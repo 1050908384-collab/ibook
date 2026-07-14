@@ -1,9 +1,21 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.config import settings
-from backend.api import chat, session, feedback, submit, report, status
+from api.chat import router as chat_router
+from api.session import router as session_router
+from api.stage import router as stage_router
+from api.visualize import router as visualize_router
+from config import settings
 
-app = FastAPI(title="AI Agent Trainer", version="1.0.0")
+app = FastAPI(
+    title=settings.APP_NAME,
+    version="1.0.0",
+    description="AI Agent Trainer - 多Agent个性化辅导系统"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,19 +25,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat, prefix="/api/chat", tags=["chat"])
-app.include_router(session, prefix="/api/session", tags=["session"])
-app.include_router(feedback, prefix="/api/feedback", tags=["feedback"])
-app.include_router(submit, prefix="/api/submit", tags=["submit"])
-app.include_router(report, prefix="/api/report", tags=["report"])
-app.include_router(status, prefix="/api/status", tags=["status"])
-
+app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
+app.include_router(session_router, prefix="/api/session", tags=["Session"])
+app.include_router(stage_router, prefix="/api/stage", tags=["Stage"])
+app.include_router(visualize_router, prefix="/api/visualize", tags=["Visualize"])
 
 @app.get("/")
 def root():
-    return {"message": "AI Agent Trainer API", "version": "1.0.0"}
+    return {"message": f"{settings.APP_NAME} is running"}
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=settings.PORT)
+    uvicorn.run(
+        "main:app",
+        host=settings.APP_HOST,
+        port=settings.APP_PORT,
+        reload=True
+    )

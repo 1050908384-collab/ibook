@@ -1,50 +1,47 @@
-from backend.agents.base_agent import BaseAgent
 from typing import Dict, Any
-from backend.models.learner_profile import LearnerProfile
-
+from agents.base_agent import BaseAgent
+from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
+from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
+from tools.agent1_tools.graph_query_tool import GraphQueryTool
 
 class DiagnosticAgent(BaseAgent):
     def __init__(self):
-        super().__init__("agent_01_diagnostic", "学情诊断Agent")
-        self.available_tools = [
-            "vector_search_tool",
-            "graph_query_tool",
-            "question_generation_tool"
-        ]
-    
-    def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        user_input = input_data.get("user_input", "")
-        conversation_history = input_data.get("conversation_history", [])
-        
-        prompt = f"""你是一个学情诊断专家，负责了解学习者的背景和需求。
-        
-对话历史：{conversation_history}
-用户当前输入：{user_input}
+        super().__init__("diagnostic_agent", ["learner_profiling", "knowledge_graph_mapping"])
+        self.extract_skills_tool = ExtractSkillsTool()
+        self.calculate_confidence_tool = CalculateConfidenceTool()
+        self.graph_query_tool = GraphQueryTool()
+        self.load_tools([self.extract_skills_tool, self.calculate_confidence_tool, self.graph_query_tool])
 
-请分析并输出学习者画像（JSON格式），包括：
-1. 专业背景和编程经验
-2. 已掌握的技能（Python/深度学习/分布式等）
-3. 知识盲区
-4. 学习目标
-5. 可用时间
-6. 学习偏好
-"""
+    async def generate_profile(self, session_id: str, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+        user_input = raw_data.get("user_input", "")
         
-        response = self.call_llm(prompt)
+        skill_tags = await self.extract_skills_tool.extract_skills(user_input)
+        knowledge_gaps = await self.extract_skills_tool.extract_gaps(user_input)
         
-        return {
-            "learner_profile": response,
-            "next_questions": self._generate_next_questions(response),
-            "completed": self._is_diagnosis_complete(response)
+        for gap in knowledge_gaps:
+            prerequisites = await self.graph_query_tool.query_prerequisites(gap["skill"])
+            gap["prerequisites"] = prerequisites
+        
+        confidence = await self.calculate_confidence_tool.calculate(user_input, skill_tags, knowledge_gaps)
+        
+        profile = {
+            "session_id": session_id,
+            "skill_tags": skill_tags,
+            "knowledge_gaps": knowledge_gaps,
+            "goal": raw_data.get("goal", ""),
+            "daily_hours": raw_data.get("daily_hours", 2.0),
+            "learning_style": raw_data.get("learning_style", "mixed"),
+            "learning_rhythm": raw_data.get("learning_rhythm", "medium"),
+            "confidence_index": raw_data.get("confidence_index", 0.5),
+            "confusion_markers": [],
+            "confidence": confidence
         }
-    
-    def _generate_next_questions(self, profile: str) -> list:
-        prompt = f"""根据以下学习者画像，生成1-2个追问问题以完善画像：
-{profile}
-"""
-        result = self.call_llm(prompt)
-        return result.split("\n") if result else []
-    
-    def _is_diagnosis_complete(self, profile: str) -> bool:
-        required_fields = ["专业背景", "编程经验", "学习目标", "可用时间"]
-        return all(field in profile for field in required_fields)
+        
+        return profile
+
+    async def update_profile(self, session_id: str, profile: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+        for key, value in updates.items():
+            if key in profile:
+                profile[key] = value
+        
+        return profile

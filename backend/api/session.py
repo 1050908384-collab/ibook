@@ -1,56 +1,46 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Optional
-import uuid
+from orchestrator.harness import Harness
 
 router = APIRouter()
-
-sessions = {}
-
-
-class SessionCreate(BaseModel):
-    user_id: str
-    user_name: str
-
+harness = Harness()
 
 class SessionResponse(BaseModel):
     session_id: str
-    user_id: str
-    user_name: str
-    created_at: str
+    status: str
 
-
-@router.post("/", response_model=SessionResponse)
-async def create_session(request: SessionCreate):
-    session_id = str(uuid.uuid4())
-    sessions[session_id] = {
-        "user_id": request.user_id,
-        "user_name": request.user_name,
-        "created_at": str(uuid.uuid1().time)
-    }
-    return SessionResponse(
-        session_id=session_id,
-        user_id=request.user_id,
-        user_name=request.user_name,
-        created_at=sessions[session_id]["created_at"]
-    )
-
+@router.post("/")
+async def create_session():
+    try:
+        session = harness.state_manager.create_session(None)
+        return {"session_id": session["session_id"], "status": "active"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{session_id}")
 async def get_session(session_id: str):
-    if session_id not in sessions:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return sessions[session_id]
+    try:
+        session = harness.state_manager.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        return session
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+@router.put("/{session_id}/end")
+async def end_session(session_id: str):
+    try:
+        harness.state_manager.end_session(session_id)
+        return {"session_id": session_id, "status": "completed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/{session_id}")
-async def delete_session(session_id: str):
-    if session_id not in sessions:
-        raise HTTPException(status_code=404, detail="Session not found")
-    del sessions[session_id]
-    return {"message": "Session deleted successfully"}
-
-
-@router.get("/")
-async def list_sessions():
-    return list(sessions.values())
+@router.put("/{session_id}/abandon")
+async def abandon_session(session_id: str):
+    try:
+        harness.state_manager.abandon_session(session_id)
+        return {"session_id": session_id, "status": "abandoned"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

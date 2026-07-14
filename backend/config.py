@@ -1,38 +1,36 @@
-from pydantic_settings import BaseSettings
-from typing import Dict, Optional
-
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
 
 class Settings(BaseSettings):
-    LLM_PROVIDER: str = "ollama"
-    OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "deepseek-7b"
-    
-    DEEPSEEK_API_KEY: Optional[str] = None
-    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
-    
-    MAX_DEBATE_ROUNDS: int = 3
-    MAX_ITERATIONS: int = 10
-    ACCURACY_THRESHOLD: float = 0.85
-    COVERAGE_THRESHOLD: float = 0.90
-    STAGNATION_THRESHOLD: float = 0.03
-    
-    CHROMA_DB_PATH: str = "data/chroma_db"
-    SQLITE_PATH: str = "data/sqlite_data"
-    GRAPH_DATA_PATH: str = "data/graph_data"
-    
-    PORT: int = 8000
-    
-    AGENT_MODEL_ROUTING: Dict[str, str] = {
-        "agent_01_diagnostic": "deepseek-7b",
-        "agent_02_retrieval": "deepseek-7b",
-        "agent_03_generation": "deepseek-7b",
-        "agent_04_tech_review": "deepseek-7b",
-        "agent_05_quality_review": "deepseek-7b",
-        "agent_06_iteration": "deepseek-7b",
-    }
-    
-    class Config:
-        env_file = ".env"
+    APP_NAME: str = "AI Agent Trainer"
+    APP_HOST: str = "0.0.0.0"
+    APP_PORT: int = 8000
 
+    OLLMA_BASE_URL: str = "http://localhost:11434"
+    OLLMA_MODEL: str = "deepseek-r1:7b"
+
+    DEEPSEEK_API_KEY: str = ""
+    DEEPSEEK_API_BASE: str = "https://api.deepseek.com"
+
+    DATABASE_URL: str = "sqlite:///../data/sqlite_data/project.db"
+    CHROMA_PATH: str = "../data/chroma_db"
+    GRAPH_PATH: str = "../data/graph_data/knowledge_graph.gpickle"
+
+    LOG_LEVEL: str = "INFO"
+    DEBUG: bool = False
+
+    MAX_REVIEW_ITERATIONS: int = 3
+    CONFIDENCE_THRESHOLD: float = 0.7
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 settings = Settings()
+
+BACKEND_DIR = Path(__file__).parent
+PROJECT_ROOT = BACKEND_DIR.parent
+DATA_DIR = PROJECT_ROOT / "data"
+SKILLS_DIR = BACKEND_DIR / "skills"

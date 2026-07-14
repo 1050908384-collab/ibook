@@ -1,36 +1,28 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
-from backend.llm.client import LLMClient
-from backend.llm.router import route_model
+from typing import Dict, Any, List, Optional
+from llm.client import LLMClient
+from skills import load_skills
 
-
-class BaseAgent(ABC):
-    def __init__(self, agent_id: str, name: str):
-        self.agent_id = agent_id
-        self.name = name
+class BaseAgent:
+    def __init__(self, agent_name: str, skill_names: List[str] = None):
+        self.agent_name = agent_name
         self.llm_client = LLMClient()
-        self.model, self.provider = route_model(agent_id)
-        self.available_tools: List[str] = []
-    
-    @abstractmethod
-    def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        pass
-    
-    def call_llm(self, prompt: str, **kwargs) -> str:
-        return self.llm_client.generate(
-            model=self.model,
-            prompt=prompt,
-            provider=self.provider,
-            **kwargs
-        )
-    
-    def call_llm_chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        return self.llm_client.chat(
-            model=self.model,
-            messages=messages,
-            provider=self.provider,
-            **kwargs
-        )
-    
-    def has_tool(self, tool_name: str) -> bool:
-        return tool_name in self.available_tools
+        self.skills = load_skills(skill_names or [])
+        self.tools = []
+
+    def load_tools(self, tools: List[Any]) -> None:
+        self.tools.extend(tools)
+
+    async def call_llm(self, prompt: str, system_prompt: str = "", **kwargs) -> str:
+        return await self.llm_client.complete(prompt, system_prompt, **kwargs)
+
+    async def execute_tool(self, tool_name: str, **kwargs) -> Any:
+        for tool in self.tools:
+            if hasattr(tool, tool_name):
+                return getattr(tool, tool_name)(**kwargs)
+        raise ValueError(f"Tool {tool_name} not found")
+
+    def build_prompt(self, template: str, **kwargs) -> str:
+        return template.format(**kwargs)
+
+    def get_skill_context(self) -> str:
+        return "\n".join([skill.content for skill in self.skills])

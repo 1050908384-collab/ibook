@@ -1,49 +1,71 @@
-import sys
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from orchestrator.harness import Harness
+import asyncio
 
-from backend.orchestrator.harness import AgentHarness
-
-
-def main():
-    print("=" * 60)
-    print("AI Agent Trainer Demo")
-    print("=" * 60)
+async def run_demo():
+    print("=== AI Agent Trainer Demo ===")
+    print()
     
-    harness = AgentHarness()
+    harness = Harness()
     
-    sample_input = """我是一名计算机专业大二学生，有PyTorch基础但没有分布式系统经验。
-我想学习"大模型LoRA微调与LLM部署"，但不知道从哪里开始、该学多少。"""
+    session_id = harness.state_manager.create_session(None)["session_id"]
+    print(f"Created session: {session_id}")
+    print()
     
-    print("\n用户输入:")
-    print(sample_input)
-    print("\n" + "=" * 60)
-    print("开始运行Agent流程...")
-    print("=" * 60)
+    user_input = """
+    我的学习背景：研究生，有PyTorch基础，用过transformer库
+    我的学习目标：掌握LoRA微调，能独立部署到生产环境
+    我每天能学：2小时
+    我喜欢怎么学：偏爱动手实操，不太喜欢纯理论讲解
+    """
     
-    result = harness.run(session_id="demo_session_001", user_input=sample_input)
+    print("Step 1: User initial input")
+    print("-" * 50)
+    print(user_input)
+    print()
     
-    print("\n运行结果:")
-    print(f"状态: {result.get('status')}")
-    print(f"迭代轮次: {result.get('iteration_round')}")
-    print(f"正确率: {result.get('accuracy')}")
-    print(f"覆盖率: {result.get('coverage')}")
+    result = await harness.process_initial_input(session_id, user_input)
+    print("Step 2: Profile generated")
+    print("-" * 50)
+    print(f"Confidence: {result['profile']['confidence']}")
+    print(f"Skill tags: {result['profile']['skill_tags']}")
+    print(f"Knowledge gaps: {[g['skill'] for g in result['profile']['knowledge_gaps']]}")
+    print()
     
-    if result.get("reason"):
-        print(f"\n终止原因: {result.get('reason')}")
+    print("Step 3: Stage generated")
+    print("-" * 50)
+    print(f"Stage: {result['stage_info']['block_name']}")
+    print(f"Estimated hours: {result['stage_info']['estimated_hours']}")
+    print()
     
-    if result.get("content"):
-        print("\n生成的学习内容:")
-        print("-" * 40)
-        content = result.get("content")
-        print(content[:2000] + "..." if len(content) > 2000 else content)
-        print("-" * 40)
+    print("Step 4: Starting stage...")
+    print("-" * 50)
+    stage_result = await harness.start_stage(session_id)
+    print(f"Review passed: {stage_result['review_passed']}")
+    print(f"Iterations: {stage_result['iterations']}")
+    print()
     
-    print("\n" + "=" * 60)
-    print("Demo运行完成!")
-    print("=" * 60)
-
+    print("Step 5: Answering a question")
+    print("-" * 50)
+    question = "什么是LoRA？它是如何工作的？"
+    print(f"Question: {question}")
+    answer_result = await harness.handle_question(session_id, question)
+    print(f"Answer length: {len(answer_result['answer'])} characters")
+    print(f"Tech pass: {answer_result['tech_pass']}")
+    print(f"Quality pass: {answer_result['quality_pass']}")
+    print()
+    
+    print("Step 6: Completing stage")
+    print("-" * 50)
+    complete_result = await harness.complete_stage(session_id)
+    print(f"Status: {complete_result['status']}")
+    print(f"Accuracy: {complete_result['accuracy']}")
+    print()
+    
+    print("=== Demo completed ===")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(run_demo())
