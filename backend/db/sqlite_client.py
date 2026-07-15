@@ -1,14 +1,22 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from config import settings
+from pathlib import Path
 import json
 import uuid
 
 class SQLiteClient:
     def __init__(self):
+        self._ensure_data_dir()
         self.engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
         self.Session = sessionmaker(bind=self.engine)
         self._init_tables()
+
+    def _ensure_data_dir(self):
+        db_url = settings.DATABASE_URL
+        if db_url.startswith("sqlite:///"):
+            db_path = Path(db_url.replace("sqlite:///", ""))
+            db_path.parent.mkdir(parents=True, exist_ok=True)
 
     def _init_tables(self):
         with self.engine.connect() as conn:

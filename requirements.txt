@@ -3,6 +3,7 @@ uvicorn==0.30.6
 pydantic==2.9.0
 python-dotenv==1.0.1
 requests==2.32.3
+httpx==0.27.2
 sqlalchemy==2.0.35
 networkx==3.4.1
 numpy==1.26.4

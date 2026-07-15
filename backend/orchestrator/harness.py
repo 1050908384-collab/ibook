@@ -112,7 +112,7 @@ class Harness:
         return tech_errors, quality_errors
 
     def _extract_raw_data(self, user_input: str) -> Dict[str, Any]:
-        return {}
+        return {"user_input": user_input}
 
     def _generate_followup_questions(self, profile: Dict[str, Any]) -> list:
         return []
