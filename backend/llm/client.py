@@ -2,6 +2,7 @@ from typing import Optional
 import asyncio
 import httpx
 import json
+import re
 from config import settings
 import logging
 
@@ -14,7 +15,12 @@ class LLMClient:
         self.ollma_model = settings.OLLMA_MODEL
         self.client = httpx.AsyncClient(timeout=120)
 
-    async def complete(self, prompt: str, system_prompt: str = "", max_tokens: int = 4096, temperature: float = 0.7) -> str:
+    def _clean_response(self, response_text: str) -> str:
+        response_text = response_text.replace("<think>", "").replace("</think>", "")
+        response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL)
+        return response_text.strip()
+
+    async def complete(self, prompt: str, system_prompt: str = "", max_tokens: int = 8192, temperature: float = 0.7) -> str:
         try:
             print(f"=== 发送给Ollama的prompt（前200字符）=== {prompt[:200]}")
             
@@ -33,7 +39,9 @@ class LLMClient:
             )
             response.raise_for_status()
             result = response.json()
-            return result.get("response", "")
+            response_text = result.get("response", "")
+            cleaned_response = self._clean_response(response_text)
+            return cleaned_response
         except httpx.RequestError as e:
             logger.error(f"Ollama request failed: {e}")
             return f"Error: {str(e)}"
@@ -41,7 +49,7 @@ class LLMClient:
             logger.error(f"LLM complete error: {e}")
             return f"Error: {str(e)}"
 
-    async def chat(self, messages: list, max_tokens: int = 4096, temperature: float = 0.7) -> str:
+    async def chat(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
         try:
             payload = {
                 "model": self.ollma_model,
@@ -57,7 +65,9 @@ class LLMClient:
             )
             response.raise_for_status()
             result = response.json()
-            return result.get("message", {}).get("content", "")
+            response_text = result.get("message", {}).get("content", "")
+            cleaned_response = self._clean_response(response_text)
+            return cleaned_response
         except httpx.RequestError as e:
             logger.error(f"Ollama chat request failed: {e}")
             return f"Error: {str(e)}"

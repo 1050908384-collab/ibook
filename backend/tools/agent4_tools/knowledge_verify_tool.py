@@ -23,7 +23,7 @@ class KnowledgeVerifyTool:
         
         prompt = f"""请检查以下内容的技术准确性：
         
-        {content[:4000]}
+        {content}
         
         请以JSON数组格式返回发现的错误，每个错误包含：
         - type: 错误类型（hallucination/fact_error/concept_error）

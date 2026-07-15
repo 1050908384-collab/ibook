@@ -23,7 +23,7 @@ class DifficultyAnalyzerTool:
         
         prompt = f"""请分析以下内容的学习难度：
         
-        {content[:2000]}
+        {content}
         
         请以JSON数组格式返回发现的问题，每个问题包含：
         - type: 问题类型（too_hard/too_easy/poor_structure）

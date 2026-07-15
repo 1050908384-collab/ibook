@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from agents.base_agent import BaseAgent
 from tools.agent3_tools.vector_search_tool import VectorSearchTool
 from tools.agent3_tools.llm_generate_tool import LLMGenerateTool
@@ -9,56 +9,43 @@ from tools.agent3_tools.format_converter_tool import FormatConverterTool
 
 class ContentGeneratorAgent(BaseAgent):
     def __init__(self):
-        super().__init__("content_generator_agent", ["content_generation", "code_style", "question_answering"])
+        super().__init__("content_generator_agent", ["knowledge_graph", "content_strategy", "language_models"])
         self.vector_search_tool = VectorSearchTool()
         self.llm_generate_tool = LLMGenerateTool()
         self.code_generation_tool = CodeGenerationTool()
         self.question_extract_tool = QuestionExtractTool()
         self.template_render_tool = TemplateRenderTool()
         self.format_converter_tool = FormatConverterTool()
-        self.load_tools([
-            self.vector_search_tool,
-            self.llm_generate_tool,
-            self.code_generation_tool,
-            self.question_extract_tool,
-            self.template_render_tool,
-            self.format_converter_tool
-        ])
+        self.load_tools([self.vector_search_tool, self.llm_generate_tool, self.code_generation_tool, 
+                        self.question_extract_tool, self.template_render_tool, self.format_converter_tool])
 
     async def generate_learning_package(self, session_id: str, stage_info: Dict[str, Any]) -> Dict[str, Any]:
         block_id = stage_info.get("block_id", "")
         gap = stage_info.get("gap", {})
         
-        related_docs = await self.vector_search_tool.search(block_id, top_k=5)
-        tutorial_content = await self.llm_generate_tool.generate_tutorial(block_id, gap, related_docs)
-        code_examples = await self.code_generation_tool.generate_code(block_id)
-        questions = await self.question_extract_tool.extract_questions(block_id, count=5)
+        related_docs = await self.vector_search_tool.search_by_block(block_id)
+        tutorial = await self.llm_generate_tool.generate_tutorial(block_id, gap, related_docs)
         
-        package = {
-            "session_id": session_id,
-            "stage_id": stage_info.get("stage_id", ""),
-            "block_id": block_id,
-            "block_name": stage_info.get("block_name", ""),
-            "tutorial": tutorial_content,
+        code_examples = await self.code_generation_tool.generate_code(block_id, stage_info)
+        
+        questions = await self.question_extract_tool.extract_questions(tutorial, stage_info)
+        
+        return {
+            "tutorial": tutorial,
             "code_examples": code_examples,
             "questions": questions,
-            "version": 1
+            "format": "markdown"
         }
-        
-        return package
 
-    async def modify_learning_package(self, session_id: str, package: Dict[str, Any], errors: Dict[str, Any]) -> Dict[str, Any]:
+    async def modify_package(self, session_id: str, package: Dict[str, Any], errors: Dict[str, Any]) -> Dict[str, Any]:
         tech_errors = errors.get("tech", [])
         quality_errors = errors.get("quality", [])
         
-        if tech_errors:
+        if tech_errors and "tutorial" in package:
             package["tutorial"] = await self.llm_generate_tool.fix_tutorial(package["tutorial"], tech_errors)
-            package["code_examples"] = await self.code_generation_tool.fix_code(package["code_examples"], tech_errors)
         
-        if quality_errors:
+        if quality_errors and "tutorial" in package:
             package["tutorial"] = await self.llm_generate_tool.adjust_tutorial_difficulty(package["tutorial"], quality_errors)
-        
-        package["version"] += 1
         
         return package
 
@@ -71,10 +58,7 @@ class ContentGeneratorAgent(BaseAgent):
         tech_errors = errors.get("tech", [])
         quality_errors = errors.get("quality", [])
         
-        if tech_errors:
-            answer = await self.llm_generate_tool.fix_answer(answer, tech_errors, question)
-        
-        if quality_errors:
-            answer = await self.llm_generate_tool.adjust_answer(answer, quality_errors, question)
+        if tech_errors or quality_errors:
+            answer = await self.llm_generate_tool._modify_answer(answer, tech_errors, quality_errors, question)
         
         return answer

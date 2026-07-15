@@ -56,9 +56,22 @@ class LLMGenerateTool:
         return response
 
     async def fix_answer(self, answer: str, errors: List[Dict[str, Any]], question: str = "") -> str:
-        error_str = "\n".join([f"- [{e.get('type', 'unknown')}] {e.get('message', '')}" for e in errors])
+        return self._modify_answer(answer, errors, [], question)
+
+    async def adjust_answer(self, answer: str, errors: List[Dict[str, Any]], question: str = "") -> str:
+        return self._modify_answer(answer, [], errors, question)
+
+    async def _modify_answer(self, answer: str, tech_errors: List[Dict[str, Any]], quality_errors: List[Dict[str, Any]], question: str = "") -> str:
+        tech_error_str = "\n".join([f"- [技术错误] [{e.get('type', 'unknown')}] {e.get('message', '')}" for e in tech_errors])
+        quality_error_str = "\n".join([f"- [质量问题] [{e.get('type', 'unknown')}] {e.get('message', '')}" for e in quality_errors])
+        all_errors = []
+        if tech_error_str:
+            all_errors.append(f"技术错误：\n{tech_error_str}")
+        if quality_error_str:
+            all_errors.append(f"质量问题：\n{quality_error_str}")
+        error_str = "\n\n".join(all_errors)
         
-        system_prompt = """你是一个专业的技术编辑。请根据反馈意见修改回答，确保技术准确性。
+        system_prompt = """你是一个专业的技术编辑。请根据反馈意见修改回答。
         重要：只修改被指出有问题的部分，保持其他正确内容不变，不要删减任何信息。
         修改后的回答长度应该与原回答相当或更长，确保所有技术细节都被保留。"""
         
@@ -71,29 +84,8 @@ class LLMGenerateTool:
 {error_str}
 
 请修改回答，只针对上述问题进行修正。保持回答的完整性和详细程度，不要删减正确的内容。
-修改后的回答应该包含所有原始信息，只修正错误的部分。"""
+修改后的回答应该包含所有原始信息，只修正错误的部分。如果没有需要修复的问题，请原样返回原回答。"""
         
         response = await self.llm_client.complete(prompt, system_prompt)
-        print(f"=== fix_answer LLM响应（前300字符）===\n{response[:300]}\n=== 响应结束 ===")
-        return response
-
-    async def adjust_answer(self, answer: str, errors: List[Dict[str, Any]], question: str = "") -> str:
-        error_str = "\n".join([f"- [{e.get('type', 'unknown')}] {e.get('message', '')}" for e in errors])
-        
-        system_prompt = """你是一个专业的教学编辑。请根据反馈意见调整回答的难度和表达方式，使其更适合学习者。
-        重要：保持所有技术内容不变，只调整表达方式、增加解释或简化语言。
-        修改后的回答长度应该与原回答相当或更长。"""
-        
-        question_part = f"原始问题：{question}\n\n" if question else ""
-        
-        prompt = f"""{question_part}原回答：
-{answer}
-
-需要调整的问题：
-{error_str}
-
-请调整回答的难度和表达方式，使其更适合学习者。保持所有技术内容的准确性，只改进表达方式。"""
-        
-        response = await self.llm_client.complete(prompt, system_prompt)
-        print(f"=== adjust_answer LLM响应（前300字符）===\n{response[:300]}\n=== 响应结束 ===")
+        print(f"=== _modify_answer LLM响应（前300字符）===\n{response[:300]}\n=== 响应结束 ===")
         return response
