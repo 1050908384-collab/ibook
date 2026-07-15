@@ -4,7 +4,6 @@ pydantic==2.9.0
 python-dotenv==1.0.1
 requests==2.32.3
 sqlalchemy==2.0.35
-chromadb==0.5.18
 networkx==3.4.1
 numpy==1.26.4
 scipy==1.13.1

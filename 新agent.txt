@@ -1,0 +1,87 @@
+6个agent功能简述
+agent1：把所有个性化数据（用户填的+Agent6更新的）统一转成个性化用户数据（画像）
+Agent2：看画像，告诉用户“下一阶段学什么”
+Agent3：生产内容：生成学习包、修改学习包、回答用户问题
+Agent4：检查内容技术对不对（幻觉、语法、规范）
+Agent5：检查内容教得好不好（难度、负荷、风格）
+Agent6：阶段结束后分析所有数据，更新用户个性化数据
+每一个agent的联系（简易版）——O代表Orchestrator
+Agent1：
+输入：个性化词汇（由用户首次填写的信息，用户补充的追问回答，通过Orchestrator提取），个性化数据（学习时间，一些最开始是默认的时间，之后这些数据可能会因为agent6儿改变）
+输出：画像JSON（各类数据，包括有的个性化词汇转化为数据）
+Agent2：
+输入：Agent1输出的画像（仅取knowledge_gaps + goal）
+输出：下一学习阶段目录信息
+Agent3：
+输入：学习阶段内容，agent4、5报错信息，用户问题
+输出：学习资料包，用户问题答案
+Agent4：
+输入：agent3输出的学习包，agent3输出的用户问题答案
+输出：技术问题报错
+Agent5：
+输入：agent3输出的学习包，agent3输出的用户问题答案
+输出：报错
+Agent6：
+输入：正确率+用户画像+用户交互
+输出：用户个性化数据+用户个性化词汇
+Orchestrator
+输入：用户首次发送消息   输出：关键个性化词汇，并且调用agent1
+输入：agent1输出中的一个数据置信度太小（这个度具体多少要探究一下）  输出：数据库中追问问题
+输入：agent1处理好后的数据，并且置信度OK    输出：调用agent2
+输入：agent2的输出，并且用户点击开始     输出：调用agent3
+输入：agent3的输出        输出：启动agent4，5
+输入：agent4和5的报错信息（如有）    输出：中和报错信息，并且将报错信息给到agent3，调用agent3
+输入：agent4和5的报错信息（如OK）   输出：agent3的输出
+输入：用户问题内容        输出：提取关键词，并且关键词和内容一起给agent3，调用agent3；并且针对用户的问题，调整数据库部分用户数据
+输入：用户点击“问题“    输出：调取数据库的问题
+输入：用户答案          输出：正确率
+输入：正确率             输出：调用agent6，正确率+用户画像+用户交互给他
+输入：agent6输出         输出：修改数据+不动数据给到agent1
+总结流程：
+用户首次输入 → Orchestrator提取个性化词汇和数据
+  ↓
+Orchestrator → Agent1（输入：个性化词汇+数据）
+Agent1输出：画像JSON
+  ↓
+前端展示：画像卡片 + 多边形雷达图
+Orchestrator → Agent2（输入：画像中的knowledge_gaps + goal）
+Agent2输出：下一阶段目录信息
+  ↓
+前端展示：下一阶段信息 + "开始学习"按钮
+用户点击"开始学习阶段N"
+  ↓
+Orchestrator → Agent3（输入：阶段内容）
+Agent3输出：学习包V1
+  ↓
+Orchestrator同时启动Agent4 + Agent5（并行审核V1）
+Agent4输出：技术报错清单
+Agent5输出：教学报错清单
+  ↓
+Orchestrator汇总报错 → 有报错 → 给Agent3修改
+Agent3（输入：原学习包 + 报错清单）→ 输出：学习包V2
+→ 回到Agent4+5审核V2 → 循环直到通过
+  ↓
+审核通过 → 学习包展示给用户
+  ↓
+用户学习过程中提问：
+  Orchestrator → Agent3（输入：用户问题）
+  Agent3输出：回答
+  同时Agent4+5守护审核回答 → 通过后展示给用户
+  ↓
+用户点击"题目" → 提交答案
+Orchestrator计算正确率
+  ↓
+Orchestrator → Agent6（输入：正确率 + qa_history + interactions + 当前画像）
+Agent6输出：用户个性化数据（更新后的知识盲区、学习节奏、信心指数、困惑标记、下一阶段策略）
+  ↓
+Orchestrator将Agent6输出 → Agent1（输入：Agent6的更新数据）
+Agent1输出：新画像
+  ↓
+前端更新：多边形图（对应盲区颜色变化）
+Orchestrator → Agent2（输入：新画像中的knowledge_gaps + goal）
+Agent2输出：下一阶段目录信息
+  ↓
+前端展示：下一阶段信息 + "开始学习"按钮
+→ 回到循环，直到所有knowledge_gaps状态为"已掌握"
+  ↓
+结业报告
