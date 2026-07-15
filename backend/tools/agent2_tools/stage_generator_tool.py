@@ -10,6 +10,8 @@ class StageGeneratorTool:
     def _clean_response(self, response: str) -> str:
         response = response.replace("<think>", "").replace("</think>", "")
         response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+        response = re.sub(r'```json\s*', '', response)
+        response = re.sub(r'\s*```', '', response)
         return response.strip()
 
     async def generate_stage(self, session_id: str, gap: Dict[str, Any], block_info: Dict[str, Any], goal: str) -> Dict[str, Any]:
@@ -22,17 +24,24 @@ class StageGeneratorTool:
 当前水平：{level}
 学习目标：{goal}
 
-请生成一个学习阶段计划，以JSON格式返回，包含：stage_id、title、description、objectives、duration_hours、difficulty。"""
+请生成一个学习阶段计划，以JSON对象格式返回，包含：stage_id、title、description、objectives、duration_hours、difficulty。"""
         
         response = await self.llm_client.complete(prompt, system_prompt)
         print(f"=== generate_stage LLM响应 ===\n{response}\n=== 响应结束 ===")
         response = self._clean_response(response)
         
         try:
-            match = re.search(r'\{.*\}', response, re.DOTALL)
-            if match:
-                result = json.loads(match.group())
-                print(f"=== generate_stage 解析结果 ===\n{result}\n=== 解析结束 ===")
+            array_match = re.search(r'\[.*\]', response, re.DOTALL)
+            if array_match:
+                result = json.loads(array_match.group())
+                if isinstance(result, list) and len(result) > 0:
+                    print(f"=== generate_stage 解析结果（数组取第一个）===\n{result[0]}\n=== 解析结束 ===")
+                    return result[0]
+            
+            obj_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if obj_match:
+                result = json.loads(obj_match.group())
+                print(f"=== generate_stage 解析结果（单个对象）===\n{result}\n=== 解析结束 ===")
                 return result
         except Exception as e:
             print(f"generate_stage JSON解析失败: {e}, 使用默认值")

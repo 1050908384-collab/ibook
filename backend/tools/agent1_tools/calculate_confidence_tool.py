@@ -8,7 +8,7 @@ class CalculateConfidenceTool:
         if not user_input:
             return 0.3
         
-        base_confidence = 0.5
+        base_confidence = 0.6
         
         if skill_tags and len(skill_tags) >= 1:
             base_confidence += 0.1 * min(len(skill_tags), 3)
