@@ -67,14 +67,14 @@ class ContentGeneratorAgent(BaseAgent):
         answer = await self.llm_generate_tool.generate_answer(question, related_docs)
         return answer
 
-    async def modify_answer(self, session_id: str, answer: str, errors: Dict[str, Any]) -> str:
+    async def modify_answer(self, session_id: str, answer: str, errors: Dict[str, Any], question: str = "") -> str:
         tech_errors = errors.get("tech", [])
         quality_errors = errors.get("quality", [])
         
         if tech_errors:
-            answer = await self.llm_generate_tool.fix_answer(answer, tech_errors)
+            answer = await self.llm_generate_tool.fix_answer(answer, tech_errors, question)
         
         if quality_errors:
-            answer = await self.llm_generate_tool.adjust_answer(answer, quality_errors)
+            answer = await self.llm_generate_tool.adjust_answer(answer, quality_errors, question)
         
         return answer

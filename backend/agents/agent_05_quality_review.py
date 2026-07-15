@@ -14,8 +14,10 @@ class QualityReviewAgent(BaseAgent):
 
     async def review(self, session_id: str, content: Dict[str, Any]) -> List[Dict[str, Any]]:
         errors = []
+        print(f"=== Agent5 QualityReviewAgent 开始审核 ===")
         
         if "tutorial" in content:
+            print(f"=== 分析教程难度（前200字符）===\n{content['tutorial'][:200]}")
             difficulty_errors = await self.difficulty_analyzer_tool.analyze(content["tutorial"])
             errors.extend(difficulty_errors)
             
@@ -26,7 +28,17 @@ class QualityReviewAgent(BaseAgent):
             errors.extend(style_errors)
         
         if "answer" in content:
+            print(f"=== 分析回答质量（前200字符）===\n{content['answer'][:200]}")
             style_errors = await self.style_match_tool.check(content["answer"])
             errors.extend(style_errors)
+            
+            difficulty_errors = await self.difficulty_analyzer_tool.analyze(content["answer"])
+            errors.extend(difficulty_errors)
+        
+        print(f"=== Agent5 QualityReviewAgent 审核完成 ===")
+        print(f"=== 发现质量问题: {len(errors)}个 ===")
+        if errors:
+            for i, e in enumerate(errors, 1):
+                print(f"  {i}. [{e.get('type', 'unknown')}] {e.get('message', '')}")
         
         return errors

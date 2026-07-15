@@ -21,7 +21,9 @@ class LLMGenerateTool:
 
 请用markdown格式编写，内容要详细但易于理解。"""
         
-        return await self.llm_client.complete(prompt, system_prompt)
+        response = await self.llm_client.complete(prompt, system_prompt)
+        print(f"=== generate_tutorial LLM响应（前500字符）===\n{response[:500]}\n=== 响应结束 ===")
+        return response
 
     async def fix_tutorial(self, tutorial: str, errors: List[Dict[str, Any]]) -> str:
         error_str = "\n".join([f"- {e.get('message', '')}" for e in errors])
@@ -49,22 +51,49 @@ class LLMGenerateTool:
 
 请详细回答这个问题，确保技术准确性和易懂性。如果涉及代码，请提供示例代码。"""
         
-        return await self.llm_client.complete(prompt, system_prompt)
+        response = await self.llm_client.complete(prompt, system_prompt)
+        print(f"=== generate_answer LLM响应（前500字符）===\n{response[:500]}\n=== 响应结束 ===")
+        return response
 
-    async def fix_answer(self, answer: str, errors: List[Dict[str, Any]]) -> str:
-        error_str = "\n".join([f"- {e.get('message', '')}" for e in errors])
+    async def fix_answer(self, answer: str, errors: List[Dict[str, Any]], question: str = "") -> str:
+        error_str = "\n".join([f"- [{e.get('type', 'unknown')}] {e.get('message', '')}" for e in errors])
         
-        system_prompt = """你是一个专业的技术编辑。请根据反馈意见修改回答，确保技术准确性。"""
+        system_prompt = """你是一个专业的技术编辑。请根据反馈意见修改回答，确保技术准确性。
+        重要：只修改被指出有问题的部分，保持其他正确内容不变，不要删减任何信息。
+        修改后的回答长度应该与原回答相当或更长，确保所有技术细节都被保留。"""
         
-        prompt = f"""原回答：
+        question_part = f"原始问题：{question}\n\n" if question else ""
+        
+        prompt = f"""{question_part}原回答：
 {answer}
 
 需要修复的问题：
 {error_str}
 
-请修改回答，解决以上问题。"""
+请修改回答，只针对上述问题进行修正。保持回答的完整性和详细程度，不要删减正确的内容。
+修改后的回答应该包含所有原始信息，只修正错误的部分。"""
         
-        return await self.llm_client.complete(prompt, system_prompt)
+        response = await self.llm_client.complete(prompt, system_prompt)
+        print(f"=== fix_answer LLM响应（前300字符）===\n{response[:300]}\n=== 响应结束 ===")
+        return response
 
-    async def adjust_answer(self, answer: str, errors: List[Dict[str, Any]]) -> str:
-        return answer
+    async def adjust_answer(self, answer: str, errors: List[Dict[str, Any]], question: str = "") -> str:
+        error_str = "\n".join([f"- [{e.get('type', 'unknown')}] {e.get('message', '')}" for e in errors])
+        
+        system_prompt = """你是一个专业的教学编辑。请根据反馈意见调整回答的难度和表达方式，使其更适合学习者。
+        重要：保持所有技术内容不变，只调整表达方式、增加解释或简化语言。
+        修改后的回答长度应该与原回答相当或更长。"""
+        
+        question_part = f"原始问题：{question}\n\n" if question else ""
+        
+        prompt = f"""{question_part}原回答：
+{answer}
+
+需要调整的问题：
+{error_str}
+
+请调整回答的难度和表达方式，使其更适合学习者。保持所有技术内容的准确性，只改进表达方式。"""
+        
+        response = await self.llm_client.complete(prompt, system_prompt)
+        print(f"=== adjust_answer LLM响应（前300字符）===\n{response[:300]}\n=== 响应结束 ===")
+        return response

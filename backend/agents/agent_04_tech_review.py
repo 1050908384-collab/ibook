@@ -14,8 +14,10 @@ class TechnicalReviewAgent(BaseAgent):
 
     async def review(self, session_id: str, content: Dict[str, Any]) -> List[Dict[str, Any]]:
         errors = []
+        print(f"=== Agent4 TechnicalReviewAgent 开始审核 ===")
         
         if "tutorial" in content:
+            print(f"=== 审核教程内容（前200字符）===\n{content['tutorial'][:200]}")
             hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["tutorial"])
             errors.extend(hallucination_errors)
             
@@ -23,6 +25,7 @@ class TechnicalReviewAgent(BaseAgent):
             errors.extend(rule_errors)
         
         if "code_examples" in content:
+            print(f"=== 审核代码示例 ===")
             for code in content["code_examples"]:
                 syntax_errors = await self.code_parser_tool.parse_code(code.get("code", ""))
                 errors.extend(syntax_errors)
@@ -31,7 +34,14 @@ class TechnicalReviewAgent(BaseAgent):
                 errors.extend(code_rule_errors)
         
         if "answer" in content:
+            print(f"=== 审核回答内容（前200字符）===\n{content['answer'][:200]}")
             hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["answer"])
             errors.extend(hallucination_errors)
+        
+        print(f"=== Agent4 TechnicalReviewAgent 审核完成 ===")
+        print(f"=== 发现技术错误: {len(errors)}个 ===")
+        if errors:
+            for i, e in enumerate(errors, 1):
+                print(f"  {i}. [{e.get('type', 'unknown')}] {e.get('message', '')}")
         
         return errors

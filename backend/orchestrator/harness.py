@@ -58,20 +58,40 @@ class Harness:
         }
 
     async def handle_question(self, session_id: str, question: str) -> Dict[str, Any]:
+        print(f"=== handle_question 开始 === question: {question}")
+        
         answer = await self.agent3.answer_question(session_id, question)
+        print(f"=== answer_question 返回（前300字符）===\n{answer[:300]}\n=== 返回结束 ===")
         
-        tech_errors, quality_errors = await self._parallel_review(session_id, {"answer": answer})
+        max_iterations = 3
+        iteration = 1
+        tech_errors = []
+        quality_errors = []
         
-        if tech_errors or quality_errors:
+        while iteration <= max_iterations:
+            print(f"=== 第{iteration}轮审核 ===")
+            tech_errors, quality_errors = await self._parallel_review(session_id, {"answer": answer})
+            print(f"=== 第{iteration}轮审核结果 === tech_errors: {len(tech_errors)}, quality_errors: {len(quality_errors)}")
+            
+            if not tech_errors and not quality_errors:
+                print(f"=== 第{iteration}轮审核通过，结束循环 ===")
+                break
+            
+            print(f"=== 第{iteration}轮审核失败，开始修改 ===")
             combined_errors = {"tech": tech_errors, "quality": quality_errors}
-            answer = await self.agent3.modify_answer(session_id, answer, combined_errors)
+            answer = await self.agent3.modify_answer(session_id, answer, combined_errors, question)
+            print(f"=== 第{iteration}轮修改后的回答（前300字符）===\n{answer[:300]}\n=== 修改结束 ===")
+            
+            iteration += 1
         
         self.state_manager.add_qa_record(session_id, question, answer)
         
+        print(f"=== handle_question 完成 ===")
         return {
             "answer": answer,
             "tech_pass": not tech_errors,
-            "quality_pass": not quality_errors
+            "quality_pass": not quality_errors,
+            "iterations": iteration
         }
 
     async def submit_answer(self, session_id: str, question_id: str, user_answer: str) -> Dict[str, Any]:
