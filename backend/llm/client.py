@@ -1,6 +1,7 @@
 from typing import Optional
 import asyncio
 import httpx
+import json
 from config import settings
 import logging
 
@@ -15,16 +16,20 @@ class LLMClient:
 
     async def complete(self, prompt: str, system_prompt: str = "", max_tokens: int = 4096, temperature: float = 0.7) -> str:
         try:
+            print(f"=== 发送给Ollama的prompt（前200字符）=== {prompt[:200]}")
+            
+            payload = {
+                "model": self.ollma_model,
+                "prompt": prompt,
+                "system": system_prompt,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": False
+            }
+            
             response = await self.client.post(
                 f"{self.ollma_base_url}/api/generate",
-                json={
-                    "model": self.ollma_model,
-                    "prompt": prompt,
-                    "system": system_prompt,
-                    "max_tokens": max_tokens,
-                    "temperature": temperature,
-                    "stream": False
-                }
+                json=payload
             )
             response.raise_for_status()
             result = response.json()
@@ -38,15 +43,17 @@ class LLMClient:
 
     async def chat(self, messages: list, max_tokens: int = 4096, temperature: float = 0.7) -> str:
         try:
+            payload = {
+                "model": self.ollma_model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": False
+            }
+            
             response = await self.client.post(
                 f"{self.ollma_base_url}/api/chat",
-                json={
-                    "model": self.ollma_model,
-                    "messages": messages,
-                    "max_tokens": max_tokens,
-                    "temperature": temperature,
-                    "stream": False
-                }
+                json=payload
             )
             response.raise_for_status()
             result = response.json()

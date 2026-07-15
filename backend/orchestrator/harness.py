@@ -19,6 +19,7 @@ class Harness:
         self.agent6 = StageDecisionAgent()
 
     async def process_initial_input(self, session_id: str, user_input: str) -> Dict[str, Any]:
+        print(f"=== Harness收到用户输入 === {user_input}")
         raw_data = self._extract_raw_data(user_input)
         profile = await self.agent1.generate_profile(session_id, raw_data)
         

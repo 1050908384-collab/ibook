@@ -14,7 +14,7 @@ class StagePlannerAgent(BaseAgent):
         knowledge_gaps = profile.get("knowledge_gaps", [])
         goal = profile.get("goal", "")
         
-        unstarted_gaps = [g for g in knowledge_gaps if g.get("status") == "未开始"]
+        unstarted_gaps = [g for g in knowledge_gaps if g.get("status", "未开始") == "未开始"]
         
         if not unstarted_gaps:
             return {"status": "completed", "message": "所有知识盲区已掌握"}
