@@ -171,5 +171,5 @@ cursor.execute("PRAGMA foreign_keys=ON;")
 conn.commit()
 conn.close()
 
-print("✅ 9张表创建成功！")
-print(f"📁 数据库文件位置: {DB_PATH}")
+print("[OK] 9 tables created successfully!")
+print(f"[INFO] Database file location: {DB_PATH}")
