@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import List, Optional
+
+from pydantic import BaseModel, Field
 
 class KnowledgeBlock(BaseModel):
     block_id: str
@@ -7,8 +8,8 @@ class KnowledgeBlock(BaseModel):
     description: Optional[str] = None
     estimated_hours: float = 1.0
     difficulty: str = "初级"
-    prerequisites: List[str] = []
-    corresponding_gaps: List[str] = []
+    prerequisites: List[str] = Field(default_factory=list)
+    corresponding_gaps: List[str] = Field(default_factory=list)
 
 class KnowledgeDoc(BaseModel):
     doc_id: str

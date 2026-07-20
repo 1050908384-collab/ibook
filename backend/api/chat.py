@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from typing import Optional
-from orchestrator.harness import Harness
+from pydantic import BaseModel, Field
+
+from api.dependencies import get_harness
 
 router = APIRouter()
-harness = Harness()
+harness = get_harness()
 
 class ChatRequest(BaseModel):
     session_id: Optional[str] = None
-    message: str
+    message: str = Field(min_length=1)
 
 class ChatResponse(BaseModel):
     session_id: str
@@ -23,12 +24,18 @@ async def chat(request: ChatRequest):
         result = await harness.process_initial_input(request.session_id, request.message)
         return {"session_id": request.session_id, "response": result}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        status_code = 404 if isinstance(e, ValueError) else 500
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 @router.post("/question")
 async def handle_question(request: ChatRequest):
     try:
+        if not request.session_id:
+            raise HTTPException(status_code=400, detail="session_id is required")
         result = await harness.handle_question(request.session_id, request.message)
         return {"session_id": request.session_id, "response": result}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        status_code = 404 if isinstance(e, ValueError) else 500
+        raise HTTPException(status_code=status_code, detail=str(e))

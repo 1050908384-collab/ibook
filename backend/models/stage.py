@@ -1,5 +1,8 @@
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+from models.material import TestQuestion
 
 class StageInfo(BaseModel):
     stage_id: str
@@ -7,7 +10,8 @@ class StageInfo(BaseModel):
     block_id: str
     block_name: str
     estimated_hours: float = 1.0
-    prerequisites: List[str] = []
+    gap_skill: str
+    prerequisites: List[str] = Field(default_factory=list)
     status: str = "pending"
     accuracy: Optional[float] = None
     strategy_used: Optional[str] = None
@@ -18,6 +22,7 @@ class LearningPackage(BaseModel):
     block_id: str
     block_name: str
     tutorial: str = ""
-    code_examples: List[Dict] = []
-    questions: List[Dict] = []
+    code_examples: List[dict] = Field(default_factory=list)
+    questions: List[TestQuestion] = Field(default_factory=list)
+    format: str = "markdown"
     version: int = 1

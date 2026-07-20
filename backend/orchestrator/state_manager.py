@@ -1,64 +1,141 @@
-from typing import Dict, Any, Optional, List
-from memory.session_manager import SessionManager
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+import uuid
+
 from db.sqlite_client import SQLiteClient
+from models.profile import UserProfile
+from models.stage import LearningPackage, StageInfo
+from models.user_data import SessionData
+
 
 class StateManager:
-    def __init__(self):
-        self.session_manager = SessionManager()
-        self.db_client = SQLiteClient()
+    def __init__(self, db_client: SQLiteClient | None = None):
+        self.db_client = db_client or SQLiteClient()
+        self._cache: Dict[str, SessionData] = {}
+
+    def create_session(self, session_id: str | None = None) -> Dict[str, Any]:
+        session_id = session_id or str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        state = SessionData(session_id=session_id, created_at=now, updated_at=now)
+        self.db_client.create_session(session_id)
+        self._save(state)
+        return state.model_dump(mode="json")
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
-        return self.session_manager.get_session(session_id)
+        state = self._get(session_id)
+        return state.model_dump(mode="json") if state else None
 
-    def create_session(self, session_id: str) -> Dict[str, Any]:
-        self.db_client.create_session(session_id)
-        return self.session_manager.create_session(session_id)
+    def require_session(self, session_id: str) -> SessionData:
+        state = self._get(session_id)
+        if not state:
+            raise ValueError(f"Session not found: {session_id}")
+        if state.status != "active":
+            raise ValueError(f"Session is not active: {session_id}")
+        return state
 
-    def update_profile(self, session_id: str, profile: Dict[str, Any]) -> None:
-        self.session_manager.update_profile(session_id, profile)
-        self.db_client.save_profile(session_id, profile)
+    def update_profile(self, session_id: str, profile: UserProfile | dict) -> None:
+        state = self.require_session(session_id)
+        state.profile = UserProfile.model_validate(profile)
+        self.db_client.save_profile(session_id, state.profile.model_dump(mode="json"))
+        self._save(state)
 
     def get_profile(self, session_id: str) -> Optional[Dict[str, Any]]:
-        return self.session_manager.get_profile(session_id)
+        state = self._get(session_id)
+        return state.profile.model_dump(mode="json") if state and state.profile else None
 
-    def update_stage(self, session_id: str, stage_info: Dict[str, Any]) -> None:
-        self.session_manager.update_stage(session_id, stage_info)
-        self.db_client.save_stage(session_id, stage_info)
+    def update_stage(self, session_id: str, stage: StageInfo | dict) -> None:
+        state = self.require_session(session_id)
+        state.stage_info = StageInfo.model_validate(stage)
+        state.current_stage = state.stage_info.stage_num
+        self.db_client.save_stage(session_id, state.stage_info.model_dump(mode="json"))
+        self._save(state)
 
     def get_current_stage(self, session_id: str) -> Optional[Dict[str, Any]]:
-        return self.session_manager.get_current_stage(session_id)
+        state = self._get(session_id)
+        return state.stage_info.model_dump(mode="json") if state and state.stage_info else None
 
-    def update_learning_package(self, session_id: str, package: Dict[str, Any]) -> None:
-        self.session_manager.update_learning_package(session_id, package)
+    def update_learning_package(self, session_id: str, package: LearningPackage | dict) -> None:
+        state = self.require_session(session_id)
+        state.learning_package = LearningPackage.model_validate(package)
+        self._save(state)
 
     def get_learning_package(self, session_id: str) -> Optional[Dict[str, Any]]:
-        return self.session_manager.get_learning_package(session_id)
+        state = self._get(session_id)
+        return state.learning_package.model_dump(mode="json") if state and state.learning_package else None
 
     def add_qa_record(self, session_id: str, question: str, answer: str, tech_pass: bool = True, quality_pass: bool = True) -> None:
-        self.session_manager.add_qa_record(session_id, question, answer, tech_pass, quality_pass)
-        self.db_client.save_qa_record(session_id, question, answer, tech_pass, quality_pass)
+        state = self.require_session(session_id)
+        record = {"question": question, "answer": answer, "tech_pass": tech_pass, "quality_pass": quality_pass}
+        state.qa_history.append(record)
+        self.db_client.save_qa_record(session_id, question, answer, tech_pass, quality_pass, state.current_stage)
+        self._save(state)
 
     def get_qa_history(self, session_id: str) -> List[Dict[str, Any]]:
-        return self.session_manager.get_qa_history(session_id)
+        state = self._get(session_id)
+        return list(state.qa_history) if state else []
 
     def add_answer_record(self, session_id: str, question_id: str, user_answer: str, is_correct: bool, time_spent: int = 0) -> None:
-        self.session_manager.add_answer_record(session_id, question_id, user_answer, is_correct, time_spent)
-        self.db_client.save_answer_record(session_id, question_id, user_answer, is_correct, time_spent)
+        state = self.require_session(session_id)
+        record = {
+            "stage": state.current_stage,
+            "question_id": question_id,
+            "user_answer": user_answer,
+            "is_correct": is_correct,
+            "time_spent": time_spent,
+        }
+        state.answer_records.append(record)
+        self.db_client.save_answer_record(session_id, question_id, user_answer, is_correct, time_spent, state.current_stage)
+        self._save(state)
+
+    def get_answer_records(self, session_id: str) -> List[Dict[str, Any]]:
+        state = self._get(session_id)
+        return list(state.answer_records) if state else []
 
     def calculate_accuracy(self, session_id: str) -> float:
-        answers = self.session_manager.get_answer_records(session_id)
-        if not answers:
+        state = self._get(session_id)
+        if not state:
             return 0.0
-        correct = sum(1 for a in answers if a["is_correct"])
-        return correct / len(answers)
+        answers = [
+            answer
+            for answer in state.answer_records
+            if answer.get("stage", state.current_stage) == state.current_stage
+        ]
+        return sum(1 for answer in answers if answer["is_correct"]) / len(answers) if answers else 0.0
+
+    def add_interaction(self, session_id: str, interaction_type: str, data: Dict[str, Any]) -> None:
+        state = self.require_session(session_id)
+        state.interactions.append({"type": interaction_type, "data": data})
+        self._save(state)
 
     def get_interactions(self, session_id: str) -> List[Dict[str, Any]]:
-        return self.session_manager.get_interactions(session_id)
+        state = self._get(session_id)
+        return list(state.interactions) if state else []
+
+    def set_status(self, session_id: str, status: str) -> None:
+        state = self._get(session_id)
+        if not state:
+            raise ValueError(f"Session not found: {session_id}")
+        state.status = status
+        self.db_client.update_session_status(session_id, status)
+        self._save(state)
 
     def end_session(self, session_id: str) -> None:
-        self.session_manager.end_session(session_id)
-        self.db_client.update_session_status(session_id, "completed")
+        self.set_status(session_id, "completed")
 
     def abandon_session(self, session_id: str) -> None:
-        self.session_manager.end_session(session_id)
-        self.db_client.update_session_status(session_id, "abandoned")
+        self.set_status(session_id, "abandoned")
+
+    def _get(self, session_id: str) -> SessionData | None:
+        if session_id in self._cache:
+            return self._cache[session_id]
+        payload = self.db_client.load_session_state(session_id)
+        if not payload:
+            return None
+        state = SessionData.model_validate(payload)
+        self._cache[session_id] = state
+        return state
+
+    def _save(self, state: SessionData) -> None:
+        state.updated_at = datetime.now(timezone.utc).isoformat()
+        self._cache[state.session_id] = state
+        self.db_client.save_session_state(state.session_id, state.model_dump(mode="json"))

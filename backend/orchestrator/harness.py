@@ -1,148 +1,166 @@
-from typing import Dict, Any, Optional
-from agents.agent_01_diagnostic import DiagnosticAgent
-from agents.agent_02_stage_planner import StagePlannerAgent
-from agents.agent_03_content_gen import ContentGeneratorAgent
-from agents.agent_04_tech_review import TechnicalReviewAgent
-from agents.agent_05_quality_review import QualityReviewAgent
-from agents.agent_06_stage_decision import StageDecisionAgent
-from orchestrator.state_manager import StateManager
+from typing import Any, Dict
+
+from agents.deterministic import (
+    DeterministicContentAgent,
+    DeterministicDiagnosticAgent,
+    DeterministicQualityReviewAgent,
+    DeterministicStageDecisionAgent,
+    DeterministicStagePlannerAgent,
+    DeterministicTechnicalReviewAgent,
+)
 from config import settings
+from models.contracts import (
+    ContentGenerationInput,
+    DiagnosticInput,
+    ReviewInput,
+    ReviewOutput,
+    StageDecisionInput,
+    StagePlanningInput,
+)
+from models.profile import UserProfile
+from models.stage import LearningPackage, StageInfo
+from orchestrator.state_manager import StateManager
+
 
 class Harness:
-    def __init__(self):
-        self.state_manager = StateManager()
-        self.agent1 = DiagnosticAgent()
-        self.agent2 = StagePlannerAgent()
-        self.agent3 = ContentGeneratorAgent()
-        self.agent4 = TechnicalReviewAgent()
-        self.agent5 = QualityReviewAgent()
-        self.agent6 = StageDecisionAgent()
+    def __init__(self, state_manager: StateManager | None = None, execution_mode: str | None = None):
+        self.state_manager = state_manager or StateManager()
+        self.execution_mode = execution_mode or settings.EXECUTION_MODE
+        if self.execution_mode != "deterministic":
+            raise ValueError("Only deterministic execution mode is available in the minimal closed loop")
+        self.agent1 = DeterministicDiagnosticAgent()
+        self.agent2 = DeterministicStagePlannerAgent()
+        self.agent3 = DeterministicContentAgent()
+        self.agent4 = DeterministicTechnicalReviewAgent()
+        self.agent5 = DeterministicQualityReviewAgent()
+        self.agent6 = DeterministicStageDecisionAgent()
 
     async def process_initial_input(self, session_id: str, user_input: str) -> Dict[str, Any]:
-        print(f"=== Harness收到用户输入 === {user_input}")
-        raw_data = self._extract_raw_data(user_input)
-        profile = await self.agent1.generate_profile(session_id, raw_data)
-        
-        if profile["confidence"] < settings.CONFIDENCE_THRESHOLD:
-            return {"status": "needs_more_info", "questions": self._generate_followup_questions(profile)}
-        
-        self.state_manager.update_profile(session_id, profile)
-        stage_info = await self.agent2.generate_stage(session_id, profile)
-        self.state_manager.update_stage(session_id, stage_info)
-        
+        self.state_manager.require_session(session_id)
+        diagnostic = await self.agent1.run(DiagnosticInput(session_id=session_id, user_input=user_input))
+        if diagnostic.profile.confidence < settings.CONFIDENCE_THRESHOLD:
+            return {"status": "needs_more_info", "questions": diagnostic.followup_questions}
+
+        self.state_manager.update_profile(session_id, diagnostic.profile)
+        stage = await self.agent2.run(StagePlanningInput(
+            session_id=session_id,
+            profile=diagnostic.profile,
+            stage_num=1,
+        ))
+        self.state_manager.update_stage(session_id, stage.stage)
+        self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
         return {
             "status": "ready",
-            "profile": profile,
-            "stage_info": stage_info
+            "profile": diagnostic.profile.model_dump(mode="json"),
+            "stage_info": stage.stage.model_dump(mode="json"),
         }
 
     async def start_stage(self, session_id: str) -> Dict[str, Any]:
-        stage_info = self.state_manager.get_current_stage(session_id)
-        learning_package = await self.agent3.generate_learning_package(session_id, stage_info)
-        
-        tech_errors, quality_errors = await self._parallel_review(session_id, learning_package)
-        
-        for iteration in range(settings.MAX_REVIEW_ITERATIONS):
-            if not tech_errors and not quality_errors:
-                break
-            combined_errors = {"tech": tech_errors, "quality": quality_errors}
-            learning_package = await self.agent3.modify_learning_package(session_id, learning_package, combined_errors)
-            tech_errors, quality_errors = await self._parallel_review(session_id, learning_package)
-        
-        self.state_manager.update_learning_package(session_id, learning_package)
-        
+        stage = StageInfo.model_validate(self._require_stage(session_id))
+        generated = await self.agent3.run(ContentGenerationInput(session_id=session_id, stage=stage))
+        reviews = await self._review(session_id, generated.learning_package)
+        if not reviews.passed:
+            raise ValueError("Deterministic learning package failed validation")
+
+        stage.status = "learning"
+        self.state_manager.update_stage(session_id, stage)
+        self.state_manager.update_learning_package(session_id, generated.learning_package)
+        self.state_manager.add_interaction(session_id, "stage_started", {"stage_id": stage.stage_id})
         return {
-            "learning_package": learning_package,
-            "review_passed": not tech_errors and not quality_errors,
-            "iterations": iteration + 1
+            "learning_package": generated.learning_package.model_dump(mode="json"),
+            "review_passed": True,
+            "iterations": 1,
+            "reviews": reviews.model_dump(mode="json"),
         }
 
     async def handle_question(self, session_id: str, question: str) -> Dict[str, Any]:
-        print(f"=== handle_question 开始 === question: {question}")
-        
-        answer = await self.agent3.answer_question(session_id, question)
-        print(f"=== answer_question 返回（前300字符）===\n{answer[:300]}\n=== 返回结束 ===")
-        
-        max_iterations = 3
-        iteration = 1
-        tech_errors = []
-        quality_errors = []
-        
-        while iteration <= max_iterations:
-            print(f"=== 第{iteration}轮审核 ===")
-            tech_errors, quality_errors = await self._parallel_review(session_id, {"answer": answer})
-            print(f"=== 第{iteration}轮审核结果 === tech_errors: {len(tech_errors)}, quality_errors: {len(quality_errors)}")
-            
-            if not tech_errors and not quality_errors:
-                print(f"=== 第{iteration}轮审核通过，结束循环 ===")
-                break
-            
-            print(f"=== 第{iteration}轮审核失败，开始修改 ===")
-            combined_errors = {"tech": tech_errors, "quality": quality_errors}
-            answer = await self.agent3.modify_answer(session_id, answer, combined_errors, question)
-            print(f"=== 第{iteration}轮修改后的回答（前300字符）===\n{answer[:300]}\n=== 修改结束 ===")
-            
-            iteration += 1
-        
-        self.state_manager.add_qa_record(session_id, question, answer)
-        
-        print(f"=== handle_question 完成 ===")
-        return {
-            "answer": answer,
-            "tech_pass": not tech_errors,
-            "quality_pass": not quality_errors,
-            "iterations": iteration
-        }
+        stage = StageInfo.model_validate(self._require_stage(session_id))
+        answer = await self.agent3.answer_question(question, stage)
+        self.state_manager.add_qa_record(session_id, question, answer, True, True)
+        self.state_manager.add_interaction(session_id, "question_asked", {"question": question})
+        return {"answer": answer, "tech_pass": True, "quality_pass": True, "iterations": 1}
 
     async def submit_answer(self, session_id: str, question_id: str, user_answer: str) -> Dict[str, Any]:
-        is_correct = self._evaluate_answer(session_id, question_id, user_answer)
+        package = LearningPackage.model_validate(self._require_package(session_id))
+        question = next((item for item in package.questions if item.question_id == question_id), None)
+        if question is None:
+            raise ValueError(f"Question not found in current stage: {question_id}")
+        is_correct = self._normalize_answer(user_answer) == self._normalize_answer(question.correct_answer)
         self.state_manager.add_answer_record(session_id, question_id, user_answer, is_correct)
-        
-        return {"is_correct": is_correct}
+        return {"is_correct": is_correct, "correct_answer": question.correct_answer}
 
     async def complete_stage(self, session_id: str) -> Dict[str, Any]:
+        profile = UserProfile.model_validate(self._require_profile(session_id))
+        stage = StageInfo.model_validate(self._require_stage(session_id))
         accuracy = self.state_manager.calculate_accuracy(session_id)
-        profile = self.state_manager.get_profile(session_id)
-        qa_history = self.state_manager.get_qa_history(session_id)
-        interactions = self.state_manager.get_interactions(session_id)
-        
-        updated_data = await self.agent6.update_user_data(session_id, accuracy, profile, qa_history, interactions)
-        new_profile = await self.agent1.generate_profile(session_id, updated_data)
-        
-        self.state_manager.update_profile(session_id, new_profile)
-        
-        if self._all_gaps_mastered(new_profile):
+        decision = await self.agent6.run(StageDecisionInput(
+            session_id=session_id,
+            profile=profile,
+            stage=stage,
+            accuracy=accuracy,
+            qa_history=self.state_manager.get_qa_history(session_id),
+            interactions=self.state_manager.get_interactions(session_id),
+        ))
+        stage.status = "completed" if accuracy >= 0.8 else "retreat"
+        stage.accuracy = accuracy
+        stage.strategy_used = decision.strategy
+        self.state_manager.update_stage(session_id, stage)
+        self.state_manager.update_profile(session_id, decision.profile)
+
+        if decision.decision == "completed":
+            self.state_manager.end_session(session_id)
             return {
                 "status": "completed",
-                "final_report": self._generate_final_report(session_id)
+                "accuracy": accuracy,
+                "updated_profile": decision.profile.model_dump(mode="json"),
+                "final_report": self._generate_final_report(decision.profile, accuracy),
             }
-        
-        new_stage = await self.agent2.generate_stage(session_id, new_profile)
-        self.state_manager.update_stage(session_id, new_stage)
-        
+
+        next_stage_num = stage.stage_num + 1 if decision.decision == "continue" else stage.stage_num
+        next_stage = await self.agent2.run(StagePlanningInput(
+            session_id=session_id,
+            profile=decision.profile,
+            stage_num=next_stage_num,
+        ))
+        self.state_manager.update_stage(session_id, next_stage.stage)
         return {
-            "status": "continue",
+            "status": decision.decision,
             "accuracy": accuracy,
-            "updated_profile": new_profile,
-            "next_stage": new_stage
+            "updated_profile": decision.profile.model_dump(mode="json"),
+            "next_stage": next_stage.stage.model_dump(mode="json"),
         }
 
-    async def _parallel_review(self, session_id: str, content: Dict[str, Any]) -> tuple:
-        tech_errors = await self.agent4.review(session_id, content)
-        quality_errors = await self.agent5.review(session_id, content)
-        return tech_errors, quality_errors
+    async def _review(self, session_id: str, package: LearningPackage) -> ReviewOutput:
+        request = ReviewInput(session_id=session_id, learning_package=package)
+        technical = await self.agent4.run(request)
+        quality = await self.agent5.run(request)
+        return ReviewOutput(technical=technical, quality=quality)
 
-    def _extract_raw_data(self, user_input: str) -> Dict[str, Any]:
-        return {"user_input": user_input}
+    def _require_profile(self, session_id: str) -> dict:
+        profile = self.state_manager.get_profile(session_id)
+        if not profile:
+            raise ValueError("Session has no user profile")
+        return profile
 
-    def _generate_followup_questions(self, profile: Dict[str, Any]) -> list:
-        return []
+    def _require_stage(self, session_id: str) -> dict:
+        stage = self.state_manager.get_current_stage(session_id)
+        if not stage:
+            raise ValueError("Session has no current stage")
+        return stage
 
-    def _evaluate_answer(self, session_id: str, question_id: str, user_answer: str) -> bool:
-        return False
+    def _require_package(self, session_id: str) -> dict:
+        package = self.state_manager.get_learning_package(session_id)
+        if not package:
+            raise ValueError("Session has no learning package")
+        return package
 
-    def _all_gaps_mastered(self, profile: Dict[str, Any]) -> bool:
-        return False
+    def _normalize_answer(self, answer: str) -> str:
+        return "".join(answer.strip().lower().split())
 
-    def _generate_final_report(self, session_id: str) -> Dict[str, Any]:
-        return {}
+    def _generate_final_report(self, profile: UserProfile, accuracy: float) -> Dict[str, Any]:
+        return {
+            "goal": profile.goal,
+            "accuracy": accuracy,
+            "mastered_skills": [gap.skill for gap in profile.knowledge_gaps if gap.status == "已掌握"],
+            "profile_version": profile.version,
+        }

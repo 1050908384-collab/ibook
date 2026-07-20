@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-from orchestrator.harness import Harness
+
+from api.dependencies import get_harness
 
 router = APIRouter()
-harness = Harness()
+harness = get_harness()
 
 class StartStageRequest(BaseModel):
     session_id: str
@@ -20,7 +20,8 @@ async def start_stage(request: StartStageRequest):
         result = await harness.start_stage(request.session_id)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        status_code = 404 if isinstance(e, ValueError) else 500
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 @router.post("/submit-answer")
 async def submit_answer(request: SubmitAnswerRequest):
@@ -28,7 +29,8 @@ async def submit_answer(request: SubmitAnswerRequest):
         result = await harness.submit_answer(request.session_id, request.question_id, request.user_answer)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        status_code = 404 if isinstance(e, ValueError) else 500
+        raise HTTPException(status_code=status_code, detail=str(e))
 
 @router.post("/complete/{session_id}")
 async def complete_stage(session_id: str):
@@ -36,4 +38,5 @@ async def complete_stage(session_id: str):
         result = await harness.complete_stage(session_id)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        status_code = 404 if isinstance(e, ValueError) else 500
+        raise HTTPException(status_code=status_code, detail=str(e))

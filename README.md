@@ -18,6 +18,8 @@
 - **LLM**：Ollma本地模型 (deepseek-r1/ qwen2.5)
 - **前端**：React + TypeScript
 
+后端当前默认使用 `EXECUTION_MODE=deterministic`，无需启动 Ollama 即可跑通诊断、阶段规划、学习包、答题和结业闭环。
+
 ## 项目结构
 
 ```
@@ -63,6 +65,12 @@ python scripts/seed_test_data.py
 ```bash
 cd backend
 python main.py
+```
+
+### 运行确定性闭环测试
+
+```bash
+python -m unittest discover -s tests -v
 ```
 
 ## Agent架构

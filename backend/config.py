@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     MAX_REVIEW_ITERATIONS: int = 3
     CONFIDENCE_THRESHOLD: float = 0.7
+    EXECUTION_MODE: str = "deterministic"
 
     model_config = SettingsConfigDict(
         env_file=".env",

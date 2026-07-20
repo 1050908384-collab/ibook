@@ -1,5 +1,9 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from typing import Any, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, Field
+
+from models.profile import UserProfile
+from models.stage import LearningPackage, StageInfo
 
 class QARecord(BaseModel):
     qa_id: str
@@ -22,6 +26,12 @@ class AnswerRecord(BaseModel):
 class SessionData(BaseModel):
     session_id: str
     current_stage: int = 1
-    status: str = "active"
+    status: Literal["active", "completed", "abandoned"] = "active"
+    profile: Optional[UserProfile] = None
+    stage_info: Optional[StageInfo] = None
+    learning_package: Optional[LearningPackage] = None
+    qa_history: List[Dict[str, Any]] = Field(default_factory=list)
+    answer_records: List[Dict[str, Any]] = Field(default_factory=list)
+    interactions: List[Dict[str, Any]] = Field(default_factory=list)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

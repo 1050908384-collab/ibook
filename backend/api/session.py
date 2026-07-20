@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from orchestrator.harness import Harness
+
+from api.dependencies import get_harness
 
 router = APIRouter()
-harness = Harness()
+harness = get_harness()
 
 class SessionResponse(BaseModel):
     session_id: str

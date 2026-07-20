@@ -1,5 +1,6 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, Field
 
 class ReviewError(BaseModel):
     error_type: str
@@ -7,13 +8,17 @@ class ReviewError(BaseModel):
     description: str
     suggestion: Optional[str] = None
 
-class TechnicalReviewResult(BaseModel):
+class ReviewResult(BaseModel):
+    reviewer: Literal["technical", "quality"]
     passed: bool
-    errors: List[ReviewError] = []
+    errors: List[ReviewError] = Field(default_factory=list)
     review_details: Optional[str] = None
 
-class QualityReviewResult(BaseModel):
-    passed: bool
-    errors: List[ReviewError] = []
+
+class TechnicalReviewResult(ReviewResult):
+    reviewer: Literal["technical"] = "technical"
+
+
+class QualityReviewResult(ReviewResult):
+    reviewer: Literal["quality"] = "quality"
     scores: Optional[dict] = None
-    review_details: Optional[str] = None

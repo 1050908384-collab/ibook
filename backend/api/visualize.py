@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
-from orchestrator.harness import Harness
+
+from api.dependencies import get_harness
 
 router = APIRouter()
-harness = Harness()
+harness = get_harness()
 
 @router.get("/profile/{session_id}")
 async def get_profile_data(session_id: str):
