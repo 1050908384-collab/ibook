@@ -1,9 +1,9 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from models.profile import UserProfile
-from models.review import ReviewResult
+from models.review import ReviewError, ReviewResult
 from models.stage import LearningPackage, StageInfo
 
 
@@ -38,13 +38,49 @@ class ContentGenerationOutput(BaseModel):
 
 class ReviewInput(BaseModel):
     session_id: str
+    target_type: Literal["learning_package", "answer"]
+    content: str
+    stage: StageInfo
+    profile: UserProfile
+    question: Optional[str] = None
+    code_examples: List[dict] = Field(default_factory=list)
+
+
+class ContentRevisionInput(BaseModel):
+    session_id: str
     learning_package: LearningPackage
+    stage: StageInfo
+    profile: UserProfile
+    technical_errors: List[ReviewError] = Field(default_factory=list)
+    quality_errors: List[ReviewError] = Field(default_factory=list)
+
+
+class AnswerGenerationInput(BaseModel):
+    session_id: str
+    question: str
+    stage: StageInfo
+    profile: UserProfile
+
+
+class AnswerGenerationOutput(BaseModel):
+    answer: str
+
+
+class AnswerRevisionInput(BaseModel):
+    session_id: str
+    question: str
+    answer: str
+    stage: StageInfo
+    profile: UserProfile
+    technical_errors: List[ReviewError] = Field(default_factory=list)
+    quality_errors: List[ReviewError] = Field(default_factory=list)
 
 
 class ReviewOutput(BaseModel):
     technical: ReviewResult
     quality: ReviewResult
 
+    @computed_field
     @property
     def passed(self) -> bool:
         return self.technical.passed and self.quality.passed

@@ -1,6 +1,12 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
+BACKEND_DIR = Path(__file__).parent
+PROJECT_ROOT = BACKEND_DIR.parent
+DATA_DIR = PROJECT_ROOT / "data"
+SKILLS_DIR = BACKEND_DIR / "skills"
+
+
 class Settings(BaseSettings):
     APP_NAME: str = "AI Agent Trainer"
     APP_HOST: str = "0.0.0.0"
@@ -21,17 +27,12 @@ class Settings(BaseSettings):
 
     MAX_REVIEW_ITERATIONS: int = 3
     CONFIDENCE_THRESHOLD: float = 0.7
-    EXECUTION_MODE: str = "deterministic"
+    EXECUTION_MODE: str = "hybrid"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=BACKEND_DIR / ".env",
         env_file_encoding="utf-8",
         extra="ignore"
     )
 
 settings = Settings()
-
-BACKEND_DIR = Path(__file__).parent
-PROJECT_ROOT = BACKEND_DIR.parent
-DATA_DIR = PROJECT_ROOT / "data"
-SKILLS_DIR = BACKEND_DIR / "skills"

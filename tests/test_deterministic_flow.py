@@ -10,6 +10,31 @@ sys.path.insert(0, str(BACKEND_DIR))
 from db.sqlite_client import SQLiteClient
 from orchestrator.harness import Harness
 from orchestrator.state_manager import StateManager
+from models.review import ReviewError, TechnicalReviewResult
+from tools.agent4_tools.rule_check_tool import RuleCheckTool
+
+
+class RejectOnceTechnicalReviewer:
+    def __init__(self):
+        self.calls = 0
+
+    async def run(self, request):
+        self.calls += 1
+        if self.calls == 1:
+            return TechnicalReviewResult(
+                passed=False,
+                errors=[ReviewError(
+                    error_type="test_rejection",
+                    description="缺少关键技术说明",
+                    suggestion="补充关键技术说明",
+                )],
+            )
+        return TechnicalReviewResult(passed=True)
+
+
+class ExplodingReviewer:
+    async def run(self, request):
+        raise RuntimeError("review unavailable")
 
 
 class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
@@ -75,6 +100,65 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("repeat", result["status"])
         self.assertEqual(0.0, result["accuracy"])
         self.assertEqual(1, result["next_stage"]["stage_num"])
+
+    async def test_learning_package_is_revised_and_reviewed_again(self):
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        await harness.process_initial_input(session_id, "want to learn LoRA")
+        reviewer = RejectOnceTechnicalReviewer()
+        harness.agent4 = reviewer
+
+        result = await harness.start_stage(session_id)
+
+        self.assertTrue(result["review_passed"])
+        self.assertEqual(2, result["iterations"])
+        self.assertEqual(2, result["learning_package"]["version"])
+        self.assertFalse(result["review_history"][0]["passed"])
+        self.assertTrue(result["review_history"][1]["passed"])
+        self.assertEqual(2, reviewer.calls)
+
+    async def test_answer_is_revised_and_reviewed_again(self):
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        await harness.process_initial_input(session_id, "want to learn LoRA")
+        await harness.start_stage(session_id)
+        reviewer = RejectOnceTechnicalReviewer()
+        harness.agent4 = reviewer
+
+        result = await harness.handle_question(session_id, "What is LoRA?")
+
+        self.assertTrue(result["tech_pass"])
+        self.assertTrue(result["quality_pass"])
+        self.assertEqual(2, result["iterations"])
+        self.assertIn("补充修订", result["answer"])
+        self.assertFalse(result["review_history"][0]["passed"])
+        self.assertTrue(result["review_history"][1]["passed"])
+        self.assertEqual(2, reviewer.calls)
+
+    async def test_reviewer_failure_becomes_failed_review(self):
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        await harness.process_initial_input(session_id, "want to learn LoRA")
+        harness.agent5 = ExplodingReviewer()
+
+        result = await harness.handle_question(session_id, "What is LoRA?")
+
+        self.assertFalse(result["quality_pass"])
+        self.assertEqual(3, result["iterations"])
+        error = result["review_history"][-1]["quality"]["errors"][0]
+        self.assertEqual("review_system_error", error["error_type"])
+
+    async def test_lora_rule_tool_rejects_mechanism_and_parameter_errors(self):
+        content = (
+            "LoRA将原始权重W分解为U*Sigma*V，并只训练U和V。"
+            "原模型有10万个参数，微调参数量仅为50万，显著减少了参数。"
+        )
+
+        errors = await RuleCheckTool().check_rules(content)
+
+        error_types = {error["error_type"] for error in errors}
+        self.assertIn("lora_mechanism_error", error_types)
+        self.assertIn("parameter_count_error", error_types)
 
 
 if __name__ == "__main__":

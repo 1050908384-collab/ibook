@@ -20,7 +20,14 @@ class LLMClient:
         response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL)
         return response_text.strip()
 
-    async def complete(self, prompt: str, system_prompt: str = "", max_tokens: int = 8192, temperature: float = 0.7) -> str:
+    async def complete(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        max_tokens: int = 8192,
+        temperature: float = 0.7,
+        json_mode: bool = False,
+    ) -> str:
         try:
             print(f"=== 发送给Ollama的prompt（前200字符）=== {prompt[:200]}")
             
@@ -28,10 +35,14 @@ class LLMClient:
                 "model": self.ollma_model,
                 "prompt": prompt,
                 "system": system_prompt,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
+                "options": {
+                    "num_predict": max_tokens,
+                    "temperature": temperature,
+                },
                 "stream": False
             }
+            if json_mode:
+                payload["format"] = "json"
             
             response = await self.client.post(
                 f"{self.ollma_base_url}/api/generate",
@@ -41,6 +52,7 @@ class LLMClient:
             result = response.json()
             response_text = result.get("response", "")
             cleaned_response = self._clean_response(response_text)
+            print(f"=== Ollama响应（前500字符）===\n{cleaned_response[:500]}\n=== 响应结束 ===")
             return cleaned_response
         except httpx.RequestError as e:
             logger.error(f"Ollama request failed: {e}")
@@ -54,8 +66,10 @@ class LLMClient:
             payload = {
                 "model": self.ollma_model,
                 "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
+                "options": {
+                    "num_predict": max_tokens,
+                    "temperature": temperature,
+                },
                 "stream": False
             }
             
@@ -67,6 +81,7 @@ class LLMClient:
             result = response.json()
             response_text = result.get("message", {}).get("content", "")
             cleaned_response = self._clean_response(response_text)
+            print(f"=== Ollama Chat响应（前500字符）===\n{cleaned_response[:500]}\n=== 响应结束 ===")
             return cleaned_response
         except httpx.RequestError as e:
             logger.error(f"Ollama chat request failed: {e}")

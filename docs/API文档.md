@@ -55,7 +55,16 @@
   "response": {
     "answer": "回答内容",
     "tech_pass": true,
-    "quality_pass": true
+    "quality_pass": true,
+    "iterations": 1,
+    "review_history": [
+      {
+        "iteration": 1,
+        "technical": {"passed": true, "errors": []},
+        "quality": {"passed": true, "errors": []},
+        "passed": true
+      }
+    ]
   }
 }
 ```
@@ -140,7 +149,15 @@
 {
   "learning_package": { ... },
   "review_passed": true,
-  "iterations": 1
+  "iterations": 1,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {"passed": true, "errors": []},
+      "quality": {"passed": true, "errors": []},
+      "passed": true
+    }
+  ]
 }
 ```
 

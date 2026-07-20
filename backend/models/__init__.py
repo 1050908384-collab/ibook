@@ -1,6 +1,10 @@
 from models.contracts import (
+    AnswerGenerationInput,
+    AnswerGenerationOutput,
+    AnswerRevisionInput,
     ContentGenerationInput,
     ContentGenerationOutput,
+    ContentRevisionInput,
     DiagnosticInput,
     DiagnosticOutput,
     ReviewInput,
@@ -12,8 +16,12 @@ from models.contracts import (
 )
 
 __all__ = [
+    "AnswerGenerationInput",
+    "AnswerGenerationOutput",
+    "AnswerRevisionInput",
     "ContentGenerationInput",
     "ContentGenerationOutput",
+    "ContentRevisionInput",
     "DiagnosticInput",
     "DiagnosticOutput",
     "ReviewInput",

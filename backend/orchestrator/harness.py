@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Dict
 
 from agents.deterministic import (
@@ -7,10 +8,17 @@ from agents.deterministic import (
     DeterministicStageDecisionAgent,
     DeterministicStagePlannerAgent,
     DeterministicTechnicalReviewAgent,
+    HybridContentAgent,
+    HybridDiagnosticAgent,
+    HybridQualityReviewAgent,
+    HybridTechnicalReviewAgent,
 )
 from config import settings
 from models.contracts import (
+    AnswerGenerationInput,
+    AnswerRevisionInput,
     ContentGenerationInput,
+    ContentRevisionInput,
     DiagnosticInput,
     ReviewInput,
     ReviewOutput,
@@ -18,6 +26,7 @@ from models.contracts import (
     StagePlanningInput,
 )
 from models.profile import UserProfile
+from models.review import QualityReviewResult, ReviewError, ReviewRound, TechnicalReviewResult
 from models.stage import LearningPackage, StageInfo
 from orchestrator.state_manager import StateManager
 
@@ -26,13 +35,13 @@ class Harness:
     def __init__(self, state_manager: StateManager | None = None, execution_mode: str | None = None):
         self.state_manager = state_manager or StateManager()
         self.execution_mode = execution_mode or settings.EXECUTION_MODE
-        if self.execution_mode != "deterministic":
-            raise ValueError("Only deterministic execution mode is available in the minimal closed loop")
-        self.agent1 = DeterministicDiagnosticAgent()
+        if self.execution_mode not in {"deterministic", "hybrid"}:
+            raise ValueError("EXECUTION_MODE must be 'deterministic' or 'hybrid'")
+        self.agent1 = HybridDiagnosticAgent() if self.execution_mode == "hybrid" else DeterministicDiagnosticAgent()
         self.agent2 = DeterministicStagePlannerAgent()
-        self.agent3 = DeterministicContentAgent()
-        self.agent4 = DeterministicTechnicalReviewAgent()
-        self.agent5 = DeterministicQualityReviewAgent()
+        self.agent3 = HybridContentAgent() if self.execution_mode == "hybrid" else DeterministicContentAgent()
+        self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
+        self.agent5 = HybridQualityReviewAgent() if self.execution_mode == "hybrid" else DeterministicQualityReviewAgent()
         self.agent6 = DeterministicStageDecisionAgent()
 
     async def process_initial_input(self, session_id: str, user_input: str) -> Dict[str, Any]:
@@ -57,28 +66,63 @@ class Harness:
 
     async def start_stage(self, session_id: str) -> Dict[str, Any]:
         stage = StageInfo.model_validate(self._require_stage(session_id))
+        profile = UserProfile.model_validate(self._require_profile(session_id))
         generated = await self.agent3.run(ContentGenerationInput(session_id=session_id, stage=stage))
-        reviews = await self._review(session_id, generated.learning_package)
-        if not reviews.passed:
-            raise ValueError("Deterministic learning package failed validation")
+        learning_package, review_history = await self._review_learning_package(
+            session_id,
+            generated.learning_package,
+            stage,
+            profile,
+        )
+        review_passed = review_history[-1].passed
 
-        stage.status = "learning"
+        stage.status = "learning" if review_passed else "pending"
         self.state_manager.update_stage(session_id, stage)
-        self.state_manager.update_learning_package(session_id, generated.learning_package)
-        self.state_manager.add_interaction(session_id, "stage_started", {"stage_id": stage.stage_id})
+        self.state_manager.update_learning_package(session_id, learning_package)
+        self.state_manager.add_interaction(session_id, "stage_review_completed", {
+            "stage_id": stage.stage_id,
+            "passed": review_passed,
+            "iterations": len(review_history),
+        })
         return {
-            "learning_package": generated.learning_package.model_dump(mode="json"),
-            "review_passed": True,
-            "iterations": 1,
-            "reviews": reviews.model_dump(mode="json"),
+            "learning_package": learning_package.model_dump(mode="json"),
+            "review_passed": review_passed,
+            "iterations": len(review_history),
+            "review_history": [item.model_dump(mode="json") for item in review_history],
         }
 
     async def handle_question(self, session_id: str, question: str) -> Dict[str, Any]:
         stage = StageInfo.model_validate(self._require_stage(session_id))
-        answer = await self.agent3.answer_question(question, stage)
-        self.state_manager.add_qa_record(session_id, question, answer, True, True)
+        profile = UserProfile.model_validate(self._require_profile(session_id))
+        generated = await self.agent3.generate_answer(AnswerGenerationInput(
+            session_id=session_id,
+            question=question,
+            stage=stage,
+            profile=profile,
+        ))
+        answer, review_history = await self._review_answer(
+            session_id,
+            question,
+            generated.answer,
+            stage,
+            profile,
+        )
+        latest_review = review_history[-1]
+        self.state_manager.add_qa_record(
+            session_id,
+            question,
+            answer,
+            latest_review.technical.passed,
+            latest_review.quality.passed,
+        )
         self.state_manager.add_interaction(session_id, "question_asked", {"question": question})
-        return {"answer": answer, "tech_pass": True, "quality_pass": True, "iterations": 1}
+        return {
+            "answer": answer,
+            "tech_pass": latest_review.technical.passed,
+            "quality_pass": latest_review.quality.passed,
+            "iterations": len(review_history),
+            "review_history": [item.model_dump(mode="json") for item in review_history],
+        }
 
     async def submit_answer(self, session_id: str, question_id: str, user_answer: str) -> Dict[str, Any]:
         package = LearningPackage.model_validate(self._require_package(session_id))
@@ -130,11 +174,143 @@ class Harness:
             "next_stage": next_stage.stage.model_dump(mode="json"),
         }
 
-    async def _review(self, session_id: str, package: LearningPackage) -> ReviewOutput:
-        request = ReviewInput(session_id=session_id, learning_package=package)
-        technical = await self.agent4.run(request)
-        quality = await self.agent5.run(request)
+    async def _review_learning_package(
+        self,
+        session_id: str,
+        package: LearningPackage,
+        stage: StageInfo,
+        profile: UserProfile,
+    ) -> tuple[LearningPackage, list[ReviewRound]]:
+        history = []
+        current_package = package
+        for iteration in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
+            print(f"=== 学习包审核循环：第{iteration}轮 ===")
+            reviews = await self._review(ReviewInput(
+                session_id=session_id,
+                target_type="learning_package",
+                content=current_package.tutorial,
+                stage=stage,
+                profile=profile,
+                code_examples=current_package.code_examples,
+            ))
+            round_result = ReviewRound(
+                iteration=iteration,
+                technical=reviews.technical,
+                quality=reviews.quality,
+            )
+            history.append(round_result)
+            self._record_review_round(session_id, "learning_package", round_result)
+            if round_result.passed:
+                print(f"=== 学习包第{iteration}轮审核通过 ===")
+                break
+            if iteration == settings.MAX_REVIEW_ITERATIONS:
+                print("=== 学习包达到最大审核轮次，保留未通过状态 ===")
+                break
+            print(f"=== Orchestrator汇总第{iteration}轮意见，调用Agent3修改学习包 ===")
+            revised = await self.agent3.revise_learning_package(ContentRevisionInput(
+                session_id=session_id,
+                learning_package=current_package,
+                stage=stage,
+                profile=profile,
+                technical_errors=reviews.technical.errors,
+                quality_errors=reviews.quality.errors,
+            ))
+            current_package = revised.learning_package
+        return current_package, history
+
+    async def _review_answer(
+        self,
+        session_id: str,
+        question: str,
+        answer: str,
+        stage: StageInfo,
+        profile: UserProfile,
+    ) -> tuple[str, list[ReviewRound]]:
+        history = []
+        current_answer = answer
+        for iteration in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
+            print(f"=== 问答审核循环：第{iteration}轮 ===")
+            reviews = await self._review(ReviewInput(
+                session_id=session_id,
+                target_type="answer",
+                content=current_answer,
+                question=question,
+                stage=stage,
+                profile=profile,
+            ))
+            round_result = ReviewRound(
+                iteration=iteration,
+                technical=reviews.technical,
+                quality=reviews.quality,
+            )
+            history.append(round_result)
+            self._record_review_round(session_id, "answer", round_result)
+            if round_result.passed:
+                print(f"=== 回答第{iteration}轮审核通过 ===")
+                break
+            if iteration == settings.MAX_REVIEW_ITERATIONS:
+                print("=== 回答达到最大审核轮次，返回未通过状态 ===")
+                break
+            print(f"=== Orchestrator汇总第{iteration}轮意见，调用Agent3修改回答 ===")
+            revised = await self.agent3.revise_answer(AnswerRevisionInput(
+                session_id=session_id,
+                question=question,
+                answer=current_answer,
+                stage=stage,
+                profile=profile,
+                technical_errors=reviews.technical.errors,
+                quality_errors=reviews.quality.errors,
+            ))
+            current_answer = revised.answer
+        return current_answer, history
+
+    async def _review(self, request: ReviewInput) -> ReviewOutput:
+        technical, quality = await asyncio.gather(
+            self.agent4.run(request),
+            self.agent5.run(request),
+            return_exceptions=True,
+        )
+        if isinstance(technical, Exception):
+            print(f"=== Agent4审核异常：{technical} ===")
+            technical = TechnicalReviewResult(
+                passed=False,
+                errors=[ReviewError(
+                    error_type="review_system_error",
+                    severity="critical",
+                    description=f"Agent4技术审核执行失败：{technical}",
+                    suggestion="重新执行技术审核",
+                )],
+            )
+        if isinstance(quality, Exception):
+            print(f"=== Agent5审核异常：{quality} ===")
+            quality = QualityReviewResult(
+                passed=False,
+                errors=[ReviewError(
+                    error_type="review_system_error",
+                    severity="critical",
+                    description=f"Agent5教学审核执行失败：{quality}",
+                    suggestion="重新执行教学审核",
+                )],
+            )
         return ReviewOutput(technical=technical, quality=quality)
+
+    def _record_review_round(self, session_id: str, target_type: str, review_round: ReviewRound) -> None:
+        print(
+            f"=== Orchestrator审核汇总：target={target_type}, round={review_round.iteration}, "
+            f"tech_errors={len(review_round.technical.errors)}, "
+            f"quality_errors={len(review_round.quality.errors)}, passed={review_round.passed} ==="
+        )
+        for reviewer, errors in (
+            ("Agent4", review_round.technical.errors),
+            ("Agent5", review_round.quality.errors),
+        ):
+            for error in errors:
+                print(f"  {reviewer} [{error.severity}] {error.description} -> {error.suggestion or '未提供建议'}")
+        self.state_manager.add_interaction(session_id, "review_round", {
+            "target_type": target_type,
+            **review_round.model_dump(mode="json"),
+            "passed": review_round.passed,
+        })
 
     def _require_profile(self, session_id: str) -> dict:
         profile = self.state_manager.get_profile(session_id)

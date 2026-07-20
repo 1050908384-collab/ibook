@@ -18,7 +18,7 @@
 - **LLM**：Ollma本地模型 (deepseek-r1/ qwen2.5)
 - **前端**：React + TypeScript
 
-后端当前默认使用 `EXECUTION_MODE=deterministic`，无需启动 Ollama 即可跑通诊断、阶段规划、学习包、答题和结业闭环。
+后端默认使用 `EXECUTION_MODE=hybrid`：状态管理、阶段规划和答题判定保持确定性，教程与问答由 Ollama 生成。设置为 `deterministic` 后，无需启动 Ollama 也可以跑通完整闭环。
 
 ## 项目结构
 

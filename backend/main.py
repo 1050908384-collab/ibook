@@ -25,6 +25,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_utf8_json_charset(request, call_next):
+    response = await call_next(request)
+    content_type = response.headers.get("content-type", "")
+    if content_type.startswith("application/json") and "charset=" not in content_type:
+        response.headers["content-type"] = "application/json; charset=utf-8"
+    return response
+
 app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(session_router, prefix="/api/session", tags=["Session"])
 app.include_router(stage_router, prefix="/api/stage", tags=["Stage"])
