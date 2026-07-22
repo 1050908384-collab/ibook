@@ -143,4 +143,4 @@ API_KEY = "sk-xxxxxxxxxxxx"
 
 ## 7. 版本信息
 - 版本：v3.0，更新日期：2026-07-23
-- 变更记录：从v2.0骨架升级为v3.0详尽格式；能力描述明确3个适用场景与被动提示定位（实际校验由Agent4兜底）；核心方法论重构为5步（PEP8→docstring→异常处理→配置化安全→API时效）；规则1新增PEP8检查表（含违规/正确示例/severity）；规则2新增docstring规范表；规则3新增异常处理规范表（禁裸except/禁静默吞异常）；规则4新增配置化与安全规范表（含critical级硬编码处置）；输入输出规范新增与Agent4衔接的ReviewError JSON示例；异常处理扩展为4场景表格；附录A补4个参考标准（PEP8/Google Style/OWASP/Clean Code）；附录B新增合规代码 vs 违规代码完整对比示例（含4类ReviewError清单）
+- 变更记录：能力描述明确3个适用场景与被动提示定位（实际校验由Agent4兜底）；核心方法论重构为5步（PEP8→docstring→异常处理→配置化安全→API时效）；规则1新增PEP8检查表（含违规/正确示例/severity）；规则2新增docstring规范表；规则3新增异常处理规范表（禁裸except/禁静默吞异常）；规则4新增配置化与安全规范表（含critical级硬编码处置）；输入输出规范新增与Agent4衔接的ReviewError JSON示例；异常处理扩展为4场景表格；附录A补4个参考标准（PEP8/Google Style/OWASP/Clean Code）；附录B新增合规代码 vs 违规代码完整对比示例（含4类ReviewError清单）
