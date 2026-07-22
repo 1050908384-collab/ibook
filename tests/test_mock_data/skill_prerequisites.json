@@ -1,0 +1,26 @@
+{
+  "Python": {
+    "prerequisites": [],
+    "dependencies": ["深度学习", "机器学习"]
+  },
+  "深度学习": {
+    "prerequisites": ["Python"],
+    "dependencies": ["注意力机制"]
+  },
+  "注意力机制": {
+    "prerequisites": ["深度学习"],
+    "dependencies": ["Transformer"]
+  },
+  "Transformer": {
+    "prerequisites": ["注意力机制"],
+    "dependencies": ["LoRA"]
+  },
+  "LoRA": {
+    "prerequisites": ["Transformer", "注意力机制"],
+    "dependencies": ["QLoRA"]
+  },
+  "QLoRA": {
+    "prerequisites": ["LoRA"],
+    "dependencies": []
+  }
+}

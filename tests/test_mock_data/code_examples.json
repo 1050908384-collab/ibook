@@ -1,0 +1,18 @@
+{
+  "KB-LORA0001": [
+    {
+      "title": "LoRA 最小示例",
+      "language": "python",
+      "code": "import torch\nimport torch.nn as nn\nclass LoRALayer(nn.Module):\n    def __init__(self, r, d_in, d_out):\n        super().__init__()\n        self.A = nn.Parameter(torch.randn(r, d_in))\n        self.B = nn.Parameter(torch.zeros(d_out, r))\n    def forward(self, x):\n        return x + x @ self.B.T @ self.A",
+      "explanation": "仅训练低秩矩阵 A、B，原权重 W 冻结。"
+    }
+  ],
+  "KB-TRANSF01": [
+    {
+      "title": "缩放点积注意力",
+      "language": "python",
+      "code": "import torch\ndef attention(Q, K, V):\n    d_k = K.size(-1)\n    scores = (Q @ K.transpose(-2, -1)) / (d_k ** 0.5)\n    return torch.softmax(scores, dim=-1) @ V",
+      "explanation": "缩放点积注意力是 Transformer 的核心。"
+    }
+  ]
+}

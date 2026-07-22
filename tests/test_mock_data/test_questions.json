@@ -1,0 +1,42 @@
+[
+  {
+    "question_id": "Q-LORA-1",
+    "block_id": "KB-LORA0001",
+    "difficulty": "高级",
+    "question_type": "选择",
+    "question_text": "LoRA 微调训练的是哪些矩阵?",
+    "options": ["W", "A 和 B", "U Sigma V", "梯度"],
+    "correct_answer": "A 和 B",
+    "hint": "LoRA 训练低秩增量 ΔW=BA"
+  },
+  {
+    "question_id": "Q-LORA-2",
+    "block_id": "KB-LORA0001",
+    "difficulty": "高级",
+    "question_type": "填空",
+    "question_text": "LoRA 可训练参数量公式：r*(?) + r*(?)，两个问号分别是?",
+    "options": null,
+    "correct_answer": "d_in, d_out",
+    "hint": "可训练参数 = r*(d_in+d_out)"
+  },
+  {
+    "question_id": "Q-LORA-3",
+    "block_id": "KB-LORA0001",
+    "difficulty": "高级",
+    "question_type": "判断",
+    "question_text": "LoRA 是对原权重 W 做 SVD 后训练 U、Σ、V。",
+    "options": null,
+    "correct_answer": "错误",
+    "hint": "LoRA 新增低秩更新，不做 SVD"
+  },
+  {
+    "question_id": "Q-TRANS-1",
+    "block_id": "KB-TRANSF01",
+    "difficulty": "中级",
+    "question_type": "选择",
+    "question_text": "Transformer 的核心机制是?",
+    "options": ["卷积", "自注意力", "循环", "池化"],
+    "correct_answer": "自注意力",
+    "hint": "Transformer 基于自注意力"
+  }
+]

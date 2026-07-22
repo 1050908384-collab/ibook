@@ -1,0 +1,38 @@
+[
+  {
+    "doc_id": "DOC-LORA-TUT",
+    "block_id": "KB-LORA0001",
+    "title": "LoRA 入门教程",
+    "content": "# LoRA 入门\nLoRA 冻结原权重 W，训练低秩增量 ΔW=(α/r)BA，可训练参数量为 r*(d_in+d_out)。",
+    "doc_type": "tutorial",
+    "source": "internal",
+    "difficulty": "中级"
+  },
+  {
+    "doc_id": "DOC-LORA-CODE",
+    "block_id": "KB-LORA0001",
+    "title": "LoRA 代码示例",
+    "content": "import torch\nimport torch.nn as nn\nclass LoRALayer(nn.Module):\n    def __init__(self, r, d_in, d_out):\n        super().__init__()\n        self.A = nn.Parameter(torch.randn(r, d_in))\n        self.B = nn.Parameter(torch.zeros(d_out, r))\n    def forward(self, x):\n        return x + x @ self.B.T @ self.A",
+    "doc_type": "code",
+    "source": "internal",
+    "difficulty": "高级"
+  },
+  {
+    "doc_id": "DOC-LORA-TRAP",
+    "block_id": "KB-LORA0001",
+    "title": "LoRA 常见误区",
+    "content": "LoRA 不是对 W 做 SVD 后训练 U、Σ、V，而是新增低秩更新。",
+    "doc_type": "pitfall",
+    "source": "internal",
+    "difficulty": "高级"
+  },
+  {
+    "doc_id": "DOC-TRANS-TUT",
+    "block_id": "KB-TRANSF01",
+    "title": "Transformer 教程",
+    "content": "# Transformer\n基于自注意力机制，不依赖卷积。",
+    "doc_type": "tutorial",
+    "source": "internal",
+    "difficulty": "中级"
+  }
+]

@@ -1,0 +1,5 @@
+{
+  "tutorial": "# {block_name}\n\n{content}\n",
+  "answer": "{answer}\n\n参考资料：{references}",
+  "stage_card": "## 阶段 {stage_num}: {block_name}\n目标: {goal}"
+}
