@@ -1,34 +1,34 @@
 # SKILL名称：stage_planning
 
 ## 1. 能力描述
-- 功能：接收完整学习者画像与知识图谱依赖数据，筛选无前置依赖的待学板块，生成单阶段学习目录信息，不一次性输出全流程路线
-- 适用场景：Agent2接收画像后生成下一阶段学习任务，驱动内容生成模块输出教程
-- 前置依赖：学习者画像JSON（knowledge_gaps、goal、daily_hours）、knowledge_graph_mapping输出的依赖列表
+- 功能：从学习者画像中选取下一个待学知识盲区，生成单阶段学习目录信息
+- 适用场景：Agent2（DeterministicStagePlannerAgent）规划下一阶段；当前新框架未加载本技能，作为休眠方法论备查
+- 前置依赖：学习者画像UserProfile（knowledge_gaps、stage_num）
 
 ## 2. 核心方法论
-- 步骤1：筛选画像内状态为「未开始」的知识盲区板块
-- 步骤2：调用图谱依赖数据校验每个盲区的前置学习是否全部完成
-- 步骤3：从无未完成前置的板块中，优先选择与用户学习目标关联度最高的板块
-- 步骤4：读取板块预估时长，结合用户每日可投入时长微调负荷，生成标准化阶段目录
+- 步骤1：遍历profile.knowledge_gaps，选取首个status≠“已掌握”的盲区
+- 步骤2：以gap.skill为block_name，生成确定性stage_id与block_id（uuid5）
+- 步骤3：写入estimated_hours（默认2.0）、prerequisites（取自gap.prerequisites）、stage_num
+- 步骤4：无未掌握盲区时抛出异常终止
 
 ## 3. 知识/规则定义
-- 规则1：仅输出单个学习阶段，禁止一次性生成多阶段完整学习路线
-- 规则2：阶段预估时长取自图谱block的estimated_hours字段，不可超过用户daily_hours上限
-- 规则3：多候选板块时，优先匹配用户核心学习goal的板块，其次选择低难度基础板块
-- 规则4：必须严格遵循图谱前置依赖，不可跳过基础直接推送高阶内容
+- 规则1：仅输出单个学习阶段，禁止一次生成多阶段路线
+- 规则2：stage_id与block_id由session_id+stage_num+gap.skill确定性派生（uuid5），保证幂等
+- 规则3：estimated_hours默认2.0，prerequisites沿用gap.prerequisites
+- 规则4：字段须符合StageInfo契约
 
 ## 4. 输入输出规范
-- 输入：学习者画像JSON（knowledge_gaps + goal + daily_hours）、知识图谱依赖列表
-- 输出：单阶段目录JSON，字段包含 stage_id、block_id、block_name、estimated_hours、prerequisites、stage_intro
+- 输入：StagePlanningInput(session_id, profile: UserProfile, stage_num)
+- 输出：StagePlanningOutput(stage: StageInfo)
+- StageInfo关键字段：stage_id、stage_num、block_id、block_name、estimated_hours、gap_skill、prerequisites
 
 ## 5. 异常处理
-- 所有盲区均存在未完成前置依赖 → 返回提示文本，告知用户需先完成前置基础学习
-- 画像内全部知识盲区标记为「已掌握」→ 返回结业完成标识，终止学习流程
-- 无可用候选板块 → 输出空阶段，引导用户更新学习目标扩充盲区
+- 所有盲区均已掌握 → 抛出ValueError("No unmastered knowledge gap remains")
+- gap.prerequisites为空 → prerequisites输出空数组，不阻断
 
 ## 6. 附录
-- 附录A：阶段目录信息完整JSON格式示例
-- 附录B：多板块优先级选择判定规则
+- 附录A：StageInfo标准JSON示例
+- 附录B：uuid5确定性ID派生规则
 
 ## 7. 版本信息
-- 版本：v1.0，更新日期：2026-07-20
+- 版本：v2.0，更新日期：2026-07-23（注：新框架Agent2为纯确定性实现，当前未加载本技能，内容已对齐其行为）
