@@ -87,7 +87,12 @@
 - `user_profile`（UserProfile对象，含 `skill_tags`、`learning_style`、`knowledge_gaps[].level`、`professional_background`、`daily_hours`、`goal`）
 - 内容特征标签（由Agent⑤提取，含 概念密度、代码行数、理论/实践比例、环境要求）
 
-### 输出
+### 输出（数据流向quality_metrics）
+**本SKILL输出的核心数据将直接提供给 `quality_metrics` 用于加权评分**：
+- `difficulty_match`(0-1) → 对应 `quality_metrics` 的 **难度匹配度** 维度（权重20%）
+- `style_match`(0-1) → 对应 `quality_metrics` 的 **风格适配度** 维度（权重10%）
+- `environment_fit`(0/1) → 对应 `quality_metrics` 的 **环境可行性** 维度（权重10%），**同时用于红线检查**
+- `issues` 数组 → 合并到 `QualityReviewResult.errors`（用于附加条件检查）
 学习者适配评估结果，LLM返回JSON格式：
 ```json
 {

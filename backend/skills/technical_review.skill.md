@@ -16,12 +16,19 @@
 ## 2. 核心方法论
 - **步骤1：解析输入内容**——识别代码块（```...```围栏）和技术陈述段落（含"参数量"、"原理"、"LoRA"、"显存"等领域关键词），为每个技术声明分配位置标识（location），便于后续evidence定位
 - **步骤2：按优先级逐级检查（硬性→语义→规范）**——
-  - 硬性检查：调用 `rule_check_tool.check_rules(content)` 执行正则匹配，识别LoRA机制错误、参数量计算错误、语法错误、依赖冲突
-  - 语义检查：调用 `knowledge_verify_tool` 计算技术声明与知识库的相似度，应用幻觉判定阈值
-  - 规范检查：调用 `industry_standards` 规则匹配硬编码、端口暴露、权限缺失、许可证缺失等违规
-- **步骤3：应用阈值和错误模式库标记问题**——对识别出的可疑片段应用规则1（幻觉阈值）和规则2（错误模式库）逐条比对，命中即生成ReviewError并填充error_type/severity/location/description/evidence/suggestion
+  - **硬性检查**：调用 `rule_check_tool.check_rules(content)` 执行正则匹配，识别LoRA机制错误、参数量计算错误、语法错误、依赖冲突
+  - **语义检查**：调用 `knowledge_verify_tool` 计算技术声明与知识库的相似度，应用规则1（幻觉阈值）判定
+  - **规范检查（子模块调用）**：**调用 `industry_standards` 子检查模块**，传入相同的 `ReviewInput`，获取领域合规性检查的 `ReviewError` 列表
+- **步骤3：合并所有错误并标记问题**——将硬性检查、语义检查、规范检查的所有ReviewError合并，应用规则1（幻觉阈值）和规则2（错误模式库）逐条比对
 - **步骤4：按报错分级标准分类**——将所有ReviewError按规则3（Critical/Major/Minor三级）归类，确保severity字段取值限定为 `"critical"|"major"|"minor"`，默认 `"major"`
-- **步骤5：综合裁决输出**——应用规则4（裁决优先级）合并结果：若硬性检查发现critical错误，`passed` 强制为 `false`，且事实检查结果仍须附加在errors中。最终输出包含status、errors数组、summary的结构化报告
+- **步骤5：综合裁决输出**——应用规则4（裁决优先级）合并结果：若硬性检查发现critical错误，`passed` 强制为 `false`。最终输出包含status、errors数组、summary的结构化报告
+
+**与industry_standards的协作流程**：
+1. `technical_review` 接收 `ReviewInput`
+2. 内部执行步骤2的"规范检查"时，调用 `industry_standards` 的规则匹配逻辑
+3. `industry_standards` 返回 `List[ReviewError]`
+4. `technical_review` 将此列表与硬性检查、语义检查的错误合并
+5. `technical_review` 作为唯一的最终出口，输出完整的 `TechnicalReviewResult`
 
 ## 3. 知识/规则定义
 

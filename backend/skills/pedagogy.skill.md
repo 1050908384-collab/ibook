@@ -63,8 +63,13 @@
 - `learning_package` 内容（tutorial文本或answer文本，通过 `ReviewInput.content` 传入）
 - `user_profile`（通过 `ReviewInput.profile` 传入，含 `skill_tags`、`knowledge_gaps`、`learning_style`、`goal`）
 
-### 输出
-教学质量评估结果，LLM返回JSON格式：
+### 输出（数据流向quality_metrics）
+**本SKILL输出的核心数据将直接提供给 `quality_metrics` 用于加权评分**：
+- `cognitive_load_score` → 对应 `quality_metrics` 的 **认知负荷合理度** 维度（权重25%）
+- `pedagogy_score` → 对应 `quality_metrics` 的 **教学逻辑严谨度** 维度（权重20%）
+- `issues` 数组 → 合并到 `QualityReviewResult.errors`（用于附加条件检查）
+
+LLM返回JSON格式：
 ```json
 {
   "pedagogy_score": 65,
