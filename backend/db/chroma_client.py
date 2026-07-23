@@ -1,3 +1,4 @@
+#Chroma 向量库连接
 try:
     from chromadb import PersistentClient
     CHROMA_AVAILABLE = True

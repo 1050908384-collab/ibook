@@ -1,3 +1,4 @@
+#读取data/knowledge_base/文件->切分->入 SQLite + Chroma
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

@@ -1,3 +1,4 @@
+#NetworkX 知识图谱加载
 import networkx as nx
 import pickle
 from config import settings
