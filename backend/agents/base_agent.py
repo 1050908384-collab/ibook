@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #Agent 基类——统一接口、Tool加载、LLM调用
 from typing import Dict, Any, List, Optional
 from llm.client import LLMClient

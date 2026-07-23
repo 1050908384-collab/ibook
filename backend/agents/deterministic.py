@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ← 实际运行的 Agent 实现（含确定性版+混合版）
 import json
 import re

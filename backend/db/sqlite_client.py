@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #SQLite 读写（9张表）
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker
@@ -278,15 +279,17 @@ class SQLiteClient:
         with self.Session() as session:
             session.execute(text("""
                 INSERT OR REPLACE INTO stage_progress (
-                    stage_id, session_id, stage_num, block_id, block_name, status
-                ) VALUES (:stage_id, :session_id, :stage_num, :block_id, :block_name, :status)
+                    stage_id, session_id, stage_num, block_id, block_name, status, accuracy, strategy_used
+                ) VALUES (:stage_id, :session_id, :stage_num, :block_id, :block_name, :status, :accuracy, :strategy_used)
             """), {
                 "stage_id": stage_info.get("stage_id", str(uuid.uuid4())),
                 "session_id": session_id,
                 "stage_num": stage_info.get("stage_num", 1),
                 "block_id": stage_info.get("block_id", ""),
                 "block_name": stage_info.get("block_name", ""),
-                "status": stage_info.get("status", "pending")
+                "status": stage_info.get("status", "pending"),
+                "accuracy": stage_info.get("accuracy"),
+                "strategy_used": stage_info.get("strategy_used")
             })
             session.commit()
 

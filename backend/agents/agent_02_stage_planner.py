@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from typing import Dict, Any
 from agents.base_agent import BaseAgent
 from tools.agent2_tools.knowledge_block_query_tool import KnowledgeBlockQueryTool

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #Chroma 向量库连接
 try:
     from chromadb import PersistentClient

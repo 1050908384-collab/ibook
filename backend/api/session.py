@@ -13,7 +13,7 @@ class SessionResponse(BaseModel):
 @router.post("/")
 async def create_session():
     try:
-        session = harness.state_manager.create_session(None)
+        session = harness.create_session(None)
         return {"session_id": session["session_id"], "status": "active"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -21,7 +21,7 @@ async def create_session():
 @router.get("/{session_id}")
 async def get_session(session_id: str):
     try:
-        session = harness.state_manager.get_session(session_id)
+        session = harness.get_session(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         return session
@@ -33,7 +33,7 @@ async def get_session(session_id: str):
 @router.put("/{session_id}/end")
 async def end_session(session_id: str):
     try:
-        harness.state_manager.end_session(session_id)
+        harness.end_session(session_id)
         return {"session_id": session_id, "status": "completed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -41,7 +41,7 @@ async def end_session(session_id: str):
 @router.put("/{session_id}/abandon")
 async def abandon_session(session_id: str):
     try:
-        harness.state_manager.abandon_session(session_id)
+        harness.abandon_session(session_id)
         return {"session_id": session_id, "status": "abandoned"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

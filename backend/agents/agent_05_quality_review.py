@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from typing import Dict, Any, List
 from agents.base_agent import BaseAgent
 from tools.agent5_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool

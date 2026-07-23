@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from typing import Dict, Any, List
 from agents.base_agent import BaseAgent
 from tools.agent4_tools.code_parser_tool import CodeParserTool

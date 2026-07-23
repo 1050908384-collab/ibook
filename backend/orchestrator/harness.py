@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import asyncio
 from typing import Any, Dict
 
@@ -129,7 +130,10 @@ class Harness:
         question = next((item for item in package.questions if item.question_id == question_id), None)
         if question is None:
             raise ValueError(f"Question not found in current stage: {question_id}")
-        is_correct = self._normalize_answer(user_answer) == self._normalize_answer(question.correct_answer)
+        is_correct = self._match_answer(
+            user_answer, question.correct_answer,
+            question_type=getattr(question, 'question_type', '')
+        )
         self.state_manager.add_answer_record(session_id, question_id, user_answer, is_correct)
         return {"is_correct": is_correct, "correct_answer": question.correct_answer}
 
@@ -160,10 +164,33 @@ class Harness:
                 "final_report": self._generate_final_report(decision.profile, accuracy),
             }
 
+        # ===== P0: Agent1 重诊断闭环 =====
+        mastered = [g.skill for g in decision.profile.knowledge_gaps if g.status == "已掌握"]
+        remaining = [g.skill for g in decision.profile.knowledge_gaps if g.status != "已掌握"]
+        re_input = (
+            f"我已掌握：{"、".join(mastered) if mastered else "暂时没有"}。"
+            f"我还需要学习：{"、".join(remaining) if remaining else "暂时没有了"}。"
+            f"我刚完成了{stage.block_name}阶段学习，正确率{accuracy:.0%}。"
+        )
+        re_diag = await self.agent1.run(DiagnosticInput(
+            session_id=session_id,
+            user_input=re_input,
+        ))
+        re_profile = re_diag.profile
+        re_profile.confidence_index = decision.profile.confidence_index
+        re_profile.version = decision.profile.version
+        for ng in re_profile.knowledge_gaps:
+            for og in decision.profile.knowledge_gaps:
+                if ng.skill == og.skill:
+                    ng.status = og.status
+                    ng.progress = og.progress
+                    break
+        self.state_manager.update_profile(session_id, re_profile)
+
         next_stage_num = stage.stage_num + 1 if decision.decision == "continue" else stage.stage_num
         next_stage = await self.agent2.run(StagePlanningInput(
             session_id=session_id,
-            profile=decision.profile,
+            profile=re_profile,
             stage_num=next_stage_num,
         ))
         self.state_manager.update_stage(session_id, next_stage.stage)
@@ -330,8 +357,50 @@ class Harness:
             raise ValueError("Session has no learning package")
         return package
 
-    def _normalize_answer(self, answer: str) -> str:
-        return "".join(answer.strip().lower().split())
+    @staticmethod
+    def _normalize_answer(answer: str) -> str:
+        """标准化答案：去空格、转小写、去标点符号。"""
+        import re
+        cleaned = re.sub(r'[^\w.\u4e00-\u9fff/]', '', answer.strip().lower())
+        return cleaned
+
+    @staticmethod
+    def _match_answer(user_answer: str, correct_answer: str, question_type: str = '') -> bool:
+        """
+        多级答案匹配策略（P2 模糊匹配）。
+        1. 精确匹配（标准化后相等）
+        2. 选择题：单字母选项匹配
+        3. 包含匹配（正确答案含用户答案或反之）
+        4. 数值近似（误差 < 5%）
+        """
+        user_norm = Harness._normalize_answer(user_answer)
+        correct_norm = Harness._normalize_answer(correct_answer)
+
+        # 1. 精确匹配
+        if user_norm == correct_norm:
+            return True
+
+        # 2. 选择题选项字母匹配
+        if question_type in ('选择', '选择题', '单选', 'multiple_choice'):
+            if len(user_norm) == 1 and user_norm.isalpha() and \
+               correct_norm.startswith(user_norm):
+                return True
+
+        # 3. 包含匹配（双向，至少2字符防止单字母误判）
+        if len(user_norm) >= 3 and len(correct_norm) >= 3:
+            if user_norm in correct_norm or correct_norm in user_norm:
+                return True
+
+        # 4. 数值近似
+        try:
+            user_num = float(user_norm.replace(',', '').replace('，', ''))
+            correct_num = float(correct_norm.replace(',', '').replace('，', ''))
+            if abs(user_num - correct_num) / max(abs(correct_num), 1.0) < 0.05:
+                return True
+        except (ValueError, ZeroDivisionError):
+            pass
+
+        return False
 
     def _generate_final_report(self, profile: UserProfile, accuracy: float) -> Dict[str, Any]:
         return {
@@ -340,3 +409,16 @@ class Harness:
             "mastered_skills": [gap.skill for gap in profile.knowledge_gaps if gap.status == "已掌握"],
             "profile_version": profile.version,
         }
+
+    # ===== P1: 公共 Session 管理方法 =====
+    def get_session(self, session_id: str) -> dict | None:
+        return self.state_manager.get_session(session_id)
+
+    def end_session(self, session_id: str) -> None:
+        self.state_manager.end_session(session_id)
+
+    def abandon_session(self, session_id: str) -> None:
+        self.state_manager.abandon_session(session_id)
+
+    def create_session(self, session_id: str | None = None) -> dict:
+        return self.state_manager.create_session(session_id)
