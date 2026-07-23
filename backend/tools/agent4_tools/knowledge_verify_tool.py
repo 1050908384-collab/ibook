@@ -9,7 +9,7 @@ knowledge_verify_tool — Agent4 知识依据验证工具（幻觉检测）
     def knowledge_verify(input_data: dict, config: dict = None) -> dict
     返回：{"status", "data", "message", "mock_used"}
 
-规则对齐（technical_review.skill.md 规则1：幻觉判定阈值）：
+规则对齐（technical_review.skill.md 规则1：幻觉判定阈值）:
     - similarity < 0.65        → 潜在幻觉   (critical)
     - 0.65 <= similarity < 0.80 → 存疑需复核 (major / review_needed)
     - similarity >= 0.80        → 有依据     (pass)

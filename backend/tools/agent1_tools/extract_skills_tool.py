@@ -1,3 +1,4 @@
+#LLM提取→技能标签+盲区
 from typing import List, Dict, Any
 from llm.client import LLMClient
 import json
