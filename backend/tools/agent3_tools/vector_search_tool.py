@@ -76,11 +76,11 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
     block_id = input_data.get("block_id", "")
     top_k = min(max(input_data.get("top_k", 3), 1), 5)
 
-    if not query.strip():
+    if not query.strip() and not block_id:
         return {
             "status": "error",
             "data": None,
-            "message": "输入未包含 query 字段，无法检索",
+            "message": "输入未包含 query 或 block_id 字段，无法检索",
             "mock_used": use_mock,
         }
 
@@ -115,6 +115,7 @@ def _search_chunks(query: str, block_id: str, top_k: int) -> tuple[List[Dict[str
     """
     SQL: 从 knowledge_chunks 表检索相关片段（关键词匹配+按更新时间排序）。
     注：真实向量检索需集成向量数据库（如 Pinecone/Chroma），当前用关键词匹配模拟。
+    通过 JOIN knowledge_docs 获取 source、title、created_at 字段。
     """
     db_path = _get_db_path()
     if not db_path.exists():
@@ -129,24 +130,26 @@ def _search_chunks(query: str, block_id: str, top_k: int) -> tuple[List[Dict[str
                 conn.close()
                 return [], True
 
-            like_clauses = " OR ".join(["content LIKE ?" for _ in query_words])
+            like_clauses = " OR ".join(["c.content LIKE ?" for _ in query_words])
             params = [f"%{word}%" for word in query_words]
 
             if block_id:
                 sql = f"""
-                    SELECT chunk_id, block_id, content, source, created_at, title
-                    FROM knowledge_chunks
-                    WHERE block_id = ? AND ({like_clauses})
-                    ORDER BY created_at DESC
+                    SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
+                    FROM knowledge_chunks c
+                    LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
+                    WHERE c.block_id = ? AND ({like_clauses})
+                    ORDER BY d.created_at DESC
                     LIMIT ?
                     """
                 params = [block_id] + params + [top_k]
             else:
                 sql = f"""
-                    SELECT chunk_id, block_id, content, source, created_at, title
-                    FROM knowledge_chunks
+                    SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
+                    FROM knowledge_chunks c
+                    LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
                     WHERE {like_clauses}
-                    ORDER BY created_at DESC
+                    ORDER BY d.created_at DESC
                     LIMIT ?
                     """
                 params = params + [top_k]
@@ -205,6 +208,11 @@ def _mock_search(input_data: dict, top_k: int) -> dict:
         scenario = "normal"
 
     all_results = scenarios.get(scenario, {}).get("results", [])
+    block_id = input_data.get("block_id", "")
+    
+    if block_id:
+        all_results = [r for r in all_results if r.get("block_id") == block_id]
+    
     results = all_results[:top_k]
 
     return {
@@ -241,6 +249,26 @@ class VectorSearchTool:
         result = vector_search({
             "query": query,
             "block_id": block_id,
+            "top_k": top_k,
+        }, config=self._default_config)
+        if result.get("status") != "success":
+            return []
+        return result["data"].get("results", [])
+
+    async def search_by_block(self, block_id: str) -> List[Dict[str, Any]]:
+        result = vector_search({
+            "query": "",
+            "block_id": block_id,
+            "top_k": 3,
+        }, config=self._default_config)
+        if result.get("status") != "success":
+            return []
+        return result["data"].get("results", [])
+
+    async def search_by_query(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        result = vector_search({
+            "query": query,
+            "block_id": "",
             "top_k": top_k,
         }, config=self._default_config)
         if result.get("status") != "success":

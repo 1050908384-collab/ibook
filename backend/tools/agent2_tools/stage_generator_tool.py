@@ -21,6 +21,7 @@ stage_generator_tool — Agent2 阶段计划生成工具
 
 import json
 import logging
+import re
 import uuid
 from pathlib import Path
 from typing import Any, Dict
@@ -184,7 +185,7 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
                 f"掌握{skill_name}的核心技术",
                 f"能够独立完成{skill_name}相关任务"
             ]),
-            "difficulty": llm_data.get("difficulty", "medium"),
+            "difficulty": llm_data.get("difficulty", "中级"),
         },
         "generated_by_llm": True,
     }

@@ -129,21 +129,21 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
             if block_id:
                 sql = """
                     SELECT question_id, question_type, question_text, options, 
-                           correct_answer, explanation, difficulty
+                           correct_answer, difficulty, hint
                     FROM test_questions
                     WHERE block_id = ?
-                    ORDER BY question_type IN ('填空', '选择') DESC, difficulty ASC, created_at DESC
+                    ORDER BY question_type IN ('填空', '选择') DESC, difficulty ASC
                     LIMIT ?
                     """
                 params = [block_id, count]
             elif block_name:
                 sql = """
                     SELECT q.question_id, q.question_type, q.question_text, q.options, 
-                           q.correct_answer, q.explanation, q.difficulty
+                           q.correct_answer, q.difficulty, q.hint
                     FROM test_questions q
                     JOIN knowledge_blocks b ON q.block_id = b.block_id
                     WHERE b.block_name = ?
-                    ORDER BY q.question_type IN ('填空', '选择') DESC, q.difficulty ASC, q.created_at DESC
+                    ORDER BY q.question_type IN ('填空', '选择') DESC, q.difficulty ASC
                     LIMIT ?
                     """
                 params = [block_name, count]
@@ -173,8 +173,8 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
                 "question_text": r[2],
                 "options": options,
                 "correct_answer": r[4],
-                "explanation": r[5] or "",
-                "difficulty": r[6],
+                "difficulty": r[5],
+                "explanation": r[6] or "",
             })
 
         return questions, True
@@ -249,9 +249,14 @@ class QuestionExtractTool:
     def __init__(self):
         self._default_config = {"use_mock": True}
 
-    async def extract_questions(self, block_id: str, count: int = 2) -> List[Dict[str, Any]]:
+    async def extract_questions(self, tutorial: str, stage_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        block_id = stage_info.get("block_id", "")
+        block_name = stage_info.get("block_name", "")
+        count = stage_info.get("question_count", 2)
+        
         result = question_extract({
             "block_id": block_id,
+            "block_name": block_name,
             "count": count,
         }, config=self._default_config)
         if result.get("status") != "success":

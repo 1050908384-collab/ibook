@@ -327,10 +327,15 @@ class CodeGenerationTool:
     def __init__(self):
         self._default_config = {"use_mock": True}
 
-    async def generate_code(self, block_id: str) -> List[Dict[str, Any]]:
+    async def generate_code(self, block_id: str, stage_info: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+        skill_name = ""
+        if stage_info:
+            skill_name = stage_info.get("gap_skill", "") or stage_info.get("block_name", "")
+        
         result = code_generation({
             "mode": "generate",
             "block_id": block_id,
+            "skill_name": skill_name,
         }, config=self._default_config)
         if result.get("status") != "success":
             return []
