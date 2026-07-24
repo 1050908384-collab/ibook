@@ -1,64 +1,315 @@
 # -*- coding: utf-8 -*-
-#LLM提取→技能标签+盲区
-from typing import List, Dict, Any
-from llm.client import LLMClient
-import json
-import re
+"""
+extract_skills_tool — Agent1 技能与盲区提取工具
+================================================
+功能：从用户自然语言输入提取已掌握技能标签（skill_tags）和知识盲区（knowledge_gaps）。
+    - 真实模式：调用 LLM 做结构化提取，对齐 learner_profiling.skill.md 规则1
+    - Mock 模式：返回 ./data/test_data/mock_extract_skills_tool.json 预设提取结果
 
+统一接口：
+    def extract_skills(input_data: dict, config: dict = None) -> dict
+    返回：{"status", "data", "message", "mock_used"}
+
+规则对齐（learner_profiling.skill.md）：
+    - 规则1：skill_tags 为已掌握技能列表；knowledge_gaps 每项含 skill 与 level(beginner/intermediate/advanced)
+    - 规则2：LLM返回非JSON时回退确定性正则匹配
+
+保留 ExtractSkillsTool 类作为向后兼容适配器。
+"""
+
+import json
+import logging
+import re
+from pathlib import Path
+from typing import Any, Dict, List
+
+from config import DATA_DIR
+from llm.client import LLMClient
+
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logger.addHandler(logging.NullHandler())
+
+MOCK_FILE = DATA_DIR / "test_data" / "mock_extract_skills_tool.json"
+
+
+# ------------------------------------------------------------------
+# 统一函数式接口（规范实现）
+# ------------------------------------------------------------------
+def extract_skills(input_data: dict, config: dict = None) -> dict:
+    """
+    从用户输入提取技能标签和知识盲区。
+
+    参数：
+        input_data: dict
+            - user_input: str    用户原始输入（优先）
+            - content: str       同义字段，user_input 缺失时使用
+            - scenario: str      Mock 模式下选择场景：normal|boundary|exception
+        config: dict
+            - use_mock: bool     是否使用 Mock（默认 True）
+            - mode: str          提取模式："all"(同时提取) | "skills"(仅技能) | "gaps"(仅盲区)
+
+    返回：
+        {
+            "status": "success" | "error",
+            "data": {
+                "skill_tags": List[str],         已掌握技能标签
+                "knowledge_gaps": List[Dict],    知识盲区（每项含 skill/level）
+                "parsed_by_llm": bool,           是否由 LLM 解析成功
+                "fallback_used": bool            是否使用回退策略
+            },
+            "message": str,
+            "mock_used": bool
+        }
+    """
+    config = config or {}
+    use_mock = config.get("use_mock", True)
+    mode = config.get("mode", "all")
+
+    user_input = (input_data or {}).get("user_input") or (input_data or {}).get("content") or ""
+    if not user_input.strip():
+        return {
+            "status": "error",
+            "data": None,
+            "message": "输入未包含 user_input 或 content 字段，无法提取",
+            "mock_used": use_mock,
+        }
+
+    try:
+        if use_mock:
+            return _mock_extract(user_input, input_data, mode)
+
+        if mode == "all":
+            result = _extract_both(user_input)
+        elif mode == "skills":
+            result = {"skill_tags": _extract_skill_tags(user_input), "knowledge_gaps": []}
+        elif mode == "gaps":
+            result = {"skill_tags": [], "knowledge_gaps": _extract_knowledge_gaps(user_input)}
+        else:
+            result = _extract_both(user_input)
+
+        result["parsed_by_llm"] = True
+        result["fallback_used"] = False
+        return {
+            "status": "success",
+            "data": result,
+            "message": _build_message(result),
+            "mock_used": False,
+        }
+    except Exception as e:
+        logger.exception("extract_skills 执行失败")
+        fallback = _fallback_extract(user_input)
+        return {
+            "status": "success",
+            "data": {
+                "skill_tags": fallback.get("skill_tags", []),
+                "knowledge_gaps": fallback.get("knowledge_gaps", []),
+                "parsed_by_llm": False,
+                "fallback_used": True,
+            },
+            "message": f"LLM提取异常，已回退确定性提取: {e}",
+            "mock_used": False,
+        }
+
+
+# ------------------------------------------------------------------
+# 真实模式：LLM 结构化提取
+# ------------------------------------------------------------------
+def _extract_both(user_input: str) -> dict:
+    """同时提取技能标签和知识盲区（一次LLM调用）。"""
+    system_prompt = """你是一个学习诊断专家。请分析用户的输入，提取用户已经掌握的技能标签和想要学习的知识盲区。
+
+技能标签应该是具体的技术或知识领域，如：Python编程、机器学习、深度学习等。
+知识盲区是用户想要学习但尚未掌握的领域，每个盲区需标注当前水平(beginner/intermediate/advanced)。
+
+请以JSON格式返回，包含两个字段：
+- skill_tags: 已掌握技能标签数组
+- knowledge_gaps: 知识盲区数组，每个元素含 skill 和 level 字段"""
+
+    example = """{
+        "skill_tags": ["Python", "PyTorch"],
+        "knowledge_gaps": [
+            {"skill": "大模型微调", "level": "beginner"},
+            {"skill": "LoRA", "level": "beginner"}
+        ]
+    }"""
+
+    prompt = f"用户输入：{user_input}\n\n请提取技能标签和知识盲区，以JSON格式返回，例如：{example}"
+
+    llm_client = LLMClient()
+    response = llm_client.complete(prompt, system_prompt)
+    response = _clean_response(response)
+
+    try:
+        match = re.search(r'\{.*\}', response, re.DOTALL)
+        if match:
+            result = json.loads(match.group())
+            return {
+                "skill_tags": result.get("skill_tags", []),
+                "knowledge_gaps": result.get("knowledge_gaps", []),
+            }
+    except Exception as e:
+        logger.warning("LLM JSON解析失败: %s", e)
+
+    return _fallback_extract(user_input)
+
+
+def _extract_skill_tags(user_input: str) -> List[str]:
+    """仅提取已掌握技能标签。"""
+    system_prompt = """你是一个学习诊断专家。请分析用户的输入，提取用户已经掌握的技能标签。
+技能标签应该是具体的技术或知识领域，如：Python编程、机器学习、深度学习等。"""
+
+    example = '["Python", "机器学习"]'
+    prompt = f"用户输入：{user_input}\n\n请提取用户已掌握的技能标签，以JSON数组格式返回，例如：{example}"
+
+    llm_client = LLMClient()
+    response = llm_client.complete(prompt, system_prompt)
+    response = _clean_response(response)
+
+    try:
+        match = re.search(r'\[.*\]', response, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+    except Exception as e:
+        logger.warning("技能标签解析失败: %s", e)
+
+    return _fallback_skills(user_input)
+
+
+def _extract_knowledge_gaps(user_input: str) -> List[Dict[str, Any]]:
+    """仅提取知识盲区。"""
+    system_prompt = """你是一个学习诊断专家。请分析用户的输入，识别用户想要学习但尚未掌握的知识领域（知识缺口）。"""
+
+    example = '[{"skill": "大模型微调", "level": "beginner"}]'
+    prompt = f"用户输入：{user_input}\n\n请识别用户的知识缺口，以JSON数组格式返回，每个元素包含skill和level字段，例如：{example}"
+
+    llm_client = LLMClient()
+    response = llm_client.complete(prompt, system_prompt)
+    response = _clean_response(response)
+
+    try:
+        match = re.search(r'\[.*\]', response, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+    except Exception as e:
+        logger.warning("知识盲区解析失败: %s", e)
+
+    return _fallback_gaps(user_input)
+
+
+# ------------------------------------------------------------------
+# 回退策略：确定性正则提取
+# ------------------------------------------------------------------
+def _fallback_extract(user_input: str) -> dict:
+    """LLM失败时的回退提取策略。"""
+    return {
+        "skill_tags": _fallback_skills(user_input),
+        "knowledge_gaps": _fallback_gaps(user_input),
+    }
+
+
+def _fallback_skills(user_input: str) -> List[str]:
+    """基于关键词的技能标签回退提取。"""
+    skill_keywords = {
+        "python", "pytorch", "tensorflow", "机器学习", "深度学习", "大模型",
+        "transformer", "nlp", "计算机视觉", "cv", "数据挖掘", "算法",
+        "编程", "开发", "人工智能", "ai", "数据分析", "sql", "数据库",
+    }
+    tags = []
+    for kw in skill_keywords:
+        if kw.lower() in user_input.lower():
+            tags.append(kw)
+    return tags or ["编程基础"]
+
+
+def _fallback_gaps(user_input: str) -> List[Dict[str, Any]]:
+    """基于关键词的知识盲区回退提取。"""
+    gap_keywords = {
+        "想学", "学习", "掌握", "入门", "了解", "熟悉", "精通", "提升",
+    }
+    if any(kw in user_input for kw in gap_keywords):
+        return [{"skill": "大模型微调", "level": "beginner"}]
+    return []
+
+
+# ------------------------------------------------------------------
+# 工具函数
+# ------------------------------------------------------------------
+def _clean_response(response: str) -> str:
+    """清理LLM响应中的标记。"""
+    response = response.replace("<think>", "").replace("</think>", "")
+    response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+    response = re.sub(r'```json\s*', '', response)
+    response = re.sub(r'\s*```', '', response)
+    return response.strip()
+
+
+def _build_message(result: dict) -> str:
+    tags = result.get("skill_tags", [])
+    gaps = result.get("knowledge_gaps", [])
+    fallback = result.get("fallback_used", False)
+
+    base = f"提取到 {len(tags)} 个技能标签，{len(gaps)} 个知识盲区"
+    if fallback:
+        return f"{base}（使用回退策略）"
+    return base
+
+
+# ------------------------------------------------------------------
+# Mock 模式
+# ------------------------------------------------------------------
+def _mock_extract(user_input: str, input_data: dict, mode: str) -> dict:
+    """从 mock JSON 读取预设场景。"""
+    scenario = (input_data or {}).get("scenario") or "normal"
+    scenarios = _load_mock()
+    if scenario not in scenarios:
+        scenario = "normal"
+
+    data = dict(scenarios[scenario])
+    if mode == "skills":
+        data["knowledge_gaps"] = []
+    elif mode == "gaps":
+        data["skill_tags"] = []
+
+    data["parsed_by_llm"] = True
+    data["fallback_used"] = False
+
+    return {
+        "status": "success",
+        "data": data,
+        "message": f"[Mock] {_build_message(data)}",
+        "mock_used": True,
+    }
+
+
+def _load_mock() -> dict:
+    if not MOCK_FILE.exists():
+        logger.warning("Mock 文件不存在: %s", MOCK_FILE)
+        return {}
+    try:
+        with MOCK_FILE.open("r", encoding="utf-8") as f:
+            return json.load(f).get("scenarios", {})
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("读取 Mock 文件失败: %s", e)
+        return {}
+
+
+# ------------------------------------------------------------------
+# 向后兼容适配器
+# ------------------------------------------------------------------
 class ExtractSkillsTool:
     def __init__(self):
+        self._default_config = {"use_mock": True}
         self.llm_client = LLMClient()
 
-    def _clean_response(self, response: str) -> str:
-        response = response.replace("<think>", "").replace("</think>", "")
-        response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
-        return response.strip()
-
     async def extract_skills(self, user_input: str) -> List[str]:
-        if not user_input:
+        result = extract_skills({"user_input": user_input}, config=self._default_config)
+        if result.get("status") != "success":
             return []
-        
-        system_prompt = """你是一个学习诊断专家。请分析用户的输入，提取用户已经掌握的技能标签。
-        技能标签应该是具体的技术或知识领域，如：Python编程、机器学习、深度学习等。"""
-        
-        example = '["Python", "机器学习"]'
-        prompt = f"用户输入：{user_input}\n\n请提取用户已掌握的技能标签，以JSON数组格式返回，例如：{example}"
-        
-        response = await self.llm_client.complete(prompt, system_prompt)
-        print(f"=== extract_skills LLM响应 ===\n{response}\n=== 响应结束 ===")
-        response = self._clean_response(response)
-        
-        try:
-            match = re.search(r'\[.*\]', response, re.DOTALL)
-            if match:
-                result = json.loads(match.group())
-                print(f"=== extract_skills 解析结果 ===\n{result}\n=== 解析结束 ===")
-                return result
-            return ["编程基础"]
-        except Exception as e:
-            print(f"extract_skills JSON解析失败: {e}, 使用默认值")
-            return ["编程基础"]
+        return result["data"].get("skill_tags", [])
 
     async def extract_gaps(self, user_input: str) -> List[Dict[str, Any]]:
-        if not user_input:
+        result = extract_skills({"user_input": user_input}, config={"use_mock": self._default_config["use_mock"], "mode": "gaps"})
+        if result.get("status") != "success":
             return []
-        
-        system_prompt = """你是一个学习诊断专家。请分析用户的输入，识别用户想要学习但尚未掌握的知识领域（知识缺口）。"""
-        
-        example = '[{"skill": "大模型微调", "level": "beginner"}]'
-        prompt = f"用户输入：{user_input}\n\n请识别用户的知识缺口，以JSON数组格式返回，每个元素包含skill和level字段，例如：{example}"
-        
-        response = await self.llm_client.complete(prompt, system_prompt)
-        print(f"=== extract_gaps LLM响应 ===\n{response}\n=== 响应结束 ===")
-        response = self._clean_response(response)
-        
-        try:
-            match = re.search(r'\[.*\]', response, re.DOTALL)
-            if match:
-                result = json.loads(match.group())
-                print(f"=== extract_gaps 解析结果 ===\n{result}\n=== 解析结束 ===")
-                return result
-            return [{"skill": "大模型微调", "level": "beginner"}]
-        except Exception as e:
-            print(f"extract_gaps JSON解析失败: {e}, 使用默认值")
-            return [{"skill": "大模型微调", "level": "beginner"}]
+        return result["data"].get("knowledge_gaps", [])

@@ -14,7 +14,7 @@
 
 ## 2. 核心方法论
 - **步骤1：定位教程主题与难度面向**——读取 `stage.block_name` 作为教程主题，结合 `profile.goal` 确定面向（如"掌握LoRA微调"），参照 `profile.skill_tags` 判断已知基线，避免重复已掌握内容或跨度太大
-- **步骤2：一次性生成五段式结构教程**——调用LLM按"已知回顾→核心概念拆解→实操演示→常见坑点→自测"五段生成Markdown；核心概念配代码示例（遵循 code_style），自测段含1~2道TestQuestion（填空/选择优先）
+- **步骤2：一次性生成四段式结构教程**——调用LLM按"已知回顾→核心概念拆解→实操演示→常见坑点"四段生成Markdown；核心概念配代码示例（遵循 code_style）；自测题由用户主动点击自测时从 `test_questions` 表抽取，教程中不包含
 - **步骤3：交付审核**——tutorial 交 `DeterministicContentAgent` 包装为 `LearningPackage(tutorial, questions, code_examples, version=1)`，由 Orchestrator 送 Agent4/Agent5 双重审核
 - **步骤4：格式化审核反馈**——将 `technical_errors`（ReviewError数组）与 `quality_errors`（QualityIssue数组）合并为反馈清单，按 severity 降序排列（critical > major > minor）
 - **步骤5：逐条修订**——调用LLM按反馈清单逐条修订教程，保留正确内容，仅修改 errors 指向的 location，返回完整新 tutorial，`version` 自增
@@ -22,16 +22,15 @@
 
 ## 3. 知识/规则定义
 
-### 规则1：五段式结构规范
+### 规则1：四段式结构规范
 | 段落 | 必含要素 | 缺失处置 | severity |
 |:---|:---|:---|:---|
 | 已知回顾 | 链接 `profile.skill_tags` 中相关已掌握技能 | 标记 `missing_review` | major |
 | 核心概念拆解 | `block_name` 的定义/原理，每段≤2个新概念 | 标记 `concept_overload` | major |
 | 实操演示 | 可运行代码示例（遵循code_style）或真实场景案例 | 标记 `missing_context_case` | major |
 | 常见坑点 | 2~3个典型误区/陷阱 | 标记 `missing_pitfalls` | minor |
-| 自测 | 1~2道TestQuestion（填空/选择优先） | 标记 `missing_self_test` | minor |
 
-**结构完整性依据**：五段式对应"已知→未知→实践→反思→检验"的认知闭环，与 `pedagogy.skill.md` 规则2的渐进式讲解规范一致。
+**结构完整性依据**：四段式对应"已知→未知→实践→反思"的认知闭环，与 `pedagogy.skill.md` 规则2的渐进式讲解规范一致。自测题由用户主动点击自测时从 `test_questions` 表抽取，不纳入教程生成阶段。
 
 ### 规则2：内容要素规范
 | 要素 | 要求 | 违规处置 |
@@ -52,7 +51,7 @@
 - 逐条解决审核 errors，不得遗漏 critical/major 项
 - 保留审核未指出的正确内容，不做无谓改写
 - 审核意见为空时保留原 tutorial，仅 `version` 自增
-- 改稿后 tutorial 必须仍保持五段式结构完整性
+- 改稿后 tutorial 必须仍保持四段式结构完整性
 
 ## 4. 输入输出规范
 
@@ -75,10 +74,8 @@
 ```json
 {
   "learning_package": {
-    "tutorial": "# LoRA微调入门\n\n## 已知回顾\n你已经掌握了Transformer的注意力机制...\n\n## 核心概念拆解\nLoRA冻结原权重W，训练低秩增量ΔW=(α/r)BA...\n\n## 实操演示\n```python\nclass LoRALayer(nn.Module):\n    ...\n```\n\n## 常见坑点\n- 秩r过大导致过拟合\n\n## 自测\n1. LoRA训练哪两个矩阵？",
-    "questions": [
-      {"question_type": "填空", "question_text": "LoRA可训练参数量公式：r*(?)+r*(?)", "correct_answer": "d_in, d_out"}
-    ],
+    "tutorial": "# LoRA微调入门\n\n## 已知回顾\n你已经掌握了Transformer的注意力机制...\n\n## 核心概念拆解\nLoRA冻结原权重W，训练低秩增量ΔW=(α/r)BA...\n\n## 实操演示\n```python\nclass LoRALayer(nn.Module):\n    ...\n```\n\n## 常见坑点\n- 秩r过大导致过拟合",
+    "questions": [],
     "code_examples": [
       {"title": "LoRA最小示例", "language": "python", "code": "..."}
     ],
@@ -88,8 +85,8 @@
 ```
 
 **字段说明**：
-- `tutorial`：Markdown教程正文（五段式）
-- `questions`：自测题（`DeterministicContentAgent` 基类生成1道填空题，LLM可补充）
+- `tutorial`：Markdown教程正文（四段式）
+- `questions`：自测题列表（教程生成阶段为空，用户主动点击自测时从 `test_questions` 表抽取填充）
 - `code_examples`：从 tutorial 提取的代码示例
 - `version`：迭代版本号，首次为1，每次改稿+1
 
@@ -127,10 +124,10 @@
 
 **处理过程**：
 1. 步骤1：主题=LoRA，面向=掌握LoRA微调，已知基线=[Transformer,注意力机制]
-2. 步骤2：LLM生成五段式——已知回顾链接Transformer注意力机制；核心概念讲ΔW=(α/r)BA；实操给LoRALayer代码；坑点讲r过大过拟合；自测1道填空（参数量公式）
+2. 步骤2：LLM生成四段式——已知回顾链接Transformer注意力机制；核心概念讲ΔW=(α/r)BA；实操给LoRALayer代码；坑点讲r过大过拟合；questions为空（自测题由用户主动点击时从 `test_questions` 表抽取）
 3. 步骤3：包装为 LearningPackage(version=1)，送 Agent4/Agent5 审核
 
-**输出**：tutorial（五段式）+ questions(1道填空) + code_examples(LoRALayer)，version=1
+**输出**：tutorial（四段式）+ questions(空) + code_examples(LoRALayer)，version=1
 
 #### 场景2：审核未通过后改稿
 **输入**：
@@ -147,14 +144,14 @@
 ```
 
 **处理过程**：
-1. 步骤4：合并反馈，critical优先（LoRA机制错误），其次minor（缺自测）
-2. 步骤5：LLM修订——将"SVD分解"改为"冻结W训练低秩增量ΔW=BA"；补1道自测题；保留其余正确内容
+1. 步骤4：合并反馈，critical优先（LoRA机制错误）
+2. 步骤5：LLM修订——将"SVD分解"改为"冻结W训练低秩增量ΔW=BA"；保留其余正确内容；自测题不纳入改稿范围
 3. 步骤6：version=1→2，重新送审
 
-**输出**：修订后tutorial（机制错误已修复+自测已补），version=2
+**输出**：修订后tutorial（机制错误已修复），version=2
 
-**说明**：场景2体现规则3改稿优先级——critical的LoRA机制错误必须先修复，minor的缺自测一并补全，正确内容保留不改。
+**说明**：场景2体现规则3改稿优先级——critical的LoRA机制错误必须先修复，正确内容保留不改。自测题由用户主动点击自测时从 `test_questions` 表抽取，不纳入教程生成与改稿阶段。
 
 ## 7. 版本信息
-- 版本：v3.0，更新日期：2026-07-23
-- 变更记录：能力描述明确3个适用场景与 `content_skill_context` 加载机制；核心方法论重构为6步（定位主题→生成五段式→送审→格式化反馈→逐条修订→迭代终止）；规则1新增五段式结构表（含缺失处置/severity）；规则2新增内容要素规范表；规则3新增改稿优先级与改稿规则；输入输出规范补完整 LearningPackage JSON示例与字段说明；异常处理扩展为6场景表格；附录A补4个教程生成理论（Sweller/Bloom/Piaget/Vygotsky）；附录B新增2个完整场景（首次生成+审核改稿，含输入JSON→处理过程→输出）
+- 版本：v3.1，更新日期：2026-07-24
+- 变更记录：能力描述明确3个适用场景与 `content_skill_context` 加载机制；核心方法论重构为6步（定位主题→生成四段式→送审→格式化反馈→逐条修订→迭代终止）；规则1新增四段式结构表（含缺失处置/severity）；规则2新增内容要素规范表；规则3新增改稿优先级与改稿规则；输入输出规范补完整 LearningPackage JSON示例与字段说明；异常处理扩展为6场景表格；附录A补4个教程生成理论（Sweller/Bloom/Piaget/Vygotsky）；附录B新增2个完整场景（首次生成+审核改稿，含输入JSON→处理过程→输出）；v3.1修订：自测题从教程生成阶段移除，改为用户主动点击自测时从 `test_questions` 表抽取；教程结构从五段式调整为四段式（已知回顾→核心概念拆解→实操演示→常见坑点）
