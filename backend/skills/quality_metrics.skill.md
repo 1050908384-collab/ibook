@@ -8,10 +8,10 @@ Agent⑤（质量评审）由三个Skill协同工作，**本SKILL（quality_metr
 | Skill名称 | 角色 | 职责方向 | 提供的数据维度 |
 |:---|:---|:---|:---|
 | **quality_metrics**（本文件） | **评分框架（大脑）** | 定义评分体系、权重、及格线、红线规则，**本身不做具体评估** | 不提供原始数据，仅定义评分规则 |
-| **pedagogy** | 教学法专家（眼睛） | 评估内容的教学逻辑是否科学，认知负荷是否合理 | 提供 **2个维度**：`cognitive_load`（认知负荷合理度）、`pedagogy`（教学逻辑严谨度） |
+| **pedagogy** | 教学法专家（眼睛） | 评估内容的教学逻辑是否科学，认知负荷是否合理，情绪是否友好 | 提供 **3个维度**：`cognitive_load`（认知负荷合理度）、`pedagogy`（教学逻辑严谨度）、`emotion_friendliness`（情绪友好度） |
 | **learner_model** | 画像专家（尺子） | 评估内容与学习者画像的匹配程度 | 提供 **3个维度**：`difficulty`（难度匹配度）、`style_match`（风格适配度）、`environment_fit`（环境可行性） |
 
-> 第6个维度 `emotion_friendliness`（情绪友好度）由情绪分析工具直接提供，不属于这两个Skill的职责范围。
+> 六个维度全部由 pedagogy（3个）和 learner_model（3个）提供，无需额外工具。quality_metrics 仅负责接收成品评分、加权汇总和红线判定。
 
 ### 0.2 过关判定流程（三级判定）
 **不是"6个维度全部过关"，而是以下三级判定流程**：
@@ -59,20 +59,16 @@ Agent⑤（质量评审）由三个Skill协同工作，**本SKILL（quality_metr
 - 功能：为Agent⑤提供**综合评分标准与权重**，定义"怎么打分和算总分"——六维评分体系、权重分配、及格线、单项红线。Agent⑤调用本SKILL将各工具输出的原始数据（难度匹配度、认知负荷、环境可行性、风格适配度、情绪友好度、教学逻辑严谨度）转换为统一的评分报告，包含加权总分和通过/不通过结论。在 `HybridQualityReviewAgent` 中被加载为 `skill_context`，作为LLM计算综合评分的标准
 - 适用场景：所有工具数据采集完成后进入评分阶段。`DeterministicQualityReviewAgent` 检查内容长度红线，`HybridQualityReviewAgent` 使用LLM进行六维评分并按权重计算总分
 - 前置依赖：
-  - 六个工具/技能的返回结果：
-    - 难度匹配度（来自 `learner_model.skill.md` 规则2）
-    - 认知负荷合理度（来自 `pedagogy.skill.md` 规则3）
-    - 环境可行性（来自 `learner_model.skill.md` 规则4）
-    - 风格适配度（来自 `learner_model.skill.md` 规则3）
-    - 情绪友好度（来自情绪分析工具，评估内容的鼓励性、亲和力）
-    - 教学逻辑严谨度（来自 `pedagogy.skill.md` 规则1/2/4综合）
+  - 两个子SKILL的返回结果（共6个维度，无额外工具依赖）：
+    - 认知负荷合理度 + 认知负荷水平 + 教学逻辑严谨度 + 情绪友好度（来自 `pedagogy.skill.md` 规则3/1-2-4/5）
+    - 难度匹配度 + 环境可行性 + 风格适配度（来自 `learner_model.skill.md` 规则2/4/3）
   - 用户画像（`ReviewInput.profile`）
   - 学习内容（`ReviewInput.content`）
 
 ## 2. 核心方法论
-- **步骤1：将各工具原始结果映射为0-100分标准化得分**——应用规则4的映射函数，将difficulty_match(0-1)、concept_density、environment_fit(0/1)、style_match(0-1)、emotion_ratio(0-1)、pedagogy原始分统一转换为0-100的dimension_scores
+- **步骤1：接收子SKILL成品评分并标准化**——接收 pedagogy 提供的 cognitive_load_score / cognitive_load_level / pedagogy_score / emotion_friendliness_score（0-100成品分，直接使用）和 learner_model 提供的 difficulty_match(0-1) / style_match(0-1) / environment_fit(0/1)（需×100标准化为0-100分），汇总为 dimension_scores
 - **步骤2：按权重计算加权总分**——应用规则1的六维权重，计算 `total_score = Σ(dimension_score × weight)`
-- **步骤3：检查红线条件**——应用规则3的单项红线：若 cognitive_load_score > 85 或 environment_score = 0，直接判定不通过，无需再看总分
+- **步骤3：检查红线条件**——应用规则3的单项红线：若 cognitive_load_level > 85（来自pedagogy）或 environment_fit = 0（来自learner_model），直接判定不通过，无需再看总分
 - **步骤4：输出通过/不通过结论和建议**——应用规则2及格线（total_score ≥ 70 通过），生成包含 total_score、dimension_scores、status、red_line_triggered、suggestions 的完整评分报告
 
 ## 3. 知识/规则定义
@@ -84,7 +80,7 @@ Agent⑤（质量评审）由三个Skill协同工作，**本SKILL（quality_metr
 | 认知负荷合理度 | `cognitive_load` | 25% | 内容复杂度是否在合理范围 | `pedagogy.skill.md` 规则3 |
 | 环境可行性 | `environment_fit` | 10% | 部署示例是否可在用户环境运行 | `learner_model.skill.md` 规则4 |
 | 风格适配度 | `style_match` | 10% | 内容风格与用户偏好匹配度 | `learner_model.skill.md` 规则3 |
-| 情绪友好度 | `emotion_friendliness` | 15% | 内容的鼓励性、亲和力、挫败感控制 | 情绪分析工具 |
+| 情绪友好度 | `emotion_friendliness` | 15% | 内容的鼓励性、亲和力、挫败感控制 | `pedagogy.skill.md` 规则5 |
 | 教学逻辑严谨度 | `pedagogy` | 20% | 是否遵循脚手架、渐进式、建构主义原则 | `pedagogy.skill.md` 规则1/2/4 |
 
 **权重设计依据**：认知负荷(25%)和教学逻辑(20%)权重最高，因为这两项直接决定学习者能否跟上内容；难度匹配(20%)次之，确保内容在i+1区间；情绪友好(15%)影响学习持续性；环境和风格各10%为辅助维度。
@@ -206,21 +202,21 @@ def map_pedagogy(section_completeness: int, has_scaffold: bool, has_case: bool) 
 ## 4. 输入输出规范
 
 ### 输入
-六个工具的原始输出字典：
+**来自 pedagogy 的成品评分**（3个维度）+ **来自 learner_model 的成品评分**（3个维度）+ **合并的 issues 数组**：
 ```json
 {
+  "cognitive_load_score": 80,
+  "cognitive_load_level": 20,
+  "pedagogy_score": 85,
+  "emotion_friendliness_score": 75,
   "difficulty_match": 0.8,
-  "concept_density": 6,
   "environment_fit": 1,
   "style_match": 0.9,
-  "positive_ratio": 0.75,
-  "has_discouraging_words": false,
-  "section_completeness": 4,
-  "has_scaffold": true,
-  "has_case": true,
   "review_errors": []
 }
 ```
+
+> **数据契约说明**：pedagogy 输出 cognitive_load_score / cognitive_load_level / pedagogy_score / emotion_friendliness_score（均为0-100成品分），learner_model 输出 difficulty_match(0-1) / style_match(0-1) / environment_fit(0/1)。quality_metrics 的映射函数（规则4）仅作为**评分参考说明**，实际计算时直接使用子SKILL提供的成品分（0-1值需×100标准化），不重复从原始值计算。
 
 ### 输出
 综合评分报告，LLM返回JSON格式：
@@ -259,13 +255,14 @@ def map_pedagogy(section_completeness: int, has_scaffold: bool, has_case: bool) 
 ## 5. 异常处理
 | 异常场景 | 处置方式 |
 |:---|:---|
-| 某维度数据缺失（如情绪分析工具未返回结果） | 该维度权重重新分配到其他5个维度（按原权重比例分配），在review_details中标注 `"emotion_friendliness数据缺失，权重重新分配"`。缺失维度按60分基准计算（保守估计） |
+| 某维度数据缺失（如pedagogy未返回emotion_friendliness_score） | 该维度权重重新分配到其他5个维度（按原权重比例分配），在review_details中标注 `"emotion_friendliness数据缺失，权重重新分配"`。缺失维度按60分基准计算（保守估计） |
 | 多红线触发（认知负荷>85且环境不可行） | 以认知负荷红线为最高优先级，red_line_triggered取 `"cognitive_load_overload"`，suggestions优先给出认知负荷拆分建议，环境建议列为次要 |
 | 总分接近及格线（65~69分） | 判定 status=`"review_needed"`，passed=false，suggestions标注"边缘通过，建议优化提升至70分以上" |
 | 内容过短（`content.strip()`<40字符） | `DeterministicQualityReviewAgent` 直接返回 passed=false，error_type=`"too_short"`，不执行LLM六维评分，所有dimension_scores=0 |
 | LLM审核结果无法解析 | 添加 ReviewError(error_type=`"review_system_error"`, severity=critical, description="Agent5评分结果无法解析")，passed=false，status=`"fail"` |
 | LLM返回的severity值不在 `{"critical","major","minor"}` 范围内 | 自动修正为 `"major"` |
 | 六维数据全部缺失 | 降级为仅检查内容长度红线，返回 status=`"fail"`，review_details标注"评分数据完全缺失，请检查工具链" |
+| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 
@@ -414,6 +411,6 @@ def map_pedagogy(section_completeness: int, has_scaffold: bool, has_case: bool) 
 | status | pass | fail |
 
 ## 7. 版本信息
-- 版本：v3.0，更新日期：2026-07-23
-- 变更记录：评分体系从四维扩展为**六维**（新增 environment_fit 10%、style_match 10%、emotion_friendliness 15%，原 clarity 并入 pedagogy 改为"教学逻辑严谨度"20%）；核心方法论重构为4步（映射→加权→红线检查→输出）；规则1新增六维权重表和数据来源说明；规则3新增单项红线（认知负荷水平>85或环境fit=0直接不通过）及多红线优先级，**区分"合理度评分"（越高越好，用于加权总分）与"负荷水平"（越高越糟，用于红线检查，两者互逆）**；规则4新增6个评分映射函数（含Python代码示例和数值示例，认知负荷提供score与level两个函数）；输入输出规范新增total_score/dimension_scores/status/red_line_triggered/suggestions完整JSON示例；异常处理新增数据缺失权重重分配和多红线优先级场景；附录A补充3个评分理论（Bloom分类学、Sweller认知负荷、Kirkpatrick四级模型）；附录B新增2个完整场景（总分通过93分+红线阻断38分，含完整计算过程和对比表）
+- 版本：v3.1，更新日期：2026-07-24
+- 变更记录：评分体系从四维扩展为**六维**（新增 environment_fit 10%、style_match 10%、emotion_friendliness 15%，原 clarity 并入 pedagogy 改为"教学逻辑严谨度"20%）；核心方法论重构为4步（映射→加权→红线检查→输出）；规则1新增六维权重表和数据来源说明；规则3新增单项红线（认知负荷水平>85或环境fit=0直接不通过）及多红线优先级，**区分"合理度评分"（越高越好，用于加权总分）与"负荷水平"（越高越糟，用于红线检查，两者互逆）**；规则4新增6个评分映射函数（含Python代码示例和数值示例，认知负荷提供score与level两个函数）；输入输出规范新增total_score/dimension_scores/status/red_line_triggered/suggestions完整JSON示例；异常处理新增数据缺失权重重分配和多红线优先级场景；附录A补充3个评分理论；附录B新增2个完整场景。**v3.1变更：①情绪友好度数据来源从"情绪分析工具"（不存在）改为pedagogy规则5，消除对未定义工具的依赖；②明确数据契约——输入接收子SKILL成品评分（非原始值），映射函数改为参考说明；③前置依赖修正为仅依赖pedagogy+learner_model两个子SKILL；④新增"审核循环≥3次"异常处置路径**
 - **与代码对齐说明**：当前 `QualityReviewResult.scores` 代码实现为四维（difficulty/cognitive_load/clarity/pedagogy），本SKILL v3.0按扩展指南升级为六维。后续代码实现可扩展 scores 字典增加 environment_fit/style_match/emotion_friendliness 键，并调整 `HybridQualityReviewAgent` 的评分prompt以匹配六维体系

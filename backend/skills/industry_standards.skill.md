@@ -172,6 +172,7 @@ llm = LLM(model="meta-llama/Llama-2-7b", gpu_memory_utilization=0.85)
 | 规则正则匹配引擎超时 | 跳过该条规则检查，在返回结果中追加 `error_type="rule_check_timeout"`（severity=minor），标注"建议人工复核" |
 | 模型名无法识别许可证 | 追加 `error_type="license_unknown"`（severity=minor），建议人工确认许可证 |
 | PEFT配置字段拼写错误（如`target_modules`拼写为`target_moduels`） | 追加 `error_type="peft_typo"`（severity=critical），提示常见拼写错误 |
+| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，本子模块返回的ReviewError仍合并到TechnicalReviewResult，但整体status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 
@@ -303,4 +304,5 @@ output = llm.generate(["你好"], params)
   - **I/O统一**：输入改为ReviewInput（与technical_review一致），输出改为标准化ReviewError数组（与technical_review错误列表格式完全一致）
   - **架构定位**：明确标注为technical_review的子检查模块，输出直接合并到TechnicalReviewResult.errors
   - **附录示例**：新增2个完整领域场景（LoRA+QLoRA配置审核、vLLM部署命令审核）
+  - **v3.1变更**：新增"审核循环≥3次"异常处置路径
 - **与代码对齐说明**：当前`HybridTechnicalReviewAgent`直接加载本SKILL为`skill_context`。v3.0明确本SKILL输出为ReviewError列表，后续代码可增加`_run_industry_standards_check()`子流程调用本SKILL的规则检查，将返回的ReviewError合并到最终errors中

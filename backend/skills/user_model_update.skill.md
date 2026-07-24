@@ -14,7 +14,7 @@
 - **步骤2：将掌握概率映射为status**——应用规则3的状态映射，将 P_corrected 映射为"已掌握"/"学习中"/"未掌握"
 - **步骤3：推断学习节奏和信心指数**——应用规则4推断学习节奏（过快/适中/过慢），应用规则5计算信心指数（accuracy×0.6 + emotion×0.4）
 - **步骤4：生成困惑标记**——应用规则6，对答错≥2次或提问≥3次的知识点写入 confusion_tags
-- **步骤5：组装profile_updates**——合并上述结果，输出包含 knowledge_gaps/dynamic_state/pace_adjustment/confusion_tags/next_strategy 的完整画像更新和 update_rationale
+- **步骤5：组装profile_updates并生成策略建议**——合并上述结果，输出包含 knowledge_gaps/dynamic_state/pace_adjustment/confusion_tags 的完整画像更新和 update_rationale。同时基于 P_corrected 生成 `next_strategy`（BKT基于掌握度的策略建议），该建议传递给 `iteration_strategy.skill.md`，由其结合迭代历史和方向切换条件做出最终策略决策
 
 ## 3. 知识/规则定义
 
@@ -116,6 +116,18 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 
 **情绪得分→We映射**：见规则2的We情绪权重表。
 
+### 规则8：next_strategy计算规则（BKT基于掌握度的策略建议）
+基于 P_corrected 的整体掌握概率（取所有知识点的最大值乘以情绪修正），生成策略建议：
+
+| P_corrected 区间 | next_strategy | 含义 |
+|:---|:---|:---|
+| ≥ 0.85 | `"finish"` | 已基本掌握，建议结业 |
+| [0.80, 0.85) | `"advance"` | 掌握度较高，建议进阶 |
+| [0.60, 0.80) | `"reinforce"` | 部分掌握，建议巩固 |
+| < 0.60 | `"simplify"` | 掌握度较低，建议降维 |
+
+**说明**：本规则基于BKT掌握度生成纯数据驱动的策略建议，不考虑迭代历史和方向切换条件。最终策略决策由 `iteration_strategy.skill.md` 负责，其会将此建议与迭代历史结合，判断是否需要方向切换（如连续降维无效时触发回溯）或强制结业。
+
 ## 4. 输入输出规范
 
 ### 输入
@@ -141,10 +153,10 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
       "confidence_index": 0.60
     },
     "pace_adjustment": "过慢",
-    "confusion_tags": ["LoRA秩选择"],
-    "next_strategy": "巩固"
+    "confusion_tags": ["LoRA秩选择"]
   },
-  "update_rationale": "BKT计算P_BKT=0.852，经Wt=0.85（耗时比1.3）和We=1.1（情绪0.6>0.5）修正后P_corrected=0.797，处于[0.4,0.8)区间，状态映射为'学习中'。信心指数=0.6×0.6+0.6×0.4=0.60。节奏过慢（耗时比1.3>1.2）。LoRA秩选择答错2次，写入confusion_tags。"
+  "next_strategy": "reinforce",
+  "update_rationale": "BKT计算P_BKT=0.852，经Wt=0.85（耗时比1.3）和We=1.1（情绪0.6>0.5）修正后P_corrected=0.797，处于[0.4,0.8)区间，状态映射为'学习中'。信心指数=0.6×0.6+0.6×0.4=0.60。节奏过慢（耗时比1.3>1.2）。LoRA秩选择答错2次，写入confusion_tags。基于P_corrected=0.797∈[0.6,0.8)生成next_strategy='reinforce'建议，传递给iteration_strategy结合迭代历史做最终决策。"
 }
 ```
 
@@ -153,7 +165,7 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 - `profile_updates.dynamic_state`：动态状态，含 mastery_probability（BKT修正后掌握概率）和 confidence_index（信心指数）
 - `profile_updates.pace_adjustment`：学习节奏推断结果（"过快"/"适中"/"过慢"）
 - `profile_updates.confusion_tags`：困惑标记列表
-- `profile_updates.next_strategy`：建议的下一阶段策略（基于P_corrected和accuracy的综合判断）
+- `next_strategy`：基于BKT掌握度的策略建议（`"finish"`/`"advance"`/`"reinforce"`/`"simplify"`），由 `iteration_strategy.skill.md` 结合迭代历史和方向切换条件修正后作为最终策略
 - `update_rationale`：人类可读的更新理由，包含BKT计算过程、修正因子取值、状态映射依据
 
 ## 5. 异常处理
@@ -166,6 +178,8 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 | 知识点在画像中不存在（question_records中的skill不在knowledge_gaps中） | 新增KnowledgeGap到knowledge_gaps列表，status初始为"未掌握"，progress=P_corrected |
 | P_BKT计算异常（如除零错误） | 跳过BKT计算，降级为accuracy直接映射（accuracy≥0.8→已掌握，<0.8→部分掌握），update_rationale标注"BKT计算异常，降级为accuracy直接映射" |
 | 画像数据缺失 | 使用UserProfile默认值（confidence_index=0.5，version=1），标注"数据不足" |
+| P_corrected处于阈值边界（如恰好0.60或0.80） | 按下限区间取值（0.60→reinforce，0.80→advance），next_strategy标注对应区间 |
+| next_strategy建议为"finish"但knowledge_gaps中仍有"学习中"状态 | 降级为"advance"建议，update_rationale标注"存在未掌握知识点，建议进阶而非结业" |
 
 ## 6. 附录
 
@@ -282,7 +296,6 @@ P(L)_new = 0.7533 + 0.2467×0.4 = 0.7533 + 0.0987 = 0.8520
 
 **步骤5：组装profile_updates**
 - knowledge_gaps：LoRA的status更新为"学习中"，progress=0.797
-- next_strategy：accuracy=0.6在[0.6, 0.8)区间 → "巩固"（reinforce）
 - version = 1 + 1 = 2
 
 **输出**：
@@ -303,10 +316,9 @@ P(L)_new = 0.7533 + 0.2467×0.4 = 0.7533 + 0.0987 = 0.8520
       "confidence_index": 0.68
     },
     "pace_adjustment": "过慢",
-    "confusion_tags": ["LoRA秩选择"],
-    "next_strategy": "巩固"
+    "confusion_tags": ["LoRA秩选择"]
   },
-  "update_rationale": "BKT逐题更新：P(L)从0.2经5题（对对错对错）更新至P_BKT=0.852。修正因子：Wt=0.85（耗时比1.3，位于1.2~2.0区间）、We=1.1（情绪0.6>0.5）。P_corrected=0.852×0.85×1.1=0.797，处于[0.4,0.8)区间，状态映射为'学习中'。信心指数=0.6×0.6+0.8×0.4=0.68。节奏过慢（耗时比1.3>1.2）。Q3和Q5答错LoRA秩选择相关题目，答错2次≥2，写入confusion_tags。建议下一策略：巩固。"
+  "update_rationale": "BKT逐题更新：P(L)从0.2经5题（对对错对错）更新至P_BKT=0.852。修正因子：Wt=0.85（耗时比1.3，位于1.2~2.0区间）、We=1.1（情绪0.6>0.5）。P_corrected=0.852×0.85×1.1=0.797，处于[0.4,0.8)区间，状态映射为'学习中'。信心指数=0.6×0.6+0.8×0.4=0.68。节奏过慢（耗时比1.3>1.2）。Q3和Q5答错LoRA秩选择相关题目，答错2次≥2，写入confusion_tags。掌握度数据mastery_probability=0.797将传递给iteration_strategy用于策略选择。"
 }
 ```
 
@@ -322,11 +334,10 @@ P(L)_new = 0.7533 + 0.2467×0.4 = 0.7533 + 0.0987 = 0.8520
 | confidence_index 信心指数 | 0.68 | 0.6×0.6+0.8×0.4 |
 | pace_adjustment 节奏 | 过慢 | 耗时比1.3 > 1.2 |
 | confusion_tags 困惑标记 | ["LoRA秩选择"] | Q3+Q5答错2次 |
-| next_strategy 下一步策略 | 巩固 | accuracy=0.6 ∈ [0.6, 0.8) |
 
-**说明**：本场景完整展示了BKT四参数模型从初始概率0.2经5题迭代更新至0.852的全过程，以及修正因子（Wt时长权重+We情绪权重）将P_BKT从0.852修正至0.797的关键作用——修正前会判为"已掌握"，修正后判为"学习中"，体现了BKT+修正因子相比纯accuracy判定（accuracy=0.6→部分掌握）的精度提升：BKT考虑了答对/答错的序列模式（前2题答对拉高概率，后2题答错拉低概率），而纯accuracy仅看3/5=0.6的比例。
+**说明**：本场景完整展示了BKT四参数模型从初始概率0.2经5题迭代更新至0.852的全过程，以及修正因子（Wt时长权重+We情绪权重）将P_BKT从0.852修正至0.797的关键作用——修正前会判为"已掌握"，修正后判为"学习中"，体现了BKT+修正因子相比纯accuracy判定（accuracy=0.6→部分掌握）的精度提升：BKT考虑了答对/答错的序列模式（前2题答对拉高概率，后2题答错拉低概率），而纯accuracy仅看3/5=0.6的比例。本SKILL输出的 mastery_probability=0.797 将作为 iteration_strategy 的输入，由其决定下一阶段策略。
 
 ## 7. 版本信息
-- 版本：v3.0，更新日期：2026-07-23
-- 变更记录：合并原 `knowledge_tracing.skill.md`（BKT参数）和 `emotion_model.skill.md`（情绪规则）全部内容；能力描述明确"掌握度精算和画像组装"适用场景；核心方法论重构为5步（BKT计算→状态映射→节奏信心推断→困惑标记→组装画像）；新增规则1 BKT四参数表（P(L₀)/P(T)/P(G)/P(S)含取值依据和BKT更新公式）；新增规则2修正因子（Wt时长权重三档+We情绪权重三档+P_corrected公式）；规则3状态映射升级为三档（≥0.8已掌握/0.4~0.8学习中/<0.4未掌握，基于P_corrected而非accuracy）；新增规则4学习节奏推断（耗时比三档）；规则5信心指数升级为加权公式（accuracy×0.6+emotion×0.4）；新增规则6困惑标记生成（答错≥2次或提问≥3次）；新增规则7情绪规则（5类情绪标签关键词+行为信号+得分-1~+1映射）；输入输出规范新增profile_updates和update_rationale完整JSON示例；异常处理新增样本量不足Wt=1.0 fallback和情绪缺失We=1.0 fallback；附录A补充3个参考论文（Corbett&Anderson 1995 BKT原始论文、Pardos&Heffernan 2010改进型BKT、VanLehn 2006辅导系统架构）；附录B新增完整BKT计算场景（5题逐题更新全公式+修正因子+状态映射+输出汇总表）
-- **与代码对齐说明**：当前 `DeterministicStageDecisionAgent` 代码使用纯accuracy判定（accuracy≥0.8→已掌握，confidence_index=accuracy）。本SKILL v3.0升级为BKT四参数模型+修正因子，更精确地反映真实掌握度。后续代码可引入BKT计算模块，将 `confidence_index` 升级为加权公式，并增加 `mastery_probability`/`pace_adjustment`/`confusion_tags` 字段
+- 版本：v3.2，更新日期：2026-07-24
+- 变更记录：合并原 `knowledge_tracing.skill.md`（BKT参数）和 `emotion_model.skill.md`（情绪规则）全部内容；能力描述明确"掌握度精算和画像组装"适用场景；核心方法论重构为5步（BKT计算→状态映射→节奏信心推断→困惑标记→组装画像+策略建议）；新增规则1 BKT四参数表（P(L₀)/P(T)/P(G)/P(S)含取值依据和BKT更新公式）；新增规则2修正因子（Wt时长权重三档+We情绪权重三档+P_corrected公式）；规则3状态映射升级为三档（≥0.8已掌握/0.4~0.8学习中/<0.4未掌握，基于P_corrected而非accuracy）；新增规则4学习节奏推断（耗时比三档）；规则5信心指数升级为加权公式（accuracy×0.6+emotion×0.4）；新增规则6困惑标记生成（答错≥2次或提问≥3次）；新增规则7情绪规则（5类情绪标签关键词+行为信号+得分-1~+1映射）；新增规则8 next_strategy计算规则（基于P_corrected的四档策略建议）；输入输出规范新增profile_updates、next_strategy和update_rationale完整JSON示例；异常处理新增阈值边界fallback和finish策略降级；附录A补充3个参考论文；附录B新增完整BKT计算场景。**v3.2变更：恢复 next_strategy 输出字段（基于BKT掌握度的策略建议），明确与 iteration_strategy 的边界——本SKILL输出数据驱动建议，iteration_strategy结合迭代历史做最终决策**
+- **与代码对齐说明**：当前 `DeterministicStageDecisionAgent` 代码使用纯accuracy判定（accuracy≥0.8→已掌握，confidence_index=accuracy）。`profile_update_tool.py` 已实现BKT计算和next_strategy输出（第379-387行），与本SKILL v3.2规则一致。后续代码可引入BKT计算模块，将 `confidence_index` 升级为加权公式，并增加 `mastery_probability`/`pace_adjustment`/`confusion_tags` 字段

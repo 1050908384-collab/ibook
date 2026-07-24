@@ -5,7 +5,7 @@
 - 适用场景（3个）：
   1. **审核学习包结构**：评估Agent3生成的tutorial是否遵循"已知回顾→核心概念→实操演示→常见坑点→自测"五段逻辑，缺少任一环节扣分
   2. **评估认知负荷**：计算内容的新概念密度，判断是否超出工作记忆容量限制（5±2个），超载则建议拆分阶段
-  3. **检查建构主义元素**：验证内容是否提供真实情境案例，让学习者在解决问题中建构知识
+  3. **检查建构主义元素与情绪友好度**：验证内容是否提供真实情境案例让学习者在解决问题中建构知识；同时评估内容的鼓励性和挫败感控制，确保情绪友好
 - 前置依赖：
   - 待审核内容（`ReviewInput.content`，tutorial或answer文本）
   - 画像中的用户水平（`ReviewInput.profile`，含 `skill_tags`、`knowledge_gaps`、`learning_style`，用于判断"已知"基线和难度适配）
@@ -15,7 +15,8 @@
 - **步骤1：检查内容是否从"已知回顾"开始**——扫描内容开头300字，检测是否存在回顾用户已掌握技能的段落（关键词：`在前面的学习中`、`你已经掌握了`、`回顾`、`前置要求`、`prerequisite`）。若 `profile.skill_tags` 非空但内容开头无链接性回顾，标记 issue_type=`"missing_review"`
 - **步骤2：检查新概念的引入节奏（每步不超过2个）**——按段落切分内容，统计每段落首次出现的技术术语数量。若单一段落新概念>2个，标记 issue_type=`"concept_overload_in_paragraph"`，location指向该段落
 - **步骤3：检查是否有情境化案例**——检测内容是否包含真实应用场景描述（关键词：`场景`、`案例`、`应用`、`实际项目`、`例如`、`case`）和可运行代码示例（```python围栏）。若仅有理论无案例，标记 issue_type=`"missing_context_case"`
-- **步骤4：量化认知负荷**——计算三个指标：①新概念密度（首次出现的技术术语数/内容字数×1000）；②总篇幅（字数）；③复杂度（嵌套层级深度+公式数量）。综合输出 cognitive_load_score（0-100），超载则标记 issue_type=`"cognitive_load"`
+- **步骤4：量化认知负荷**——计算三个指标：①新概念密度（首次出现的技术术语数/内容字数×1000）；②总篇幅（字数）；③复杂度（嵌套层级深度+公式数量）。综合输出 cognitive_load_score（0-100，合理度，越高越好）和 cognitive_load_level（0-100，负荷水平，越高越糟，= 100 - cognitive_load_score），超载则标记 issue_type=`"cognitive_load"`
+- **步骤5：评估情绪友好度**——应用规则5，统计内容的正面情绪语句占比（positive_ratio）和是否含挫败性表达（has_discouraging_words），输出 emotion_friendliness_score（0-100）。含"这很简单""你应该懂"等居高临下表达扣分
 
 ## 3. 知识/规则定义
 
@@ -57,6 +58,23 @@
   - 案例分析（含问题→分析→解决的叙事结构）
 - **违规处置**：issue_type=`"missing_context_case"`，severity=major，suggestion建议补充真实场景案例
 
+### 规则5：情绪友好度评估（Emotional Friendliness）
+- **要求**：内容应具有鼓励性和亲和力，避免居高临下或挫败性表达，让学习者保持学习动力
+- **检查逻辑**：
+  - 统计正面情绪语句占比（positive_ratio）：扫描内容中含鼓励性表达的语句数 / 总语句数。鼓励性关键词：`别担心`、`一步步来`、`你能做到`、`没关系`、`我们一起来`、`这很正常`、`刚开始都这样`
+  - 检测挫败性表达（has_discouraging_words）：扫描是否含居高临下或否定性表达。挫败性关键词：`这很简单`、`你应该懂`、`这都不懂`、`很简单`、`怎么连...都不会`、`这还用说`
+- **评分计算**：
+  ```
+  emotion_friendliness_score = round(positive_ratio × 100)
+  若 has_discouraging_words == true:
+      emotion_friendliness_score = max(0, emotion_friendliness_score - 20)  # 挫败性表达扣20分
+  ```
+- **阈值**：
+  - score ≥ 80：情绪友好度高（鼓励性语句丰富，无挫败表达）
+  - 60 ~ 79：情绪友好度中等（有一定鼓励但不够，或偶有轻微挫败表达）
+  - < 60：情绪友好度低（缺乏鼓励或含明显挫败表达），标记 issue_type=`"poor_emotion_friendliness"`，severity=minor，suggestion建议增加鼓励性语句
+- **违规处置**：含挫败性表达时 issue_type=`"discouraging_words"`，severity=major，suggestion="删除'这很简单'等居高临下表达，改为'这个概念一开始看起来复杂，我们一步步来'"
+
 ## 4. 输入输出规范
 
 ### 输入
@@ -66,7 +84,9 @@
 ### 输出（数据流向quality_metrics）
 **本SKILL输出的核心数据将直接提供给 `quality_metrics` 用于加权评分**：
 - `cognitive_load_score` → 对应 `quality_metrics` 的 **认知负荷合理度** 维度（权重25%）
+- `cognitive_load_level` → 供 `quality_metrics` 的 **红线检查** 使用（>85触发认知负荷红线）
 - `pedagogy_score` → 对应 `quality_metrics` 的 **教学逻辑严谨度** 维度（权重20%）
+- `emotion_friendliness_score` → 对应 `quality_metrics` 的 **情绪友好度** 维度（权重15%）
 - `issues` 数组 → 合并到 `QualityReviewResult.errors`（用于附加条件检查）
 
 LLM返回JSON格式：
@@ -74,6 +94,8 @@ LLM返回JSON格式：
 {
   "pedagogy_score": 65,
   "cognitive_load_score": 82,
+  "cognitive_load_level": 18,
+  "emotion_friendliness_score": 60,
   "issues": [
     {
       "issue_type": "missing_review",
@@ -92,15 +114,23 @@ LLM返回JSON格式：
       "severity": "major",
       "location": "核心概念段落",
       "suggestion": "补充真实应用场景，如'在推荐系统微调场景中，LoRA可在单卡GPU上完成亿级参数模型的领域适配...'"
+    },
+    {
+      "issue_type": "discouraging_words",
+      "severity": "major",
+      "location": "核心概念段落",
+      "suggestion": "删除'这很简单'等居高临下表达，改为'这个概念一开始看起来复杂，我们一步步来'"
     }
   ],
-  "summary": "内容技术准确，但教学结构不完整：缺少已知回顾、常见坑点、自测段落，且缺乏情境化案例。pedagogy_score=65低于70分及格线。"
+  "summary": "内容技术准确，但教学结构不完整：缺少已知回顾、常见坑点、自测段落，缺乏情境化案例，且含挫败性表达。pedagogy_score=65低于70分及格线。"
 }
 ```
 
 **字段说明**：
 - `pedagogy_score`：0-100，教学严谨度评分（五段式完整性+脚手架原则+建构主义综合）
-- `cognitive_load_score`：0-100，认知负荷合理度评分（新概念密度映射）
+- `cognitive_load_score`：0-100，认知负荷合理度评分（新概念密度映射，越高越合理）
+- `cognitive_load_level`：0-100，认知负荷水平（= 100 - cognitive_load_score，越高越糟，供红线检查）
+- `emotion_friendliness_score`：0-100，情绪友好度评分（鼓励性语句占比，含挫败表达扣分）
 - `issues`：问题列表，每项含 `issue_type`（缺失类型）、`severity`（critical/major/minor）、`location`（位置）、`suggestion`（修复建议）
 - `summary`：人类可读的审核总结
 
@@ -115,6 +145,7 @@ LLM返回JSON格式：
 | 用户画像skill_tags为空 | 跳过"已知回顾"匹配检查，但仍要求内容开头有引导性回顾段落，标记 issue_type=`"missing_review"`，severity降级为minor |
 | 新概念术语词典未覆盖（无法识别新概念） | 启发式统计（大写首字母+英文单词+中文术语后缀如"矩阵/系数/函数"），cognitive_load_score标注"估算值"，建议人工复核 |
 | LLM审核结果无法解析 | 添加 ReviewError(error_type=`"review_system_error"`, severity=critical, description="Agent5教学法审核结果无法解析")，passed=false |
+| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 
@@ -195,5 +226,5 @@ LoRA是一种微调方法。它使用SVD分解原权重W，训练U和V矩阵。
 - 判定：passed=false，存在4个major问题
 
 ## 7. 版本信息
-- 版本：v3.0，更新日期：2026-07-23
-- 变更记录：能力描述明确3个适用场景；核心方法论重构为4步（已知回顾→节奏检查→情境化案例→量化认知负荷）；规则1新增"前置要求"章节检测和段落级新概念检查；规则3补充Sweller(1988)理论依据和工作记忆容量来源；输入输出规范新增pedagogy_score和issues列表完整JSON示例；异常处理新增内容过简（<500字）和结构不清晰场景；附录A补充5个教学法理论（Vygotsky ZPD、Sweller认知负荷、Bruner脚手架、Piaget建构主义、Bloom掌握学习）；附录B新增好的教学结构（92分）vs差的教学结构（42分）完整对比示例
+- 版本：v3.1，更新日期：2026-07-24
+- 变更记录：能力描述明确3个适用场景；核心方法论重构为4步（已知回顾→节奏检查→情境化案例→量化认知负荷）；规则1新增"前置要求"章节检测和段落级新概念检查；规则3补充Sweller(1988)理论依据和工作记忆容量来源；输入输出规范新增pedagogy_score和issues列表完整JSON示例；异常处理新增内容过简（<500字）和结构不清晰场景；附录A补充5个教学法理论；附录B新增好的教学结构vs差的教学结构完整对比示例。**v3.1变更：新增规则5情绪友好度评估（鼓励性语句占比+挫败性表达检测），输出新增 emotion_friendliness_score（对应quality_metrics情绪友好度维度15%）和 cognitive_load_level（供红线检查）；消除quality_metrics对不存在的"情绪分析工具"的依赖；新增"审核循环≥3次"异常处置路径**

@@ -5,29 +5,26 @@
 - 适用场景（3个）：
   1. **内容审核**：Agent3生成的学习包（tutorial、code_examples）发布前审核技术正确性，由Orchestrator在 `_review_learning_package` 时触发
   2. **回答审核**：用户问题回答（answer）发送前审核，由Orchestrator在 `_review_answer` 时触发
-  3. **多工具结果冲突裁决**：当 `rule_check_tool` 与LLM语义审核、知识库（`knowledge_verify_tool`）与标准答案库结论不一致时，按裁决优先级输出最终结论
+  3. **多工具结果冲突裁决**：当 `rule_check_tool` 与LLM语义审核、知识库相似度检索（`knowledge_verify_tool`）与知识库标准答案条目结论不一致时，按裁决优先级输出最终结论
 - 前置依赖：
   - 待审核内容（`ReviewInput.content`）
   - 知识库（`knowledge_verify_tool` 提供的语义相似度检索）
-  - 标准答案库（领域基线，如LoRA冻结W训练ΔW=(α/r)BA）
+  - 知识库标准答案条目（`knowledge_base` 中人工策展的高置信度领域基线条目，如"LoRA冻结W训练ΔW=(α/r)BA"。**非独立资源**，是知识库的策展子集，用于解决相似度检索不足时的判定回退）
   - 规范规则库（`rule_check_tool` 的正则规则、`industry_standards.skill.md` 的红线条款）
   - 当前学习阶段信息（`ReviewInput.stage.block_name`）和用户画像（`ReviewInput.profile`）
 
 ## 2. 核心方法论
 - **步骤1：解析输入内容**——识别代码块（```...```围栏）和技术陈述段落（含"参数量"、"原理"、"LoRA"、"显存"等领域关键词），为每个技术声明分配位置标识（location），便于后续evidence定位
-- **步骤2：按优先级逐级检查（硬性→语义→规范）**——
-  - **硬性检查**：调用 `rule_check_tool.check_rules(content)` 执行正则匹配，识别LoRA机制错误、参数量计算错误、语法错误、依赖冲突
-  - **语义检查**：调用 `knowledge_verify_tool` 计算技术声明与知识库的相似度，应用规则1（幻觉阈值）判定
-  - **规范检查（子模块调用）**：**调用 `industry_standards` 子检查模块**，传入相同的 `ReviewInput`，获取领域合规性检查的 `ReviewError` 列表
-- **步骤3：合并所有错误并标记问题**——将硬性检查、语义检查、规范检查的所有ReviewError合并，应用规则1（幻觉阈值）和规则2（错误模式库）逐条比对
-- **步骤4：按报错分级标准分类**——将所有ReviewError按规则3（Critical/Major/Minor三级）归类，确保severity字段取值限定为 `"critical"|"major"|"minor"`，默认 `"major"`
-- **步骤5：综合裁决输出**——应用规则4（裁决优先级）合并结果：若硬性检查发现critical错误，`passed` 强制为 `false`。最终输出包含status、errors数组、summary的结构化报告
+- **步骤2：硬性检查**——调用 `rule_check_tool.check_rules(content)` 执行确定性规则检查，识别LoRA机制错误、参数量计算错误、语法错误、依赖冲突。此步骤为纯规则匹配，无LLM参与，结果100%确定
+- **步骤3：事实检查**——调用 `knowledge_verify_tool` 计算技术声明与知识库的语义相似度，应用规则1（幻觉阈值）判定事实正确性。此步骤为LLM语义审核+知识库检索结合
+- **步骤4：标准检查（调用 `industry_standards` 子模块）**——**调用 `industry_standards` 子检查模块**，传入相同的 `ReviewInput`，获取LoRA/QLoRA微调与vLLM部署领域合规红线的 `ReviewError` 列表（含显存分配、端口安全、数据脱敏、许可证合规等）
+- **步骤5：综合裁决输出**——合并步骤2~4的所有ReviewError，应用规则2（错误模式库）标记、规则3（报错分级标准）分类（Critical/Major/Minor）、规则4（裁决优先级）裁决：若硬性检查发现critical错误，`passed` 强制为 `false`。最终输出包含status、errors数组、summary的结构化报告
 
 **与industry_standards的协作流程**：
 1. `technical_review` 接收 `ReviewInput`
-2. 内部执行步骤2的"规范检查"时，调用 `industry_standards` 的规则匹配逻辑
+2. 内部执行步骤4的"标准检查"时，调用 `industry_standards` 的规则匹配逻辑
 3. `industry_standards` 返回 `List[ReviewError]`
-4. `technical_review` 将此列表与硬性检查、语义检查的错误合并
+4. `technical_review` 将此列表与步骤2（硬性检查）、步骤3（事实检查）的错误合并
 5. `technical_review` 作为唯一的最终出口，输出完整的 `TechnicalReviewResult`
 
 ## 3. 知识/规则定义
@@ -77,13 +74,13 @@
 **优先级顺序（从高到低）**：
 1. **硬性阻断**：语法错误 / 依赖冲突 / 安全违规 / LoRA机制错误 / 参数量计算错误（来自 `rule_check_tool` 确定性检查）
 2. **规范红线**：硬编码密钥 / 端口暴露 / 权限缺失 / 许可证违规（来自 `industry_standards`）
-3. **语义冲突**：知识库相似度检查 vs 标准答案库——**标准答案库优先于知识库**
+3. **语义冲突**：知识库相似度检索 vs 知识库标准答案条目——**标准答案条目优先于相似度检索**
 
 **裁决规则**：
 - 若硬性检查发现critical错误，`passed` 必须为 `false`，**且事实检查（语义检查）结果仍须附加在errors数组中**，不得因硬性错误已fail而省略事实核查
-- 当 `rule_check_tool` 与LLM审核结论冲突时，以 `rule_check_tool` 的确定性规则为准（规则5）
-- 当知识库无依据（sim<0.65）但标准答案库命中时，**以标准答案库为准**判通过，并在evidence中标注"标准答案库依据"
-- 当知识库有依据但标准答案库明确反对时，以标准答案库为准判fail
+- 当 `rule_check_tool` 与LLM审核结论冲突时，以 `rule_check_tool` 的确定性规则为准
+- 当知识库相似度检索无依据（sim<0.65）但知识库标准答案条目命中时，**以标准答案条目为准**判通过，并在evidence中标注"知识库标准答案条目依据"
+- 当知识库相似度检索有依据但标准答案条目明确反对时，以标准答案条目为准判fail
 
 ## 4. 输入输出规范
 
@@ -140,6 +137,7 @@ TechnicalReviewResult对象，LLM返回JSON格式：
 | `rule_check_tool` 执行异常 | 记录日志，继续执行LLM审核，在review_details中标注"规则检查缺失" |
 | LLM审核结果无法解析（`parse_json_object` 返回None） | 添加 `ReviewError(error_type="review_system_error", severity="critical", description="Agent4审核结果无法解析", suggestion="重新执行技术审核")`，passed=false |
 | LLM返回的severity值不在 `{"critical","major","minor"}` 范围内 | 自动修正为 `"major"` |
+| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容"，不再发回Agent3修改 |
 
 ## 6. 附录
 
@@ -207,7 +205,7 @@ TechnicalReviewResult对象，LLM返回JSON格式：
 }
 ```
 
-#### 场景2：语义冲突（知识库无依据但标准答案库有依据）
+#### 场景2：语义冲突（知识库相似度无依据但标准答案条目有依据）
 **输入**：
 ```json
 {
@@ -222,9 +220,9 @@ TechnicalReviewResult对象，LLM返回JSON格式：
 1. 步骤1解析：识别技术声明"LoRA冻结W训练ΔW=(α/r)BA"
 2. 步骤2硬性检查：`rule_check_tool` 正则未命中（无SVD、无U/Σ/V描述），无critical
 3. 步骤2语义检查：`knowledge_verify_tool` 计算相似度=0.58（< 0.65），按规则1应判"潜在幻觉"（critical）
-4. 步骤2标准答案库查询：标准答案库命中"LoRA冻结W训练ΔW=(α/r)BA"条目，明确支持该陈述
-5. 步骤3标记问题：知识库vs标准答案库冲突
-6. 步骤4分级：按规则4裁决——标准答案库优先于知识库，判通过，但在evidence中标注"标准答案库依据"
+4. 步骤2标准答案条目查询：知识库标准答案条目命中"LoRA冻结W训练ΔW=(α/r)BA"条目，明确支持该陈述
+5. 步骤3标记问题：知识库相似度检索 vs 标准答案条目冲突
+6. 步骤4分级：按规则4裁决——标准答案条目优先于相似度检索，判通过，但在evidence中标注"知识库标准答案条目依据"
 7. 步骤5裁决：status=`pass`，passed=true，errors为空数组但review_details记录冲突
 
 **输出**：
@@ -233,13 +231,14 @@ TechnicalReviewResult对象，LLM返回JSON格式：
   "status": "pass",
   "passed": true,
   "errors": [],
-  "summary": "知识库相似度0.58低于阈值，但标准答案库明确支持该陈述，按裁决优先级（标准答案库>知识库）判通过。",
-  "review_details": "知识库sim=0.58（潜在幻觉），标准答案库命中LoRA冻结W条目，以标准答案库为准。建议后续扩充知识库覆盖。"
+  "summary": "知识库相似度0.58低于阈值，但知识库标准答案条目明确支持该陈述，按裁决优先级（标准答案条目>相似度检索）判通过。",
+  "review_details": "知识库sim=0.58（潜在幻觉），标准答案条目命中LoRA冻结W条目，以标准答案条目为准。建议后续扩充知识库覆盖。"
 }
 ```
 
-**说明**：场景2体现了规则4的"标准答案库优先于知识库"裁决逻辑——当知识库检索能力不足导致相似度低，但标准答案库有明确依据时，不应误判为幻觉，而应以标准答案库为准放行，并在review_details中提示知识库覆盖不足。
+**说明**：场景2体现了规则4的"标准答案条目优先于相似度检索"裁决逻辑——当知识库检索能力不足导致相似度低，但标准答案条目有明确依据时，不应误判为幻觉，而应以标准答案条目为准放行，并在review_details中提示知识库覆盖不足。
 
 ## 7. 版本信息
-- 版本：v3.0，更新日期：2026-07-23
-- 变更记录：合并原 `hallucination_detection.skill.md` 全部内容；新增5步核心方法论；新增规则1幻觉阈值来源（Stanford CS224V）；扩展规则2错误模式库至7类（含5+常见模式）；新增规则3互斥条件判断流程；新增规则4裁决优先级与标准答案库优先逻辑；完善输入输出JSON示例（含status字段）；新增异常处理表（含工具超时、证据ID缺失、多工具冲突）；附录A扩充至3个参考标准；附录B新增2个完整场景示例（硬性阻断+语义冲突）
+- 版本：v3.2，更新日期：2026-07-24
+- 变更记录：合并原 `hallucination_detection.skill.md` 全部内容；核心方法论重构为5步（解析→硬性检查→事实检查→标准检查→综合裁决），与文档3的Agent④审核流程（硬性→事实→标准→合规→综合裁决）对齐；新增规则1幻觉阈值来源（Stanford CS224V）；扩展规则2错误模式库至7类（含5+常见模式）；新增规则3互斥条件判断流程；新增规则4裁决优先级与标准答案条目优先逻辑；完善输入输出JSON示例（含status字段）；新增异常处理表（含工具超时、证据ID缺失、多工具冲突）；附录A扩充至3个参考标准；附录B新增2个完整场景示例（硬性阻断+语义冲突）。**v3.2变更：将核心方法论的"逐级检查"拆分为独立的硬性检查、事实检查、标准检查三个步骤，明确各步骤的工具调用和职责边界，与文档3的流程步骤一一对应**
+- **与代码对齐说明**：当前 `HybridTechnicalReviewAgent` 实现了 `check_hard_coded`（硬性检查）和 `check_hallucination`（事实检查），但尚未实现独立的 `run_industry_standards_check`（标准检查）子流程。本SKILL v3.2明确标准检查作为独立步骤，后续代码需增加 `_run_industry_standards_check()` 方法调用 `industry_standards` 子模块，将返回的ReviewError合并到最终errors中
