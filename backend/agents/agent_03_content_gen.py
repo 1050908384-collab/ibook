@@ -21,7 +21,7 @@ class ContentGeneratorAgent(BaseAgent):
 
     async def generate_learning_package(self, session_id: str, stage_info: Dict[str, Any]) -> Dict[str, Any]:
         block_id = stage_info.get("block_id", "")
-        gap = {"skill": stage_info.get("gap_skill", "") or stage_info.get("block_name", "")}
+        gap = stage_info.get("gap", {})
         
         related_docs = await self.vector_search_tool.search_by_block(block_id)
         tutorial = await self.llm_generate_tool.generate_tutorial(block_id, gap, related_docs)

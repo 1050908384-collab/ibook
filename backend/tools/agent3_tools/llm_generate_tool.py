@@ -20,10 +20,11 @@ llm_generate_tool — Agent3 LLM内容生成工具
 
 import json
 import logging
+import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List
 
-from config import DATA_DIR
+from config import BACKEND_DIR, DATA_DIR, settings
 from llm.client import LLMClient
 
 logger = logging.getLogger(__name__)
@@ -115,8 +116,8 @@ def llm_generate(input_data: dict, config: dict = None) -> dict:
 def _generate_tutorial(input_data: dict) -> dict:
     """生成四段式教程：已知回顾→核心概念拆解→实操演示→常见坑点。"""
     block_id = input_data.get("block_id", "")
-    gap = input_data.get("gap", {})
-    skill_name = gap.get("skill", block_id) or "未知技能"
+    gap = input_data.get("gap", {}) or {}
+    skill_name = gap.get("skill") or _resolve_block_name(block_id) or block_id or "未知技能"
 
     system_prompt = """你是一个专业的技术教程编写专家。请用通俗易懂的语言编写一篇技术教程。
 
@@ -287,10 +288,43 @@ def _extract_code_examples(content: str) -> List[Dict[str, Any]]:
     return examples
 
 
+def _resolve_block_name(block_id: str) -> str:
+    """当 gap 为空时，根据 block_id 反查 knowledge_blocks.block_name 作为技能名。
+
+    避免把 block_id（uuid 哈希）直接塞进 prompt 当技能名。
+    查询失败或无记录时返回空字符串，由调用方继续回退。
+    """
+    if not block_id:
+        return ""
+    try:
+        url = getattr(settings, "DATABASE_URL", "")
+        raw = url.replace("sqlite:///", "", 1)
+        p = Path(raw)
+        if not p.is_absolute():
+            p = (BACKEND_DIR / p).resolve()
+        if not p.exists():
+            return ""
+        conn = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
+        try:
+            cur = conn.execute(
+                "SELECT block_name FROM knowledge_blocks WHERE block_id = ? LIMIT 1",
+                (block_id,),
+            )
+            row = cur.fetchone()
+        finally:
+            conn.close()
+        return row[0] if row else ""
+    except Exception as e:
+        logger.warning("反查 block_name 失败 (block_id=%s): %s", block_id, e)
+        return ""
+
+
 def _fallback_content(mode: str, input_data: dict) -> str:
     """LLM失败时的回退内容。"""
     if mode == "tutorial":
-        skill_name = input_data.get("gap", {}).get("skill", "未知技能")
+        gap = input_data.get("gap", {}) or {}
+        block_id = input_data.get("block_id", "")
+        skill_name = gap.get("skill") or _resolve_block_name(block_id) or "未知技能"
         return f"""# {skill_name}入门
 
 ## 已知回顾
