@@ -432,6 +432,71 @@ def profile_update(input_data: dict, config: dict = None) -> dict:
         }
 
 
+def record_code_error(error_analysis: Dict[str, Any], current_profile: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    从 Agent4 的代码错误分析结果中提取技能差距信息，用于画像更新。
+
+    对齐 iteration_strategy.skill.md v3.3：读取 code_skill_gaps（错误频率）、
+    code_proficiency_level（代码熟练度），供策略调整使用。
+
+    参数：
+        error_analysis: Dict  Agent4 analyze_code_error() 的返回结果
+        current_profile: Dict  当前用户画像（可选）
+
+    返回：
+        {
+            "code_skill_gaps": {错误类型: 出错次数},
+            "code_proficiency_level": "beginner"|"intermediate"|"advanced",
+            "confusion_markers": [str],
+            "error_recorded": True
+        }
+    """
+    error_type = error_analysis.get("error_type", "")
+    root_cause = error_analysis.get("root_cause", "code_unknown")
+    severity = error_analysis.get("severity", "major")
+    is_known = error_analysis.get("is_known_error", False)
+
+    profile = current_profile or {}
+    existing_gaps = profile.get("code_skill_gaps", {})
+    if isinstance(existing_gaps, list):
+        existing_gaps = {}
+
+    updated_gaps = dict(existing_gaps)
+    if error_type:
+        updated_gaps[error_type] = updated_gaps.get(error_type, 0) + 1
+
+    env_error_count = sum(
+        count for etype, count in updated_gaps.items()
+        if etype in ("ModuleNotFoundError", "ImportError", "CUDAError", "FileNotFoundError", "MemoryError")
+    )
+    total_errors = sum(updated_gaps.values())
+
+    if total_errors == 0:
+        proficiency = "advanced"
+    elif total_errors <= 2 and not env_error_count:
+        proficiency = "intermediate"
+    elif env_error_count > 0 and env_error_count >= total_errors * 0.5:
+        proficiency = "beginner"
+    elif total_errors >= 5:
+        proficiency = "beginner"
+    else:
+        proficiency = "intermediate"
+
+    confusion_markers = list(profile.get("confusion_markers", []))
+    if error_type and error_type not in confusion_markers and severity in ("critical", "major"):
+        confusion_markers.append(f"code_error:{error_type}")
+
+    return {
+        "code_skill_gaps": updated_gaps,
+        "code_proficiency_level": proficiency,
+        "confusion_markers": confusion_markers,
+        "error_recorded": True,
+        "root_cause": root_cause,
+        "severity": severity,
+        "is_known_error": is_known,
+    }
+
+
 # ------------------------------------------------------------------
 # 向后兼容适配器
 # 保留原 StageDecisionAgent 调用的 async 类接口，委托给函数式核心。
@@ -537,3 +602,10 @@ class ProfileUpdateTool:
                 confusion.append(skill)
         
         return confusion
+
+    async def record_code_error(
+        self,
+        error_analysis: Dict[str, Any],
+        current_profile: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        return record_code_error(error_analysis, current_profile)

@@ -421,14 +421,106 @@ def _load_mock() -> dict:
 
 
 # ------------------------------------------------------------------
+# 代码错误模式检测（供 Agent4 analyze_code_error 调用）
+# 对齐 technical_review.skill.md 规则2 + code_error_patterns.skill.md
+# ------------------------------------------------------------------
+_CODE_ERROR_PATTERNS: List[Dict[str, Any]] = [
+    {
+        "error_type": "param_type_mismatch",
+        "severity": "major",
+        "category": "code_error",
+        "pattern": r"torch\.tensor\([^)]*list[^)]*\)|torch\.tensor\(.*?(?!\.float\(\)|\.int\(\))",
+        "location": "PyTorch张量创建",
+        "description": "创建torch.tensor时未显式指定dtype，可能导致类型不匹配（如int列表直接转为float32）。",
+        "evidence": "technical_review.skill.md 规则2：PyTorch张量创建应显式指定dtype。",
+        "suggestion": "在torch.tensor()中显式指定dtype，如 torch.tensor(data, dtype=torch.float32)。",
+    },
+    {
+        "error_type": "deprecated_api_usage",
+        "severity": "minor",
+        "category": "code_error",
+        "pattern": r"\.cuda\(\)|model\.to\(['\"]cuda['\"]\)",
+        "location": "模型设备迁移",
+        "description": "使用.model.cuda()旧写法，建议使用更灵活的model.to(device)。",
+        "evidence": "technical_review.skill.md 规则2：推荐使用model.to(device)替代.model.cuda()。",
+        "suggestion": "改用 model.to(device)，其中 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')。",
+    },
+    {
+        "error_type": "hardcoded_path",
+        "severity": "major",
+        "category": "code_error",
+        "pattern": r'["\']/(?:root|home)/[^"\']+["\']|["\']C:\\\\[^"\']+["\']',
+        "location": "文件路径",
+        "description": "使用硬编码的绝对路径，移植性差且可能泄露服务器信息。",
+        "evidence": "technical_review.skill.md 规则2：禁止硬编码服务器绝对路径。",
+        "suggestion": "使用相对路径或配置文件读取路径，如 from pathlib import Path; Path('data/file.txt')。",
+    },
+    {
+        "error_type": "missing_error_handling",
+        "severity": "major",
+        "category": "code_error",
+        "pattern": r"(?:from_pretrained|open\(|requests\.|urllib\.|load\(|read\()(?!.*try)(?!.*except)",
+        "location": "IO/网络操作",
+        "description": "IO/网络/模型加载操作缺少try-except异常处理。",
+        "evidence": "technical_review.skill.md 规则2：IO和模型加载操作应包含异常处理。",
+        "suggestion": "添加 try-except 包裹操作，捕获 FileNotFoundError/ConnectionError 等异常并给出友好提示。",
+    },
+    {
+        "error_type": "lora_rank_too_high",
+        "severity": "minor",
+        "category": "code_error",
+        "pattern": r'lora_config.*r\s*=\s*(\d+)|r\s*=\s*(\d+)',
+        "location": "LoRA配置",
+        "description": "LoRA秩r值过大（≥64），容易导致过拟合。",
+        "evidence": "industry_standards.skill.md 规则1.1：r≥64触发警告，建议r∈[2,32]。",
+        "suggestion": "将r值调整到推荐范围 r∈[2, 32]。",
+    },
+]
+
+
+def check_code_error_patterns(code: str) -> List[Dict[str, Any]]:
+    """
+    检测代码中常见的错误模式（供 Agent4 analyze_code_error Step5 调用）。
+
+    参数：
+        code: str  待检测的代码片段
+
+    返回：
+        List[Dict]  violation 列表，每条含 error_type/severity/category/
+                    location/description/evidence/suggestion
+    """
+    if not code or not code.strip():
+        return []
+
+    violations: List[Dict[str, Any]] = []
+    for rule in _CODE_ERROR_PATTERNS:
+        matches = list(re.finditer(rule["pattern"], code, re.IGNORECASE))
+        for m in matches:
+            violation = {
+                "error_type": rule["error_type"],
+                "severity": rule["severity"],
+                "category": rule["category"],
+                "location": rule["location"],
+                "description": rule["description"],
+                "evidence": rule["evidence"],
+                "suggestion": rule["suggestion"],
+            }
+            if m.groups():
+                violation["matched_text"] = m.group(0)[:80]
+            violations.append(violation)
+
+    return violations
+
+
+# ------------------------------------------------------------------
 # 向后兼容适配器
 # 保留原 TechnicalReviewAgent 调用的 async 类接口，委托给函数式核心。
 #   check_rules(content)      → 检查教程/文本内容
 #   check_code_rules(code)    → 检查代码示例（路由同 check_rules）
+#   check_code_error_patterns(code) → 代码错误模式专项检测
 # ------------------------------------------------------------------
 class RuleCheckTool:
     def __init__(self):
-        # 默认走 Mock，保证在知识库未就绪时仍可运行
         self._default_config = {"use_mock": True}
 
     async def check_rules(self, content: str) -> List[Dict[str, Any]]:
@@ -442,3 +534,6 @@ class RuleCheckTool:
         if result.get("status") != "success":
             return []
         return result["data"].get("violations", [])
+
+    async def check_code_error_patterns(self, code: str) -> List[Dict[str, Any]]:
+        return check_code_error_patterns(code)

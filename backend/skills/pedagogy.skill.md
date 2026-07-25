@@ -17,6 +17,7 @@
 - **步骤3：检查是否有情境化案例**——检测内容是否包含真实应用场景描述（关键词：`场景`、`案例`、`应用`、`实际项目`、`例如`、`case`）和可运行代码示例（```python围栏）。若仅有理论无案例，标记 issue_type=`"missing_context_case"`
 - **步骤4：量化认知负荷**——计算三个指标：①新概念密度（首次出现的技术术语数/内容字数×1000）；②总篇幅（字数）；③复杂度（嵌套层级深度+公式数量）。综合输出 cognitive_load_score（0-100，合理度，越高越好）和 cognitive_load_level（0-100，负荷水平，越高越糟，= 100 - cognitive_load_score），超载则标记 issue_type=`"cognitive_load"`
 - **步骤5：评估情绪友好度**——应用规则5，统计内容的正面情绪语句占比（positive_ratio）和是否含挫败性表达（has_discouraging_words），输出 emotion_friendliness_score（0-100）。含"这很简单""你应该懂"等居高临下表达扣分
+- **步骤6（可选）：评估代码修复教学质量**——当内容为代码修复建议时（`mode == "code_error_analysis"` 或内容含代码修复标记），应用规则6，依次检查错误定位精准度、引导性解释充分性、完整答案完整性三项原则，输出 code_fix_pedagogy_score 和 code_fix_issues
 
 ## 3. 知识/规则定义
 
@@ -75,6 +76,24 @@
   - < 60：情绪友好度低（缺乏鼓励或含明显挫败表达），标记 issue_type=`"poor_emotion_friendliness"`，severity=minor，suggestion建议增加鼓励性语句
 - **违规处置**：含挫败性表达时 issue_type=`"discouraging_words"`，severity=major，suggestion="删除'这很简单'等居高临下表达，改为'这个概念一开始看起来复杂，我们一步步来'"
 
+### 规则6：代码修复教学原则（Code Fix Pedagogy）
+- **适用场景**：当审核内容为"代码错误修复建议"时（即内容包含问题代码分析 + 修复方案，或 Agent3 基于 Agent4 的代码错误分析生成的修复内容），触发本规则评估
+- **三大核心原则（必须同时满足）**：
+  1. **错误定位精准**——必须明确指出错误发生的位置（行号、函数名、变量名）和错误类型，让用户清楚"哪里错了、错在哪类"。格式要求：先给出错误定位，再展开分析。判定标准：内容中是否包含具体的位置标识（如"第5行"、"函数 `foo()` 中"、"变量 `data`"）和错误类型名称（如"KeyError"、"语法错误"）。缺失任一项判定为违规
+  2. **引导性解释充分**——必须在给出完整修复代码之前，先用自然语言解释错误的根本原因和修复思路，引导用户思考。要求包含：错误根因分析（为什么会错）+ 修复思路说明（怎么想到要这么改）。引导性文字的长度应 ≥ 修复代码长度的 30%。判定标准：检查是否存在独立的"原因分析"或"修复思路"段落，且该段落在完整修复代码之前
+  3. **完整答案必给**——必须提供完整的、可直接运行的修复代码，不能只给提示不给答案。修复代码需满足：a) 标注关键修改点（用 `# ← 修改点：xxx` 或 diff 格式标注）；b) 关键修改点数量 ≤ 3 处时全部标注，> 3 处时标注前 3 个最重要的；c) 修复代码与原代码的上下文保持一致，可独立运行。判定标准：检查内容中是否存在完整代码块，且代码块内包含至少 1 处修改点标注
+- **违规等级判定**：
+
+| 违反原则 | issue_type | severity | 扣分说明 |
+|:---|:---|:---|:---|
+| 缺少错误定位（原则1） | `poor_code_fix_no_location` | major | 扣 20 分 |
+| 缺少引导性解释（原则2） | `poor_code_fix_no_guidance` | major | 扣 15 分 |
+| 缺少完整答案（原则3） | `poor_code_fix_no_answer` | critical | 扣 30 分 |
+| 缺少修改点标注（原则3子项） | `poor_code_fix_no_annotation` | minor | 扣 10 分 |
+
+- **输出要求**：`code_fix_pedagogy_score`（0~100，越高越符合教学原则），`code_fix_issues`（违反的原则列表）
+- **触发条件**：当 `ReviewInput.mode == "code_error_analysis"` 或内容中包含代码修复建议标记时，自动启用本规则评估
+
 ## 4. 输入输出规范
 
 ### 输入
@@ -87,7 +106,9 @@
 - `cognitive_load_level` → 供 `quality_metrics` 的 **红线检查** 使用（>85触发认知负荷红线）
 - `pedagogy_score` → 对应 `quality_metrics` 的 **教学逻辑严谨度** 维度（权重20%）
 - `emotion_friendliness_score` → 对应 `quality_metrics` 的 **情绪友好度** 维度（权重15%）
+- `code_fix_pedagogy_score` → 代码修复场景专用，供 `quality_metrics` 作为附加评分维度（仅当 `mode == "code_error_analysis"` 时生效）
 - `issues` 数组 → 合并到 `QualityReviewResult.errors`（用于附加条件检查）
+- `code_fix_issues` 数组 → 代码修复场景专用，合并到 `QualityReviewResult.errors`（仅代码修复场景）
 
 LLM返回JSON格式：
 ```json
@@ -226,5 +247,5 @@ LoRA是一种微调方法。它使用SVD分解原权重W，训练U和V矩阵。
 - 判定：passed=false，存在4个major问题
 
 ## 7. 版本信息
-- 版本：v3.1，更新日期：2026-07-24
-- 变更记录：能力描述明确3个适用场景；核心方法论重构为4步（已知回顾→节奏检查→情境化案例→量化认知负荷）；规则1新增"前置要求"章节检测和段落级新概念检查；规则3补充Sweller(1988)理论依据和工作记忆容量来源；输入输出规范新增pedagogy_score和issues列表完整JSON示例；异常处理新增内容过简（<500字）和结构不清晰场景；附录A补充5个教学法理论；附录B新增好的教学结构vs差的教学结构完整对比示例。**v3.1变更：新增规则5情绪友好度评估（鼓励性语句占比+挫败性表达检测），输出新增 emotion_friendliness_score（对应quality_metrics情绪友好度维度15%）和 cognitive_load_level（供红线检查）；消除quality_metrics对不存在的"情绪分析工具"的依赖；新增"审核循环≥3次"异常处置路径**
+- 版本：v3.2，更新日期：2026-07-25
+- 变更记录：能力描述明确3个适用场景；核心方法论重构为4步（已知回顾→节奏检查→情境化案例→量化认知负荷）；规则1新增"前置要求"章节检测和段落级新概念检查；规则3补充Sweller(1988)理论依据和工作记忆容量来源；输入输出规范新增pedagogy_score和issues列表完整JSON示例；异常处理新增内容过简（<500字）和结构不清晰场景；附录A补充5个教学法理论；附录B新增好的教学结构vs差的教学结构完整对比示例。**v3.1变更**：新增规则5情绪友好度评估（鼓励性语句占比+挫败性表达检测），输出新增 emotion_friendliness_score（对应quality_metrics情绪友好度维度15%）和 cognitive_load_level（供红线检查）；消除quality_metrics对不存在的"情绪分析工具"的依赖；新增"审核循环≥3次"异常处置路径。**v3.2变更**：新增规则6代码修复教学原则（三大核心原则：错误定位精准、引导性解释充分、完整答案必给）；核心方法论新增步骤6（可选）评估代码修复教学质量；输出新增 code_fix_pedagogy_score 和 code_fix_issues；适配 Agent4 代码错误分析新功能，确保代码修复建议遵循教学法原则

@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-knowledge_verify_tool — Agent4 知识依据验证工具（幻觉检测）
-================================================
-功能：输入技术陈述，输出置信度(0~1)与是否有知识库依据，用于幻觉判定。
+knowledge_verify_tool — Agent4 知识依据验证工具（幻觉检测 + 代码错误匹配）
+======================================================================
+功能：
+  模式1（陈述验证）：输入技术陈述，输出置信度(0~1)与是否有知识库依据，用于幻觉判定。
+  模式2（代码错误验证）：输入 code_executor_tool 返回的报错信息，匹配知识库中已知错误模式，
+                       返回 is_known_error（布尔）和 known_solution（字符串）。
+
     - 真实模式：查 knowledge_chunks 表做语义检索（关键词重叠归一化相似度）
     - Mock 模式：返回 ./data/test_data/mock_knowledge_verify_tool.json 预设数据
 
@@ -55,38 +59,36 @@ _STOPWORDS = {
 # ------------------------------------------------------------------
 def knowledge_verify(input_data: dict, config: dict = None) -> dict:
     """
-    验证技术陈述是否有知识库依据。
+    知识依据验证，支持两种模式：
 
-    参数：
-        input_data: dict
+    模式1 — 陈述验证（默认）：
+        输入技术陈述，输出置信度(0~1)与是否有知识库依据，用于幻觉判定。
+        input_data:
             - statement: str   待验证的技术陈述（优先）
             - content: str     同义字段，statement 缺失时使用
             - scenario: str    Mock 模式下选择场景：normal|boundary|exception
-        config: dict
-            - use_mock: bool   是否使用 Mock（默认 True）
-            - top_k: int       返回最相似分块数量（默认 5）
 
-    返回：
+    模式2 — 代码错误验证：
+        输入 code_executor_tool 返回的报错信息，匹配知识库中已知错误模式。
+        input_data:
+            - error_info: str   报错信息字符串（code_executor_tool 返回）
+            - code: str         可选，出错的代码片段
+
+    返回（两种模式均返回统一结构）：
         {
             "status": "success" | "error",
-            "data": {
-                "statement": str,            # 截断后的陈述
-                "confidence": float,         # 0~1，最高相似度
-                "has_basis": bool,           # confidence >= 0.65
-                "level": "pass" | "review_needed" | "potential_hallucination",
-                "thresholds": {"critical": 0.65, "pass": 0.80},
-                "matched_chunks": [
-                    {"chunk_id","doc_id","block_id","content","similarity"}
-                ],
-                "checked_chunks": int,
-                "db_available": bool
-            },
+            "data": { ... },
             "message": str,
             "mock_used": bool
         }
     """
     config = config or {}
     use_mock = config.get("use_mock", True)
+
+    error_info = (input_data or {}).get("error_info") or ""
+    if error_info.strip():
+        return _verify_code_error(input_data, config)
+
     top_k = int(config.get("top_k", 5))
 
     statement = (input_data or {}).get("statement") or (input_data or {}).get("content") or ""
@@ -263,12 +265,411 @@ def _build_message(level: str, confidence: float, n_chunks: int, db_available: b
 
 
 # ------------------------------------------------------------------
+# 代码错误验证模式：匹配 code_executor_tool 返回的报错信息
+# ------------------------------------------------------------------
+
+# 常见错误类型映射（错误信息 → 标准化错误类别）
+_ERROR_TYPE_MAP = {
+    "typeerror": "TypeError",
+    "valueerror": "ValueError",
+    "keyerror": "KeyError",
+    "indexerror": "IndexError",
+    "attributeerror": "AttributeError",
+    "nameerror": "NameError",
+    "syntaxerror": "SyntaxError",
+    "indentationerror": "IndentationError",
+    "taberror": "TabError",
+    "zerodivisionerror": "ZeroDivisionError",
+    "memoryerror": "MemoryError",
+    "notimplementederror": "NotImplementedError",
+    "importerror": "ImportError",
+    "modulenotfounderror": "ModuleNotFoundError",
+    "filenotfounderror": "FileNotFoundError",
+    "permissionerror": "PermissionError",
+    "connectionerror": "ConnectionError",
+    "timeouterror": "TimeoutError",
+    "jsondecodeerror": "JSONDecodeError",
+    "jsonencodeerror": "JSONEncodeError",
+    "httpx": "HTTPError",
+    "requestexception": "RequestException",
+    "cuda": "CUDAError",
+    "pytorch": "PyTorchError",
+    "torcherror": "PyTorchError",
+    "torch": "PyTorchError",
+    "tensorflow": "TensorFlowError",
+    "runtimeerror": "RuntimeError",
+    "jsondecode": "JSONDecodeError",
+}
+
+
+# 错误严重等级映射（code_error_patterns.skill.md 规则1）
+_SEVERITY_MAP: Dict[str, str] = {}
+for _et in ("SyntaxError", "IndentationError", "TabError"):
+    _SEVERITY_MAP[_et] = "critical"
+for _et in (
+    "TypeError", "ValueError", "KeyError", "IndexError", "AttributeError",
+    "NameError", "ZeroDivisionError", "MemoryError",
+    "ImportError", "ModuleNotFoundError", "FileNotFoundError", "PermissionError",
+    "ConnectionError", "TimeoutError", "OSError", "IOError",
+    "CUDAError", "PyTorchError", "TensorFlowError", "TorchError",
+    "JSONDecodeError", "JSONEncodeError", "HTTPError", "RequestException",
+    "RuntimeError", "RecursionError", "OverflowError", "UnboundLocalError",
+):
+    _SEVERITY_MAP[_et] = "major"
+for _et in ("AssertionError", "NotImplementedError", "StopIteration", "GeneratorExit", "Exception"):
+    _SEVERITY_MAP[_et] = "minor"
+
+
+# 错误归因映射（code_error_patterns.skill.md 规则2）
+_ENVIRONMENT_ERRORS = {
+    "ModuleNotFoundError", "ImportError", "FileNotFoundError", "PermissionError",
+    "IsADirectoryError", "NotADirectoryError", "ConnectionError", "TimeoutError",
+    "OSError", "IOError", "CUDAError", "PyTorchError", "TensorFlowError", "TorchError",
+    "MemoryError",
+}
+
+_DEPENDENCY_ERRORS = {"AttributeError", "ImportError", "TypeError"}
+
+_DATA_ERRORS = {"JSONDecodeError", "JSONEncodeError", "ValueError", "KeyError"}
+
+_CODE_ERRORS = {
+    "SyntaxError", "IndentationError", "TabError",
+    "KeyError", "IndexError", "TypeError", "AttributeError",
+    "NameError", "ZeroDivisionError", "AssertionError",
+    "RecursionError", "OverflowError", "UnboundLocalError",
+}
+
+
+def classify_error_severity(error_type: str) -> str:
+    """
+    按 code_error_patterns.skill.md 规则1 将错误类型映射为严重等级。
+
+    返回: "critical" / "major" / "minor"
+    """
+    return _SEVERITY_MAP.get(error_type, "major")
+
+
+def classify_error_root_cause(error_type: str, error_info: str = "") -> str:
+    """
+    按 code_error_patterns.skill.md 规则2 判定错误归因类型。
+
+    返回: "code_issue" / "environment_issue" / "dependency_issue" / "data_issue" / "code_unknown"
+    """
+    if not error_type:
+        return "code_unknown"
+
+    if error_type in _ENVIRONMENT_ERRORS:
+        return "environment_issue"
+
+    info_lower = (error_info or "").lower()
+    dep_keywords = ("deprecated", "removed", "not found in module", "version", "incompatible", "api")
+    if error_type in _DEPENDENCY_ERRORS and any(kw in info_lower for kw in dep_keywords):
+        return "dependency_issue"
+
+    data_keywords = ("parse", "format", "invalid", "unexpected value", "cannot parse", "missing field")
+    if error_type in _DATA_ERRORS and any(kw in info_lower for kw in data_keywords):
+        return "data_issue"
+
+    if error_type in _CODE_ERRORS:
+        return "code_issue"
+
+    return "code_unknown"
+
+
+def _extract_error_type(error_info: str) -> str:
+    """从报错信息中提取标准化的错误类型。"""
+    if not error_info:
+        return ""
+    text_lower = error_info.lower()
+    for keyword, error_type in _ERROR_TYPE_MAP.items():
+        if keyword in text_lower:
+            return error_type
+    return ""
+
+
+def _extract_error_keywords(error_info: str) -> set:
+    """从报错信息中提取关键词（去除错误类型名和停用词后）。"""
+    if not error_info:
+        return set()
+    text = error_info.lower()
+    terms: set = set()
+
+    for w in re.findall(r"[a-z][a-z0-9_\-]{1,}", text):
+        if w not in _STOPWORDS and len(w) > 2:
+            terms.add(w)
+
+    cjk = re.findall(r"[\u4e00-\u9fff]+", text)
+    for seg in cjk:
+        for i in range(len(seg) - 1):
+            terms.add(seg[i : i + 2])
+        if len(seg) == 1:
+            terms.add(seg)
+
+    return terms
+
+
+def _match_error_pattern(error_info: str, code: str = "") -> Dict[str, Any]:
+    """
+    将报错信息与知识库中的错误模式进行匹配。
+
+    策略：
+    1. 提取错误类型（如 TypeError）
+    2. 提取报错关键词
+    3. 在 knowledge_chunks 中搜索包含错误类型且与关键词匹配的分块
+    4. 从匹配分块中提取解决方案（包含"解决"、"fix"、"修复"、"建议"等关键词的段落）
+
+    返回：
+        {
+            "is_known_error": bool,
+            "known_solution": str,
+            "error_type": str,
+            "matched_chunk": dict or None,
+            "confidence": float,
+        }
+    """
+    error_type = _extract_error_type(error_info)
+    error_terms = _extract_error_keywords(error_info)
+
+    if not error_type and not error_terms:
+        return {
+            "is_known_error": False,
+            "known_solution": "",
+            "error_type": "",
+            "matched_chunk": None,
+            "confidence": 0.0,
+        }
+
+    try:
+        chunks, db_available = _load_chunks()
+    except Exception:
+        chunks, db_available = [], False
+
+    if not chunks:
+        return {
+            "is_known_error": False,
+            "known_solution": "",
+            "error_type": error_type,
+            "matched_chunk": None,
+            "confidence": 0.0,
+        }
+
+    scored: List[Dict[str, Any]] = []
+    for ch in chunks:
+        content_lower = ch["content"].lower()
+        chunk_terms = _tokenize(ch["content"])
+
+        has_error_type = error_type.lower() in content_lower if error_type else False
+        sim = _similarity(error_terms, chunk_terms) if error_terms else 0.0
+
+        if has_error_type:
+            sim = max(sim, 0.5)
+
+        if sim > 0:
+            solution = _extract_solution(ch["content"])
+            scored.append({
+                "chunk_id": ch["chunk_id"],
+                "doc_id": ch["doc_id"],
+                "block_id": ch["block_id"],
+                "content": ch["content"][:300],
+                "similarity": round(sim, 4),
+                "has_error_type": has_error_type,
+                "solution": solution,
+            })
+
+    scored.sort(key=lambda x: x["similarity"], reverse=True)
+
+    if scored:
+        best = scored[0]
+        confidence = best["similarity"]
+        is_known = confidence >= 0.5 or best["has_error_type"]
+        solution = best["solution"] or (best["content"][:200] if is_known else "")
+
+        return {
+            "is_known_error": is_known,
+            "known_solution": solution,
+            "error_type": error_type,
+            "severity": classify_error_severity(error_type),
+            "root_cause": classify_error_root_cause(error_type, error_info),
+            "matched_chunk": {
+                "chunk_id": best["chunk_id"],
+                "doc_id": best["doc_id"],
+                "block_id": best["block_id"],
+                "content": best["content"],
+            },
+            "confidence": round(confidence, 4),
+        }
+
+    return {
+        "is_known_error": False,
+        "known_solution": "",
+        "error_type": error_type,
+        "severity": classify_error_severity(error_type),
+        "root_cause": classify_error_root_cause(error_type, error_info),
+        "matched_chunk": None,
+        "confidence": 0.0,
+    }
+
+
+# 解决方案提取关键词
+_SOLUTION_KEYWORDS = ["解决", "fix", "修复", "建议", "如何", "处理", "避免", "改用", "使用", "try", "instead"]
+
+
+def _extract_solution(content: str) -> str:
+    """从知识库分块内容中提取解决方案段落。"""
+    if not content:
+        return ""
+
+    sentences = re.split(r'[。\n！？!?]', content)
+    solution_parts = []
+
+    for sent in sentences:
+        sent = sent.strip()
+        if not sent:
+            continue
+        sent_lower = sent.lower()
+        if any(kw in sent_lower for kw in _SOLUTION_KEYWORDS):
+            solution_parts.append(sent)
+
+    if solution_parts:
+        return "；".join(solution_parts)
+    return ""
+
+
+def _verify_code_error(input_data: dict, config: dict) -> dict:
+    """
+    代码错误验证模式核心实现。
+
+    参数：
+        input_data:
+            - error_info: str   报错信息（必填）
+            - code: str         可选，出错的代码片段
+            - scenario: str     Mock 模式下选择场景
+        config:
+            - use_mock: bool    是否使用 Mock
+
+    返回：
+        {
+            "status": "success" | "error",
+            "data": {
+                "mode": "code_error_verify",
+                "error_info": str,
+                "error_type": str,
+                "is_known_error": bool,
+                "known_solution": str,
+                "confidence": float,
+                "matched_chunk": dict or None,
+                "suggested_code": str
+            },
+            "message": str,
+            "mock_used": bool
+        }
+    """
+    use_mock = config.get("use_mock", True)
+    error_info = (input_data or {}).get("error_info", "")
+    code = (input_data or {}).get("code", "")
+
+    if not error_info.strip():
+        return {
+            "status": "error",
+            "data": None,
+            "message": "代码错误验证模式需要 error_info 字段",
+            "mock_used": use_mock,
+        }
+
+    try:
+        if use_mock:
+            return _mock_verify_code_error(error_info, code, input_data)
+
+        result = _match_error_pattern(error_info, code)
+
+        return {
+            "status": "success",
+            "data": {
+                "mode": "code_error_verify",
+                "error_info": error_info[:300],
+                "error_type": result["error_type"],
+                "is_known_error": result["is_known_error"],
+                "known_solution": result["known_solution"],
+                "severity": result.get("severity", "major"),
+                "root_cause": result.get("root_cause", "code_unknown"),
+                "confidence": result["confidence"],
+                "matched_chunk": result["matched_chunk"],
+                "suggested_code": "",
+            },
+            "message": (
+                f"匹配到已知错误 {result['error_type']}，置信度 {result['confidence']:.2f}"
+                if result["is_known_error"]
+                else f"未在知识库中找到匹配的错误模式（类型：{result['error_type']}）"
+            ),
+            "mock_used": False,
+        }
+    except Exception as e:
+        logger.exception("_verify_code_error 执行失败")
+        return {
+            "status": "error",
+            "data": None,
+            "message": f"代码错误验证执行异常: {e}",
+            "mock_used": use_mock,
+        }
+
+
+def _mock_verify_code_error(error_info: str, code: str, input_data: dict) -> dict:
+    """Mock 模式：按错误类型或 scenario 返回预设的错误匹配结果。"""
+    mock_data = _load_mock()
+    scenario = (input_data or {}).get("scenario", "")
+
+    if not scenario:
+        error_type = _extract_error_type(error_info)
+        type_to_scenario = {
+            "TypeError": "type_error",
+            "ValueError": "value_error",
+            "KeyError": "key_error",
+            "IndexError": "key_error",
+            "AttributeError": "attribute_error",
+            "SyntaxError": "syntax_error",
+            "IndentationError": "syntax_error",
+            "TabError": "syntax_error",
+            "ImportError": "import_error",
+            "ModuleNotFoundError": "import_error",
+            "ZeroDivisionError": "zero_division",
+            "PyTorchError": "pytorch_error",
+            "CUDAError": "cuda_error",
+            "TorchError": "pytorch_error",
+            "RuntimeError": "pytorch_error",
+        }
+        scenario = type_to_scenario.get(error_type, "unknown_error")
+
+    error_scenarios = mock_data.get("code_error_scenarios", {})
+    if scenario not in error_scenarios:
+        scenario = "unknown_error"
+
+    data = dict(error_scenarios.get(scenario, error_scenarios.get("unknown_error", {})))
+    data["mode"] = "code_error_verify"
+    data["error_info"] = error_info[:300]
+
+    error_type = data.get("error_type", _extract_error_type(error_info))
+    data["severity"] = classify_error_severity(error_type)
+    data["root_cause"] = classify_error_root_cause(error_type, error_info)
+
+    return {
+        "status": "success",
+        "data": data,
+        "message": (
+            f"[Mock] 匹配到已知错误，置信度 {data.get('confidence', 0):.2f}"
+            if data.get("is_known_error", False)
+            else f"[Mock] 未找到匹配的错误模式"
+        ),
+        "mock_used": True,
+    }
+
+
+# ------------------------------------------------------------------
 # Mock 模式
 # ------------------------------------------------------------------
 def _mock_verify(statement: str, input_data: dict) -> dict:
     """从 mock JSON 读取预设场景，按 scenario 或陈述内容自动选择。"""
     scenario = _pick_scenario(statement, input_data)
-    scenarios = _load_mock()
+    scenarios = _load_mock().get("scenarios", {})
 
     if scenario not in scenarios:
         scenario = "normal"
@@ -314,7 +715,13 @@ def _load_mock() -> dict:
         return {}
     try:
         with MOCK_FILE.open("r", encoding="utf-8") as f:
-            return json.load(f).get("scenarios", {})
+            full_data = json.load(f)
+        scenarios = full_data.get("scenarios", {})
+        code_error_scenarios = full_data.get("code_error_scenarios", {})
+        return {
+            "scenarios": scenarios,
+            "code_error_scenarios": code_error_scenarios,
+        }
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("读取 Mock 文件失败: %s", e)
         return {}
@@ -330,7 +737,6 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class KnowledgeVerifyTool:
     def __init__(self):
-        # 默认走 Mock，保证在知识库未就绪时仍可运行
         self._default_config = {"use_mock": True}
 
     async def verify_knowledge(self, content: str) -> List[Dict[str, Any]]:
@@ -353,7 +759,6 @@ class KnowledgeVerifyTool:
                 "description": f"知识库相似度 {confidence:.2f} < {THRESHOLD_CRITICAL} 阈值，存在潜在幻觉风险。",
                 "evidence": evidence,
                 "suggestion": "删除无法验证的技术声明或补充可靠来源。",
-                # 兼容旧调用方 print 使用的字段
                 "type": "hallucination",
                 "message": f"知识库相似度 {confidence:.2f}，存在潜在幻觉风险。",
             }]
@@ -369,3 +774,62 @@ class KnowledgeVerifyTool:
                 "message": f"知识库相似度 {confidence:.2f}，存疑需复核。",
             }]
         return []
+
+    async def verify_code_error(
+        self,
+        error_info: str,
+        code: str = "",
+        scenario: str = "",
+    ) -> Dict[str, Any]:
+        """
+        验证代码错误是否与知识库中已知错误模式匹配。
+
+        参数：
+            error_info: str      code_executor_tool 返回的报错信息
+            code: str            可选，出错的代码片段
+            scenario: str        可选，Mock 场景选择
+
+        返回：
+            {
+                "is_known_error": bool,
+                "known_solution": str,
+                "error_type": str,
+                "confidence": float,
+                "matched_chunk": dict or None,
+                "suggested_code": str,
+                "mock_used": bool
+            }
+        """
+        input_data: Dict[str, Any] = {"error_info": error_info}
+        if code:
+            input_data["code"] = code
+        if scenario:
+            input_data["scenario"] = scenario
+
+        result = knowledge_verify(input_data, config=self._default_config)
+
+        if result.get("status") != "success":
+            return {
+                "is_known_error": False,
+                "known_solution": "",
+                "error_type": "",
+                "severity": "major",
+                "root_cause": "code_unknown",
+                "confidence": 0.0,
+                "matched_chunk": None,
+                "suggested_code": "",
+                "mock_used": result.get("mock_used", True),
+            }
+
+        data = result.get("data", {})
+        return {
+            "is_known_error": data.get("is_known_error", False),
+            "known_solution": data.get("known_solution", ""),
+            "error_type": data.get("error_type", ""),
+            "severity": data.get("severity", "major"),
+            "root_cause": data.get("root_cause", "code_unknown"),
+            "confidence": data.get("confidence", 0.0),
+            "matched_chunk": data.get("matched_chunk"),
+            "suggested_code": data.get("suggested_code", ""),
+            "mock_used": result.get("mock_used", True),
+        }
