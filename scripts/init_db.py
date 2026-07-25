@@ -91,6 +91,19 @@ CREATE TABLE IF NOT EXISTS test_questions (
     FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
 );
 
+-- 5. 常见问题库（FAQ）
+CREATE TABLE IF NOT EXISTS faq_items (
+    faq_id VARCHAR(50) PRIMARY KEY,
+    block_id VARCHAR(50) NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    difficulty VARCHAR(20) CHECK (difficulty IN ('初级', '中级', '高级')),
+    tags TEXT,
+    views INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
+);
+
 -- =============================================
 -- 第二层：用户个性化数据
 -- =============================================
@@ -171,5 +184,5 @@ cursor.execute("PRAGMA foreign_keys=ON;")
 conn.commit()
 conn.close()
 
-print("[OK] 9 tables created successfully!")
+print("[OK] 11 tables created successfully!")
 print(f"[INFO] Database file location: {DB_PATH}")
