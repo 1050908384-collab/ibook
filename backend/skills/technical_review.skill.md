@@ -14,11 +14,27 @@
   - 当前学习阶段信息（`ReviewInput.stage.block_name`）和用户画像（`ReviewInput.profile`）
 
 ## 2. 核心方法论
+### 2.1 内容审核/回答审核流程（通用场景）
 - **步骤1：解析输入内容**——识别代码块（```...```围栏）和技术陈述段落（含"参数量"、"原理"、"LoRA"、"显存"等领域关键词），为每个技术声明分配位置标识（location），便于后续evidence定位
 - **步骤2：硬性检查**——调用 `rule_check_tool.check_rules(content)` 执行确定性规则检查，识别LoRA机制错误、参数量计算错误、语法错误、依赖冲突。此步骤为纯规则匹配，无LLM参与，结果100%确定
 - **步骤3：事实检查**——调用 `knowledge_verify_tool` 计算技术声明与知识库的语义相似度，应用规则1（幻觉阈值）判定事实正确性。此步骤为LLM语义审核+知识库检索结合
 - **步骤4：标准检查（调用 `industry_standards` 子模块）**——**调用 `industry_standards` 子检查模块**，传入相同的 `ReviewInput`，获取LoRA/QLoRA微调与vLLM部署领域合规红线的 `ReviewError` 列表（含显存分配、端口安全、数据脱敏、许可证合规等）
 - **步骤5：综合裁决输出**——合并步骤2~4的所有ReviewError，应用规则2（错误模式库）标记、规则3（报错分级标准）分类（Critical/Major/Minor）、规则4（裁决优先级）裁决：若硬性检查发现critical错误，`passed` 强制为 `false`。最终输出包含status、errors数组、summary的结构化报告
+
+### 2.2 用户提交代码审核流程（代码错误分析专用场景）
+当Agent4收到"用户代码错误分析"请求时（含代码+报错，或仅问题描述），执行以下专属流程：
+
+- **步骤1：解析报错信息提取错误类型**——从 `error_info` 中提取异常类型名（如 `KeyError`、`TypeError`），**优先引用 `code_error_patterns.skill.md` 规则1的错误类型→等级映射表**进行错误分类映射
+- **步骤2：错误分级判定**——应用 `code_error_patterns.skill.md` 规则1，将错误类型映射为三级严重等级：SyntaxError类→致命(critical)、RuntimeError类→主要(major)、LogicError类→次要(minor)
+- **步骤3：错误归因判定**——应用 `code_error_patterns.skill.md` 规则2，对已识别的错误类型进行归因分类：代码问题 / 环境问题 / 外部依赖问题 / 数据问题。按归因判定优先级执行：环境问题→外部依赖问题→数据问题→代码问题
+- **步骤4：知识库交叉验证**——调用 `knowledge_verify_tool.verify_code_error()` 获取知识库匹配结果。此步骤的结果**作为辅助参考**，用于补充修改建议和验证规则分类的准确性，但**不改变步骤2-3的规则判定结论**（冲突时以 `code_error_patterns.skill.md` 规则分类为准）
+- **步骤5：代码静态检查（可选）**——若用户提供了代码片段，调用 `code_parser_tool.parse_code()` 检查语法错误，调用 `rule_check_tool.check_code_rules()` 检查规范违规。结果作为补充信息附加在输出中
+- **步骤6：生成标准化输出**——按 `code_error_patterns.skill.md` 定义的输出格式生成结果，包含 `error_category`、`severity`、`root_cause`、`fix_suggestion`、`confidence`、`classification_method`、`evidence`
+
+**判断依据优先级**：
+1. **最高优先级**：`code_error_patterns.skill.md` 的错误分级规则（规则1）和归因判定规则（规则2）——所有错误分类、严重等级、归因类型必须优先采纳此SKILL的定义
+2. **辅助参考**：`knowledge_verify_tool` 的知识库检索结果——用于补充修改建议、提供代码修复示例、增强分类置信度
+3. **补充信息**：`code_parser_tool` 和 `rule_check_tool` 的静态检查结果——仅附加在输出的补充字段中
 
 **与industry_standards的协作流程**：
 1. `technical_review` 接收 `ReviewInput`
@@ -93,6 +109,7 @@ ReviewInput对象，包含：
 - `session_id`、`stage`、`question`（可选）、`code_examples`（可选）
 
 ### 输出
+#### 通用场景输出（内容审核/回答审核）
 TechnicalReviewResult对象，LLM返回JSON格式：
 ```json
 {
@@ -121,11 +138,38 @@ TechnicalReviewResult对象，LLM返回JSON格式：
 }
 ```
 
+#### 代码错误分析场景输出（用户提交代码审核）
+**输出格式**：`错误分类：xxx，严重等级：xxx，修改建议：xxx`
+
+CodeErrorClassification对象，JSON格式：
+```json
+{
+  "error_category": "RuntimeError",
+  "severity": "major",
+  "root_cause": "code_issue",
+  "fix_suggestion": {
+    "summary": "KeyError: 'user_id' — 访问了字典中不存在的键",
+    "detail": "代码在访问字典 data['user_id'] 时，该键不存在。建议在访问前使用 data.get('user_id', default_value) 或先检查 'user_id' in data。",
+    "code_fix": "user_id = data.get('user_id', None)\nif user_id is None:\n    raise ValueError(\"缺少必填字段 user_id\")",
+    "environment_checks": []
+  },
+  "confidence": 0.85,
+  "classification_method": "rule_based",
+  "evidence": "错误类型KeyError匹配规则1 RuntimeError类；报错信息含'user_id'键名；代码审查无语法错误"
+}
+```
+
 **字段说明**：
-- `status`：`"pass"` / `"fail"` / `"review_needed"`（review_needed对应仅Major+相似度0.65~0.80存疑场景，需人工复核）
-- `errors`：ReviewError数组，每项含 `error_type`、`severity`、`location`、`description`、`evidence`、`suggestion`
-- `summary`：人类可读的审核总结
-- `passed`：布尔值，与status联动（pass→true，fail→false，review_needed→false待人工）
+- `error_category`：错误分类（`"SyntaxError"` / `"RuntimeError"` / `"LogicError"` / `"unknown"`），来自 `code_error_patterns.skill.md` 规则1
+- `severity`：严重等级（`"critical"` / `"major"` / `"minor"`），来自 `code_error_patterns.skill.md` 规则1
+- `root_cause`：归因类型（`"code_issue"` / `"environment_issue"` / `"dependency_issue"` / `"data_issue"` / `"code_unknown"`），来自 `code_error_patterns.skill.md` 规则2
+- `fix_suggestion.summary`：一句话修改建议，格式为"错误分类：xxx，严重等级：xxx，修改建议：xxx"
+- `fix_suggestion.detail`：详细修改说明
+- `fix_suggestion.code_fix`：修复代码示例（仅当有代码输入时提供）
+- `fix_suggestion.environment_checks`：环境排查清单（仅当归因为环境问题时提供）
+- `confidence`：分类置信度（0~1）
+- `classification_method`：分类方法（`"rule_based"` 规则匹配 / `"knowledge_based"` 知识库匹配 / `"hybrid"` 混合）
+- `evidence`：分类依据说明
 
 ## 5. 异常处理
 | 异常场景 | 处置方式 |
@@ -239,6 +283,6 @@ TechnicalReviewResult对象，LLM返回JSON格式：
 **说明**：场景2体现了规则4的"标准答案条目优先于相似度检索"裁决逻辑——当知识库检索能力不足导致相似度低，但标准答案条目有明确依据时，不应误判为幻觉，而应以标准答案条目为准放行，并在review_details中提示知识库覆盖不足。
 
 ## 7. 版本信息
-- 版本：v3.2，更新日期：2026-07-24
-- 变更记录：合并原 `hallucination_detection.skill.md` 全部内容；核心方法论重构为5步（解析→硬性检查→事实检查→标准检查→综合裁决），与文档3的Agent④审核流程（硬性→事实→标准→合规→综合裁决）对齐；新增规则1幻觉阈值来源（Stanford CS224V）；扩展规则2错误模式库至7类（含5+常见模式）；新增规则3互斥条件判断流程；新增规则4裁决优先级与标准答案条目优先逻辑；完善输入输出JSON示例（含status字段）；新增异常处理表（含工具超时、证据ID缺失、多工具冲突）；附录A扩充至3个参考标准；附录B新增2个完整场景示例（硬性阻断+语义冲突）。**v3.2变更：将核心方法论的"逐级检查"拆分为独立的硬性检查、事实检查、标准检查三个步骤，明确各步骤的工具调用和职责边界，与文档3的流程步骤一一对应**
-- **与代码对齐说明**：当前 `HybridTechnicalReviewAgent` 实现了 `check_hard_coded`（硬性检查）和 `check_hallucination`（事实检查），但尚未实现独立的 `run_industry_standards_check`（标准检查）子流程。本SKILL v3.2明确标准检查作为独立步骤，后续代码需增加 `_run_industry_standards_check()` 方法调用 `industry_standards` 子模块，将返回的ReviewError合并到最终errors中
+- 版本：v3.3，更新日期：2026-07-25
+- 变更记录：**v3.3变更**：新增"用户提交代码审核流程"（2.2节），定义Agent4处理代码错误分析请求的6步专属流程；明确判断依据优先级（code_error_patterns.skill.md规则 > knowledge_verify_tool > 静态检查工具）；新增代码错误分析场景的输出格式与字段说明（含error_category、severity、root_cause、fix_suggestion等字段），输出格式为"错误分类：xxx，严重等级：xxx，修改建议：xxx"。**v3.2变更**：将核心方法论的"逐级检查"拆分为独立的硬性检查、事实检查、标准检查三个步骤，明确各步骤的工具调用和职责边界，与文档3的流程步骤一一对应
+- **与代码对齐说明**：`analyze_code_error()` 方法已实现代码错误分析功能，v3.3要求该方法集成 `code_error_patterns.skill.md` 的错误分级与归因规则，优先使用规则分类结果作为最终判定，knowledge_verify_tool结果作为辅助参考
