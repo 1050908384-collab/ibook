@@ -457,7 +457,7 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 # 向后兼容适配器
 # 保留原 QualityReviewAgent 调用的 async 类接口，委托给函数式核心。
-# agent_05 仅传 content 不传 profile，故画像为空（默认学生/beginner）。
+# 支持画像传入：profile 可包含 grade / skill_tags / knowledge_gaps / learning_style
 # analyze 返回 issues 列表（兼容旧调用方 print 的 type/message 字段）。
 # ------------------------------------------------------------------
 class DifficultyAnalyzerTool:
@@ -467,8 +467,11 @@ class DifficultyAnalyzerTool:
     def _clean_response(self, response: str) -> str:
         return _clean_response(response)
 
-    async def analyze(self, content: str) -> List[Dict[str, Any]]:
-        result = difficulty_analyzer({"content": content}, config=self._default_config)
+    async def analyze(self, content: str, profile: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        input_data: Dict[str, Any] = {"content": content}
+        if profile is not None:
+            input_data["profile"] = profile
+        result = difficulty_analyzer(input_data, config=self._default_config)
         if result.get("status") != "success":
             return []
         issues = result["data"].get("issues", [])

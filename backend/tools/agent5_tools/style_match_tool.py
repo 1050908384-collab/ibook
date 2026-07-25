@@ -29,7 +29,7 @@ style_match_tool — Agent5 风格匹配评估工具
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -251,14 +251,18 @@ def _err(msg: str) -> dict:
 # ------------------------------------------------------------------
 # 向后兼容适配器
 # 保留原 QualityReviewAgent 调用的 async 类接口，委托给函数式核心。
-# 注意：agent_05 仅传 content 不传 profile，故默认 mixed。
+# 支持画像传入：profile 可包含 learning_style
+# check 返回 issues 列表（兼容旧调用方 print 的 type/message 字段）。
 # ------------------------------------------------------------------
 class StyleMatchTool:
     def __init__(self):
         pass
 
-    async def check(self, content: str) -> List[Dict[str, Any]]:
-        result = style_match({"content": content})
+    async def check(self, content: str, profile: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        input_data: Dict[str, Any] = {"content": content}
+        if profile is not None:
+            input_data["profile"] = profile
+        result = style_match(input_data)
         if result.get("status") != "success":
             return []
         issues = result["data"].get("issues", [])
