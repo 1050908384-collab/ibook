@@ -17,8 +17,12 @@ class SubmitAnswerRequest(BaseModel):
 @router.post("/start")
 async def start_stage(request: StartStageRequest):
     try:
+        print(f"[API][POST /api/stage/start] session_id={request.session_id}", flush=True)
         result = await harness.start_stage(request.session_id)
-        return result
+        return {
+            **result,
+            "state": harness.get_runtime_state(request.session_id),
+        }
     except Exception as e:
         status_code = 404 if isinstance(e, ValueError) else 500
         raise HTTPException(status_code=status_code, detail=str(e))
@@ -26,8 +30,12 @@ async def start_stage(request: StartStageRequest):
 @router.post("/submit-answer")
 async def submit_answer(request: SubmitAnswerRequest):
     try:
+        print(f"[API][POST /api/stage/submit-answer] session_id={request.session_id} | question_id={request.question_id}", flush=True)
         result = await harness.submit_answer(request.session_id, request.question_id, request.user_answer)
-        return result
+        return {
+            **result,
+            "state": harness.get_runtime_state(request.session_id),
+        }
     except Exception as e:
         status_code = 404 if isinstance(e, ValueError) else 500
         raise HTTPException(status_code=status_code, detail=str(e))
@@ -35,8 +43,12 @@ async def submit_answer(request: SubmitAnswerRequest):
 @router.post("/complete/{session_id}")
 async def complete_stage(session_id: str):
     try:
+        print(f"[API][POST /api/stage/complete] session_id={session_id}", flush=True)
         result = await harness.complete_stage(session_id)
-        return result
+        return {
+            **result,
+            "state": harness.get_runtime_state(session_id),
+        }
     except Exception as e:
         status_code = 404 if isinstance(e, ValueError) else 500
         raise HTTPException(status_code=status_code, detail=str(e))

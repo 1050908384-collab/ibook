@@ -14,7 +14,12 @@ class SessionResponse(BaseModel):
 async def create_session():
     try:
         session = harness.create_session(None)
-        return {"session_id": session["session_id"], "status": "active"}
+        print(f"[API][POST /api/session] session_id={session['session_id']}", flush=True)
+        return {
+            "session_id": session["session_id"],
+            "status": "active",
+            "state": harness.get_runtime_state(session["session_id"]),
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

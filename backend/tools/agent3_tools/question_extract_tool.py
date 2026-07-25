@@ -247,7 +247,7 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class QuestionExtractTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        self._default_config = {"use_mock": False}
 
     async def extract_questions(self, tutorial: str, stage_info: Dict[str, Any]) -> List[Dict[str, Any]]:
         block_id = stage_info.get("block_id", "")

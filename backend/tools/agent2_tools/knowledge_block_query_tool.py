@@ -222,7 +222,7 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class KnowledgeBlockQueryTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        self._default_config = {"use_mock": False}
 
     async def query_block(self, skill_name: str) -> Dict[str, Any]:
         result = knowledge_block_query({"skill_name": skill_name}, config=self._default_config)

@@ -15,6 +15,7 @@ class SQLiteClient:
         event.listen(self.engine, "connect", self._enable_sqlite_foreign_keys)
         self.Session = sessionmaker(bind=self.engine)
         self._init_tables()
+        self._migrate_tables()
 
     def close(self) -> None:
         self.engine.dispose()
@@ -188,6 +189,25 @@ class SQLiteClient:
             """))
             conn.commit()
 
+    def _migrate_tables(self):
+        with self.engine.connect() as conn:
+            self._ensure_column(conn, "user_profiles", "user_id", "VARCHAR(50)")
+            self._ensure_column(conn, "user_profiles", "grade", "VARCHAR(50)")
+            self._ensure_column(conn, "user_profiles", "hardware", "VARCHAR(100)")
+            self._ensure_column(conn, "user_profiles", "profile_confidence", "FLOAT")
+            self._ensure_column(conn, "user_profiles", "last_updated", "TIMESTAMP")
+            conn.commit()
+
+    @staticmethod
+    def _ensure_column(conn, table_name: str, column_name: str, column_sql: str) -> None:
+        columns = {
+            row[1]
+            for row in conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+        }
+        if column_name in columns:
+            return
+        conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}"))
+
     def create_session(self, session_id: str) -> None:
         with self.Session() as session:
             session.execute(text("INSERT OR IGNORE INTO sessions (session_id) VALUES (:session_id)"),
@@ -264,18 +284,23 @@ class SQLiteClient:
             """), {"session_id": session_id}).scalar_one()
             session.execute(text("""
                 INSERT INTO user_profiles (
-                    profile_id, session_id, version, skill_tags, knowledge_gaps,
-                    goal, daily_hours, learning_style, learning_rhythm,
-                    confidence_index, confusion_markers, confidence
+                    profile_id, session_id, user_id, version, grade, goal,
+                    daily_hours, learning_style, hardware, skill_tags, knowledge_gaps,
+                    learning_rhythm, confidence_index, confusion_markers,
+                    confidence, profile_confidence, last_updated
                 ) VALUES (
-                    :profile_id, :session_id, :version, :skill_tags, :knowledge_gaps,
-                    :goal, :daily_hours, :learning_style, :learning_rhythm,
-                    :confidence_index, :confusion_markers, :confidence
+                    :profile_id, :session_id, :user_id, :version, :grade, :goal,
+                    :daily_hours, :learning_style, :hardware, :skill_tags, :knowledge_gaps,
+                    :learning_rhythm, :confidence_index, :confusion_markers,
+                    :confidence, :profile_confidence, CURRENT_TIMESTAMP
                 )
             """), {
                 "profile_id": profile_id,
                 "session_id": session_id,
+                "user_id": profile.get("user_id", session_id),
                 "version": version,
+                "grade": profile.get("grade", ""),
+                "hardware": profile.get("hardware", ""),
                 "skill_tags": json.dumps(profile.get("skill_tags", [])),
                 "knowledge_gaps": json.dumps(profile.get("knowledge_gaps", [])),
                 "goal": profile.get("goal", ""),
@@ -284,7 +309,8 @@ class SQLiteClient:
                 "learning_rhythm": profile.get("learning_rhythm", "medium"),
                 "confidence_index": profile.get("confidence_index", 0.5),
                 "confusion_markers": json.dumps(profile.get("confusion_markers", [])),
-                "confidence": profile.get("confidence", 0.7)
+                "confidence": profile.get("confidence", 0.7),
+                "profile_confidence": profile.get("profile_confidence", profile.get("confidence", 0.7)),
             })
             session.commit()
 

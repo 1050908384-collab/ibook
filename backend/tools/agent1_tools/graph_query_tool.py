@@ -287,7 +287,7 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class GraphQueryTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        self._default_config = {"use_mock": False}
 
     async def query_prerequisites(self, skill_name: str) -> List[str]:
         result = graph_query({"skill_name": skill_name}, config=self._default_config)

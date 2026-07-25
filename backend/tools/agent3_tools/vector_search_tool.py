@@ -243,7 +243,7 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class VectorSearchTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        self._default_config = {"use_mock": False}
 
     async def search(self, query: str, block_id: str = "", top_k: int = 3) -> List[Dict[str, Any]]:
         result = vector_search({

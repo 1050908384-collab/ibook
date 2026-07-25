@@ -521,7 +521,7 @@ def check_code_error_patterns(code: str) -> List[Dict[str, Any]]:
 # ------------------------------------------------------------------
 class RuleCheckTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        self._default_config = {"use_mock": False}
 
     async def check_rules(self, content: str) -> List[Dict[str, Any]]:
         result = rule_check({"content": content}, config=self._default_config)

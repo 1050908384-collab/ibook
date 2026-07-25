@@ -1,92 +1,103 @@
 # -*- coding: utf-8 -*-
 """
-FAQ数据向量化初始化脚本
-================================================
-功能：将faq_items表中的FAQ数据向量化，存入Chroma向量库。
-执行方式：python scripts/init_faq_vectors.py
+FAQ 数据向量化初始化脚本
 
-流程：
-    1. 从SQLite的faq_items表读取所有FAQ条目
-    2. 将每个FAQ的question和answer合并为文档内容
-    3. 将文档向量化并存入Chroma的"faq_collection"集合
-    4. 保留metadata（faq_id, block_id, question, answer, difficulty, tags, views）
-
-依赖：
-    - ChromaDB (需提前安装：pip install chromadb)
-    - SQLite数据库中已有faq_items表
+作用：
+1. 从 `faq_items` 读取 FAQ 数据
+2. 将 `question + answer` 写入 Chroma 向量库
+3. 统一使用 `DATABASE_URL` 与 `CHROMA_PATH`
 """
 
-import sys
+import json
 import os
+import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
+sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, BACKEND_DIR)
 
+from sqlalchemy import text
+
+from backend.config import BACKEND_DIR as BACKEND_PATH, settings
 from backend.db.sqlite_client import SQLiteClient
-from backend.db.chroma_client import ChromaClient
-from chromadb import PersistentClient
+
+try:
+    from chromadb import PersistentClient
+except ImportError:
+    PersistentClient = None
 
 
 def init_faq_vectors():
-    print("[INFO] 开始FAQ数据向量化初始化...")
+    if PersistentClient is None:
+        print("[ERROR] chromadb is not installed. Run `pip install chromadb` first.")
+        return
 
+    print("[INFO] Starting FAQ vector initialization...")
     sqlite_client = SQLiteClient()
 
     try:
         with sqlite_client.Session() as session:
-            rows = session.execute("""
-                SELECT faq_id, block_id, question, answer, difficulty, tags, views
-                FROM faq_items
-            """).fetchall()
+            rows = session.execute(
+                text(
+                    """
+                    SELECT faq_id, block_id, question, answer, difficulty, tags, views
+                    FROM faq_items
+                    """
+                )
+            ).fetchall()
 
         if not rows:
-            print("[WARN] faq_items表为空，跳过向量化")
+            print("[WARN] faq_items is empty, skipping vector initialization.")
             return
 
-        print(f"[INFO] 读取到 {len(rows)} 条FAQ条目")
+        print(f"[INFO] Loaded {len(rows)} FAQ items")
 
-        chroma_client = PersistentClient(path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "chroma"))
+        chroma_path = Path(settings.CHROMA_PATH)
+        if not chroma_path.is_absolute():
+            chroma_path = (BACKEND_PATH / chroma_path).resolve()
+
+        chroma_client = PersistentClient(path=str(chroma_path))
         collection = chroma_client.get_or_create_collection("faq_collection")
 
         documents = []
         metadatas = []
         ids = []
 
-        for row in rows:
-            faq_id, block_id, question, answer, difficulty, tags, views = row
-
+        for faq_id, block_id, question, answer, difficulty, tags, views in rows:
             documents.append(f"{question}\n{answer}")
 
             try:
-                tags_list = eval(tags) if tags else []
-            except:
+                tags_list = json.loads(tags) if tags else []
+                if not isinstance(tags_list, list):
+                    tags_list = []
+            except Exception:
                 tags_list = []
 
-            metadatas.append({
-                "faq_id": faq_id,
-                "block_id": block_id,
-                "question": question,
-                "answer": answer,
-                "difficulty": difficulty or "",
-                "tags": tags_list,
-                "views": views or 0,
-            })
-
+            metadatas.append(
+                {
+                    "faq_id": faq_id,
+                    "block_id": block_id,
+                    "question": question,
+                    "answer": answer,
+                    "difficulty": difficulty or "",
+                    "tags": tags_list,
+                    "views": views or 0,
+                }
+            )
             ids.append(faq_id)
 
-        print(f"[INFO] 准备向量化 {len(documents)} 条文档...")
-        collection.add(
-            documents=documents,
-            metadatas=metadatas,
-            ids=ids
-        )
+        print(f"[INFO] Writing {len(documents)} FAQ vectors...")
+        collection.add(documents=documents, metadatas=metadatas, ids=ids)
 
-        print(f"[OK] FAQ向量初始化完成！")
-        print(f"[INFO] Chroma集合 'faq_collection' 包含 {collection.count()} 条向量")
-
-    except Exception as e:
-        print(f"[ERROR] FAQ向量初始化失败: {e}")
-        import traceback
-        traceback.print_exc()
+        print("[OK] FAQ vector initialization completed")
+        print(f"[INFO] faq_collection count: {collection.count()}")
+    except Exception as exc:
+        print(f"[ERROR] FAQ vector initialization failed: {exc}")
+        raise
+    finally:
+        sqlite_client.close()
 
 
 if __name__ == "__main__":

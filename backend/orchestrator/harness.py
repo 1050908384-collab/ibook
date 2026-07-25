@@ -45,10 +45,20 @@ class Harness:
         self.agent5 = HybridQualityReviewAgent() if self.execution_mode == "hybrid" else DeterministicQualityReviewAgent()
         self.agent6 = DeterministicStageDecisionAgent()
 
+    def _log(self, session_id: str, event: str, detail: str = "") -> None:
+        suffix = f" | {detail}" if detail else ""
+        print(f"[Harness][session={session_id}] {event}{suffix}", flush=True)
+
     async def process_initial_input(self, session_id: str, user_input: str) -> Dict[str, Any]:
+        self._log(session_id, "process_initial_input:start", f"message={user_input[:60]}")
         self.state_manager.require_session(session_id)
         diagnostic = await self.agent1.run(DiagnosticInput(session_id=session_id, user_input=user_input))
         if diagnostic.profile.confidence < settings.CONFIDENCE_THRESHOLD:
+            self._log(
+                session_id,
+                "process_initial_input:needs_more_info",
+                f"confidence={diagnostic.profile.confidence:.2f}",
+            )
             return {"status": "needs_more_info", "questions": diagnostic.followup_questions}
 
         self.state_manager.update_profile(session_id, diagnostic.profile)
@@ -59,6 +69,11 @@ class Harness:
         ))
         self.state_manager.update_stage(session_id, stage.stage)
         self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
+        self._log(
+            session_id,
+            "process_initial_input:ready",
+            f"goal={diagnostic.profile.goal}, stage={stage.stage.block_name}",
+        )
         return {
             "status": "ready",
             "profile": diagnostic.profile.model_dump(mode="json"),
@@ -68,6 +83,7 @@ class Harness:
     async def start_stage(self, session_id: str) -> Dict[str, Any]:
         stage = StageInfo.model_validate(self._require_stage(session_id))
         profile = UserProfile.model_validate(self._require_profile(session_id))
+        self._log(session_id, "start_stage:start", f"stage={stage.stage_num}, block={stage.block_name}")
         generated = await self.agent3.run(ContentGenerationInput(session_id=session_id, stage=stage))
         learning_package, review_history = await self._review_learning_package(
             session_id,
@@ -85,6 +101,11 @@ class Harness:
             "passed": review_passed,
             "iterations": len(review_history),
         })
+        self._log(
+            session_id,
+            "start_stage:done",
+            f"passed={review_passed}, iterations={len(review_history)}",
+        )
         return {
             "learning_package": learning_package.model_dump(mode="json"),
             "review_passed": review_passed,
@@ -95,6 +116,7 @@ class Harness:
     async def handle_question(self, session_id: str, question: str) -> Dict[str, Any]:
         stage = StageInfo.model_validate(self._require_stage(session_id))
         profile = UserProfile.model_validate(self._require_profile(session_id))
+        self._log(session_id, "handle_question:start", f"question={question[:60]}")
         generated = await self.agent3.generate_answer(AnswerGenerationInput(
             session_id=session_id,
             question=question,
@@ -117,6 +139,11 @@ class Harness:
             latest_review.quality.passed,
         )
         self.state_manager.add_interaction(session_id, "question_asked", {"question": question})
+        self._log(
+            session_id,
+            "handle_question:done",
+            f"tech_pass={latest_review.technical.passed}, quality_pass={latest_review.quality.passed}",
+        )
         return {
             "answer": answer,
             "tech_pass": latest_review.technical.passed,
@@ -135,12 +162,14 @@ class Harness:
             question_type=getattr(question, 'question_type', '')
         )
         self.state_manager.add_answer_record(session_id, question_id, user_answer, is_correct)
+        self._log(session_id, "submit_answer", f"question_id={question_id}, correct={is_correct}")
         return {"is_correct": is_correct, "correct_answer": question.correct_answer}
 
     async def complete_stage(self, session_id: str) -> Dict[str, Any]:
         profile = UserProfile.model_validate(self._require_profile(session_id))
         stage = StageInfo.model_validate(self._require_stage(session_id))
         accuracy = self.state_manager.calculate_accuracy(session_id)
+        self._log(session_id, "complete_stage:start", f"stage={stage.stage_num}, accuracy={accuracy:.2f}")
         decision = await self.agent6.run(StageDecisionInput(
             session_id=session_id,
             profile=profile,
@@ -157,6 +186,7 @@ class Harness:
 
         if decision.decision == "completed":
             self.state_manager.end_session(session_id)
+            self._log(session_id, "complete_stage:completed", f"accuracy={accuracy:.2f}")
             return {
                 "status": "completed",
                 "accuracy": accuracy,
@@ -194,6 +224,11 @@ class Harness:
             stage_num=next_stage_num,
         ))
         self.state_manager.update_stage(session_id, next_stage.stage)
+        self._log(
+            session_id,
+            "complete_stage:next_stage",
+            f"decision={decision.decision}, next_stage={next_stage.stage.stage_num}",
+        )
         return {
             "status": decision.decision,
             "accuracy": accuracy,
@@ -414,11 +449,18 @@ class Harness:
     def get_session(self, session_id: str) -> dict | None:
         return self.state_manager.get_session(session_id)
 
+    def get_runtime_state(self, session_id: str) -> dict | None:
+        return self.state_manager.get_session(session_id)
+
     def end_session(self, session_id: str) -> None:
         self.state_manager.end_session(session_id)
+        self._log(session_id, "session:end")
 
     def abandon_session(self, session_id: str) -> None:
         self.state_manager.abandon_session(session_id)
+        self._log(session_id, "session:abandon")
 
     def create_session(self, session_id: str | None = None) -> dict:
-        return self.state_manager.create_session(session_id)
+        session = self.state_manager.create_session(session_id)
+        self._log(session["session_id"], "session:create")
+        return session

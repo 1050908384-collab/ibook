@@ -127,47 +127,14 @@ def stage_generator(input_data: dict, config: dict = None) -> dict:
 # ------------------------------------------------------------------
 def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, Any],
                     goal: str, stage_num: int) -> dict:
-    """生成阶段计划（LLM生成描述，确定性派生ID）。"""
+    """生成阶段计划（确定性描述，稳定派生ID）。"""
     skill_name = gap.get("skill", "未知技能")
     level = gap.get("level", "beginner")
-
-    system_prompt = """你是一个学习规划专家。请根据用户的知识缺口和学习目标，生成一个学习阶段计划的描述信息。
-
-要求：
-1. title：简短的阶段标题（不超过20字）
-2. description：阶段描述（不超过100字）
-3. objectives：3个学习目标（每个不超过30字）
-4. difficulty：难度（初级/中级/高级），根据当前水平和知识缺口自动判断
-
-请以JSON格式返回，包含 title、description、objectives、difficulty 四个字段。"""
-
-    example = """{
-        "title": "学习LoRA微调",
-        "description": "掌握LoRA微调的核心概念和实践技能",
-        "objectives": ["理解LoRA的基本概念", "掌握LoRA的核心技术", "能够独立完成LoRA相关任务"],
-        "difficulty": "中级"
-    }"""
-
-    prompt = f"""知识缺口：{skill_name}
-当前水平：{level}
-学习目标：{goal}
-
-请生成学习阶段计划的描述信息，以JSON格式返回，例如：{example}"""
-
-    llm_client = LLMClient()
-    response = llm_client.complete(prompt, system_prompt)
-    response = _clean_response(response)
-
     llm_data = {}
-    try:
-        match = re.search(r'\{.*\}', response, re.DOTALL)
-        if match:
-            llm_data = json.loads(match.group())
-    except Exception as e:
-        logger.warning("LLM JSON解析失败: %s，使用默认值", e)
 
     stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{session_id}:{stage_num}:{skill_name}"))
-    block_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{skill_name}"))
+    block_id = block_info.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, skill_name).hex[:8].upper()}"
+    difficulty_map = {"beginner": "初级", "intermediate": "中级", "advanced": "高级"}
 
     return {
         "stage": {
@@ -179,15 +146,15 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
             "gap_skill": skill_name,
             "prerequisites": block_info.get("prerequisites", []),
             "title": llm_data.get("title", f"学习{skill_name}"),
-            "description": llm_data.get("description", f"掌握{skill_name}的核心概念和实践技能"),
+            "description": llm_data.get("description", f"围绕{skill_name}完成一次可执行的阶段学习与练习。"),
             "objectives": llm_data.get("objectives", [
                 f"理解{skill_name}的基本概念",
                 f"掌握{skill_name}的核心技术",
                 f"能够独立完成{skill_name}相关任务"
             ]),
-            "difficulty": llm_data.get("difficulty", "中级"),
+            "difficulty": llm_data.get("difficulty", block_info.get("difficulty") or difficulty_map.get(level, "中级")),
         },
-        "generated_by_llm": True,
+        "generated_by_llm": False,
     }
 
 
@@ -269,7 +236,7 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class StageGeneratorTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        self._default_config = {"use_mock": False}
         self.llm_client = LLMClient()
 
     async def generate_stage(self, session_id: str, gap: Dict[str, Any],

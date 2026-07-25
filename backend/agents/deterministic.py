@@ -26,6 +26,19 @@ from models.profile import KnowledgeGap, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
 from models.stage import LearningPackage, StageInfo
 from skills import load_skills
+from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
+from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
+from tools.agent1_tools.graph_query_tool import GraphQueryTool
+from tools.agent2_tools.knowledge_block_query_tool import KnowledgeBlockQueryTool
+from tools.agent2_tools.stage_generator_tool import StageGeneratorTool
+from tools.agent3_tools.faq_search_tool import FAQSearchTool
+from tools.agent3_tools.question_extract_tool import QuestionExtractTool
+from tools.agent3_tools.vector_search_tool import VectorSearchTool
+from tools.agent5_tools.cognitive_load_tool import CognitiveLoadTool
+from tools.agent5_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
+from tools.agent5_tools.style_match_tool import StyleMatchTool
+from tools.agent6_tools.profile_update_tool import ProfileUpdateTool
+from tools.agent6_tools.strategy_selector_tool import StrategySelectorTool
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
 
 
@@ -47,20 +60,63 @@ def get_skill_context(skill_names: list[str]) -> str:
     return "\n\n".join(skill.content for skill in load_skills(skill_names))
 
 
+def _agent_log(agent_name: str, message: str) -> None:
+    print(f"[{agent_name}] {message}", flush=True)
+
+
 class DeterministicDiagnosticAgent:
+    def __init__(self):
+        self.extract_skills_tool = ExtractSkillsTool()
+        self.calculate_confidence_tool = CalculateConfidenceTool()
+        self.graph_query_tool = GraphQueryTool()
+
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
+        _agent_log("Agent1", f"diagnostic:start | session={request.session_id}")
         text = request.user_input.strip()
         target_text = self._target_text(text)
         targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
         mentioned = [skill for skill in SKILL_NAMES if skill.lower() in text.lower()]
         mastered = [skill for skill in mentioned if skill not in targets]
+        followup_questions: list[str] = []
+        try:
+            extracted_tags = await self.extract_skills_tool.extract_skills(text)
+            extracted_gaps = await self.extract_skills_tool.extract_gaps(text)
+            if extracted_tags:
+                mastered = extracted_tags
+            if extracted_gaps:
+                targets = [gap.get("skill", "") for gap in extracted_gaps if gap.get("skill")]
+        except Exception:
+            extracted_gaps = []
 
         if not targets:
             targets = [mentioned[-1]] if mentioned else ["通用学习目标"]
             mastered = [skill for skill in mentioned if skill not in targets]
 
-        gaps = [KnowledgeGap(skill=skill) for skill in targets]
+        gaps = []
+        for skill in targets:
+            prerequisites: list[str] = []
+            try:
+                prerequisites = await self.graph_query_tool.query_prerequisites(skill)
+            except Exception:
+                prerequisites = []
+            gaps.append(KnowledgeGap(skill=skill, prerequisites=prerequisites))
+
         confidence = 0.9 if mentioned and target_text != text else 0.75
+        try:
+            confidence_result = await self.calculate_confidence_tool.calculate(
+                text,
+                mastered,
+                [gap.model_dump(mode="json") for gap in gaps],
+            )
+            confidence = max(confidence, confidence_result)
+        except Exception:
+            pass
+        if confidence < 0.7 and not mentioned:
+            followup_questions = [
+                "你希望优先解决哪一类问题？",
+                "你目前有哪些相关基础？",
+                "你每天大约能投入多久学习？",
+            ]
         profile = UserProfile(
             session_id=request.session_id,
             skill_tags=mastered,
@@ -68,7 +124,8 @@ class DeterministicDiagnosticAgent:
             goal=target_text or text,
             confidence=confidence,
         )
-        return DiagnosticOutput(profile=profile)
+        _agent_log("Agent1", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
+        return DiagnosticOutput(profile=profile, followup_questions=followup_questions)
 
     def _target_text(self, text: str) -> str:
         match = re.search(
@@ -81,6 +138,7 @@ class DeterministicDiagnosticAgent:
 
 class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
     def __init__(self):
+        super().__init__()
         self.llm_client = LLMClient()
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
@@ -147,7 +205,12 @@ JSON字段要求：
 
 
 class DeterministicStagePlannerAgent:
+    def __init__(self):
+        self.knowledge_block_query_tool = KnowledgeBlockQueryTool()
+        self.stage_generator_tool = StageGeneratorTool()
+
     async def run(self, request: StagePlanningInput) -> StagePlanningOutput:
+        _agent_log("Agent2", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
         gap = next(
             (item for item in request.profile.knowledge_gaps if item.status != "已掌握"),
             None,
@@ -155,23 +218,54 @@ class DeterministicStagePlannerAgent:
         if gap is None:
             raise ValueError("No unmastered knowledge gap remains")
 
+        block_info = {}
+        try:
+            block_info = await self.knowledge_block_query_tool.query_block(gap.skill)
+        except Exception:
+            block_info = {}
+        block_info = block_info or {}
+
+        generated_stage = {}
+        try:
+            generated_stage = await self.stage_generator_tool.generate_stage(
+                request.session_id,
+                gap.model_dump(mode="json"),
+                block_info,
+                request.profile.goal,
+            )
+        except Exception:
+            generated_stage = {}
+        generated_stage = generated_stage or {}
+
         stable_key = f"{request.session_id}:{request.stage_num}:{gap.skill}"
-        stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
+        stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
         stage = StageInfo(
             stage_id=stage_id,
             stage_num=request.stage_num,
-            block_id=f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}",
-            block_name=gap.skill,
+            block_id=block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}",
+            block_name=block_info.get("block_name") or generated_stage.get("block_name") or gap.skill,
             gap_skill=gap.skill,
-            estimated_hours=2.0,
-            prerequisites=gap.prerequisites,
+            estimated_hours=block_info.get("estimated_hours") or generated_stage.get("estimated_hours") or 2.0,
+            prerequisites=block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites,
         )
+        _agent_log("Agent2", f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id}")
         return StagePlanningOutput(stage=stage)
 
 
 class DeterministicContentAgent:
+    def __init__(self):
+        self.vector_search_tool = VectorSearchTool()
+        self.question_extract_tool = QuestionExtractTool()
+        self.faq_search_tool = FAQSearchTool()
+
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
+        _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
         stage = request.stage
+        related_docs = []
+        try:
+            related_docs = await self.vector_search_tool.search_by_block(stage.block_id)
+        except Exception:
+            related_docs = []
         tutorial = (
             f"# {stage.block_name}\n\n"
             f"本阶段目标是理解 {stage.block_name} 的核心概念，并完成一次基础练习。\n\n"
@@ -180,29 +274,77 @@ class DeterministicContentAgent:
             "2. 用自己的语言复述。\n"
             "3. 完成阶段测试题。\n"
         )
-        question = TestQuestion(
-            question_id=f"Q-{stage.stage_id[:8]}-1",
-            block_id=stage.block_id,
-            question_type="填空",
-            question_text="本阶段的学习主题是什么？",
-            correct_answer=stage.block_name,
-            hint="答案就是阶段标题。",
-        )
+        if related_docs:
+            excerpts = "\n".join(f"- {item.get('content', '')[:120]}" for item in related_docs[:3])
+            tutorial += f"\n\n## 相关知识片段\n\n{excerpts}\n"
+
+        extracted_questions = []
+        try:
+            extracted_questions = await self.question_extract_tool.extract_questions(
+                tutorial,
+                {"block_id": stage.block_id, "block_name": stage.block_name, "question_count": 2},
+            )
+        except Exception:
+            extracted_questions = []
+
+        questions = [
+            TestQuestion.model_validate(question)
+            for question in extracted_questions
+            if isinstance(question, dict)
+        ]
+        if not questions:
+            questions = [TestQuestion(
+                question_id=f"Q-{stage.stage_id[:8]}-1",
+                block_id=stage.block_id,
+                question_type="填空",
+                question_text="本阶段的学习主题是什么？",
+                correct_answer=stage.block_name,
+                hint="答案就是阶段标题。",
+            )]
         package = LearningPackage(
             session_id=request.session_id,
             stage_id=stage.stage_id,
             block_id=stage.block_id,
             block_name=stage.block_name,
             tutorial=tutorial,
-            questions=[question],
+            questions=questions,
         )
+        _agent_log("Agent3", f"content:done | docs={len(related_docs)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
-        answer = (
-            f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
-            "建议先回到本阶段核心概念，再结合练习验证理解。"
-        )
+        _agent_log("Agent3", f"answer:start | question={request.question[:60]}")
+        faq_results = []
+        try:
+            faq_results = await self.faq_search_tool.search(
+                request.question,
+                block_id=request.stage.block_id,
+                top_k=1,
+            )
+        except Exception:
+            faq_results = []
+        if faq_results:
+            answer = faq_results[0].get("answer") or faq_results[0].get("question") or ""
+            if answer:
+                _agent_log("Agent3", f"answer:faq_hit | similarity={faq_results[0].get('similarity')}")
+                return AnswerGenerationOutput(answer=answer)
+
+        related_docs = []
+        try:
+            related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
+        except Exception:
+            related_docs = []
+        if related_docs:
+            references = "\n".join(f"- {item.get('content', '')[:160]}" for item in related_docs)
+            answer = (
+                f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
+                f"可以先参考这些知识片段：\n{references}"
+            )
+        else:
+            answer = (
+                f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
+                "建议先回到本阶段核心概念，再结合练习验证理解。"
+            )
         return AnswerGenerationOutput(answer=answer)
 
     async def revise_learning_package(self, request: ContentRevisionInput) -> ContentGenerationOutput:
@@ -228,12 +370,14 @@ class DeterministicContentAgent:
 
 class HybridContentAgent(DeterministicContentAgent):
     def __init__(self):
+        super().__init__()
         self.llm_client = LLMClient()
         self.content_skill_context = get_skill_context(["content_generation", "code_style"])
         self.answer_skill_context = get_skill_context(["question_answering"])
 
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
         output = await super().run(request)
+        _agent_log("Agent3", f"content:llm_enhance | block={request.stage.block_name}")
         stage = request.stage
         prompt = f"""请为学习阶段“{stage.block_name}”生成一份Markdown教程。
 
@@ -253,14 +397,41 @@ class HybridContentAgent(DeterministicContentAgent):
         )
         if self._is_valid_response(tutorial):
             output.learning_package.tutorial = tutorial
+            _agent_log("Agent3", f"content:llm_done | tutorial_len={len(tutorial)}")
         return output
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
+        _agent_log("Agent3", f"answer:hybrid_start | question={request.question[:60]}")
+        faq_results = []
+        try:
+            faq_results = await self.faq_search_tool.search(
+                request.question,
+                block_id=request.stage.block_id,
+                top_k=1,
+            )
+        except Exception:
+            faq_results = []
+        if faq_results:
+            answer = faq_results[0].get("answer") or faq_results[0].get("question") or ""
+            if answer:
+                _agent_log("Agent3", f"answer:faq_hit | similarity={faq_results[0].get('similarity')}")
+                return AnswerGenerationOutput(answer=answer)
+
+        related_docs = []
+        try:
+            related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
+        except Exception:
+            related_docs = []
+        context = ""
+        if related_docs:
+            context = "\n\n相关知识片段：\n" + "\n".join(
+                f"- {item.get('content', '')[:200]}" for item in related_docs
+            )
         prompt = f"""当前学习阶段：{request.stage.block_name}
 用户学习目标：{request.profile.goal}
 用户问题：{request.question}
 
-请直接回答问题。先给出简明结论，再解释原理；需要时提供示例。不要编造来源。"""
+请直接回答问题。先给出简明结论，再解释原理；需要时提供示例。不要编造来源。{context}"""
         prompt += f"\n\n答疑规范：\n{self.answer_skill_context}"
         answer = await self.llm_client.complete(
             prompt,
@@ -268,7 +439,9 @@ class HybridContentAgent(DeterministicContentAgent):
             temperature=0.5,
         )
         if self._is_valid_response(answer):
+            _agent_log("Agent3", f"answer:llm_done | answer_len={len(answer)}")
             return AnswerGenerationOutput(answer=answer)
+        _agent_log("Agent3", "answer:llm_invalid -> deterministic_fallback")
         return await super().generate_answer(request)
 
     async def revise_learning_package(self, request: ContentRevisionInput) -> ContentGenerationOutput:
@@ -342,10 +515,24 @@ class DeterministicTechnicalReviewAgent:
 
 
 class DeterministicQualityReviewAgent:
+    def __init__(self):
+        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
+        self.cognitive_load_tool = CognitiveLoadTool()
+        self.style_match_tool = StyleMatchTool()
+
     async def run(self, request: ReviewInput) -> QualityReviewResult:
         errors = []
         if len(request.content.strip()) < 40:
             errors.append(ReviewError(error_type="too_short", description="教程内容不足以支持阶段学习"))
+        if request.target_type == "learning_package":
+            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
+            try:
+                tool_errors = await self.difficulty_analyzer_tool.analyze(request.content, profile=profile)
+                tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
+                tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
+                errors.extend(normalize_review_errors(tool_errors))
+            except Exception:
+                pass
         return QualityReviewResult(
             passed=not errors,
             errors=errors,
@@ -438,6 +625,9 @@ class HybridQualityReviewAgent:
     def __init__(self):
         self.llm_client = LLMClient()
         self.skill_context = get_skill_context(["pedagogy", "learner_model", "quality_metrics"])
+        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
+        self.cognitive_load_tool = CognitiveLoadTool()
+        self.style_match_tool = StyleMatchTool()
 
     async def run(self, request: ReviewInput) -> QualityReviewResult:
         print(f"=== Agent5 教学质量审核开始：{request.target_type} ===")
@@ -449,6 +639,19 @@ class HybridQualityReviewAgent:
             json_mode=True,
         )
         result = self._parse_result(response)
+        if request.target_type == "learning_package":
+            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
+            tool_errors = []
+            try:
+                tool_errors.extend(await self.difficulty_analyzer_tool.analyze(request.content, profile=profile))
+                tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
+                tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
+            except Exception:
+                tool_errors = []
+            normalized_tool_errors = normalize_review_errors(tool_errors)
+            if normalized_tool_errors:
+                result.errors = normalized_tool_errors + result.errors
+                result.passed = False
         print(f"=== Agent5 教学质量审核完成：passed={result.passed}, errors={len(result.errors)} ===")
         return result
 
@@ -527,30 +730,32 @@ def normalize_review_errors(raw_errors: list) -> list[ReviewError]:
 
 
 class DeterministicStageDecisionAgent:
+    def __init__(self):
+        self.strategy_selector_tool = StrategySelectorTool()
+        self.profile_update_tool = ProfileUpdateTool()
+
     async def run(self, request: StageDecisionInput) -> StageDecisionOutput:
         profile = request.profile.model_copy(deep=True)
-        for gap in profile.knowledge_gaps:
-            if gap.skill != request.stage.gap_skill:
-                continue
-            if request.accuracy >= 0.8:
-                gap.status = "已掌握"
-                gap.progress = 1.0
-            else:
-                gap.status = "部分掌握"
-                gap.progress = max(gap.progress, request.accuracy)
-
-        profile.confidence_index = min(1.0, max(0.0, request.accuracy))
+        updated_gaps = await self.profile_update_tool.update_gaps(
+            [gap.model_dump(mode="json") for gap in profile.knowledge_gaps],
+            request.accuracy,
+        )
+        profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
+        profile.learning_rhythm = await self.profile_update_tool.infer_rhythm(request.interactions)
+        profile.confidence_index = await self.profile_update_tool.infer_confidence(request.qa_history, request.accuracy)
+        profile.confusion_markers = await self.profile_update_tool.detect_confusion(request.qa_history)
         profile.version += 1
         all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
         if all_mastered:
             decision = "completed"
-            strategy = "finish"
         elif request.accuracy >= 0.8:
             decision = "continue"
-            strategy = "advance"
         else:
             decision = "repeat"
-            strategy = "reinforce"
+        strategy = await self.strategy_selector_tool.select_strategy(
+            request.accuracy,
+            profile.model_dump(mode="json"),
+        )
         return StageDecisionOutput(decision=decision, profile=profile, strategy=strategy)
 
 

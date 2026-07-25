@@ -199,7 +199,7 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class CalculateConfidenceTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        self._default_config = {"use_mock": False}
 
     async def calculate(self, user_input: str, skill_tags: List[str], knowledge_gaps: List[Dict[str, Any]]) -> float:
         result = calculate_confidence({

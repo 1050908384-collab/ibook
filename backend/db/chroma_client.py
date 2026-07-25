@@ -6,13 +6,18 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
-from config import settings
+from pathlib import Path
+
+from config import BACKEND_DIR, settings
 
 
 class ChromaClient:
     def __init__(self):
         if CHROMA_AVAILABLE:
-            self.client = PersistentClient(path=settings.CHROMA_PATH)
+            chroma_path = Path(settings.CHROMA_PATH)
+            if not chroma_path.is_absolute():
+                chroma_path = (BACKEND_DIR / chroma_path).resolve()
+            self.client = PersistentClient(path=str(chroma_path))
             self.collection = self.client.get_or_create_collection("knowledge_base")
         else:
             self.client = None
