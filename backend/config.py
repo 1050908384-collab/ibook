@@ -10,7 +10,7 @@ SKILLS_DIR = BACKEND_DIR / "skills"
 class Settings(BaseSettings):
     APP_NAME: str = "AI Agent Trainer"
     APP_HOST: str = "0.0.0.0"
-    APP_PORT: int = 8000
+    APP_PORT: int = 8500
 
     OLLMA_BASE_URL: str = "http://localhost:11434"
     OLLMA_MODEL: str = "deepseek-r1:7b"

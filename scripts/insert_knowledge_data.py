@@ -1,9 +1,12 @@
 import sqlite3
 import json
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 数据库文件路径（相对于项目根目录）
-DB_PATH = os.path.join('data', 'knowledge.db')
+from backend.config import settings
+
+DB_PATH = settings.DATABASE_URL.replace("sqlite:///", "").replace("../", "")
 
 # ============================================
 # 1. 定义要插入的数据（严格按学习顺序排列）
@@ -127,7 +130,7 @@ def insert_data():
 
     # 清空旧数据（避免重复插入）
     cursor.execute("DELETE FROM knowledge_blocks")
-    print("🧹 已清空旧数据")
+    print("[INFO] 已清空旧数据")
 
     # 逐条插入
     for block in blocks_data:
@@ -150,12 +153,12 @@ def insert_data():
             block["prereq"],                     # prerequisites (JSON数组)
             '["' + block["name"] + '"]'          # corresponding_gaps (对应盲区)
         ))
-        print(f"✅ 已插入: {block['id']} - {block['name']}")
+        print(f"[OK] 已插入: {block['id']} - {block['name']}")
 
     # 提交并关闭
     conn.commit()
     conn.close()
-    print("\n🎉 所有数据导入成功！")
+    print("\n[DONE] 所有数据导入成功！")
 
 if __name__ == "__main__":
     insert_data()

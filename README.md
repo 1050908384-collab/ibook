@@ -81,36 +81,36 @@ python scripts/init_faq_vectors.py
 
 ```powershell
 # 1. 创建 Session
-$session = Invoke-RestMethod -Method POST -Uri http://localhost:8000/api/session/
+$session = Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/session/
 $sessionId = $session.session_id
 $sessionId
 
 # 2. 初始化用户画像 + 生成当前阶段
 $body = "{`"session_id`": `"$sessionId`", `"message`": `"我想学习大模型微调`"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-Invoke-RestMethod -Method POST -Uri http://localhost:8000/api/chat/ -Body $bytes -ContentType "application/json; charset=utf-8"
+Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/chat/ -Body $bytes -ContentType "application/json; charset=utf-8"
 
 # 3. 启动当前阶段，生成教程并触发 Agent4/5 审核
 $body = "{`"session_id`": `"$sessionId`"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-Invoke-RestMethod -Method POST -Uri http://localhost:8000/api/stage/start -Body $bytes -ContentType "application/json; charset=utf-8"
+Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/stage/start -Body $bytes -ContentType "application/json; charset=utf-8"
 
 # 4. 在当前阶段内提问
 $body = "{`"session_id`": `"$sessionId`", `"message`": `"什么是LoRA微调？`"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-Invoke-RestMethod -Method POST -Uri http://localhost:8000/api/chat/question -Body $bytes -ContentType "application/json; charset=utf-8"
+Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/chat/question -Body $bytes -ContentType "application/json; charset=utf-8"
 
 # 5. 查看当前 Session 状态
-Invoke-RestMethod -Method GET -Uri "http://localhost:8000/api/session/$sessionId"
+Invoke-RestMethod -Method GET -Uri "http://localhost:8500/api/session/$sessionId"
 
 # 6. 如果要提交题目答案
 $questionId = "你的题目ID"
 $body = "{`"session_id`": `"$sessionId`", `"question_id`": `"$questionId`", `"user_answer`": `"LoRA`"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-Invoke-RestMethod -Method POST -Uri http://localhost:8000/api/stage/submit-answer -Body $bytes -ContentType "application/json; charset=utf-8"
+Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/stage/submit-answer -Body $bytes -ContentType "application/json; charset=utf-8"
 
 # 7. 完成当前阶段，触发 Agent6 决策
-Invoke-RestMethod -Method POST -Uri "http://localhost:8000/api/stage/complete/$sessionId"
+Invoke-RestMethod -Method POST -Uri "http://localhost:8500/api/stage/complete/$sessionId"
 ```
 
 ### 启动服务
