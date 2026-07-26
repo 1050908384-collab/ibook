@@ -65,13 +65,14 @@ def insert_knowledge_docs(db: SQLiteClient, docs_data: list):
         with db.Session() as session:
             session.execute(text("""
                 INSERT OR REPLACE INTO knowledge_docs (
-                    doc_id, block_id, title, content, doc_type, source, difficulty
+                    doc_id, block_id, subtopic_id, title, content, doc_type, source, difficulty
                 ) VALUES (
-                    :doc_id, :block_id, :title, :content, :doc_type, :source, :difficulty
+                    :doc_id, :block_id, :subtopic_id, :title, :content, :doc_type, :source, :difficulty
                 )
             """), {
                 "doc_id": doc["doc_id"],
                 "block_id": doc["block_id"],
+                "subtopic_id": doc.get("subtopic_id"),
                 "title": doc["title"],
                 "content": doc["content"],
                 "doc_type": doc["doc_type"],

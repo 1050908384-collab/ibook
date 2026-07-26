@@ -5,7 +5,7 @@
 ## 核心特性
 
 - **个性化画像**：通过对话式交互生成用户学习画像
-- **阶段式学习**：逐阶段推送学习内容，动态调整学习路径
+- **阶段式学习**：按“子知识点 + 每日可学时长”逐阶段推送学习内容，动态调整学习路径
 - **实时答疑**：学习过程中随时提问，系统即时回答
 - **双重审核**：技术审核+质量评审，确保学习内容准确性和教学效果
 - **策略调整**：根据测试结果自动调整下一阶段学习策略
@@ -27,6 +27,11 @@ project-root/
 ├── backend/          # 后端服务
 ├── frontend/         # 前端界面
 ├── data/             # 数据存储
+│   ├── seeds/        # 结构化种子数据（5个JSON文件）
+│   ├── sqlite_data/  # 主SQLite数据库 project.db
+│   ├── chroma_db/    # FAQ/知识检索向量库
+│   ├── graph_data/   # 知识依赖图谱数据
+│   └── test_data/    # 测试样例数据
 ├── scripts/          # 工具脚本
 └── docs/             # 项目文档
 ```
@@ -56,19 +61,27 @@ cp .env.example .env
 
 ```bash
 python scripts/init_db.py
-python scripts/init_knowledge_base.py
-python scripts/build_knowledge_graph.py
-python scripts/seed_test_data.py
+python scripts/insert_knowledge_data.py
 python scripts/init_faq_vectors.py
 ```
+
+当前数据导入脚本只读取 `data/seeds/` 下的 5 个结构化文件：
+
+- `knowledge_blocks.json`
+- `knowledge_subtopics.json`
+- `knowledge_docs.json`
+- `faq_items.json`
+- `test_questions.json`
 
 ## 数据库约定
 
 - 当前唯一主 SQLite 库为 `data/sqlite_data/project.db`
-- `project.db` 是运行时唯一真相源，包含知识库表、FAQ 表、会话表和 `session_states`
+- `project.db` 是运行时唯一真相源，包含知识板块、子知识点、知识文档、FAQ、题库、会话与状态快照
 - 历史库 `data/knowledge.db` 不再参与运行链路，仅保留备份归档用途
 - 所有后端代码、初始化脚本、FAQ 向量化脚本统一读取 `DATABASE_URL`
 - 所有 Chroma 数据统一读取 `CHROMA_PATH`
+- Agent2 当前按 `knowledge_subtopics` 的 `estimated_hours` 与 `sequence_index` 规划阶段
+- Agent3 当前按 `knowledge_docs` 检索教程与答疑内容；`knowledge_docs.subtopic_id` 用于将文档精确关联到子知识点
 
 ## FAQ 问答链路
 - Agent3 仅在用户提问时调用 FAQ 检索，不在教程生成阶段调用
@@ -86,7 +99,7 @@ $sessionId = $session.session_id
 $sessionId
 
 # 2. 初始化用户画像 + 生成当前阶段
-$body = "{`"session_id`": `"$sessionId`", `"message`": `"我想学习大模型微调`"}"
+$body = "{`"session_id`": `"$sessionId`", `"message`": `"我想学习大模型微调，我有Python和Linux基础，每天可以学习1小时，偏实操型`"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/chat/ -Body $bytes -ContentType "application/json; charset=utf-8"
 
@@ -140,8 +153,9 @@ python -m unittest discover -s tests -v
 ## 学习流程
 
 1. 用户首次输入 → Agent1生成画像
-2. Agent2生成下一阶段内容
+2. Agent2根据知识盲区、子知识点顺序和 `daily_hours` 生成下一阶段
 3. Agent3生成学习包 → Agent4+5并行审核
 4. 用户学习 + 实时答疑
 5. 完成测试 → Agent6更新画像
-6. 循环直到所有知识盲区掌握
+6. 若当前大板块仍有未完成子知识点，则继续推进下一子知识点
+7. 循环直到所有知识盲区掌握

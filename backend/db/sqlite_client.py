@@ -212,6 +212,7 @@ class SQLiteClient:
             self._ensure_column(conn, "user_profiles", "profile_confidence", "FLOAT")
             self._ensure_column(conn, "user_profiles", "last_updated", "TIMESTAMP")
             self._ensure_column(conn, "stage_progress", "subtopic_id", "VARCHAR(50)")
+            self._ensure_column(conn, "knowledge_docs", "subtopic_id", "VARCHAR(50)")
             conn.commit()
 
     @staticmethod
