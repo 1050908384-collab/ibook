@@ -4,6 +4,10 @@ import json
 import re
 import uuid
 
+try:
+    from db.sqlite_client import SQLiteClient
+except ModuleNotFoundError:
+    from backend.db.sqlite_client import SQLiteClient
 from llm.client import LLMClient
 from models.contracts import (
     AnswerGenerationInput,
@@ -208,6 +212,7 @@ class DeterministicStagePlannerAgent:
     def __init__(self):
         self.knowledge_block_query_tool = KnowledgeBlockQueryTool()
         self.stage_generator_tool = StageGeneratorTool()
+        self.db_client = SQLiteClient()
 
     async def run(self, request: StagePlanningInput) -> StagePlanningOutput:
         _agent_log("Agent2", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
@@ -232,23 +237,49 @@ class DeterministicStagePlannerAgent:
                 gap.model_dump(mode="json"),
                 block_info,
                 request.profile.goal,
+                request.stage_num,
             )
         except Exception:
             generated_stage = {}
         generated_stage = generated_stage or {}
 
+        subtopic = None
+        try:
+            subtopic = self.db_client.get_next_subtopic(
+                request.session_id,
+                block_info.get("block_id", ""),
+                max_hours=request.profile.daily_hours,
+            ) if block_info.get("block_id") else None
+        except Exception:
+            subtopic = None
+
         stable_key = f"{request.session_id}:{request.stage_num}:{gap.skill}"
         stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
+        stage_name = (
+            subtopic.get("subtopic_name")
+            if subtopic else
+            block_info.get("block_name") or generated_stage.get("block_name") or gap.skill
+        )
+        stage_hours = (
+            subtopic.get("estimated_hours")
+            if subtopic and subtopic.get("estimated_hours") is not None else
+            block_info.get("estimated_hours") or generated_stage.get("estimated_hours") or 2.0
+        )
         stage = StageInfo(
             stage_id=stage_id,
             stage_num=request.stage_num,
             block_id=block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}",
-            block_name=block_info.get("block_name") or generated_stage.get("block_name") or gap.skill,
+            block_name=stage_name,
+            subtopic_id=subtopic.get("subtopic_id") if subtopic else None,
             gap_skill=gap.skill,
-            estimated_hours=block_info.get("estimated_hours") or generated_stage.get("estimated_hours") or 2.0,
-            prerequisites=block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites,
+            estimated_hours=stage_hours,
+            prerequisites=(
+                subtopic.get("prerequisites")
+                if subtopic and subtopic.get("prerequisites") is not None else
+                block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites
+            ),
         )
-        _agent_log("Agent2", f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id}")
+        _agent_log("Agent2", f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'}")
         return StagePlanningOutput(stage=stage)
 
 
@@ -733,6 +764,7 @@ class DeterministicStageDecisionAgent:
     def __init__(self):
         self.strategy_selector_tool = StrategySelectorTool()
         self.profile_update_tool = ProfileUpdateTool()
+        self.db_client = SQLiteClient()
 
     async def run(self, request: StageDecisionInput) -> StageDecisionOutput:
         profile = request.profile.model_copy(deep=True)
@@ -741,6 +773,26 @@ class DeterministicStageDecisionAgent:
             request.accuracy,
         )
         profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
+        if request.stage.subtopic_id and request.stage.block_id:
+            additional_completed = [request.stage.subtopic_id] if request.accuracy >= 0.8 else []
+            ratio, completed_count, total_count = self.db_client.get_subtopic_completion_ratio(
+                request.session_id,
+                request.stage.block_id,
+                additional_completed=additional_completed,
+            )
+            current_gap = next((gap for gap in profile.knowledge_gaps if gap.skill == request.stage.gap_skill), None)
+            has_more_subtopics = (
+                request.accuracy >= 0.8
+                and total_count > 0
+                and completed_count < total_count
+            )
+            if current_gap is not None:
+                if has_more_subtopics:
+                    current_gap.progress = round(min(max(ratio, 0.0), 0.99), 3)
+                    current_gap.status = "学习中"
+                elif request.accuracy >= 0.8:
+                    current_gap.status = "已掌握"
+                    current_gap.progress = 1.0
         profile.learning_rhythm = await self.profile_update_tool.infer_rhythm(request.interactions)
         profile.confidence_index = await self.profile_update_tool.infer_confidence(request.qa_history, request.accuracy)
         profile.confusion_markers = await self.profile_update_tool.detect_confusion(request.qa_history)
@@ -748,6 +800,13 @@ class DeterministicStageDecisionAgent:
         all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
         if all_mastered:
             decision = "completed"
+        elif request.stage.subtopic_id and request.accuracy >= 0.8:
+            ratio, completed_count, total_count = self.db_client.get_subtopic_completion_ratio(
+                request.session_id,
+                request.stage.block_id,
+                additional_completed=[request.stage.subtopic_id],
+            )
+            decision = "continue" if total_count > 0 and completed_count < total_count else "continue"
         elif request.accuracy >= 0.8:
             decision = "continue"
         else:

@@ -80,6 +80,7 @@ class SQLiteClient:
                     stage_num INT NOT NULL,
                     block_id VARCHAR(50),
                     block_name VARCHAR(100),
+                    subtopic_id VARCHAR(50),
                     status VARCHAR(20) CHECK (status IN ('pending', 'learning', 'tested', 'completed', 'retreat')) DEFAULT 'pending',
                     accuracy FLOAT,
                     strategy_used VARCHAR(20),
@@ -135,6 +136,20 @@ class SQLiteClient:
                     doc_type VARCHAR(20) CHECK (doc_type IN ('tutorial', 'code', 'spec', 'best_practice', 'pitfall')),
                     source VARCHAR(200),
                     difficulty VARCHAR(20) CHECK (difficulty IN ('初级', '中级', '高级')),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS knowledge_subtopics (
+                    subtopic_id VARCHAR(50) PRIMARY KEY,
+                    block_id VARCHAR(50) NOT NULL,
+                    subtopic_name VARCHAR(200) NOT NULL,
+                    estimated_hours FLOAT DEFAULT 1.0,
+                    sequence_index INT NOT NULL,
+                    difficulty VARCHAR(20) CHECK (difficulty IN ('初级', '中级', '高级')),
+                    prerequisites TEXT,
+                    content_summary TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
                 )
@@ -196,6 +211,7 @@ class SQLiteClient:
             self._ensure_column(conn, "user_profiles", "hardware", "VARCHAR(100)")
             self._ensure_column(conn, "user_profiles", "profile_confidence", "FLOAT")
             self._ensure_column(conn, "user_profiles", "last_updated", "TIMESTAMP")
+            self._ensure_column(conn, "stage_progress", "subtopic_id", "VARCHAR(50)")
             conn.commit()
 
     @staticmethod
@@ -318,19 +334,85 @@ class SQLiteClient:
         with self.Session() as session:
             session.execute(text("""
                 INSERT OR REPLACE INTO stage_progress (
-                    stage_id, session_id, stage_num, block_id, block_name, status, accuracy, strategy_used
-                ) VALUES (:stage_id, :session_id, :stage_num, :block_id, :block_name, :status, :accuracy, :strategy_used)
+                    stage_id, session_id, stage_num, block_id, block_name, subtopic_id, status, accuracy, strategy_used
+                ) VALUES (:stage_id, :session_id, :stage_num, :block_id, :block_name, :subtopic_id, :status, :accuracy, :strategy_used)
             """), {
                 "stage_id": stage_info.get("stage_id", str(uuid.uuid4())),
                 "session_id": session_id,
                 "stage_num": stage_info.get("stage_num", 1),
                 "block_id": stage_info.get("block_id", ""),
                 "block_name": stage_info.get("block_name", ""),
+                "subtopic_id": stage_info.get("subtopic_id"),
                 "status": stage_info.get("status", "pending"),
                 "accuracy": stage_info.get("accuracy"),
                 "strategy_used": stage_info.get("strategy_used")
             })
             session.commit()
+
+    def get_completed_subtopic_ids(self, session_id: str, block_id: str) -> list[str]:
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT DISTINCT subtopic_id
+                FROM stage_progress
+                WHERE session_id = :session_id
+                  AND block_id = :block_id
+                  AND status = 'completed'
+                  AND subtopic_id IS NOT NULL
+                  AND subtopic_id != ''
+            """), {
+                "session_id": session_id,
+                "block_id": block_id,
+            }).fetchall()
+        return [row[0] for row in rows if row and row[0]]
+
+    def get_next_subtopic(
+        self,
+        session_id: str,
+        block_id: str,
+        max_hours: float | None = None,
+        additional_completed: list[str] | None = None,
+    ) -> dict | None:
+        completed = set(self.get_completed_subtopic_ids(session_id, block_id))
+        completed.update(item for item in (additional_completed or []) if item)
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT subtopic_id, block_id, subtopic_name, estimated_hours, sequence_index,
+                       difficulty, prerequisites, content_summary
+                FROM knowledge_subtopics
+                WHERE block_id = :block_id
+                ORDER BY sequence_index ASC
+            """), {"block_id": block_id}).mappings().all()
+        remaining = [dict(row) for row in rows if row["subtopic_id"] not in completed]
+        if not remaining:
+            return None
+        if max_hours is not None:
+            for row in remaining:
+                hours = row.get("estimated_hours") or 0
+                if hours <= max_hours:
+                    row["prerequisites"] = json.loads(row["prerequisites"]) if row.get("prerequisites") else []
+                    return row
+        row = remaining[0]
+        row["prerequisites"] = json.loads(row["prerequisites"]) if row.get("prerequisites") else []
+        return row
+
+    def get_subtopic_completion_ratio(
+        self,
+        session_id: str,
+        block_id: str,
+        additional_completed: list[str] | None = None,
+    ) -> tuple[float, int, int]:
+        completed = set(self.get_completed_subtopic_ids(session_id, block_id))
+        completed.update(item for item in (additional_completed or []) if item)
+        with self.Session() as session:
+            total = session.execute(text("""
+                SELECT COUNT(*)
+                FROM knowledge_subtopics
+                WHERE block_id = :block_id
+            """), {"block_id": block_id}).scalar_one()
+        if total <= 0:
+            return 1.0, 0, 0
+        completed_count = min(len(completed), total)
+        return completed_count / total, completed_count, total
 
     def save_qa_record(self, session_id: str, question: str, answer: str, tech_pass: bool, quality_pass: bool, stage: int = 1) -> None:
         with self.Session() as session:

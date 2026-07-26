@@ -1,0 +1,143 @@
+[
+  {
+    "question_id": "Q-01-01",
+    "block_id": "KB-01",
+    "difficulty": "初级",
+    "question_type": "选择",
+    "question_text": "查看当前目录下所有文件（包括隐藏文件）的命令是？",
+    "options": [
+      "ls",
+      "ls -a",
+      "dir",
+      "ls -l"
+    ],
+    "correct_answer": "ls -a",
+    "hint": "隐藏文件以 . 开头"
+  },
+  {
+    "question_id": "Q-01-02",
+    "block_id": "KB-01",
+    "difficulty": "初级",
+    "question_type": "填空",
+    "question_text": "切换到上一级目录的命令是____",
+    "options": null,
+    "correct_answer": "cd ..",
+    "hint": ".. 表示父目录"
+  },
+  {
+    "question_id": "Q-02-01",
+    "block_id": "KB-02",
+    "difficulty": "初级",
+    "question_type": "判断",
+    "question_text": "Python中的列表是不可变的数据类型",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "错误",
+    "hint": "列表可以增删改"
+  },
+  {
+    "question_id": "Q-02-02",
+    "block_id": "KB-02",
+    "difficulty": "初级",
+    "question_type": "选择",
+    "question_text": "以下哪个不是Python的内置数据类型？",
+    "options": [
+      "list",
+      "tuple",
+      "array",
+      "dict"
+    ],
+    "correct_answer": "array",
+    "hint": "array需要导入numpy"
+  },
+  {
+    "question_id": "Q-04-01",
+    "block_id": "KB-04",
+    "difficulty": "中级",
+    "question_type": "选择",
+    "question_text": "PyTorch中创建全1张量的函数是？",
+    "options": [
+      "torch.zeros()",
+      "torch.ones()",
+      "torch.eye()",
+      "torch.rand()"
+    ],
+    "correct_answer": "torch.ones()",
+    "hint": "ones表示全1"
+  },
+  {
+    "question_id": "Q-04-02",
+    "block_id": "KB-04",
+    "difficulty": "中级",
+    "question_type": "简答",
+    "question_text": "解释PyTorch中的自动求导机制是如何工作的？",
+    "options": null,
+    "correct_answer": "PyTorch通过构建计算图来实现自动求导。当张量设置requires_grad=True时，PyTorch会跟踪对该张量的所有操作，形成一个计算图。调用backward()时，从根节点（通常是损失函数）开始，根据链式法则自动计算所有叶子节点的梯度。",
+    "hint": "计算图、链式法则"
+  },
+  {
+    "question_id": "Q-06-01",
+    "block_id": "KB-06",
+    "difficulty": "中级",
+    "question_type": "填空",
+    "question_text": "Attention机制的核心公式是：Attention(Q,K,V) = softmax(QK^T / ____)V",
+    "options": null,
+    "correct_answer": "sqrt(d_k)",
+    "hint": "缩放因子"
+  },
+  {
+    "question_id": "Q-08-01",
+    "block_id": "KB-08",
+    "difficulty": "高级",
+    "question_type": "判断",
+    "question_text": "KV Cache可以显著提升模型生成速度",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "hint": "避免重复计算"
+  },
+  {
+    "question_id": "Q-10-01",
+    "block_id": "KB-10",
+    "difficulty": "高级",
+    "question_type": "选择",
+    "question_text": "RLHF的三个阶段不包括以下哪一个？",
+    "options": [
+      "预训练",
+      "奖励模型训练",
+      "PPO强化学习",
+      "监督微调"
+    ],
+    "correct_answer": "预训练",
+    "hint": "预训练是第一阶段，不是RLHF的一部分"
+  },
+  {
+    "question_id": "Q-12-01",
+    "block_id": "KB-12",
+    "difficulty": "高级",
+    "question_type": "填空",
+    "question_text": "QLoRA使用的量化格式是____",
+    "options": null,
+    "correct_answer": "NF4",
+    "hint": "Normalized Float 4-bit"
+  },
+  {
+    "question_id": "Q-15-01",
+    "block_id": "KB-15",
+    "difficulty": "高级",
+    "question_type": "选择",
+    "question_text": "vLLM的核心技术不包括以下哪一项？",
+    "options": [
+      "PagedAttention",
+      "Continuous Batching",
+      "LoRA",
+      "动态批处理"
+    ],
+    "correct_answer": "LoRA",
+    "hint": "LoRA是微调技术"
+  }
+]

@@ -240,14 +240,15 @@ class StageGeneratorTool:
         self.llm_client = LLMClient()
 
     async def generate_stage(self, session_id: str, gap: Dict[str, Any],
-                             block_info: Dict[str, Any], goal: str) -> Dict[str, Any]:
+                             block_info: Dict[str, Any], goal: str, stage_num: int = 1) -> Dict[str, Any]:
         result = stage_generator({
             "session_id": session_id,
             "gap": gap,
             "block_info": block_info,
             "goal": goal,
+            "stage_num": stage_num,
         }, config=self._default_config)
         if result.get("status") != "success":
             return _fallback_stage(session_id, gap.get("skill", "未知技能"),
-                                   gap.get("level", "beginner"), goal, 1)
+                                   gap.get("level", "beginner"), goal, stage_num)
         return result["data"].get("stage", {})

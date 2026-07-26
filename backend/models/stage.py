@@ -9,6 +9,7 @@ class StageInfo(BaseModel):
     stage_num: int
     block_id: str
     block_name: str
+    subtopic_id: Optional[str] = None
     estimated_hours: float = 1.0
     gap_skill: str
     prerequisites: List[str] = Field(default_factory=list)
