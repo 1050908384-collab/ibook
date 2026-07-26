@@ -1,6 +1,5 @@
 import sys
 import json
-import re
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -13,54 +12,25 @@ from backend.db.sqlite_client import SQLiteClient
 
 
 SEEDS_DIR = Path(__file__).resolve().parent.parent / "data" / "seeds"
-SEED_FILE_PATH = SEEDS_DIR / "knowledge_seed.json"
+BLOCKS_FILE_PATH = SEEDS_DIR / "knowledge_blocks.json"
+DOCS_FILE_PATH = SEEDS_DIR / "knowledge_docs.json"
 SUBTOPICS_FILE_PATH = SEEDS_DIR / "knowledge_subtopics.json"
 FAQ_FILE_PATH = SEEDS_DIR / "faq_items.json"
 QUESTIONS_FILE_PATH = SEEDS_DIR / "test_questions.json"
 
-
-def load_seed_data(file_path: Path) -> dict:
+def load_seed_data(file_path: Path):
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
-def load_optional_list(file_path: Path, key: str | None = None) -> list:
+def load_required_list(file_path: Path) -> list:
     if not file_path.exists():
-        return []
+        print("[ERROR] 种子文件不存在: {}".format(file_path))
+        sys.exit(1)
     payload = load_seed_data(file_path)
-    if isinstance(payload, list):
-        return payload
-    if key:
-        return payload.get(key, [])
-    return []
-
-
-def extract_subtopics_from_blocks(blocks_data: list) -> list:
-    subtopics = []
-    line_pattern = re.compile(r"^\s*-\s*(?P<name>.+?)-(?P<hours>\d+(?:\.\d+)?)h\s*$")
-    for block in blocks_data:
-        lines = str(block.get("description", "")).splitlines()
-        sequence_index = 1
-        previous_subtopic_id = None
-        for line in lines:
-            match = line_pattern.match(line)
-            if not match:
-                continue
-            subtopic_id = f"KBS-{block['block_id'].replace('KB-', '')}-{sequence_index:02d}"
-            prerequisites = [previous_subtopic_id] if previous_subtopic_id else []
-            subtopics.append({
-                "subtopic_id": subtopic_id,
-                "block_id": block["block_id"],
-                "subtopic_name": match.group("name").strip(),
-                "estimated_hours": float(match.group("hours")),
-                "sequence_index": sequence_index,
-                "difficulty": block.get("difficulty"),
-                "prerequisites": prerequisites,
-                "content_summary": match.group("name").strip(),
-            })
-            previous_subtopic_id = subtopic_id
-            sequence_index += 1
-    return subtopics
+    if not isinstance(payload, list):
+        print("[ERROR] 种子文件格式错误，应为 JSON 数组: {}".format(file_path))
+        sys.exit(1)
+    return payload
 
 
 def insert_knowledge_blocks(db: SQLiteClient, blocks_data: list):
@@ -191,17 +161,12 @@ def insert_test_questions(db: SQLiteClient, questions_data: list):
 
 
 def main():
-    if not SEED_FILE_PATH.exists():
-        print("[ERROR] 种子文件不存在: {}".format(SEED_FILE_PATH))
-        sys.exit(1)
-
     print("[INFO] 正在加载知识种子数据...")
-    seed_data = load_seed_data(SEED_FILE_PATH)
-    blocks_data = seed_data.get("blocks", [])
-    docs_data = seed_data.get("docs", [])
-    faq_data = load_optional_list(FAQ_FILE_PATH) or seed_data.get("faqs", [])
-    questions_data = load_optional_list(QUESTIONS_FILE_PATH) or seed_data.get("questions", [])
-    subtopics_data = load_optional_list(SUBTOPICS_FILE_PATH) or extract_subtopics_from_blocks(blocks_data)
+    blocks_data = load_required_list(BLOCKS_FILE_PATH)
+    docs_data = load_required_list(DOCS_FILE_PATH)
+    subtopics_data = load_required_list(SUBTOPICS_FILE_PATH)
+    faq_data = load_required_list(FAQ_FILE_PATH)
+    questions_data = load_required_list(QUESTIONS_FILE_PATH)
 
     print("[INFO] 正在初始化数据库连接...")
     db = SQLiteClient()
