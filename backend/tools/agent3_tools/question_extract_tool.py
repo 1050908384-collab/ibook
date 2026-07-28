@@ -128,7 +128,7 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
             params = []
             if block_id:
                 sql = """
-                    SELECT question_id, question_type, question_text, options, 
+                    SELECT question_id, block_id, question_type, question_text, options,
                            correct_answer, difficulty, hint
                     FROM test_questions
                     WHERE block_id = ?
@@ -138,7 +138,7 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
                 params = [block_id, count]
             elif block_name:
                 sql = """
-                    SELECT q.question_id, q.question_type, q.question_text, q.options, 
+                    SELECT q.question_id, q.block_id, q.question_type, q.question_text, q.options,
                            q.correct_answer, q.difficulty, q.hint
                     FROM test_questions q
                     JOIN knowledge_blocks b ON q.block_id = b.block_id
@@ -159,9 +159,9 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
         questions = []
         for r in rows:
             options = []
-            if r[3]:
+            if r[4]:
                 try:
-                    options = json.loads(r[3])
+                    options = json.loads(r[4])
                     if not isinstance(options, list):
                         options = []
                 except json.JSONDecodeError:
@@ -169,12 +169,13 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
 
             questions.append({
                 "question_id": r[0],
-                "question_type": r[1],
-                "question_text": r[2],
+                "block_id": r[1],
+                "question_type": r[2],
+                "question_text": r[3],
                 "options": options,
-                "correct_answer": r[4],
-                "difficulty": r[5],
-                "explanation": r[6] or "",
+                "correct_answer": r[5],
+                "difficulty": r[6],
+                "explanation": r[7] or "",
             })
 
         return questions, True

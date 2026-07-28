@@ -255,11 +255,7 @@ class DeterministicStagePlannerAgent:
 
         stable_key = f"{request.session_id}:{request.stage_num}:{gap.skill}"
         stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
-        stage_name = (
-            subtopic.get("subtopic_name")
-            if subtopic else
-            block_info.get("block_name") or generated_stage.get("block_name") or gap.skill
-        )
+        stage_name = gap.skill or block_info.get("block_name") or generated_stage.get("block_name")
         stage_hours = (
             subtopic.get("estimated_hours")
             if subtopic and subtopic.get("estimated_hours") is not None else
@@ -318,20 +314,19 @@ class DeterministicContentAgent:
         except Exception:
             extracted_questions = []
 
-        questions = [
+        questions = [TestQuestion(
+            question_id=f"Q-{stage.block_id.replace('KB-', '')}-01",
+            block_id=stage.block_id,
+            question_type="填空",
+            question_text="本阶段的学习主题是什么？",
+            correct_answer=stage.block_name,
+            hint="答案就是当前阶段名称。",
+        )]
+        questions.extend(
             TestQuestion.model_validate(question)
             for question in extracted_questions
             if isinstance(question, dict)
-        ]
-        if not questions:
-            questions = [TestQuestion(
-                question_id=f"Q-{stage.stage_id[:8]}-1",
-                block_id=stage.block_id,
-                question_type="填空",
-                question_text="本阶段的学习主题是什么？",
-                correct_answer=stage.block_name,
-                hint="答案就是阶段标题。",
-            )]
+        )
         package = LearningPackage(
             session_id=request.session_id,
             stage_id=stage.stage_id,
@@ -555,15 +550,6 @@ class DeterministicQualityReviewAgent:
         errors = []
         if len(request.content.strip()) < 40:
             errors.append(ReviewError(error_type="too_short", description="教程内容不足以支持阶段学习"))
-        if request.target_type == "learning_package":
-            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
-            try:
-                tool_errors = await self.difficulty_analyzer_tool.analyze(request.content, profile=profile)
-                tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
-                tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
-                errors.extend(normalize_review_errors(tool_errors))
-            except Exception:
-                pass
         return QualityReviewResult(
             passed=not errors,
             errors=errors,
@@ -773,26 +759,10 @@ class DeterministicStageDecisionAgent:
             request.accuracy,
         )
         profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
-        if request.stage.subtopic_id and request.stage.block_id:
-            additional_completed = [request.stage.subtopic_id] if request.accuracy >= 0.8 else []
-            ratio, completed_count, total_count = self.db_client.get_subtopic_completion_ratio(
-                request.session_id,
-                request.stage.block_id,
-                additional_completed=additional_completed,
-            )
-            current_gap = next((gap for gap in profile.knowledge_gaps if gap.skill == request.stage.gap_skill), None)
-            has_more_subtopics = (
-                request.accuracy >= 0.8
-                and total_count > 0
-                and completed_count < total_count
-            )
-            if current_gap is not None:
-                if has_more_subtopics:
-                    current_gap.progress = round(min(max(ratio, 0.0), 0.99), 3)
-                    current_gap.status = "学习中"
-                elif request.accuracy >= 0.8:
-                    current_gap.status = "已掌握"
-                    current_gap.progress = 1.0
+        current_gap = next((gap for gap in profile.knowledge_gaps if gap.skill == request.stage.gap_skill), None)
+        if current_gap is not None and request.accuracy >= 0.8:
+            current_gap.status = "已掌握"
+            current_gap.progress = 1.0
         profile.learning_rhythm = await self.profile_update_tool.infer_rhythm(request.interactions)
         profile.confidence_index = await self.profile_update_tool.infer_confidence(request.qa_history, request.accuracy)
         profile.confusion_markers = await self.profile_update_tool.detect_confusion(request.qa_history)
@@ -800,13 +770,6 @@ class DeterministicStageDecisionAgent:
         all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
         if all_mastered:
             decision = "completed"
-        elif request.stage.subtopic_id and request.accuracy >= 0.8:
-            ratio, completed_count, total_count = self.db_client.get_subtopic_completion_ratio(
-                request.session_id,
-                request.stage.block_id,
-                additional_completed=[request.stage.subtopic_id],
-            )
-            decision = "continue" if total_count > 0 and completed_count < total_count else "continue"
         elif request.accuracy >= 0.8:
             decision = "continue"
         else:

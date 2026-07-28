@@ -2,20 +2,10 @@
 """
 knowledge_block_query_tool — Agent2 知识板块查询工具
 ================================================
-功能：按技能名称/板块ID查询知识板块详情（含estimated_hours/difficulty/prerequisites）。
-    - 真实模式：查 knowledge_blocks 表，返回完整板块信息
+功能：按技能名称/板块ID查询知识板块详情（含 estimated_hours、difficulty、
+prerequisites、subtopics）。
+    - 真实模式：主数据来自 knowledge_blocks 表，关系数据来自 graph_data
     - Mock 模式：返回 ./data/test_data/mock_knowledge_block_query_tool.json 预设板块数据
-
-统一接口：
-    def knowledge_block_query(input_data: dict, config: dict = None) -> dict
-    返回：{"status", "data", "message", "mock_used"}
-
-规则对齐（stage_planning.skill.md 规则3）：
-    - block_name = gap.skill，estimated_hours 固定2.0（框架默认，实际从表读取）
-    - prerequisites 沿用 gap.prerequisites
-    - 字段须符合 StageInfo 契约
-
-保留 KnowledgeBlockQueryTool 类作为向后兼容适配器。
 """
 
 import json
@@ -25,48 +15,17 @@ from pathlib import Path
 from typing import Any, Dict
 
 from config import BACKEND_DIR, DATA_DIR, settings
+from db.graph_client import GraphClient
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logger.addHandler(logging.NullHandler())
 
 MOCK_FILE = DATA_DIR / "test_data" / "mock_knowledge_block_query_tool.json"
+BLOCKS_SEED_FILE = DATA_DIR / "seeds" / "knowledge_blocks.json"
 
 
-# ------------------------------------------------------------------
-# 统一函数式接口（规范实现）
-# ------------------------------------------------------------------
 def knowledge_block_query(input_data: dict, config: dict = None) -> dict:
-    """
-    查询知识板块详情。
-
-    参数：
-        input_data: dict
-            - skill_name: str   技能名称（优先，匹配 block_name）
-            - block_id: str     板块ID（备选）
-            - scenario: str     Mock 模式下选择场景：normal|boundary|exception
-        config: dict
-            - use_mock: bool    是否使用 Mock（默认 True）
-
-    返回：
-        {
-            "status": "success" | "error",
-            "data": {
-                "block": {
-                    "block_id": str,
-                    "block_name": str,
-                    "description": str,
-                    "estimated_hours": float,
-                    "difficulty": str,
-                    "prerequisites": List[str],
-                    "corresponding_gaps": List[str]
-                } | None,
-                "db_available": bool
-            },
-            "message": str,
-            "mock_used": bool
-        }
-    """
     config = config or {}
     use_mock = config.get("use_mock", True)
 
@@ -93,49 +52,47 @@ def knowledge_block_query(input_data: dict, config: dict = None) -> dict:
             "message": _build_message(block),
             "mock_used": False,
         }
-    except Exception as e:
+    except Exception as exc:
         logger.exception("knowledge_block_query 执行失败")
         return {
             "status": "error",
             "data": None,
-            "message": f"knowledge_block_query 执行异常: {e}",
+            "message": f"knowledge_block_query 执行异常: {exc}",
             "mock_used": use_mock,
         }
 
 
-# ------------------------------------------------------------------
-# 真实模式：数据库查询
-# ------------------------------------------------------------------
 def _get_db_path() -> Path:
-    """解析 settings.DATABASE_URL 为绝对路径。"""
     url = settings.DATABASE_URL
     raw = url.replace("sqlite:///", "", 1)
-    p = Path(raw)
-    if not p.is_absolute():
-        p = (BACKEND_DIR / p).resolve()
-    return p
+    path = Path(raw)
+    if not path.is_absolute():
+        path = (BACKEND_DIR / path).resolve()
+    return path
 
 
 def _query_block(skill_name: str) -> tuple[Dict[str, Any] | None, bool]:
-    """
-    SQL: 从 knowledge_blocks 表查询板块信息（先按 block_name，再按 block_id）。
-    """
     db_path = _get_db_path()
     if not db_path.exists():
         logger.warning("数据库不存在: %s，knowledge_block_query 无可用板块", db_path)
         return None, False
 
     try:
+        graph_client = GraphClient()
+        seed_index = _load_seed_index()
+        block_id = _resolve_block_id(skill_name, seed_index) or skill_name
+        graph_block = _find_block_in_graph(graph_client, block_id) or _find_block_in_graph(graph_client, skill_name)
+
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
             cur = conn.execute(
                 """
-                SELECT block_id, block_name, description, estimated_hours, 
+                SELECT block_id, block_name, description, estimated_hours,
                        difficulty, prerequisites, corresponding_gaps
                 FROM knowledge_blocks
-                WHERE block_name = ? OR block_id = ?
+                WHERE block_id = ? OR block_name = ?
                 """,
-                (skill_name, skill_name),
+                (block_id, skill_name),
             )
             row = cur.fetchone()
         finally:
@@ -145,14 +102,9 @@ def _query_block(skill_name: str) -> tuple[Dict[str, Any] | None, bool]:
             logger.warning("未找到板块: %s", skill_name)
             return None, True
 
-        prereqs = []
-        if row[5]:
-            try:
-                prereqs = json.loads(row[5])
-                if not isinstance(prereqs, list):
-                    prereqs = []
-            except json.JSONDecodeError:
-                prereqs = []
+        block_id = graph_block.get("block_id", row[0]) if graph_block else row[0]
+        prerequisite_names = _get_block_prerequisite_names(graph_client, block_id)
+        subtopics = _get_ordered_subtopics(graph_client, block_id)
 
         gaps = []
         if row[6]:
@@ -164,17 +116,85 @@ def _query_block(skill_name: str) -> tuple[Dict[str, Any] | None, bool]:
                 gaps = []
 
         return {
-            "block_id": row[0],
-            "block_name": row[1],
-            "description": row[2],
-            "estimated_hours": row[3],
-            "difficulty": row[4],
-            "prerequisites": prereqs,
+            "block_id": block_id,
+            "block_name": seed_index.get(block_id, {}).get("block_name") or graph_block.get("block_name", row[1]) if graph_block else seed_index.get(block_id, {}).get("block_name", row[1]),
+            "description": seed_index.get(block_id, {}).get("description") or graph_block.get("description", row[2]) if graph_block else seed_index.get(block_id, {}).get("description", row[2]),
+            "estimated_hours": seed_index.get(block_id, {}).get("estimated_hours") or graph_block.get("estimated_hours", row[3]) if graph_block else seed_index.get(block_id, {}).get("estimated_hours", row[3]),
+            "difficulty": seed_index.get(block_id, {}).get("difficulty") or graph_block.get("difficulty", row[4]) if graph_block else seed_index.get(block_id, {}).get("difficulty", row[4]),
+            "prerequisites": prerequisite_names,
             "corresponding_gaps": gaps,
+            "subtopics": subtopics,
         }, True
-    except sqlite3.Error as e:
-        logger.warning("查询 knowledge_blocks 失败: %s", e)
+    except sqlite3.Error as exc:
+        logger.warning("查询 knowledge_blocks 失败: %s", exc)
         return None, False
+
+
+def _find_block_in_graph(graph_client: GraphClient, skill_name: str) -> dict[str, Any] | None:
+    normalized = skill_name.strip()
+    for node_id, node_data in graph_client.graph.nodes(data=True):
+        if node_data.get("node_type") != "block":
+            continue
+        if node_id == normalized or node_data.get("block_name") == normalized:
+            payload = dict(node_data)
+            payload["block_id"] = node_id
+            return payload
+    return None
+
+
+def _load_seed_index() -> dict[str, dict[str, Any]]:
+    if not BLOCKS_SEED_FILE.exists():
+        return {}
+    try:
+        rows = json.loads(BLOCKS_SEED_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    index: dict[str, dict[str, Any]] = {}
+    for row in rows if isinstance(rows, list) else []:
+        block_id = row.get("block_id")
+        if block_id:
+            index[block_id] = row
+    return index
+
+
+def _resolve_block_id(skill_name: str, seed_index: dict[str, dict[str, Any]]) -> str | None:
+    normalized = skill_name.strip().lower()
+    if not normalized:
+        return None
+    for block_id, row in seed_index.items():
+        block_name = str(row.get("block_name", "")).strip().lower()
+        gaps = [str(item).strip().lower() for item in row.get("corresponding_gaps", []) if str(item).strip()]
+        if normalized == block_id.lower() or normalized == block_name:
+            return block_id
+        if normalized in gaps:
+            return block_id
+        if normalized and (normalized in block_name or any(normalized in gap for gap in gaps)):
+            return block_id
+    return None
+
+
+def _get_block_prerequisite_names(graph_client: GraphClient, block_id: str) -> list[str]:
+    names: list[str] = []
+    for prerequisite_id in graph_client.get_prerequisites(block_id):
+        node_data = graph_client.graph.nodes.get(prerequisite_id, {})
+        names.append(node_data.get("block_name", prerequisite_id))
+    return names
+
+
+def _get_ordered_subtopics(graph_client: GraphClient, block_id: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for subtopic_id in graph_client.get_contained_subtopics(block_id):
+        node_data = dict(graph_client.graph.nodes.get(subtopic_id, {}))
+        rows.append(
+            {
+                "subtopic_id": subtopic_id,
+                "subtopic_name": node_data.get("subtopic_name", subtopic_id),
+                "sequence_index": node_data.get("sequence_index", 0),
+                "estimated_hours": node_data.get("estimated_hours", 0),
+                "difficulty": node_data.get("difficulty", ""),
+            }
+        )
+    return sorted(rows, key=lambda item: (item["sequence_index"], item["subtopic_id"]))
 
 
 def _build_message(block: Dict[str, Any] | None) -> str:
@@ -183,11 +203,7 @@ def _build_message(block: Dict[str, Any] | None) -> str:
     return f"找到板块: {block['block_name']}（难度: {block['difficulty']}，时长: {block['estimated_hours']}小时）"
 
 
-# ------------------------------------------------------------------
-# Mock 模式
-# ------------------------------------------------------------------
 def _mock_query(skill_name: str, input_data: dict) -> dict:
-    """从 mock JSON 读取预设场景。"""
     scenario = (input_data or {}).get("scenario") or "normal"
     scenarios = _load_mock()
     if scenario not in scenarios:
@@ -210,16 +226,13 @@ def _load_mock() -> dict:
         logger.warning("Mock 文件不存在: %s", MOCK_FILE)
         return {}
     try:
-        with MOCK_FILE.open("r", encoding="utf-8") as f:
-            return json.load(f).get("scenarios", {})
-    except (json.JSONDecodeError, OSError) as e:
-        logger.warning("读取 Mock 文件失败: %s", e)
+        with MOCK_FILE.open("r", encoding="utf-8") as handle:
+            return json.load(handle).get("scenarios", {})
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.warning("读取 Mock 文件失败: %s", exc)
         return {}
 
 
-# ------------------------------------------------------------------
-# 向后兼容适配器
-# ------------------------------------------------------------------
 class KnowledgeBlockQueryTool:
     def __init__(self):
         self._default_config = {"use_mock": False}

@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "sqlite:///../data/sqlite_data/project.db"
     CHROMA_PATH: str = "../data/chroma_db"
-    GRAPH_PATH: str = "../data/graph_data/knowledge_graph.gpickle"
+    GRAPH_PATH: str = "../data/graph_data/runtime/knowledge_graph.gpickle"
 
     LOG_LEVEL: str = "INFO"
     DEBUG: bool = False

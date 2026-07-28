@@ -3,68 +3,33 @@
 graph_query_tool — Agent1 知识图谱依赖查询工具
 ================================================
 功能：按技能名称/板块ID查询知识图谱节点与先修依赖，递归推导学习先后顺序。
-    - 真实模式：查 knowledge_blocks 表的 prerequisites 字段（JSON数组）做递归依赖查询
+    - 真实模式：读取 data/graph_data/runtime 的图谱结果
     - Mock 模式：返回 ./data/test_data/mock_graph_query_tool.json 预设依赖链
 
 统一接口：
     def graph_query(input_data: dict, config: dict = None) -> dict
     返回：{"status", "data", "message", "mock_used"}
-
-规则对齐（knowledge_graph_mapping.skill.md）：
-    - 规则1：先修依赖必须是图谱中已存在标准板块，不生成临时节点
-    - 规则2：依赖具备传递性，自动去重
-    - 规则3：依赖链超3层生成分层提示
-    - 规则4：检测循环依赖，截断后返回部分有效依赖并警告
-
-保留 GraphQueryTool 类作为向后兼容适配器。
 """
 
 import json
 import logging
-import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List
 
-from config import BACKEND_DIR, DATA_DIR, settings
+import networkx as nx
+
+from config import DATA_DIR
+from db.graph_client import GraphClient
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logger.addHandler(logging.NullHandler())
 
 MOCK_FILE = DATA_DIR / "test_data" / "mock_graph_query_tool.json"
+BLOCKS_SEED_FILE = DATA_DIR / "seeds" / "knowledge_blocks.json"
 
 
-# ------------------------------------------------------------------
-# 统一函数式接口（规范实现）
-# ------------------------------------------------------------------
 def graph_query(input_data: dict, config: dict = None) -> dict:
-    """
-    查询技能的先修依赖链。
-
-    参数：
-        input_data: dict
-            - skill_name: str   技能名称（优先）
-            - block_id: str     板块ID（备选）
-            - scenario: str     Mock 模式下选择场景：normal|boundary|exception
-        config: dict
-            - use_mock: bool    是否使用 Mock（默认 True）
-
-    返回：
-        {
-            "status": "success" | "error",
-            "data": {
-                "skill": str,
-                "dependencies": [
-                    {"block_id", "block_name", "difficulty", "estimated_hours", "level"}
-                ],
-                "max_depth": int,
-                "warning": str | None,
-                "db_available": bool
-            },
-            "message": str,
-            "mock_used": bool
-        }
-    """
     config = config or {}
     use_mock = config.get("use_mock", True)
 
@@ -81,155 +46,144 @@ def graph_query(input_data: dict, config: dict = None) -> dict:
         if use_mock:
             return _mock_query(skill_name, input_data)
 
-        blocks, db_available = _load_blocks()
-        if not blocks:
-            return {
-                "status": "success",
-                "data": {
-                    "skill": skill_name,
-                    "dependencies": [],
-                    "max_depth": 0,
-                    "warning": None,
-                    "db_available": False,
-                },
-                "message": f"知识库不可用，无{skill_name}的依赖信息",
-                "mock_used": False,
-            }
-
-        result = _resolve_dependencies(skill_name, blocks)
-        result["db_available"] = db_available
+        graph_client = GraphClient()
+        result = _resolve_dependencies(skill_name, graph_client)
+        result["db_available"] = bool(graph_client.graph.nodes)
         return {
             "status": "success",
             "data": result,
             "message": _build_message(result),
             "mock_used": False,
         }
-    except Exception as e:
+    except Exception as exc:
         logger.exception("graph_query 执行失败")
         return {
             "status": "error",
             "data": None,
-            "message": f"graph_query 执行异常: {e}",
+            "message": f"graph_query 执行异常: {exc}",
             "mock_used": use_mock,
         }
 
 
-# ------------------------------------------------------------------
-# 真实模式：数据库依赖查询
-# ------------------------------------------------------------------
-def _get_db_path() -> Path:
-    """解析 settings.DATABASE_URL 为绝对路径（与 sqlite_client 一致）。"""
-    url = settings.DATABASE_URL
-    raw = url.replace("sqlite:///", "", 1)
-    p = Path(raw)
-    if not p.is_absolute():
-        p = (BACKEND_DIR / p).resolve()
-    return p
-
-
-def _load_blocks() -> tuple[Dict[str, Dict[str, Any]], bool]:
-    """
-    SQL: 从 knowledge_blocks 表读取全部板块（含 prerequisites JSON字段）。
-    返回：{block_name: block_data, ...} 的索引字典，便于快速查找。
-    """
-    db_path = _get_db_path()
-    if not db_path.exists():
-        logger.warning("数据库不存在: %s，graph_query 无可用知识板块", db_path)
-        return {}, False
-    try:
-        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-        try:
-            cur = conn.execute(
-                """
-                SELECT block_id, block_name, description, estimated_hours, difficulty, prerequisites
-                FROM knowledge_blocks
-                """
-            )
-            rows = cur.fetchall()
-        finally:
-            conn.close()
-
-        blocks: Dict[str, Dict[str, Any]] = {}
-        for r in rows:
-            prereqs = []
-            if r[5]:
-                try:
-                    prereqs = json.loads(r[5])
-                    if not isinstance(prereqs, list):
-                        prereqs = []
-                except json.JSONDecodeError:
-                    prereqs = []
-            blocks[r[1]] = {
-                "block_id": r[0],
-                "block_name": r[1],
-                "description": r[2],
-                "estimated_hours": r[3],
-                "difficulty": r[4],
-                "prerequisites": prereqs,
-            }
-        return blocks, True
-    except sqlite3.Error as e:
-        logger.warning("读取 knowledge_blocks 失败: %s", e)
-        return {}, False
-
-
-def _resolve_dependencies(skill_name: str, blocks: Dict[str, Dict[str, Any]],
-                          visited: set = None, depth: int = 1) -> dict:
-    """递归解析依赖链，检测循环依赖。"""
-    if visited is None:
-        visited = set()
-
-    dependencies: List[Dict[str, Any]] = []
-    warning = None
-    max_depth = depth
-
-    if skill_name in visited:
+def _resolve_dependencies(skill_name: str, graph_client: GraphClient) -> dict:
+    graph = graph_client.graph
+    seed_index = _load_seed_index()
+    block_id = _resolve_block_id(skill_name, seed_index) or _find_block_id(graph, skill_name)
+    if not block_id:
         return {
             "skill": skill_name,
             "dependencies": [],
-            "max_depth": depth,
-            "warning": f"circular_dependency: {skill_name} 出现在依赖链中形成循环",
-        }
-    visited.add(skill_name)
-
-    block = blocks.get(skill_name)
-    if not block:
-        visited.remove(skill_name)
-        return {
-            "skill": skill_name,
-            "dependencies": [],
-            "max_depth": depth,
+            "max_depth": 0,
             "warning": None,
         }
 
-    for prereq_name in block.get("prerequisites", []):
-        if prereq_name in visited:
-            warning = f"circular_dependency: {prereq_name} ↔ {skill_name} 形成循环，已截断"
+    prerequisite_graph = nx.DiGraph()
+    block_nodes: dict[str, dict[str, Any]] = {}
+
+    for node_id, node_data in graph.nodes(data=True):
+        if node_data.get("node_type") != "block":
             continue
+        block_nodes[node_id] = dict(node_data)
+        prerequisite_graph.add_node(node_id)
 
-        child_result = _resolve_dependencies(prereq_name, blocks, visited, depth + 1)
-        if child_result.get("warning"):
-            warning = child_result["warning"]
-        max_depth = max(max_depth, child_result["max_depth"])
+    for source_id, target_id, edge_data in graph.edges(data=True):
+        relation_types = edge_data.get("relation_types", [])
+        if (
+            (edge_data.get("relation_type") == "PREREQUISITE_OF" or "PREREQUISITE_OF" in relation_types)
+            and edge_data.get("scope") == "block"
+        ):
+            prerequisite_graph.add_edge(source_id, target_id)
 
-        child_block = blocks.get(prereq_name)
-        if child_block:
-            dependencies.append({
-                "block_id": child_block["block_id"],
-                "block_name": prereq_name,
-                "difficulty": child_block["difficulty"],
-                "estimated_hours": child_block["estimated_hours"],
-                "level": depth,
-            })
+    if block_id not in prerequisite_graph:
+        return {
+            "skill": block_nodes.get(block_id, {}).get("block_name", skill_name),
+            "dependencies": [],
+            "max_depth": 0,
+            "warning": None,
+        }
 
-    visited.remove(skill_name)
+    ancestors = nx.ancestors(prerequisite_graph, block_id)
+    dependencies: list[dict[str, Any]] = []
+    for ancestor_id in sorted(
+        ancestors,
+        key=lambda node_id: (
+            _distance_or_default(prerequisite_graph, node_id, block_id),
+            node_id,
+        ),
+    ):
+        node_data = block_nodes.get(ancestor_id, {})
+        dependencies.append(
+            {
+                "block_id": ancestor_id,
+                "block_name": _canonical_block_name(ancestor_id, node_data, seed_index),
+                "difficulty": node_data.get("difficulty", ""),
+                "estimated_hours": node_data.get("estimated_hours", 0),
+                "level": _distance_or_default(prerequisite_graph, ancestor_id, block_id),
+            }
+        )
 
+    max_depth = max((item["level"] for item in dependencies), default=0)
     return {
-        "skill": skill_name,
+        "skill": _canonical_block_name(block_id, block_nodes.get(block_id, {}), seed_index) or skill_name,
         "dependencies": dependencies,
         "max_depth": max_depth,
-        "warning": warning,
+        "warning": None,
     }
+
+
+def _find_block_id(graph: nx.DiGraph, skill_name: str) -> str | None:
+    normalized = skill_name.strip()
+    for node_id, node_data in graph.nodes(data=True):
+        if node_data.get("node_type") != "block":
+            continue
+        if node_id == normalized or node_data.get("block_name") == normalized:
+            return node_id
+    return None
+
+
+def _load_seed_index() -> dict[str, dict[str, Any]]:
+    if not BLOCKS_SEED_FILE.exists():
+        return {}
+    try:
+        rows = json.loads(BLOCKS_SEED_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    index: dict[str, dict[str, Any]] = {}
+    for row in rows if isinstance(rows, list) else []:
+        block_id = row.get("block_id")
+        if block_id:
+            index[block_id] = row
+    return index
+
+
+def _resolve_block_id(skill_name: str, seed_index: dict[str, dict[str, Any]]) -> str | None:
+    normalized = skill_name.strip().lower()
+    if not normalized:
+        return None
+
+    for block_id, row in seed_index.items():
+        block_name = str(row.get("block_name", "")).strip().lower()
+        gaps = [str(item).strip().lower() for item in row.get("corresponding_gaps", []) if str(item).strip()]
+        if normalized == block_id.lower() or normalized == block_name:
+            return block_id
+        if normalized in gaps:
+            return block_id
+        if normalized and (normalized in block_name or any(normalized in gap for gap in gaps)):
+            return block_id
+    return None
+
+
+def _canonical_block_name(block_id: str, node_data: dict[str, Any], seed_index: dict[str, dict[str, Any]]) -> str:
+    seed_row = seed_index.get(block_id, {})
+    return seed_row.get("block_name") or node_data.get("block_name") or block_id
+
+
+def _distance_or_default(graph: nx.DiGraph, source_id: str, target_id: str) -> int:
+    try:
+        return nx.shortest_path_length(graph, source_id, target_id)
+    except nx.NetworkXNoPath:
+        return 0
 
 
 def _build_message(result: dict) -> str:
@@ -247,11 +201,7 @@ def _build_message(result: dict) -> str:
     return f"{skill} 的依赖查询完成，{len(deps)}个依赖，最大深度{max_depth}"
 
 
-# ------------------------------------------------------------------
-# Mock 模式
-# ------------------------------------------------------------------
 def _mock_query(skill_name: str, input_data: dict) -> dict:
-    """从 mock JSON 读取预设场景。"""
     scenario = (input_data or {}).get("scenario") or "normal"
     scenarios = _load_mock()
     if scenario not in scenarios:
@@ -275,16 +225,13 @@ def _load_mock() -> dict:
         logger.warning("Mock 文件不存在: %s", MOCK_FILE)
         return {}
     try:
-        with MOCK_FILE.open("r", encoding="utf-8") as f:
-            return json.load(f).get("scenarios", {})
-    except (json.JSONDecodeError, OSError) as e:
-        logger.warning("读取 Mock 文件失败: %s", e)
+        with MOCK_FILE.open("r", encoding="utf-8") as handle:
+            return json.load(handle).get("scenarios", {})
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.warning("读取 Mock 文件失败: %s", exc)
         return {}
 
 
-# ------------------------------------------------------------------
-# 向后兼容适配器
-# ------------------------------------------------------------------
 class GraphQueryTool:
     def __init__(self):
         self._default_config = {"use_mock": False}
@@ -294,7 +241,7 @@ class GraphQueryTool:
         if result.get("status") != "success":
             return []
         deps = result["data"].get("dependencies", [])
-        return [d["block_name"] for d in deps]
+        return [item["block_name"] for item in deps]
 
     async def query_dependencies(self, skill_name: str) -> List[str]:
         return await self.query_prerequisites(skill_name)

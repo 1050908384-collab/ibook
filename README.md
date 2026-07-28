@@ -5,7 +5,7 @@
 ## 核心特性
 
 - **个性化画像**：通过对话式交互生成用户学习画像
-- **阶段式学习**：按“子知识点 + 每日可学时长”逐阶段推送学习内容，动态调整学习路径
+- **阶段式学习**：按知识板块依赖、板块下子知识点顺序逐阶段推送学习内容，动态调整学习路径
 - **实时答疑**：学习过程中随时提问，系统即时回答
 - **双重审核**：技术审核+质量评审，确保学习内容准确性和教学效果
 - **策略调整**：根据测试结果自动调整下一阶段学习策略
@@ -15,7 +15,7 @@
 
 - **后端**：FastAPI, Python 3.12+
 - **数据库**：SQLite, Chroma Vector DB, NetworkX
-- **LLM**：Ollma本地模型 (deepseek-r1/ qwen2.5)
+- **LLM**：Ollama本地模型 (deepseek-r1 / qwen2.5)
 - **前端**：React + TypeScript
 
 后端默认使用 `EXECUTION_MODE=hybrid`：状态管理、阶段规划和答题判定保持确定性，教程与问答由 Ollama 生成。设置为 `deterministic` 后，无需启动 Ollama 也可以跑通完整闭环。
@@ -30,7 +30,7 @@ project-root/
 │   ├── seeds/        # 结构化种子数据（5个JSON文件）
 │   ├── sqlite_data/  # 主SQLite数据库 project.db
 │   ├── chroma_db/    # FAQ/知识检索向量库
-│   ├── graph_data/   # 知识依赖图谱数据
+│   ├── graph_data/   # 知识依赖图谱结果层（current/runtime）
 │   └── test_data/    # 测试样例数据
 ├── scripts/          # 工具脚本
 └── docs/             # 项目文档
@@ -41,7 +41,7 @@ project-root/
 ### 环境要求
 
 - Python 3.12+
-- Ollma (本地模型推理)
+- Ollama (本地模型推理)
 - Node.js 18+ (前端)
 
 ### 安装依赖
@@ -62,8 +62,11 @@ cp .env.example .env
 ```bash
 python scripts/init_db.py
 python scripts/insert_knowledge_data.py
+python scripts/build_knowledge_graph.py
 python scripts/init_faq_vectors.py
 ```
+
+如果当前不依赖 FAQ 检索，可以先跳过 `python scripts/init_faq_vectors.py`。
 
 当前数据导入脚本只读取 `data/seeds/` 下的 5 个结构化文件：
 
@@ -80,8 +83,14 @@ python scripts/init_faq_vectors.py
 - 历史库 `data/knowledge.db` 不再参与运行链路，仅保留备份归档用途
 - 所有后端代码、初始化脚本、FAQ 向量化脚本统一读取 `DATABASE_URL`
 - 所有 Chroma 数据统一读取 `CHROMA_PATH`
-- Agent2 当前按 `knowledge_subtopics` 的 `estimated_hours` 与 `sequence_index` 规划阶段
+- 图谱运行时文件统一读取 `GRAPH_PATH`，当前默认指向 `data/graph_data/runtime/knowledge_graph.gpickle`
+- `data/seeds/knowledge_blocks.json` 与 `data/seeds/knowledge_subtopics.json` 仍然是图谱的权威源数据
+- `data/graph_data/current/` 存放可检查的图谱结果：`nodes.jsonl`、`edges.jsonl`、`manifest.json` 及派生结果
+- `data/graph_data/runtime/` 存放运行时图缓存 `knowledge_graph.gpickle`
+- Agent1 当前通过 `graph_data` 查询板块前置依赖
+- Agent2 当前按板块依赖和板块内 `subtopics.sequence_index` 组织阶段输入，并返回板块下的知识点列表
 - Agent3 当前按 `knowledge_docs` 检索教程与答疑内容；`knowledge_docs.subtopic_id` 用于将文档精确关联到子知识点
+- Agent6 当前消费画像中的 `knowledge_gaps.prerequisites` 做策略判断；该字段通常由前置图谱查询结果填充
 
 ## FAQ 问答链路
 - Agent3 仅在用户提问时调用 FAQ 检索，不在教程生成阶段调用
@@ -129,6 +138,12 @@ Invoke-RestMethod -Method POST -Uri "http://localhost:8500/api/stage/complete/$s
 ### 启动服务
 
 ```bash
+cd project-root
+pip install -r requirements.txt
+python scripts/init_db.py
+python scripts/insert_knowledge_data.py
+python scripts/build_knowledge_graph.py
+python scripts/init_faq_vectors.py
 cd backend
 python main.py
 ```
@@ -143,17 +158,17 @@ python -m unittest discover -s tests -v
 
 | Agent | 职责 | 核心功能 |
 |-------|------|----------|
-| Agent1 | 学情诊断 | 生成用户画像JSON |
-| Agent2 | 目录生成 | 规划下一阶段学习内容 |
+| Agent1 | 学情诊断 | 生成用户画像JSON，并查询知识图谱前置依赖 |
+| Agent2 | 目录生成 | 查询板块信息与子知识点列表，规划下一阶段学习内容 |
 | Agent3 | 内容生成 | 生成学习包、回答问题 |
 | Agent4 | 技术审核 | 检查幻觉、语法、规范 |
 | Agent5 | 质量评审 | 检查难度、负荷、风格 |
-| Agent6 | 阶段决策 | 更新画像、选择策略 |
+| Agent6 | 阶段决策 | 更新画像、选择策略，消费画像中的前置依赖信息 |
 
 ## 学习流程
 
 1. 用户首次输入 → Agent1生成画像
-2. Agent2根据知识盲区、子知识点顺序和 `daily_hours` 生成下一阶段
+2. Agent2根据知识盲区、板块前置关系和板块内子知识点顺序生成下一阶段
 3. Agent3生成学习包 → Agent4+5并行审核
 4. 用户学习 + 实时答疑
 5. 完成测试 → Agent6更新画像

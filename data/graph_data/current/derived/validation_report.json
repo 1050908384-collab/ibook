@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-07-28T08:47:19.239055+00:00",
+  "missing_block_prerequisites": [],
+  "missing_subtopic_prerequisites": [],
+  "block_cycles": [],
+  "subtopic_cycles": [],
+  "isolated_blocks": [],
+  "isolated_subtopics": [],
+  "edge_counts": {
+    "contains": 68,
+    "prerequisite": 75,
+    "progresses_to": 67
+  }
+}
