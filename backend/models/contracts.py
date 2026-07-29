@@ -99,3 +99,4 @@ class StageDecisionOutput(BaseModel):
     decision: Literal["continue", "repeat", "completed"]
     profile: UserProfile
     strategy: str
+    stage_summary: Optional[str] = None

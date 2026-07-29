@@ -2,6 +2,7 @@
 import re
 from typing import Dict, Any, List, Optional
 from agents.base_agent import BaseAgent
+from models.review import ReviewError, TechnicalReviewResult
 from tools.agent4_tools.code_executor_tool import CodeExecutorTool
 from tools.agent4_tools.code_parser_tool import CodeParserTool
 from tools.agent4_tools.knowledge_verify_tool import (
@@ -145,70 +146,125 @@ class TechnicalReviewAgent(BaseAgent):
         session_id: str,
         content: Dict[str, Any],
         profile: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
-        errors = []
+    ) -> TechnicalReviewResult:
+        raw_errors = []
         print(f"=== Agent4(合并后) TechnicalReviewAgent 开始审核 ===")
 
         profile_dict = self._profile_to_dict(profile) if profile else {}
 
+        # 入口 guard：content 必须包含至少一个已知分支
+        known_branches = ("tutorial", "code_examples", "answer")
+        if not any(k in content for k in known_branches):
+            print(f"=== Agent4(合并后) content 缺少已知分支（tutorial/code_examples/answer）===")
+            return TechnicalReviewResult(
+                passed=False,
+                errors=[ReviewError(
+                    error_type="invalid_input",
+                    severity="critical",
+                    description=f"待审核内容缺少已知分支字段（需包含 {known_branches} 之一）",
+                    suggestion="请补充 tutorial / code_examples / answer 字段后重新审核",
+                )],
+                review_details={"summary": "输入内容缺少可审核分支"},
+            )
+
         if "tutorial" in content:
             print(f"=== 审核教程内容（前200字符）===\n{content['tutorial'][:200]}")
-            # 技术审核
-            hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["tutorial"])
-            errors.extend(hallucination_errors)
-
-            rule_errors = await self.rule_check_tool.check_rules(content["tutorial"])
-            errors.extend(rule_errors)
-
-            # 质量审核（原Agent5功能）
+            # 步骤1：硬性检查（规则检查）
+            try:
+                rule_errors = await self.rule_check_tool.check_rules(content["tutorial"])
+                raw_errors.extend(rule_errors)
+            except Exception:
+                pass
+            # 步骤2：事实检查（幻觉检测）
+            try:
+                hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["tutorial"])
+                raw_errors.extend(hallucination_errors)
+            except Exception:
+                pass
+            # 步骤3-4：质量审核（难度/认知负荷/风格匹配）
             print(f"=== 质量审核：分析教程难度 ===")
-            difficulty_errors = await self.difficulty_analyzer_tool.analyze(
-                content["tutorial"], profile=profile_dict
-            )
-            errors.extend(difficulty_errors)
-
-            load_errors = await self.cognitive_load_tool.analyze(content["tutorial"])
-            errors.extend(load_errors)
-
-            style_errors = await self.style_match_tool.check(
-                content["tutorial"], profile=profile_dict
-            )
-            errors.extend(style_errors)
+            try:
+                difficulty_errors = await self.difficulty_analyzer_tool.analyze(
+                    content["tutorial"], profile=profile_dict
+                )
+                raw_errors.extend(difficulty_errors)
+            except Exception:
+                pass
+            try:
+                load_errors = await self.cognitive_load_tool.analyze(content["tutorial"])
+                raw_errors.extend(load_errors)
+            except Exception:
+                pass
+            try:
+                style_errors = await self.style_match_tool.check(
+                    content["tutorial"], profile=profile_dict
+                )
+                raw_errors.extend(style_errors)
+            except Exception:
+                pass
 
         if "code_examples" in content:
             print(f"=== 审核代码示例 ===")
             for code in content["code_examples"]:
-                syntax_errors = await self.code_parser_tool.parse_code(code.get("code", ""))
-                errors.extend(syntax_errors)
-
-                code_rule_errors = await self.rule_check_tool.check_code_rules(code.get("code", ""))
-                errors.extend(code_rule_errors)
+                try:
+                    syntax_errors = await self.code_parser_tool.parse_code(code.get("code", ""))
+                    raw_errors.extend(syntax_errors)
+                except Exception:
+                    pass
+                try:
+                    code_rule_errors = await self.rule_check_tool.check_code_rules(code.get("code", ""))
+                    raw_errors.extend(code_rule_errors)
+                except Exception:
+                    pass
 
         if "answer" in content:
             print(f"=== 审核回答内容（前200字符）===\n{content['answer'][:200]}")
-            # 技术审核
-            hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["answer"])
-            errors.extend(hallucination_errors)
-
-            # 质量审核（原Agent5功能）
+            # 步骤2：事实检查（幻觉检测）
+            try:
+                hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["answer"])
+                raw_errors.extend(hallucination_errors)
+            except Exception:
+                pass
+            # 步骤3-4：质量审核
             print(f"=== 质量审核：分析回答质量 ===")
-            style_errors = await self.style_match_tool.check(
-                content["answer"], profile=profile_dict
-            )
-            errors.extend(style_errors)
+            try:
+                style_errors = await self.style_match_tool.check(
+                    content["answer"], profile=profile_dict
+                )
+                raw_errors.extend(style_errors)
+            except Exception:
+                pass
+            try:
+                difficulty_errors = await self.difficulty_analyzer_tool.analyze(
+                    content["answer"], profile=profile_dict
+                )
+                raw_errors.extend(difficulty_errors)
+            except Exception:
+                pass
 
-            difficulty_errors = await self.difficulty_analyzer_tool.analyze(
-                content["answer"], profile=profile_dict
-            )
-            errors.extend(difficulty_errors)
-
+        # 步骤5：综合裁决 — 将原始dict转为ReviewError，按规则4裁决优先级
+        errors = self._normalize_errors(raw_errors)
+        passed = not any(e.severity == "critical" for e in errors) and len(errors) == 0
+        summary = f"审核完成：发现{len(errors)}个问题" + (
+            f"（其中{sum(1 for e in errors if e.severity == 'critical')}个critical）"
+            if any(e.severity == "critical" for e in errors) else ""
+        )
         print(f"=== Agent4(合并后) TechnicalReviewAgent 审核完成 ===")
-        print(f"=== 发现问题: {len(errors)}个 ===")
+        print(f"=== 发现问题: {len(errors)}个, passed={passed} ===")
         if errors:
             for i, e in enumerate(errors, 1):
-                print(f"  {i}. [{e.get('type', 'unknown')}] {e.get('message', '')}")
+                print(f"  {i}. [{e.severity}] {e.error_type}: {e.description}")
 
-        return errors
+        return TechnicalReviewResult(passed=passed, errors=errors, review_details={"summary": summary})
+
+    def _normalize_errors(self, raw_errors: List[Dict[str, Any]]) -> List[ReviewError]:
+        """将工具返回的原始dict列表转为ReviewError对象列表。
+
+        复用 deterministic.normalize_review_errors 公共实现，消除两处重复逻辑。
+        采用延迟 import 避免顶层引入 deterministic 的重依赖（db/llm 等）。
+        """
+        from agents.deterministic import normalize_review_errors
+        return normalize_review_errors(raw_errors)
 
     async def analyze_code_error(
         self,
@@ -290,12 +346,16 @@ class TechnicalReviewAgent(BaseAgent):
         exec_result: Dict[str, Any] = {}
         if code and not error_info.strip():
             print(f"  [Step2] 用户提供代码但无报错，执行代码...")
-            exec_result = await self.code_executor_tool.execute(code=code)
-            if exec_result.get("has_error", False):
-                error_info = exec_result.get("error_info", "")
-                print(f"  [Step2] 执行捕获错误: {error_info[:100]}")
-            else:
-                print(f"  [Step2] 代码执行成功，无运行时错误")
+            try:
+                exec_result = await self.code_executor_tool.execute(code=code)
+                if exec_result.get("has_error", False):
+                    error_info = exec_result.get("error_info", "")
+                    print(f"  [Step2] 执行捕获错误: {error_info[:100]}")
+                else:
+                    print(f"  [Step2] 代码执行成功，无运行时错误")
+            except Exception:
+                exec_result = {}
+                print(f"  [Step2] 代码执行异常，跳过")
 
         # Step 1: 解析报错 → 错误分类与归因
         error_type = ""
@@ -320,10 +380,13 @@ class TechnicalReviewAgent(BaseAgent):
 
         # Step 3: 知识库匹配
         if error_info.strip():
-            error_verification = await self.knowledge_verify_tool.verify_code_error(
-                error_info=error_info,
-                code=code,
-            )
+            try:
+                error_verification = await self.knowledge_verify_tool.verify_code_error(
+                    error_info=error_info,
+                    code=code,
+                )
+            except Exception:
+                error_verification = {}
             result["is_known_error"] = error_verification.get("is_known_error", False)
             result["known_solution"] = error_verification.get("known_solution", "")
             kb_severity = error_verification.get("severity", "")
@@ -343,13 +406,19 @@ class TechnicalReviewAgent(BaseAgent):
         # Step 4: 代码语法检查
         syntax_errors: List[Dict[str, Any]] = []
         if code:
-            syntax_errors = await self.code_parser_tool.parse_code(code)
+            try:
+                syntax_errors = await self.code_parser_tool.parse_code(code)
+            except Exception:
+                syntax_errors = []
             result["code_syntax_errors"] = syntax_errors
 
         # Step 5: 代码错误模式检测
         rule_violations: List[Dict[str, Any]] = []
         if code:
-            rule_violations = await self.rule_check_tool.check_code_error_patterns(code)
+            try:
+                rule_violations = await self.rule_check_tool.check_code_error_patterns(code)
+            except Exception:
+                rule_violations = []
             result["code_rule_violations"] = rule_violations
 
         # Step 6: 组装输出

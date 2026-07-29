@@ -35,25 +35,44 @@ class StageDecisionAgent(BaseAgent):
         profile: Dict[str, Any],
         qa_history: List[Dict[str, Any]],
         interactions: List[Dict[str, Any]],
+        iteration_history: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         updated_data = {}
 
         profile_dict = self._profile_to_dict(profile) if profile else {}
 
-        strategy = await self.strategy_selector_tool.select_strategy(accuracy, profile_dict)
+        # 策略选择：透传 iteration_history，激活 backtrack/终止逻辑（iteration_strategy.skill.md 规则2/3）
+        try:
+            strategy = await self.strategy_selector_tool.select_strategy(
+                accuracy, profile_dict, iteration_history=iteration_history
+            )
+        except Exception:
+            strategy = "reinforce" if accuracy >= 0.6 else "simplify"
         updated_data["strategy"] = strategy
 
-        knowledge_gaps = profile_dict.get("knowledge_gaps", [])
-        updated_gaps = await self.profile_update_tool.update_gaps(knowledge_gaps, accuracy)
-        updated_data["knowledge_gaps"] = updated_gaps
+        try:
+            knowledge_gaps = profile_dict.get("knowledge_gaps", [])
+            updated_gaps = await self.profile_update_tool.update_gaps(knowledge_gaps, accuracy)
+            updated_data["knowledge_gaps"] = updated_gaps
+        except Exception:
+            updated_data["knowledge_gaps"] = profile_dict.get("knowledge_gaps", [])
 
-        rhythm = await self.profile_update_tool.infer_rhythm(interactions)
+        try:
+            rhythm = await self.profile_update_tool.infer_rhythm(interactions)
+        except Exception:
+            rhythm = "medium"
         updated_data["learning_rhythm"] = rhythm
 
-        confidence_index = await self.profile_update_tool.infer_confidence(qa_history, accuracy)
+        try:
+            confidence_index = await self.profile_update_tool.infer_confidence(qa_history, accuracy)
+        except Exception:
+            confidence_index = max(0.0, min(1.0, accuracy))
         updated_data["confidence_index"] = confidence_index
 
-        confusion_markers = await self.profile_update_tool.detect_confusion(qa_history)
+        try:
+            confusion_markers = await self.profile_update_tool.detect_confusion(qa_history)
+        except Exception:
+            confusion_markers = []
         updated_data["confusion_markers"] = confusion_markers
 
         return updated_data
@@ -72,21 +91,29 @@ class StageDecisionAgent(BaseAgent):
         expected_time_hours: float = 0,
         total_knowledge_points: int = 0,
         total_answers: int = 0,
+        iteration_history: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """
         处理阶段结束后的全部更新工作，包括画像更新和阶段总结生成。
 
         返回结构：
         {
-            "profile_updates": {...},
-            "stage_summary": str,  # Markdown格式的阶段总结
-            "strategy": str,
+            "decision": str,            # continue/repeat/completed
+            "profile_updates": {...},   # 含 knowledge_gaps(含status/mastery)、dynamic_state、pace_adjustment、confusion_tags、next_strategy
+            "stage_summary": str,       # Markdown格式的阶段总结
+            "strategy": str,            # 可能含 backtrack（回溯）策略标签
             "update_rationale": str,
         }
         """
-        # 1. 执行原有画像更新逻辑
+        # 1. 执行原有画像更新逻辑（透传 iteration_history 激活 backtrack/终止逻辑）
+        # 若调用方未传 iteration_history，尝试从 profile dict 中读取（上游可携带）
+        if iteration_history is None:
+            profile_dict_preview = self._profile_to_dict(profile) if profile else {}
+            iteration_history = profile_dict_preview.get("iteration_history") or []
+
         updated_data = await self.update_user_data(
-            session_id, accuracy, profile, qa_history, interactions
+            session_id, accuracy, profile, qa_history, interactions,
+            iteration_history=iteration_history,
         )
 
         # 2. 准备总结生成所需的数据
@@ -130,9 +157,17 @@ class StageDecisionAgent(BaseAgent):
             total_answers=total_answers or len(question_records),
         )
 
-        # 4. 组装最终输出
+        # 4. 组装最终输出（与 StageDecisionOutput 核心字段对齐）
+        # 补充 mastery 字段（= progress），保证与画像Schema一致
+        gaps_with_mastery = []
+        for gap in knowledge_gaps:
+            gap_copy = dict(gap) if isinstance(gap, dict) else {}
+            if "mastery" not in gap_copy:
+                gap_copy["mastery"] = gap_copy.get("progress", 0.0)
+            gaps_with_mastery.append(gap_copy)
+
         profile_updates = {
-            "knowledge_gaps": knowledge_gaps,
+            "knowledge_gaps": gaps_with_mastery,
             "dynamic_state": {
                 "confidence_index": updated_data.get("confidence_index", 0.5),
             },
@@ -141,7 +176,23 @@ class StageDecisionAgent(BaseAgent):
             "next_strategy": next_strategy,
         }
 
+        # 决策判定（与 DeterministicStageDecisionAgent.run 逻辑一致）
+        # next_strategy 为 backtrack（回溯）时，decision 映射为 repeat（回退重学前置知识）
+        # next_strategy 为 finish（结业）时，decision 映射为 completed
+        all_mastered = all(
+            gap.get("status") == "已掌握" for gap in knowledge_gaps if isinstance(gap, dict)
+        ) if knowledge_gaps else False
+        if next_strategy == "finish" or all_mastered:
+            decision = "completed"
+        elif next_strategy == "backtrack":
+            decision = "repeat"
+        elif accuracy >= 0.8:
+            decision = "continue"
+        else:
+            decision = "repeat"
+
         return {
+            "decision": decision,
             "profile_updates": profile_updates,
             "stage_summary": stage_summary,
             "strategy": next_strategy,

@@ -190,6 +190,8 @@ class Harness:
                 "accuracy": accuracy,
                 "updated_profile": decision.profile.model_dump(mode="json"),
                 "final_report": self._generate_final_report(decision.profile, accuracy),
+                "stage_summary": decision.stage_summary,
+                "next_strategy": decision.strategy,
             }
 
         # ===== P0: Agent1 重诊断闭环 =====
@@ -232,6 +234,8 @@ class Harness:
             "accuracy": accuracy,
             "updated_profile": decision.profile.model_dump(mode="json"),
             "next_stage": next_stage.stage.model_dump(mode="json"),
+            "stage_summary": decision.stage_summary,
+            "next_strategy": decision.strategy,
         }
 
     async def _review_learning_package(

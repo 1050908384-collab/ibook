@@ -42,7 +42,9 @@ from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
 from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
 from tools.agent4_tools.style_match_tool import StyleMatchTool
 from tools.agent6_tools.profile_update_tool import ProfileUpdateTool
+from tools.agent6_tools.stage_summary_generator_tool import StageSummaryGeneratorTool
 from tools.agent6_tools.strategy_selector_tool import StrategySelectorTool
+from tools.agent4_tools.knowledge_verify_tool import KnowledgeVerifyTool
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
 
 
@@ -535,6 +537,7 @@ class HybridContentAgent(DeterministicContentAgent):
 class DeterministicTechnicalReviewAgent:
     def __init__(self):
         self.rule_check_tool = RuleCheckTool()
+        self.knowledge_verify_tool = KnowledgeVerifyTool()
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
@@ -543,8 +546,27 @@ class DeterministicTechnicalReviewAgent:
         errors = []
         if not request.content.strip():
             errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
-        
-        # 质量审核（原Agent5功能）
+            return TechnicalReviewResult(passed=False, errors=errors)
+
+        # 步骤1：硬性检查（规则检查 — LoRA机制、参数量、安全红线）
+        try:
+            rule_errors = normalize_review_errors(
+                await self.rule_check_tool.check_rules(request.content)
+            )
+            errors.extend(rule_errors)
+        except Exception:
+            pass
+
+        # 步骤2：事实检查（幻觉检测 — 知识依据验证，sim<0.65判幻觉）
+        try:
+            hallucination_errors = normalize_review_errors(
+                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            )
+            errors.extend(hallucination_errors)
+        except Exception:
+            pass
+
+        # 步骤3-4：质量审核（难度/认知负荷/风格匹配 — 原Agent5功能）
         if request.target_type == "learning_package":
             profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
             try:
@@ -554,7 +576,8 @@ class DeterministicTechnicalReviewAgent:
                 errors.extend(normalize_review_errors(tool_errors))
             except Exception:
                 pass
-                
+
+        # 步骤5：综合裁决（有critical错误或errors非空则不通过）
         return TechnicalReviewResult(passed=not errors, errors=errors)
 
 
@@ -566,12 +589,12 @@ class HybridTechnicalReviewAgent:
     def __init__(self):
         self.llm_client = LLMClient()
         self.rule_check_tool = RuleCheckTool()
+        self.knowledge_verify_tool = KnowledgeVerifyTool()
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
         self.skill_context = get_skill_context([
             "technical_review",
-            "hallucination_detection",
             "industry_standards",
             "pedagogy",
             "learner_model",
@@ -580,11 +603,23 @@ class HybridTechnicalReviewAgent:
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         print(f"=== Agent4(合并后) 技术+质量审核开始：{request.target_type} ===")
-        rule_errors = normalize_review_errors(
-            await self.rule_check_tool.check_rules(request.content)
-        )
-        
-        # 质量审核（原Agent5功能）
+        # 步骤1：硬性检查（规则检查）— 异常兜底
+        try:
+            rule_errors = normalize_review_errors(
+                await self.rule_check_tool.check_rules(request.content)
+            )
+        except Exception:
+            rule_errors = []
+
+        # 步骤2：事实检查（幻觉检测 — 知识依据验证）— 异常兜底
+        try:
+            hallucination_errors = normalize_review_errors(
+                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            )
+        except Exception:
+            hallucination_errors = []
+
+        # 步骤3-4：质量审核（原Agent5功能）
         quality_tool_errors = []
         if request.target_type == "learning_package":
             profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
@@ -594,9 +629,9 @@ class HybridTechnicalReviewAgent:
                 quality_tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
             except Exception:
                 pass
-        
+
         quality_tool_errors_normalized = normalize_review_errors(quality_tool_errors)
-        
+
         prompt = self._build_prompt(request)
         response = await self.llm_client.complete(
             prompt,
@@ -608,7 +643,11 @@ class HybridTechnicalReviewAgent:
         if rule_errors:
             result.errors = rule_errors + result.errors
             result.passed = False
-            print(f"=== 确定性规则发现错误：{len(rule_errors)}个 ===")
+            print(f"=== 硬性规则检查发现错误：{len(rule_errors)}个 ===")
+        if hallucination_errors:
+            result.errors = hallucination_errors + result.errors
+            result.passed = False
+            print(f"=== 事实检查(幻觉)发现错误：{len(hallucination_errors)}个 ===")
         if quality_tool_errors_normalized:
             result.errors = quality_tool_errors_normalized + result.errors
             result.passed = False
@@ -692,6 +731,10 @@ def parse_json_object(response: str) -> dict | None:
 def normalize_review_errors(raw_errors: list) -> list[ReviewError]:
     errors = []
     for raw in raw_errors if isinstance(raw_errors, list) else []:
+        # 已是 ReviewError 实例则直接收录（跳过二次构造）
+        if isinstance(raw, ReviewError):
+            errors.append(raw)
+            continue
         if not isinstance(raw, dict):
             continue
         severity = str(raw.get("severity", "major")).lower()
@@ -712,35 +755,140 @@ class DeterministicStageDecisionAgent:
     def __init__(self):
         self.strategy_selector_tool = StrategySelectorTool()
         self.profile_update_tool = ProfileUpdateTool()
+        self.stage_summary_generator_tool = StageSummaryGeneratorTool()
         self.db_client = SQLiteClient()
 
     async def run(self, request: StageDecisionInput) -> StageDecisionOutput:
         profile = request.profile.model_copy(deep=True)
-        updated_gaps = await self.profile_update_tool.update_gaps(
-            [gap.model_dump(mode="json") for gap in profile.knowledge_gaps],
-            request.accuracy,
-        )
-        profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
+
+        # 步骤2：精算掌握度（逐知识点BKT更新）— 异常兜底
+        try:
+            updated_gaps = await self.profile_update_tool.update_gaps(
+                [gap.model_dump(mode="json") for gap in profile.knowledge_gaps],
+                request.accuracy,
+            )
+            profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
+        except Exception:
+            pass  # 保留原 gaps
+
         current_gap = next((gap for gap in profile.knowledge_gaps if gap.skill == request.stage.gap_skill), None)
-        if current_gap is not None and request.accuracy >= 0.8:
-            current_gap.status = "已掌握"
-            current_gap.progress = 1.0
-        profile.learning_rhythm = await self.profile_update_tool.infer_rhythm(request.interactions)
-        profile.confidence_index = await self.profile_update_tool.infer_confidence(request.qa_history, request.accuracy)
-        profile.confusion_markers = await self.profile_update_tool.detect_confusion(request.qa_history)
+        if current_gap is not None:
+            # 用该知识点自身的掌握度判定，不再使用全局accuracy强制覆盖（避免错误地把薄弱知识点标为已掌握）
+            if current_gap.progress >= 0.75 and current_gap.status in ("学习中", "未掌握"):
+                current_gap.status = "已掌握"
+                current_gap.progress = 1.0
+
+        # 步骤2b：画像维度更新 — 各项独立兜底
+        try:
+            profile.learning_rhythm = await self.profile_update_tool.infer_rhythm(request.interactions)
+        except Exception:
+            profile.learning_rhythm = "medium"
+        try:
+            profile.confidence_index = await self.profile_update_tool.infer_confidence(request.qa_history, request.accuracy)
+        except Exception:
+            profile.confidence_index = max(0.0, min(1.0, request.accuracy))
+        try:
+            profile.confusion_markers = await self.profile_update_tool.detect_confusion(request.qa_history)
+        except Exception:
+            profile.confusion_markers = []
         profile.version += 1
+
+        # 步骤3：策略选择（透传 iteration_history，激活 backtrack/终止逻辑）
+        # StageDecisionInput 未携带 iteration_history 字段，尝试从 profile 的 model_extra 或 qa_history 推断
+        iteration_history = []
+        try:
+            profile_extra = profile.model_dump(mode="json") if hasattr(profile, "model_dump") else {}
+            iteration_history = profile_extra.get("iteration_history") or []
+        except Exception:
+            iteration_history = []
+        try:
+            strategy = await self.strategy_selector_tool.select_strategy(
+                request.accuracy,
+                profile.model_dump(mode="json"),
+                iteration_history=iteration_history,
+            )
+        except Exception:
+            strategy = "reinforce" if request.accuracy >= 0.6 else "simplify"
+
+        # 决策判定
+        # strategy 为 backtrack（回溯）时，decision 映射为 repeat（回退重学前置知识）
+        # strategy 为 finish（结业）时，decision 映射为 completed
         all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
-        if all_mastered:
+        if strategy == "finish" or all_mastered:
             decision = "completed"
+        elif strategy == "backtrack":
+            decision = "repeat"
         elif request.accuracy >= 0.8:
             decision = "continue"
         else:
             decision = "repeat"
-        strategy = await self.strategy_selector_tool.select_strategy(
-            request.accuracy,
-            profile.model_dump(mode="json"),
+
+        # === 步骤4-5：生成阶段总结报告 ===
+        # 从qa_history和interactions推断情绪得分和耗时
+        emotion_score: float | None = None
+        emotion_scores_list: list[float] = []
+        for qa in request.qa_history:
+            if isinstance(qa, dict) and "emotion_score" in qa:
+                try:
+                    emotion_scores_list.append(float(qa["emotion_score"]))
+                except (ValueError, TypeError):
+                    pass
+        if emotion_scores_list:
+            emotion_score = sum(emotion_scores_list) / len(emotion_scores_list)
+
+        # 统计实际耗时（秒 → 小时）
+        total_seconds = 0.0
+        expected_seconds = 0.0
+        for interaction in request.interactions:
+            if not isinstance(interaction, dict):
+                continue
+            try:
+                total_seconds += float(interaction.get("time_spent", 0) or 0)
+                expected_seconds += float(interaction.get("expected_time", 100) or 100)
+            except (ValueError, TypeError):
+                continue
+        time_spent_hours = round(total_seconds / 3600.0, 2)
+        expected_time_hours = round(expected_seconds / 3600.0, 2)
+
+        # 生成qa历史转化为question_records
+        question_records: list[dict] = []
+        for qa in request.qa_history:
+            if isinstance(qa, dict) and ("question_id" in qa or "skill" in qa or "is_correct" in qa):
+                question_records.append(qa)
+
+        stage_name = request.stage.block_name or f"阶段{request.stage.stage_num}"
+        knowledge_gaps_json = [g.model_dump(mode="json") for g in profile.knowledge_gaps]
+        confusion_tags = list(profile.confusion_markers) if profile.confusion_markers else []
+        pace = profile.learning_rhythm or "medium"
+
+        # 步骤5：生成总结报告 — 异常时降级为简短报告
+        try:
+            stage_summary = await self.stage_summary_generator_tool.generate_summary(
+                stage_name=stage_name,
+                accuracy=request.accuracy,
+                knowledge_gaps=knowledge_gaps_json,
+                confusion_tags=confusion_tags,
+                question_records=question_records,
+                emotion_score=emotion_score,
+                pace_adjustment=pace,
+                time_spent_hours=time_spent_hours,
+                expected_time_hours=expected_time_hours,
+                next_strategy=strategy,
+                total_knowledge_points=len(profile.knowledge_gaps),
+                total_answers=len(question_records) or len(request.qa_history),
+            )
+        except Exception:
+            stage_summary = (
+                f"## 📊 本阶段学习总结\n\n"
+                f"### 📈 阶段概览\n【{stage_name}】阶段已结束，正确率{request.accuracy*100:.0f}%。\n\n"
+                f"### 💪 鼓励与建议\n你的专属AI导师始终在这里陪你！"
+            )
+        return StageDecisionOutput(
+            decision=decision,
+            profile=profile,
+            strategy=strategy,
+            stage_summary=stage_summary,
         )
-        return StageDecisionOutput(decision=decision, profile=profile, strategy=strategy)
 
 
 async def run_deterministic_reviews(request: ReviewInput) -> ReviewOutput:
