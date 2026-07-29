@@ -38,9 +38,9 @@ from tools.agent2_tools.stage_generator_tool import StageGeneratorTool
 from tools.agent3_tools.faq_search_tool import FAQSearchTool
 from tools.agent3_tools.question_extract_tool import QuestionExtractTool
 from tools.agent3_tools.vector_search_tool import VectorSearchTool
-from tools.agent5_tools.cognitive_load_tool import CognitiveLoadTool
-from tools.agent5_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
-from tools.agent5_tools.style_match_tool import StyleMatchTool
+from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
+from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
+from tools.agent4_tools.style_match_tool import StyleMatchTool
 from tools.agent6_tools.profile_update_tool import ProfileUpdateTool
 from tools.agent6_tools.strategy_selector_tool import StrategySelectorTool
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
@@ -472,7 +472,7 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def revise_learning_package(self, request: ContentRevisionInput) -> ContentGenerationOutput:
         feedback = self._format_feedback(request.technical_errors, request.quality_errors)
-        prompt = f"""请根据Agent4和Agent5的审核意见修改学习教程。
+        prompt = f"""请根据审核意见修改学习教程。
 
 学习阶段：{request.stage.block_name}
 用户目标：{request.profile.goal}
@@ -486,7 +486,7 @@ class HybridContentAgent(DeterministicContentAgent):
 要求：逐条解决审核问题，保留正确内容，返回修改后的完整Markdown教程。"""
         tutorial = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent3内容生成专家，负责依据双重审核意见严谨改稿。",
+            system_prompt="你是Agent3内容生成专家，负责依据合并审核意见严谨改稿。",
             temperature=0.3,
         )
         if not self._is_valid_response(tutorial):
@@ -498,7 +498,7 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def revise_answer(self, request: AnswerRevisionInput) -> AnswerGenerationOutput:
         feedback = self._format_feedback(request.technical_errors, request.quality_errors)
-        prompt = f"""请根据Agent4和Agent5的审核意见修改回答。
+        prompt = f"""请根据审核意见修改回答。
 
 用户问题：{request.question}
 当前阶段：{request.stage.block_name}
@@ -512,7 +512,7 @@ class HybridContentAgent(DeterministicContentAgent):
 要求：逐条修复问题，保持技术准确和教学清晰，返回完整修改后回答。"""
         answer = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent3答疑专家，负责依据双重审核意见修改回答。",
+            system_prompt="你是Agent3答疑专家，负责依据合并审核意见修改回答。",
             temperature=0.3,
         )
         if not self._is_valid_response(answer):
@@ -520,12 +520,12 @@ class HybridContentAgent(DeterministicContentAgent):
         return AnswerGenerationOutput(answer=answer)
 
     def _format_feedback(self, technical_errors: list[ReviewError], quality_errors: list[ReviewError]) -> str:
+        # Agent5已合并至Agent4，所有错误统一在technical_errors中
         lines = []
-        for label, errors in (("Agent4技术审核", technical_errors), ("Agent5教学审核", quality_errors)):
-            for error in errors:
-                lines.append(
-                    f"- [{label}][{error.severity}] {error.description}；建议：{error.suggestion or '请修正'}"
-                )
+        for error in technical_errors:
+            lines.append(
+                f"- [审核][{error.severity}] {error.description}；建议：{error.suggestion or '请修正'}"
+            )
         return "\n".join(lines) or "无"
 
     def _is_valid_response(self, response: str) -> bool:
@@ -533,49 +533,74 @@ class HybridContentAgent(DeterministicContentAgent):
 
 
 class DeterministicTechnicalReviewAgent:
-    async def run(self, request: ReviewInput) -> TechnicalReviewResult:
-        errors = []
-        if not request.content.strip():
-            errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
-        return TechnicalReviewResult(passed=not errors, errors=errors)
-
-
-class DeterministicQualityReviewAgent:
     def __init__(self):
+        self.rule_check_tool = RuleCheckTool()
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
 
-    async def run(self, request: ReviewInput) -> QualityReviewResult:
+    async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         errors = []
-        if len(request.content.strip()) < 40:
-            errors.append(ReviewError(error_type="too_short", description="教程内容不足以支持阶段学习"))
-        return QualityReviewResult(
-            passed=not errors,
-            errors=errors,
-            scores={"clarity": 1.0 if not errors else 0.0},
-        )
+        if not request.content.strip():
+            errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
+        
+        # 质量审核（原Agent5功能）
+        if request.target_type == "learning_package":
+            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
+            try:
+                tool_errors = await self.difficulty_analyzer_tool.analyze(request.content, profile=profile)
+                tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
+                tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
+                errors.extend(normalize_review_errors(tool_errors))
+            except Exception:
+                pass
+                
+        return TechnicalReviewResult(passed=not errors, errors=errors)
+
+
+# DeterministicQualityReviewAgent 和 HybridQualityReviewAgent 已合并至 Agent4
+# 质量审核功能已集成到 DeterministicTechnicalReviewAgent 和 HybridTechnicalReviewAgent
 
 
 class HybridTechnicalReviewAgent:
     def __init__(self):
         self.llm_client = LLMClient()
         self.rule_check_tool = RuleCheckTool()
+        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
+        self.cognitive_load_tool = CognitiveLoadTool()
+        self.style_match_tool = StyleMatchTool()
         self.skill_context = get_skill_context([
             "technical_review",
             "hallucination_detection",
             "industry_standards",
+            "pedagogy",
+            "learner_model",
+            "quality_metrics",
         ])
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
-        print(f"=== Agent4 技术审核开始：{request.target_type} ===")
+        print(f"=== Agent4(合并后) 技术+质量审核开始：{request.target_type} ===")
         rule_errors = normalize_review_errors(
             await self.rule_check_tool.check_rules(request.content)
         )
+        
+        # 质量审核（原Agent5功能）
+        quality_tool_errors = []
+        if request.target_type == "learning_package":
+            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
+            try:
+                quality_tool_errors.extend(await self.difficulty_analyzer_tool.analyze(request.content, profile=profile))
+                quality_tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
+                quality_tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
+            except Exception:
+                pass
+        
+        quality_tool_errors_normalized = normalize_review_errors(quality_tool_errors)
+        
         prompt = self._build_prompt(request)
         response = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent4技术审核专家。必须独立审核，不得因为内容表达流畅就默认正确。",
+            system_prompt="你是Agent4(合并后)技术+质量审核专家。必须独立审核，不得因为内容表达流畅就默认正确。",
             temperature=0.1,
             json_mode=True,
         )
@@ -583,8 +608,12 @@ class HybridTechnicalReviewAgent:
         if rule_errors:
             result.errors = rule_errors + result.errors
             result.passed = False
-            print(f"=== Agent4确定性规则发现错误：{len(rule_errors)}个 ===")
-        print(f"=== Agent4 技术审核完成：passed={result.passed}, errors={len(result.errors)} ===")
+            print(f"=== 确定性规则发现错误：{len(rule_errors)}个 ===")
+        if quality_tool_errors_normalized:
+            result.errors = quality_tool_errors_normalized + result.errors
+            result.passed = False
+            print(f"=== 质量审核发现错误：{len(quality_tool_errors_normalized)}个 ===")
+        print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
         return result
 
     def _build_prompt(self, request: ReviewInput) -> str:
@@ -638,75 +667,8 @@ class HybridTechnicalReviewAgent:
         )
 
 
-class HybridQualityReviewAgent:
-    def __init__(self):
-        self.llm_client = LLMClient()
-        self.skill_context = get_skill_context(["pedagogy", "learner_model", "quality_metrics"])
-        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
-        self.cognitive_load_tool = CognitiveLoadTool()
-        self.style_match_tool = StyleMatchTool()
-
-    async def run(self, request: ReviewInput) -> QualityReviewResult:
-        print(f"=== Agent5 教学质量审核开始：{request.target_type} ===")
-        prompt = self._build_prompt(request)
-        response = await self.llm_client.complete(
-            prompt,
-            system_prompt="你是Agent5教学质量审核专家。必须依据用户画像评估难度、认知负荷和教学结构。",
-            temperature=0.2,
-            json_mode=True,
-        )
-        result = self._parse_result(response)
-        if request.target_type == "learning_package":
-            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
-            tool_errors = []
-            try:
-                tool_errors.extend(await self.difficulty_analyzer_tool.analyze(request.content, profile=profile))
-                tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
-                tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
-            except Exception:
-                tool_errors = []
-            normalized_tool_errors = normalize_review_errors(tool_errors)
-            if normalized_tool_errors:
-                result.errors = normalized_tool_errors + result.errors
-                result.passed = False
-        print(f"=== Agent5 教学质量审核完成：passed={result.passed}, errors={len(result.errors)} ===")
-        return result
-
-    def _build_prompt(self, request: ReviewInput) -> str:
-        return f"""请审核以下{request.target_type}的教学质量。
-
-用户目标：{request.profile.goal}
-已有技能：{request.profile.skill_tags}
-学习风格：{request.profile.learning_style}
-当前阶段：{request.stage.block_name}
-用户问题：{request.question or '无'}
-待审核内容：
-{request.content[:12000]}
-
-审核规范：
-{self.skill_context}
-
-只返回严格JSON对象：
-{{"passed":true,"errors":[{{"error_type":"cognitive_load","severity":"major","location":"具体位置","description":"问题说明","evidence":"判断依据","suggestion":"修正建议"}}],"scores":{{"difficulty":80,"cognitive_load":80,"clarity":80,"pedagogy":80}},"review_details":"审核总结"}}
-综合得分低于70或存在major/critical问题时passed必须为false。"""
-
-    def _parse_result(self, response: str) -> QualityReviewResult:
-        data = parse_json_object(response)
-        if data is None:
-            error = ReviewError(
-                error_type="review_system_error",
-                severity="critical",
-                description="Agent5审核结果无法解析",
-                suggestion="重新执行教学质量审核",
-            )
-            return QualityReviewResult(passed=False, errors=[error])
-        errors = normalize_review_errors(data.get("errors", []))
-        return QualityReviewResult(
-            passed=bool(data.get("passed", not errors)) and not errors,
-            errors=errors,
-            scores=data.get("scores"),
-            review_details=data.get("review_details"),
-        )
+# HybridQualityReviewAgent 已合并至 HybridTechnicalReviewAgent
+# 质量审核功能已集成到 HybridTechnicalReviewAgent
 
 
 def parse_json_object(response: str) -> dict | None:
@@ -782,6 +744,11 @@ class DeterministicStageDecisionAgent:
 
 
 async def run_deterministic_reviews(request: ReviewInput) -> ReviewOutput:
+    # Agent5已合并至Agent4，统一由合并后的TechnicalReviewAgent处理
     technical = await DeterministicTechnicalReviewAgent().run(request)
-    quality = await DeterministicQualityReviewAgent().run(request)
+    # 质量审核结果已合并在technical结果中
+    quality = QualityReviewResult(
+        passed=technical.passed,
+        errors=technical.errors,
+    )
     return ReviewOutput(technical=technical, quality=quality)

@@ -139,13 +139,15 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         harness = self.create_harness()
         session_id = harness.state_manager.create_session()["session_id"]
         await harness.process_initial_input(session_id, "want to learn LoRA")
-        harness.agent5 = ExplodingReviewer()
+        # Agent5已合并至Agent4，质量审核通过合并后的agent4处理
+        harness.agent4 = ExplodingReviewer()
 
         result = await harness.handle_question(session_id, "What is LoRA?")
 
-        self.assertFalse(result["quality_pass"])
+        self.assertFalse(result["tech_pass"])  # 合并后质量错误也影响tech_pass
         self.assertEqual(3, result["iterations"])
-        error = result["review_history"][-1]["quality"]["errors"][0]
+        # 合并后错误存储在technical.errors中
+        error = result["review_history"][-1]["technical"]["errors"][0]
         self.assertEqual("review_system_error", error["error_type"])
 
     async def test_lora_rule_tool_rejects_mechanism_and_parameter_errors(self):

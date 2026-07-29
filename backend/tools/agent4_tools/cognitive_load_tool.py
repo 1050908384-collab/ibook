@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-cognitive_load_tool — Agent5 认知负荷评估工具
+cognitive_load_tool — 认知负荷评估工具（原Agent5，合并至Agent4）
 ================================================
 功能：输入内容文本，输出新概念密度（个/千字）、总篇幅、逻辑复杂度（高/中/低）、负荷评分（0~100）。
 特性：纯计算，无需 Mock（mock_used 始终为 False）。
@@ -306,7 +306,7 @@ def _build_message(density: float, level: int, complexity: str, red_line: bool) 
 
 # ------------------------------------------------------------------
 # 向后兼容适配器
-# 保留原 QualityReviewAgent 调用的 async 类接口，委托给函数式核心。
+# 保留原调用的 async 类接口，委托给函数式核心。
 # analyze 返回 issues 列表（兼容旧调用方 print 的 type/message 字段）。
 # ------------------------------------------------------------------
 class CognitiveLoadTool:

@@ -5,13 +5,11 @@ from typing import Any, Dict
 from agents.deterministic import (
     DeterministicContentAgent,
     DeterministicDiagnosticAgent,
-    DeterministicQualityReviewAgent,
     DeterministicStageDecisionAgent,
     DeterministicStagePlannerAgent,
     DeterministicTechnicalReviewAgent,
     HybridContentAgent,
     HybridDiagnosticAgent,
-    HybridQualityReviewAgent,
     HybridTechnicalReviewAgent,
 )
 from config import settings
@@ -42,7 +40,7 @@ class Harness:
         self.agent2 = DeterministicStagePlannerAgent()
         self.agent3 = HybridContentAgent() if self.execution_mode == "hybrid" else DeterministicContentAgent()
         self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
-        self.agent5 = HybridQualityReviewAgent() if self.execution_mode == "hybrid" else DeterministicQualityReviewAgent()
+        # Agent5已合并至Agent4，质量审核功能已集成
         self.agent6 = DeterministicStageDecisionAgent()
 
     def _log(self, session_id: str, event: str, detail: str = "") -> None:
@@ -327,47 +325,26 @@ class Harness:
         return current_answer, history
 
     async def _review(self, request: ReviewInput) -> ReviewOutput:
-        technical, quality = await asyncio.gather(
-            self.agent4.run(request),
-            self.agent5.run(request),
-            return_exceptions=True,
+        # Agent5已合并至Agent4，统一调用合并后的TechnicalReviewAgent
+        technical = await self.agent4.run(request)
+        
+        # 质量审核结果已合并在technical结果中
+        quality = QualityReviewResult(
+            passed=technical.passed,
+            errors=technical.errors,
+            scores=getattr(technical, 'scores', None),
+            review_details=getattr(technical, 'review_details', None),
         )
-        if isinstance(technical, Exception):
-            print(f"=== Agent4审核异常：{technical} ===")
-            technical = TechnicalReviewResult(
-                passed=False,
-                errors=[ReviewError(
-                    error_type="review_system_error",
-                    severity="critical",
-                    description=f"Agent4技术审核执行失败：{technical}",
-                    suggestion="重新执行技术审核",
-                )],
-            )
-        if isinstance(quality, Exception):
-            print(f"=== Agent5审核异常：{quality} ===")
-            quality = QualityReviewResult(
-                passed=False,
-                errors=[ReviewError(
-                    error_type="review_system_error",
-                    severity="critical",
-                    description=f"Agent5教学审核执行失败：{quality}",
-                    suggestion="重新执行教学审核",
-                )],
-            )
+        
         return ReviewOutput(technical=technical, quality=quality)
 
     def _record_review_round(self, session_id: str, target_type: str, review_round: ReviewRound) -> None:
         print(
             f"=== Orchestrator审核汇总：target={target_type}, round={review_round.iteration}, "
-            f"tech_errors={len(review_round.technical.errors)}, "
-            f"quality_errors={len(review_round.quality.errors)}, passed={review_round.passed} ==="
+            f"merged_errors={len(review_round.technical.errors)}, passed={review_round.passed} ==="
         )
-        for reviewer, errors in (
-            ("Agent4", review_round.technical.errors),
-            ("Agent5", review_round.quality.errors),
-        ):
-            for error in errors:
-                print(f"  {reviewer} [{error.severity}] {error.description} -> {error.suggestion or '未提供建议'}")
+        for error in review_round.technical.errors:
+            print(f"  [合并审核] [{error.severity}] {error.description} -> {error.suggestion or '未提供建议'}")
         self.state_manager.add_interaction(session_id, "review_round", {
             "target_type": target_type,
             **review_round.model_dump(mode="json"),

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-style_match_tool — Agent5 风格匹配评估工具
+style_match_tool — 风格匹配评估工具（原Agent5，合并至Agent4）
 ================================================
 功能：输入内容风格特征与画像中 learning_style，输出匹配度评分（0~1）。
 特性：纯规则匹配，无需 Mock（mock_used 始终为 False）。
@@ -250,7 +250,7 @@ def _err(msg: str) -> dict:
 
 # ------------------------------------------------------------------
 # 向后兼容适配器
-# 保留原 QualityReviewAgent 调用的 async 类接口，委托给函数式核心。
+# 保留原调用的 async 类接口，委托给函数式核心。
 # 支持画像传入：profile 可包含 learning_style
 # check 返回 issues 列表（兼容旧调用方 print 的 type/message 字段）。
 # ------------------------------------------------------------------

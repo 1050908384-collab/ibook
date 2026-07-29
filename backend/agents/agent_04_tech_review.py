@@ -10,6 +10,9 @@ from tools.agent4_tools.knowledge_verify_tool import (
     classify_error_root_cause,
 )
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
+from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
+from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
+from tools.agent4_tools.style_match_tool import StyleMatchTool
 
 _ERROR_CLASSIFICATION_MAP: Dict[str, Dict[str, str]] = {
     "SyntaxError": {"category": "SyntaxError", "severity": "critical"},
@@ -107,16 +110,25 @@ def _determine_root_cause(error_type: str, error_info: str) -> str:
 
 class TechnicalReviewAgent(BaseAgent):
     def __init__(self):
-        super().__init__("technical_review_agent", ["technical_review", "industry_standards", "code_error_patterns"])
+        super().__init__("technical_review_agent", [
+            "technical_review", "industry_standards", "code_error_patterns",
+            "pedagogy", "learner_model", "quality_metrics"
+        ])
         self.code_executor_tool = CodeExecutorTool()
         self.code_parser_tool = CodeParserTool()
         self.knowledge_verify_tool = KnowledgeVerifyTool()
         self.rule_check_tool = RuleCheckTool()
+        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
+        self.cognitive_load_tool = CognitiveLoadTool()
+        self.style_match_tool = StyleMatchTool()
         self.load_tools([
             self.code_executor_tool,
             self.code_parser_tool,
             self.knowledge_verify_tool,
             self.rule_check_tool,
+            self.difficulty_analyzer_tool,
+            self.cognitive_load_tool,
+            self.style_match_tool,
         ])
 
     def _profile_to_dict(self, profile: Any) -> Dict[str, Any]:
@@ -135,17 +147,33 @@ class TechnicalReviewAgent(BaseAgent):
         profile: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         errors = []
-        print(f"=== Agent4 TechnicalReviewAgent 开始审核 ===")
+        print(f"=== Agent4(合并后) TechnicalReviewAgent 开始审核 ===")
 
         profile_dict = self._profile_to_dict(profile) if profile else {}
 
         if "tutorial" in content:
             print(f"=== 审核教程内容（前200字符）===\n{content['tutorial'][:200]}")
+            # 技术审核
             hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["tutorial"])
             errors.extend(hallucination_errors)
 
             rule_errors = await self.rule_check_tool.check_rules(content["tutorial"])
             errors.extend(rule_errors)
+
+            # 质量审核（原Agent5功能）
+            print(f"=== 质量审核：分析教程难度 ===")
+            difficulty_errors = await self.difficulty_analyzer_tool.analyze(
+                content["tutorial"], profile=profile_dict
+            )
+            errors.extend(difficulty_errors)
+
+            load_errors = await self.cognitive_load_tool.analyze(content["tutorial"])
+            errors.extend(load_errors)
+
+            style_errors = await self.style_match_tool.check(
+                content["tutorial"], profile=profile_dict
+            )
+            errors.extend(style_errors)
 
         if "code_examples" in content:
             print(f"=== 审核代码示例 ===")
@@ -158,11 +186,24 @@ class TechnicalReviewAgent(BaseAgent):
 
         if "answer" in content:
             print(f"=== 审核回答内容（前200字符）===\n{content['answer'][:200]}")
+            # 技术审核
             hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["answer"])
             errors.extend(hallucination_errors)
 
-        print(f"=== Agent4 TechnicalReviewAgent 审核完成 ===")
-        print(f"=== 发现技术错误: {len(errors)}个 ===")
+            # 质量审核（原Agent5功能）
+            print(f"=== 质量审核：分析回答质量 ===")
+            style_errors = await self.style_match_tool.check(
+                content["answer"], profile=profile_dict
+            )
+            errors.extend(style_errors)
+
+            difficulty_errors = await self.difficulty_analyzer_tool.analyze(
+                content["answer"], profile=profile_dict
+            )
+            errors.extend(difficulty_errors)
+
+        print(f"=== Agent4(合并后) TechnicalReviewAgent 审核完成 ===")
+        print(f"=== 发现问题: {len(errors)}个 ===")
         if errors:
             for i, e in enumerate(errors, 1):
                 print(f"  {i}. [{e.get('type', 'unknown')}] {e.get('message', '')}")
