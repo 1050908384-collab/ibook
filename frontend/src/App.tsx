@@ -16,12 +16,16 @@ import {
   LayoutDashboard,
   Loader2,
   MessageCircle,
+  MoreHorizontal,
+  Pause,
+  Pencil,
   Play,
   RefreshCw,
   Send,
   Settings,
   Sparkles,
   Target,
+  Trash2,
   UserRound
 } from 'lucide-react';
 import { apiClient } from './api/client';
@@ -244,6 +248,17 @@ function getErrorMessage(error: unknown) {
   return '后端暂时不可用，已切换为本地演示数据。';
 }
 
+function formatTimer(totalSeconds: number) {
+  const safeSeconds = Math.max(0, totalSeconds);
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
 function Sidebar({
   view,
   setView,
@@ -260,8 +275,8 @@ function Sidebar({
   completedAgents: AgentId[];
 }) {
   const nav = [
+    { id: 'learn' as View, label: '当前学习包', icon: BookOpen },
     { id: 'chat' as View, label: '学习对话', icon: MessageCircle },
-    { id: 'learn' as View, label: '当前阶段', icon: BookOpen },
     { id: 'dashboard' as View, label: '学习仪表盘', icon: LayoutDashboard },
     { id: 'settings' as View, label: '设置', icon: Settings }
   ];
@@ -367,47 +382,100 @@ function Topbar({
 }
 
 function ProfilePanel({
-  profile,
   stage,
-  onStart
+  messages,
+  timerSeconds,
+  timerRunning,
+  onToggleTimer
 }: {
-  profile: Profile;
   stage: StageInfo;
-  onStart: () => void;
+  messages: Message[];
+  timerSeconds: number;
+  timerRunning: boolean;
+  onToggleTimer: () => void;
 }) {
+  const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>({ current: true });
+  const [renamedThreads, setRenamedThreads] = useState<Record<string, string>>({});
+  const [removedThreads, setRemovedThreads] = useState<string[]>([]);
+  const [threadMenu, setThreadMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const currentStageKey = `stage-${stage.stage_num ?? 1}`;
+  const stageDuration = Math.round((stage.estimated_hours ?? 1) * 3600);
+  const timerLabel = timerRunning
+    ? '暂停提醒'
+    : timerSeconds <= 0
+      ? '重新开始'
+      : timerSeconds < stageDuration
+        ? '继续计时'
+        : '开始计时';
+  const historyItems = (messages.length
+    ? messages.map((message, index) => ({
+      id: message.id,
+      title: renamedThreads[message.id] || (message.role === 'assistant' ? message.note || 'AI 回复' : '我的提问'),
+      preview: message.content,
+      role: message.role,
+      index: index + 1
+    }))
+    : [{
+      id: 'empty-history',
+      title: '等待对话',
+      preview: '开始当前阶段后，这里会记录本阶段的学习对话。',
+      role: 'assistant' as const,
+      index: 1
+    }]).filter((item) => !removedThreads.includes(item.id));
+  const currentExpanded = expandedStages.current ?? true;
+
+  const toggleStage = () => {
+    setExpandedStages((prev) => ({ ...prev, current: !(prev.current ?? true) }));
+  };
+
+  useEffect(() => {
+    if (!threadMenu) return;
+
+    const closeMenu = () => setThreadMenu(null);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+    window.addEventListener('click', closeMenu);
+    window.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('resize', closeMenu);
+    return () => {
+      window.removeEventListener('click', closeMenu);
+      window.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('resize', closeMenu);
+    };
+  }, [threadMenu]);
+
+  const openThreadMenu = (id: string, x: number, y: number) => {
+    setThreadMenu({
+      id,
+      x: Math.max(8, Math.min(x, window.innerWidth - 178)),
+      y: Math.max(8, Math.min(y, window.innerHeight - 132))
+    });
+  };
+
+  const focusThread = (id: string) => {
+    document.getElementById(`message-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setThreadMenu(null);
+  };
+
+  const renameThread = (id: string) => {
+    const item = historyItems.find((historyItem) => historyItem.id === id);
+    if (!item || id === 'empty-history') return;
+    const nextTitle = window.prompt('重命名对话', item.title)?.trim();
+    if (nextTitle) setRenamedThreads((prev) => ({ ...prev, [id]: nextTitle }));
+    setThreadMenu(null);
+  };
+
+  const removeThread = (id: string) => {
+    if (id !== 'empty-history') setRemovedThreads((prev) => [...prev, id]);
+    setThreadMenu(null);
+  };
+
   return (
     <aside className="context-panel">
-      <section className="context-card profile-card">
-        <div className="card-heading">
-          <span>
-            <UserRound size={18} />
-            <strong>学习画像</strong>
-          </span>
-          <b>{pct(profile.confidence ?? 0.7)}% 可信</b>
-        </div>
-        <div className="profile-rows">
-          <div>
-            <span>已有基础</span>
-            <strong>{profile.skill_tags?.join(' · ') || '等待诊断'}</strong>
-          </div>
-          <div>
-            <span>知识盲区</span>
-            <strong>{profile.knowledge_gaps?.slice(0, 3).map((gap) => gap.skill).join(' · ') || '暂无'}</strong>
-          </div>
-          <div>
-            <span>每日时长</span>
-            <strong>{profile.daily_hours ?? 2} 小时</strong>
-          </div>
-          <div>
-            <span>学习风格</span>
-            <strong>{styleText[profile.learning_style || 'mixed'] || profile.learning_style}</strong>
-          </div>
-        </div>
-      </section>
-
       <section className="context-card stage-card">
         <div className="stage-eyebrow">
-          <span>当前阶段</span>
+          <span>当前学习包</span>
           <b>阶段 {stage.stage_num ?? 1}</b>
         </div>
         <h3>{stage.block_name || '等待阶段规划'}</h3>
@@ -422,25 +490,73 @@ function ProfilePanel({
             {statusText[stage.status || 'pending'] || stage.status}
           </span>
         </div>
-        <button className="primary wide" onClick={onStart}>
-          <Play size={17} />
-          开始学习阶段
+        <button className={`stage-timer-button ${timerRunning ? 'running' : ''}`} onClick={onToggleTimer}>
+          {timerRunning ? <Pause size={17} /> : <Play size={17} />}
+          <span>{timerLabel}</span>
+          <b>{formatTimer(timerSeconds)}</b>
         </button>
       </section>
 
-      <section className="context-card agent-card">
-        <div className="card-heading">
-          <span>
-            <Sparkles size={18} />
-            <strong>审核与策略</strong>
-          </span>
-          <small>实时</small>
+      <section className="history-panel">
+        <button className="history-stage-title" onClick={toggleStage} aria-expanded={currentExpanded}>
+          <ChevronRight size={15} />
+          <span>学习阶段 {stage.stage_num ?? 1}</span>
+          <small>{historyItems.length} 个对话窗口</small>
+        </button>
+        <div className={`history-thread-list ${currentExpanded ? 'expanded' : ''}`} id={currentStageKey}>
+          {historyItems.map((item) => (
+            <div
+              className={`history-thread ${item.role}`}
+              key={item.id}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                openThreadMenu(item.id, event.clientX, event.clientY);
+              }}
+            >
+              <button className="history-thread-main" onClick={() => focusThread(item.id)}>
+                <span>{item.index}</span>
+                <div>
+                  <strong>{item.title}</strong>
+                  <small>{item.preview}</small>
+                </div>
+              </button>
+              <button
+                className="history-thread-more"
+                aria-label={`管理${item.title}`}
+                title="管理对话"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  openThreadMenu(item.id, rect.right - 168, rect.bottom + 5);
+                }}
+              >
+                <MoreHorizontal size={16} />
+              </button>
+            </div>
+          ))}
         </div>
-        <div className="agent-progress">
-          <i style={{ width: stage.status === 'learning' ? '78%' : '42%' }} />
-        </div>
-        <p>内容生成后会经过技术正确性与教学质量双维度审核，阶段结束后由 Agent6 更新画像。</p>
       </section>
+      {threadMenu && (
+        <div
+          className="thread-context-menu"
+          role="menu"
+          style={{ left: threadMenu.x, top: threadMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button role="menuitem" onClick={() => focusThread(threadMenu.id)}>
+            <MessageCircle size={15} />
+            定位到对话
+          </button>
+          <button role="menuitem" onClick={() => renameThread(threadMenu.id)} disabled={threadMenu.id === 'empty-history'}>
+            <Pencil size={15} />
+            重命名
+          </button>
+          <button className="danger-item" role="menuitem" onClick={() => removeThread(threadMenu.id)} disabled={threadMenu.id === 'empty-history'}>
+            <Trash2 size={15} />
+            从历史列表移除
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
@@ -450,9 +566,10 @@ function ChatView({
   input,
   setInput,
   onSend,
-  onStart,
-  profile,
   stage,
+  timerSeconds,
+  timerRunning,
+  onToggleTimer,
   loading,
   error
 }: {
@@ -460,23 +577,37 @@ function ChatView({
   input: string;
   setInput: (input: string) => void;
   onSend: (event: FormEvent) => void;
-  onStart: () => void;
-  profile: Profile;
   stage: StageInfo;
+  timerSeconds: number;
+  timerRunning: boolean;
+  onToggleTimer: () => void;
   loading: boolean;
   error: string | null;
 }) {
   return (
     <div className="page-shell">
-      <Topbar title="学习对话" subtitle="先完成画像诊断，再进入阶段学习与实时答疑" loading={loading} error={error} />
+      <Topbar
+        title={stage.block_name || `学习阶段 ${stage.stage_num ?? 1}`}
+        subtitle={stage.subtopic_name || stage.gap_skill || '阶段学习与实时答疑'}
+        loading={loading}
+        error={error}
+      />
       <div className="chat-layout">
+        <ProfilePanel
+          stage={stage}
+          messages={messages}
+          timerSeconds={timerSeconds}
+          timerRunning={timerRunning}
+          onToggleTimer={onToggleTimer}
+        />
+
         <main className="chat-main">
           <div className="conversation">
             <div className="date-separator">
               <span>今天</span>
             </div>
             {messages.map((message) => (
-              <div key={message.id} className={`message-row ${message.role}`}>
+              <div id={`message-${message.id}`} key={message.id} className={`message-row ${message.role}`}>
                 <div className="message-avatar">{message.role === 'assistant' ? <Sparkles size={16} /> : '你'}</div>
                 <div className="message-wrap">
                   <div className="message-meta">
@@ -522,8 +653,6 @@ function ChatView({
             </div>
           </form>
         </main>
-
-        <ProfilePanel profile={profile} stage={stage} onStart={onStart} />
       </div>
     </div>
   );
@@ -823,6 +952,41 @@ function DashboardView({
           </div>
         </div>
 
+        <section className="dashboard-profile-card">
+          <div className="dashboard-profile-head">
+            <div>
+              <span className="metric-icon blue"><UserRound size={20} /></span>
+              <div>
+                <small>学习画像</small>
+                <h3>{profile.grade || '当前学习者'}</h3>
+              </div>
+            </div>
+            <b>{pct(profile.confidence ?? 0.7)}% 可信</b>
+          </div>
+          <div className="dashboard-profile-details">
+            <div>
+              <span>已有基础</span>
+              <strong>{profile.skill_tags?.join(' · ') || '等待诊断'}</strong>
+            </div>
+            <div>
+              <span>知识盲区</span>
+              <strong>{gaps.slice(0, 3).map((gap) => gap.skill).join(' · ') || '暂无'}</strong>
+            </div>
+            <div>
+              <span>每日时长</span>
+              <strong>{profile.daily_hours ?? 2} 小时</strong>
+            </div>
+            <div>
+              <span>学习方式</span>
+              <strong>{styleText[profile.learning_style || 'mixed'] || profile.learning_style}</strong>
+            </div>
+            <div>
+              <span>设备条件</span>
+              <strong>{profile.hardware || '未提供'}</strong>
+            </div>
+          </div>
+        </section>
+
         <div className="dashboard-grid">
           <section className="white-card">
             <div className="card-title">
@@ -989,6 +1153,8 @@ export default function App() {
   const [onboardingForm, setOnboardingForm] = useState<OnboardingFormData>(emptyOnboardingForm);
   const [followupQuestions, setFollowupQuestions] = useState<string[]>([]);
   const [highlightedFields, setHighlightedFields] = useState<OnboardingField[]>([]);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
@@ -998,6 +1164,38 @@ export default function App() {
 
   const completeAgent = (agentId: AgentId) => {
     setCompletedAgents((prev) => prev.includes(agentId) ? prev : [...prev, agentId]);
+  };
+
+  useEffect(() => {
+    const estimatedSeconds = Math.round((stage?.estimated_hours ?? 1) * 3600);
+    setTimerSeconds(estimatedSeconds);
+    setTimerRunning(false);
+  }, [stage?.stage_id, stage?.estimated_hours]);
+
+  useEffect(() => {
+    if (!timerRunning) return;
+    const intervalId = window.setInterval(() => {
+      setTimerSeconds((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(intervalId);
+          setTimerRunning(false);
+          setError('当前阶段倒计时结束，可以休息或进入阶段测试。');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [timerRunning]);
+
+  const toggleStageTimer = () => {
+    setError(null);
+    if (timerSeconds <= 0) {
+      setTimerSeconds(Math.round((stage?.estimated_hours ?? 1) * 3600));
+      setTimerRunning(true);
+      return;
+    }
+    setTimerRunning((prev) => !prev);
   };
 
   useEffect(() => {
@@ -1249,6 +1447,8 @@ export default function App() {
     setOnboardingForm(emptyOnboardingForm);
     setFollowupQuestions([]);
     setHighlightedFields([]);
+    setTimerSeconds(0);
+    setTimerRunning(false);
     setActiveAgent(null);
     setCompletedAgents([]);
     setWorkflow('onboarding');
@@ -1305,9 +1505,10 @@ export default function App() {
           input={input}
           setInput={setInput}
           onSend={sendMessage}
-          onStart={startStage}
-          profile={workspaceProfile}
           stage={workspaceStage}
+          timerSeconds={timerSeconds}
+          timerRunning={timerRunning}
+          onToggleTimer={toggleStageTimer}
           loading={loading}
           error={error}
         />
