@@ -79,6 +79,7 @@ class DeterministicDiagnosticAgent:
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
         _agent_log("Agent1", f"diagnostic:start | session={request.session_id}")
         text = request.user_input.strip()
+        structured = self._parse_structured_input(text)
         target_text = self._target_text(text)
         targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
         mentioned = [skill for skill in SKILL_NAMES if skill.lower() in text.lower()]
@@ -93,6 +94,14 @@ class DeterministicDiagnosticAgent:
                 targets = [gap.get("skill", "") for gap in extracted_gaps if gap.get("skill")]
         except Exception:
             extracted_gaps = []
+
+        if structured.get("skill_tags"):
+            mastered = structured["skill_tags"]
+        if structured.get("goal"):
+            target_text = structured["goal"]
+            structured_targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
+            if structured_targets:
+                targets = structured_targets
 
         if not targets:
             targets = [mentioned[-1]] if mentioned else ["通用学习目标"]
@@ -117,6 +126,15 @@ class DeterministicDiagnosticAgent:
             confidence = max(confidence, confidence_result)
         except Exception:
             pass
+        required_structured_fields = [
+            structured.get("grade"),
+            structured.get("skill_tags"),
+            structured.get("goal"),
+            structured.get("daily_hours"),
+            structured.get("learning_style"),
+        ]
+        if all(required_structured_fields):
+            confidence = max(confidence, 0.9)
         if confidence < 0.7 and not mentioned:
             followup_questions = [
                 "你希望优先解决哪一类问题？",
@@ -125,9 +143,13 @@ class DeterministicDiagnosticAgent:
             ]
         profile = UserProfile(
             session_id=request.session_id,
+            grade=structured.get("grade", ""),
             skill_tags=mastered,
             knowledge_gaps=gaps,
             goal=target_text or text,
+            daily_hours=structured.get("daily_hours", self._extract_daily_hours(text)),
+            learning_style=structured.get("learning_style", self._extract_learning_style(text)),
+            hardware=structured.get("hardware", ""),
             confidence=confidence,
         )
         _agent_log("Agent1", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
@@ -140,6 +162,54 @@ class DeterministicDiagnosticAgent:
             flags=re.IGNORECASE,
         )
         return match.group(1).strip(" ，。,.！!") if match else text
+
+    def _parse_structured_input(self, text: str) -> dict:
+        goal = self._labeled_value(text, ("我的学习目标", "学习目标"))
+        return {
+            "grade": self._labeled_value(text, ("我的身份背景", "身份背景", "学习背景")),
+            "skill_tags": self._parse_tags(self._labeled_value(text, ("我的已有基础", "已有基础", "知识基础"))),
+            "goal": goal,
+            "daily_hours": self._extract_daily_hours(self._labeled_value(text, ("我每天可以学习", "每天可以学习", "每日学习时长")) or text),
+            "learning_style": self._extract_learning_style(self._labeled_value(text, ("我的学习方式", "学习方式")) or text),
+            "hardware": self._labeled_value(text, ("我的设备条件", "设备条件")),
+        }
+
+    @staticmethod
+    def _labeled_value(text: str, labels: tuple[str, ...]) -> str:
+        for label in labels:
+            pattern = rf"{re.escape(label)}\s*[：:]\s*(.+)"
+            match = re.search(pattern, text)
+            if match:
+                return match.group(1).strip(" \t，。,.；;")
+        return ""
+
+    @staticmethod
+    def _parse_tags(raw: str) -> list[str]:
+        if not raw:
+            return []
+        parts = re.split(r"[、,，/|；;\s]+", raw)
+        return [part.strip() for part in parts if part.strip()]
+
+    @staticmethod
+    def _extract_daily_hours(text: str) -> float:
+        match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:小时|h|H)", text)
+        if not match:
+            match = re.search(r"(?:每天|每日).{0,8}?([0-9]+(?:\.[0-9]+)?)", text)
+        if not match:
+            return 2.0
+        hours = float(match.group(1))
+        return max(0.5, min(8.0, hours))
+
+    @staticmethod
+    def _extract_learning_style(text: str) -> str:
+        lowered = text.lower()
+        if "practice" in lowered or "实操" in text or "实践" in text or "动手" in text:
+            return "practice"
+        if "theory" in lowered or "理论" in text or "原理" in text:
+            return "theory"
+        if "mixed" in lowered or "混合" in text or "结合" in text:
+            return "mixed"
+        return "mixed"
 
 
 class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
@@ -156,12 +226,14 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
 JSON字段要求：
 - skill_tags: 已掌握技能字符串数组
 - knowledge_gaps: 待学习知识数组，每项包含 skill 和 level
+- grade: 身份或学习背景
 - goal: 学习目标
 - daily_hours: 每日学习小时数，未知时为2
 - learning_style: theory、practice 或 mixed
+- hardware: 设备条件，未知时为空字符串
 
 示例：
-{{"skill_tags":["Python"],"knowledge_gaps":[{{"skill":"LoRA","level":"beginner"}}],"goal":"掌握LoRA微调","daily_hours":2,"learning_style":"mixed"}}
+{{"grade":"研二","skill_tags":["Python"],"knowledge_gaps":[{{"skill":"LoRA","level":"beginner"}}],"goal":"掌握LoRA微调","daily_hours":2,"learning_style":"mixed","hardware":"RTX 4060"}}
 """
         response = await self.llm_client.complete(
             prompt,
@@ -183,11 +255,13 @@ JSON字段要求：
                 return fallback
             profile = UserProfile(
                 session_id=request.session_id,
+                grade=data.get("grade") or fallback.profile.grade,
                 skill_tags=data.get("skill_tags", []),
                 knowledge_gaps=normalized_gaps,
                 goal=data.get("goal") or fallback.profile.goal,
                 daily_hours=data.get("daily_hours", 2.0),
                 learning_style=data.get("learning_style", "mixed"),
+                hardware=data.get("hardware") or fallback.profile.hardware,
                 confidence=0.9,
             )
             return DiagnosticOutput(profile=profile)

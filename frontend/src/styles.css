@@ -1783,6 +1783,446 @@ select:focus-visible {
   font-weight: 700;
 }
 
+.onboarding-shell,
+.confirm-shell {
+  background: var(--canvas);
+  overflow-y: auto;
+}
+
+.onboarding-page,
+.profile-confirm-page {
+  width: min(880px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 28px 0 52px;
+}
+
+.onboarding-steps {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: #8b93a5;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.onboarding-steps span {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 10px;
+}
+
+.onboarding-steps span.active {
+  color: var(--violet);
+  border-color: #d8d5fb;
+  background: #f7f6ff;
+}
+
+.onboarding-hero,
+.profile-setup-form,
+.confirm-head,
+.current-stage-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(28, 32, 53, 0.045);
+}
+
+.onboarding-hero {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 22px;
+  margin-bottom: 14px;
+}
+
+.hero-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--violet);
+  flex: 0 0 auto;
+}
+
+.onboarding-hero span,
+.confirm-head > div > span {
+  color: var(--violet);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.onboarding-hero h1,
+.confirm-head h1 {
+  font-size: 26px;
+  line-height: 1.25;
+  margin: 5px 0 8px;
+}
+
+.onboarding-hero p,
+.confirm-head p {
+  color: #7b8394;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.profile-setup-form {
+  padding: 22px;
+}
+
+.form-status-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f0f1f5;
+}
+
+.form-status-row span {
+  display: block;
+  color: #8d94a5;
+  font-size: 10px;
+}
+
+.form-status-row strong {
+  display: block;
+  font-size: 22px;
+  margin-top: 2px;
+}
+
+.completeness-track {
+  height: 7px;
+  border-radius: 999px;
+  background: #eceef4;
+  overflow: hidden;
+}
+
+.completeness-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--green);
+}
+
+.form-alert,
+.confirm-error {
+  display: flex;
+  gap: 10px;
+  border-radius: 10px;
+  border: 1px solid #f0d8b9;
+  background: #fff9f0;
+  color: #8b5b21;
+  padding: 12px;
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.form-alert.error,
+.confirm-error {
+  border-color: #f1d5d9;
+  background: #fff6f7;
+  color: #b84a58;
+}
+
+.form-alert strong {
+  display: block;
+  font-size: 13px;
+}
+
+.form-alert p {
+  margin: 2px 0 0;
+}
+
+.form-section {
+  margin-top: 18px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 2px;
+}
+
+.form-section.needs-attention {
+  border-color: #f0c47a;
+  background: #fffaf0;
+}
+
+.form-section label {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.form-section p {
+  color: #858c9d;
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+.form-section input,
+.form-section textarea {
+  width: 100%;
+  border: 1px solid #dfe2eb;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  padding: 11px 12px;
+  font-size: 13px;
+}
+
+.form-section textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.form-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.tag-input-wrap {
+  border: 1px solid #dfe2eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px;
+}
+
+.setup-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.setup-tags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 7px;
+  background: #edf3ff;
+  color: #3f67dc;
+  padding: 5px 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.setup-tags button,
+.tag-entry button {
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.setup-tags button {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  color: #3f67dc;
+  background: rgba(63, 103, 220, 0.12);
+}
+
+.tag-entry {
+  display: grid;
+  grid-template-columns: 1fr 36px;
+  gap: 8px;
+}
+
+.tag-entry input {
+  border: 0;
+  padding: 7px 3px;
+}
+
+.tag-entry button {
+  border-radius: 8px;
+  background: var(--violet);
+  color: #fff;
+}
+
+.style-segments {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.style-segments button {
+  min-height: 78px;
+  text-align: left;
+  border: 1px solid #dfe2eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 11px;
+  cursor: pointer;
+}
+
+.style-segments button.active {
+  border-color: #bfc8ff;
+  background: #f7f6ff;
+  box-shadow: 0 0 0 2px rgba(98, 88, 232, 0.08);
+}
+
+.style-segments strong,
+.style-segments span {
+  display: block;
+}
+
+.style-segments strong {
+  font-size: 13px;
+}
+
+.style-segments span {
+  color: #7e8697;
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 5px;
+}
+
+.field-error {
+  display: block;
+  color: var(--red);
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.onboarding-submit {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+.confirm-head {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 18px;
+  align-items: center;
+  padding: 22px;
+  margin-bottom: 14px;
+}
+
+.confidence-card {
+  border: 1px solid #d5efe2;
+  border-radius: 12px;
+  background: #f8fffb;
+  padding: 14px;
+  text-align: center;
+  color: #20845d;
+}
+
+.confidence-card span,
+.confidence-card strong {
+  display: block;
+}
+
+.confidence-card span {
+  color: #6f9d87;
+  font-size: 10px;
+  margin-top: 7px;
+}
+
+.confidence-card strong {
+  color: #166c4a;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.confirm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 14px;
+}
+
+.confirm-card {
+  min-height: 360px;
+}
+
+.confirm-list {
+  margin: 15px 0 0;
+}
+
+.confirm-list div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f0f1f5;
+}
+
+.confirm-list div:last-child {
+  border-bottom: 0;
+}
+
+.confirm-list dt {
+  color: #8d94a5;
+  font-size: 11px;
+}
+
+.confirm-list dd {
+  margin: 0;
+  color: #30384b;
+  font-size: 12px;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.radar-chart h3 {
+  display: none;
+}
+
+.current-stage-panel {
+  margin-top: 14px;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.current-stage-panel h2 {
+  font-size: 23px;
+  margin: 10px 0 6px;
+}
+
+.current-stage-panel p {
+  color: #737b8e;
+  font-size: 13px;
+  margin: 0;
+}
+
+.stage-facts {
+  display: grid;
+  gap: 8px;
+  min-width: 240px;
+}
+
+.stage-facts span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #697285;
+  background: #f7f8fb;
+  border-radius: 9px;
+  padding: 9px 10px;
+  font-size: 11px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 16px;
+}
+
 @media (max-width: 1120px) {
   .app-sidebar {
     width: 220px;
@@ -1885,6 +2325,8 @@ select:focus-visible {
   .metric-grid,
   .dashboard-grid,
   .result-grid,
+  .confirm-grid,
+  .current-stage-panel,
   .test-body {
     grid-template-columns: 1fr;
   }
@@ -1912,6 +2354,42 @@ select:focus-visible {
 
   .lesson-actions,
   .lesson-actions button {
+    width: 100%;
+  }
+
+  .onboarding-page,
+  .profile-confirm-page {
+    width: calc(100% - 28px);
+    padding-top: 18px;
+  }
+
+  .onboarding-steps,
+  .confirm-actions {
+    flex-direction: column;
+  }
+
+  .onboarding-hero,
+  .confirm-head {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .form-status-row,
+  .form-two-col,
+  .style-segments {
+    grid-template-columns: 1fr;
+  }
+
+  .confirm-list div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .stage-facts {
+    min-width: 0;
+  }
+
+  .confirm-actions button {
     width: 100%;
   }
 

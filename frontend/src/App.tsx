@@ -25,8 +25,18 @@ import {
   UserRound
 } from 'lucide-react';
 import { apiClient } from './api/client';
+import OnboardingPage from './pages/OnboardingPage';
+import ProfileConfirmPage from './pages/ProfileConfirmPage';
+import {
+  buildDiagnosticMessage,
+  emptyOnboardingForm,
+  formDataFromProfile,
+  OnboardingField,
+  OnboardingFormData
+} from './utils/buildDiagnosticMessage';
 
 type View = 'chat' | 'learn' | 'dashboard' | 'settings' | 'result';
+type WorkflowState = 'onboarding' | 'diagnosing' | 'needs_more_info' | 'profile_ready' | 'starting_stage' | 'learning';
 type AgentId = 'agent1' | 'agent3' | 'agent4' | 'agent6';
 type Message = {
   id: string;
@@ -42,11 +52,13 @@ type KnowledgeGap = {
   prerequisites?: string[];
 };
 type Profile = {
+  grade?: string;
   skill_tags?: string[];
   knowledge_gaps?: KnowledgeGap[];
   goal?: string;
   daily_hours?: number;
   learning_style?: string;
+  hardware?: string;
   learning_rhythm?: string;
   confidence_index?: number;
   confusion_markers?: string[];
@@ -59,6 +71,7 @@ type StageInfo = {
   block_id?: string;
   block_name?: string;
   subtopic_id?: string;
+  subtopic_name?: string;
   estimated_hours?: number;
   gap_skill?: string;
   prerequisites?: string[];
@@ -241,7 +254,7 @@ function Sidebar({
 }: {
   view: View;
   setView: (view: View) => void;
-  profile: Profile;
+  profile: Profile | null;
   sessionId: string | null;
   activeAgent: AgentId | null;
   completedAgents: AgentId[];
@@ -287,8 +300,8 @@ function Sidebar({
             继续
           </button>
         </div>
-        <strong>{profile.goal || 'LoRA 微调与部署'}</strong>
-        <small>{sessionId ? `Session ${sessionId.slice(0, 8)}` : '本地演示会话'}</small>
+        <strong>{profile?.goal || '尚未创建学习目标'}</strong>
+        <small>{sessionId ? `Session ${sessionId.slice(0, 8)}` : '等待创建会话'}</small>
       </div>
 
       <div className="agent-mini">
@@ -966,12 +979,16 @@ function SettingsView({
 
 export default function App() {
   const [view, setView] = useState<View>('chat');
+  const [workflow, setWorkflow] = useState<WorkflowState>('onboarding');
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<Profile>(fallbackProfile);
-  const [stage, setStage] = useState<StageInfo>(fallbackStage);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [stage, setStage] = useState<StageInfo | null>(null);
   const [learningPackage, setLearningPackage] = useState<LearningPackage | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [input, setInput] = useState('我有 PyTorch 基础，想学习 LoRA 微调和 vLLM 部署，每天可以学习 2 小时，偏实操。');
+  const [input, setInput] = useState('');
+  const [onboardingForm, setOnboardingForm] = useState<OnboardingFormData>(emptyOnboardingForm);
+  const [followupQuestions, setFollowupQuestions] = useState<string[]>([]);
+  const [highlightedFields, setHighlightedFields] = useState<OnboardingField[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
@@ -991,22 +1008,100 @@ export default function App() {
       .then((session) => {
         if (session?.profile) {
           setProfile(session.profile);
+          setOnboardingForm(formDataFromProfile(session.profile));
           completeAgent('agent1');
+          setWorkflow(session.learning_package ? 'learning' : 'profile_ready');
+        } else {
+          localStorage.removeItem('sessionId');
+          setSessionId(null);
+          setWorkflow('onboarding');
         }
-        if (session?.stage_info || session?.current_stage) setStage(session.stage_info || session.current_stage);
+        if (session?.stage_info) setStage(session.stage_info);
         if (session?.learning_package) {
           setLearningPackage(session.learning_package);
           completeAgent('agent3');
           completeAgent('agent4');
+          setView('learn');
         }
       })
-      .catch(() => undefined);
+      .catch(() => {
+        localStorage.removeItem('sessionId');
+        setSessionId(null);
+        setWorkflow('onboarding');
+      });
   }, []);
 
   const currentQuestions = useMemo(() => {
     const questions = learningPackage?.questions?.length ? learningPackage.questions : fallbackPackage.questions || [];
     return questions;
   }, [learningPackage]);
+
+  const inferHighlightedFields = (questions: string[]) => {
+    const combined = questions.join(' ');
+    const fields = new Set<OnboardingField>();
+    if (/身份|背景|年级|职业|学生|工程师/.test(combined)) fields.add('grade');
+    if (/基础|技能|掌握|会什么|知识/.test(combined)) fields.add('skill_tags');
+    if (/目标|想学|希望|解决/.test(combined)) fields.add('goal');
+    if (/多久|时长|小时|时间|投入/.test(combined)) fields.add('daily_hours');
+    if (/方式|风格|理论|实操|实践|偏好/.test(combined)) fields.add('learning_style');
+    if (/设备|显卡|硬件|GPU|电脑/.test(combined)) fields.add('hardware');
+    return Array.from(fields);
+  };
+
+  const buildDemoProfile = (formData: OnboardingFormData): Profile => ({
+    ...fallbackProfile,
+    grade: formData.grade,
+    skill_tags: formData.skill_tags,
+    goal: formData.goal,
+    daily_hours: Number(formData.daily_hours) || 2,
+    learning_style: formData.learning_style,
+    hardware: formData.hardware,
+    confidence: 0.86
+  });
+
+  const submitOnboarding = async () => {
+    if (loading || workflow === 'diagnosing') return;
+    setError(null);
+    setFollowupQuestions([]);
+    setHighlightedFields([]);
+    setLoading(true);
+    setWorkflow('diagnosing');
+    setActiveAgent('agent1');
+
+    try {
+      const response = await apiClient.chat({
+        session_id: sessionId || undefined,
+        message: buildDiagnosticMessage(onboardingForm)
+      });
+      setSessionId(response.session_id);
+      localStorage.setItem('sessionId', response.session_id);
+
+      if (response.response?.status === 'needs_more_info') {
+        const questions = response.response.questions || [];
+        setFollowupQuestions(questions);
+        setHighlightedFields(inferHighlightedFields(questions));
+        setWorkflow('needs_more_info');
+        return;
+      }
+
+      if (response.response?.profile) {
+        setProfile(response.response.profile);
+        setOnboardingForm(formDataFromProfile(response.response.profile));
+      }
+      if (response.response?.stage_info) setStage(response.response.stage_info);
+      completeAgent('agent1');
+      setWorkflow('profile_ready');
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+      setProfile(buildDemoProfile(onboardingForm));
+      setStage({ ...fallbackStage, status: 'pending' });
+      completeAgent('agent1');
+      setWorkflow('profile_ready');
+    } finally {
+      setActiveAgent(null);
+      setLoading(false);
+    }
+  };
 
   const sendMessage = async (event: FormEvent) => {
     event.preventDefault();
@@ -1016,7 +1111,7 @@ export default function App() {
     setError(null);
     setMessages((prev) => [...prev, { id: shortId(), role: 'user', content: text }]);
     setLoading(true);
-    const initialDiagnosis = !sessionId || !profile.goal;
+    const initialDiagnosis = !sessionId || !profile?.goal;
     setActiveAgent(initialDiagnosis ? 'agent1' : 'agent3');
 
     try {
@@ -1043,6 +1138,7 @@ export default function App() {
           }]);
         }
       } else {
+        if (!sessionId) throw new Error('尚未创建后端会话');
         const response = await apiClient.handleQuestion({ session_id: sessionId, message: text });
         completeAgent('agent3');
         completeAgent('agent4');
@@ -1078,6 +1174,7 @@ export default function App() {
   const startStage = async () => {
     setError(null);
     setLoading(true);
+    setWorkflow('starting_stage');
     setActiveAgent('agent3');
     try {
       if (!sessionId) throw new Error('尚未创建后端会话');
@@ -1092,13 +1189,15 @@ export default function App() {
         content: `学习包已生成，审核轮次：${response.iterations ?? 1}，审核结果：${response.review_passed ? '通过' : '待复核'}。`,
         note: '学习包'
       }]);
+      setWorkflow('learning');
       setView('learn');
     } catch (caught) {
       setError(getErrorMessage(caught));
       setLearningPackage(fallbackPackage);
-      setStage({ ...fallbackStage, status: 'learning' });
+      setStage({ ...(stage || fallbackStage), status: 'learning' });
       completeAgent('agent3');
       completeAgent('agent4');
+      setWorkflow('learning');
       setView('learn');
     } finally {
       setActiveAgent(null);
@@ -1127,7 +1226,7 @@ export default function App() {
       setError(getErrorMessage(caught));
       setResult({ status: 'continue', accuracy: 0.87, next_strategy: 'advance', stage_summary: '本地演示结果：正确率较高，建议继续推进。' });
       setProfile({
-        ...fallbackProfile,
+        ...(profile || fallbackProfile),
         knowledge_gaps: fallbackProfile.knowledge_gaps?.map((gap, index) => index === 0 ? { ...gap, status: '已掌握', progress: 0.86 } : gap)
       });
     } finally {
@@ -1141,15 +1240,32 @@ export default function App() {
   const clearLocalSession = () => {
     localStorage.removeItem('sessionId');
     setSessionId(null);
-    setProfile(fallbackProfile);
-    setStage(fallbackStage);
+    setProfile(null);
+    setStage(null);
     setLearningPackage(null);
     setResult(null);
     setMessages(initialMessages);
+    setInput('');
+    setOnboardingForm(emptyOnboardingForm);
+    setFollowupQuestions([]);
+    setHighlightedFields([]);
     setActiveAgent(null);
     setCompletedAgents([]);
+    setWorkflow('onboarding');
     setView('chat');
   };
+
+  const editProfile = () => {
+    if (profile) setOnboardingForm(formDataFromProfile(profile));
+    setError(null);
+    setFollowupQuestions([]);
+    setHighlightedFields([]);
+    setWorkflow('onboarding');
+    setView('chat');
+  };
+
+  const workspaceProfile = profile || fallbackProfile;
+  const workspaceStage = stage || fallbackStage;
 
   return (
     <div className="app">
@@ -1161,22 +1277,44 @@ export default function App() {
         activeAgent={activeAgent}
         completedAgents={completedAgents}
       />
-      {view === 'chat' && (
+      {(!profile || workflow === 'onboarding' || workflow === 'diagnosing' || workflow === 'needs_more_info') && (
+        <OnboardingPage
+          formData={onboardingForm}
+          onChange={setOnboardingForm}
+          onSubmit={submitOnboarding}
+          loading={loading}
+          mode={workflow === 'diagnosing' ? 'diagnosing' : workflow === 'needs_more_info' ? 'needs_more_info' : 'onboarding'}
+          questions={followupQuestions}
+          error={error}
+          highlightedFields={highlightedFields}
+        />
+      )}
+      {profile && (workflow === 'profile_ready' || workflow === 'starting_stage') && (
+        <ProfileConfirmPage
+          profile={profile}
+          stage={workspaceStage}
+          loading={loading}
+          error={error}
+          onEdit={editProfile}
+          onStart={startStage}
+        />
+      )}
+      {profile && workflow === 'learning' && view === 'chat' && (
         <ChatView
           messages={messages}
           input={input}
           setInput={setInput}
           onSend={sendMessage}
           onStart={startStage}
-          profile={profile}
-          stage={stage}
+          profile={workspaceProfile}
+          stage={workspaceStage}
           loading={loading}
           error={error}
         />
       )}
-      {view === 'learn' && (
+      {profile && workflow === 'learning' && view === 'learn' && (
         <LearnView
-          stage={stage}
+          stage={workspaceStage}
           learningPackage={learningPackage}
           onStart={startStage}
           onTest={() => setTestOpen(true)}
@@ -1184,11 +1322,11 @@ export default function App() {
           error={error}
         />
       )}
-      {view === 'dashboard' && (
-        <DashboardView profile={profile} stage={stage} result={result} setView={setView} loading={loading} error={error} />
+      {profile && workflow === 'learning' && view === 'dashboard' && (
+        <DashboardView profile={workspaceProfile} stage={workspaceStage} result={result} setView={setView} loading={loading} error={error} />
       )}
-      {view === 'settings' && <SettingsView profile={profile} loading={loading} error={error} onClear={clearLocalSession} />}
-      {view === 'result' && <ResultView profile={profile} stage={stage} result={result} setView={setView} loading={loading} error={error} />}
+      {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} />}
+      {profile && workflow === 'learning' && view === 'result' && <ResultView profile={workspaceProfile} stage={workspaceStage} result={result} setView={setView} loading={loading} error={error} />}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
     </div>
   );
