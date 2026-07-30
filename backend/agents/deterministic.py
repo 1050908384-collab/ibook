@@ -813,6 +813,10 @@ class DeterministicStageDecisionAgent:
         # 决策判定
         # strategy 为 backtrack（回溯）时，decision 映射为 repeat（回退重学前置知识）
         # strategy 为 finish（结业）时，decision 映射为 completed
+        if current_gap is not None and request.accuracy >= 0.8:
+            current_gap.status = "已掌握"
+            current_gap.progress = 1.0
+
         all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
         if strategy == "finish" or all_mastered:
             decision = "completed"

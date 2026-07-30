@@ -330,8 +330,20 @@ class Harness:
 
     async def _review(self, request: ReviewInput) -> ReviewOutput:
         # Agent5已合并至Agent4，统一调用合并后的TechnicalReviewAgent
-        technical = await self.agent4.run(request)
-        
+        try:
+            technical = await self.agent4.run(request)
+        except Exception as exc:
+            technical = TechnicalReviewResult(
+                passed=False,
+                errors=[ReviewError(
+                    error_type="review_system_error",
+                    severity="critical",
+                    description=f"Agent4 review failed: {exc}",
+                    suggestion="重新执行审核，若仍失败请检查合并后的 Agent4、skill 与 tool 链路",
+                )],
+                review_details={"exception": str(exc)},
+            )
+
         # 质量审核结果已合并在technical结果中
         quality = QualityReviewResult(
             passed=technical.passed,
@@ -339,7 +351,7 @@ class Harness:
             scores=getattr(technical, 'scores', None),
             review_details=getattr(technical, 'review_details', None),
         )
-        
+
         return ReviewOutput(technical=technical, quality=quality)
 
     def _record_review_round(self, session_id: str, target_type: str, review_round: ReviewRound) -> None:
