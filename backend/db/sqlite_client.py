@@ -231,6 +231,7 @@ class SQLiteClient:
             self._ensure_column(conn, "user_profiles", "last_updated", "TIMESTAMP")
             self._ensure_column(conn, "stage_progress", "subtopic_id", "VARCHAR(50)")
             self._ensure_column(conn, "knowledge_docs", "subtopic_id", "VARCHAR(50)")
+            self._migrate_test_questions_table(conn)
             conn.commit()
 
     @staticmethod
@@ -242,6 +243,63 @@ class SQLiteClient:
         if column_name in columns:
             return
         conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}"))
+
+    def _migrate_test_questions_table(self, conn) -> None:
+        columns = {
+            row[1]
+            for row in conn.execute(text("PRAGMA table_info(test_questions)")).fetchall()
+        }
+        expected_columns = {
+            "question_id", "block_id", "subtopic_id", "difficulty", "question_type",
+            "question_text", "options", "correct_answer", "explanation",
+            "expected_output", "grading_mode", "source", "hint"
+        }
+        if columns == expected_columns:
+            return
+
+        conn.execute(text("ALTER TABLE test_questions RENAME TO test_questions_legacy"))
+        conn.execute(text("""
+            CREATE TABLE test_questions (
+                question_id VARCHAR(50) PRIMARY KEY,
+                block_id VARCHAR(50) NOT NULL,
+                subtopic_id VARCHAR(50),
+                difficulty VARCHAR(20),
+                question_type VARCHAR(50),
+                question_text TEXT NOT NULL,
+                options TEXT,
+                correct_answer TEXT NOT NULL,
+                explanation TEXT,
+                expected_output TEXT,
+                grading_mode VARCHAR(50),
+                source VARCHAR(200),
+                hint TEXT,
+                FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id),
+                FOREIGN KEY (subtopic_id) REFERENCES knowledge_subtopics(subtopic_id)
+            )
+        """))
+        conn.execute(text("""
+            INSERT INTO test_questions (
+                question_id, block_id, subtopic_id, difficulty, question_type,
+                question_text, options, correct_answer, explanation,
+                expected_output, grading_mode, source, hint
+            )
+            SELECT
+                question_id,
+                block_id,
+                NULL,
+                difficulty,
+                question_type,
+                question_text,
+                options,
+                correct_answer,
+                hint,
+                NULL,
+                'exact_match',
+                'legacy_seed',
+                hint
+            FROM test_questions_legacy
+        """))
+        conn.execute(text("DROP TABLE test_questions_legacy"))
 
     def create_session(self, session_id: str) -> None:
         with self.Session() as session:
@@ -293,8 +351,9 @@ class SQLiteClient:
     def get_question(self, question_id: str) -> dict | None:
         with self.Session() as session:
             row = session.execute(text("""
-                SELECT question_id, block_id, difficulty, question_type,
-                       question_text, options, correct_answer, hint
+                SELECT question_id, block_id, subtopic_id, difficulty, question_type,
+                       question_text, options, correct_answer, explanation,
+                       expected_output, grading_mode, source, hint
                 FROM test_questions
                 WHERE question_id = :question_id
             """), {"question_id": question_id}).mappings().first()
