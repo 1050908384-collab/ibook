@@ -6,12 +6,15 @@ import {
   Bot,
   Brain,
   Check,
+  ChevronLeft,
   ChevronRight,
   Circle,
   Clock,
   Code2,
   Copy,
   FileQuestion,
+  FileText,
+  FolderOpen,
   Gauge,
   LayoutDashboard,
   Loader2,
@@ -20,13 +23,15 @@ import {
   Pause,
   Pencil,
   Play,
+  Plus,
   RefreshCw,
   Send,
   Settings,
   Sparkles,
   Target,
   Trash2,
-  UserRound
+  UserRound,
+  X
 } from 'lucide-react';
 import { apiClient } from './api/client';
 import OnboardingPage from './pages/OnboardingPage';
@@ -104,6 +109,45 @@ type StageResult = {
   next_strategy?: string;
   final_report?: Record<string, unknown>;
 };
+type LearningProject = {
+  sessionId: string;
+  goal: string;
+  stageName: string;
+  stageNum: number;
+  updatedAt: number;
+};
+type StoredLearningMaterial = {
+  id: string;
+  sessionId: string;
+  goal: string;
+  stage: StageInfo;
+  learningPackage: LearningPackage;
+  createdAt: number;
+  updatedAt: number;
+};
+
+const PROJECTS_STORAGE_KEY = 'learningProjects';
+const MATERIALS_STORAGE_KEY = 'learningMaterials';
+
+function readLearningProjects(): LearningProject[] {
+  try {
+    const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.sessionId && item?.goal) : [];
+  } catch {
+    return [];
+  }
+}
+
+function readLearningMaterials(): StoredLearningMaterial[] {
+  try {
+    const stored = localStorage.getItem(MATERIALS_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.id && item?.learningPackage) : [];
+  } catch {
+    return [];
+  }
+}
 
 const fallbackProfile: Profile = {
   skill_tags: ['PyTorch', 'Transformer', 'Python'],
@@ -262,35 +306,43 @@ function formatTimer(totalSeconds: number) {
 function Sidebar({
   view,
   setView,
-  profile,
-  sessionId,
   activeAgent,
-  completedAgents
+  completedAgents,
+  collapsed,
+  onToggleCollapsed
 }: {
   view: View;
   setView: (view: View) => void;
-  profile: Profile | null;
-  sessionId: string | null;
   activeAgent: AgentId | null;
   completedAgents: AgentId[];
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   const nav = [
-    { id: 'learn' as View, label: '当前学习包', icon: BookOpen },
+    { id: 'learn' as View, label: '所有学习包', icon: FolderOpen },
     { id: 'chat' as View, label: '学习对话', icon: MessageCircle },
     { id: 'dashboard' as View, label: '学习仪表盘', icon: LayoutDashboard },
     { id: 'settings' as View, label: '设置', icon: Settings }
   ];
 
   return (
-    <aside className="app-sidebar">
+    <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="brand">
         <div className="brand-mark">
           <Sparkles size={22} />
         </div>
-        <div>
+        <div className="brand-copy">
           <strong>AI Agent Trainer</strong>
           <span>个性化学习工作台</span>
         </div>
+        <button
+          className="sidebar-toggle"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? '展开主导航' : '收起主导航'}
+          title={collapsed ? '展开主导航' : '收起主导航'}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
 
       <nav className="nav-list" aria-label="主导航">
@@ -299,25 +351,13 @@ function Sidebar({
           const Icon = item.icon;
           const active = view === item.id || (view === 'result' && item.id === 'learn');
           return (
-            <button key={item.id} className={active ? 'active' : ''} onClick={() => setView(item.id)}>
+            <button key={item.id} className={active ? 'active' : ''} onClick={() => setView(item.id)} title={collapsed ? item.label : undefined}>
               <Icon size={18} />
-              {item.label}
+              <span className="nav-label">{item.label}</span>
             </button>
           );
         })}
       </nav>
-
-      <div className="goal-card">
-        <div className="goal-card-head">
-          <span>当前目标</span>
-          <button className="goal-continue" onClick={() => setView('chat')}>
-            <RefreshCw size={13} />
-            继续
-          </button>
-        </div>
-        <strong>{profile?.goal || '尚未创建学习目标'}</strong>
-        <small>{sessionId ? `Session ${sessionId.slice(0, 8)}` : '等待创建会话'}</small>
-      </div>
 
       <div className="agent-mini">
         <div className="mini-title">
@@ -357,12 +397,16 @@ function Topbar({
   title,
   subtitle,
   loading,
-  error
+  error,
+  onSwitchGoal,
+  onOpenMaterials
 }: {
   title: string;
   subtitle: string;
   loading: boolean;
   error: string | null;
+  onSwitchGoal?: () => void;
+  onOpenMaterials?: () => void;
 }) {
   return (
     <header className="topbar">
@@ -372,10 +416,24 @@ function Topbar({
       </div>
       <div className="top-actions">
         {error && <span className="error-pill">{error}</span>}
-        <span className="session-pill">
-          {loading ? <Loader2 className="spin" size={14} /> : <span />}
-          {loading ? 'Agent 处理中' : '学习中'}
-        </span>
+        {loading && (
+          <span className="session-pill">
+            <Loader2 className="spin" size={14} />
+            Agent 处理中
+          </span>
+        )}
+        {onSwitchGoal && (
+          <button className="switch-goal-button" onClick={onSwitchGoal} disabled={loading}>
+            <RefreshCw size={15} />
+            切换目标
+          </button>
+        )}
+        {onOpenMaterials && (
+          <button className="open-material-button" onClick={onOpenMaterials} disabled={loading}>
+            <BookOpen size={15} />
+            打开学习材料
+          </button>
+        )}
       </div>
     </header>
   );
@@ -561,6 +619,77 @@ function ProfilePanel({
   );
 }
 
+function MaterialDocument({
+  stage,
+  learningPackage,
+  compact = false
+}: {
+  stage: StageInfo;
+  learningPackage: LearningPackage;
+  compact?: boolean;
+}) {
+  const codeExamples = learningPackage.code_examples || [];
+  return (
+    <article className={`material-document ${compact ? 'compact' : ''}`}>
+      <div className="material-document-meta">
+        <span>阶段 {stage.stage_num ?? 1}</span>
+        <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
+      </div>
+      <h2>{stage.block_name || learningPackage.block_name || '未命名学习材料'}</h2>
+      <div className="material-markdown">
+        <ReactMarkdown>{learningPackage.tutorial || '当前学习包暂未返回教程内容。'}</ReactMarkdown>
+      </div>
+      {codeExamples.length > 0 && (
+        <section className="material-code-section">
+          <h3>代码示例</h3>
+          {codeExamples.map((example, index) => (
+            <div className="material-code" key={`${example.title}-${index}`}>
+              <div><Code2 size={14} /> {example.title || `代码示例 ${index + 1}`}</div>
+              <pre><code>{example.code}</code></pre>
+            </div>
+          ))}
+        </section>
+      )}
+    </article>
+  );
+}
+
+function CurrentMaterialPanel({
+  stage,
+  learningPackage,
+  onClose,
+  onTest
+}: {
+  stage: StageInfo;
+  learningPackage: LearningPackage | null;
+  onClose: () => void;
+  onTest: () => void;
+}) {
+  const content = learningPackage || fallbackPackage;
+  return (
+    <aside className="current-material-panel">
+      <header>
+        <div>
+          <span>当前阶段学习包</span>
+          <strong>{stage.block_name || content.block_name}</strong>
+        </div>
+        <button onClick={onClose} aria-label="关闭学习材料" title="关闭">
+          <X size={17} />
+        </button>
+      </header>
+      <div className="current-material-scroll">
+        <MaterialDocument stage={stage} learningPackage={content} compact />
+      </div>
+      <footer>
+        <button onClick={onTest}>
+          <FileQuestion size={16} />
+          开始阶段测试
+        </button>
+      </footer>
+    </aside>
+  );
+}
+
 function ChatView({
   messages,
   input,
@@ -570,6 +699,11 @@ function ChatView({
   timerSeconds,
   timerRunning,
   onToggleTimer,
+  onSwitchGoal,
+  learningPackage,
+  materialPanelOpen,
+  onToggleMaterials,
+  onTest,
   loading,
   error
 }: {
@@ -581,6 +715,11 @@ function ChatView({
   timerSeconds: number;
   timerRunning: boolean;
   onToggleTimer: () => void;
+  onSwitchGoal: () => void;
+  learningPackage: LearningPackage | null;
+  materialPanelOpen: boolean;
+  onToggleMaterials: () => void;
+  onTest: () => void;
   loading: boolean;
   error: string | null;
 }) {
@@ -591,8 +730,10 @@ function ChatView({
         subtitle={stage.subtopic_name || stage.gap_skill || '阶段学习与实时答疑'}
         loading={loading}
         error={error}
+        onSwitchGoal={onSwitchGoal}
+        onOpenMaterials={onToggleMaterials}
       />
-      <div className="chat-layout">
+      <div className={`chat-layout ${materialPanelOpen ? 'materials-open' : ''}`}>
         <ProfilePanel
           stage={stage}
           messages={messages}
@@ -653,6 +794,14 @@ function ChatView({
             </div>
           </form>
         </main>
+        {materialPanelOpen && (
+          <CurrentMaterialPanel
+            stage={stage}
+            learningPackage={learningPackage}
+            onClose={onToggleMaterials}
+            onTest={onTest}
+          />
+        )}
       </div>
     </div>
   );
@@ -779,6 +928,86 @@ function LearnView({
   );
 }
 
+function AllLearningPackagesView({
+  materials,
+  loading,
+  error
+}: {
+  materials: StoredLearningMaterial[];
+  loading: boolean;
+  error: string | null;
+}) {
+  const sortedMaterials = useMemo(
+    () => [...materials].sort((a, b) => b.createdAt - a.createdAt),
+    [materials]
+  );
+  const [selectedId, setSelectedId] = useState(sortedMaterials[0]?.id || '');
+
+  useEffect(() => {
+    if (!sortedMaterials.some((item) => item.id === selectedId)) {
+      setSelectedId(sortedMaterials[0]?.id || '');
+    }
+  }, [selectedId, sortedMaterials]);
+
+  const selected = sortedMaterials.find((item) => item.id === selectedId) || sortedMaterials[0];
+
+  return (
+    <div className="page-shell">
+      <Topbar title="所有学习包" subtitle="按生成时间归档的阶段学习材料" loading={loading} error={error} />
+      <main className="material-library">
+        <aside className="material-library-list">
+          <header>
+            <FolderOpen size={18} />
+            <div>
+              <strong>学习材料</strong>
+              <span>{sortedMaterials.length} 份文档</span>
+            </div>
+          </header>
+          <div className="material-file-list">
+            {sortedMaterials.map((material) => (
+              <button
+                className={material.id === selected?.id ? 'active' : ''}
+                key={material.id}
+                onClick={() => setSelectedId(material.id)}
+              >
+                <FileText size={17} />
+                <span>
+                  <strong>{material.stage.block_name || material.learningPackage.block_name || '未命名学习材料'}</strong>
+                  <small>{material.goal}</small>
+                </span>
+                <time>{new Date(material.createdAt).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })}</time>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <section className="material-library-preview">
+          {selected ? (
+            <>
+              <header>
+                <div>
+                  <span>{new Date(selected.createdAt).toLocaleString('zh-CN')}</span>
+                  <strong>{selected.goal}</strong>
+                </div>
+                <small>阶段 {selected.stage.stage_num ?? 1}</small>
+              </header>
+              <div className="material-library-scroll">
+                <MaterialDocument stage={selected.stage} learningPackage={selected.learningPackage} />
+              </div>
+            </>
+          ) : (
+            <div className="material-library-empty">
+              <FolderOpen size={30} />
+              <strong>暂无学习材料</strong>
+              <span>生成阶段学习包后，材料会按时间归档到这里。</span>
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
 function TestModal({
   questions,
   onClose,
@@ -867,6 +1096,77 @@ function TestModal({
   );
 }
 
+function ProjectSwitcherModal({
+  projects,
+  currentSessionId,
+  loading,
+  error,
+  onClose,
+  onSelect,
+  onCreate
+}: {
+  projects: LearningProject[];
+  currentSessionId: string | null;
+  loading: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSelect: (sessionId: string) => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="project-switcher-modal" role="dialog" aria-modal="true" aria-labelledby="project-switcher-title">
+        <header>
+          <div>
+            <span>学习项目</span>
+            <h2 id="project-switcher-title">切换学习目标</h2>
+          </div>
+          <button className="project-modal-close" onClick={onClose} aria-label="关闭切换目标弹窗" title="关闭">
+            <X size={18} />
+          </button>
+        </header>
+
+        {error && <div className="project-switch-error">{error}</div>}
+
+        <div className="project-list">
+          {projects.length === 0 && (
+            <div className="project-empty">
+              <Target size={24} />
+              <strong>还没有历史学习项目</strong>
+              <span>创建目标并完成画像后，项目会保存在这里。</span>
+            </div>
+          )}
+          {projects.map((project) => {
+            const current = project.sessionId === currentSessionId;
+            return (
+              <button
+                className={`project-option ${current ? 'current' : ''}`}
+                key={project.sessionId}
+                onClick={() => onSelect(project.sessionId)}
+                disabled={loading || current}
+              >
+                <span className="project-option-icon"><Target size={17} /></span>
+                <span className="project-option-copy">
+                  <strong>{project.goal}</strong>
+                  <small>阶段 {project.stageNum} · {project.stageName}</small>
+                </span>
+                <span className="project-option-state">{current ? '当前项目' : '切换'}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <footer>
+          <button className="new-project-button" onClick={onCreate} disabled={loading}>
+            <Plus size={16} />
+            创建新学习目标
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
 function Radar({ profile }: { profile: Profile }) {
   const gaps = profile.knowledge_gaps?.slice(0, 5) || fallbackProfile.knowledge_gaps!;
   const points = gaps.map((gap, index) => {
@@ -927,7 +1227,7 @@ function DashboardView({
             <span>{profile.goal || 'LoRA 微调与部署'}</span>
             <h2>学习进展总览</h2>
           </div>
-          <button className="primary" onClick={() => setView('learn')}>
+          <button className="primary" onClick={() => setView('chat')}>
             <Play size={16} />
             继续学习
           </button>
@@ -1084,7 +1384,7 @@ function ResultView({
               <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
               <div><span>前置状态</span><strong className="green">已检查</strong></div>
             </div>
-            <button className="primary wide" onClick={() => setView('learn')}>
+            <button className="primary wide" onClick={() => setView('chat')}>
               <Play size={17} />
               继续学习
             </button>
@@ -1143,6 +1443,7 @@ function SettingsView({
 
 export default function App() {
   const [view, setView] = useState<View>('chat');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [workflow, setWorkflow] = useState<WorkflowState>('onboarding');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -1161,10 +1462,55 @@ export default function App() {
   const [result, setResult] = useState<StageResult | null>(null);
   const [activeAgent, setActiveAgent] = useState<AgentId | null>(null);
   const [completedAgents, setCompletedAgents] = useState<AgentId[]>([]);
+  const [learningProjects, setLearningProjects] = useState<LearningProject[]>(readLearningProjects);
+  const [learningMaterials, setLearningMaterials] = useState<StoredLearningMaterial[]>(readLearningMaterials);
+  const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
+  const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
 
   const completeAgent = (agentId: AgentId) => {
     setCompletedAgents((prev) => prev.includes(agentId) ? prev : [...prev, agentId]);
   };
+
+  const rememberProject = (nextSessionId: string, nextProfile: Profile, nextStage?: StageInfo | null) => {
+    const project: LearningProject = {
+      sessionId: nextSessionId,
+      goal: nextProfile.goal || '未命名学习目标',
+      stageName: nextStage?.block_name || '等待阶段规划',
+      stageNum: nextStage?.stage_num ?? 1,
+      updatedAt: Date.now()
+    };
+    setLearningProjects((prev) => [project, ...prev.filter((item) => item.sessionId !== nextSessionId)].slice(0, 20));
+  };
+
+  const rememberMaterial = (
+    nextSessionId: string,
+    nextProfile: Profile,
+    nextStage: StageInfo,
+    nextPackage: LearningPackage
+  ) => {
+    const id = `${nextSessionId}:${nextStage.stage_id || nextStage.stage_num || nextStage.block_name || 'current'}`;
+    setLearningMaterials((prev) => {
+      const existing = prev.find((item) => item.id === id);
+      const material: StoredLearningMaterial = {
+        id,
+        sessionId: nextSessionId,
+        goal: nextProfile.goal || '未命名学习目标',
+        stage: nextStage,
+        learningPackage: nextPackage,
+        createdAt: existing?.createdAt || Date.now(),
+        updatedAt: Date.now()
+      };
+      return [material, ...prev.filter((item) => item.id !== id)].slice(0, 50);
+    });
+  };
+
+  useEffect(() => {
+    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(learningProjects));
+  }, [learningProjects]);
+
+  useEffect(() => {
+    localStorage.setItem(MATERIALS_STORAGE_KEY, JSON.stringify(learningMaterials));
+  }, [learningMaterials]);
 
   useEffect(() => {
     const estimatedSeconds = Math.round((stage?.estimated_hours ?? 1) * 3600);
@@ -1207,6 +1553,7 @@ export default function App() {
         if (session?.profile) {
           setProfile(session.profile);
           setOnboardingForm(formDataFromProfile(session.profile));
+          rememberProject(savedSessionId, session.profile, session.stage_info);
           completeAgent('agent1');
           setWorkflow(session.learning_package ? 'learning' : 'profile_ready');
         } else {
@@ -1217,9 +1564,12 @@ export default function App() {
         if (session?.stage_info) setStage(session.stage_info);
         if (session?.learning_package) {
           setLearningPackage(session.learning_package);
+          if (session.profile && session.stage_info) {
+            rememberMaterial(savedSessionId, session.profile, session.stage_info, session.learning_package);
+          }
           completeAgent('agent3');
           completeAgent('agent4');
-          setView('learn');
+          setView('chat');
         }
       })
       .catch(() => {
@@ -1285,6 +1635,7 @@ export default function App() {
       if (response.response?.profile) {
         setProfile(response.response.profile);
         setOnboardingForm(formDataFromProfile(response.response.profile));
+        rememberProject(response.session_id, response.response.profile, response.response.stage_info);
       }
       if (response.response?.stage_info) setStage(response.response.stage_info);
       completeAgent('agent1');
@@ -1378,7 +1729,14 @@ export default function App() {
       if (!sessionId) throw new Error('尚未创建后端会话');
       const response = await apiClient.startStage({ session_id: sessionId });
       setLearningPackage(response.learning_package);
-      if (response.state?.stage_info) setStage(response.state.stage_info);
+      const generatedStage = response.state?.stage_info || stage || fallbackStage;
+      if (response.state?.stage_info) {
+        setStage(response.state.stage_info);
+        if (profile) rememberProject(sessionId, profile, response.state.stage_info);
+      }
+      if (profile && response.learning_package) {
+        rememberMaterial(sessionId, profile, generatedStage, response.learning_package);
+      }
       completeAgent('agent3');
       completeAgent('agent4');
       setMessages((prev) => [...prev, {
@@ -1388,7 +1746,8 @@ export default function App() {
         note: '学习包'
       }]);
       setWorkflow('learning');
-      setView('learn');
+      setView('chat');
+      setMaterialPanelOpen(true);
     } catch (caught) {
       setError(getErrorMessage(caught));
       setLearningPackage(fallbackPackage);
@@ -1396,7 +1755,8 @@ export default function App() {
       completeAgent('agent3');
       completeAgent('agent4');
       setWorkflow('learning');
-      setView('learn');
+      setView('chat');
+      setMaterialPanelOpen(true);
     } finally {
       setActiveAgent(null);
       setLoading(false);
@@ -1417,6 +1777,7 @@ export default function App() {
         setResult(response);
         if (response.updated_profile) setProfile(response.updated_profile);
         if (response.next_stage) setStage(response.next_stage);
+        rememberProject(sessionId, response.updated_profile || profile || fallbackProfile, response.next_stage || stage);
       } else {
         throw new Error('尚未创建后端会话');
       }
@@ -1437,6 +1798,7 @@ export default function App() {
 
   const clearLocalSession = () => {
     localStorage.removeItem('sessionId');
+    setError(null);
     setSessionId(null);
     setProfile(null);
     setStage(null);
@@ -1449,10 +1811,52 @@ export default function App() {
     setHighlightedFields([]);
     setTimerSeconds(0);
     setTimerRunning(false);
+    setMaterialPanelOpen(false);
     setActiveAgent(null);
     setCompletedAgents([]);
     setWorkflow('onboarding');
     setView('chat');
+  };
+
+  const createLearningGoal = () => {
+    setProjectSwitcherOpen(false);
+    clearLocalSession();
+  };
+
+  const openProjectSwitcher = () => {
+    setError(null);
+    setProjectSwitcherOpen(true);
+  };
+
+  const switchLearningProject = async (nextSessionId: string) => {
+    if (nextSessionId === sessionId || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const session = await apiClient.getSession(nextSessionId);
+      if (!session?.profile) throw new Error('该学习项目尚未生成有效画像');
+      setSessionId(nextSessionId);
+      localStorage.setItem('sessionId', nextSessionId);
+      setProfile(session.profile);
+      setOnboardingForm(formDataFromProfile(session.profile));
+      setStage(session.stage_info || null);
+      setLearningPackage(session.learning_package || null);
+      setResult(null);
+      setMessages(initialMessages);
+      setCompletedAgents(session.learning_package ? ['agent1', 'agent3', 'agent4'] : ['agent1']);
+      setWorkflow(session.learning_package ? 'learning' : 'profile_ready');
+      setView('chat');
+      rememberProject(nextSessionId, session.profile, session.stage_info);
+      if (session.learning_package && session.stage_info) {
+        rememberMaterial(nextSessionId, session.profile, session.stage_info, session.learning_package);
+      }
+      setMaterialPanelOpen(false);
+      setProjectSwitcherOpen(false);
+    } catch (caught) {
+      setError(`无法切换项目：${getErrorMessage(caught)}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const editProfile = () => {
@@ -1472,10 +1876,10 @@ export default function App() {
       <Sidebar
         view={view}
         setView={setView}
-        profile={profile}
-        sessionId={sessionId}
         activeAgent={activeAgent}
         completedAgents={completedAgents}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
       />
       {(!profile || workflow === 'onboarding' || workflow === 'diagnosing' || workflow === 'needs_more_info') && (
         <OnboardingPage
@@ -1509,16 +1913,18 @@ export default function App() {
           timerSeconds={timerSeconds}
           timerRunning={timerRunning}
           onToggleTimer={toggleStageTimer}
+          onSwitchGoal={openProjectSwitcher}
+          learningPackage={learningPackage}
+          materialPanelOpen={materialPanelOpen}
+          onToggleMaterials={() => setMaterialPanelOpen((prev) => !prev)}
+          onTest={() => setTestOpen(true)}
           loading={loading}
           error={error}
         />
       )}
       {profile && workflow === 'learning' && view === 'learn' && (
-        <LearnView
-          stage={workspaceStage}
-          learningPackage={learningPackage}
-          onStart={startStage}
-          onTest={() => setTestOpen(true)}
+        <AllLearningPackagesView
+          materials={learningMaterials}
           loading={loading}
           error={error}
         />
@@ -1529,6 +1935,17 @@ export default function App() {
       {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} />}
       {profile && workflow === 'learning' && view === 'result' && <ResultView profile={workspaceProfile} stage={workspaceStage} result={result} setView={setView} loading={loading} error={error} />}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
+      {projectSwitcherOpen && (
+        <ProjectSwitcherModal
+          projects={learningProjects}
+          currentSessionId={sessionId}
+          loading={loading}
+          error={error}
+          onClose={() => setProjectSwitcherOpen(false)}
+          onSelect={switchLearningProject}
+          onCreate={createLearningGoal}
+        />
+      )}
     </div>
   );
 }
