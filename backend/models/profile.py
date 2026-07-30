@@ -3,12 +3,14 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+
 class KnowledgeGap(BaseModel):
     skill: str
     level: str = "beginner"
-    status: str = "未开始"
+    status: str = "未掌握"
     progress: float = 0.0
     prerequisites: List[str] = Field(default_factory=list)
+
 
 class UserProfile(BaseModel):
     session_id: str

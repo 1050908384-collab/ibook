@@ -1,63 +1,63 @@
-# AI Agent Trainer - 多Agent个性化辅导系统
+﻿# AI Agent Trainer - 澶欰gent涓€у寲杈呭绯荤粺
 
-一个基于多Agent协同的AI个性化学习辅导系统，专注于大模型微调与推理部署领域的教学。
+涓€涓熀浜庡Agent鍗忓悓鐨凙I涓€у寲瀛︿範杈呭绯荤粺锛屼笓娉ㄤ簬澶фā鍨嬪井璋冧笌鎺ㄧ悊閮ㄧ讲棰嗗煙鐨勬暀瀛︺€?
 
-## 核心特性
+## 鏍稿績鐗规€?
 
-- **个性化画像**：通过对话式交互生成用户学习画像
-- **阶段式学习**：按知识板块依赖、板块下子知识点顺序逐阶段推送学习内容，动态调整学习路径
-- **实时答疑**：学习过程中随时提问，系统即时回答
-- **双重审核**：技术审核+质量评审，确保学习内容准确性和教学效果
-- **策略调整**：根据测试结果自动调整下一阶段学习策略
-- **可视化报告**：实时展示学习进度和能力变化
+- **涓€у寲鐢诲儚**锛氶€氳繃瀵硅瘽寮忎氦浜掔敓鎴愮敤鎴峰涔犵敾鍍?
+- **闃舵寮忓涔?*锛氭寜鐭ヨ瘑鏉垮潡渚濊禆銆佹澘鍧椾笅瀛愮煡璇嗙偣椤哄簭閫愰樁娈垫帹閫佸涔犲唴瀹癸紝鍔ㄦ€佽皟鏁村涔犺矾寰?
+- **瀹炴椂绛旂枒**锛氬涔犺繃绋嬩腑闅忔椂鎻愰棶锛岀郴缁熷嵆鏃跺洖绛?
+- **鍙岄噸瀹℃牳**锛氭妧鏈鏍?璐ㄩ噺璇勫锛岀‘淇濆涔犲唴瀹瑰噯纭€у拰鏁欏鏁堟灉
+- **绛栫暐璋冩暣**锛氭牴鎹祴璇曠粨鏋滆嚜鍔ㄨ皟鏁翠笅涓€闃舵瀛︿範绛栫暐
+- **鍙鍖栨姤鍛?*锛氬疄鏃跺睍绀哄涔犺繘搴﹀拰鑳藉姏鍙樺寲
 
-## 技术栈
+## 鎶€鏈爤
 
-- **后端**：FastAPI, Python 3.12+
-- **数据库**：SQLite, Chroma Vector DB, NetworkX
-- **LLM**：Ollama本地模型 (deepseek-r1 / qwen2.5)
-- **前端**：React + TypeScript
+- **鍚庣**锛欶astAPI, Python 3.12+
+- **鏁版嵁搴?*锛歋QLite, Chroma Vector DB, NetworkX
+- **LLM**锛歄llama鏈湴妯″瀷 (deepseek-r1 / qwen2.5)
+- **鍓嶇**锛歊eact + TypeScript
 
-后端默认使用 `EXECUTION_MODE=hybrid`：状态管理、阶段规划和答题判定保持确定性，教程与问答由 Ollama 生成。设置为 `deterministic` 后，无需启动 Ollama 也可以跑通完整闭环。
+鍚庣榛樿浣跨敤 `EXECUTION_MODE=hybrid`锛氱姸鎬佺鐞嗐€侀樁娈佃鍒掑拰绛旈鍒ゅ畾淇濇寔纭畾鎬э紝鏁欑▼涓庨棶绛旂敱 Ollama 鐢熸垚銆傝缃负 `deterministic` 鍚庯紝鏃犻渶鍚姩 Ollama 涔熷彲浠ヨ窇閫氬畬鏁撮棴鐜€?
 
-## 项目结构
+## 椤圭洰缁撴瀯
 
 ```
 project-root/
-├── backend/          # 后端服务
-├── frontend/         # 前端界面
-├── data/             # 数据存储
-│   ├── seeds/        # 结构化种子数据（5个JSON文件）
-│   ├── sqlite_data/  # 主SQLite数据库 project.db
-│   ├── chroma_db/    # FAQ/知识检索向量库
-│   ├── graph_data/   # 知识依赖图谱结果层（current/runtime）
-│   └── test_data/    # 测试样例数据
-├── scripts/          # 工具脚本
-└── docs/             # 项目文档
+鈹溾攢鈹€ backend/          # 鍚庣鏈嶅姟
+鈹溾攢鈹€ frontend/         # 鍓嶇鐣岄潰
+鈹溾攢鈹€ data/             # 鏁版嵁瀛樺偍
+鈹?  鈹溾攢鈹€ seeds/        # 缁撴瀯鍖栫瀛愭暟鎹紙5涓狫SON鏂囦欢锛?
+鈹?  鈹溾攢鈹€ sqlite_data/  # 涓籗QLite鏁版嵁搴?project.db
+鈹?  鈹溾攢鈹€ chroma_db/    # FAQ/鐭ヨ瘑妫€绱㈠悜閲忓簱
+鈹?  鈹溾攢鈹€ graph_data/   # 鐭ヨ瘑渚濊禆鍥捐氨缁撴灉灞傦紙current/runtime锛?
+鈹?  鈹斺攢鈹€ test_data/    # 娴嬭瘯鏍蜂緥鏁版嵁
+鈹溾攢鈹€ scripts/          # 宸ュ叿鑴氭湰
+鈹斺攢鈹€ docs/             # 椤圭洰鏂囨。
 ```
 
-## 快速开始
+## 蹇€熷紑濮?
 
-### 环境要求
+### 鐜瑕佹眰
 
 - Python 3.12+
-- Ollama (本地模型推理)
-- Node.js 18+ (前端)
+- Ollama (鏈湴妯″瀷鎺ㄧ悊)
+- Node.js 18+ (鍓嶇)
 
-### 安装依赖
+### 瀹夎渚濊禆
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 配置环境变量
+### 閰嶇疆鐜鍙橀噺
 
 ```bash
 cp .env.example .env
-# 编辑 .env 文件
+# 缂栬緫 .env 鏂囦欢
 ```
 
-### 初始化数据
+### 鍒濆鍖栨暟鎹?
 
 ```bash
 python scripts/init_db.py
@@ -66,9 +66,9 @@ python scripts/build_knowledge_graph.py
 python scripts/init_faq_vectors.py
 ```
 
-如果当前不依赖 FAQ 检索，可以先跳过 `python scripts/init_faq_vectors.py`。
+濡傛灉褰撳墠涓嶄緷璧?FAQ 妫€绱紝鍙互鍏堣烦杩?`python scripts/init_faq_vectors.py`銆?
 
-当前数据导入脚本只读取 `data/seeds/` 下的 5 个结构化文件：
+褰撳墠鏁版嵁瀵煎叆鑴氭湰鍙鍙?`data/seeds/` 涓嬬殑 5 涓粨鏋勫寲鏂囦欢锛?
 
 - `knowledge_blocks.json`
 - `knowledge_subtopics.json`
@@ -76,66 +76,66 @@ python scripts/init_faq_vectors.py
 - `faq_items.json`
 - `test_questions.json`
 
-## 数据库约定
+## 鏁版嵁搴撶害瀹?
 
-- 当前唯一主 SQLite 库为 `data/sqlite_data/project.db`
-- `project.db` 是运行时唯一真相源，包含知识板块、子知识点、知识文档、FAQ、题库、会话与状态快照
-- 历史库 `data/knowledge.db` 不再参与运行链路，仅保留备份归档用途
-- 所有后端代码、初始化脚本、FAQ 向量化脚本统一读取 `DATABASE_URL`
-- 所有 Chroma 数据统一读取 `CHROMA_PATH`
-- 图谱运行时文件统一读取 `GRAPH_PATH`，当前默认指向 `data/graph_data/runtime/knowledge_graph.gpickle`
-- `data/seeds/knowledge_blocks.json` 与 `data/seeds/knowledge_subtopics.json` 仍然是图谱的权威源数据
-- `data/graph_data/current/` 存放可检查的图谱结果：`nodes.jsonl`、`edges.jsonl`、`manifest.json` 及派生结果
-- `data/graph_data/runtime/` 存放运行时图缓存 `knowledge_graph.gpickle`
-- Agent1 当前通过 `graph_data` 查询板块前置依赖
-- Agent2 当前按板块依赖和板块内 `subtopics.sequence_index` 组织阶段输入，并返回板块下的知识点列表
-- Agent3 当前按 `knowledge_docs` 检索教程与答疑内容；`knowledge_docs.subtopic_id` 用于将文档精确关联到子知识点
-- Agent6 当前消费画像中的 `knowledge_gaps.prerequisites` 做策略判断；该字段通常由前置图谱查询结果填充
+- 褰撳墠鍞竴涓?SQLite 搴撲负 `data/sqlite_data/project.db`
+- `project.db` 鏄繍琛屾椂鍞竴鐪熺浉婧愶紝鍖呭惈鐭ヨ瘑鏉垮潡銆佸瓙鐭ヨ瘑鐐广€佺煡璇嗘枃妗ｃ€丗AQ銆侀搴撱€佷細璇濅笌鐘舵€佸揩鐓?
+- 鍘嗗彶搴?`data/knowledge.db` 涓嶅啀鍙備笌杩愯閾捐矾锛屼粎淇濈暀澶囦唤褰掓。鐢ㄩ€?
+- 鎵€鏈夊悗绔唬鐮併€佸垵濮嬪寲鑴氭湰銆丗AQ 鍚戦噺鍖栬剼鏈粺涓€璇诲彇 `DATABASE_URL`
+- 鎵€鏈?Chroma 鏁版嵁缁熶竴璇诲彇 `CHROMA_PATH`
+- 鍥捐氨杩愯鏃舵枃浠剁粺涓€璇诲彇 `GRAPH_PATH`锛屽綋鍓嶉粯璁ゆ寚鍚?`data/graph_data/runtime/knowledge_graph.gpickle`
+- `data/seeds/knowledge_blocks.json` 涓?`data/seeds/knowledge_subtopics.json` 浠嶇劧鏄浘璋辩殑鏉冨▉婧愭暟鎹?
+- `data/graph_data/current/` 瀛樻斁鍙鏌ョ殑鍥捐氨缁撴灉锛歚nodes.jsonl`銆乣edges.jsonl`銆乣manifest.json` 鍙婃淳鐢熺粨鏋?
+- `data/graph_data/runtime/` 瀛樻斁杩愯鏃跺浘缂撳瓨 `knowledge_graph.gpickle`
+- Agent1 褰撳墠閫氳繃 `graph_data` 鏌ヨ鏉垮潡鍓嶇疆渚濊禆
+- Agent2 褰撳墠鎸夋澘鍧椾緷璧栧拰鏉垮潡鍐?`subtopics.sequence_index` 缁勭粐闃舵杈撳叆锛屽苟杩斿洖鏉垮潡涓嬬殑鐭ヨ瘑鐐瑰垪琛?
+- Agent3 褰撳墠鎸?`knowledge_docs` 妫€绱㈡暀绋嬩笌绛旂枒鍐呭锛沗knowledge_docs.subtopic_id` 鐢ㄤ簬灏嗘枃妗ｇ簿纭叧鑱斿埌瀛愮煡璇嗙偣
+- Agent6 褰撳墠娑堣垂鐢诲儚涓殑 `knowledge_gaps.prerequisites` 鍋氱瓥鐣ュ垽鏂紱璇ュ瓧娈甸€氬父鐢卞墠缃浘璋辨煡璇㈢粨鏋滃～鍏?
 
-## FAQ 问答链路
-- Agent3 仅在用户提问时调用 FAQ 检索，不在教程生成阶段调用
-- FAQ 检索使用“完整问题直查向量库”方案，不先调用 LLM 提取关键词
-- FAQ 检索返回候选后，只有最高相似度达到阈值时才直接返回 FAQ 标准答案
-- FAQ 未命中或最高相似度低于阈值时，直接回退到知识库检索与 LLM 普通答疑
-- FAQ 向量数据来源于 `faq_items`，通过 `python scripts/init_faq_vectors.py` 写入 Chroma 的 `faq_collection`
+## FAQ 闂瓟閾捐矾
+- Agent3 浠呭湪鐢ㄦ埛鎻愰棶鏃惰皟鐢?FAQ 妫€绱紝涓嶅湪鏁欑▼鐢熸垚闃舵璋冪敤
+- FAQ 妫€绱娇鐢ㄢ€滃畬鏁撮棶棰樼洿鏌ュ悜閲忓簱鈥濇柟妗堬紝涓嶅厛璋冪敤 LLM 鎻愬彇鍏抽敭璇?
+- FAQ 妫€绱㈣繑鍥炲€欓€夊悗锛屽彧鏈夋渶楂樼浉浼煎害杈惧埌闃堝€兼椂鎵嶇洿鎺ヨ繑鍥?FAQ 鏍囧噯绛旀
+- FAQ 鏈懡涓垨鏈€楂樼浉浼煎害浣庝簬闃堝€兼椂锛岀洿鎺ュ洖閫€鍒扮煡璇嗗簱妫€绱笌 LLM 鏅€氱瓟鐤?
+- FAQ 鍚戦噺鏁版嵁鏉ユ簮浜?`faq_items`锛岄€氳繃 `python scripts/init_faq_vectors.py` 鍐欏叆 Chroma 鐨?`faq_collection`
 
-## PowerShell 调试流程
+## PowerShell 璋冭瘯娴佺▼
 
 ```powershell
-# 1. 创建 Session
+# 1. 鍒涘缓 Session
 $session = Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/session/
 $sessionId = $session.session_id
 $sessionId
 
-# 2. 初始化用户画像 + 生成当前阶段
-$body = "{`"session_id`": `"$sessionId`", `"message`": `"我想学习大模型微调，我有Python和Linux基础，每天可以学习1小时，偏实操型`"}"
+# 2. 鍒濆鍖栫敤鎴风敾鍍?+ 鐢熸垚褰撳墠闃舵
+$body = "{`"session_id`": `"$sessionId`", `"message`": `"鎴戞兂瀛︿範澶фā鍨嬪井璋冿紝鎴戞湁Python鍜孡inux鍩虹锛屾瘡澶╁彲浠ュ涔?灏忔椂锛屽亸瀹炴搷鍨媊"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/chat/ -Body $bytes -ContentType "application/json; charset=utf-8"
 
-# 3. 启动当前阶段，生成教程并触发 Agent4/5 审核
+# 3. 鍚姩褰撳墠闃舵锛岀敓鎴愭暀绋嬪苟瑙﹀彂 Agent4/5 瀹℃牳
 $body = "{`"session_id`": `"$sessionId`"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/stage/start -Body $bytes -ContentType "application/json; charset=utf-8"
 
-# 4. 在当前阶段内提问
-$body = "{`"session_id`": `"$sessionId`", `"message`": `"什么是LoRA微调？`"}"
+# 4. 鍦ㄥ綋鍓嶉樁娈靛唴鎻愰棶
+$body = "{`"session_id`": `"$sessionId`", `"message`": `"浠€涔堟槸LoRA寰皟锛焋"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/chat/question -Body $bytes -ContentType "application/json; charset=utf-8"
 
-# 5. 查看当前 Session 状态
+# 5. 鏌ョ湅褰撳墠 Session 鐘舵€?
 Invoke-RestMethod -Method GET -Uri "http://localhost:8500/api/session/$sessionId"
 
-# 6. 如果要提交题目答案
-$questionId = "你的题目ID"
+# 6. 濡傛灉瑕佹彁浜ら鐩瓟妗?
+$questionId = "浣犵殑棰樼洰ID"
 $body = "{`"session_id`": `"$sessionId`", `"question_id`": `"$questionId`", `"user_answer`": `"LoRA`"}"
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 Invoke-RestMethod -Method POST -Uri http://localhost:8500/api/stage/submit-answer -Body $bytes -ContentType "application/json; charset=utf-8"
 
-# 7. 完成当前阶段，触发 Agent6 决策
+# 7. 瀹屾垚褰撳墠闃舵锛岃Е鍙?Agent6 鍐崇瓥
 Invoke-RestMethod -Method POST -Uri "http://localhost:8500/api/stage/complete/$sessionId"
 ```
 
-### 启动服务
+### 鍚姩鏈嶅姟
 
 ```bash
 cd project-root
@@ -148,7 +148,7 @@ cd backend
 python main.py
 ```
 
-### 运行确定性闭环测试
+### 杩愯纭畾鎬ч棴鐜祴璇?
 
 ```bash
 python -m unittest discover -s tests -v
@@ -158,19 +158,31 @@ python -m unittest discover -s tests -v
 
 | Agent | 职责 | 核心功能 |
 |-------|------|----------|
-| Agent1 | 学情诊断 | 生成用户画像JSON，并查询知识图谱前置依赖 |
-| Agent2 | 目录生成 | 查询板块信息与子知识点列表，规划下一阶段学习内容 |
+| Agent1 | 学情诊断 | 生成用户画像 JSON，并查询知识图谱前置依赖 |
+| Agent2 | 路径规划 | 基于 `subtopic_status` 与知识点前置依赖选择下一学习知识点 |
 | Agent3 | 内容生成 | 生成学习包、回答问题 |
-| Agent4 | 技术审核 | 检查幻觉、语法、规范 |
-| Agent5 | 质量评审 | 检查难度、负荷、风格 |
-| Agent6 | 阶段决策 | 更新画像、选择策略，消费画像中的前置依赖信息 |
+| Agent4 | 审核代理 | 统一承担技术审核与质量评审 |
+| Agent6 | 阶段决策 | 更新画像、选择策略，并驱动下一阶段或重复当前知识点 |
 
 ## 学习流程
 
-1. 用户首次输入 → Agent1生成画像
-2. Agent2根据知识盲区、板块前置关系和板块内子知识点顺序生成下一阶段
-3. Agent3生成学习包 → Agent4+5并行审核
+1. 用户首次输入 → Agent1 生成画像
+2. Agent2 根据知识点级 DAG 与 `subtopic_status` 生成下一阶段
+3. Agent3 生成学习包 → Agent4 执行统一审核
 4. 用户学习 + 实时答疑
-5. 完成测试 → Agent6更新画像
-6. 若当前大板块仍有未完成子知识点，则继续推进下一子知识点
+5. 完成测试 → Agent6 更新画像
+6. 若当前知识点通过，则 Agent2 选择下一个可学习知识点；未通过则重复当前知识点
 7. 循环直到所有知识盲区掌握
+
+
+## DAG + mastery state锛?026-07-30澧炶ˉ锛?
+
+- 褰撳墠闃舵閫夎矾宸蹭粠鈥滃己绾挎€ф澘鍧楁帹杩涒€濆垏鍒扳€滅煡璇嗙偣绾х姸鎬佹帹杩涒€?
+- 杩愯鏃舵柊澧?`subtopic_status` 琛紝浣滀负 Agent2 鐨勭湡瀹炵姸鎬佹簮
+- 鐘舵€佽涔夛細`-1` 鏈帉鎻★紝`0` 瀛︿範涓紝`1` 宸叉帉鎻?
+- Agent2 姣忔鍙仛涓夋锛?
+  1. 鎵惧嚭鎵€鏈?`status = -1` 鐨勭煡璇嗙偣
+  2. 杩囨护鍑哄墠缃煡璇嗙偣閮藉凡 `= 1` 鐨勫€欓€夐」
+  3. 浠庡€欓€夐」涓€変竴涓渶閫傚悎褰撳墠鐢ㄦ埛鐨勭煡璇嗙偣
+- `knowledge_gaps` 缁х画淇濈暀锛屼絾鐜板湪鏇撮€傚悎浣滀负鏉垮潡绾ф眹鎬昏鍥?
+- 褰撳墠鐗堟湰涓嶅寘鍚洖閫€绛栫暐锛涢樁娈靛け璐ユ椂淇濇寔褰撳墠鐭ヨ瘑鐐?`0`锛岄噸澶嶅綋鍓嶇煡璇嗙偣

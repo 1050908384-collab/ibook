@@ -525,3 +525,13 @@ P(L)_new = 0.7533 + 0.2467×0.4 = 0.7533 + 0.0987 = 0.8520
 ## 7. 版本信息
 - 版本：v3.3，更新日期：2026-07-25
 - 变更记录：合并原 `knowledge_tracing.skill.md`（BKT参数）和 `emotion_model.skill.md`（情绪规则）全部内容；能力描述明确"掌握度精算和画像组装"适用场景；核心方法论重构为5步（BKT计算→状态映射→节奏信心推断→困惑标记→组装画像+策略建议）；新增规则1 BKT四参数表（P(L₀)/P(T)/P(G)/P(S)含取值依据和BKT更新公式）；新增规则2修正因子（Wt时长权重三档+We情绪权重三档+P_corrected公式）；规则3状态映射升级为三档（≥0.8已掌握/0.4~0.8学习中/<0.4未掌握，基于P_corrected而非accuracy）；新增规则4学习节奏推断（耗时比三档）；规则5信心指数升级为加权公式（accuracy×0.6+emotion×0.4）；新增规则6困惑标记生成（答错≥2次或提问≥3次）；新增规则7情绪规则（5类情绪标签关键词+行为信号+得分-1~+1映射）；新增规则8 next_strategy计算规则（基于P_corrected的四档策略建议）；输入输出规范新增profile_updates、next_strategy和update_rationale完整JSON示例；异常处理新增阈值边界fallback和finish策略降级；附录A补充3个参考论文；附录B新增完整BKT计算场景。**v3.2变更**：恢复 next_strategy 输出字段（基于BKT掌握度的策略建议），明确与 iteration_strategy 的边界——本SKILL输出数据驱动建议，iteration_strategy结合迭代历史做最终决策。**v3.3变更**：新增规则9代码错误特征提取（错误类型计数更新、confusion_tags写入规则、code_skill_gaps字段结构、熟练度等级推断）；输入新增 code_error_analysis 可选字段；profile_updates 新增 code_skill_gaps 和 code_proficiency_level 字段；明确与 learner_model.skill.md 规则5和 iteration_strategy.skill.md 的协作边界；适配 Agent4 代码错误分析新功能，实现从代码错误到画像更新的完整链路
+
+
+## 11. 2026-07-30 增补
+
+- 当前版本优先更新知识点级状态
+- 规则简化为：
+  - 正确率 `>= 0.8`：当前知识点置为 `1`
+  - 正确率 `< 0.8`：当前知识点保持 `0`
+- 然后再从 `subtopic_status` 反推板块级 `knowledge_gaps` 汇总
+- 当前版本不启用回退策略

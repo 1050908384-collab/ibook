@@ -169,6 +169,24 @@ class SQLiteClient:
                 )
             """))
             conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS subtopic_status (
+                    session_id VARCHAR(50) NOT NULL,
+                    subtopic_id VARCHAR(50) NOT NULL,
+                    block_id VARCHAR(50) NOT NULL,
+                    status INT NOT NULL DEFAULT -1 CHECK (status IN (-1, 0, 1)),
+                    mastery_score FLOAT DEFAULT 0.0,
+                    last_accuracy FLOAT,
+                    attempt_count INT DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    started_at TIMESTAMP,
+                    completed_at TIMESTAMP,
+                    PRIMARY KEY (session_id, subtopic_id),
+                    FOREIGN KEY (session_id) REFERENCES sessions(session_id),
+                    FOREIGN KEY (subtopic_id) REFERENCES knowledge_subtopics(subtopic_id),
+                    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
+                )
+            """))
+            conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS test_questions (
                     question_id VARCHAR(50) PRIMARY KEY,
                     block_id VARCHAR(50) NOT NULL,
@@ -230,6 +248,7 @@ class SQLiteClient:
             session.execute(text("INSERT OR IGNORE INTO sessions (session_id) VALUES (:session_id)"),
                            {"session_id": session_id})
             session.commit()
+        self.init_subtopic_status(session_id)
 
     def session_exists(self, session_id: str) -> bool:
         with self.Session() as session:
@@ -350,21 +369,151 @@ class SQLiteClient:
             })
             session.commit()
 
+    def init_subtopic_status(self, session_id: str) -> None:
+        with self.Session() as session:
+            existing = session.execute(text("""
+                SELECT 1
+                FROM subtopic_status
+                WHERE session_id = :session_id
+                LIMIT 1
+            """), {"session_id": session_id}).first()
+            if existing:
+                return
+            rows = session.execute(text("""
+                SELECT subtopic_id, block_id
+                FROM knowledge_subtopics
+            """)).fetchall()
+            for subtopic_id, block_id in rows:
+                session.execute(text("""
+                    INSERT OR IGNORE INTO subtopic_status (
+                        session_id, subtopic_id, block_id, status, mastery_score, updated_at
+                    ) VALUES (
+                        :session_id, :subtopic_id, :block_id, -1, 0.0, CURRENT_TIMESTAMP
+                    )
+                """), {
+                    "session_id": session_id,
+                    "subtopic_id": subtopic_id,
+                    "block_id": block_id,
+                })
+            session.commit()
+
+    def ensure_subtopic_status(self, session_id: str) -> None:
+        self.init_subtopic_status(session_id)
+
+    def get_subtopic_status(self, session_id: str, subtopic_id: str) -> dict | None:
+        self.ensure_subtopic_status(session_id)
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT session_id, subtopic_id, block_id, status, mastery_score,
+                       last_accuracy, attempt_count, updated_at, started_at, completed_at
+                FROM subtopic_status
+                WHERE session_id = :session_id
+                  AND subtopic_id = :subtopic_id
+            """), {
+                "session_id": session_id,
+                "subtopic_id": subtopic_id,
+            }).mappings().first()
+        return dict(row) if row else None
+
+    def set_subtopic_status(
+        self,
+        session_id: str,
+        subtopic_id: str,
+        status: int,
+        mastery_score: float | None = None,
+        last_accuracy: float | None = None,
+        increment_attempt: bool = False,
+    ) -> None:
+        self.ensure_subtopic_status(session_id)
+        existing = self.get_subtopic_status(session_id, subtopic_id)
+        if not existing:
+            return
+        attempt_count = int(existing.get("attempt_count") or 0) + (1 if increment_attempt else 0)
+        with self.Session() as session:
+            session.execute(text("""
+                UPDATE subtopic_status
+                SET status = :status,
+                    mastery_score = COALESCE(:mastery_score, mastery_score),
+                    last_accuracy = COALESCE(:last_accuracy, last_accuracy),
+                    attempt_count = :attempt_count,
+                    started_at = CASE
+                        WHEN :status = 0 AND started_at IS NULL THEN CURRENT_TIMESTAMP
+                        ELSE started_at
+                    END,
+                    completed_at = CASE
+                        WHEN :status = 1 THEN CURRENT_TIMESTAMP
+                        ELSE completed_at
+                    END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE session_id = :session_id
+                  AND subtopic_id = :subtopic_id
+            """), {
+                "session_id": session_id,
+                "subtopic_id": subtopic_id,
+                "status": status,
+                "mastery_score": mastery_score,
+                "last_accuracy": last_accuracy,
+                "attempt_count": attempt_count,
+            })
+            session.commit()
+
     def get_completed_subtopic_ids(self, session_id: str, block_id: str) -> list[str]:
+        self.ensure_subtopic_status(session_id)
         with self.Session() as session:
             rows = session.execute(text("""
-                SELECT DISTINCT subtopic_id
-                FROM stage_progress
+                SELECT subtopic_id
+                FROM subtopic_status
                 WHERE session_id = :session_id
                   AND block_id = :block_id
-                  AND status = 'completed'
-                  AND subtopic_id IS NOT NULL
-                  AND subtopic_id != ''
+                  AND status = 1
             """), {
                 "session_id": session_id,
                 "block_id": block_id,
             }).fetchall()
         return [row[0] for row in rows if row and row[0]]
+
+    def list_subtopic_statuses(self, session_id: str) -> list[dict]:
+        self.ensure_subtopic_status(session_id)
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT s.subtopic_id, s.block_id, s.status, s.mastery_score, s.last_accuracy,
+                       s.attempt_count, k.subtopic_name, k.estimated_hours, k.sequence_index,
+                       k.difficulty, k.prerequisites, k.content_summary
+                FROM subtopic_status s
+                JOIN knowledge_subtopics k ON s.subtopic_id = k.subtopic_id
+                WHERE s.session_id = :session_id
+                ORDER BY k.block_id ASC, k.sequence_index ASC
+            """), {"session_id": session_id}).mappings().all()
+        return [dict(row) for row in rows]
+
+    def list_learnable_subtopics(
+        self,
+        session_id: str,
+        preferred_block_id: str | None = None,
+        max_hours: float | None = None,
+    ) -> list[dict]:
+        rows = self.list_subtopic_statuses(session_id)
+        status_index = {row["subtopic_id"]: int(row["status"]) for row in rows}
+        candidates: list[dict] = []
+        for row in rows:
+            if int(row["status"]) != -1:
+                continue
+            prerequisites = json.loads(row["prerequisites"]) if row.get("prerequisites") else []
+            if all(status_index.get(prerequisite_id) == 1 for prerequisite_id in prerequisites):
+                row["prerequisites"] = prerequisites
+                candidates.append(row)
+
+        def sort_key(item: dict) -> tuple:
+            hours = float(item.get("estimated_hours") or 0)
+            return (
+                0 if preferred_block_id and item["block_id"] == preferred_block_id else 1,
+                0 if max_hours is not None and hours <= max_hours else 1,
+                hours if max_hours is not None else 0,
+                int(item.get("sequence_index") or 0),
+                item["subtopic_id"],
+            )
+
+        return sorted(candidates, key=sort_key)
 
     def get_next_subtopic(
         self,
@@ -375,26 +524,37 @@ class SQLiteClient:
     ) -> dict | None:
         completed = set(self.get_completed_subtopic_ids(session_id, block_id))
         completed.update(item for item in (additional_completed or []) if item)
-        with self.Session() as session:
-            rows = session.execute(text("""
-                SELECT subtopic_id, block_id, subtopic_name, estimated_hours, sequence_index,
-                       difficulty, prerequisites, content_summary
-                FROM knowledge_subtopics
-                WHERE block_id = :block_id
-                ORDER BY sequence_index ASC
-            """), {"block_id": block_id}).mappings().all()
-        remaining = [dict(row) for row in rows if row["subtopic_id"] not in completed]
-        if not remaining:
+        rows = [
+            row for row in self.list_learnable_subtopics(
+                session_id=session_id,
+                preferred_block_id=block_id,
+                max_hours=max_hours,
+            )
+            if row["block_id"] == block_id and row["subtopic_id"] not in completed
+        ]
+        return rows[0] if rows else None
+
+    def get_block_status_summary(self, session_id: str, block_id: str) -> dict | None:
+        rows = [row for row in self.list_subtopic_statuses(session_id) if row["block_id"] == block_id]
+        if not rows:
             return None
-        if max_hours is not None:
-            for row in remaining:
-                hours = row.get("estimated_hours") or 0
-                if hours <= max_hours:
-                    row["prerequisites"] = json.loads(row["prerequisites"]) if row.get("prerequisites") else []
-                    return row
-        row = remaining[0]
-        row["prerequisites"] = json.loads(row["prerequisites"]) if row.get("prerequisites") else []
-        return row
+        total = len(rows)
+        mastered = sum(1 for row in rows if int(row["status"]) == 1)
+        learning = sum(1 for row in rows if int(row["status"]) == 0)
+        progress = mastered / total if total else 0.0
+        if mastered == total:
+            status = "已掌握"
+        elif learning > 0 or mastered > 0:
+            status = "学习中"
+        else:
+            status = "未掌握"
+        return {
+            "block_id": block_id,
+            "status": status,
+            "progress": round(progress, 3),
+            "mastered_subtopics": mastered,
+            "total_subtopics": total,
+        }
 
     def get_subtopic_completion_ratio(
         self,

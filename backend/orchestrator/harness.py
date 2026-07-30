@@ -93,6 +93,12 @@ class Harness:
 
         stage.status = "learning" if review_passed else "pending"
         self.state_manager.update_stage(session_id, stage)
+        if review_passed and stage.subtopic_id:
+            self.state_manager.db_client.set_subtopic_status(
+                session_id=session_id,
+                subtopic_id=stage.subtopic_id,
+                status=0,
+            )
         self.state_manager.update_learning_package(session_id, learning_package)
         self.state_manager.add_interaction(session_id, "stage_review_completed", {
             "stage_id": stage.stage_id,
@@ -176,63 +182,64 @@ class Harness:
             qa_history=self.state_manager.get_qa_history(session_id),
             interactions=self.state_manager.get_interactions(session_id),
         ))
+
         stage.status = "completed" if accuracy >= 0.8 else "retreat"
         stage.accuracy = accuracy
         stage.strategy_used = decision.strategy
-        self.state_manager.update_stage(session_id, stage)
-        self.state_manager.update_profile(session_id, decision.profile)
 
-        if decision.decision == "completed":
+        if stage.subtopic_id:
+            self.state_manager.db_client.set_subtopic_status(
+                session_id=session_id,
+                subtopic_id=stage.subtopic_id,
+                status=1 if accuracy >= 0.8 else 0,
+                mastery_score=1.0 if accuracy >= 0.8 else max(0.4, round(accuracy, 3)),
+                last_accuracy=accuracy,
+                increment_attempt=True,
+            )
+
+        synced_profile = await self._sync_profile_from_subtopic_status(decision.profile)
+        self.state_manager.update_stage(session_id, stage)
+        self.state_manager.update_profile(session_id, synced_profile)
+
+        all_mastered = all(gap.progress >= 1.0 for gap in synced_profile.knowledge_gaps)
+        if all_mastered:
             self.state_manager.end_session(session_id)
             self._log(session_id, "complete_stage:completed", f"accuracy={accuracy:.2f}")
             return {
                 "status": "completed",
                 "accuracy": accuracy,
-                "updated_profile": decision.profile.model_dump(mode="json"),
-                "final_report": self._generate_final_report(decision.profile, accuracy),
+                "updated_profile": synced_profile.model_dump(mode="json"),
+                "final_report": self._generate_final_report(synced_profile, accuracy),
                 "stage_summary": decision.stage_summary,
                 "next_strategy": decision.strategy,
             }
 
-        # ===== P0: Agent1 重诊断闭环 =====
-        mastered = [g.skill for g in decision.profile.knowledge_gaps if g.status == "已掌握"]
-        remaining = [g.skill for g in decision.profile.knowledge_gaps if g.status != "已掌握"]
-        re_input = (
-            f"我已掌握：{"、".join(mastered) if mastered else "暂时没有"}。"
-            f"我还需要学习：{"、".join(remaining) if remaining else "暂时没有了"}。"
-            f"我刚完成了{stage.block_name}阶段学习，正确率{accuracy:.0%}。"
-        )
-        re_diag = await self.agent1.run(DiagnosticInput(
-            session_id=session_id,
-            user_input=re_input,
-        ))
-        re_profile = re_diag.profile
-        re_profile.confidence_index = decision.profile.confidence_index
-        re_profile.version = decision.profile.version
-        for ng in re_profile.knowledge_gaps:
-            for og in decision.profile.knowledge_gaps:
-                if ng.skill == og.skill:
-                    ng.status = og.status
-                    ng.progress = og.progress
-                    break
-        self.state_manager.update_profile(session_id, re_profile)
+        if accuracy < 0.8:
+            self._log(session_id, "complete_stage:repeat", f"subtopic={stage.subtopic_id or '-'}")
+            return {
+                "status": "repeat",
+                "accuracy": accuracy,
+                "updated_profile": synced_profile.model_dump(mode="json"),
+                "next_stage": stage.model_dump(mode="json"),
+                "stage_summary": decision.stage_summary,
+                "next_strategy": decision.strategy,
+            }
 
-        next_stage_num = stage.stage_num + 1 if decision.decision == "continue" else stage.stage_num
         next_stage = await self.agent2.run(StagePlanningInput(
             session_id=session_id,
-            profile=re_profile,
-            stage_num=next_stage_num,
+            profile=synced_profile,
+            stage_num=stage.stage_num + 1,
         ))
         self.state_manager.update_stage(session_id, next_stage.stage)
         self._log(
             session_id,
             "complete_stage:next_stage",
-            f"decision={decision.decision}, next_stage={next_stage.stage.stage_num}",
+            f"next_stage={next_stage.stage.stage_num}, subtopic={next_stage.stage.subtopic_id or '-'}",
         )
         return {
-            "status": decision.decision,
+            "status": "continue",
             "accuracy": accuracy,
-            "updated_profile": decision.profile.model_dump(mode="json"),
+            "updated_profile": synced_profile.model_dump(mode="json"),
             "next_stage": next_stage.stage.model_dump(mode="json"),
             "stage_summary": decision.stage_summary,
             "next_strategy": decision.strategy,
@@ -367,6 +374,30 @@ class Harness:
             "passed": review_round.passed,
         })
 
+    async def _sync_profile_from_subtopic_status(self, profile: UserProfile) -> UserProfile:
+        synced_profile = profile.model_copy(deep=True)
+        for gap in synced_profile.knowledge_gaps:
+            block_info = {}
+            try:
+                block_info = await self.agent2.knowledge_block_query_tool.query_block(gap.skill)
+            except Exception:
+                block_info = {}
+            block_id = block_info.get("block_id")
+            if not block_id:
+                continue
+            summary = self.state_manager.db_client.get_block_status_summary(
+                session_id=synced_profile.session_id,
+                block_id=block_id,
+            )
+            if not summary:
+                continue
+            gap.status = summary["status"]
+            gap.progress = summary["progress"]
+            if not gap.prerequisites:
+                gap.prerequisites = block_info.get("prerequisites", [])
+        synced_profile.version += 1
+        return synced_profile
+
     def _require_profile(self, session_id: str) -> dict:
         profile = self.state_manager.get_profile(session_id)
         if not profile:
@@ -434,7 +465,7 @@ class Harness:
         return {
             "goal": profile.goal,
             "accuracy": accuracy,
-            "mastered_skills": [gap.skill for gap in profile.knowledge_gaps if gap.status == "已掌握"],
+            "mastered_skills": [gap.skill for gap in profile.knowledge_gaps if gap.progress >= 1.0],
             "profile_version": profile.version,
         }
 
