@@ -6,7 +6,6 @@ from agents.deterministic import (
     DeterministicContentAgent,
     DeterministicDiagnosticAgent,
     DeterministicStageDecisionAgent,
-    DeterministicStagePlannerAgent,
     DeterministicTechnicalReviewAgent,
     HybridContentAgent,
     HybridDiagnosticAgent,
@@ -37,7 +36,7 @@ class Harness:
         if self.execution_mode not in {"deterministic", "hybrid"}:
             raise ValueError("EXECUTION_MODE must be 'deterministic' or 'hybrid'")
         self.agent1 = HybridDiagnosticAgent() if self.execution_mode == "hybrid" else DeterministicDiagnosticAgent()
-        self.agent2 = DeterministicStagePlannerAgent()
+    
         self.agent3 = HybridContentAgent() if self.execution_mode == "hybrid" else DeterministicContentAgent()
         self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
         # Agent5已合并至Agent4，质量审核功能已集成
@@ -60,7 +59,7 @@ class Harness:
             return {"status": "needs_more_info", "questions": diagnostic.followup_questions}
 
         self.state_manager.update_profile(session_id, diagnostic.profile)
-        stage = await self.agent2.run(StagePlanningInput(
+        stage = await self.agent1.generate_stage(StagePlanningInput(
             session_id=session_id,
             profile=diagnostic.profile,
             stage_num=1,
@@ -225,7 +224,7 @@ class Harness:
                 "next_strategy": decision.strategy,
             }
 
-        next_stage = await self.agent2.run(StagePlanningInput(
+        next_stage = await self.agent1.generate_stage(StagePlanningInput(
             session_id=session_id,
             profile=synced_profile,
             stage_num=stage.stage_num + 1,
@@ -379,7 +378,7 @@ class Harness:
         for gap in synced_profile.knowledge_gaps:
             block_info = {}
             try:
-                block_info = await self.agent2.knowledge_block_query_tool.query_block(gap.skill)
+                block_info = await self.agent1.knowledge_block_query_tool.query_block(gap.skill)
             except Exception:
                 block_info = {}
             block_id = block_info.get("block_id")
