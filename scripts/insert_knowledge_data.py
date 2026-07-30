@@ -140,25 +140,32 @@ def insert_test_questions(db: SQLiteClient, questions_data: list):
         with db.Session() as session:
             session.execute(text("""
                 INSERT OR REPLACE INTO test_questions (
-                    question_id, block_id, difficulty, question_type,
-                    question_text, options, correct_answer, hint
+                    question_id, block_id, subtopic_id, difficulty, question_type,
+                    question_text, options, correct_answer, explanation,
+                    expected_output, grading_mode, source, hint
                 ) VALUES (
-                    :question_id, :block_id, :difficulty, :question_type,
-                    :question_text, :options, :correct_answer, :hint
+                    :question_id, :block_id, :subtopic_id, :difficulty, :question_type,
+                    :question_text, :options, :correct_answer, :explanation,
+                    :expected_output, :grading_mode, :source, :hint
                 )
             """), {
                 "question_id": question["question_id"],
                 "block_id": question["block_id"],
-                "difficulty": question["difficulty"],
-                "question_type": question["question_type"],
+                "subtopic_id": question.get("subtopic_id"),
+                "difficulty": question.get("difficulty"),
+                "question_type": question.get("question_type"),
                 "question_text": question["question_text"],
-                "options": json.dumps(question["options"], ensure_ascii=False) if question["options"] else None,
-                "correct_answer": question["correct_answer"],
-                "hint": question["hint"]
+                "options": json.dumps(question.get("options"), ensure_ascii=False) if question.get("options") else None,
+                "correct_answer": question.get("correct_answer", ""),
+                "explanation": question.get("explanation"),
+                "expected_output": question.get("expected_output"),
+                "grading_mode": question.get("grading_mode", "exact_match"),
+                "source": question.get("source", "test_questions.json"),
+                "hint": question.get("hint") or question.get("explanation") or None,
             })
             session.commit()
         count += 1
-    print("[OK] test_questions: 已插入 {} 条记录".format(count))
+    print("[OK] test_questions: ??? {} ???".format(count))
 
 
 def main():
