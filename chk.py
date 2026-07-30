@@ -1,8 +1,8 @@
-﻿import os, glob
+import os, glob
 
 cwd = os.getcwd()
 suspects = [
-    "backend/agents/agent_02_stage_planner.py",
+    "backend/agents/agent_01_diagnostic.py",
     "backend/agents/agent_04_tech_review.py",
     "backend/agents/agent_05_quality_review.py",
     "backend/agents/base_agent.py",
