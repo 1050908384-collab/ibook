@@ -166,30 +166,30 @@ class DeterministicDiagnosticAgent:
         )
         return match.group(1).strip(" ，。,.！!") if match else text
 
-<<<<<<< HEAD
     async def generate_stage(self, request: StagePlanningInput) -> StagePlanningOutput:
         """Stage planning functionality merged from Agent2 into Agent1."""
         _agent_log("Agent1", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
+
         gap = next(
-            (item for item in request.profile.knowledge_gaps if item.status != "已掌握"),
+            (item for item in request.profile.knowledge_gaps if float(item.progress or 0.0) < 1.0),
             None,
         )
         if gap is None:
             raise ValueError("No unmastered knowledge gap remains")
 
-        block_info = {}
+        preferred_block = {}
         try:
-            block_info = await self.knowledge_block_query_tool.query_block(gap.skill)
+            preferred_block = await self.knowledge_block_query_tool.query_block(gap.skill)
         except Exception:
-            block_info = {}
-        block_info = block_info or {}
+            preferred_block = {}
+        preferred_block = preferred_block or {}
 
         generated_stage = {}
         try:
             generated_stage = await self.stage_generator_tool.generate_stage(
                 request.session_id,
                 gap.model_dump(mode="json"),
-                block_info,
+                preferred_block,
                 request.profile.goal,
                 request.stage_num,
             )
@@ -197,41 +197,54 @@ class DeterministicDiagnosticAgent:
             generated_stage = {}
         generated_stage = generated_stage or {}
 
-        subtopic = None
-        try:
-            subtopic = self.db_client.get_next_subtopic(
-                request.session_id,
-                block_info.get("block_id", ""),
-                max_hours=request.profile.daily_hours,
-            ) if block_info.get("block_id") else None
-        except Exception:
-            subtopic = None
-
-        stable_key = f"{request.session_id}:{request.stage_num}:{gap.skill}"
-        stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
-        stage_name = gap.skill or block_info.get("block_name") or generated_stage.get("block_name")
-        stage_hours = (
-            subtopic.get("estimated_hours")
-            if subtopic and subtopic.get("estimated_hours") is not None else
-            block_info.get("estimated_hours") or generated_stage.get("estimated_hours") or 2.0
+        candidates = self.db_client.list_learnable_subtopics(
+            session_id=request.session_id,
+            preferred_block_id=preferred_block.get("block_id"),
+            max_hours=request.profile.daily_hours,
         )
+        if not candidates:
+            raise ValueError("No learnable subtopics remain for current session")
+
+        subtopic = candidates[0]
+        block_info = preferred_block
+        if subtopic.get("block_id") and subtopic.get("block_id") != preferred_block.get("block_id"):
+            try:
+                block_info = await self.knowledge_block_query_tool.query_block(subtopic["block_id"])
+            except Exception:
+                block_info = preferred_block
+        block_info = block_info or preferred_block or {}
+
+        stable_key = f"{request.session_id}:{request.stage_num}:{subtopic['subtopic_id']}"
+        stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
+        block_id = block_info.get("block_id") or subtopic.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
+        block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
+        estimated_hours = float(
+            subtopic.get("estimated_hours")
+            or block_info.get("estimated_hours")
+            or generated_stage.get("estimated_hours")
+            or 2.0
+        )
+        prerequisites = subtopic.get("prerequisites")
+        if prerequisites is None:
+            prerequisites = block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites
+
         stage = StageInfo(
             stage_id=stage_id,
             stage_num=request.stage_num,
-            block_id=block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}",
-            block_name=stage_name,
-            subtopic_id=subtopic.get("subtopic_id") if subtopic else None,
+            block_id=block_id,
+            block_name=block_name,
+            subtopic_id=subtopic.get("subtopic_id"),
+            subtopic_name=subtopic.get("subtopic_name"),
             gap_skill=gap.skill,
-            estimated_hours=stage_hours,
-            prerequisites=(
-                subtopic.get("prerequisites")
-                if subtopic and subtopic.get("prerequisites") is not None else
-                block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites
-            ),
+            estimated_hours=estimated_hours,
+            prerequisites=prerequisites,
         )
-        _agent_log("Agent1", f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'}")
+        _agent_log(
+            "Agent1",
+            f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'}",
+        )
         return StagePlanningOutput(stage=stage)
-=======
+
     def _parse_structured_input(self, text: str) -> dict:
         goal = self._labeled_value(text, ("我的学习目标", "学习目标"))
         return {
@@ -279,7 +292,6 @@ class DeterministicDiagnosticAgent:
         if "mixed" in lowered or "混合" in text or "结合" in text:
             return "mixed"
         return "mixed"
->>>>>>> 9d25d4d9471f71d65b549f752adee7f087be7cb7
 
 
 class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
