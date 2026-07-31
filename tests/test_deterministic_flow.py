@@ -4,7 +4,9 @@ import unittest
 from pathlib import Path
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
+sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(BACKEND_DIR))
 
 from db.sqlite_client import SQLiteClient
@@ -12,6 +14,19 @@ from orchestrator.harness import Harness
 from orchestrator.state_manager import StateManager
 from models.review import ReviewError, TechnicalReviewResult
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
+from scripts.insert_knowledge_data import (
+    BLOCKS_FILE_PATH,
+    DOCS_FILE_PATH,
+    FAQ_FILE_PATH,
+    QUESTIONS_FILE_PATH,
+    SUBTOPICS_FILE_PATH,
+    insert_faq_items,
+    insert_knowledge_blocks,
+    insert_knowledge_docs,
+    insert_knowledge_subtopics,
+    insert_test_questions,
+    load_required_list,
+)
 
 
 class RejectOnceTechnicalReviewer:
@@ -50,8 +65,16 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
     def create_harness(self) -> Harness:
         client = SQLiteClient(self.database_url)
+        self._seed_reference_data(client)
         self.clients.append(client)
         return Harness(StateManager(client), execution_mode="deterministic")
+
+    def _seed_reference_data(self, client: SQLiteClient) -> None:
+        insert_knowledge_blocks(client, load_required_list(BLOCKS_FILE_PATH))
+        insert_knowledge_docs(client, load_required_list(DOCS_FILE_PATH))
+        insert_knowledge_subtopics(client, load_required_list(SUBTOPICS_FILE_PATH))
+        insert_faq_items(client, load_required_list(FAQ_FILE_PATH))
+        insert_test_questions(client, load_required_list(QUESTIONS_FILE_PATH))
 
     async def test_complete_flow_survives_new_harness(self):
         first = self.create_harness()

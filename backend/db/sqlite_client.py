@@ -234,6 +234,7 @@ class SQLiteClient:
             self._migrate_test_questions_table(conn)
             conn.commit()
 
+
     @staticmethod
     def _ensure_column(conn, table_name: str, column_name: str, column_sql: str) -> None:
         columns = {

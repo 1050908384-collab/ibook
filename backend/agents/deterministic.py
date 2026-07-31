@@ -71,13 +71,13 @@ def _agent_log(agent_name: str, message: str) -> None:
 
 
 class DeterministicDiagnosticAgent:
-    def __init__(self):
+    def __init__(self, db_client: SQLiteClient | None = None):
         self.extract_skills_tool = ExtractSkillsTool()
         self.calculate_confidence_tool = CalculateConfidenceTool()
         self.graph_query_tool = GraphQueryTool()
         self.knowledge_block_query_tool = KnowledgeBlockQueryTool()
         self.stage_generator_tool = StageGeneratorTool()
-        self.db_client = SQLiteClient()
+        self.db_client = db_client or SQLiteClient()
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
         _agent_log("Agent1", f"diagnostic:start | session={request.session_id}")
@@ -217,7 +217,7 @@ class DeterministicDiagnosticAgent:
         stable_key = f"{request.session_id}:{request.stage_num}:{subtopic['subtopic_id']}"
         stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
         block_id = block_info.get("block_id") or subtopic.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
-        block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
+        block_name = gap.skill or block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name")
         estimated_hours = float(
             subtopic.get("estimated_hours")
             or block_info.get("estimated_hours")
@@ -295,8 +295,8 @@ class DeterministicDiagnosticAgent:
 
 
 class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, db_client: SQLiteClient | None = None):
+        super().__init__(db_client=db_client)
         self.llm_client = LLMClient()
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:

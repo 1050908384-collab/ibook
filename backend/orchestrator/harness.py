@@ -35,7 +35,11 @@ class Harness:
         self.execution_mode = execution_mode or settings.EXECUTION_MODE
         if self.execution_mode not in {"deterministic", "hybrid"}:
             raise ValueError("EXECUTION_MODE must be 'deterministic' or 'hybrid'")
-        self.agent1 = HybridDiagnosticAgent() if self.execution_mode == "hybrid" else DeterministicDiagnosticAgent()
+        self.agent1 = (
+            HybridDiagnosticAgent(db_client=self.state_manager.db_client)
+            if self.execution_mode == "hybrid"
+            else DeterministicDiagnosticAgent(db_client=self.state_manager.db_client)
+        )
     
         self.agent3 = HybridContentAgent() if self.execution_mode == "hybrid" else DeterministicContentAgent()
         self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
@@ -197,6 +201,11 @@ class Harness:
             )
 
         synced_profile = await self._sync_profile_from_subtopic_status(decision.profile)
+        if accuracy >= 0.8:
+            for gap in synced_profile.knowledge_gaps:
+                if gap.skill == stage.gap_skill:
+                    gap.status = "已掌握"
+                    gap.progress = 1.0
         self.state_manager.update_stage(session_id, stage)
         self.state_manager.update_profile(session_id, synced_profile)
 
@@ -224,22 +233,13 @@ class Harness:
                 "next_strategy": decision.strategy,
             }
 
-        next_stage = await self.agent1.generate_stage(StagePlanningInput(
-            session_id=session_id,
-            profile=synced_profile,
-            stage_num=stage.stage_num + 1,
-        ))
-        self.state_manager.update_stage(session_id, next_stage.stage)
-        self._log(
-            session_id,
-            "complete_stage:next_stage",
-            f"next_stage={next_stage.stage.stage_num}, subtopic={next_stage.stage.subtopic_id or '-'}",
-        )
+        self.state_manager.end_session(session_id)
+        self._log(session_id, "complete_stage:completed", f"accuracy={accuracy:.2f}")
         return {
-            "status": "continue",
+            "status": "completed",
             "accuracy": accuracy,
             "updated_profile": synced_profile.model_dump(mode="json"),
-            "next_stage": next_stage.stage.model_dump(mode="json"),
+            "final_report": self._generate_final_report(synced_profile, accuracy),
             "stage_summary": decision.stage_summary,
             "next_strategy": decision.strategy,
         }
