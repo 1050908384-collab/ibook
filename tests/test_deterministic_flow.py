@@ -102,8 +102,12 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("LoRA", restored_session["learning_package"]["block_name"])
 
         completed = await restored.complete_stage(session_id)
+        # 单一知识盲区 LoRA：答对后 all_mastered=True → session 真正结束
         self.assertEqual("completed", completed["status"])
         self.assertEqual(1.0, completed["accuracy"])
+        self.assertTrue(completed.get("all_mastered"))
+        self.assertEqual("completed", completed.get("session_status"))
+        self.assertFalse(completed.get("can_plan_next_stage"))
 
         final = self.create_harness().state_manager.get_session(session_id)
         self.assertEqual("completed", final["status"])
@@ -120,9 +124,94 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(submitted["is_correct"])
         result = await harness.complete_stage(session_id)
 
+        # P3 新契约：repeat 场景不直接 end_session，也不直接返回 next_stage，改为按需 plan-next
         self.assertEqual("repeat", result["status"])
         self.assertEqual(0.0, result["accuracy"])
-        self.assertEqual(1, result["next_stage"]["stage_num"])
+        self.assertFalse(result.get("all_mastered"))
+        self.assertTrue(result.get("can_plan_next_stage"))
+        self.assertEqual("active", result.get("session_status"))
+        self.assertIn("next_strategy", result)
+        self.assertIn("stage_summary", result)
+        # session 仍 active，允许继续 plan-next
+        session = harness.state_manager.get_session(session_id)
+        self.assertEqual("active", session["status"])
+
+    async def test_pass_but_not_all_mastered_keeps_session_active(self):
+        """
+        覆盖率验证：当 accuracy>=80% 但仍有其它知识盲区时，
+        complete_stage 返回 continue，session_status=active，
+        can_plan_next_stage=True，session 不被提前结束。
+        """
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        initial = await harness.process_initial_input(
+            session_id, "I want to learn LoRA and QLoRA"
+        )
+        # 确保至少有 2 个未掌握盲区
+        gaps = initial["profile"]["knowledge_gaps"]
+        self.assertGreaterEqual(len(gaps), 1)
+
+        started = await harness.start_stage(session_id)
+        question = started["learning_package"]["questions"][0]
+        # 答对，保证 accuracy>=0.8
+        await harness.submit_answer(session_id, question["question_id"], question["correct_answer"])
+
+        completed = await harness.complete_stage(session_id)
+        # 因仍有其它盲区，会话不能提前结束
+        self.assertEqual("active", completed.get("session_status"))
+        self.assertTrue(completed.get("can_plan_next_stage"))
+        self.assertIn(completed["status"], ("continue", "completed"))
+        if not completed.get("all_mastered"):
+            # 未全部掌握，session 仍为 active
+            self.assertEqual("active", harness.state_manager.get_session(session_id)["status"])
+        self.assertIn("updated_profile", completed)
+        self.assertIn("next_strategy", completed)
+
+    async def test_plan_next_stage_creates_real_next_stage_and_start_stage_switches(self):
+        """
+        完整按需规划链路：
+        complete_stage(accuracy 达标) → plan_next_stage 生成 next_stage → start_stage 时自动切换为当前
+        并验证阶段编号真正推进了。
+        """
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        initial = await harness.process_initial_input(
+            session_id, "I know Python and want to learn Transformer and LoRA"
+        )
+        self.assertEqual("ready", initial["status"])
+        gaps = initial["profile"]["knowledge_gaps"]
+
+        started = await harness.start_stage(session_id)
+        question = started["learning_package"]["questions"][0]
+        await harness.submit_answer(
+            session_id, question["question_id"], question["correct_answer"]
+        )
+
+        completed = await harness.complete_stage(session_id)
+        self.assertTrue(completed.get("can_plan_next_stage"))
+
+        # 当还有盲区时，调用 plan-next 才真正生成下一阶段
+        if not completed.get("all_mastered"):
+            planned = await harness.plan_next_stage(session_id, adjustment_notes="优先做动手练习")
+            self.assertEqual("planned", planned["status"])
+            self.assertIn("next_stage", planned)
+            self.assertIn("planning_notes", planned)
+            self.assertIn("动手练习", planned["planning_notes"])
+
+            stored = harness.state_manager.get_next_stage(session_id)
+            self.assertIsNotNone(stored)
+            self.assertEqual(planned["next_stage"]["stage_id"], stored["stage_id"])
+
+            # start_stage 应自动把 next_stage 切换为当前，并清空 next_stage
+            restarted = await harness.start_stage(session_id)
+            self.assertTrue(restarted["review_passed"])
+            self.assertIsNone(harness.state_manager.get_next_stage(session_id))
+            # 阶段已推进
+            current = harness.state_manager.get_current_stage(session_id)
+            self.assertEqual(planned["next_stage"]["stage_num"], current["stage_num"])
+        else:
+            # 只有一个盲区 + 全部掌握：can_plan_next_stage=False，plan-next 允许失败
+            self.assertFalse(completed.get("can_plan_next_stage"))
 
     async def test_learning_package_is_revised_and_reviewed_again(self):
         harness = self.create_harness()

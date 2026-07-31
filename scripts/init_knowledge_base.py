@@ -1,11 +1,15 @@
 #读取data/knowledge_base/文件->切分->入 SQLite + Chroma
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from db.sqlite_client import SQLiteClient
-from db.chroma_client import ChromaClient
 from pathlib import Path
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
+sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, BACKEND_DIR)
+
+from backend.db.sqlite_client import SQLiteClient
+from backend.db.chroma_client import ChromaClient
 
 def init_knowledge_base():
     print("Initializing knowledge base...")

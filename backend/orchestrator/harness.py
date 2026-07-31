@@ -82,6 +82,14 @@ class Harness:
         }
 
     async def start_stage(self, session_id: str) -> Dict[str, Any]:
+        # 若已通过 plan-next 规划过 next_stage，则在真正启动阶段前把 next_stage 切换为当前 stage_info
+        planned = self.state_manager.get_next_stage(session_id)
+        if planned:
+            self._log(session_id, "start_stage:apply_planned_next_stage", f"planned_stage_num={planned.get('stage_num')}, block={planned.get('block_name')}")
+            self.state_manager.update_stage(session_id, StageInfo.model_validate(planned))
+            # 切换完成后清理 next_stage / planning_notes，避免重复套用
+            self.state_manager.clear_next_stage(session_id)
+
         stage = StageInfo.model_validate(self._require_stage(session_id))
         profile = UserProfile.model_validate(self._require_profile(session_id))
         self._log(session_id, "start_stage:start", f"stage={stage.stage_num}, block={stage.block_name}")
@@ -173,6 +181,15 @@ class Harness:
         return {"is_correct": is_correct, "correct_answer": question.correct_answer}
 
     async def complete_stage(self, session_id: str) -> Dict[str, Any]:
+        """
+        complete_stage 新职责（P3 按需阶段规划）：
+        1. 只负责调用 Agent6 决策
+        2. 保存 Agent6 更新后的用户画像 / 个性化数据
+        3. 只有在全部知识盲区都掌握时，才真正结束 session
+        4. 返回 status/session_id/accuracy/updated_profile/stage_summary/
+           next_strategy/can_plan_next_stage/session_status/all_mastered
+        5. 不直接推进当前阶段到下一个阶段编号，不生成 next_stage
+        """
         profile = UserProfile.model_validate(self._require_profile(session_id))
         stage = StageInfo.model_validate(self._require_stage(session_id))
         accuracy = self.state_manager.calculate_accuracy(session_id)
@@ -186,6 +203,7 @@ class Harness:
             interactions=self.state_manager.get_interactions(session_id),
         ))
 
+        # 更新当前阶段的结果状态（只改当前 stage，不推进编号）
         stage.status = "completed" if accuracy >= 0.8 else "retreat"
         stage.accuracy = accuracy
         stage.strategy_used = decision.strategy
@@ -209,39 +227,95 @@ class Harness:
         self.state_manager.update_stage(session_id, stage)
         self.state_manager.update_profile(session_id, synced_profile)
 
+        # 只有全部掌握才真正结束 session
         all_mastered = all(gap.progress >= 1.0 for gap in synced_profile.knowledge_gaps)
         if all_mastered:
             self.state_manager.end_session(session_id)
-            self._log(session_id, "complete_stage:completed", f"accuracy={accuracy:.2f}")
-            return {
-                "status": "completed",
-                "accuracy": accuracy,
-                "updated_profile": synced_profile.model_dump(mode="json"),
-                "final_report": self._generate_final_report(synced_profile, accuracy),
-                "stage_summary": decision.stage_summary,
-                "next_strategy": decision.strategy,
-            }
+            self._log(session_id, "complete_stage:all_mastered -> end_session")
+            final_report = self._generate_final_report(synced_profile, accuracy)
+        else:
+            # 未全部掌握：session 保持 active，等用户按需触发 plan-next
+            final_report = None
+            self._log(
+                session_id,
+                f"complete_stage:keep_active | accuracy={accuracy:.2f} | all_mastered=False",
+            )
 
-        if accuracy < 0.8:
-            self._log(session_id, "complete_stage:repeat", f"subtopic={stage.subtopic_id or '-'}")
-            return {
-                "status": "repeat",
-                "accuracy": accuracy,
-                "updated_profile": synced_profile.model_dump(mode="json"),
-                "next_stage": stage.model_dump(mode="json"),
-                "stage_summary": decision.stage_summary,
-                "next_strategy": decision.strategy,
-            }
+        # 可规划下一阶段的条件：session 仍 active 即可；即便 repeat 场景也允许重新规划
+        session_state = self.state_manager.get_session(session_id)
+        session_status = session_state.get("status") if session_state else "active"
+        can_plan_next_stage = not all_mastered and session_status == "active"
 
-        self.state_manager.end_session(session_id)
-        self._log(session_id, "complete_stage:completed", f"accuracy={accuracy:.2f}")
+        result_status = "completed" if all_mastered else ("repeat" if accuracy < 0.8 else "continue")
         return {
-            "status": "completed",
+            "status": result_status,
+            "session_id": session_id,
             "accuracy": accuracy,
             "updated_profile": synced_profile.model_dump(mode="json"),
-            "final_report": self._generate_final_report(synced_profile, accuracy),
             "stage_summary": decision.stage_summary,
             "next_strategy": decision.strategy,
+            "can_plan_next_stage": can_plan_next_stage,
+            "session_status": session_status,
+            "all_mastered": all_mastered,
+            "final_report": final_report,
+        }
+
+    async def plan_next_stage(self, session_id: str, adjustment_notes: str | None = None) -> Dict[str, Any]:
+        """
+        按需生成下一阶段（plan-next 接口）：
+        - 基于 complete_stage 后最新的画像，调用 Agent1 的规划链路
+        - 生成真正的 next_stage 并保存到 session state
+        - 不立刻把 next_stage 覆盖到当前 stage_info（留待 start_stage 或前端确认后切换）
+
+        stage_num 选择规则：
+        - accuracy >= 0.8（已掌握本阶段）：stage_num = current_stage + 1
+        - accuracy < 0.8（retreat/repeat）：stage_num = current_stage（重试当前阶段）
+        """
+        profile = UserProfile.model_validate(self._require_profile(session_id))
+        current_stage_info = StageInfo.model_validate(self._require_stage(session_id))
+        self._log(
+            session_id,
+            "plan_next_stage:start",
+            f"current_stage={current_stage_info.stage_num}, accuracy={current_stage_info.accuracy or 0:.2f}",
+        )
+
+        accuracy = current_stage_info.accuracy or 0.0
+        if accuracy >= 0.8:
+            next_stage_num = current_stage_info.stage_num + 1
+            default_notes = f"本阶段（{current_stage_info.stage_num}）已达标，推进到下一阶段"
+        else:
+            next_stage_num = current_stage_info.stage_num
+            default_notes = f"本阶段（{current_stage_info.stage_num}）正确率不足 80%，重试当前阶段"
+
+        user_notes = adjustment_notes.strip() if adjustment_notes and adjustment_notes.strip() else None
+        planning_notes = (
+            f"{default_notes}；{user_notes}" if user_notes else default_notes
+        )
+
+        planned = await self.agent1.generate_stage(StagePlanningInput(
+            session_id=session_id,
+            profile=profile,
+            stage_num=next_stage_num,
+            adjustment_notes=user_notes,
+        ))
+        next_stage = planned.stage
+        self.state_manager.update_next_stage(session_id, next_stage)
+        self.state_manager.update_planning_notes(session_id, planning_notes)
+
+        session_state = self.state_manager.get_session(session_id)
+        session_status = session_state.get("status") if session_state else "active"
+        self._log(
+            session_id,
+            "plan_next_stage:done",
+            f"next_stage_num={next_stage.stage_num}, block={next_stage.block_name}",
+        )
+        return {
+            "status": "planned",
+            "session_id": session_id,
+            "next_stage": next_stage.model_dump(mode="json"),
+            "updated_profile": profile.model_dump(mode="json"),
+            "planning_notes": planning_notes,
+            "session_status": session_status,
         }
 
     async def _review_learning_package(
