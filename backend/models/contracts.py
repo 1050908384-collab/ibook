@@ -21,6 +21,7 @@ class StagePlanningInput(BaseModel):
     session_id: str
     profile: UserProfile
     stage_num: int
+    adjustment_notes: Optional[str] = None
 
 
 class StagePlanningOutput(BaseModel):

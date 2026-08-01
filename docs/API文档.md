@@ -1,8 +1,8 @@
-# AI Agent Trainer API文档
+﻿# AI Agent Trainer API文档
 
 ## 一、基础信息
 
-- **API地址**: `http://localhost:8000/api`
+- **API地址**: `http://localhost:8500/api`
 - **Content-Type**: `application/json`
 - **认证方式**: 无（开发阶段）
 
@@ -274,28 +274,28 @@
 
 ```bash
 # 1. 创建会话
-curl -X POST http://localhost:8000/api/session/
+curl -X POST http://localhost:8500/api/session/
 
 # 2. 初始输入
-curl -X POST http://localhost:8000/api/chat/ \
+curl -X POST http://localhost:8500/api/chat/ \
   -H "Content-Type: application/json" \
   -d '{"session_id": "xxx", "message": "我有PyTorch基础，想学习LoRA微调"}'
 
 # 3. 开始阶段
-curl -X POST http://localhost:8000/api/stage/start \
+curl -X POST http://localhost:8500/api/stage/start \
   -H "Content-Type: application/json" \
   -d '{"session_id": "xxx"}'
 
 # 4. 提问
-curl -X POST http://localhost:8000/api/chat/question \
+curl -X POST http://localhost:8500/api/chat/question \
   -H "Content-Type: application/json" \
   -d '{"session_id": "xxx", "message": "什么是LoRA？"}'
 
 # 5. 提交答案
-curl -X POST http://localhost:8000/api/stage/submit-answer \
+curl -X POST http://localhost:8500/api/stage/submit-answer \
   -H "Content-Type: application/json" \
   -d '{"session_id": "xxx", "question_id": "Q-001", "user_answer": "def"}'
 
 # 6. 完成阶段
-curl -X POST http://localhost:8000/api/stage/complete/xxx
+curl -X POST http://localhost:8500/api/stage/complete/xxx
 ```

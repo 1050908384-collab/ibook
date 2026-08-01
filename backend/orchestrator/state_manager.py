@@ -65,6 +65,32 @@ class StateManager:
         state = self._get(session_id)
         return state.learning_package.model_dump(mode="json") if state and state.learning_package else None
 
+    def update_next_stage(self, session_id: str, next_stage: StageInfo | dict) -> None:
+        state = self.require_session(session_id)
+        state.next_stage = StageInfo.model_validate(next_stage)
+        self._save(state)
+
+    def get_next_stage(self, session_id: str) -> Optional[Dict[str, Any]]:
+        state = self._get(session_id)
+        return state.next_stage.model_dump(mode="json") if state and state.next_stage else None
+
+    def clear_next_stage(self, session_id: str) -> None:
+        """清空已应用过的 next_stage 和 planning_notes，避免重复套用
+        """
+        state = self.require_session(session_id)
+        state.next_stage = None
+        state.next_stage_planning_notes = None
+        self._save(state)
+
+    def update_planning_notes(self, session_id: str, notes: str) -> None:
+        state = self.require_session(session_id)
+        state.next_stage_planning_notes = notes
+        self._save(state)
+
+    def get_planning_notes(self, session_id: str) -> Optional[str]:
+        state = self._get(session_id)
+        return state.next_stage_planning_notes if state else None
+
     def add_qa_record(self, session_id: str, question: str, answer: str, tech_pass: bool = True, quality_pass: bool = True) -> None:
         state = self.require_session(session_id)
         record = {"question": question, "answer": answer, "tech_pass": tech_pass, "quality_pass": quality_pass}
