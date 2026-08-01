@@ -3,6 +3,7 @@
 import json
 import re
 import uuid
+from typing import Any, Dict, List, Optional
 
 try:
     from db.sqlite_client import SQLiteClient
@@ -28,7 +29,7 @@ from models.contracts import (
 from models.material import TestQuestion
 from models.profile import KnowledgeGap, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
-from models.stage import LearningPackage, StageInfo
+from models.stage import Claim, LearningPackage, Source, StageInfo
 from skills import load_skills
 from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
 from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
@@ -414,6 +415,30 @@ class DeterministicContentAgent:
             for question in extracted_questions
             if isinstance(question, dict)
         )
+
+        sources = []
+        if related_docs:
+            for i, doc in enumerate(related_docs[:3]):
+                doc_id = doc.get("doc_id") or doc.get("id") or f"doc_{i}"
+                sources.append(Source(
+                    source_id=f"src_{doc_id}",
+                    source_type="knowledge_doc",
+                    title=doc.get("title", ""),
+                    locator=doc.get("chunk_id") or doc_id,
+                ))
+
+        claims = [
+            Claim(
+                claim_id="clm_001",
+                text=f"{stage.block_name}的核心概念和学习步骤",
+                source_ref=sources[0].source_id if sources else None,
+                section_ref="tutorial:sec_0",
+                claim_type="concept",
+                is_key_technical=bool(sources),
+                confidence=0.8,
+            )
+        ]
+
         package = LearningPackage(
             session_id=request.session_id,
             stage_id=stage.stage_id,
@@ -421,6 +446,8 @@ class DeterministicContentAgent:
             block_name=stage.block_name,
             tutorial=tutorial,
             questions=questions,
+            sources=sources,
+            claims=claims,
         )
         _agent_log("Agent3", f"content:done | docs={len(related_docs)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
@@ -479,6 +506,117 @@ class DeterministicContentAgent:
         suffix = "；".join(suggestions)
         answer = request.answer if not suffix else f"{request.answer}\n\n补充修订：{suffix}"
         return AnswerGenerationOutput(answer=answer)
+
+    async def reply_to_review(
+        self,
+        session_id: str,
+        issues: List[Dict[str, Any]],
+        package: Dict[str, Any],
+        debate_history: Optional[List] = None,
+    ) -> List[Dict[str, Any]]:
+        """对 Agent4 的每条 issue 逐条回复。
+
+        边界规则（协议强制）：
+        - must_fix=true 的 issue：只能 accepted 或 partially_accepted，不能 rejected
+        - rejected 必须带 source_refs 反证，否则无效
+        """
+        replies: List[Dict[str, Any]] = []
+        sources = package.get("sources", [])
+
+        for issue in issues:
+            must_fix = issue.get("must_fix", False)
+            canonical_id = issue.get("canonical_error_id", "")
+
+            if must_fix:
+                disposition = "partially_accepted"
+                reason = f"[{issue.get('error_type', '')}] 根据审核建议修正: {issue.get('suggestion') or issue.get('description', '')}"
+                source_refs = issue.get("source_refs") or [
+                    s.get("source_id") for s in sources[:1] if isinstance(s, dict)
+                ] or [s.source_id for s in sources[:1]]
+                patched_sections = [issue.get("location") or "tutorial:sec_0"]
+            else:
+                disposition = "accepted"
+                reason = f"接受审核意见: {issue.get('description', '')}"
+                source_refs = issue.get("source_refs") or []
+                patched_sections = [issue.get("location") or "tutorial:sec_0"]
+
+            replies.append({
+                "canonical_error_id": canonical_id,
+                "disposition": disposition,
+                "reason": reason,
+                "source_refs": source_refs,
+                "patched_sections": patched_sections,
+            })
+        return replies
+
+    async def modify_package(
+        self,
+        session_id: str,
+        package: Dict[str, Any],
+        errors: Dict[str, Any],
+        accepted_issues: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """修改学习包内容，只处理 accepted/partially_accepted 的 issue.
+
+        - 内容改写 → claim status="revised"
+        - 内容删除 → claim status="dropped"
+        - 新增的 claim → status="active"
+        - 保留 review_trace_id 不变（同一 trace 内迭代）
+        - version 递增
+        """
+        tech_errors = errors.get("tech", [])
+
+        def _get_attr(item: Any, key: str, default: Any = None) -> Any:
+            if hasattr(item, key):
+                return getattr(item, key)
+            if isinstance(item, dict):
+                return item.get(key, default)
+            return default
+
+        if accepted_issues is not None:
+            accepted_canonical_ids = {
+                _get_attr(i, "canonical_error_id") for i in accepted_issues
+            }
+            tech_errors = [
+                e for e in tech_errors
+                if _get_attr(e, "canonical_error_id") in accepted_canonical_ids
+                or not _get_attr(e, "must_fix", False)
+            ]
+        if tech_errors and "tutorial" in package:
+            suggestions = [
+                _get_attr(e, "suggestion") or _get_attr(e, "description", "")
+                for e in tech_errors
+            ]
+            package["tutorial"] += "\n\n## 辩论修订\n\n" + "\n".join(f"- {s}" for s in suggestions)
+
+        # 更新 claims 的 status
+        if "claims" in package and isinstance(package["claims"], list):
+            accepted_claim_ids = {
+                _get_attr(i, "claim_id") for i in (accepted_issues or [])
+                if _get_attr(i, "claim_id")
+            }
+            for claim in package["claims"]:
+                claim_id = _get_attr(claim, "claim_id")
+                if claim_id in accepted_claim_ids:
+                    # 内容改写 → revised
+                    if isinstance(claim, dict):
+                        claim["status"] = "revised"
+                    elif hasattr(claim, "status"):
+                        claim.status = "revised"
+                elif any(
+                    _get_attr(e, "claim_id") == claim_id
+                    for e in tech_errors
+                ):
+                    # 内容删除 → dropped
+                    if isinstance(claim, dict):
+                        claim["status"] = "dropped"
+                    elif hasattr(claim, "status"):
+                        claim.status = "dropped"
+
+        # version 递增
+        if "version" in package:
+            package["version"] = package.get("version", 1) + 1
+        return package
 
 
 class HybridContentAgent(DeterministicContentAgent):
