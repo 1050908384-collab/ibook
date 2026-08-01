@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-08-01T14:46:24.282314+00:00",
+  "seed_files": {
+    "blocks": "data/seeds/knowledge_blocks.json",
+    "subtopics": "data/seeds/knowledge_subtopics.json"
+  },
+  "node_counts": {
+    "total": 83,
+    "blocks": 15,
+    "subtopics": 68
+  },
+  "edge_counts": {
+    "contains": 68,
+    "prerequisite": 75,
+    "progresses_to": 67
+  },
+  "runtime_graph_path": "data/graph_data/runtime/knowledge_graph.gpickle"
+}

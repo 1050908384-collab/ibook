@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from typing import Any, Dict
+import uuid
+from typing import Any, Dict, List, Optional
 
 from agents.deterministic import (
     DeterministicContentAgent,
     DeterministicDiagnosticAgent,
-    DeterministicQualityReviewAgent,
     DeterministicStageDecisionAgent,
-    DeterministicStagePlannerAgent,
     DeterministicTechnicalReviewAgent,
     HybridContentAgent,
     HybridDiagnosticAgent,
-    HybridQualityReviewAgent,
     HybridTechnicalReviewAgent,
 )
 from config import settings
@@ -31,6 +29,9 @@ from models.review import QualityReviewResult, ReviewError, ReviewRound, Technic
 from models.stage import LearningPackage, StageInfo
 from orchestrator.state_manager import StateManager
 
+# 审核辩论协议常量（协议第 7 节）
+MAX_DEBATE_ROUNDS = 2  # 内层答辩复核轮次上限
+
 
 class Harness:
     def __init__(self, state_manager: StateManager | None = None, execution_mode: str | None = None):
@@ -38,11 +39,15 @@ class Harness:
         self.execution_mode = execution_mode or settings.EXECUTION_MODE
         if self.execution_mode not in {"deterministic", "hybrid"}:
             raise ValueError("EXECUTION_MODE must be 'deterministic' or 'hybrid'")
-        self.agent1 = HybridDiagnosticAgent() if self.execution_mode == "hybrid" else DeterministicDiagnosticAgent()
-        self.agent2 = DeterministicStagePlannerAgent()
+        self.agent1 = (
+            HybridDiagnosticAgent(db_client=self.state_manager.db_client)
+            if self.execution_mode == "hybrid"
+            else DeterministicDiagnosticAgent(db_client=self.state_manager.db_client)
+        )
+    
         self.agent3 = HybridContentAgent() if self.execution_mode == "hybrid" else DeterministicContentAgent()
         self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
-        self.agent5 = HybridQualityReviewAgent() if self.execution_mode == "hybrid" else DeterministicQualityReviewAgent()
+        # Agent5已合并至Agent4，质量审核功能已集成
         self.agent6 = DeterministicStageDecisionAgent()
 
     def _log(self, session_id: str, event: str, detail: str = "") -> None:
@@ -62,7 +67,7 @@ class Harness:
             return {"status": "needs_more_info", "questions": diagnostic.followup_questions}
 
         self.state_manager.update_profile(session_id, diagnostic.profile)
-        stage = await self.agent2.run(StagePlanningInput(
+        stage = await self.agent1.generate_stage(StagePlanningInput(
             session_id=session_id,
             profile=diagnostic.profile,
             stage_num=1,
@@ -81,6 +86,14 @@ class Harness:
         }
 
     async def start_stage(self, session_id: str) -> Dict[str, Any]:
+        # 若已通过 plan-next 规划过 next_stage，则在真正启动阶段前把 next_stage 切换为当前 stage_info
+        planned = self.state_manager.get_next_stage(session_id)
+        if planned:
+            self._log(session_id, "start_stage:apply_planned_next_stage", f"planned_stage_num={planned.get('stage_num')}, block={planned.get('block_name')}")
+            self.state_manager.update_stage(session_id, StageInfo.model_validate(planned))
+            # 切换完成后清理 next_stage / planning_notes，避免重复套用
+            self.state_manager.clear_next_stage(session_id)
+
         stage = StageInfo.model_validate(self._require_stage(session_id))
         profile = UserProfile.model_validate(self._require_profile(session_id))
         self._log(session_id, "start_stage:start", f"stage={stage.stage_num}, block={stage.block_name}")
@@ -91,26 +104,48 @@ class Harness:
             stage,
             profile,
         )
-        review_passed = review_history[-1].passed
+        # 从 _review_learning_package 获取审核 trace 信息（P3）
+        review_trace = getattr(self, "_last_review_trace", None) or {}
+        final_status = review_trace.get("final_status", "passed")
+        package_status = review_trace.get("package_status", "approved")
+        # 拍板：needs_human_review 下学习包降级可用（A 方案），不阻塞学习流
+        review_passed = final_status in ("passed", "needs_human_review")
+        needs_human_review = final_status == "needs_human_review"
 
         stage.status = "learning" if review_passed else "pending"
         self.state_manager.update_stage(session_id, stage)
+        if review_passed and stage.subtopic_id:
+            self.state_manager.db_client.set_subtopic_status(
+                session_id=session_id,
+                subtopic_id=stage.subtopic_id,
+                status=0,
+            )
         self.state_manager.update_learning_package(session_id, learning_package)
         self.state_manager.add_interaction(session_id, "stage_review_completed", {
             "stage_id": stage.stage_id,
             "passed": review_passed,
             "iterations": len(review_history),
+            "review_trace_id": review_trace.get("trace_id"),
+            "final_status": final_status,
+            "needs_human_review": needs_human_review,
         })
         self._log(
             session_id,
             "start_stage:done",
-            f"passed={review_passed}, iterations={len(review_history)}",
+            f"passed={review_passed}, iterations={len(review_history)}, "
+            f"final_status={final_status}, needs_human_review={needs_human_review}",
         )
         return {
             "learning_package": learning_package.model_dump(mode="json"),
             "review_passed": review_passed,
             "iterations": len(review_history),
             "review_history": [item.model_dump(mode="json") for item in review_history],
+            # P3：审核辩论协议返回字段（前端可据此展示"待审"标记）
+            "review_trace_id": review_trace.get("trace_id"),
+            "package_status": package_status,
+            "needs_human_review": needs_human_review,
+            "unresolved_issue_count": review_trace.get("unresolved_issue_count", 0),
+            "unresolved_must_fix_count": review_trace.get("unresolved_must_fix_count", 0),
         }
 
     async def handle_question(self, session_id: str, question: str) -> Dict[str, Any]:
@@ -166,6 +201,15 @@ class Harness:
         return {"is_correct": is_correct, "correct_answer": question.correct_answer}
 
     async def complete_stage(self, session_id: str) -> Dict[str, Any]:
+        """
+        complete_stage 新职责（P3 按需阶段规划）：
+        1. 只负责调用 Agent6 决策
+        2. 保存 Agent6 更新后的用户画像 / 个性化数据
+        3. 只有在全部知识盲区都掌握时，才真正结束 session
+        4. 返回 status/session_id/accuracy/updated_profile/stage_summary/
+           next_strategy/can_plan_next_stage/session_status/all_mastered
+        5. 不直接推进当前阶段到下一个阶段编号，不生成 next_stage
+        """
         profile = UserProfile.model_validate(self._require_profile(session_id))
         stage = StageInfo.model_validate(self._require_stage(session_id))
         accuracy = self.state_manager.calculate_accuracy(session_id)
@@ -178,62 +222,120 @@ class Harness:
             qa_history=self.state_manager.get_qa_history(session_id),
             interactions=self.state_manager.get_interactions(session_id),
         ))
+
+        # 更新当前阶段的结果状态（只改当前 stage，不推进编号）
         stage.status = "completed" if accuracy >= 0.8 else "retreat"
         stage.accuracy = accuracy
         stage.strategy_used = decision.strategy
+
+        if stage.subtopic_id:
+            self.state_manager.db_client.set_subtopic_status(
+                session_id=session_id,
+                subtopic_id=stage.subtopic_id,
+                status=1 if accuracy >= 0.8 else 0,
+                mastery_score=1.0 if accuracy >= 0.8 else max(0.4, round(accuracy, 3)),
+                last_accuracy=accuracy,
+                increment_attempt=True,
+            )
+
+        synced_profile = await self._sync_profile_from_subtopic_status(decision.profile)
+        if accuracy >= 0.8:
+            for gap in synced_profile.knowledge_gaps:
+                if gap.skill == stage.gap_skill:
+                    gap.status = "已掌握"
+                    gap.progress = 1.0
         self.state_manager.update_stage(session_id, stage)
-        self.state_manager.update_profile(session_id, decision.profile)
+        self.state_manager.update_profile(session_id, synced_profile)
 
-        if decision.decision == "completed":
+        # 只有全部掌握才真正结束 session
+        all_mastered = all(gap.progress >= 1.0 for gap in synced_profile.knowledge_gaps)
+        if all_mastered:
             self.state_manager.end_session(session_id)
-            self._log(session_id, "complete_stage:completed", f"accuracy={accuracy:.2f}")
-            return {
-                "status": "completed",
-                "accuracy": accuracy,
-                "updated_profile": decision.profile.model_dump(mode="json"),
-                "final_report": self._generate_final_report(decision.profile, accuracy),
-            }
+            self._log(session_id, "complete_stage:all_mastered -> end_session")
+            final_report = self._generate_final_report(synced_profile, accuracy)
+        else:
+            # 未全部掌握：session 保持 active，等用户按需触发 plan-next
+            final_report = None
+            self._log(
+                session_id,
+                f"complete_stage:keep_active | accuracy={accuracy:.2f} | all_mastered=False",
+            )
 
-        # ===== P0: Agent1 重诊断闭环 =====
-        mastered = [g.skill for g in decision.profile.knowledge_gaps if g.status == "已掌握"]
-        remaining = [g.skill for g in decision.profile.knowledge_gaps if g.status != "已掌握"]
-        re_input = (
-            f"我已掌握：{"、".join(mastered) if mastered else "暂时没有"}。"
-            f"我还需要学习：{"、".join(remaining) if remaining else "暂时没有了"}。"
-            f"我刚完成了{stage.block_name}阶段学习，正确率{accuracy:.0%}。"
-        )
-        re_diag = await self.agent1.run(DiagnosticInput(
-            session_id=session_id,
-            user_input=re_input,
-        ))
-        re_profile = re_diag.profile
-        re_profile.confidence_index = decision.profile.confidence_index
-        re_profile.version = decision.profile.version
-        for ng in re_profile.knowledge_gaps:
-            for og in decision.profile.knowledge_gaps:
-                if ng.skill == og.skill:
-                    ng.status = og.status
-                    ng.progress = og.progress
-                    break
-        self.state_manager.update_profile(session_id, re_profile)
+        # 可规划下一阶段的条件：session 仍 active 即可；即便 repeat 场景也允许重新规划
+        session_state = self.state_manager.get_session(session_id)
+        session_status = session_state.get("status") if session_state else "active"
+        can_plan_next_stage = not all_mastered and session_status == "active"
 
-        next_stage_num = stage.stage_num + 1 if decision.decision == "continue" else stage.stage_num
-        next_stage = await self.agent2.run(StagePlanningInput(
-            session_id=session_id,
-            profile=re_profile,
-            stage_num=next_stage_num,
-        ))
-        self.state_manager.update_stage(session_id, next_stage.stage)
+        result_status = "completed" if all_mastered else ("repeat" if accuracy < 0.8 else "continue")
+        return {
+            "status": result_status,
+            "session_id": session_id,
+            "accuracy": accuracy,
+            "updated_profile": synced_profile.model_dump(mode="json"),
+            "stage_summary": decision.stage_summary,
+            "next_strategy": decision.strategy,
+            "can_plan_next_stage": can_plan_next_stage,
+            "session_status": session_status,
+            "all_mastered": all_mastered,
+            "final_report": final_report,
+        }
+
+    async def plan_next_stage(self, session_id: str, adjustment_notes: str | None = None) -> Dict[str, Any]:
+        """
+        按需生成下一阶段（plan-next 接口）：
+        - 基于 complete_stage 后最新的画像，调用 Agent1 的规划链路
+        - 生成真正的 next_stage 并保存到 session state
+        - 不立刻把 next_stage 覆盖到当前 stage_info（留待 start_stage 或前端确认后切换）
+
+        stage_num 选择规则：
+        - accuracy >= 0.8（已掌握本阶段）：stage_num = current_stage + 1
+        - accuracy < 0.8（retreat/repeat）：stage_num = current_stage（重试当前阶段）
+        """
+        profile = UserProfile.model_validate(self._require_profile(session_id))
+        current_stage_info = StageInfo.model_validate(self._require_stage(session_id))
         self._log(
             session_id,
-            "complete_stage:next_stage",
-            f"decision={decision.decision}, next_stage={next_stage.stage.stage_num}",
+            "plan_next_stage:start",
+            f"current_stage={current_stage_info.stage_num}, accuracy={current_stage_info.accuracy or 0:.2f}",
+        )
+
+        accuracy = current_stage_info.accuracy or 0.0
+        if accuracy >= 0.8:
+            next_stage_num = current_stage_info.stage_num + 1
+            default_notes = f"本阶段（{current_stage_info.stage_num}）已达标，推进到下一阶段"
+        else:
+            next_stage_num = current_stage_info.stage_num
+            default_notes = f"本阶段（{current_stage_info.stage_num}）正确率不足 80%，重试当前阶段"
+
+        user_notes = adjustment_notes.strip() if adjustment_notes and adjustment_notes.strip() else None
+        planning_notes = (
+            f"{default_notes}；{user_notes}" if user_notes else default_notes
+        )
+
+        planned = await self.agent1.generate_stage(StagePlanningInput(
+            session_id=session_id,
+            profile=profile,
+            stage_num=next_stage_num,
+            adjustment_notes=user_notes,
+        ))
+        next_stage = planned.stage
+        self.state_manager.update_next_stage(session_id, next_stage)
+        self.state_manager.update_planning_notes(session_id, planning_notes)
+
+        session_state = self.state_manager.get_session(session_id)
+        session_status = session_state.get("status") if session_state else "active"
+        self._log(
+            session_id,
+            "plan_next_stage:done",
+            f"next_stage_num={next_stage.stage_num}, block={next_stage.block_name}",
         )
         return {
-            "status": decision.decision,
-            "accuracy": accuracy,
-            "updated_profile": decision.profile.model_dump(mode="json"),
-            "next_stage": next_stage.stage.model_dump(mode="json"),
+            "status": "planned",
+            "session_id": session_id,
+            "next_stage": next_stage.model_dump(mode="json"),
+            "updated_profile": profile.model_dump(mode="json"),
+            "planning_notes": planning_notes,
+            "session_status": session_status,
         }
 
     async def _review_learning_package(
@@ -243,10 +345,27 @@ class Harness:
         stage: StageInfo,
         profile: UserProfile,
     ) -> tuple[LearningPackage, list[ReviewRound]]:
-        history = []
+        """审核学习包：审核 → 答辩 → 复核 → 裁决（协议第 4~5 节）。
+
+        外层 review iteration（MAX_REVIEW_ITERATIONS）内嵌 debate 子循环。
+        每个 iteration = 一次完整辩论轮（Agent4 审核 → Agent3 答辩 → Agent4 复核 → Orchestrator 裁决 → Agent3 修改）。
+        达到最大轮次仍有未决 must_fix → needs_human_review（非阻塞，package 降级为 provisional）。
+        """
+        history: list[ReviewRound] = []
         current_package = package
+        # 循环外创建一次 trace_id，全程复用（协议：同一 trace 内迭代）
+        trace_id = f"tr_{uuid.uuid4().hex[:16]}"
+        current_package.review_trace_id = trace_id
+        final_status = "in_progress"
+        package_status = "draft"
+
+        # 落库：创建 trace + 首轮 sources + claims（P2）
+        self._persist_trace_init(trace_id, session_id, stage, current_package)
+
         for iteration in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
-            print(f"=== 学习包审核循环：第{iteration}轮 ===")
+            print(f"=== 学习包审核循环：第{iteration}轮（trace={trace_id}）===")
+
+            # 步骤1：Agent4 首轮审核（传 sources/claims/trace_id/round_index）
             reviews = await self._review(ReviewInput(
                 session_id=session_id,
                 target_type="learning_package",
@@ -254,7 +373,64 @@ class Harness:
                 stage=stage,
                 profile=profile,
                 code_examples=current_package.code_examples,
+                trace_id=trace_id,
+                sources=[s.model_dump(mode="json") for s in current_package.sources],
+                claims=[c.model_dump(mode="json") for c in current_package.claims],
+                round_index=iteration,
             ))
+
+            # 如果审核通过，直接结束
+            if reviews.passed:
+                round_result = ReviewRound(
+                    iteration=iteration,
+                    technical=reviews.technical,
+                    quality=reviews.quality,
+                )
+                history.append(round_result)
+                self._record_review_round(session_id, "learning_package", round_result)
+                final_status = "passed"
+                package_status = "approved"
+                print(f"=== 学习包第{iteration}轮审核通过 ===")
+                break
+
+            # 步骤2：Agent3 答辩（对每条 issue 逐条回复）
+            issues = [e.model_dump(mode="json") for e in reviews.technical.errors]
+            package_dict = current_package.model_dump(mode="json")
+            print(f"=== 调用 Agent3.reply_to_review（{len(issues)} 条 issue）===")
+            author_replies = await self.agent3.reply_to_review(
+                session_id, issues, package_dict
+            )
+
+            # 步骤3：Agent4 复核裁决（对 Agent3 的回复做 persist/withdraw/downgrade）
+            print(f"=== 调用 Agent4.rebut ===")
+            verdicts = await self.agent4.rebut(session_id, issues, author_replies)
+            print(f"=== Agent4 复核裁决结果：{verdicts} ===")
+
+            # 步骤4：Orchestrator 裁决 — 根据复核结果分类 issues
+            accepted_issues, unresolved_must_fix_count = self._adjudicate_issues(
+                reviews.technical.errors, verdicts
+            )
+
+            # 落库：issues + round + responses（P2）
+            self._persist_debate_round(
+                trace_id, iteration, reviews.technical.errors,
+                author_replies, verdicts, accepted_issues, unresolved_must_fix_count,
+            )
+
+            # 步骤5：Agent3 修改学习包（只处理被裁决通过/降级的 issue）
+            if accepted_issues:
+                print(f"=== 调用 Agent3.modify_package（{len(accepted_issues)} 条已裁决 issue）===")
+                revised_package_dict = await self.agent3.modify_package(
+                    session_id,
+                    package_dict,
+                    {"tech": reviews.technical.errors, "quality": reviews.quality.errors},
+                    accepted_issues,
+                )
+                current_package = LearningPackage.model_validate(revised_package_dict)
+                current_package.review_trace_id = trace_id
+                # 落库：更新 claims（status 变为 revised/dropped）（P2）
+                self._persist_claims_update(trace_id, current_package)
+
             round_result = ReviewRound(
                 iteration=iteration,
                 technical=reviews.technical,
@@ -262,23 +438,236 @@ class Harness:
             )
             history.append(round_result)
             self._record_review_round(session_id, "learning_package", round_result)
-            if round_result.passed:
-                print(f"=== 学习包第{iteration}轮审核通过 ===")
+
+            # 步骤6：判断是否通过 — 所有 must_fix 已解决则通过
+            if unresolved_must_fix_count == 0 and not reviews.technical.errors:
+                final_status = "passed"
+                package_status = "approved"
+                print(f"=== 学习包第{iteration}轮辩论后通过 ===")
                 break
+
+            if unresolved_must_fix_count == 0:
+                # 无未决 must_fix，但有 minor 问题 → 视为通过
+                final_status = "passed"
+                package_status = "approved"
+                print(f"=== 学习包第{iteration}轮辩论后通过（剩余非 must_fix 问题）===")
+                break
+
             if iteration == settings.MAX_REVIEW_ITERATIONS:
-                print("=== 学习包达到最大审核轮次，保留未通过状态 ===")
+                # 达到最大轮次仍有未决 must_fix → needs_human_review（协议第 7 节）
+                final_status = "needs_human_review"
+                package_status = "provisional"
+                print(
+                    f"=== 学习包达到最大审核轮次，{unresolved_must_fix_count} 个 must_fix 未决，"
+                    f"标记为 needs_human_review（package 降级为 provisional）==="
+                )
                 break
-            print(f"=== Orchestrator汇总第{iteration}轮意见，调用Agent3修改学习包 ===")
-            revised = await self.agent3.revise_learning_package(ContentRevisionInput(
-                session_id=session_id,
-                learning_package=current_package,
-                stage=stage,
-                profile=profile,
-                technical_errors=reviews.technical.errors,
-                quality_errors=reviews.quality.errors,
-            ))
-            current_package = revised.learning_package
+
+            print(f"=== 第{iteration}轮仍有 {unresolved_must_fix_count} 个 must_fix 未决，进入下一轮 ===")
+
+        # 设置 package 最终状态
+        current_package.review_trace_id = trace_id
+        unresolved_count = sum(
+            1 for r in history for e in r.technical.errors if e.must_fix
+        )
+        self._last_review_trace = {
+            "trace_id": trace_id,
+            "final_status": final_status,
+            "package_status": package_status,
+            "unresolved_issue_count": unresolved_count,
+            "unresolved_must_fix_count": unresolved_count,
+        }
+        # 落库：更新 trace 最终状态（P2）
+        self._persist_trace_finalize(trace_id, final_status, package_status, unresolved_count)
         return current_package, history
+
+    def _persist_trace_init(
+        self, trace_id: str, session_id: str, stage: StageInfo, package: LearningPackage
+    ) -> None:
+        """落库：创建 trace + sources + claims（循环外调用一次）。"""
+        try:
+            db = self.state_manager.db_client
+            db.save_review_trace(
+                trace_id=trace_id,
+                session_id=session_id,
+                stage_id=stage.stage_id,
+                target_type="learning_package",
+                package_version=package.version,
+                package_status="draft",
+                review_mode="debate",
+                final_status="in_progress",
+            )
+            db.save_learning_package_sources(
+                trace_id, [s.model_dump(mode="json") for s in package.sources]
+            )
+            db.save_learning_package_claims(
+                trace_id, [c.model_dump(mode="json") for c in package.claims]
+            )
+        except Exception as e:
+            print(f"[Harness] 落库失败（trace init）: {e}")
+
+    def _persist_debate_round(
+        self,
+        trace_id: str,
+        iteration: int,
+        errors: List[ReviewError],
+        author_replies: List[Dict[str, Any]],
+        verdicts: Dict[str, str],
+        accepted_issues: List[Dict[str, Any]],
+        unresolved_must_fix_count: int,
+    ) -> None:
+        """落库：issues + round + responses（每轮辩论后调用）。"""
+        try:
+            db = self.state_manager.db_client
+            round_id = f"rd_{trace_id}_{iteration}"
+
+            # 1. issues（带 opened_in_round_num）
+            issues_for_db = []
+            for e in errors:
+                iss = e.model_dump(mode="json")
+                iss["opened_in_round_num"] = iteration
+                issues_for_db.append(iss)
+            db.save_review_debate_issues(trace_id, issues_for_db)
+
+            # 2. round（开轮并立即关闭）
+            verdict_label = "all_resolved" if unresolved_must_fix_count == 0 else "partial_resolved"
+            db.save_review_debate_round(
+                trace_id=trace_id,
+                round_id=round_id,
+                round_num=iteration,
+                review_iteration=iteration,
+                round_status="closed",
+                orchestrator_verdict=verdict_label,
+                verdict_summary=f"unresolved_must_fix={unresolved_must_fix_count}",
+            )
+
+            # 3. Agent3 答辩 responses
+            author_responses = []
+            for reply in author_replies:
+                cid = reply.get("canonical_error_id", "")
+                author_responses.append({
+                    "round_id": round_id,
+                    "issue_id": f"iss_{trace_id}_{cid}",
+                    "actor": "agent3",
+                    "response_type": "author_reply",
+                    "disposition": reply.get("disposition", "accepted"),
+                    "rationale": reply.get("reason"),
+                    "source_refs": reply.get("source_refs", []),
+                    "patched_sections": reply.get("patched_sections", []),
+                })
+            db.save_review_debate_responses(round_id, author_responses)
+
+            # 4. Agent4 复核 responses
+            reviewer_responses = []
+            for cid, verdict in verdicts.items():
+                reviewer_responses.append({
+                    "round_id": round_id,
+                    "issue_id": f"iss_{trace_id}_{cid}",
+                    "actor": "agent4",
+                    "response_type": "reviewer_verdict",
+                    "disposition": verdict,
+                    "rationale": None,
+                })
+            db.save_review_debate_responses(round_id, reviewer_responses)
+
+            # 5. Orchestrator 裁决 responses + 更新 issue 状态
+            orchestrator_responses = []
+            for iss in accepted_issues:
+                cid = iss.get("canonical_error_id", "")
+                issue_id = f"iss_{trace_id}_{cid}"
+                # withdraw → accepted, downgrade → partially_accepted
+                verdict = verdicts.get(cid, "withdraw")
+                disposition = "accepted" if verdict == "withdraw" else "partially_accepted"
+                orchestrator_responses.append({
+                    "round_id": round_id,
+                    "issue_id": issue_id,
+                    "actor": "orchestrator",
+                    "response_type": "orchestrator_ruling",
+                    "disposition": disposition,
+                    "rationale": f"Agent4 verdict={verdict}",
+                })
+                db.update_review_debate_issue_status(
+                    issue_id=issue_id,
+                    current_status=disposition,
+                    final_disposition=disposition,
+                    resolved_in_round_num=iteration,
+                )
+            db.save_review_debate_responses(round_id, orchestrator_responses)
+
+            # persist 的 issue（persist 且 must_fix）标记为 open
+            for e in errors:
+                cid = e.canonical_error_id or ""
+                if verdicts.get(cid) == "persist":
+                    db.update_review_debate_issue_status(
+                        issue_id=f"iss_{trace_id}_{cid}",
+                        current_status="open",
+                    )
+        except Exception as e:
+            print(f"[Harness] 落库失败（debate round）: {e}")
+
+    def _persist_claims_update(self, trace_id: str, package: LearningPackage) -> None:
+        """落库：modify_package 后更新 claims（status 变为 revised/dropped）。"""
+        try:
+            db = self.state_manager.db_client
+            db.save_learning_package_claims(
+                trace_id, [c.model_dump(mode="json") for c in package.claims]
+            )
+        except Exception as e:
+            print(f"[Harness] 落库失败（claims update）: {e}")
+
+    def _persist_trace_finalize(
+        self, trace_id: str, final_status: str, package_status: str, unresolved_count: int
+    ) -> None:
+        """落库：更新 trace 最终状态（循环结束调用）。"""
+        try:
+            db = self.state_manager.db_client
+            db.update_review_trace_status(
+                trace_id=trace_id,
+                final_status=final_status,
+                package_status=package_status,
+                unresolved_issue_count=unresolved_count,
+                unresolved_must_fix_count=unresolved_count,
+            )
+        except Exception as e:
+            print(f"[Harness] 落库失败（trace finalize）: {e}")
+
+    def _adjudicate_issues(
+        self,
+        errors: List[ReviewError],
+        verdicts: Dict[str, str],
+    ) -> tuple[List[Dict[str, Any]], int]:
+        """Orchestrator 裁决：根据 Agent4 复核结果分类 issues。
+
+        返回 (accepted_issues, unresolved_must_fix_count)：
+        - accepted_issues：Agent3 需要 modify 的 issues（withdraw + downgrade）
+        - unresolved_must_fix_count：仍坚持(persist)且 must_fix=true 的数量
+        """
+        accepted_issues: List[Dict[str, Any]] = []
+        unresolved_must_fix_count = 0
+
+        for err in errors:
+            cid = err.canonical_error_id or ""
+            verdict = verdicts.get(cid, "persist")
+
+            if verdict == "withdraw":
+                # Agent4 撤销该 issue → Agent3 接受处理
+                accepted_issues.append(err.model_dump(mode="json"))
+            elif verdict == "downgrade":
+                # Agent4 降级 → 降级 severity，若原 must_fix 则解除
+                err.severity = "minor" if err.severity == "major" else err.severity
+                if err.must_fix:
+                    err.must_fix = False
+                    err.must_fix_reason = "Agent4 复核降级，解除 must_fix"
+                accepted_issues.append(err.model_dump(mode="json"))
+            else:
+                # persist → Agent4 坚持该 issue
+                if err.must_fix:
+                    # must_fix=True：强制 Agent3 修改，但仍计入未决（进下一轮重新审核）
+                    accepted_issues.append(err.model_dump(mode="json"))
+                    unresolved_must_fix_count += 1
+                # must_fix=False：minor 问题，允许通过，不强制修改
+
+        return accepted_issues, unresolved_must_fix_count
 
     async def _review_answer(
         self,
@@ -327,52 +716,67 @@ class Harness:
         return current_answer, history
 
     async def _review(self, request: ReviewInput) -> ReviewOutput:
-        technical, quality = await asyncio.gather(
-            self.agent4.run(request),
-            self.agent5.run(request),
-            return_exceptions=True,
-        )
-        if isinstance(technical, Exception):
-            print(f"=== Agent4审核异常：{technical} ===")
+        # Agent5已合并至Agent4，统一调用合并后的TechnicalReviewAgent
+        try:
+            technical = await self.agent4.run(request)
+        except Exception as exc:
             technical = TechnicalReviewResult(
                 passed=False,
                 errors=[ReviewError(
                     error_type="review_system_error",
                     severity="critical",
-                    description=f"Agent4技术审核执行失败：{technical}",
-                    suggestion="重新执行技术审核",
+                    description=f"Agent4 review failed: {exc}",
+                    suggestion="重新执行审核，若仍失败请检查合并后的 Agent4、skill 与 tool 链路",
                 )],
+                review_details={"exception": str(exc)},
             )
-        if isinstance(quality, Exception):
-            print(f"=== Agent5审核异常：{quality} ===")
-            quality = QualityReviewResult(
-                passed=False,
-                errors=[ReviewError(
-                    error_type="review_system_error",
-                    severity="critical",
-                    description=f"Agent5教学审核执行失败：{quality}",
-                    suggestion="重新执行教学审核",
-                )],
-            )
+
+        # 质量审核结果已合并在technical结果中
+        quality = QualityReviewResult(
+            passed=technical.passed,
+            errors=technical.errors,
+            scores=getattr(technical, 'scores', None),
+            review_details=getattr(technical, 'review_details', None),
+        )
+
         return ReviewOutput(technical=technical, quality=quality)
 
     def _record_review_round(self, session_id: str, target_type: str, review_round: ReviewRound) -> None:
         print(
             f"=== Orchestrator审核汇总：target={target_type}, round={review_round.iteration}, "
-            f"tech_errors={len(review_round.technical.errors)}, "
-            f"quality_errors={len(review_round.quality.errors)}, passed={review_round.passed} ==="
+            f"merged_errors={len(review_round.technical.errors)}, passed={review_round.passed} ==="
         )
-        for reviewer, errors in (
-            ("Agent4", review_round.technical.errors),
-            ("Agent5", review_round.quality.errors),
-        ):
-            for error in errors:
-                print(f"  {reviewer} [{error.severity}] {error.description} -> {error.suggestion or '未提供建议'}")
+        for error in review_round.technical.errors:
+            print(f"  [合并审核] [{error.severity}] {error.description} -> {error.suggestion or '未提供建议'}")
         self.state_manager.add_interaction(session_id, "review_round", {
             "target_type": target_type,
             **review_round.model_dump(mode="json"),
             "passed": review_round.passed,
         })
+
+    async def _sync_profile_from_subtopic_status(self, profile: UserProfile) -> UserProfile:
+        synced_profile = profile.model_copy(deep=True)
+        for gap in synced_profile.knowledge_gaps:
+            block_info = {}
+            try:
+                block_info = await self.agent1.knowledge_block_query_tool.query_block(gap.skill)
+            except Exception:
+                block_info = {}
+            block_id = block_info.get("block_id")
+            if not block_id:
+                continue
+            summary = self.state_manager.db_client.get_block_status_summary(
+                session_id=synced_profile.session_id,
+                block_id=block_id,
+            )
+            if not summary:
+                continue
+            gap.status = summary["status"]
+            gap.progress = summary["progress"]
+            if not gap.prerequisites:
+                gap.prerequisites = block_info.get("prerequisites", [])
+        synced_profile.version += 1
+        return synced_profile
 
     def _require_profile(self, session_id: str) -> dict:
         profile = self.state_manager.get_profile(session_id)
@@ -441,7 +845,7 @@ class Harness:
         return {
             "goal": profile.goal,
             "accuracy": accuracy,
-            "mastered_skills": [gap.skill for gap in profile.knowledge_gaps if gap.status == "已掌握"],
+            "mastered_skills": [gap.skill for gap in profile.knowledge_gaps if gap.progress >= 1.0],
             "profile_version": profile.version,
         }
 

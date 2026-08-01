@@ -424,29 +424,95 @@ class StrategySelectorTool:
     def __init__(self):
         pass
 
-    async def select_strategy(self, accuracy: float, profile: Dict[str, Any]) -> str:
+    async def select_strategy(
+        self,
+        accuracy: float,
+        profile: Dict[str, Any],
+        iteration_history: Optional[List[Dict[str, Any]]] = None,
+        coverage: Optional[float] = None,
+        max_iterations: int = MAX_ITERATIONS,
+        user_completed: bool = False,
+    ) -> str:
         """
-        根据正确率和画像选择策略标签。
-        
-        简化版接口（兼容 StageDecisionAgent.update_user_data 调用）：
-        - accuracy >= 0.85 且全部已掌握 → "finish"
-        - accuracy >= 0.80 → "advance"
-        - 0.60 <= accuracy < 0.80 → "reinforce"
-        - accuracy < 0.60 → "simplify"
+        根据正确率、画像和迭代历史选择策略标签。
+
+        委托给函数式 strategy_selector() 完整版，激活 iteration_strategy.skill.md
+        规则2（降维→回溯方向切换）和规则3（最大轮次/死循环终止）。
+
+        参数：
+            accuracy: 本阶段正确率（0~1）
+            profile: 当前用户画像
+            iteration_history: 迭代历史列表（可选，用于 backtrack/终止检测）
+            coverage: 知识覆盖率（可选，缺省时自动计算）
+            max_iterations: 最大迭代次数（默认5）
+            user_completed: 用户是否主动完成
+
+        返回：策略标签字符串
+            finish / advance / reinforce / simplify / backtrack
         """
-        accuracy = min(1.0, max(0.0, float(accuracy)))
-        
-        # 检查是否全部掌握
-        knowledge_gaps = profile.get("knowledge_gaps", [])
-        all_mastered = all(
-            g.get("status") == "已掌握" for g in knowledge_gaps
-        ) if knowledge_gaps else True
-        
-        if accuracy >= ACCURACY_FINISH and all_mastered:
-            return STRATEGY_FINISH
-        elif accuracy >= ACCURACY_ADVANCE:
-            return STRATEGY_ADVANCE
-        elif accuracy >= ACCURACY_REINFORCE_LOW:
-            return STRATEGY_REINFORCE
-        else:
+        input_data = {
+            "accuracy": accuracy,
+            "current_profile": profile or {},
+            "iteration_history": iteration_history or [],
+            "max_iterations": max_iterations,
+            "user_completed": user_completed,
+        }
+        if coverage is not None:
+            input_data["coverage"] = coverage
+
+        result = strategy_selector(input_data)
+        if result.get("status") != "success" or not result.get("data"):
+            # 异常兜底：回退到简化版阈值判定
+            accuracy = min(1.0, max(0.0, float(accuracy)))
+            knowledge_gaps = (profile or {}).get("knowledge_gaps", [])
+            all_mastered = all(
+                g.get("status") == "已掌握" for g in knowledge_gaps
+            ) if knowledge_gaps else True
+            if accuracy >= ACCURACY_FINISH and all_mastered:
+                return STRATEGY_FINISH
+            elif accuracy >= ACCURACY_ADVANCE:
+                return STRATEGY_ADVANCE
+            elif accuracy >= ACCURACY_REINFORCE_LOW:
+                return STRATEGY_REINFORCE
             return STRATEGY_SIMPLIFY
+
+        return result["data"].get("strategy_label", STRATEGY_REINFORCE)
+
+    async def select_strategy_full(
+        self,
+        accuracy: float,
+        profile: Dict[str, Any],
+        iteration_history: Optional[List[Dict[str, Any]]] = None,
+        coverage: Optional[float] = None,
+        max_iterations: int = MAX_ITERATIONS,
+        user_completed: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        完整版策略选择，返回包含 strategy_label/decision/backtrack_target/should_terminate
+        等全部字段的 dict。供需要回溯目标或终止信号的调用方使用。
+        """
+        input_data = {
+            "accuracy": accuracy,
+            "current_profile": profile or {},
+            "iteration_history": iteration_history or [],
+            "max_iterations": max_iterations,
+            "user_completed": user_completed,
+        }
+        if coverage is not None:
+            input_data["coverage"] = coverage
+
+        result = strategy_selector(input_data)
+        if result.get("status") != "success" or not result.get("data"):
+            # 异常兜底
+            label = await self.select_strategy(
+                accuracy, profile, iteration_history, coverage, max_iterations, user_completed
+            )
+            return {
+                "strategy_label": label,
+                "reason": "函数式接口异常，回退简化判定",
+                "should_terminate": False,
+                "decision": DECISION_REPEAT,
+                "backtrack_target": None,
+                "iteration_reset": False,
+            }
+        return result["data"]

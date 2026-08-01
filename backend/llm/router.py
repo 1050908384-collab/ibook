@@ -26,9 +26,10 @@ class TaskRouter:
                 "temperature": 0.2,
                 "max_tokens": 2048
             },
+            # quality_review_agent 已合并至 technical_review_agent
             "quality_review_agent": {
                 "model": "deepseek-r1:7b",
-                "temperature": 0.4,
+                "temperature": 0.2,
                 "max_tokens": 2048
             },
             "stage_decision_agent": {

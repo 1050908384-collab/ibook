@@ -390,15 +390,18 @@ def profile_update(input_data: dict, config: dict = None) -> dict:
         wt_desc = f"Wt取{sum(wt_values)/len(wt_values):.2f}" if wt_values else "Wt=1.0"
         we_desc = f"We={_compute_we(emotion_score):.1f}"
         emotion_desc = "情绪数据缺失，We=1.0" if emotion_score is None else f"情绪={emotion_score}"
-        
+
         if sample_count < 3:
             wt_desc += "（样本量不足<3，Wt采用fallback=1.0）"
-        
+
+        # 耗时比（除零保护）
+        time_ratio = (total_time_spent / total_expected_time) if total_expected_time > 0 else 0.0
+
         update_rationale = (
             f"BKT计算：{'; '.join(rationale_parts)}。"
             f"修正因子：{wt_desc}、{we_desc}（{emotion_desc}）。"
             f"P_corrected汇总={overall_mastery}，"
-            f"节奏={rhythm}（耗时比={total_time_spent/total_expected_time:.1f}），"
+            f"节奏={rhythm}（耗时比={time_ratio:.1f}），"
             f"信心指数={confidence}，"
             f"困惑标记={confusion_tags}。"
             f"建议下一策略：{next_strategy}。"
@@ -507,21 +510,36 @@ class ProfileUpdateTool:
 
     async def update_gaps(self, gaps: List[Dict[str, Any]], accuracy: float) -> List[Dict[str, Any]]:
         """
-        更新知识点掌握状态（简化版）。
-        基于 accuracy 直接映射（与 BKT 结果兼容）：
-        - accuracy >= 0.8 → 已掌握, progress=1.0
-        - accuracy < 0.8  → 部分掌握/学习中, progress=max(progress, accuracy)
+        更新知识点掌握状态。
+        逐知识点基于自身掌握进度（progress + correct/total）计算，不使用全局accuracy统一覆盖。
+        判定规则（与 profile_update() 的 _map_status 阈值统一对齐）：
+        - corrected >= MASTERED_THRESHOLD(0.8) → 已掌握
+        - LEARNING_LOW(0.4) <= corrected < 0.8 → 学习中
+        - corrected < 0.4 → 未掌握
         """
         updated = []
         for gap in gaps:
             gap_copy = dict(gap)
-            if accuracy >= 0.8:
-                gap_copy["status"] = "已掌握"
-                gap_copy["progress"] = 1.0
+            # 优先读取该知识点自身的答题统计
+            total_answered = int(gap_copy.get("total_answered") or 0)
+            correct_count = int(gap_copy.get("correct_count") or 0)
+            current_progress = float(gap_copy.get("progress") or 0.0)
+
+            if total_answered > 0:
+                skill_acc = correct_count / total_answered
+                # 带学习跃迁的近似更新（简化版BKT）
+                if skill_acc >= 0.67:
+                    corrected = min(1.0, max(current_progress, skill_acc) + 0.05 * total_answered / max(1, total_answered + 3))
+                else:
+                    corrected = max(0.0, (current_progress + skill_acc) / 2)
             else:
-                current_progress = gap_copy.get("progress", 0.0)
-                gap_copy["status"] = "学习中" if accuracy >= 0.4 else "未掌握"
-                gap_copy["progress"] = max(current_progress, accuracy)
+                # 无答题记录：使用全局accuracy做弱提示（加权，不强行覆盖）
+                corrected = (current_progress * 0.6 + accuracy * 0.4) if current_progress < accuracy else current_progress
+
+            # 逐知识点状态映射（复用 _map_status 的统一阈值常量，消除两套阈值分歧）
+            status, progress = _map_status(corrected)
+            gap_copy["status"] = status
+            gap_copy["progress"] = progress
             updated.append(gap_copy)
         return updated
 

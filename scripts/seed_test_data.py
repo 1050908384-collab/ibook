@@ -1,10 +1,14 @@
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from db.sqlite_client import SQLiteClient
 from sqlalchemy import text
 import json
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
+sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, BACKEND_DIR)
+
+from backend.db.sqlite_client import SQLiteClient
 
 def seed_test_data():
     print("Seeding test data...")

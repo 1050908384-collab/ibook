@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8000/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8500/api';
 
 export const apiClient = {
   chat: async (data: { message: string; session_id?: string }) => {

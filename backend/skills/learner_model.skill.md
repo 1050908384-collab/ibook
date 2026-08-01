@@ -276,3 +276,10 @@
 ## 7. 版本信息
 - 版本：v3.2，更新日期：2026-07-25
 - 变更记录：能力描述明确3个适用场景（难度匹配度/风格适配度/环境可行性）；核心方法论重构为3步（识别用户类型→映射基准→比对输出匹配度）；规则2难度适配映射新增代码行数维度（≤50/50-150/≥150行）；规则3风格适配规则新增匹配度计算方式；新增规则4环境容忍度规则（Docker→conda、GPU→CPU、多卡→单卡梯度累积替代方案库）；输入输出规范新增user_type/difficulty_match(0-1)/style_match(0-1)/environment_fit(0/1)完整JSON示例；异常处理新增混合型用户加权平均评估场景；附录A补充3个学习者风格理论；附录B新增工程师型vs学生型同一内容对比评估示例。**v3.1变更**：新增"审核循环≥3次"异常处置路径。**v3.2变更**：新增规则5代码能力画像评估（error_frequency_map、error_type_diversity、code_proficiency_level、root_cause_tendency四维评估）；输出新增 code_skill_score 和 code_skill_profile；明确代码能力评估对难度匹配度和环境可行性评分的影响规则；适配 Agent4 代码错误分析新功能，为 Agent5 和 Agent6 提供用户代码能力特征数据
+
+
+## 7. 2026-07-30 增补
+
+- 用户画像继续参与候选项排序
+- 但知识点掌握状态不再直接存放在画像里做唯一真相
+- 当前真实状态来源：`subtopic_status` 与 `knowledge_subtopics.prerequisites`

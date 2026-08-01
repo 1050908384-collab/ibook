@@ -1,12 +1,12 @@
 # SKILL名称：stage_planning
 
 ## 1. 能力描述
-- 功能：从学习者画像中选取**下一个待学知识盲区**，生成单阶段学习目录信息（StageInfo）。对齐 Agent2 `DeterministicStagePlannerAgent` 的确定性实现——取首个未掌握 gap，用 uuid5 派生确定性 ID，estimated_hours 固定 2.0
+- 功能：从学习者画像中选取**下一个待学知识盲区**，生成单阶段学习目录信息（StageInfo）。对齐 Agent1 `DeterministicDiagnosticAgent.generate_stage` 的确定性实现——取首个未掌握 gap，用 uuid5 派生确定性 ID，estimated_hours 固定 2.0
 - 适用场景（3个）：
-  1. **规划下一阶段**：阶段开始时由 `DeterministicStagePlannerAgent.run` 触发，从 profile.knowledge_gaps 选取下一个待学盲区
+  1. **规划下一阶段**：阶段开始时由 `DeterministicDiagnosticAgent.generate_stage` 触发，从 profile.knowledge_gaps 选取下一个待学盲区
   2. **回溯后重规划**：Agent6 触发回溯策略后，重新规划前置知识阶段
   3. **结业判定前置**：无未掌握盲区时抛出异常，由上层判定结业
-- **休眠状态说明**：当前新框架 `DeterministicStagePlannerAgent` 为纯确定性实现，未通过 `load_skills` 加载本SKILL（逻辑内联于代码），本SKILL内容已对齐其行为，作为休眠方法论备查
+- **休眠状态说明**：当前新框架 `DeterministicDiagnosticAgent.generate_stage` 为纯确定性实现，未通过 `load_skills` 加载本SKILL（逻辑内联于代码），本SKILL内容已对齐其行为，作为休眠方法论备查
 - 前置依赖：
   - 学习者画像 UserProfile（`knowledge_gaps` 列表、`stage_num`）
   - 会话标识 `session_id`（用于 uuid5 派生）
@@ -22,7 +22,7 @@
 ### 规则1：阶段选取规范
 | 检查项 | 要求 | 违规处置 |
 |:---|:---|:---|
-| 单阶段输出 | 仅输出1个学习阶段，禁止一次生成多阶段路线 | 违反则不符合 Agent2 契约 |
+| 单阶段输出 | 仅输出1个学习阶段，禁止一次生成多阶段路线 | 违反则不符合 Agent1 契约 |
 | 盲区选取顺序 | 取 knowledge_gaps 中首个 `status ≠ "已掌握"` 的 gap | 全部已掌握时抛异常 |
 | gap_skill 来源 | `stage.gap_skill = gap.skill` | 不生成临时技能名 |
 
@@ -140,4 +140,15 @@
 
 ## 7. 版本信息
 - 版本：v3.0，更新日期：2026-07-23
-- 变更记录：能力描述明确3个适用场景与休眠状态说明（对齐 `DeterministicStagePlannerAgent` 行为）；核心方法论重构为4步（选取盲区→派生ID→填充字段→无盲区处理）；规则1新增阶段选取规范表；规则2新增确定性ID派生表（含uuid5幂等性说明）；规则3新增阶段字段规范表（estimated_hours固定2.0）；规则4明确 StageInfo 契约对齐；输入输出规范补完整 StagePlanningOutput JSON示例；异常处理扩展为4场景表格；附录A补4个阶段规划理论（Bloom掌握学习/Vygotsky ZPD/逆向设计/知识空间理论）；附录B新增2个完整场景（正常规划+无盲区结业）
+- 变更记录：能力描述明确3个适用场景与休眠状态说明（对齐 `DeterministicDiagnosticAgent.generate_stage` 行为）；核心方法论重构为4步（选取盲区→派生ID→填充字段→无盲区处理）；规则1新增阶段选取规范表；规则2新增确定性ID派生表（含uuid5幂等性说明）；规则3新增阶段字段规范表（estimated_hours固定2.0）；规则4明确 StageInfo 契约对齐；输入输出规范补完整 StagePlanningOutput JSON示例；异常处理扩展为4场景表格；附录A补4个阶段规划理论（Bloom掌握学习/Vygotsky ZPD/逆向设计/知识空间理论）；附录B新增2个完整场景（正常规划+无盲区结业）
+
+
+## 8. 2026-07-30 增补
+
+- 当前项目落地已切到知识点级 `DAG + mastery state`
+- Agent1.generate_stage 每次只做三步：
+  1. 找出所有 `status = -1` 的知识点
+  2. 过滤出前置知识点都已 `= 1` 的候选项
+  3. 从候选项中选一个最适合当前用户的知识点
+- `knowledge_gaps` 保留，但只作为板块级汇总参考
+- 当前版本不做回退；失败时重复当前知识点

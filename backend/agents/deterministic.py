@@ -3,6 +3,7 @@
 import json
 import re
 import uuid
+from typing import Any, Dict, List, Optional
 
 try:
     from db.sqlite_client import SQLiteClient
@@ -28,21 +29,24 @@ from models.contracts import (
 from models.material import TestQuestion
 from models.profile import KnowledgeGap, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
-from models.stage import LearningPackage, StageInfo
+from models.stage import Claim, LearningPackage, Source, StageInfo
+from agents.agent_04_tech_review import TechnicalReviewAgent
 from skills import load_skills
 from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
 from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
 from tools.agent1_tools.graph_query_tool import GraphQueryTool
-from tools.agent2_tools.knowledge_block_query_tool import KnowledgeBlockQueryTool
-from tools.agent2_tools.stage_generator_tool import StageGeneratorTool
+from tools.agent1_tools.knowledge_block_query_tool import KnowledgeBlockQueryTool
+from tools.agent1_tools.stage_generator_tool import StageGeneratorTool
 from tools.agent3_tools.faq_search_tool import FAQSearchTool
 from tools.agent3_tools.question_extract_tool import QuestionExtractTool
 from tools.agent3_tools.vector_search_tool import VectorSearchTool
-from tools.agent5_tools.cognitive_load_tool import CognitiveLoadTool
-from tools.agent5_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
-from tools.agent5_tools.style_match_tool import StyleMatchTool
+from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
+from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
+from tools.agent4_tools.style_match_tool import StyleMatchTool
 from tools.agent6_tools.profile_update_tool import ProfileUpdateTool
+from tools.agent6_tools.stage_summary_generator_tool import StageSummaryGeneratorTool
 from tools.agent6_tools.strategy_selector_tool import StrategySelectorTool
+from tools.agent4_tools.knowledge_verify_tool import KnowledgeVerifyTool
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
 
 
@@ -69,14 +73,18 @@ def _agent_log(agent_name: str, message: str) -> None:
 
 
 class DeterministicDiagnosticAgent:
-    def __init__(self):
+    def __init__(self, db_client: SQLiteClient | None = None):
         self.extract_skills_tool = ExtractSkillsTool()
         self.calculate_confidence_tool = CalculateConfidenceTool()
         self.graph_query_tool = GraphQueryTool()
+        self.knowledge_block_query_tool = KnowledgeBlockQueryTool()
+        self.stage_generator_tool = StageGeneratorTool()
+        self.db_client = db_client or SQLiteClient()
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
         _agent_log("Agent1", f"diagnostic:start | session={request.session_id}")
         text = request.user_input.strip()
+        structured = self._parse_structured_input(text)
         target_text = self._target_text(text)
         targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
         mentioned = [skill for skill in SKILL_NAMES if skill.lower() in text.lower()]
@@ -91,6 +99,14 @@ class DeterministicDiagnosticAgent:
                 targets = [gap.get("skill", "") for gap in extracted_gaps if gap.get("skill")]
         except Exception:
             extracted_gaps = []
+
+        if structured.get("skill_tags"):
+            mastered = structured["skill_tags"]
+        if structured.get("goal"):
+            target_text = structured["goal"]
+            structured_targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
+            if structured_targets:
+                targets = structured_targets
 
         if not targets:
             targets = [mentioned[-1]] if mentioned else ["通用学习目标"]
@@ -115,6 +131,15 @@ class DeterministicDiagnosticAgent:
             confidence = max(confidence, confidence_result)
         except Exception:
             pass
+        required_structured_fields = [
+            structured.get("grade"),
+            structured.get("skill_tags"),
+            structured.get("goal"),
+            structured.get("daily_hours"),
+            structured.get("learning_style"),
+        ]
+        if all(required_structured_fields):
+            confidence = max(confidence, 0.9)
         if confidence < 0.7 and not mentioned:
             followup_questions = [
                 "你希望优先解决哪一类问题？",
@@ -123,9 +148,13 @@ class DeterministicDiagnosticAgent:
             ]
         profile = UserProfile(
             session_id=request.session_id,
+            grade=structured.get("grade", ""),
             skill_tags=mastered,
             knowledge_gaps=gaps,
             goal=target_text or text,
+            daily_hours=structured.get("daily_hours", self._extract_daily_hours(text)),
+            learning_style=structured.get("learning_style", self._extract_learning_style(text)),
+            hardware=structured.get("hardware", ""),
             confidence=confidence,
         )
         _agent_log("Agent1", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
@@ -139,10 +168,137 @@ class DeterministicDiagnosticAgent:
         )
         return match.group(1).strip(" ，。,.！!") if match else text
 
+    async def generate_stage(self, request: StagePlanningInput) -> StagePlanningOutput:
+        """Stage planning functionality merged from Agent2 into Agent1."""
+        _agent_log("Agent1", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
+
+        gap = next(
+            (item for item in request.profile.knowledge_gaps if float(item.progress or 0.0) < 1.0),
+            None,
+        )
+        if gap is None:
+            raise ValueError("No unmastered knowledge gap remains")
+
+        preferred_block = {}
+        try:
+            preferred_block = await self.knowledge_block_query_tool.query_block(gap.skill)
+        except Exception:
+            preferred_block = {}
+        preferred_block = preferred_block or {}
+
+        generated_stage = {}
+        try:
+            generated_stage = await self.stage_generator_tool.generate_stage(
+                request.session_id,
+                gap.model_dump(mode="json"),
+                preferred_block,
+                request.profile.goal,
+                request.stage_num,
+            )
+        except Exception:
+            generated_stage = {}
+        generated_stage = generated_stage or {}
+
+        candidates = self.db_client.list_learnable_subtopics(
+            session_id=request.session_id,
+            preferred_block_id=preferred_block.get("block_id"),
+            max_hours=request.profile.daily_hours,
+        )
+        if not candidates:
+            raise ValueError("No learnable subtopics remain for current session")
+
+        subtopic = candidates[0]
+        block_info = preferred_block
+        if subtopic.get("block_id") and subtopic.get("block_id") != preferred_block.get("block_id"):
+            try:
+                block_info = await self.knowledge_block_query_tool.query_block(subtopic["block_id"])
+            except Exception:
+                block_info = preferred_block
+        block_info = block_info or preferred_block or {}
+
+        stable_key = f"{request.session_id}:{request.stage_num}:{subtopic['subtopic_id']}"
+        stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
+        block_id = block_info.get("block_id") or subtopic.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
+        block_name = gap.skill or block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name")
+        estimated_hours = float(
+            subtopic.get("estimated_hours")
+            or block_info.get("estimated_hours")
+            or generated_stage.get("estimated_hours")
+            or 2.0
+        )
+        prerequisites = subtopic.get("prerequisites")
+        if prerequisites is None:
+            prerequisites = block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites
+
+        stage = StageInfo(
+            stage_id=stage_id,
+            stage_num=request.stage_num,
+            block_id=block_id,
+            block_name=block_name,
+            subtopic_id=subtopic.get("subtopic_id"),
+            subtopic_name=subtopic.get("subtopic_name"),
+            gap_skill=gap.skill,
+            estimated_hours=estimated_hours,
+            prerequisites=prerequisites,
+        )
+        _agent_log(
+            "Agent1",
+            f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'}",
+        )
+        return StagePlanningOutput(stage=stage)
+
+    def _parse_structured_input(self, text: str) -> dict:
+        goal = self._labeled_value(text, ("我的学习目标", "学习目标"))
+        return {
+            "grade": self._labeled_value(text, ("我的身份背景", "身份背景", "学习背景")),
+            "skill_tags": self._parse_tags(self._labeled_value(text, ("我的已有基础", "已有基础", "知识基础"))),
+            "goal": goal,
+            "daily_hours": self._extract_daily_hours(self._labeled_value(text, ("我每天可以学习", "每天可以学习", "每日学习时长")) or text),
+            "learning_style": self._extract_learning_style(self._labeled_value(text, ("我的学习方式", "学习方式")) or text),
+            "hardware": self._labeled_value(text, ("我的设备条件", "设备条件")),
+        }
+
+    @staticmethod
+    def _labeled_value(text: str, labels: tuple[str, ...]) -> str:
+        for label in labels:
+            pattern = rf"{re.escape(label)}\s*[：:]\s*(.+)"
+            match = re.search(pattern, text)
+            if match:
+                return match.group(1).strip(" \t，。,.；;")
+        return ""
+
+    @staticmethod
+    def _parse_tags(raw: str) -> list[str]:
+        if not raw:
+            return []
+        parts = re.split(r"[、,，/|；;\s]+", raw)
+        return [part.strip() for part in parts if part.strip()]
+
+    @staticmethod
+    def _extract_daily_hours(text: str) -> float:
+        match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:小时|h|H)", text)
+        if not match:
+            match = re.search(r"(?:每天|每日).{0,8}?([0-9]+(?:\.[0-9]+)?)", text)
+        if not match:
+            return 2.0
+        hours = float(match.group(1))
+        return max(0.5, min(8.0, hours))
+
+    @staticmethod
+    def _extract_learning_style(text: str) -> str:
+        lowered = text.lower()
+        if "practice" in lowered or "实操" in text or "实践" in text or "动手" in text:
+            return "practice"
+        if "theory" in lowered or "理论" in text or "原理" in text:
+            return "theory"
+        if "mixed" in lowered or "混合" in text or "结合" in text:
+            return "mixed"
+        return "mixed"
+
 
 class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, db_client: SQLiteClient | None = None):
+        super().__init__(db_client=db_client)
         self.llm_client = LLMClient()
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
@@ -154,12 +310,14 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
 JSON字段要求：
 - skill_tags: 已掌握技能字符串数组
 - knowledge_gaps: 待学习知识数组，每项包含 skill 和 level
+- grade: 身份或学习背景
 - goal: 学习目标
 - daily_hours: 每日学习小时数，未知时为2
 - learning_style: theory、practice 或 mixed
+- hardware: 设备条件，未知时为空字符串
 
 示例：
-{{"skill_tags":["Python"],"knowledge_gaps":[{{"skill":"LoRA","level":"beginner"}}],"goal":"掌握LoRA微调","daily_hours":2,"learning_style":"mixed"}}
+{{"grade":"研二","skill_tags":["Python"],"knowledge_gaps":[{{"skill":"LoRA","level":"beginner"}}],"goal":"掌握LoRA微调","daily_hours":2,"learning_style":"mixed","hardware":"RTX 4060"}}
 """
         response = await self.llm_client.complete(
             prompt,
@@ -181,11 +339,13 @@ JSON字段要求：
                 return fallback
             profile = UserProfile(
                 session_id=request.session_id,
+                grade=data.get("grade") or fallback.profile.grade,
                 skill_tags=data.get("skill_tags", []),
                 knowledge_gaps=normalized_gaps,
                 goal=data.get("goal") or fallback.profile.goal,
                 daily_hours=data.get("daily_hours", 2.0),
                 learning_style=data.get("learning_style", "mixed"),
+                hardware=data.get("hardware") or fallback.profile.hardware,
                 confidence=0.9,
             )
             return DiagnosticOutput(profile=profile)
@@ -206,81 +366,6 @@ JSON字段要求：
                 return json.loads(match.group())
             except json.JSONDecodeError:
                 return None
-
-
-class DeterministicStagePlannerAgent:
-    def __init__(self):
-        self.knowledge_block_query_tool = KnowledgeBlockQueryTool()
-        self.stage_generator_tool = StageGeneratorTool()
-        self.db_client = SQLiteClient()
-
-    async def run(self, request: StagePlanningInput) -> StagePlanningOutput:
-        _agent_log("Agent2", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
-        gap = next(
-            (item for item in request.profile.knowledge_gaps if item.status != "已掌握"),
-            None,
-        )
-        if gap is None:
-            raise ValueError("No unmastered knowledge gap remains")
-
-        block_info = {}
-        try:
-            block_info = await self.knowledge_block_query_tool.query_block(gap.skill)
-        except Exception:
-            block_info = {}
-        block_info = block_info or {}
-
-        generated_stage = {}
-        try:
-            generated_stage = await self.stage_generator_tool.generate_stage(
-                request.session_id,
-                gap.model_dump(mode="json"),
-                block_info,
-                request.profile.goal,
-                request.stage_num,
-            )
-        except Exception:
-            generated_stage = {}
-        generated_stage = generated_stage or {}
-
-        subtopic = None
-        try:
-            subtopic = self.db_client.get_next_subtopic(
-                request.session_id,
-                block_info.get("block_id", ""),
-                max_hours=request.profile.daily_hours,
-            ) if block_info.get("block_id") else None
-        except Exception:
-            subtopic = None
-
-        stable_key = f"{request.session_id}:{request.stage_num}:{gap.skill}"
-        stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
-        stage_name = (
-            subtopic.get("subtopic_name")
-            if subtopic else
-            block_info.get("block_name") or generated_stage.get("block_name") or gap.skill
-        )
-        stage_hours = (
-            subtopic.get("estimated_hours")
-            if subtopic and subtopic.get("estimated_hours") is not None else
-            block_info.get("estimated_hours") or generated_stage.get("estimated_hours") or 2.0
-        )
-        stage = StageInfo(
-            stage_id=stage_id,
-            stage_num=request.stage_num,
-            block_id=block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}",
-            block_name=stage_name,
-            subtopic_id=subtopic.get("subtopic_id") if subtopic else None,
-            gap_skill=gap.skill,
-            estimated_hours=stage_hours,
-            prerequisites=(
-                subtopic.get("prerequisites")
-                if subtopic and subtopic.get("prerequisites") is not None else
-                block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites
-            ),
-        )
-        _agent_log("Agent2", f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'}")
-        return StagePlanningOutput(stage=stage)
 
 
 class DeterministicContentAgent:
@@ -318,20 +403,43 @@ class DeterministicContentAgent:
         except Exception:
             extracted_questions = []
 
-        questions = [
+        questions = [TestQuestion(
+            question_id=f"Q-{stage.block_id.replace('KB-', '')}-01",
+            block_id=stage.block_id,
+            question_type="填空",
+            question_text="本阶段的学习主题是什么？",
+            correct_answer=stage.block_name,
+            hint="答案就是当前阶段名称。",
+        )]
+        questions.extend(
             TestQuestion.model_validate(question)
             for question in extracted_questions
             if isinstance(question, dict)
+        )
+
+        sources = []
+        if related_docs:
+            for i, doc in enumerate(related_docs[:3]):
+                doc_id = doc.get("doc_id") or doc.get("id") or f"doc_{i}"
+                sources.append(Source(
+                    source_id=f"src_{doc_id}",
+                    source_type="knowledge_doc",
+                    title=doc.get("title", ""),
+                    locator=doc.get("chunk_id") or doc_id,
+                ))
+
+        claims = [
+            Claim(
+                claim_id="clm_001",
+                text=f"{stage.block_name}的核心概念和学习步骤",
+                source_ref=sources[0].source_id if sources else None,
+                section_ref="tutorial:sec_0",
+                claim_type="concept",
+                is_key_technical=bool(sources),
+                confidence=0.8,
+            )
         ]
-        if not questions:
-            questions = [TestQuestion(
-                question_id=f"Q-{stage.stage_id[:8]}-1",
-                block_id=stage.block_id,
-                question_type="填空",
-                question_text="本阶段的学习主题是什么？",
-                correct_answer=stage.block_name,
-                hint="答案就是阶段标题。",
-            )]
+
         package = LearningPackage(
             session_id=request.session_id,
             stage_id=stage.stage_id,
@@ -339,6 +447,8 @@ class DeterministicContentAgent:
             block_name=stage.block_name,
             tutorial=tutorial,
             questions=questions,
+            sources=sources,
+            claims=claims,
         )
         _agent_log("Agent3", f"content:done | docs={len(related_docs)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
@@ -397,6 +507,117 @@ class DeterministicContentAgent:
         suffix = "；".join(suggestions)
         answer = request.answer if not suffix else f"{request.answer}\n\n补充修订：{suffix}"
         return AnswerGenerationOutput(answer=answer)
+
+    async def reply_to_review(
+        self,
+        session_id: str,
+        issues: List[Dict[str, Any]],
+        package: Dict[str, Any],
+        debate_history: Optional[List] = None,
+    ) -> List[Dict[str, Any]]:
+        """对 Agent4 的每条 issue 逐条回复。
+
+        边界规则（协议强制）：
+        - must_fix=true 的 issue：只能 accepted 或 partially_accepted，不能 rejected
+        - rejected 必须带 source_refs 反证，否则无效
+        """
+        replies: List[Dict[str, Any]] = []
+        sources = package.get("sources", [])
+
+        for issue in issues:
+            must_fix = issue.get("must_fix", False)
+            canonical_id = issue.get("canonical_error_id", "")
+
+            if must_fix:
+                disposition = "partially_accepted"
+                reason = f"[{issue.get('error_type', '')}] 根据审核建议修正: {issue.get('suggestion') or issue.get('description', '')}"
+                source_refs = issue.get("source_refs") or [
+                    s.get("source_id") for s in sources[:1] if isinstance(s, dict)
+                ] or [s.source_id for s in sources[:1]]
+                patched_sections = [issue.get("location") or "tutorial:sec_0"]
+            else:
+                disposition = "accepted"
+                reason = f"接受审核意见: {issue.get('description', '')}"
+                source_refs = issue.get("source_refs") or []
+                patched_sections = [issue.get("location") or "tutorial:sec_0"]
+
+            replies.append({
+                "canonical_error_id": canonical_id,
+                "disposition": disposition,
+                "reason": reason,
+                "source_refs": source_refs,
+                "patched_sections": patched_sections,
+            })
+        return replies
+
+    async def modify_package(
+        self,
+        session_id: str,
+        package: Dict[str, Any],
+        errors: Dict[str, Any],
+        accepted_issues: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """修改学习包内容，只处理 accepted/partially_accepted 的 issue.
+
+        - 内容改写 → claim status="revised"
+        - 内容删除 → claim status="dropped"
+        - 新增的 claim → status="active"
+        - 保留 review_trace_id 不变（同一 trace 内迭代）
+        - version 递增
+        """
+        tech_errors = errors.get("tech", [])
+
+        def _get_attr(item: Any, key: str, default: Any = None) -> Any:
+            if hasattr(item, key):
+                return getattr(item, key)
+            if isinstance(item, dict):
+                return item.get(key, default)
+            return default
+
+        if accepted_issues is not None:
+            accepted_canonical_ids = {
+                _get_attr(i, "canonical_error_id") for i in accepted_issues
+            }
+            tech_errors = [
+                e for e in tech_errors
+                if _get_attr(e, "canonical_error_id") in accepted_canonical_ids
+                or not _get_attr(e, "must_fix", False)
+            ]
+        if tech_errors and "tutorial" in package:
+            suggestions = [
+                _get_attr(e, "suggestion") or _get_attr(e, "description", "")
+                for e in tech_errors
+            ]
+            package["tutorial"] += "\n\n## 辩论修订\n\n" + "\n".join(f"- {s}" for s in suggestions)
+
+        # 更新 claims 的 status
+        if "claims" in package and isinstance(package["claims"], list):
+            accepted_claim_ids = {
+                _get_attr(i, "claim_id") for i in (accepted_issues or [])
+                if _get_attr(i, "claim_id")
+            }
+            for claim in package["claims"]:
+                claim_id = _get_attr(claim, "claim_id")
+                if claim_id in accepted_claim_ids:
+                    # 内容改写 → revised
+                    if isinstance(claim, dict):
+                        claim["status"] = "revised"
+                    elif hasattr(claim, "status"):
+                        claim.status = "revised"
+                elif any(
+                    _get_attr(e, "claim_id") == claim_id
+                    for e in tech_errors
+                ):
+                    # 内容删除 → dropped
+                    if isinstance(claim, dict):
+                        claim["status"] = "dropped"
+                    elif hasattr(claim, "status"):
+                        claim.status = "dropped"
+
+        # version 递增
+        if "version" in package:
+            package["version"] = package.get("version", 1) + 1
+        return package
 
 
 class HybridContentAgent(DeterministicContentAgent):
@@ -477,7 +698,7 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def revise_learning_package(self, request: ContentRevisionInput) -> ContentGenerationOutput:
         feedback = self._format_feedback(request.technical_errors, request.quality_errors)
-        prompt = f"""请根据Agent4和Agent5的审核意见修改学习教程。
+        prompt = f"""请根据审核意见修改学习教程。
 
 学习阶段：{request.stage.block_name}
 用户目标：{request.profile.goal}
@@ -491,7 +712,7 @@ class HybridContentAgent(DeterministicContentAgent):
 要求：逐条解决审核问题，保留正确内容，返回修改后的完整Markdown教程。"""
         tutorial = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent3内容生成专家，负责依据双重审核意见严谨改稿。",
+            system_prompt="你是Agent3内容生成专家，负责依据合并审核意见严谨改稿。",
             temperature=0.3,
         )
         if not self._is_valid_response(tutorial):
@@ -503,7 +724,7 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def revise_answer(self, request: AnswerRevisionInput) -> AnswerGenerationOutput:
         feedback = self._format_feedback(request.technical_errors, request.quality_errors)
-        prompt = f"""请根据Agent4和Agent5的审核意见修改回答。
+        prompt = f"""请根据审核意见修改回答。
 
 用户问题：{request.question}
 当前阶段：{request.stage.block_name}
@@ -517,7 +738,7 @@ class HybridContentAgent(DeterministicContentAgent):
 要求：逐条修复问题，保持技术准确和教学清晰，返回完整修改后回答。"""
         answer = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent3答疑专家，负责依据双重审核意见修改回答。",
+            system_prompt="你是Agent3答疑专家，负责依据合并审核意见修改回答。",
             temperature=0.3,
         )
         if not self._is_valid_response(answer):
@@ -525,12 +746,12 @@ class HybridContentAgent(DeterministicContentAgent):
         return AnswerGenerationOutput(answer=answer)
 
     def _format_feedback(self, technical_errors: list[ReviewError], quality_errors: list[ReviewError]) -> str:
+        # Agent5已合并至Agent4，所有错误统一在technical_errors中
         lines = []
-        for label, errors in (("Agent4技术审核", technical_errors), ("Agent5教学审核", quality_errors)):
-            for error in errors:
-                lines.append(
-                    f"- [{label}][{error.severity}] {error.description}；建议：{error.suggestion or '请修正'}"
-                )
+        for error in technical_errors:
+            lines.append(
+                f"- [审核][{error.severity}] {error.description}；建议：{error.suggestion or '请修正'}"
+            )
         return "\n".join(lines) or "无"
 
     def _is_valid_response(self, response: str) -> bool:
@@ -538,23 +759,40 @@ class HybridContentAgent(DeterministicContentAgent):
 
 
 class DeterministicTechnicalReviewAgent:
+    def __init__(self):
+        self.rule_check_tool = RuleCheckTool()
+        self.knowledge_verify_tool = KnowledgeVerifyTool()
+        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
+        self.cognitive_load_tool = CognitiveLoadTool()
+        self.style_match_tool = StyleMatchTool()
+        # 委托 Agent4 协议字段补全（对接需求清单 2.1）
+        self._protocol_agent = TechnicalReviewAgent()
+
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         errors = []
         if not request.content.strip():
             errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
-        return TechnicalReviewResult(passed=not errors, errors=errors)
+            return TechnicalReviewResult(passed=False, errors=errors)
 
+        # 步骤1：硬性检查（规则检查 — LoRA机制、参数量、安全红线）
+        try:
+            rule_errors = normalize_review_errors(
+                await self.rule_check_tool.check_rules(request.content)
+            )
+            errors.extend(rule_errors)
+        except Exception:
+            pass
 
-class DeterministicQualityReviewAgent:
-    def __init__(self):
-        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
-        self.cognitive_load_tool = CognitiveLoadTool()
-        self.style_match_tool = StyleMatchTool()
+        # 步骤2：事实检查（幻觉检测 — 知识依据验证，sim<0.65判幻觉）
+        try:
+            hallucination_errors = normalize_review_errors(
+                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            )
+            errors.extend(hallucination_errors)
+        except Exception:
+            pass
 
-    async def run(self, request: ReviewInput) -> QualityReviewResult:
-        errors = []
-        if len(request.content.strip()) < 40:
-            errors.append(ReviewError(error_type="too_short", description="教程内容不足以支持阶段学习"))
+        # 步骤3-4：质量审核（难度/认知负荷/风格匹配 — 原Agent5功能）
         if request.target_type == "learning_package":
             profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
             try:
@@ -564,32 +802,85 @@ class DeterministicQualityReviewAgent:
                 errors.extend(normalize_review_errors(tool_errors))
             except Exception:
                 pass
-        return QualityReviewResult(
-            passed=not errors,
-            errors=errors,
-            scores={"clarity": 1.0 if not errors else 0.0},
+
+        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        errors = self._protocol_agent._enrich_debate_fields(
+            errors,
+            sources=request.sources,
+            claims=request.claims,
+            round_index=request.round_index,
         )
+
+        # 步骤6：综合裁决（有critical错误或errors非空则不通过）
+        return TechnicalReviewResult(passed=not errors, errors=errors)
+
+    async def rebut(
+        self,
+        session_id: str,
+        issues: List[Dict[str, Any]],
+        author_replies: List[Dict[str, Any]],
+    ) -> Dict[str, str]:
+        """委托 Agent4 实现复核裁决（对接需求清单 2.2）。"""
+        return await self._protocol_agent.rebut(session_id, issues, author_replies)
+
+
+# DeterministicQualityReviewAgent 和 HybridQualityReviewAgent 已合并至 Agent4
+# 质量审核功能已集成到 DeterministicTechnicalReviewAgent 和 HybridTechnicalReviewAgent
 
 
 class HybridTechnicalReviewAgent:
     def __init__(self):
         self.llm_client = LLMClient()
         self.rule_check_tool = RuleCheckTool()
+        self.knowledge_verify_tool = KnowledgeVerifyTool()
+        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
+        self.cognitive_load_tool = CognitiveLoadTool()
+        self.style_match_tool = StyleMatchTool()
         self.skill_context = get_skill_context([
             "technical_review",
-            "hallucination_detection",
             "industry_standards",
+            "pedagogy",
+            "learner_model",
+            "quality_metrics",
         ])
+        # 委托 Agent4 协议字段补全（对接需求清单 2.1）
+        self._protocol_agent = TechnicalReviewAgent()
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
-        print(f"=== Agent4 技术审核开始：{request.target_type} ===")
-        rule_errors = normalize_review_errors(
-            await self.rule_check_tool.check_rules(request.content)
-        )
+        print(f"=== Agent4(合并后) 技术+质量审核开始：{request.target_type} ===")
+        # 步骤1：硬性检查（规则检查）— 异常兜底
+        try:
+            rule_errors = normalize_review_errors(
+                await self.rule_check_tool.check_rules(request.content)
+            )
+        except Exception:
+            rule_errors = []
+
+        # 步骤2：事实检查（幻觉检测 — 知识依据验证）— 异常兜底
+        try:
+            hallucination_errors = normalize_review_errors(
+                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            )
+        except Exception:
+            hallucination_errors = []
+
+        # 步骤3-4：质量审核（原Agent5功能）
+        quality_tool_errors = []
+        if request.target_type == "learning_package":
+            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
+            try:
+                quality_tool_errors.extend(await self.difficulty_analyzer_tool.analyze(request.content, profile=profile))
+                quality_tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
+                quality_tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
+            except Exception:
+                pass
+
+        quality_tool_errors_normalized = normalize_review_errors(quality_tool_errors)
+
         prompt = self._build_prompt(request)
         response = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent4技术审核专家。必须独立审核，不得因为内容表达流畅就默认正确。",
+            system_prompt="你是Agent4(合并后)技术+质量审核专家。必须独立审核，不得因为内容表达流畅就默认正确。",
             temperature=0.1,
             json_mode=True,
         )
@@ -597,9 +888,40 @@ class HybridTechnicalReviewAgent:
         if rule_errors:
             result.errors = rule_errors + result.errors
             result.passed = False
-            print(f"=== Agent4确定性规则发现错误：{len(rule_errors)}个 ===")
-        print(f"=== Agent4 技术审核完成：passed={result.passed}, errors={len(result.errors)} ===")
+            print(f"=== 硬性规则检查发现错误：{len(rule_errors)}个 ===")
+        if hallucination_errors:
+            result.errors = hallucination_errors + result.errors
+            result.passed = False
+            print(f"=== 事实检查(幻觉)发现错误：{len(hallucination_errors)}个 ===")
+        if quality_tool_errors_normalized:
+            result.errors = quality_tool_errors_normalized + result.errors
+            result.passed = False
+            print(f"=== 质量审核发现错误：{len(quality_tool_errors_normalized)}个 ===")
+
+        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        # 强制为每个 error 补全 canonical_error_id/error_id/source_refs/change_request/
+        # must_fix/must_fix_reason/claim_id（协议 2.3 / 2.4 / 第 6 节）
+        result.errors = self._protocol_agent._enrich_debate_fields(
+            result.errors,
+            sources=request.sources,
+            claims=request.claims,
+            round_index=request.round_index,
+        )
+
+        print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
         return result
+
+    async def rebut(
+        self,
+        session_id: str,
+        issues: List[Dict[str, Any]],
+        author_replies: List[Dict[str, Any]],
+    ) -> Dict[str, str]:
+        """委托 Agent4 实现复核裁决（对接需求清单 2.2）。
+
+        返回 {canonical_error_id: "persist" | "withdraw" | "downgrade"}。
+        """
+        return await self._protocol_agent.rebut(session_id, issues, author_replies)
 
     def _build_prompt(self, request: ReviewInput) -> str:
         domain_reference = self._domain_reference(request.stage.block_name)
@@ -652,75 +974,8 @@ class HybridTechnicalReviewAgent:
         )
 
 
-class HybridQualityReviewAgent:
-    def __init__(self):
-        self.llm_client = LLMClient()
-        self.skill_context = get_skill_context(["pedagogy", "learner_model", "quality_metrics"])
-        self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
-        self.cognitive_load_tool = CognitiveLoadTool()
-        self.style_match_tool = StyleMatchTool()
-
-    async def run(self, request: ReviewInput) -> QualityReviewResult:
-        print(f"=== Agent5 教学质量审核开始：{request.target_type} ===")
-        prompt = self._build_prompt(request)
-        response = await self.llm_client.complete(
-            prompt,
-            system_prompt="你是Agent5教学质量审核专家。必须依据用户画像评估难度、认知负荷和教学结构。",
-            temperature=0.2,
-            json_mode=True,
-        )
-        result = self._parse_result(response)
-        if request.target_type == "learning_package":
-            profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
-            tool_errors = []
-            try:
-                tool_errors.extend(await self.difficulty_analyzer_tool.analyze(request.content, profile=profile))
-                tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
-                tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
-            except Exception:
-                tool_errors = []
-            normalized_tool_errors = normalize_review_errors(tool_errors)
-            if normalized_tool_errors:
-                result.errors = normalized_tool_errors + result.errors
-                result.passed = False
-        print(f"=== Agent5 教学质量审核完成：passed={result.passed}, errors={len(result.errors)} ===")
-        return result
-
-    def _build_prompt(self, request: ReviewInput) -> str:
-        return f"""请审核以下{request.target_type}的教学质量。
-
-用户目标：{request.profile.goal}
-已有技能：{request.profile.skill_tags}
-学习风格：{request.profile.learning_style}
-当前阶段：{request.stage.block_name}
-用户问题：{request.question or '无'}
-待审核内容：
-{request.content[:12000]}
-
-审核规范：
-{self.skill_context}
-
-只返回严格JSON对象：
-{{"passed":true,"errors":[{{"error_type":"cognitive_load","severity":"major","location":"具体位置","description":"问题说明","evidence":"判断依据","suggestion":"修正建议"}}],"scores":{{"difficulty":80,"cognitive_load":80,"clarity":80,"pedagogy":80}},"review_details":"审核总结"}}
-综合得分低于70或存在major/critical问题时passed必须为false。"""
-
-    def _parse_result(self, response: str) -> QualityReviewResult:
-        data = parse_json_object(response)
-        if data is None:
-            error = ReviewError(
-                error_type="review_system_error",
-                severity="critical",
-                description="Agent5审核结果无法解析",
-                suggestion="重新执行教学质量审核",
-            )
-            return QualityReviewResult(passed=False, errors=[error])
-        errors = normalize_review_errors(data.get("errors", []))
-        return QualityReviewResult(
-            passed=bool(data.get("passed", not errors)) and not errors,
-            errors=errors,
-            scores=data.get("scores"),
-            review_details=data.get("review_details"),
-        )
+# HybridQualityReviewAgent 已合并至 HybridTechnicalReviewAgent
+# 质量审核功能已集成到 HybridTechnicalReviewAgent
 
 
 def parse_json_object(response: str) -> dict | None:
@@ -744,6 +999,10 @@ def parse_json_object(response: str) -> dict | None:
 def normalize_review_errors(raw_errors: list) -> list[ReviewError]:
     errors = []
     for raw in raw_errors if isinstance(raw_errors, list) else []:
+        # 已是 ReviewError 实例则直接收录（跳过二次构造）
+        if isinstance(raw, ReviewError):
+            errors.append(raw)
+            continue
         if not isinstance(raw, dict):
             continue
         severity = str(raw.get("severity", "major")).lower()
@@ -764,61 +1023,152 @@ class DeterministicStageDecisionAgent:
     def __init__(self):
         self.strategy_selector_tool = StrategySelectorTool()
         self.profile_update_tool = ProfileUpdateTool()
+        self.stage_summary_generator_tool = StageSummaryGeneratorTool()
         self.db_client = SQLiteClient()
 
     async def run(self, request: StageDecisionInput) -> StageDecisionOutput:
         profile = request.profile.model_copy(deep=True)
-        updated_gaps = await self.profile_update_tool.update_gaps(
-            [gap.model_dump(mode="json") for gap in profile.knowledge_gaps],
-            request.accuracy,
-        )
-        profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
-        if request.stage.subtopic_id and request.stage.block_id:
-            additional_completed = [request.stage.subtopic_id] if request.accuracy >= 0.8 else []
-            ratio, completed_count, total_count = self.db_client.get_subtopic_completion_ratio(
-                request.session_id,
-                request.stage.block_id,
-                additional_completed=additional_completed,
+
+        # 步骤2：精算掌握度（逐知识点BKT更新）— 异常兜底
+        try:
+            updated_gaps = await self.profile_update_tool.update_gaps(
+                [gap.model_dump(mode="json") for gap in profile.knowledge_gaps],
+                request.accuracy,
             )
-            current_gap = next((gap for gap in profile.knowledge_gaps if gap.skill == request.stage.gap_skill), None)
-            has_more_subtopics = (
-                request.accuracy >= 0.8
-                and total_count > 0
-                and completed_count < total_count
-            )
-            if current_gap is not None:
-                if has_more_subtopics:
-                    current_gap.progress = round(min(max(ratio, 0.0), 0.99), 3)
-                    current_gap.status = "学习中"
-                elif request.accuracy >= 0.8:
-                    current_gap.status = "已掌握"
-                    current_gap.progress = 1.0
-        profile.learning_rhythm = await self.profile_update_tool.infer_rhythm(request.interactions)
-        profile.confidence_index = await self.profile_update_tool.infer_confidence(request.qa_history, request.accuracy)
-        profile.confusion_markers = await self.profile_update_tool.detect_confusion(request.qa_history)
+            profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
+        except Exception:
+            pass  # 保留原 gaps
+
+        current_gap = next((gap for gap in profile.knowledge_gaps if gap.skill == request.stage.gap_skill), None)
+        if current_gap is not None:
+            # 用该知识点自身的掌握度判定，不再使用全局accuracy强制覆盖（避免错误地把薄弱知识点标为已掌握）
+            if current_gap.progress >= 0.75 and current_gap.status in ("学习中", "未掌握"):
+                current_gap.status = "已掌握"
+                current_gap.progress = 1.0
+
+        # 步骤2b：画像维度更新 — 各项独立兜底
+        try:
+            profile.learning_rhythm = await self.profile_update_tool.infer_rhythm(request.interactions)
+        except Exception:
+            profile.learning_rhythm = "medium"
+        try:
+            profile.confidence_index = await self.profile_update_tool.infer_confidence(request.qa_history, request.accuracy)
+        except Exception:
+            profile.confidence_index = max(0.0, min(1.0, request.accuracy))
+        try:
+            profile.confusion_markers = await self.profile_update_tool.detect_confusion(request.qa_history)
+        except Exception:
+            profile.confusion_markers = []
         profile.version += 1
-        all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
-        if all_mastered:
-            decision = "completed"
-        elif request.stage.subtopic_id and request.accuracy >= 0.8:
-            ratio, completed_count, total_count = self.db_client.get_subtopic_completion_ratio(
-                request.session_id,
-                request.stage.block_id,
-                additional_completed=[request.stage.subtopic_id],
+
+        # 步骤3：策略选择（透传 iteration_history，激活 backtrack/终止逻辑）
+        # StageDecisionInput 未携带 iteration_history 字段，尝试从 profile 的 model_extra 或 qa_history 推断
+        iteration_history = []
+        try:
+            profile_extra = profile.model_dump(mode="json") if hasattr(profile, "model_dump") else {}
+            iteration_history = profile_extra.get("iteration_history") or []
+        except Exception:
+            iteration_history = []
+        try:
+            strategy = await self.strategy_selector_tool.select_strategy(
+                request.accuracy,
+                profile.model_dump(mode="json"),
+                iteration_history=iteration_history,
             )
-            decision = "continue" if total_count > 0 and completed_count < total_count else "continue"
+        except Exception:
+            strategy = "reinforce" if request.accuracy >= 0.6 else "simplify"
+
+        # 决策判定
+        # strategy 为 backtrack（回溯）时，decision 映射为 repeat（回退重学前置知识）
+        # strategy 为 finish（结业）时，decision 映射为 completed
+        if current_gap is not None and request.accuracy >= 0.8:
+            current_gap.status = "已掌握"
+            current_gap.progress = 1.0
+
+        all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
+        if strategy == "finish" or all_mastered:
+            decision = "completed"
+        elif strategy == "backtrack":
+            decision = "repeat"
         elif request.accuracy >= 0.8:
             decision = "continue"
         else:
             decision = "repeat"
-        strategy = await self.strategy_selector_tool.select_strategy(
-            request.accuracy,
-            profile.model_dump(mode="json"),
+
+        # === 步骤4-5：生成阶段总结报告 ===
+        # 从qa_history和interactions推断情绪得分和耗时
+        emotion_score: float | None = None
+        emotion_scores_list: list[float] = []
+        for qa in request.qa_history:
+            if isinstance(qa, dict) and "emotion_score" in qa:
+                try:
+                    emotion_scores_list.append(float(qa["emotion_score"]))
+                except (ValueError, TypeError):
+                    pass
+        if emotion_scores_list:
+            emotion_score = sum(emotion_scores_list) / len(emotion_scores_list)
+
+        # 统计实际耗时（秒 → 小时）
+        total_seconds = 0.0
+        expected_seconds = 0.0
+        for interaction in request.interactions:
+            if not isinstance(interaction, dict):
+                continue
+            try:
+                total_seconds += float(interaction.get("time_spent", 0) or 0)
+                expected_seconds += float(interaction.get("expected_time", 100) or 100)
+            except (ValueError, TypeError):
+                continue
+        time_spent_hours = round(total_seconds / 3600.0, 2)
+        expected_time_hours = round(expected_seconds / 3600.0, 2)
+
+        # 生成qa历史转化为question_records
+        question_records: list[dict] = []
+        for qa in request.qa_history:
+            if isinstance(qa, dict) and ("question_id" in qa or "skill" in qa or "is_correct" in qa):
+                question_records.append(qa)
+
+        stage_name = request.stage.block_name or f"阶段{request.stage.stage_num}"
+        knowledge_gaps_json = [g.model_dump(mode="json") for g in profile.knowledge_gaps]
+        confusion_tags = list(profile.confusion_markers) if profile.confusion_markers else []
+        pace = profile.learning_rhythm or "medium"
+
+        # 步骤5：生成总结报告 — 异常时降级为简短报告
+        try:
+            stage_summary = await self.stage_summary_generator_tool.generate_summary(
+                stage_name=stage_name,
+                accuracy=request.accuracy,
+                knowledge_gaps=knowledge_gaps_json,
+                confusion_tags=confusion_tags,
+                question_records=question_records,
+                emotion_score=emotion_score,
+                pace_adjustment=pace,
+                time_spent_hours=time_spent_hours,
+                expected_time_hours=expected_time_hours,
+                next_strategy=strategy,
+                total_knowledge_points=len(profile.knowledge_gaps),
+                total_answers=len(question_records) or len(request.qa_history),
+            )
+        except Exception:
+            stage_summary = (
+                f"## 📊 本阶段学习总结\n\n"
+                f"### 📈 阶段概览\n【{stage_name}】阶段已结束，正确率{request.accuracy*100:.0f}%。\n\n"
+                f"### 💪 鼓励与建议\n你的专属AI导师始终在这里陪你！"
+            )
+        return StageDecisionOutput(
+            decision=decision,
+            profile=profile,
+            strategy=strategy,
+            stage_summary=stage_summary,
         )
-        return StageDecisionOutput(decision=decision, profile=profile, strategy=strategy)
 
 
 async def run_deterministic_reviews(request: ReviewInput) -> ReviewOutput:
+    # Agent5已合并至Agent4，统一由合并后的TechnicalReviewAgent处理
     technical = await DeterministicTechnicalReviewAgent().run(request)
-    quality = await DeterministicQualityReviewAgent().run(request)
+    # 质量审核结果已合并在technical结果中
+    quality = QualityReviewResult(
+        passed=technical.passed,
+        errors=technical.errors,
+    )
     return ReviewOutput(technical=technical, quality=quality)

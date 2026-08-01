@@ -1,0 +1,5 @@
+.npm-cache/
+.source_zip_ref/
+dist/
+node_modules/
+*.log

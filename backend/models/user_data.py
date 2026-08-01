@@ -30,6 +30,8 @@ class SessionData(BaseModel):
     profile: Optional[UserProfile] = None
     stage_info: Optional[StageInfo] = None
     learning_package: Optional[LearningPackage] = None
+    next_stage: Optional[StageInfo] = None
+    next_stage_planning_notes: Optional[str] = None
     qa_history: List[Dict[str, Any]] = Field(default_factory=list)
     answer_records: List[Dict[str, Any]] = Field(default_factory=list)
     interactions: List[Dict[str, Any]] = Field(default_factory=list)

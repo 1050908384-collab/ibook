@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-stage_generator_tool — Agent2 阶段计划生成工具
-================================================
+stage_generator_tool — Agent1 阶段计划生成工具（原Agent2工具，已合并至Agent1）
+========================================================================================
 功能：根据知识盲区和学习目标生成学习阶段计划，对齐 StageInfo 契约。
     - 真实模式：基于 knowledge_blocks 表数据生成阶段（含 estimated_hours/prerequisites）
     - Mock 模式：返回 ./data/test_data/mock_stage_generator_tool.json 预设阶段计划
@@ -123,7 +123,7 @@ def stage_generator(input_data: dict, config: dict = None) -> dict:
 
 
 # ------------------------------------------------------------------
-# 真实模式：LLM 生成阶段计划
+# 真实模式：确定性生成阶段计划
 # ------------------------------------------------------------------
 def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, Any],
                     goal: str, stage_num: int) -> dict:
