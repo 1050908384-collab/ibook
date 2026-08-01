@@ -166,7 +166,6 @@ class DeterministicDiagnosticAgent:
         )
         return match.group(1).strip(" ，。,.！!") if match else text
 
-<<<<<<< HEAD
     async def generate_stage(self, request: StagePlanningInput) -> StagePlanningOutput:
         """Stage planning functionality merged from Agent2 into Agent1."""
         _agent_log("Agent1", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
@@ -231,7 +230,7 @@ class DeterministicDiagnosticAgent:
         )
         _agent_log("Agent1", f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'}")
         return StagePlanningOutput(stage=stage)
-=======
+
     def _parse_structured_input(self, text: str) -> dict:
         goal = self._labeled_value(text, ("我的学习目标", "学习目标"))
         return {
@@ -279,7 +278,6 @@ class DeterministicDiagnosticAgent:
         if "mixed" in lowered or "混合" in text or "结合" in text:
             return "mixed"
         return "mixed"
->>>>>>> 9d25d4d9471f71d65b549f752adee7f087be7cb7
 
 
 class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
