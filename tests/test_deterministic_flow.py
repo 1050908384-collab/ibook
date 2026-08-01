@@ -1,3 +1,5 @@
+import os
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -8,6 +10,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(BACKEND_DIR))
+
+os.environ.setdefault("EXECUTION_MODE", "deterministic")
 
 from db.sqlite_client import SQLiteClient
 from orchestrator.harness import Harness
@@ -30,6 +34,8 @@ from scripts.insert_knowledge_data import (
 
 
 class RejectOnceTechnicalReviewer:
+    """第 1 轮拒绝（带完整辩论协议字段），第 2 轮通过。用于验证审核→修改→重审循环。"""
+
     def __init__(self):
         self.calls = 0
 
@@ -42,14 +48,53 @@ class RejectOnceTechnicalReviewer:
                     error_type="test_rejection",
                     description="缺少关键技术说明",
                     suggestion="补充关键技术说明",
+                    canonical_error_id="test_reject_001",
+                    must_fix=True,
+                    must_fix_reason="测试用：关键技术缺失",
+                    change_request={"required": True, "action": "补充关键技术说明"},
                 )],
             )
         return TechnicalReviewResult(passed=True)
 
+    async def rebut(self, session_id, issues, author_replies):
+        # 第 1 轮坚持 issue（persist），迫使 Agent3 修改后进第 2 轮审核
+        return {issue.get("canonical_error_id", ""): "persist" for issue in issues}
+
 
 class ExplodingReviewer:
+    """审核总是抛异常，用于验证异常兜底。"""
+
     async def run(self, request):
         raise RuntimeError("review unavailable")
+
+    async def rebut(self, session_id, issues, author_replies):
+        # 异常路径不会真正走到 rebut，提供空实现避免 AttributeError
+        return {}
+
+
+class AlwaysPersistReviewer:
+    """每轮都报 must_fix 错误且 rebut 永远 persist，用于验证超轮次 needs_human_review 兜底。"""
+
+    def __init__(self):
+        self.calls = 0
+
+    async def run(self, request):
+        self.calls += 1
+        return TechnicalReviewResult(
+            passed=False,
+            errors=[ReviewError(
+                error_type="stubborn_error",
+                description="永远不解决的问题",
+                suggestion="无法解决",
+                canonical_error_id="stubborn_001",
+                must_fix=True,
+                must_fix_reason="测试用：死锁兜底",
+                change_request={"required": True, "action": "无法解决"},
+            )],
+        )
+
+    async def rebut(self, session_id, issues, author_replies):
+        return {issue.get("canonical_error_id", ""): "persist" for issue in issues}
 
 
 class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
@@ -228,6 +273,95 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result["review_history"][0]["passed"])
         self.assertTrue(result["review_history"][1]["passed"])
         self.assertEqual(2, reviewer.calls)
+        # 辩论协议返回字段（P3）
+        self.assertIn("review_trace_id", result)
+        self.assertIn("package_status", result)
+        self.assertEqual("approved", result["package_status"])
+        self.assertFalse(result["needs_human_review"])
+
+    async def test_debate_protocol_with_real_agents(self):
+        """用真实 deterministic agent 验证完整辩论协议链路。
+
+        验证点：
+        - Agent3 首轮包带 sources + claims
+        - Agent4 审核结果带 canonical_error_id + must_fix
+        - harness 返回 review_trace_id / package_status / needs_human_review
+        - DB 6 张表有记录（review_traces / learning_package_claims 至少有数据）
+        """
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        await harness.process_initial_input(session_id, "want to learn LoRA")
+
+        result = await harness.start_stage(session_id)
+
+        # 1. Agent3 产出带 claims（sources 依赖知识库数据，可能为空）
+        pkg = result["learning_package"]
+        self.assertGreater(len(pkg.get("claims", [])), 0, "Agent3 首轮包必须带 claims")
+        claim = pkg["claims"][0]
+        self.assertIn("claim_id", claim)
+        self.assertIn("claim_type", claim)
+        self.assertIn("section_ref", claim)
+        self.assertIn("status", claim)
+
+        # 2. 辩论协议返回字段
+        self.assertIn("review_trace_id", result)
+        self.assertIsNotNone(result["review_trace_id"])
+        self.assertIn("package_status", result)
+        self.assertIn("needs_human_review", result)
+        self.assertIn("unresolved_issue_count", result)
+
+        # 3. DB 落库验证：review_traces 有记录
+        trace_id = result["review_trace_id"]
+        db_path = harness.state_manager.db_client.engine.url.database
+        conn = sqlite3.connect(db_path)
+        try:
+            trace_count = conn.execute(
+                "SELECT COUNT(*) FROM review_traces WHERE trace_id = ?", (trace_id,)
+            ).fetchone()[0]
+            self.assertGreater(trace_count, 0, "review_traces 必须有记录")
+
+            claims_count = conn.execute(
+                "SELECT COUNT(*) FROM learning_package_claims WHERE trace_id = ?", (trace_id,)
+            ).fetchone()[0]
+            self.assertGreater(claims_count, 0, "learning_package_claims 必须有记录")
+        finally:
+            conn.close()
+
+    async def test_needs_human_review_deadlock(self):
+        """Agent4 永远 persist + must_fix，验证超轮次后 needs_human_review=True。
+
+        这是死循环停止机制的核心验证：达到 MAX_REVIEW_ITERATIONS 后不阻塞，
+        返回 needs_human_review=True + package_status=provisional。
+        """
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        await harness.process_initial_input(session_id, "want to learn LoRA")
+        harness.agent4 = AlwaysPersistReviewer()
+
+        result = await harness.start_stage(session_id)
+
+        # 达到最大轮次，未决 must_fix 仍存在
+        from config import settings
+        self.assertEqual(settings.MAX_REVIEW_ITERATIONS, result["iterations"])
+        # 死锁兜底：needs_human_review=True，package 降级为 provisional
+        self.assertTrue(result["needs_human_review"])
+        self.assertEqual("provisional", result["package_status"])
+        # 学习包仍可用（A 方案：降级可用 + 待审标记），不阻塞学习流
+        self.assertTrue(result["review_passed"])
+        self.assertGreater(result["unresolved_must_fix_count"], 0)
+        # DB trace 最终状态
+        trace_id = result["review_trace_id"]
+        db_path = harness.state_manager.db_client.engine.url.database
+        conn = sqlite3.connect(db_path)
+        try:
+            trace = conn.execute(
+                "SELECT final_status, package_status FROM review_traces WHERE trace_id = ?",
+                (trace_id,),
+            ).fetchone()
+            self.assertEqual("needs_human_review", trace[0])
+            self.assertEqual("provisional", trace[1])
+        finally:
+            conn.close()
 
     async def test_answer_is_revised_and_reviewed_again(self):
         harness = self.create_harness()

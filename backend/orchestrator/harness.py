@@ -660,9 +660,12 @@ class Harness:
                     err.must_fix_reason = "Agent4 复核降级，解除 must_fix"
                 accepted_issues.append(err.model_dump(mode="json"))
             else:
-                # persist → 保持未决
+                # persist → Agent4 坚持该 issue
                 if err.must_fix:
+                    # must_fix=True：强制 Agent3 修改，但仍计入未决（进下一轮重新审核）
+                    accepted_issues.append(err.model_dump(mode="json"))
                     unresolved_must_fix_count += 1
+                # must_fix=False：minor 问题，允许通过，不强制修改
 
         return accepted_issues, unresolved_must_fix_count
 
