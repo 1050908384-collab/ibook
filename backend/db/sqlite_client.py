@@ -1145,3 +1145,316 @@ class SQLiteClient:
             result = dict(row)
             result["tags"] = json.loads(result["tags"]) if result["tags"] else []
             return result
+
+    # ========================================================================
+    # Agent3-4 审核辩论协议 — 落库接口（P2，按 trace_id 组织）
+    # source_id / claim_id / canonical_error_id 在单个 trace 内唯一，
+    # 所有写入必须携带 trace_id，不允许脱离 trace_id 操作。
+    # ========================================================================
+
+    def save_review_trace(
+        self,
+        trace_id: str,
+        session_id: str,
+        stage_id: str | None = None,
+        target_type: str = "learning_package",
+        package_version: int = 1,
+        package_status: str = "draft",
+        review_mode: str = "debate",
+        final_status: str = "in_progress",
+        final_summary: str | None = None,
+    ) -> None:
+        """创建或更新审核 trace（review_traces 表）。"""
+        with self.Session() as session:
+            session.execute(text("""
+                INSERT INTO review_traces
+                    (trace_id, session_id, stage_id, target_type, package_version,
+                     package_status, review_mode, final_status, final_summary,
+                     created_at, updated_at)
+                VALUES
+                    (:trace_id, :session_id, :stage_id, :target_type, :package_version,
+                     :package_status, :review_mode, :final_status, :final_summary,
+                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT(trace_id) DO UPDATE SET
+                    package_version = excluded.package_version,
+                    package_status = excluded.package_status,
+                    final_status = excluded.final_status,
+                    final_summary = excluded.final_summary,
+                    updated_at = CURRENT_TIMESTAMP
+            """), {
+                "trace_id": trace_id,
+                "session_id": session_id,
+                "stage_id": stage_id,
+                "target_type": target_type,
+                "package_version": package_version,
+                "package_status": package_status,
+                "review_mode": review_mode,
+                "final_status": final_status,
+                "final_summary": final_summary,
+            })
+            session.commit()
+
+    def save_learning_package_sources(
+        self,
+        trace_id: str,
+        sources: list[dict],
+    ) -> None:
+        """批量写入来源清单（learning_package_sources，复合主键 trace_id+source_id）。"""
+        if not sources:
+            return
+        with self.Session() as session:
+            for src in sources:
+                session.execute(text("""
+                    INSERT INTO learning_package_sources
+                        (trace_id, source_id, source_type, title, locator,
+                         content_ref, source_version, metadata_json,
+                         created_at, updated_at)
+                    VALUES
+                        (:trace_id, :source_id, :source_type, :title, :locator,
+                         :content_ref, :source_version, :metadata_json,
+                         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT(trace_id, source_id) DO UPDATE SET
+                        source_type = excluded.source_type,
+                        title = excluded.title,
+                        locator = excluded.locator,
+                        content_ref = excluded.content_ref,
+                        source_version = excluded.source_version,
+                        metadata_json = excluded.metadata_json,
+                        updated_at = CURRENT_TIMESTAMP
+                """), {
+                    "trace_id": trace_id,
+                    "source_id": src.get("source_id", ""),
+                    "source_type": src.get("source_type", "knowledge_doc"),
+                    "title": src.get("title"),
+                    "locator": src.get("locator"),
+                    "content_ref": src.get("content_ref"),
+                    "source_version": src.get("source_version"),
+                    "metadata_json": json.dumps(src.get("metadata_json"), ensure_ascii=False) if src.get("metadata_json") else None,
+                })
+            session.commit()
+
+    def save_learning_package_claims(
+        self,
+        trace_id: str,
+        claims: list[dict],
+    ) -> None:
+        """批量写入 claim 声明（learning_package_claims，复合主键 trace_id+claim_id）。"""
+        if not claims:
+            return
+        with self.Session() as session:
+            for clm in claims:
+                session.execute(text("""
+                    INSERT INTO learning_package_claims
+                        (trace_id, claim_id, text, source_ref, source_span,
+                         section_ref, claim_type, is_key_technical, confidence,
+                         status, created_at, updated_at)
+                    VALUES
+                        (:trace_id, :claim_id, :text, :source_ref, :source_span,
+                         :section_ref, :claim_type, :is_key_technical, :confidence,
+                         :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT(trace_id, claim_id) DO UPDATE SET
+                        text = excluded.text,
+                        source_ref = excluded.source_ref,
+                        source_span = excluded.source_span,
+                        section_ref = excluded.section_ref,
+                        claim_type = excluded.claim_type,
+                        is_key_technical = excluded.is_key_technical,
+                        confidence = excluded.confidence,
+                        status = excluded.status,
+                        updated_at = CURRENT_TIMESTAMP
+                """), {
+                    "trace_id": trace_id,
+                    "claim_id": clm.get("claim_id", ""),
+                    "text": clm.get("text", ""),
+                    "source_ref": clm.get("source_ref"),
+                    "source_span": clm.get("source_span"),
+                    "section_ref": clm.get("section_ref", ""),
+                    "claim_type": clm.get("claim_type", "concept"),
+                    "is_key_technical": 1 if clm.get("is_key_technical") else 0,
+                    "confidence": clm.get("confidence", 0.5),
+                    "status": clm.get("status", "active"),
+                })
+            session.commit()
+
+    def save_review_debate_issues(
+        self,
+        trace_id: str,
+        issues: list[dict],
+    ) -> None:
+        """批量写入争议单（review_debate_issues，主键 issue_id，UNIQUE trace_id+canonical_error_id）。
+
+        source_refs / change_request 为列表/字典，序列化为 JSON 存储。
+        """
+        if not issues:
+            return
+        with self.Session() as session:
+            for iss in issues:
+                session.execute(text("""
+                    INSERT INTO review_debate_issues
+                        (issue_id, trace_id, canonical_error_id, error_id, claim_id,
+                         error_type, severity, must_fix, must_fix_reason,
+                         description, location, evidence, suggestion,
+                         source_refs, change_request, current_status,
+                         opened_in_round_num, created_at, updated_at)
+                    VALUES
+                        (:issue_id, :trace_id, :canonical_error_id, :error_id, :claim_id,
+                         :error_type, :severity, :must_fix, :must_fix_reason,
+                         :description, :location, :evidence, :suggestion,
+                         :source_refs, :change_request, :current_status,
+                         :opened_in_round_num, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT(trace_id, canonical_error_id) DO UPDATE SET
+                        error_id = excluded.error_id,
+                        must_fix = excluded.must_fix,
+                        must_fix_reason = excluded.must_fix_reason,
+                        current_status = excluded.current_status,
+                        updated_at = CURRENT_TIMESTAMP
+                """), {
+                    "issue_id": iss.get("issue_id") or f"iss_{trace_id}_{iss.get('canonical_error_id', '')}",
+                    "trace_id": trace_id,
+                    "canonical_error_id": iss.get("canonical_error_id", ""),
+                    "error_id": iss.get("error_id", ""),
+                    "claim_id": iss.get("claim_id"),
+                    "error_type": iss.get("error_type"),
+                    "severity": iss.get("severity", "major"),
+                    "must_fix": 1 if iss.get("must_fix") else 0,
+                    "must_fix_reason": iss.get("must_fix_reason"),
+                    "description": iss.get("description"),
+                    "location": iss.get("location"),
+                    "evidence": iss.get("evidence"),
+                    "suggestion": iss.get("suggestion"),
+                    "source_refs": json.dumps(iss.get("source_refs", []), ensure_ascii=False) if iss.get("source_refs") else None,
+                    "change_request": json.dumps(iss.get("change_request"), ensure_ascii=False) if iss.get("change_request") else None,
+                    "current_status": iss.get("current_status", "open"),
+                    "opened_in_round_num": iss.get("opened_in_round_num"),
+                })
+            session.commit()
+
+    def save_review_debate_round(
+        self,
+        trace_id: str,
+        round_id: str,
+        round_num: int,
+        review_iteration: int | None = None,
+        round_status: str = "open",
+        orchestrator_verdict: str = "pending",
+        verdict_summary: str | None = None,
+    ) -> None:
+        """写入答辩复核轮次（review_debate_rounds，UNIQUE trace_id+round_num）。"""
+        with self.Session() as session:
+            session.execute(text("""
+                INSERT INTO review_debate_rounds
+                    (round_id, trace_id, round_num, review_iteration,
+                     round_status, orchestrator_verdict, verdict_summary,
+                     created_at)
+                VALUES
+                    (:round_id, :trace_id, :round_num, :review_iteration,
+                     :round_status, :orchestrator_verdict, :verdict_summary,
+                     CURRENT_TIMESTAMP)
+                ON CONFLICT(trace_id, round_num) DO UPDATE SET
+                    round_status = excluded.round_status,
+                    orchestrator_verdict = excluded.orchestrator_verdict,
+                    verdict_summary = excluded.verdict_summary,
+                    closed_at = CASE WHEN excluded.round_status = 'closed' THEN CURRENT_TIMESTAMP ELSE NULL END
+            """), {
+                "round_id": round_id,
+                "trace_id": trace_id,
+                "round_num": round_num,
+                "review_iteration": review_iteration,
+                "round_status": round_status,
+                "orchestrator_verdict": orchestrator_verdict,
+                "verdict_summary": verdict_summary,
+            })
+            session.commit()
+
+    def save_review_debate_responses(
+        self,
+        round_id: str,
+        responses: list[dict],
+    ) -> None:
+        """批量写入每轮回复（review_debate_responses，UNIQUE round_id+issue_id+actor+response_type）。
+
+        source_refs / patched_sections 为列表，序列化为 JSON 存储。
+        """
+        if not responses:
+            return
+        with self.Session() as session:
+            for resp in responses:
+                session.execute(text("""
+                    INSERT INTO review_debate_responses
+                        (response_id, round_id, issue_id, actor, response_type,
+                         disposition, rationale, source_refs, patched_sections, created_at)
+                    VALUES
+                        (:response_id, :round_id, :issue_id, :actor, :response_type,
+                         :disposition, :rationale, :source_refs, :patched_sections, CURRENT_TIMESTAMP)
+                    ON CONFLICT(round_id, issue_id, actor, response_type) DO UPDATE SET
+                        disposition = excluded.disposition,
+                        rationale = excluded.rationale,
+                        source_refs = excluded.source_refs,
+                        patched_sections = excluded.patched_sections
+                """), {
+                    "response_id": resp.get("response_id") or f"rsp_{round_id}_{resp.get('issue_id', '')}_{resp.get('actor', '')}",
+                    "round_id": round_id,
+                    "issue_id": resp.get("issue_id", ""),
+                    "actor": resp.get("actor", "agent3"),
+                    "response_type": resp.get("response_type", "author_reply"),
+                    "disposition": resp.get("disposition", "accepted"),
+                    "rationale": resp.get("rationale"),
+                    "source_refs": json.dumps(resp.get("source_refs", []), ensure_ascii=False) if resp.get("source_refs") else None,
+                    "patched_sections": json.dumps(resp.get("patched_sections", []), ensure_ascii=False) if resp.get("patched_sections") else None,
+                })
+            session.commit()
+
+    def update_review_trace_status(
+        self,
+        trace_id: str,
+        final_status: str,
+        package_status: str | None = None,
+        unresolved_issue_count: int | None = None,
+        unresolved_must_fix_count: int | None = None,
+        final_summary: str | None = None,
+    ) -> None:
+        """更新 trace 最终状态（超轮次兜底 / 审核通过时调用）。"""
+        with self.Session() as session:
+            session.execute(text("""
+                UPDATE review_traces
+                SET final_status = :final_status,
+                    package_status = COALESCE(:package_status, package_status),
+                    unresolved_issue_count = COALESCE(:unresolved_issue_count, unresolved_issue_count),
+                    unresolved_must_fix_count = COALESCE(:unresolved_must_fix_count, unresolved_must_fix_count),
+                    final_summary = COALESCE(:final_summary, final_summary),
+                    updated_at = CURRENT_TIMESTAMP,
+                    closed_at = CASE WHEN :final_status IN ('passed', 'needs_human_review', 'failed') THEN CURRENT_TIMESTAMP ELSE closed_at END
+                WHERE trace_id = :trace_id
+            """), {
+                "trace_id": trace_id,
+                "final_status": final_status,
+                "package_status": package_status,
+                "unresolved_issue_count": unresolved_issue_count,
+                "unresolved_must_fix_count": unresolved_must_fix_count,
+                "final_summary": final_summary,
+            })
+            session.commit()
+
+    def update_review_debate_issue_status(
+        self,
+        issue_id: str,
+        current_status: str | None = None,
+        final_disposition: str | None = None,
+        resolved_in_round_num: int | None = None,
+    ) -> None:
+        """更新争议单状态（裁决后调用）。"""
+        with self.Session() as session:
+            session.execute(text("""
+                UPDATE review_debate_issues
+                SET current_status = COALESCE(:current_status, current_status),
+                    final_disposition = COALESCE(:final_disposition, final_disposition),
+                    resolved_in_round_num = COALESCE(:resolved_in_round_num, resolved_in_round_num),
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE issue_id = :issue_id
+            """), {
+                "issue_id": issue_id,
+                "current_status": current_status,
+                "final_disposition": final_disposition,
+                "resolved_in_round_num": resolved_in_round_num,
+            })
+            session.commit()

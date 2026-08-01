@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from typing import Any, Dict
+import uuid
+from typing import Any, Dict, List, Optional
 
 from agents.deterministic import (
     DeterministicContentAgent,
@@ -27,6 +28,9 @@ from models.profile import UserProfile
 from models.review import QualityReviewResult, ReviewError, ReviewRound, TechnicalReviewResult
 from models.stage import LearningPackage, StageInfo
 from orchestrator.state_manager import StateManager
+
+# 审核辩论协议常量（协议第 7 节）
+MAX_DEBATE_ROUNDS = 2  # 内层答辩复核轮次上限
 
 
 class Harness:
@@ -100,7 +104,13 @@ class Harness:
             stage,
             profile,
         )
-        review_passed = review_history[-1].passed
+        # 从 _review_learning_package 获取审核 trace 信息（P3）
+        review_trace = getattr(self, "_last_review_trace", None) or {}
+        final_status = review_trace.get("final_status", "passed")
+        package_status = review_trace.get("package_status", "approved")
+        # 拍板：needs_human_review 下学习包降级可用（A 方案），不阻塞学习流
+        review_passed = final_status in ("passed", "needs_human_review")
+        needs_human_review = final_status == "needs_human_review"
 
         stage.status = "learning" if review_passed else "pending"
         self.state_manager.update_stage(session_id, stage)
@@ -115,17 +125,27 @@ class Harness:
             "stage_id": stage.stage_id,
             "passed": review_passed,
             "iterations": len(review_history),
+            "review_trace_id": review_trace.get("trace_id"),
+            "final_status": final_status,
+            "needs_human_review": needs_human_review,
         })
         self._log(
             session_id,
             "start_stage:done",
-            f"passed={review_passed}, iterations={len(review_history)}",
+            f"passed={review_passed}, iterations={len(review_history)}, "
+            f"final_status={final_status}, needs_human_review={needs_human_review}",
         )
         return {
             "learning_package": learning_package.model_dump(mode="json"),
             "review_passed": review_passed,
             "iterations": len(review_history),
             "review_history": [item.model_dump(mode="json") for item in review_history],
+            # P3：审核辩论协议返回字段（前端可据此展示"待审"标记）
+            "review_trace_id": review_trace.get("trace_id"),
+            "package_status": package_status,
+            "needs_human_review": needs_human_review,
+            "unresolved_issue_count": review_trace.get("unresolved_issue_count", 0),
+            "unresolved_must_fix_count": review_trace.get("unresolved_must_fix_count", 0),
         }
 
     async def handle_question(self, session_id: str, question: str) -> Dict[str, Any]:
@@ -325,10 +345,27 @@ class Harness:
         stage: StageInfo,
         profile: UserProfile,
     ) -> tuple[LearningPackage, list[ReviewRound]]:
-        history = []
+        """审核学习包：审核 → 答辩 → 复核 → 裁决（协议第 4~5 节）。
+
+        外层 review iteration（MAX_REVIEW_ITERATIONS）内嵌 debate 子循环。
+        每个 iteration = 一次完整辩论轮（Agent4 审核 → Agent3 答辩 → Agent4 复核 → Orchestrator 裁决 → Agent3 修改）。
+        达到最大轮次仍有未决 must_fix → needs_human_review（非阻塞，package 降级为 provisional）。
+        """
+        history: list[ReviewRound] = []
         current_package = package
+        # 循环外创建一次 trace_id，全程复用（协议：同一 trace 内迭代）
+        trace_id = f"tr_{uuid.uuid4().hex[:16]}"
+        current_package.review_trace_id = trace_id
+        final_status = "in_progress"
+        package_status = "draft"
+
+        # 落库：创建 trace + 首轮 sources + claims（P2）
+        self._persist_trace_init(trace_id, session_id, stage, current_package)
+
         for iteration in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
-            print(f"=== 学习包审核循环：第{iteration}轮 ===")
+            print(f"=== 学习包审核循环：第{iteration}轮（trace={trace_id}）===")
+
+            # 步骤1：Agent4 首轮审核（传 sources/claims/trace_id/round_index）
             reviews = await self._review(ReviewInput(
                 session_id=session_id,
                 target_type="learning_package",
@@ -336,7 +373,64 @@ class Harness:
                 stage=stage,
                 profile=profile,
                 code_examples=current_package.code_examples,
+                trace_id=trace_id,
+                sources=[s.model_dump(mode="json") for s in current_package.sources],
+                claims=[c.model_dump(mode="json") for c in current_package.claims],
+                round_index=iteration,
             ))
+
+            # 如果审核通过，直接结束
+            if reviews.passed:
+                round_result = ReviewRound(
+                    iteration=iteration,
+                    technical=reviews.technical,
+                    quality=reviews.quality,
+                )
+                history.append(round_result)
+                self._record_review_round(session_id, "learning_package", round_result)
+                final_status = "passed"
+                package_status = "approved"
+                print(f"=== 学习包第{iteration}轮审核通过 ===")
+                break
+
+            # 步骤2：Agent3 答辩（对每条 issue 逐条回复）
+            issues = [e.model_dump(mode="json") for e in reviews.technical.errors]
+            package_dict = current_package.model_dump(mode="json")
+            print(f"=== 调用 Agent3.reply_to_review（{len(issues)} 条 issue）===")
+            author_replies = await self.agent3.reply_to_review(
+                session_id, issues, package_dict
+            )
+
+            # 步骤3：Agent4 复核裁决（对 Agent3 的回复做 persist/withdraw/downgrade）
+            print(f"=== 调用 Agent4.rebut ===")
+            verdicts = await self.agent4.rebut(session_id, issues, author_replies)
+            print(f"=== Agent4 复核裁决结果：{verdicts} ===")
+
+            # 步骤4：Orchestrator 裁决 — 根据复核结果分类 issues
+            accepted_issues, unresolved_must_fix_count = self._adjudicate_issues(
+                reviews.technical.errors, verdicts
+            )
+
+            # 落库：issues + round + responses（P2）
+            self._persist_debate_round(
+                trace_id, iteration, reviews.technical.errors,
+                author_replies, verdicts, accepted_issues, unresolved_must_fix_count,
+            )
+
+            # 步骤5：Agent3 修改学习包（只处理被裁决通过/降级的 issue）
+            if accepted_issues:
+                print(f"=== 调用 Agent3.modify_package（{len(accepted_issues)} 条已裁决 issue）===")
+                revised_package_dict = await self.agent3.modify_package(
+                    session_id,
+                    package_dict,
+                    {"tech": reviews.technical.errors, "quality": reviews.quality.errors},
+                    accepted_issues,
+                )
+                current_package = LearningPackage.model_validate(revised_package_dict)
+                current_package.review_trace_id = trace_id
+                # 落库：更新 claims（status 变为 revised/dropped）（P2）
+                self._persist_claims_update(trace_id, current_package)
+
             round_result = ReviewRound(
                 iteration=iteration,
                 technical=reviews.technical,
@@ -344,23 +438,233 @@ class Harness:
             )
             history.append(round_result)
             self._record_review_round(session_id, "learning_package", round_result)
-            if round_result.passed:
-                print(f"=== 学习包第{iteration}轮审核通过 ===")
+
+            # 步骤6：判断是否通过 — 所有 must_fix 已解决则通过
+            if unresolved_must_fix_count == 0 and not reviews.technical.errors:
+                final_status = "passed"
+                package_status = "approved"
+                print(f"=== 学习包第{iteration}轮辩论后通过 ===")
                 break
+
+            if unresolved_must_fix_count == 0:
+                # 无未决 must_fix，但有 minor 问题 → 视为通过
+                final_status = "passed"
+                package_status = "approved"
+                print(f"=== 学习包第{iteration}轮辩论后通过（剩余非 must_fix 问题）===")
+                break
+
             if iteration == settings.MAX_REVIEW_ITERATIONS:
-                print("=== 学习包达到最大审核轮次，保留未通过状态 ===")
+                # 达到最大轮次仍有未决 must_fix → needs_human_review（协议第 7 节）
+                final_status = "needs_human_review"
+                package_status = "provisional"
+                print(
+                    f"=== 学习包达到最大审核轮次，{unresolved_must_fix_count} 个 must_fix 未决，"
+                    f"标记为 needs_human_review（package 降级为 provisional）==="
+                )
                 break
-            print(f"=== Orchestrator汇总第{iteration}轮意见，调用Agent3修改学习包 ===")
-            revised = await self.agent3.revise_learning_package(ContentRevisionInput(
-                session_id=session_id,
-                learning_package=current_package,
-                stage=stage,
-                profile=profile,
-                technical_errors=reviews.technical.errors,
-                quality_errors=reviews.quality.errors,
-            ))
-            current_package = revised.learning_package
+
+            print(f"=== 第{iteration}轮仍有 {unresolved_must_fix_count} 个 must_fix 未决，进入下一轮 ===")
+
+        # 设置 package 最终状态
+        current_package.review_trace_id = trace_id
+        unresolved_count = sum(
+            1 for r in history for e in r.technical.errors if e.must_fix
+        )
+        self._last_review_trace = {
+            "trace_id": trace_id,
+            "final_status": final_status,
+            "package_status": package_status,
+            "unresolved_issue_count": unresolved_count,
+            "unresolved_must_fix_count": unresolved_count,
+        }
+        # 落库：更新 trace 最终状态（P2）
+        self._persist_trace_finalize(trace_id, final_status, package_status, unresolved_count)
         return current_package, history
+
+    def _persist_trace_init(
+        self, trace_id: str, session_id: str, stage: StageInfo, package: LearningPackage
+    ) -> None:
+        """落库：创建 trace + sources + claims（循环外调用一次）。"""
+        try:
+            db = self.state_manager.db_client
+            db.save_review_trace(
+                trace_id=trace_id,
+                session_id=session_id,
+                stage_id=stage.stage_id,
+                target_type="learning_package",
+                package_version=package.version,
+                package_status="draft",
+                review_mode="debate",
+                final_status="in_progress",
+            )
+            db.save_learning_package_sources(
+                trace_id, [s.model_dump(mode="json") for s in package.sources]
+            )
+            db.save_learning_package_claims(
+                trace_id, [c.model_dump(mode="json") for c in package.claims]
+            )
+        except Exception as e:
+            print(f"[Harness] 落库失败（trace init）: {e}")
+
+    def _persist_debate_round(
+        self,
+        trace_id: str,
+        iteration: int,
+        errors: List[ReviewError],
+        author_replies: List[Dict[str, Any]],
+        verdicts: Dict[str, str],
+        accepted_issues: List[Dict[str, Any]],
+        unresolved_must_fix_count: int,
+    ) -> None:
+        """落库：issues + round + responses（每轮辩论后调用）。"""
+        try:
+            db = self.state_manager.db_client
+            round_id = f"rd_{trace_id}_{iteration}"
+
+            # 1. issues（带 opened_in_round_num）
+            issues_for_db = []
+            for e in errors:
+                iss = e.model_dump(mode="json")
+                iss["opened_in_round_num"] = iteration
+                issues_for_db.append(iss)
+            db.save_review_debate_issues(trace_id, issues_for_db)
+
+            # 2. round（开轮并立即关闭）
+            verdict_label = "all_resolved" if unresolved_must_fix_count == 0 else "partial_resolved"
+            db.save_review_debate_round(
+                trace_id=trace_id,
+                round_id=round_id,
+                round_num=iteration,
+                review_iteration=iteration,
+                round_status="closed",
+                orchestrator_verdict=verdict_label,
+                verdict_summary=f"unresolved_must_fix={unresolved_must_fix_count}",
+            )
+
+            # 3. Agent3 答辩 responses
+            author_responses = []
+            for reply in author_replies:
+                cid = reply.get("canonical_error_id", "")
+                author_responses.append({
+                    "round_id": round_id,
+                    "issue_id": f"iss_{trace_id}_{cid}",
+                    "actor": "agent3",
+                    "response_type": "author_reply",
+                    "disposition": reply.get("disposition", "accepted"),
+                    "rationale": reply.get("reason"),
+                    "source_refs": reply.get("source_refs", []),
+                    "patched_sections": reply.get("patched_sections", []),
+                })
+            db.save_review_debate_responses(round_id, author_responses)
+
+            # 4. Agent4 复核 responses
+            reviewer_responses = []
+            for cid, verdict in verdicts.items():
+                reviewer_responses.append({
+                    "round_id": round_id,
+                    "issue_id": f"iss_{trace_id}_{cid}",
+                    "actor": "agent4",
+                    "response_type": "reviewer_verdict",
+                    "disposition": verdict,
+                    "rationale": None,
+                })
+            db.save_review_debate_responses(round_id, reviewer_responses)
+
+            # 5. Orchestrator 裁决 responses + 更新 issue 状态
+            orchestrator_responses = []
+            for iss in accepted_issues:
+                cid = iss.get("canonical_error_id", "")
+                issue_id = f"iss_{trace_id}_{cid}"
+                # withdraw → accepted, downgrade → partially_accepted
+                verdict = verdicts.get(cid, "withdraw")
+                disposition = "accepted" if verdict == "withdraw" else "partially_accepted"
+                orchestrator_responses.append({
+                    "round_id": round_id,
+                    "issue_id": issue_id,
+                    "actor": "orchestrator",
+                    "response_type": "orchestrator_ruling",
+                    "disposition": disposition,
+                    "rationale": f"Agent4 verdict={verdict}",
+                })
+                db.update_review_debate_issue_status(
+                    issue_id=issue_id,
+                    current_status=disposition,
+                    final_disposition=disposition,
+                    resolved_in_round_num=iteration,
+                )
+            db.save_review_debate_responses(round_id, orchestrator_responses)
+
+            # persist 的 issue（persist 且 must_fix）标记为 open
+            for e in errors:
+                cid = e.canonical_error_id or ""
+                if verdicts.get(cid) == "persist":
+                    db.update_review_debate_issue_status(
+                        issue_id=f"iss_{trace_id}_{cid}",
+                        current_status="open",
+                    )
+        except Exception as e:
+            print(f"[Harness] 落库失败（debate round）: {e}")
+
+    def _persist_claims_update(self, trace_id: str, package: LearningPackage) -> None:
+        """落库：modify_package 后更新 claims（status 变为 revised/dropped）。"""
+        try:
+            db = self.state_manager.db_client
+            db.save_learning_package_claims(
+                trace_id, [c.model_dump(mode="json") for c in package.claims]
+            )
+        except Exception as e:
+            print(f"[Harness] 落库失败（claims update）: {e}")
+
+    def _persist_trace_finalize(
+        self, trace_id: str, final_status: str, package_status: str, unresolved_count: int
+    ) -> None:
+        """落库：更新 trace 最终状态（循环结束调用）。"""
+        try:
+            db = self.state_manager.db_client
+            db.update_review_trace_status(
+                trace_id=trace_id,
+                final_status=final_status,
+                package_status=package_status,
+                unresolved_issue_count=unresolved_count,
+                unresolved_must_fix_count=unresolved_count,
+            )
+        except Exception as e:
+            print(f"[Harness] 落库失败（trace finalize）: {e}")
+
+    def _adjudicate_issues(
+        self,
+        errors: List[ReviewError],
+        verdicts: Dict[str, str],
+    ) -> tuple[List[Dict[str, Any]], int]:
+        """Orchestrator 裁决：根据 Agent4 复核结果分类 issues。
+
+        返回 (accepted_issues, unresolved_must_fix_count)：
+        - accepted_issues：Agent3 需要 modify 的 issues（withdraw + downgrade）
+        - unresolved_must_fix_count：仍坚持(persist)且 must_fix=true 的数量
+        """
+        accepted_issues: List[Dict[str, Any]] = []
+        unresolved_must_fix_count = 0
+
+        for err in errors:
+            cid = err.canonical_error_id or ""
+            verdict = verdicts.get(cid, "persist")
+
+            if verdict == "withdraw":
+                # Agent4 撤销该 issue → Agent3 接受处理
+                accepted_issues.append(err.model_dump(mode="json"))
+            elif verdict == "downgrade":
+                # Agent4 降级 → 降级 severity，若原 must_fix 则解除
+                err.severity = "minor" if err.severity == "major" else err.severity
+                if err.must_fix:
+                    err.must_fix = False
+                    err.must_fix_reason = "Agent4 复核降级，解除 must_fix"
+                accepted_issues.append(err.model_dump(mode="json"))
+            else:
+                # persist → 保持未决
+                if err.must_fix:
+                    unresolved_must_fix_count += 1
+
+        return accepted_issues, unresolved_must_fix_count
 
     async def _review_answer(
         self,

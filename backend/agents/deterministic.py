@@ -30,6 +30,7 @@ from models.material import TestQuestion
 from models.profile import KnowledgeGap, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
 from models.stage import Claim, LearningPackage, Source, StageInfo
+from agents.agent_04_tech_review import TechnicalReviewAgent
 from skills import load_skills
 from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
 from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
@@ -764,6 +765,8 @@ class DeterministicTechnicalReviewAgent:
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        # 委托 Agent4 协议字段补全（对接需求清单 2.1）
+        self._protocol_agent = TechnicalReviewAgent()
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         errors = []
@@ -800,8 +803,25 @@ class DeterministicTechnicalReviewAgent:
             except Exception:
                 pass
 
-        # 步骤5：综合裁决（有critical错误或errors非空则不通过）
+        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        errors = self._protocol_agent._enrich_debate_fields(
+            errors,
+            sources=request.sources,
+            claims=request.claims,
+            round_index=request.round_index,
+        )
+
+        # 步骤6：综合裁决（有critical错误或errors非空则不通过）
         return TechnicalReviewResult(passed=not errors, errors=errors)
+
+    async def rebut(
+        self,
+        session_id: str,
+        issues: List[Dict[str, Any]],
+        author_replies: List[Dict[str, Any]],
+    ) -> Dict[str, str]:
+        """委托 Agent4 实现复核裁决（对接需求清单 2.2）。"""
+        return await self._protocol_agent.rebut(session_id, issues, author_replies)
 
 
 # DeterministicQualityReviewAgent 和 HybridQualityReviewAgent 已合并至 Agent4
@@ -823,6 +843,8 @@ class HybridTechnicalReviewAgent:
             "learner_model",
             "quality_metrics",
         ])
+        # 委托 Agent4 协议字段补全（对接需求清单 2.1）
+        self._protocol_agent = TechnicalReviewAgent()
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         print(f"=== Agent4(合并后) 技术+质量审核开始：{request.target_type} ===")
@@ -875,8 +897,31 @@ class HybridTechnicalReviewAgent:
             result.errors = quality_tool_errors_normalized + result.errors
             result.passed = False
             print(f"=== 质量审核发现错误：{len(quality_tool_errors_normalized)}个 ===")
+
+        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        # 强制为每个 error 补全 canonical_error_id/error_id/source_refs/change_request/
+        # must_fix/must_fix_reason/claim_id（协议 2.3 / 2.4 / 第 6 节）
+        result.errors = self._protocol_agent._enrich_debate_fields(
+            result.errors,
+            sources=request.sources,
+            claims=request.claims,
+            round_index=request.round_index,
+        )
+
         print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
         return result
+
+    async def rebut(
+        self,
+        session_id: str,
+        issues: List[Dict[str, Any]],
+        author_replies: List[Dict[str, Any]],
+    ) -> Dict[str, str]:
+        """委托 Agent4 实现复核裁决（对接需求清单 2.2）。
+
+        返回 {canonical_error_id: "persist" | "withdraw" | "downgrade"}。
+        """
+        return await self._protocol_agent.rebut(session_id, issues, author_replies)
 
     def _build_prompt(self, request: ReviewInput) -> str:
         domain_reference = self._domain_reference(request.stage.block_name)
