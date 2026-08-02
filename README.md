@@ -16,10 +16,10 @@
 
 - **后端**：FastAPI, Python 3.12+
 - **数据库**：SQLite, Chroma Vector DB, NetworkX
-- **LLM**：Ollma本地模型 (deepseek-r1/ qwen2.5)
+- **LLM**：Ollama 本地模型 (deepseek-r1/ qwen2.5)
 - **前端**：React + TypeScript
 
-后端默认使用 `EXECUTION_MODE=hybrid`：状态管理、阶段规划和答题判定保持确定性，教程与问答由 Ollama 生成。设置为 `deterministic` 后，无需启动 Ollama 也可以跑通完整闭环。
+后端默认使用 `EXECUTION_MODE=hybrid`：Agent1 先以用户表单字段为事实源，使用别名精确匹配与轻量语义召回定位候选知识板块，LLM 仅在候选内细化盲区；阶段选路、状态管理和答题判定保持确定性，教程与问答由 Ollama 生成。设置为 `deterministic` 后，无需启动 Ollama 也可以跑通完整闭环。
 
 ## 项目结构
 
@@ -42,7 +42,7 @@ project-root/
 ### 环境要求
 
 - Python 3.12+
-- Ollma (本地模型推理)
+- Ollama (本地模型推理)
 - Node.js 18+ (前端)
 
 ### 安装依赖
@@ -68,6 +68,16 @@ python scripts/build_knowledge_graph.py
 python scripts/seed_test_data.py
 python scripts/init_faq_vectors.py
 ```
+
+### Agent1 轻量语义索引
+
+`python scripts/init_agent1_semantic_index.py` 首次执行会下载并缓存 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（约 90MB，CPU 运行），然后为 68 条 `knowledge_docs` 建立 Agent1 专用索引。下载与建索引只应由源码开发者或部署方执行；可用下面的命令检查中文召回：
+
+```bash
+python scripts/evaluate_agent1_retrieval.py
+```
+
+面向普通用户的发行包应预置 `data/fastembed_models/` 和已初始化的 `data/chroma_db/`，用户无需下载 embedding 模型、启动 Ollama embedding 服务或手动初始化索引。
 
 ### 手动校验 Agent3-4 审核辩论表结构
 
@@ -116,6 +126,7 @@ python scripts/check_review_schema.py
 - Agent1 索引独立使用 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（约 90MB、CPU 运行）与 cosine 距离，不依赖 Ollama，也不影响 FAQ 的默认向量空间。
 - **源码开发/部署者**：执行一次 `python scripts/init_agent1_semantic_index.py` 与 `python scripts/evaluate_agent1_retrieval.py`，模型缓存和索引会生成在 `data/fastembed_models/`、`data/chroma_db/`。
 - **普通用户**：发行包应预置上述两个目录；不需要下载模型或执行初始化。两个目录被 Git 忽略，不能依赖源码仓库自动提供。
+- `KnowledgeGap` 中的 `block_id`、`block_name`、`target_subtopic_ids`、`mapping_confidence` 是 Agent1 的映射与选路元数据；Agent6 不重新推断这些字段，只在更新学习状态时原样保留。
 
 ## Agent3-4 审核辩论协议
 
@@ -257,8 +268,8 @@ python -m unittest discover -s tests -v
 
 | Agent | 职责 | 核心功能 |
 |-------|------|----------|
-| Agent1 | 学情诊断 | 生成用户画像JSON |
-| Agent2 | 目录生成 | 规划下一阶段学习内容 |
+| Agent1 | 学情诊断与阶段选路 | 以表单事实源生成画像、混合召回并通过 `generate_stage` 规划当前/下一阶段 |
+| Agent2 | 路径规划逻辑角色 | 阶段规划能力当前由 Agent1 的运行时实现承载，保留的 Agent2 文件不由 Harness 直接实例化 |
 | Agent3 | 内容生成 | 生成学习包、回答问题、按 `block_id` 抽取测试题 |
 | Agent4 | 统一审核 | 同时检查技术正确性与教学质量 |
 | Agent6 | 阶段决策 | 更新画像、选择策略、推进下一阶段 |
@@ -270,8 +281,8 @@ python -m unittest discover -s tests -v
 
 ## 学习流程
 
-1. 用户首次输入 → Agent1生成画像
-2. Agent2生成下一阶段内容
+1. 用户首次输入 → Agent1 生成受候选目录约束的画像
+2. Agent1 的 `generate_stage` 生成当前阶段（逻辑上承担 Agent2 的路径规划职责）
 3. Agent3生成学习包 → Agent4统一审核
 4. 用户学习 + 实时答疑
 5. 进入阶段测试 → Agent3按当前 `block_id` 抽取 1~3 题
@@ -283,5 +294,5 @@ python -m unittest discover -s tests -v
 - 当前阶段推进已经从“板块级串行推进”下沉到“知识点状态推进”
 - 运行时真实状态来源于 `subtopic_status`
 - 状态语义：`-1` 未掌握，`0` 学习中，`1` 已掌握
-- Agent2 依据知识图谱前置关系与 `subtopic_status` 选择下一学习内容
+- 当前运行时由 Agent1 的 `generate_stage` 依据知识图谱前置关系与 `subtopic_status` 选择下一学习内容
 - `knowledge_gaps` 继续保留为板块级画像视图，不作为唯一推进依据
