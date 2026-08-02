@@ -80,11 +80,17 @@ def _evaluate_emotion(emotion_score: Optional[float]) -> str:
 def _evaluate_pace(pace_adjustment: str, time_diff_hours: float = 0) -> str:
     """根据节奏标签返回评价文字。"""
     if pace_adjustment == "fast":
-        extra = f"（用时比预期少了约{abs(time_diff_hours):.1f}小时）" if time_diff_hours > 0 else ""
-        return f"本阶段你用时比预期快了{extra}，学得有点快。建议放慢节奏，确保每个知识点都能理解透彻再进入下一阶段。"
+        if time_diff_hours > 0:
+            head = f"本阶段你用时比预期少了约{abs(time_diff_hours):.1f}小时，学得有点快。"
+        else:
+            head = "本阶段你的学习节奏偏快。"
+        return head + "建议放慢节奏，确保每个知识点都能理解透彻再进入下一阶段。"
     elif pace_adjustment == "slow":
-        extra = f"（用时比预期多了约{abs(time_diff_hours):.1f}小时）" if time_diff_hours > 0 else ""
-        return f"本阶段你用时比预期多了{extra}，可能是内容难度较大。如有需要可以使用'降维'策略重新学习。"
+        if time_diff_hours > 0:
+            head = f"本阶段你用时比预期多了约{abs(time_diff_hours):.1f}小时，可能是内容难度较大。"
+        else:
+            head = "本阶段你的学习节奏偏慢，可能是内容难度较大。"
+        return head + "如有需要可以使用'降维'策略重新学习。"
     else:
         return "学习节奏很合适，继续保持这样的进度。"
 
@@ -326,7 +332,19 @@ def stage_summary_generator(input_data: dict, config: dict = None) -> dict:
         
         # 统计字数和覆盖维度数
         char_count = len(report)
-        dimensions_covered = 8  # 始终覆盖全部8个维度
+        # 动态统计「有实质内容」的维度数：阶段概览/正确率恒有内容；
+        # 其余维度按是否落到占位/空态判定，真实反映内容覆盖度。
+        dimension_sections = [
+            overview,                                    # 维度1 阶段概览（恒有）
+            accuracy_section,                            # 维度2 正确率（恒有）
+            knowledge_section if knowledge_lines else "",  # 维度3 知识点掌握
+            blind_spot_analysis if "没有明显的知识盲区" not in blind_spot_analysis else "",  # 维度4
+            pace_section,                                # 维度5 学习节奏（恒有）
+            emotion_section,                             # 维度6 情绪状态（恒有）
+            strategy_section,                            # 维度7 下一阶段策略（恒有）
+            encouragement,                               # 维度8 鼓励与建议（恒有）
+        ]
+        dimensions_covered = sum(1 for s in dimension_sections if s and s.strip())
         
         return {
             "status": "success",

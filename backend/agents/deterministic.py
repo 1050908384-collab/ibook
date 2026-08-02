@@ -839,6 +839,7 @@ class HybridTechnicalReviewAgent:
         self.skill_context = get_skill_context([
             "technical_review",
             "industry_standards",
+            "code_error_patterns",
             "pedagogy",
             "learner_model",
             "quality_metrics",
@@ -1029,11 +1030,39 @@ class DeterministicStageDecisionAgent:
     async def run(self, request: StageDecisionInput) -> StageDecisionOutput:
         profile = request.profile.model_copy(deep=True)
 
+        # 预先提取原始答题记录与情绪均分，供 BKT 引擎的 Wt/We 修正使用
+        # （须在 update_gaps 之前计算，避免 BKT 引擎因缺少原始记录退化为简化公式）
+        # 只读层 state_manager.add_answer_record 存储的记录不含 skill/knowledge_point 字段，
+        # 若不补齐则 _group_by_skill 会全部归入 "unknown"，导致 update_gaps 按 gap.skill
+        # 匹配失败、BKT 引擎退化为聚合兜底公式（Wt/P(G) 失效）。故在 Agent6 层用当前阶段
+        # 的 gap_skill 给缺失 skill 的记录补齐归属，使 BKT 引擎真正作用于当前知识点。
+        current_skill = request.stage.gap_skill
+        pre_question_records: list[dict] = []
+        for qa in request.qa_history:
+            if isinstance(qa, dict) and ("question_id" in qa or "skill" in qa or "is_correct" in qa):
+                rec = dict(qa)
+                if not rec.get("skill") and not rec.get("knowledge_point") and current_skill:
+                    rec["skill"] = current_skill
+                pre_question_records.append(rec)
+        pre_emotion_score: float | None = None
+        _pre_emotion_list: list[float] = []
+        for qa in request.qa_history:
+            if isinstance(qa, dict) and "emotion_score" in qa:
+                try:
+                    _pre_emotion_list.append(float(qa["emotion_score"]))
+                except (ValueError, TypeError):
+                    pass
+        if _pre_emotion_list:
+            pre_emotion_score = sum(_pre_emotion_list) / len(_pre_emotion_list)
+
         # 步骤2：精算掌握度（逐知识点BKT更新）— 异常兜底
         try:
             updated_gaps = await self.profile_update_tool.update_gaps(
                 [gap.model_dump(mode="json") for gap in profile.knowledge_gaps],
                 request.accuracy,
+                question_records=pre_question_records,
+                emotion_score=pre_emotion_score,
+                skill_tags=list(profile.skill_tags or []),
             )
             profile.knowledge_gaps = [KnowledgeGap.model_validate(gap) for gap in updated_gaps]
         except Exception:
@@ -1070,24 +1099,35 @@ class DeterministicStageDecisionAgent:
         except Exception:
             iteration_history = []
         try:
-            strategy = await self.strategy_selector_tool.select_strategy(
+            strategy_full = await self.strategy_selector_tool.select_strategy_full(
                 request.accuracy,
                 profile.model_dump(mode="json"),
                 iteration_history=iteration_history,
             )
+            strategy = strategy_full.get("strategy_label", "reinforce")
         except Exception:
             strategy = "reinforce" if request.accuracy >= 0.6 else "simplify"
+            strategy_full = {"strategy_label": strategy, "backtrack_target": None,
+                             "should_terminate": False, "decision": None}
+        # 回溯目标（前置知识）：StageDecisionOutput/UserProfile 无独立字段承载，
+        # 故拼入阶段总结文本透传给用户，避免目标被静默丢弃（iteration_strategy.skill.md 规则2）
+        backtrack_target = strategy_full.get("backtrack_target") if strategy == "backtrack" else None
+        # 终止信号：达到最大轮次 / 死循环停滞 / 全部掌握均会触发 should_terminate，
+        # 此时策略工具已给出权威 decision（通常为 completed）。之前 run() 忽略该信号、
+        # 仅用 accuracy 重算，会丢弃规范的结业结果（iteration_strategy.skill.md 规则3）。
+        should_terminate = bool(strategy_full.get("should_terminate", False))
+        tool_decision = strategy_full.get("decision")
 
-        # 决策判定
+        # 决策判定（优先级：终止信号/工具权威 decision > backtrack > accuracy 推进）
         # strategy 为 backtrack（回溯）时，decision 映射为 repeat（回退重学前置知识）
         # strategy 为 finish（结业）时，decision 映射为 completed
-        if current_gap is not None and request.accuracy >= 0.8:
-            current_gap.status = "已掌握"
-            current_gap.progress = 1.0
-
+        # 注意：此处不再用全局 accuracy 强制把 current_gap 置为“已掌握”
+        # （与上方 L1064-1068 的逐知识点判定保持一致，避免把薄弱知识点误标为已掌握；
+        #  continue/repeat 的推进决策仍由下方 accuracy>=0.8 分支负责，不依赖 gap 状态覆盖）
         all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
-        if strategy == "finish" or all_mastered:
-            decision = "completed"
+        if strategy == "finish" or all_mastered or should_terminate:
+            # 尊重策略工具的终止裁决；工具 decision 缺省时兜底为 completed
+            decision = tool_decision or "completed"
         elif strategy == "backtrack":
             decision = "repeat"
         elif request.accuracy >= 0.8:
@@ -1122,11 +1162,9 @@ class DeterministicStageDecisionAgent:
         time_spent_hours = round(total_seconds / 3600.0, 2)
         expected_time_hours = round(expected_seconds / 3600.0, 2)
 
-        # 生成qa历史转化为question_records
-        question_records: list[dict] = []
-        for qa in request.qa_history:
-            if isinstance(qa, dict) and ("question_id" in qa or "skill" in qa or "is_correct" in qa):
-                question_records.append(qa)
+        # 生成qa历史转化为question_records（复用已补齐 skill 归属的 pre_question_records，
+        # 保证总结统计与 BKT 引擎输入一致）
+        question_records: list[dict] = pre_question_records
 
         stage_name = request.stage.block_name or f"阶段{request.stage.stage_num}"
         knowledge_gaps_json = [g.model_dump(mode="json") for g in profile.knowledge_gaps]
@@ -1155,6 +1193,9 @@ class DeterministicStageDecisionAgent:
                 f"### 📈 阶段概览\n【{stage_name}】阶段已结束，正确率{request.accuracy*100:.0f}%。\n\n"
                 f"### 💪 鼓励与建议\n你的专属AI导师始终在这里陪你！"
             )
+        # 回溯策略时把前置知识目标拼入总结，确保 backtrack_target 不被丢弃
+        if strategy == "backtrack" and backtrack_target:
+            stage_summary = (stage_summary or "") + f"\n\n### 🔁 回溯目标\n建议回到前置知识【{backtrack_target}】重新学习。"
         return StageDecisionOutput(
             decision=decision,
             profile=profile,

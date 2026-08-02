@@ -100,12 +100,14 @@ def _check_backtrack_trigger(iteration_history: List[Dict[str, Any]]) -> Tuple[b
         return False, ""
     
     # 检查最近2次降维的提升幅度
-    recent = simplify_records[:BACKTRACK_CONSECUTIVE_ROUNDS + 1]  # 3条记录
+    # simplify_records 由 reversed(iteration_history) 构建，顺序为「新→旧」（按轮次降序）；
+    # 上方 break 已保证这些记录是「连续」的降维轮次。
+    recent = simplify_records[:BACKTRACK_CONSECUTIVE_ROUNDS + 1]  # 3条记录（新→旧）
     consecutive_invalid = 0
     
     for i in range(len(recent) - 1):
         if i + 1 < len(recent):
-            improvement = recent[i][1] - recent[i + 1][1]  # 升序排列，后一轮减前一轮
+            improvement = recent[i][1] - recent[i + 1][1]  # 新一轮 accuracy − 上一轮 accuracy = 提升幅度
             if improvement < BACKTRACK_IMPROVEMENT_THRESHOLD:
                 consecutive_invalid += 1
     

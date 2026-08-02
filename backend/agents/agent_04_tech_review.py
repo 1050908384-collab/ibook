@@ -250,19 +250,42 @@ def _build_change_request(raw: Dict[str, Any], must_fix: bool, source_refs: List
     return {"required": bool(must_fix), "action": action}
 
 
+def _extract_source_supports_claim(raw: Dict[str, Any]) -> bool:
+    """读取工具原始信号：来源是否支持该 Claim（协议第 6 节规则3）。
+
+    默认 True（假定来源支持）；仅当工具显式给出以下任一信号时判定为「不支持」：
+      - raw["source_supports_claim"] is False
+      - raw["source_supported"] is False
+      - error_type 属于「来源不支持/来源不相关/来源矛盾」一类
+    """
+    for key in ("source_supports_claim", "source_supported"):
+        if raw.get(key) is False:
+            return False
+    et = str(raw.get("error_type") or raw.get("type") or "").lower()
+    unsupported_markers = (
+        "source_mismatch", "source_unsupported", "unsupported_source",
+        "source_irrelevant", "source_conflict", "来源不支持", "来源不相关", "来源矛盾",
+    )
+    if any(m in et for m in unsupported_markers):
+        return False
+    return True
+
+
 def derive_must_fix(
     error_type: Optional[str],
     severity: str,
     source_refs: List[str],
     is_key_technical: bool,
     change_request_required: bool,
+    source_supports_claim: bool = True,
 ) -> tuple[bool, Optional[str]]:
     """must_fix 派生规则（协议第 6 节 / Agent4任务说明 第 5 点）。
 
     满足任一条件即自动进入 must_fix：
       - severity = critical
       - error_type 属于事实错误/来源缺失/代码不可执行/违反安全或规范
-      - source_refs 为空但该 claim 是 is_key_technical=true
+      - 关键技术陈述缺少来源（source_refs 为空且 is_key_technical=true）
+      - 关键技术陈述的来源存在但不支持该 Claim（协议第 6 节规则3）
       - change_request.required = true
     返回 (must_fix, must_fix_reason)。
     """
@@ -272,6 +295,9 @@ def derive_must_fix(
         return True, f"error_type={error_type} 属于事实错误/来源缺失/代码不可执行/违反安全规范"
     if not source_refs and is_key_technical:
         return True, "关键技术陈述（is_key_technical=true）缺少有效来源支撑"
+    # 协议第 6 节规则(3)：来源存在（source_refs 非空）但不支持该关键技术 Claim
+    if source_refs and is_key_technical and not source_supports_claim:
+        return True, "关键技术陈述的来源存在但不支持该 Claim（协议第 6 节规则3）"
     if change_request_required:
         return True, "change_request.required=true，明确要求 Agent3 修改"
     return False, None
@@ -435,7 +461,8 @@ class TechnicalReviewAgent(BaseAgent):
         errors = self._enrich_debate_fields(
             errors, sources=sources, claims=claims, round_index=round_index, raw_errors=raw_errors
         )
-        passed = not any(e.severity == "critical" for e in errors) and len(errors) == 0
+        # 审核通过 = 未发现任何问题（len==0 时必然无 critical，无需重复判定 critical）
+        passed = len(errors) == 0
         must_fix_count = sum(1 for e in errors if e.must_fix)
         critical_count = sum(1 for e in errors if e.severity == "critical")
         summary = (
@@ -552,12 +579,14 @@ class TechnicalReviewAgent(BaseAgent):
 
             # 3. must_fix 派生（先看工具是否已提示 change_request.required）
             change_request_required = _extract_change_request_required(raw)
+            source_supports_claim = _extract_source_supports_claim(raw)
             must_fix, must_fix_reason = derive_must_fix(
                 error_type=err.error_type,
                 severity=err.severity,
                 source_refs=source_refs,
                 is_key_technical=is_key_technical,
                 change_request_required=change_request_required,
+                source_supports_claim=source_supports_claim,
             )
             err.must_fix = must_fix
             err.must_fix_reason = must_fix_reason
