@@ -9,6 +9,14 @@ Agent3 独立测试 —— 内容生成 Agent（学习包 + 答疑）
 独立运行：
   python tests/check_agent3_content.py
 
+输出内容：
+  1. Agent 配置（模式、工具列表）
+  2. 输入（ContentGenerationInput: session_id + StageInfo）
+  3. 运行中主要参数（向量检索结果、题目提取结果 — 直接调用工具预览中间数据）
+  4. Agent3 run() 输出（LearningPackage: tutorial / questions / sources / claims）
+  5. 答疑中间参数（FAQ 检索、向量检索）
+  6. 答疑输出（answer）
+
 说明：
   - hybrid 模式：先走确定性生成，再用本地 LLM 增强 tutorial / answer（与 Harness 实际行为一致）。
   - deterministic 模式：纯工具链路（向量检索 + FAQ），不调 LLM。
@@ -34,6 +42,105 @@ def pretty(label: str, obj) -> None:
     if hasattr(obj, "model_dump"):
         obj = obj.model_dump(mode="json")
     print(json.dumps(obj, ensure_ascii=False, indent=2, default=str))
+
+
+def section(title: str) -> None:
+    print(f"\n{'─' * 60}\n  {title}\n{'─' * 60}")
+
+
+def show_agent_config(agent) -> None:
+    """展示 Agent 的工具列表和配置。"""
+    section("Agent 配置")
+    agent_type = type(agent).__name__
+    print(f"  agent_type:    {agent_type}")
+    print(f"  has_llm:       {hasattr(agent, 'llm_client')}")
+    tools = []
+    for attr in sorted(vars(agent)):
+        if attr.startswith("_"):
+            continue
+        val = getattr(agent, attr)
+        tools.append(f"    .{attr}  →  {type(val).__name__}")
+    print(f"  tools/attrs ({len(tools)}):")
+    for line in tools:
+        print(line)
+
+
+async def show_runtime_params_content(agent, stage: StageInfo) -> dict:
+    """直接调用 Agent3 的工具，预览内容生成运行中的主要参数。"""
+    section("运行中主要参数（Agent3 内部工具调用预览）")
+    params = {}
+
+    # 1. 向量检索（按 block_id 检索相关文档）
+    print(f"\n  [工具] vector_search_tool.search_by_block(block_id='{stage.block_id}')")
+    try:
+        related_docs = await agent.vector_search_tool.search_by_block(stage.block_id)
+        params["related_docs"] = related_docs
+        print(f"    → 检索到 {len(related_docs)} 篇文档")
+        for i, doc in enumerate(related_docs[:3]):
+            content_preview = (doc.get("content", "") or "")[:100]
+            print(f"      [{i}] doc_id={doc.get('doc_id', '?')}, title={doc.get('title', '?')}, chunk_id={doc.get('chunk_id', '?')}")
+            print(f"          content: {content_preview}...")
+        if len(related_docs) > 3:
+            print(f"      ... 共 {len(related_docs)} 篇")
+    except Exception as e:
+        params["related_docs"] = f"[ERROR] {e}"
+        print(f"    → [ERROR] {e}")
+
+    # 2. 题目提取
+    print(f"\n  [工具] question_extract_tool.extract_questions(tutorial, config)")
+    try:
+        sample_tutorial = f"# {stage.block_name}\n\n核心概念与学习步骤。"
+        extracted_questions = await agent.question_extract_tool.extract_questions(
+            sample_tutorial,
+            {"block_id": stage.block_id, "block_name": stage.block_name, "question_count": 2},
+        )
+        params["extracted_questions"] = extracted_questions
+        print(f"    → 提取到 {len(extracted_questions)} 道题")
+        for i, q in enumerate(extracted_questions):
+            if isinstance(q, dict):
+                print(f"      [{i}] type={q.get('question_type', '?')}, text={q.get('question_text', '?')[:60]}")
+    except Exception as e:
+        params["extracted_questions"] = f"[ERROR] {e}"
+        print(f"    → [ERROR] {e}")
+
+    return params
+
+
+async def show_runtime_params_answer(agent, question: str, stage: StageInfo) -> dict:
+    """答疑的中间参数。"""
+    section("答疑中间参数（Agent3.generate_answer 内部工具调用预览）")
+    params = {}
+
+    # 1. FAQ 检索
+    print(f"\n  [工具] faq_search_tool.search(question='{question[:40]}', block_id='{stage.block_id}')")
+    try:
+        faq_results = await agent.faq_search_tool.search(
+            question, block_id=stage.block_id, top_k=1
+        )
+        params["faq_results"] = faq_results
+        print(f"    → FAQ 命中 {len(faq_results)} 条")
+        for i, faq in enumerate(faq_results):
+            print(f"      [{i}] question={faq.get('question', '?')[:60]}")
+            print(f"          answer={faq.get('answer', '?')[:80]}")
+            print(f"          similarity={faq.get('similarity', '?')}")
+    except Exception as e:
+        params["faq_results"] = f"[ERROR] {e}"
+        print(f"    → [ERROR] {e}")
+
+    # 2. 向量检索（按问题检索）
+    print(f"\n  [工具] vector_search_tool.search_by_query(question, top_k=3)")
+    try:
+        query_docs = await agent.vector_search_tool.search_by_query(question, top_k=3)
+        params["query_docs"] = query_docs
+        print(f"    → 检索到 {len(query_docs)} 篇相关文档")
+        for i, doc in enumerate(query_docs[:3]):
+            content_preview = (doc.get("content", "") or "")[:100]
+            print(f"      [{i}] doc_id={doc.get('doc_id', '?')}, content: {content_preview}...")
+    except Exception as e:
+        params["query_docs"] = f"[ERROR] {e}"
+        print(f"    → [ERROR] {e}")
+
+    return params
 
 
 def choose_mode() -> str:
@@ -71,35 +178,52 @@ async def main():
     profile = UserProfile(session_id=session_id, goal=f"掌握{gap_skill}")
     request = ContentGenerationInput(session_id=session_id, stage=stage)
 
+    # ========== 1. Agent 配置 ==========
+    show_agent_config(agent)
+
+    # ========== 2. 输入 ==========
     pretty("【输入】ContentGenerationInput", {
         "session_id": session_id,
         "stage": stage.model_dump(mode="json"),
     })
 
-    # Step 1: 内容生成 -> LearningPackage
-    print("\n[Step 1] 运行 run() 生成 LearningPackage ...")
+    # ========== 3. 运行中主要参数 ==========
+    runtime_params = await show_runtime_params_content(agent, stage)
+    pretty("【运行参数汇总】", runtime_params)
+
+    # ========== 4. Agent3 run() 输出 ==========
+    section("[Step 1] 运行 run() 生成 LearningPackage")
     output = await agent.run(request)
     pkg = output.learning_package
     pretty("【输出】LearningPackage 元信息", {
         "block_name": pkg.block_name,
         "block_id": pkg.block_id,
         "version": pkg.version,
+        "review_trace_id": pkg.review_trace_id,
         "tutorial_length": len(pkg.tutorial),
         "questions_count": len(pkg.questions),
         "sources_count": len(pkg.sources),
         "claims_count": len(pkg.claims),
-        "review_trace_id": pkg.review_trace_id,
     })
     print("\n--- tutorial ---")
     print(pkg.tutorial)
     print("\n--- questions ---")
     print(json.dumps([q.model_dump(mode="json") for q in pkg.questions], ensure_ascii=False, indent=2, default=str))
     print("\n--- sources ---")
-    print(json.dumps([s.model_dump(mode="json") for s in pkg.sources], ensure_ascii=False, indent=2, default=str))
+    if pkg.sources:
+        print(json.dumps([s.model_dump(mode="json") for s in pkg.sources], ensure_ascii=False, indent=2, default=str))
+    else:
+        print("  (空) — 向量检索未返回文档，Agent3 未生成 sources")
     print("\n--- claims ---")
-    print(json.dumps([c.model_dump(mode="json") for c in pkg.claims], ensure_ascii=False, indent=2, default=str))
+    if pkg.claims:
+        for c in pkg.claims:
+            print(f"  [{c.claim_id}] type={c.claim_type}, key_tech={c.is_key_technical}, conf={c.confidence}, status={c.status}")
+            print(f"    text: {c.text}")
+            print(f"    source_ref: {c.source_ref}, section_ref: {c.section_ref}")
+    else:
+        print("  (空)")
 
-    # Step 2: 答疑
+    # ========== 5. 答疑 ==========
     ans = input("\n是否继续测试答疑 generate_answer？(y/N): ").strip().lower()
     if ans != "y":
         print("已结束。")
@@ -111,8 +235,14 @@ async def main():
     pretty("【输入】AnswerGenerationInput", {
         "question": question,
         "stage.block_name": stage.block_name,
+        "stage.block_id": stage.block_id,
         "profile.goal": profile.goal,
     })
+
+    # 答疑中间参数
+    answer_params = await show_runtime_params_answer(agent, question, stage)
+    pretty("【答疑参数汇总】", answer_params)
+
     print("\n[Step 2] 运行 generate_answer() ...")
     answer_output = await agent.generate_answer(answer_request)
     print("\n--- answer ---")

@@ -40,6 +40,7 @@ class Claim(BaseModel):
     is_key_technical: bool = False
     confidence: float = 0.5
     status: Literal["active", "revised", "dropped"] = "active"
+    metadata_json: Optional[dict] = None
 
     @field_validator("confidence")
     @classmethod
