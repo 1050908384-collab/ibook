@@ -1,0 +1,2154 @@
+{
+  "schema_version": "1.0",
+  "resource_type": "video",
+  "resources": [
+    {
+      "resource_id": "RES-VID-001",
+      "resource_type": "video",
+      "title": "黑马程序员新版Linux零基础快速入门到精通，全涵盖linux系统知识、常用软件环境部署、Shell脚本、云平台实践、大数据集群项目实战等",
+      "raw_url": "https://www.bilibili.com/video/BV1n84y1i7td?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1n84y1i7td",
+      "platform": "bilibili",
+      "external_id": "BV1n84y1i7td",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 7
+      }
+    },
+    {
+      "resource_id": "RES-VID-002",
+      "resource_type": "video",
+      "title": "GeekHour】30分钟Linux入门教程",
+      "raw_url": "https://www.bilibili.com/video/BV1cq421w72c?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1cq421w72c",
+      "platform": "bilibili",
+      "external_id": "BV1cq421w72c",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 9
+      }
+    },
+    {
+      "resource_id": "RES-VID-003",
+      "resource_type": "video",
+      "title": "2026年版】速学Linux核心命令！linux核心命令篇，零基础也能学！",
+      "raw_url": "https://www.bilibili.com/video/BV1iwgY6jEjs?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1iwgY6jEjs",
+      "platform": "bilibili",
+      "external_id": "BV1iwgY6jEjs",
+      "external_part": null,
+      "content_summary": "用于学习“常用Shell命令”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 13
+      }
+    },
+    {
+      "resource_id": "RES-VID-004",
+      "resource_type": "video",
+      "title": "常用的Linux命令介绍：13个基本命令和Shell脚本编程",
+      "raw_url": "https://www.bilibili.com/video/BV1Uv4y127tU?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Uv4y127tU",
+      "platform": "bilibili",
+      "external_id": "BV1Uv4y127tU",
+      "external_part": null,
+      "content_summary": "用于学习“常用Shell命令”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 14
+      }
+    },
+    {
+      "resource_id": "RES-VID-005",
+      "resource_type": "video",
+      "title": "Linux操作系统入门：环境变量配置",
+      "raw_url": "https://www.bilibili.com/video/BV1eL4y187zB?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1eL4y187zB",
+      "platform": "bilibili",
+      "external_id": "BV1eL4y187zB",
+      "external_part": null,
+      "content_summary": "用于学习“环境变量配置”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 18
+      }
+    },
+    {
+      "resource_id": "RES-VID-006",
+      "resource_type": "video",
+      "title": "conda虚拟环境创建和删除",
+      "raw_url": "https://www.bilibili.com/video/BV1Uq4xzTEAx?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Uq4xzTEAx",
+      "platform": "bilibili",
+      "external_id": "BV1Uq4xzTEAx",
+      "external_part": null,
+      "content_summary": "用于学习“conda/pip虚拟环境管理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 22
+      }
+    },
+    {
+      "resource_id": "RES-VID-007",
+      "resource_type": "video",
+      "title": "conda(anaconda) 新建环境、克隆环境和移除环境",
+      "raw_url": "https://www.bilibili.com/video/BV14p4y1H7cJ?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV14p4y1H7cJ",
+      "platform": "bilibili",
+      "external_id": "BV14p4y1H7cJ",
+      "external_part": null,
+      "content_summary": "用于学习“conda/pip虚拟环境管理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 23
+      }
+    },
+    {
+      "resource_id": "RES-VID-008",
+      "resource_type": "video",
+      "title": "类似于 pip install -r requirements.txt 的安装方法",
+      "raw_url": "https://www.bilibili.com/video/BV1BQ4y1N7Sr?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1BQ4y1N7Sr",
+      "platform": "bilibili",
+      "external_id": "BV1BQ4y1N7Sr",
+      "external_part": null,
+      "content_summary": "用于学习“conda/pip虚拟环境管理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 25
+      }
+    },
+    {
+      "resource_id": "RES-VID-009",
+      "resource_type": "video",
+      "title": "nvidia-smi命令详解",
+      "raw_url": "https://www.bilibili.com/video/BV1jfGh67E7A?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1jfGh67E7A",
+      "platform": "bilibili",
+      "external_id": "BV1jfGh67E7A",
+      "external_part": null,
+      "content_summary": "用于学习“nvidia-smi显存监控”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 29
+      }
+    },
+    {
+      "resource_id": "RES-VID-010",
+      "resource_type": "video",
+      "title": "3小时超快速入门Python | 动画教学【2026新版】【自学Python教程】【零基础Python】【计算机二级Python】【Python期末速成",
+      "raw_url": "https://www.bilibili.com/video/BV1Jgf6YvE8e?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Jgf6YvE8e",
+      "platform": "bilibili",
+      "external_id": "BV1Jgf6YvE8e",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 37
+      }
+    },
+    {
+      "resource_id": "RES-VID-011",
+      "resource_type": "video",
+      "title": "第7课：Python数据类型之元组（tuple）类型",
+      "raw_url": "https://www.bilibili.com/video/BV1cA411q7AJ?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1cA411q7AJ",
+      "platform": "bilibili",
+      "external_id": "BV1cA411q7AJ",
+      "external_part": null,
+      "content_summary": "用于学习“数据结构”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 46
+      }
+    },
+    {
+      "resource_id": "RES-VID-012",
+      "resource_type": "video",
+      "title": "第11课：Python数据类型之—集合（set)类型",
+      "raw_url": "https://www.bilibili.com/video/BV1MZ4y1p79z?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1MZ4y1p79z",
+      "platform": "bilibili",
+      "external_id": "BV1MZ4y1p79z",
+      "external_part": null,
+      "content_summary": "用于学习“数据结构”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 48
+      }
+    },
+    {
+      "resource_id": "RES-VID-013",
+      "resource_type": "video",
+      "title": "python】装饰器超详细教学，用尽毕生所学给你解释清楚，以后再也不迷茫了！",
+      "raw_url": "https://www.bilibili.com/video/BV1Gu411Q7JV?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Gu411Q7JV",
+      "platform": "bilibili",
+      "external_id": "BV1Gu411Q7JV",
+      "external_part": null,
+      "content_summary": "用于学习“装饰器与生成器”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 56
+      }
+    },
+    {
+      "resource_id": "RES-VID-014",
+      "resource_type": "video",
+      "title": "python】生成器是什么？怎么用？能干啥？一期视频解决你所有疑问！",
+      "raw_url": "https://www.bilibili.com/video/BV1KS4y1D7Qb?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1KS4y1D7Qb",
+      "platform": "bilibili",
+      "external_id": "BV1KS4y1D7Qb",
+      "external_part": null,
+      "content_summary": "用于学习“装饰器与生成器”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 58
+      }
+    },
+    {
+      "resource_id": "RES-VID-015",
+      "resource_type": "video",
+      "title": "2025最新】Anaconda下载、安装、环境配置+Pycharm安装、激活、使用教程，零基础必看的保姆级python环境搭建教程！附安装包+激活码！",
+      "raw_url": "https://www.bilibili.com/video/BV1ywpgz3EZv?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1ywpgz3EZv",
+      "platform": "bilibili",
+      "external_id": "BV1ywpgz3EZv",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 68
+      }
+    },
+    {
+      "resource_id": "RES-VID-016",
+      "resource_type": "video",
+      "title": "Python】python数据清洗——pandas常用操作",
+      "raw_url": "https://www.bilibili.com/video/BV1du411r7Et?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1du411r7Et",
+      "platform": "bilibili",
+      "external_id": "BV1du411r7Et",
+      "external_part": null,
+      "content_summary": "用于学习“使用Pandas进行数据清洗”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 72
+      }
+    },
+    {
+      "resource_id": "RES-VID-017",
+      "resource_type": "video",
+      "title": "python/pandas保存读取数据csv/json",
+      "raw_url": "https://www.bilibili.com/video/BV1eFfNYsEh4?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1eFfNYsEh4",
+      "platform": "bilibili",
+      "external_id": "BV1eFfNYsEh4",
+      "external_part": null,
+      "content_summary": "用于学习“格式转换（JSON/CSV读写）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 76
+      }
+    },
+    {
+      "resource_id": "RES-VID-018",
+      "resource_type": "video",
+      "title": "python数据分析】pandas读取csv文件 python一对一视频讲解 经典实战 朝天吼数据",
+      "raw_url": "https://www.bilibili.com/video/BV1qi4y157hc?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1qi4y157hc",
+      "platform": "bilibili",
+      "external_id": "BV1qi4y157hc",
+      "external_part": null,
+      "content_summary": "用于学习“格式转换（JSON/CSV读写）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 78
+      }
+    },
+    {
+      "resource_id": "RES-VID-019",
+      "resource_type": "video",
+      "title": "python基础｜利用pandas导入数据｜excel csv txt｜格式转化",
+      "raw_url": "https://www.bilibili.com/video/BV1P3411M7ZQ?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1P3411M7ZQ",
+      "platform": "bilibili",
+      "external_id": "BV1P3411M7ZQ",
+      "external_part": null,
+      "content_summary": "用于学习“格式转换（JSON/CSV读写）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 80
+      }
+    },
+    {
+      "resource_id": "RES-VID-020",
+      "resource_type": "video",
+      "title": "一个10分钟的numpy入门教程",
+      "raw_url": "https://www.bilibili.com/video/BV1Wy4y1h7ii?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Wy4y1h7ii",
+      "platform": "bilibili",
+      "external_id": "BV1Wy4y1h7ii",
+      "external_part": null,
+      "content_summary": "用于学习“NumPy进行基本数组运算”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 84
+      }
+    },
+    {
+      "resource_id": "RES-VID-021",
+      "resource_type": "video",
+      "title": "10分钟学会Numpy，全面讲解，快速的过一遍",
+      "raw_url": "https://www.bilibili.com/video/BV1ZE411L7ae?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1ZE411L7ae",
+      "platform": "bilibili",
+      "external_id": "BV1ZE411L7ae",
+      "external_part": null,
+      "content_summary": "用于学习“NumPy进行基本数组运算”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 86
+      }
+    },
+    {
+      "resource_id": "RES-VID-022",
+      "resource_type": "video",
+      "title": "10分钟快速掌握正则表达式",
+      "raw_url": "https://www.bilibili.com/video/BV1da4y1p7iZ?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1da4y1p7iZ",
+      "platform": "bilibili",
+      "external_id": "BV1da4y1p7iZ",
+      "external_part": null,
+      "content_summary": "用于学习“正则表达式进行文本预处理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 90
+      }
+    },
+    {
+      "resource_id": "RES-VID-023",
+      "resource_type": "video",
+      "title": "30分钟正则表达式教程",
+      "raw_url": "https://www.bilibili.com/video/BV1fm411C7fq?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1fm411C7fq",
+      "platform": "bilibili",
+      "external_id": "BV1fm411C7fq",
+      "external_part": null,
+      "content_summary": "用于学习“正则表达式进行文本预处理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 92
+      }
+    },
+    {
+      "resource_id": "RES-VID-024",
+      "resource_type": "video",
+      "title": "PyTorch深度学习快速入门教程（绝对通俗易懂！）【小土堆",
+      "raw_url": "https://www.bilibili.com/video/BV1hE411t7RN?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1hE411t7RN",
+      "platform": "bilibili",
+      "external_id": "BV1hE411t7RN",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 100
+      }
+    },
+    {
+      "resource_id": "RES-VID-025",
+      "resource_type": "video",
+      "title": "最详细的 Windows 下 PyTorch 入门深度学习环境安装与配置 CPU GPU 版 | 土堆教程",
+      "raw_url": "https://www.bilibili.com/video/BV1S5411X7FY?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1S5411X7FY",
+      "platform": "bilibili",
+      "external_id": "BV1S5411X7FY",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 105
+      }
+    },
+    {
+      "resource_id": "RES-VID-026",
+      "resource_type": "video",
+      "title": "挑战2026最细深度学习环境搭建教程 就不信你学不会！！--Anaconda+PyTorch(CPU/GPU)、VSCode+PyCharm",
+      "raw_url": "https://www.bilibili.com/video/BV1Wqr5BUEVU?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Wqr5BUEVU",
+      "platform": "bilibili",
+      "external_id": "BV1Wqr5BUEVU",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 107
+      }
+    },
+    {
+      "resource_id": "RES-VID-027",
+      "resource_type": "video",
+      "title": "2026最新】PyTorch深度学习快速入门教程，适合新手小白！",
+      "raw_url": "https://www.bilibili.com/video/BV1wrcSzaEBf?p=4\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1wrcSzaEBf?p=4%5C",
+      "platform": "bilibili",
+      "external_id": "BV1wrcSzaEBf",
+      "external_part": "4",
+      "content_summary": "用于学习“张量操作”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 111
+      }
+    },
+    {
+      "resource_id": "RES-VID-028",
+      "resource_type": "video",
+      "title": "PyTorch深度学习实战案例】70个练手项目合集，七天练完，练完即可就业！还不拿下 ！！！（很少有人可以把pytorch讲的如此通俗易懂了）",
+      "raw_url": "https://www.bilibili.com/video/BV1CELTz7ETB?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1CELTz7ETB",
+      "platform": "bilibili",
+      "external_id": "BV1CELTz7ETB",
+      "external_part": null,
+      "content_summary": "用于学习“张量操作”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 113
+      }
+    },
+    {
+      "resource_id": "RES-VID-029",
+      "resource_type": "video",
+      "title": "07 自动求导【动手学深度学习v2",
+      "raw_url": "https://www.bilibili.com/video/BV1KA411N7Px?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1KA411N7Px",
+      "platform": "bilibili",
+      "external_id": "BV1KA411N7Px",
+      "external_part": null,
+      "content_summary": "用于学习“自动求导机制”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 117
+      }
+    },
+    {
+      "resource_id": "RES-VID-030",
+      "resource_type": "video",
+      "title": "PyTorch深度学习快速入门教程 - 16.神经网络的基本骨架-nn.Module的使用",
+      "raw_url": "https://www.bilibili.com/video/BV12PvSBiE1x?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV12PvSBiE1x",
+      "platform": "bilibili",
+      "external_id": "BV12PvSBiE1x",
+      "external_part": null,
+      "content_summary": "用于学习“torch.nn模块”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 120
+      }
+    },
+    {
+      "resource_id": "RES-VID-031",
+      "resource_type": "video",
+      "title": "4、PyTorch的Dataset与DataLoader详细使用教程",
+      "raw_url": "https://www.bilibili.com/video/BV1yP4y1L7cC?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1yP4y1L7cC",
+      "platform": "bilibili",
+      "external_id": "BV1yP4y1L7cC",
+      "external_part": null,
+      "content_summary": "用于学习“Dataset/DataLoader数据装载”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 124
+      }
+    },
+    {
+      "resource_id": "RES-VID-032",
+      "resource_type": "video",
+      "title": "8. Pytorch教程：Dataset和DataLoader",
+      "raw_url": "https://www.bilibili.com/video/BV1sD4y127bC?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1sD4y127bC",
+      "platform": "bilibili",
+      "external_id": "BV1sD4y127bC",
+      "external_part": null,
+      "content_summary": "用于学习“Dataset/DataLoader数据装载”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 126
+      }
+    },
+    {
+      "resource_id": "RES-VID-033",
+      "resource_type": "video",
+      "title": "NLP文本处理入门三件套：文本标注工具与NER、文本预训练模型构建实例、文本摘要建模实战（分词、NER、词性标注）全解析",
+      "raw_url": "https://www.bilibili.com/video/BV1NZBhBbEVi?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1NZBhBbEVi",
+      "platform": "bilibili",
+      "external_id": "BV1NZBhBbEVi",
+      "external_part": null,
+      "content_summary": "用于学习“理解分词、词性标注、命名实体识别（NER）等基础任务”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 139
+      }
+    },
+    {
+      "resource_id": "RES-VID-034",
+      "resource_type": "video",
+      "title": "词袋模型（Bag of Words）| 词频 /one-hot/Tf-IDF 编码 | 文本数值化入门技术",
+      "raw_url": "https://www.bilibili.com/video/BV1KF4m1F769?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1KF4m1F769",
+      "platform": "bilibili",
+      "external_id": "BV1KF4m1F769",
+      "external_part": null,
+      "content_summary": "用于学习“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 142
+      }
+    },
+    {
+      "resource_id": "RES-VID-035",
+      "resource_type": "video",
+      "title": "词向量 | word2vec | 理论讲解+代码 | 文本分析【python-gensim",
+      "raw_url": "https://www.bilibili.com/video/BV1vS4y1N7mo?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1vS4y1N7mo",
+      "platform": "bilibili",
+      "external_id": "BV1vS4y1N7mo",
+      "external_part": null,
+      "content_summary": "用于学习“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 143
+      }
+    },
+    {
+      "resource_id": "RES-VID-036",
+      "resource_type": "video",
+      "title": "All in Transformer | 一次讲透注意力机制：看完彻底听懂！（学不会跟我爆了）(极其详细简单的教程)",
+      "raw_url": "https://www.bilibili.com/video/BV16f1mB7Ebj?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV16f1mB7Ebj",
+      "platform": "bilibili",
+      "external_id": "BV16f1mB7Ebj",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 149
+      }
+    },
+    {
+      "resource_id": "RES-VID-037",
+      "resource_type": "video",
+      "title": "Python教程——手把手教你用pip安装第三方库，新手小白必看的菜鸟教程！",
+      "raw_url": "https://www.bilibili.com/video/BV1oWnZeNEaF?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1oWnZeNEaF",
+      "platform": "bilibili",
+      "external_id": "BV1oWnZeNEaF",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 161
+      }
+    },
+    {
+      "resource_id": "RES-VID-038",
+      "resource_type": "video",
+      "title": "大模型保姆级教程 - 1.1.1分词方式",
+      "raw_url": "https://www.bilibili.com/video/BV1PNTiz3Enh?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1PNTiz3Enh",
+      "platform": "bilibili",
+      "external_id": "BV1PNTiz3Enh",
+      "external_part": null,
+      "content_summary": "用于学习“理解BPE、WordPiece、SentencePiece算法原理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 165
+      }
+    },
+    {
+      "resource_id": "RES-VID-039",
+      "resource_type": "video",
+      "title": "手把手带你实战HuggingFace Transformers-入门篇】基础组件之Tokenizer",
+      "raw_url": "https://www.bilibili.com/video/BV1NX4y1177c?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1NX4y1177c",
+      "platform": "bilibili",
+      "external_id": "BV1NX4y1177c",
+      "external_part": null,
+      "content_summary": "用于学习“掌握HuggingFace Tokenizer的加载与使用”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 169
+      }
+    },
+    {
+      "resource_id": "RES-VID-040",
+      "resource_type": "video",
+      "title": "大模型必刷教程！计算机大佬大白话教学Transformers开源库基础及实操，适合小白学习的喂饭教程！",
+      "raw_url": "https://www.bilibili.com/video/BV1y7wezdESG?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1y7wezdESG",
+      "platform": "bilibili",
+      "external_id": "BV1y7wezdESG",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 181
+      }
+    },
+    {
+      "resource_id": "RES-VID-041",
+      "resource_type": "video",
+      "title": "Transformer】最强动画讲解！目前B站最全最详细的Transformer教程，2025最新版！从理论到实战，通俗易懂解释原理，草履虫都学的会！",
+      "raw_url": "https://www.bilibili.com/video/BV1fGeAz6Eie?p=11\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1fGeAz6Eie?p=11%5C",
+      "platform": "bilibili",
+      "external_id": "BV1fGeAz6Eie",
+      "external_part": "11",
+      "content_summary": "用于学习“掌握Transformer的Encoder-Decoder结构”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 185
+      }
+    },
+    {
+      "resource_id": "RES-VID-042",
+      "resource_type": "video",
+      "title": "Transformer】最强动画讲解！目前B站最全最详细的Transformer教程，2025最新版！从理论到实战，通俗易懂解释原理，草履虫都学的会！",
+      "raw_url": "https://www.bilibili.com/video/BV1fGeAz6Eie?p=12\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1fGeAz6Eie?p=12%5C",
+      "platform": "bilibili",
+      "external_id": "BV1fGeAz6Eie",
+      "external_part": "12",
+      "content_summary": "用于学习“重点理解Decoder-Only架构（如GPT/Llama/Qwen）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 189
+      }
+    },
+    {
+      "resource_id": "RES-VID-043",
+      "resource_type": "video",
+      "title": "CS336-1】4.1 Transformer Block 构建（残差连接，pre-norm和post-norm）",
+      "raw_url": "https://www.bilibili.com/video/BV1LPrHBsEn5?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1LPrHBsEn5",
+      "platform": "bilibili",
+      "external_id": "BV1LPrHBsEn5",
+      "external_part": null,
+      "content_summary": "用于学习“RMSNorm与残差连接”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 193
+      }
+    },
+    {
+      "resource_id": "RES-VID-044",
+      "resource_type": "video",
+      "title": "CS336-1】3.4 前反馈层：SwiGLU",
+      "raw_url": "https://www.bilibili.com/video/BV1P2raBiEPF?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1P2raBiEPF",
+      "platform": "bilibili",
+      "external_id": "BV1P2raBiEPF",
+      "external_part": null,
+      "content_summary": "用于学习“前馈网络（FFN）与SwiGLU激活函数”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 197
+      }
+    },
+    {
+      "resource_id": "RES-VID-045",
+      "resource_type": "video",
+      "title": "终于知道Transformer 为啥离不开 RoPE了",
+      "raw_url": "https://www.bilibili.com/video/BV166egzvE9H?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV166egzvE9H",
+      "platform": "bilibili",
+      "external_id": "BV166egzvE9H",
+      "external_part": null,
+      "content_summary": "用于学习“旋转位置编码（RoPE）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 201
+      }
+    },
+    {
+      "resource_id": "RES-VID-046",
+      "resource_type": "video",
+      "title": "CS336-1】3.3 RoPE旋转位置编码详解",
+      "raw_url": "https://www.bilibili.com/video/BV1tQ6RBqE7H?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1tQ6RBqE7H",
+      "platform": "bilibili",
+      "external_id": "BV1tQ6RBqE7H",
+      "external_part": null,
+      "content_summary": "用于学习“旋转位置编码（RoPE）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 203
+      }
+    },
+    {
+      "resource_id": "RES-VID-047",
+      "resource_type": "video",
+      "title": "保姆级KV Cache教程！从底层原理到显存计算，新手也能一次看懂",
+      "raw_url": "https://www.bilibili.com/video/BV1dUPuzLEu7?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1dUPuzLEu7",
+      "platform": "bilibili",
+      "external_id": "BV1dUPuzLEu7",
+      "external_part": null,
+      "content_summary": "用于学习“KV Cache机制”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 207
+      }
+    },
+    {
+      "resource_id": "RES-VID-048",
+      "resource_type": "video",
+      "title": "什么是KV Cache？为什么它能加快模型推理速度？",
+      "raw_url": "https://www.bilibili.com/video/BV1SmrSBfEg6?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1SmrSBfEg6",
+      "platform": "bilibili",
+      "external_id": "BV1SmrSBfEg6",
+      "external_part": null,
+      "content_summary": "用于学习“KV Cache机制”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 209
+      }
+    },
+    {
+      "resource_id": "RES-VID-049",
+      "resource_type": "video",
+      "title": "GPT2开发】5.实现前向传播以获得 logits",
+      "raw_url": "https://www.bilibili.com/video/BV1Fbx7eME83?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Fbx7eME83",
+      "platform": "bilibili",
+      "external_id": "BV1Fbx7eME83",
+      "external_part": null,
+      "content_summary": "用于学习“前向传播实验（加载GPT-2验证理解）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 213
+      }
+    },
+    {
+      "resource_id": "RES-VID-050",
+      "resource_type": "video",
+      "title": "83-预训练模型-GPT2（模型原理）-自然语言处理-深度学习-pytorch",
+      "raw_url": "https://www.bilibili.com/video/BV1Ru411r7vX?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Ru411r7vX",
+      "platform": "bilibili",
+      "external_id": "BV1Ru411r7vX",
+      "external_part": null,
+      "content_summary": "用于学习“前向传播实验（加载GPT-2验证理解）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 215
+      }
+    },
+    {
+      "resource_id": "RES-VID-051",
+      "resource_type": "video",
+      "title": "中配】ChatGPT原理全解析：从数据训练到思维涌现 - Andrej Karpathy",
+      "raw_url": "https://www.bilibili.com/video/BV1fGQzBMEC2/?share\\_source=copy\\_web\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1fGQzBMEC2",
+      "platform": "bilibili",
+      "external_id": "BV1fGQzBMEC2",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 223
+      }
+    },
+    {
+      "resource_id": "RES-VID-052",
+      "resource_type": "video",
+      "title": "CS229】斯坦福两小时讲透 ChatGPT 与 Claude 是怎么炼成的 (Yann Dubois) \\[中英字幕]",
+      "raw_url": "https://www.bilibili.com/video/BV1DWRHBmE9t?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1DWRHBmE9t",
+      "platform": "bilibili",
+      "external_id": "BV1DWRHBmE9t",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 242
+      }
+    },
+    {
+      "resource_id": "RES-VID-053",
+      "resource_type": "video",
+      "title": "大模型是怎么被训练出来的",
+      "raw_url": "https://www.bilibili.com/video/BV1MfLX6BE6B/?share\\_source=copy\\_web\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1MfLX6BE6B",
+      "platform": "bilibili",
+      "external_id": "BV1MfLX6BE6B",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 244
+      }
+    },
+    {
+      "resource_id": "RES-VID-054",
+      "resource_type": "video",
+      "title": "深度拆解大语言模型预训练的底层原理",
+      "raw_url": "https://www.bilibili.com/video/BV1WLja6gEjB?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1WLja6gEjB",
+      "platform": "bilibili",
+      "external_id": "BV1WLja6gEjB",
+      "external_part": null,
+      "content_summary": "用于学习“掌握预训练（Pretrain）整体流程与目标”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 248
+      }
+    },
+    {
+      "resource_id": "RES-VID-055",
+      "resource_type": "video",
+      "title": "大模型微调看这个视频就够了 SFT NEFTune",
+      "raw_url": "https://www.bilibili.com/video/BV1gmWDeLEMZ?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1gmWDeLEMZ",
+      "platform": "bilibili",
+      "external_id": "BV1gmWDeLEMZ",
+      "external_part": null,
+      "content_summary": "用于学习“有监督微调（SFT）整体流程与目标”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 252
+      }
+    },
+    {
+      "resource_id": "RES-VID-056",
+      "resource_type": "video",
+      "title": "挑战11分钟搞定，AI大模型监督微调SFT",
+      "raw_url": "https://www.bilibili.com/video/BV1J8BQBMENt?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1J8BQBMENt",
+      "platform": "bilibili",
+      "external_id": "BV1J8BQBMENt",
+      "external_part": null,
+      "content_summary": "用于学习“有监督微调（SFT）整体流程与目标”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 254
+      }
+    },
+    {
+      "resource_id": "RES-VID-057",
+      "resource_type": "video",
+      "title": "RLHF大模型加强学习机制原理介绍",
+      "raw_url": "https://www.bilibili.com/video/BV1X14y167E8?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1X14y167E8",
+      "platform": "bilibili",
+      "external_id": "BV1X14y167E8",
+      "external_part": null,
+      "content_summary": "用于学习“基于人类反馈的强化学习（RLHF）整体流程与目标”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 258
+      }
+    },
+    {
+      "resource_id": "RES-VID-058",
+      "resource_type": "video",
+      "title": "图解RLHF",
+      "raw_url": "https://www.bilibili.com/video/BV1XgLp6ZEtE?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1XgLp6ZEtE",
+      "platform": "bilibili",
+      "external_id": "BV1XgLp6ZEtE",
+      "external_part": null,
+      "content_summary": "用于学习“基于人类反馈的强化学习（RLHF）整体流程与目标”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 260
+      }
+    },
+    {
+      "resource_id": "RES-VID-059",
+      "resource_type": "video",
+      "title": "全网最细】HuggingFace从入门到实战保姆级教程！核心组件拆解 + 实战调优全流程，小白也能轻松上手！学完即就业！",
+      "raw_url": "https://www.bilibili.com/video/BV1n3gpz6ESH?p=2\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1n3gpz6ESH?p=2%5C",
+      "platform": "bilibili",
+      "external_id": "BV1n3gpz6ESH",
+      "external_part": "2",
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 270
+      }
+    },
+    {
+      "resource_id": "RES-VID-060",
+      "resource_type": "video",
+      "title": "全网最细】HuggingFace从入门到实战保姆级教程！核心组件拆解 + 实战调优全流程，小白也能轻松上手！学完即就业！",
+      "raw_url": "https://www.bilibili.com/video/BV1n3gpz6ESH?p=5\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1n3gpz6ESH?p=5%5C",
+      "platform": "bilibili",
+      "external_id": "BV1n3gpz6ESH",
+      "external_part": "5",
+      "content_summary": "用于学习“掌握transformers库的AutoModel/AutoTokenizer加载方式”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 274
+      }
+    },
+    {
+      "resource_id": "RES-VID-061",
+      "resource_type": "video",
+      "title": "手把手带你实战HuggingFace Transformers-入门篇】基础组件之Datasets",
+      "raw_url": "https://www.bilibili.com/video/BV1Ph4y1b76w?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Ph4y1b76w",
+      "platform": "bilibili",
+      "external_id": "BV1Ph4y1b76w",
+      "external_part": null,
+      "content_summary": "用于学习“datasets库的数据处理（map/filter/shuffle）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 278
+      }
+    },
+    {
+      "resource_id": "RES-VID-062",
+      "resource_type": "video",
+      "title": "transfomers源码阅读——Trainer解读系列1\\_了解训练流程",
+      "raw_url": "https://www.bilibili.com/video/BV1b8411y7rR?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1b8411y7rR",
+      "platform": "bilibili",
+      "external_id": "BV1b8411y7rR",
+      "external_part": null,
+      "content_summary": "用于学习“Trainer训练器的使用及TrainingArguments参数配置”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 282
+      }
+    },
+    {
+      "resource_id": "RES-VID-063",
+      "resource_type": "video",
+      "title": "62-LLM-微调实战-SFTTrainer-官方案例-Trainer配置\\&训练",
+      "raw_url": "https://www.bilibili.com/video/BV1orM86NEfn?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1orM86NEfn",
+      "platform": "bilibili",
+      "external_id": "BV1orM86NEfn",
+      "external_part": null,
+      "content_summary": "用于学习“Trainer训练器的使用及TrainingArguments参数配置”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 284
+      }
+    },
+    {
+      "resource_id": "RES-VID-064",
+      "resource_type": "video",
+      "title": "LoRA微调】从原理到调参，7 个问题彻底理解LoRA，不懂线性代数也没问题\\_大模型微调\\_低秩适配",
+      "raw_url": "https://www.bilibili.com/video/BV1waZ2YDEcp?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1waZ2YDEcp",
+      "platform": "bilibili",
+      "external_id": "BV1waZ2YDEcp",
+      "external_part": null,
+      "content_summary": "用于学习“理解LoRA的低秩分解原理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 296
+      }
+    },
+    {
+      "resource_id": "RES-VID-065",
+      "resource_type": "video",
+      "title": "浙江大学-大模型原理与技术】4-3 低秩适配方法 LoRA及其变体",
+      "raw_url": "https://www.bilibili.com/video/BV1ppwAekEd7?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1ppwAekEd7",
+      "platform": "bilibili",
+      "external_id": "BV1ppwAekEd7",
+      "external_part": null,
+      "content_summary": "用于学习“理解LoRA的低秩分解原理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 298
+      }
+    },
+    {
+      "resource_id": "RES-VID-066",
+      "resource_type": "video",
+      "title": "PEFT与LORA, 大模型高效调优, 快速上手实战",
+      "raw_url": "https://www.bilibili.com/video/BV11E421u7MK?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV11E421u7MK",
+      "platform": "bilibili",
+      "external_id": "BV11E421u7MK",
+      "external_part": null,
+      "content_summary": "用于学习“掌握PEFT库的LoraConfig配置（target_modules、r、lora_alpha、lora_dropout）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 306
+      }
+    },
+    {
+      "resource_id": "RES-VID-067",
+      "resource_type": "video",
+      "title": "手把手带你实战HuggingFace Transformers-高效微调篇】PEFT 进阶操作",
+      "raw_url": "https://www.bilibili.com/video/BV1YH4y1o7rg?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1YH4y1o7rg",
+      "platform": "bilibili",
+      "external_id": "BV1YH4y1o7rg",
+      "external_part": null,
+      "content_summary": "用于学习“掌握PEFT库的LoraConfig配置（target_modules、r、lora_alpha、lora_dropout）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 308
+      }
+    },
+    {
+      "resource_id": "RES-VID-068",
+      "resource_type": "video",
+      "title": "2026最新大模型微调】lora微调教程2小时学会LoRA+QLoRA+DoRA+AddaLoRA模型原理，全程通俗易懂小白也能轻松学会！！大模型/训练/实战",
+      "raw_url": "https://www.bilibili.com/video/BV1Xe5S6PEfR?p=2\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1Xe5S6PEfR?p=2%5C",
+      "platform": "bilibili",
+      "external_id": "BV1Xe5S6PEfR",
+      "external_part": "2",
+      "content_summary": "用于学习“理解QLoRA的4-bit量化（NF4、双重量化）与分页优化器原理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 312
+      }
+    },
+    {
+      "resource_id": "RES-VID-069",
+      "resource_type": "video",
+      "title": "案例实战-11-单个LoRA权重与LLaMA合并",
+      "raw_url": "https://www.bilibili.com/video/BV15h4y1M7MU?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV15h4y1M7MU",
+      "platform": "bilibili",
+      "external_id": "BV15h4y1M7MU",
+      "external_part": null,
+      "content_summary": "用于学习“掌握LoRA权重合并与导出（merge_and_unload）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 316
+      }
+    },
+    {
+      "resource_id": "RES-VID-070",
+      "resource_type": "video",
+      "title": "11.LoRA模型的花样部署与模型权重合并的可视化验证",
+      "raw_url": "https://www.bilibili.com/video/BV1CBjZz8Eum?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1CBjZz8Eum",
+      "platform": "bilibili",
+      "external_id": "BV1CBjZz8Eum",
+      "external_part": null,
+      "content_summary": "用于学习“掌握LoRA权重合并与导出（merge_and_unload）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 318
+      }
+    },
+    {
+      "resource_id": "RES-VID-071",
+      "resource_type": "video",
+      "title": "Pytorch训练技巧】梯度累计Gradient Accumulation",
+      "raw_url": "https://www.bilibili.com/video/BV1sLVKzCEoT/?share\\_source=copy\\_web\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1sLVKzCEoT",
+      "platform": "bilibili",
+      "external_id": "BV1sLVKzCEoT",
+      "external_part": null,
+      "content_summary": "用于学习“掌握梯度累积（Gradient Accumulation）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 330
+      }
+    },
+    {
+      "resource_id": "RES-VID-072",
+      "resource_type": "video",
+      "title": "Pytorch训练技巧】AMP自动混合精度训练",
+      "raw_url": "https://www.bilibili.com/video/BV1W7VKzGEXz?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1W7VKzGEXz",
+      "platform": "bilibili",
+      "external_id": "BV1W7VKzGEXz",
+      "external_part": null,
+      "content_summary": "用于学习“混合精度训练（AMP）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 334
+      }
+    },
+    {
+      "resource_id": "RES-VID-073",
+      "resource_type": "video",
+      "title": "Pytorch训练技巧】激活值检查点Activation Checkpoint",
+      "raw_url": "https://www.bilibili.com/video/BV1s7VKzGEMH?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1s7VKzGEMH",
+      "platform": "bilibili",
+      "external_id": "BV1s7VKzGEMH",
+      "external_part": null,
+      "content_summary": "用于学习“梯度检查点（Gradient Checkpointing）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 338
+      }
+    },
+    {
+      "resource_id": "RES-VID-074",
+      "resource_type": "video",
+      "title": "B14 学习率预热（Warmup）LinearLR、SequentialLR、LambdaLR",
+      "raw_url": "https://www.bilibili.com/video/BV16RDvBFEEW?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV16RDvBFEEW",
+      "platform": "bilibili",
+      "external_id": "BV16RDvBFEEW",
+      "external_part": null,
+      "content_summary": "用于学习“学习率调度（Warmup + 余弦退火）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 342
+      }
+    },
+    {
+      "resource_id": "RES-VID-075",
+      "resource_type": "video",
+      "title": "面试高频】学习率 Warmup 为什么重要：损失面陡峭 + Adam 二阶矩不准，不加会怎样",
+      "raw_url": "https://www.bilibili.com/video/BV1qcKM6KEDe?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1qcKM6KEDe",
+      "platform": "bilibili",
+      "external_id": "BV1qcKM6KEDe",
+      "external_part": null,
+      "content_summary": "用于学习“学习率调度（Warmup + 余弦退火）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 344
+      }
+    },
+    {
+      "resource_id": "RES-VID-076",
+      "resource_type": "video",
+      "title": "详细版DeepSpeed教程】从入门到实践，手把手教你如何使用DeepSpeed",
+      "raw_url": "https://www.bilibili.com/video/BV1QV2FBiEh1?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1QV2FBiEh1",
+      "platform": "bilibili",
+      "external_id": "BV1QV2FBiEh1",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 350
+      }
+    },
+    {
+      "resource_id": "RES-VID-077",
+      "resource_type": "video",
+      "title": "详细版DeepSpeed教程】从入门到实践，手把手教你如何使用DeepSpeed",
+      "raw_url": "https://www.bilibili.com/video/BV1QV2FBiEh1?p=9\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1QV2FBiEh1?p=9%5C",
+      "platform": "bilibili",
+      "external_id": "BV1QV2FBiEh1",
+      "external_part": "9",
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 356
+      }
+    },
+    {
+      "resource_id": "RES-VID-078",
+      "resource_type": "video",
+      "title": "2026最新】强推！目前B站最全最细的Vllm大模型推理快速入门教学视频！看完大模型技术猛涨！逼自己1天学完，从0基础小白到大神只要这套就够了\\~",
+      "raw_url": "https://www.bilibili.com/video/BV1pjwFzbE6i?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1pjwFzbE6i",
+      "platform": "bilibili",
+      "external_id": "BV1pjwFzbE6i",
+      "external_part": null,
+      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 370
+      }
+    },
+    {
+      "resource_id": "RES-VID-079",
+      "resource_type": "video",
+      "title": "2026最新】强推！目前B站最全最细的Vllm大模型推理快速入门教学视频！看完大模型技术猛涨！逼自己1天学完，从0基础小白到大神只要这套就够了\\~",
+      "raw_url": "https://www.bilibili.com/video/BV1pjwFzbE6i?p=2\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1pjwFzbE6i?p=2%5C",
+      "platform": "bilibili",
+      "external_id": "BV1pjwFzbE6i",
+      "external_part": "2",
+      "content_summary": "用于学习“理解vLLM的PagedAttention与Continuous Batching机制”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 378
+      }
+    },
+    {
+      "resource_id": "RES-VID-080",
+      "resource_type": "video",
+      "title": "2026最新】强推！目前B站最全最细的Vllm大模型推理快速入门教学视频！看完大模型技术猛涨！逼自己1天学完，从0基础小白到大神只要这套就够了\\~",
+      "raw_url": "https://www.bilibili.com/video/BV1pjwFzbE6i?p=3\\&vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1pjwFzbE6i?p=3%5C",
+      "platform": "bilibili",
+      "external_id": "BV1pjwFzbE6i",
+      "external_part": "3",
+      "content_summary": "用于学习“能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 382
+      }
+    }
+  ],
+  "subtopic_mappings": [
+    {
+      "resource_id": "RES-VID-003",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.95,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“常用Shell命令（cd/ls/mkdir/cp/mv）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-004",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-01",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 0.95,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“常用Shell命令（cd/ls/mkdir/cp/mv）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-005",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境变量配置-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-006",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-007",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-03",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-008",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-03",
+      "role": "supplementary",
+      "sequence_index": 3,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-009",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“nvidia-smi显存监控-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-011",
+      "block_id": "KB-02",
+      "subtopic_id": "KBS-02-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“数据结构-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-012",
+      "block_id": "KB-02",
+      "subtopic_id": "KBS-02-02",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“数据结构-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-013",
+      "block_id": "KB-02",
+      "subtopic_id": "KBS-02-05",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“装饰器与生成器-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-014",
+      "block_id": "KB-02",
+      "subtopic_id": "KBS-02-05",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“装饰器与生成器-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-016",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“使用Pandas进行数据清洗-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-017",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-018",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-02",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-019",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-02",
+      "role": "supplementary",
+      "sequence_index": 3,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-020",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“NumPy进行基本数组运算-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-021",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-03",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“NumPy进行基本数组运算-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-022",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“正则表达式进行文本预处理-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-023",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-04",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“正则表达式进行文本预处理-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-027",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“张量操作-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-028",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-01",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“张量操作-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-029",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“自动求导机制-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-030",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“torch.nn模块-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-031",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“Dataset/DataLoader数据装载-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-032",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-04",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“Dataset/DataLoader数据装载-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-033",
+      "block_id": "KB-05",
+      "subtopic_id": "KBS-05-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“理解分词、词性标注、命名实体识别（NER）等基础任务-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-034",
+      "block_id": "KB-05",
+      "subtopic_id": "KBS-05-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-035",
+      "block_id": "KB-05",
+      "subtopic_id": "KBS-05-02",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-038",
+      "block_id": "KB-07",
+      "subtopic_id": "KBS-07-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“理解BPE、WordPiece、SentencePiece算法原理-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-039",
+      "block_id": "KB-07",
+      "subtopic_id": "KBS-07-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握HuggingFace Tokenizer的加载与使用-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-041",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握Transformer的Encoder-Decoder结构-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-042",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“重点理解Decoder-Only架构（如GPT/Llama/Qwen）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-043",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“RMSNorm与残差连接-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-044",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“前馈网络（FFN）与SwiGLU激活函数-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-045",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-05",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“旋转位置编码（RoPE）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-046",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-05",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“旋转位置编码（RoPE）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-047",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-06",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“KV Cache机制-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-048",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-06",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“KV Cache机制-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-049",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-07",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“前向传播实验（加载GPT-2验证理解）-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-050",
+      "block_id": "KB-08",
+      "subtopic_id": "KBS-08-07",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“前向传播实验（加载GPT-2验证理解）-0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-054",
+      "block_id": "KB-10",
+      "subtopic_id": "KBS-10-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握预训练（Pretrain）整体流程与目标-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-055",
+      "block_id": "KB-10",
+      "subtopic_id": "KBS-10-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“有监督微调（SFT）整体流程与目标-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-056",
+      "block_id": "KB-10",
+      "subtopic_id": "KBS-10-02",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“有监督微调（SFT）整体流程与目标-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-057",
+      "block_id": "KB-10",
+      "subtopic_id": "KBS-10-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“基于人类反馈的强化学习（RLHF）整体流程与目标-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-058",
+      "block_id": "KB-10",
+      "subtopic_id": "KBS-10-03",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“基于人类反馈的强化学习（RLHF）整体流程与目标-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-060",
+      "block_id": "KB-11",
+      "subtopic_id": "KBS-11-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握transformers库的AutoModel/AutoTokenizer加载方式-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-061",
+      "block_id": "KB-11",
+      "subtopic_id": "KBS-11-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.95,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“datasets库的数据处理（map/filter/shuffle）1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-062",
+      "block_id": "KB-11",
+      "subtopic_id": "KBS-11-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“Trainer训练器的使用及TrainingArguments参数配置-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-063",
+      "block_id": "KB-11",
+      "subtopic_id": "KBS-11-03",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“Trainer训练器的使用及TrainingArguments参数配置-2h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-064",
+      "block_id": "KB-12",
+      "subtopic_id": "KBS-12-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“理解LoRA的低秩分解原理-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-065",
+      "block_id": "KB-12",
+      "subtopic_id": "KBS-12-01",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“理解LoRA的低秩分解原理-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-066",
+      "block_id": "KB-12",
+      "subtopic_id": "KBS-12-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.95,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“（target\\_modules、r、lora\\_alpha、lora\\_dropout）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-067",
+      "block_id": "KB-12",
+      "subtopic_id": "KBS-12-03",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 0.95,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“（target\\_modules、r、lora\\_alpha、lora\\_dropout）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-068",
+      "block_id": "KB-12",
+      "subtopic_id": "KBS-12-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“理解QLoRA的4-bit量化（NF4、双重量化）与分页优化器原理-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-069",
+      "block_id": "KB-12",
+      "subtopic_id": "KBS-12-05",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.95,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握LoRA权重合并与导出（merge\\_and\\_unload）0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-070",
+      "block_id": "KB-12",
+      "subtopic_id": "KBS-12-05",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 0.95,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握LoRA权重合并与导出（merge\\_and\\_unload）0.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-071",
+      "block_id": "KB-13",
+      "subtopic_id": "KBS-13-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“掌握梯度累积（Gradient Accumulation）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-072",
+      "block_id": "KB-13",
+      "subtopic_id": "KBS-13-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“混合精度训练（AMP）-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-073",
+      "block_id": "KB-13",
+      "subtopic_id": "KBS-13-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“梯度检查点（Gradient Checkpointing）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-074",
+      "block_id": "KB-13",
+      "subtopic_id": "KBS-13-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“学习率调度（Warmup + 余弦退火）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-075",
+      "block_id": "KB-13",
+      "subtopic_id": "KBS-13-04",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“学习率调度（Warmup + 余弦退火）-1h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-079",
+      "block_id": "KB-15",
+      "subtopic_id": "KBS-15-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“理解vLLM的PagedAttention与Continuous Batching机制-1.5h”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-080",
+      "block_id": "KB-15",
+      "subtopic_id": "KBS-15-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“能够使用vLLM加载模型并配置gpu\\_memory\\_utilization等关键参数进行推理部署-1.5h”自动匹配。"
+    }
+  ],
+  "block_mappings": [
+    {
+      "resource_id": "RES-VID-001",
+      "block_id": "KB-01",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-002",
+      "block_id": "KB-01",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-010",
+      "block_id": "KB-02",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-015",
+      "block_id": "KB-03",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-024",
+      "block_id": "KB-04",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-025",
+      "block_id": "KB-04",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-026",
+      "block_id": "KB-04",
+      "role": "supplementary",
+      "sequence_index": 3,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-036",
+      "block_id": "KB-06",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-037",
+      "block_id": "KB-07",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-040",
+      "block_id": "KB-08",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-051",
+      "block_id": "KB-09",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-052",
+      "block_id": "KB-10",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-053",
+      "block_id": "KB-10",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-059",
+      "block_id": "KB-11",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-076",
+      "block_id": "KB-14",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-077",
+      "block_id": "KB-14",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    },
+    {
+      "resource_id": "RES-VID-078",
+      "block_id": "KB-15",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 0.9,
+      "mapping_status": "confirmed",
+      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+    }
+  ],
+  "manual_review": []
+}

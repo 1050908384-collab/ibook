@@ -376,6 +376,7 @@ class Harness:
                 trace_id=trace_id,
                 sources=[s.model_dump(mode="json") for s in current_package.sources],
                 claims=[c.model_dump(mode="json") for c in current_package.claims],
+                recommended_videos=current_package.recommended_videos,
                 round_index=iteration,
             ))
 

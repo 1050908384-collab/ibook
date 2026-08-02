@@ -49,6 +49,7 @@ class ReviewInput(BaseModel):
     trace_id: Optional[str] = None                       # 本次审核生命周期 ID（review_traces.trace_id）
     sources: List[dict] = Field(default_factory=list)    # Agent3 产出的来源清单（协议 2.1）
     claims: List[dict] = Field(default_factory=list)     # Agent3 产出的可验证陈述（协议 2.2）
+    recommended_videos: List[dict] = Field(default_factory=list)  # Agent3 按当前子知识点推荐的视频资源
     round_index: int = 1                                 # 当前审核轮次，用于 error_id 后缀 _r{round_index}
 
 

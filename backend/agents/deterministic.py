@@ -30,6 +30,7 @@ from models.material import TestQuestion
 from models.profile import KnowledgeGap, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
 from models.stage import Claim, LearningPackage, Source, StageInfo
+from tools.learning_resource_tool import LearningResourceTool
 from agents.agent_04_tech_review import TechnicalReviewAgent
 from skills import load_skills
 from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
@@ -373,6 +374,7 @@ class DeterministicContentAgent:
         self.vector_search_tool = VectorSearchTool()
         self.question_extract_tool = QuestionExtractTool()
         self.faq_search_tool = FAQSearchTool()
+        self.learning_resource_tool = LearningResourceTool()
 
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
         _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
@@ -382,6 +384,9 @@ class DeterministicContentAgent:
             related_docs = await self.vector_search_tool.search_by_block(stage.block_id)
         except Exception:
             related_docs = []
+        recommended_videos = await self.learning_resource_tool.get_recommended_videos(
+            stage.block_id, stage.subtopic_id
+        )
         tutorial = (
             f"# {stage.block_name}\n\n"
             f"本阶段目标是理解 {stage.block_name} 的核心概念，并完成一次基础练习。\n\n"
@@ -428,14 +433,33 @@ class DeterministicContentAgent:
                     locator=doc.get("chunk_id") or doc_id,
                 ))
 
+        for video in recommended_videos:
+            sources.append(Source(
+                source_id=f"src_video_{video['resource_id']}",
+                source_type="video",
+                title=video["title"],
+                locator=f"learning_resources:{video['resource_id']}",
+                content_ref=video["url"],
+                metadata_json={
+                    "block_id": video["block_id"],
+                    "subtopic_id": video["subtopic_id"],
+                    "review_status": video["review_status"],
+                },
+            ))
+
+        technical_source = next(
+            (source for source in sources if source.source_type == "knowledge_doc"),
+            None,
+        )
+
         claims = [
             Claim(
                 claim_id="clm_001",
                 text=f"{stage.block_name}的核心概念和学习步骤",
-                source_ref=sources[0].source_id if sources else None,
+                source_ref=technical_source.source_id if technical_source else None,
                 section_ref="tutorial:sec_0",
                 claim_type="concept",
-                is_key_technical=bool(sources),
+                is_key_technical=technical_source is not None,
                 confidence=0.8,
             )
         ]
@@ -449,8 +473,9 @@ class DeterministicContentAgent:
             questions=questions,
             sources=sources,
             claims=claims,
+            recommended_videos=recommended_videos,
         )
-        _agent_log("Agent3", f"content:done | docs={len(related_docs)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
+        _agent_log("Agent3", f"content:done | docs={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
@@ -765,11 +790,13 @@ class DeterministicTechnicalReviewAgent:
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.learning_resource_tool = LearningResourceTool()
         # 委托 Agent4 协议字段补全（对接需求清单 2.1）
         self._protocol_agent = TechnicalReviewAgent()
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         errors = []
+        video_resource_errors = []
         if not request.content.strip():
             errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
             return TechnicalReviewResult(passed=False, errors=errors)
@@ -802,6 +829,12 @@ class DeterministicTechnicalReviewAgent:
                 errors.extend(normalize_review_errors(tool_errors))
             except Exception:
                 pass
+            video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                request.recommended_videos,
+                request.stage.block_id,
+                request.stage.subtopic_id,
+            )
+            errors.extend(normalize_review_errors(video_resource_errors))
 
         # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
         errors = self._protocol_agent._enrich_debate_fields(
@@ -809,6 +842,7 @@ class DeterministicTechnicalReviewAgent:
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
+            raw_errors=video_resource_errors,
         )
 
         # 步骤6：综合裁决（有critical错误或errors非空则不通过）
@@ -836,6 +870,7 @@ class HybridTechnicalReviewAgent:
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.learning_resource_tool = LearningResourceTool()
         self.skill_context = get_skill_context([
             "technical_review",
             "industry_standards",
@@ -849,6 +884,7 @@ class HybridTechnicalReviewAgent:
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         print(f"=== Agent4(合并后) 技术+质量审核开始：{request.target_type} ===")
+        video_resource_errors = []
         # 步骤1：硬性检查（规则检查）— 异常兜底
         try:
             rule_errors = normalize_review_errors(
@@ -875,8 +911,19 @@ class HybridTechnicalReviewAgent:
                 quality_tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
             except Exception:
                 pass
+            video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                request.recommended_videos,
+                request.stage.block_id,
+                request.stage.subtopic_id,
+            )
+            video_errors = normalize_review_errors(video_resource_errors)
+        else:
+            video_errors = []
 
         quality_tool_errors_normalized = normalize_review_errors(quality_tool_errors)
+
+        if video_errors:
+            quality_tool_errors_normalized.extend(video_errors)
 
         prompt = self._build_prompt(request)
         response = await self.llm_client.complete(
@@ -907,6 +954,7 @@ class HybridTechnicalReviewAgent:
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
+            raw_errors=video_resource_errors,
         )
 
         print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
@@ -926,12 +974,27 @@ class HybridTechnicalReviewAgent:
 
     def _build_prompt(self, request: ReviewInput) -> str:
         domain_reference = self._domain_reference(request.stage.block_name)
+        video_context = "无"
+        if request.recommended_videos:
+            video_context = "\n".join(
+                "- {resource_id}: {title} | {url} | 审核状态={review_status} | 摘要={content_summary}".format(
+                    resource_id=video.get("resource_id", "未提供ID"),
+                    title=video.get("title", "未提供标题"),
+                    url=video.get("url", "未提供URL"),
+                    review_status=video.get("review_status", "unknown"),
+                    content_summary=video.get("content_summary", "未提供摘要"),
+                )
+                for video in request.recommended_videos
+            )
         return f"""请审核以下{request.target_type}的技术正确性。
 
 学习阶段：{request.stage.block_name}
 用户问题：{request.question or '无'}
 待审核内容：
 {request.content[:12000]}
+
+当前阶段推荐视频：
+{video_context}
 
 审核规范：
 {self.skill_context}
@@ -941,6 +1004,7 @@ class HybridTechnicalReviewAgent:
 2. 重新计算所有参数量、比例和数值示例；
 3. 区分“分解原权重”和“增加可训练低秩更新”等不同机制；
 4. 任何无法确认的关键声明不得直接判定通过。
+5. 推荐视频必须属于当前知识点；视频摘要未审核时，明确指出其不能作为技术事实依据。
 
 当前领域校验基线：
 {domain_reference}

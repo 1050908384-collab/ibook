@@ -17,6 +17,7 @@ DOCS_FILE_PATH = SEEDS_DIR / "knowledge_docs.json"
 SUBTOPICS_FILE_PATH = SEEDS_DIR / "knowledge_subtopics.json"
 FAQ_FILE_PATH = SEEDS_DIR / "faq_items.json"
 QUESTIONS_FILE_PATH = SEEDS_DIR / "test_questions.json"
+VIDEO_CATALOG_PATH = PROJECT_ROOT / "data" / "knowledge_base" / "video_resources.json"
 
 def load_seed_data(file_path: Path):
     with open(file_path, "r", encoding="utf-8") as f:
@@ -31,6 +32,20 @@ def load_required_list(file_path: Path) -> list:
         print("[ERROR] 种子文件格式错误，应为 JSON 数组: {}".format(file_path))
         sys.exit(1)
     return payload
+
+
+def load_video_catalog(file_path: Path) -> tuple[list, list, list]:
+    if not file_path.exists():
+        print("[ERROR] 视频资源目录不存在: {}".format(file_path))
+        sys.exit(1)
+    catalog = load_seed_data(file_path)
+    resources = catalog.get("resources") if isinstance(catalog, dict) else None
+    mappings = catalog.get("subtopic_mappings") if isinstance(catalog, dict) else None
+    block_mappings = catalog.get("block_mappings") if isinstance(catalog, dict) else None
+    if not isinstance(resources, list) or not isinstance(mappings, list) or not isinstance(block_mappings, list):
+        print("[ERROR] 视频资源目录格式错误: {}".format(file_path))
+        sys.exit(1)
+    return resources, mappings, block_mappings
 
 
 def insert_knowledge_blocks(db: SQLiteClient, blocks_data: list):
@@ -165,7 +180,78 @@ def insert_test_questions(db: SQLiteClient, questions_data: list):
             })
             session.commit()
         count += 1
-    print("[OK] test_questions: ??? {} ???".format(count))
+    print("[OK] test_questions: 已插入 {} 条记录".format(count))
+
+
+def insert_learning_resources(db: SQLiteClient, resources_data: list):
+    for resource in resources_data:
+        with db.Session() as session:
+            session.execute(text("""
+                INSERT INTO learning_resources (
+                    resource_id, resource_type, title, raw_url, canonical_url, platform,
+                    external_id, external_part, content_summary, recommendation_level,
+                    review_status, metadata_json
+                ) VALUES (
+                    :resource_id, :resource_type, :title, :raw_url, :canonical_url, :platform,
+                    :external_id, :external_part, :content_summary, :recommendation_level,
+                    :review_status, :metadata_json
+                )
+                ON CONFLICT(resource_id) DO UPDATE SET
+                    title=excluded.title, raw_url=excluded.raw_url,
+                    canonical_url=excluded.canonical_url, platform=excluded.platform,
+                    external_id=excluded.external_id, external_part=excluded.external_part,
+                    content_summary=excluded.content_summary,
+                    recommendation_level=excluded.recommendation_level,
+                    review_status=excluded.review_status, metadata_json=excluded.metadata_json,
+                    updated_at=CURRENT_TIMESTAMP
+            """), {**resource, "metadata_json": json.dumps(resource.get("metadata", {}), ensure_ascii=False)})
+            session.commit()
+    print("[OK] learning_resources: 已插入 {} 条记录".format(len(resources_data)))
+
+
+def insert_subtopic_resources(db: SQLiteClient, mappings_data: list):
+    for mapping in mappings_data:
+        with db.Session() as session:
+            session.execute(text("""
+                INSERT INTO subtopic_resources (
+                    resource_id, block_id, subtopic_id, role, sequence_index,
+                    relevance_score, mapping_status, mapping_notes
+                ) VALUES (
+                    :resource_id, :block_id, :subtopic_id, :role, :sequence_index,
+                    :relevance_score, :mapping_status, :mapping_notes
+                )
+                ON CONFLICT(resource_id, subtopic_id) DO UPDATE SET
+                    block_id=excluded.block_id, role=excluded.role,
+                    sequence_index=excluded.sequence_index,
+                    relevance_score=excluded.relevance_score,
+                    mapping_status=excluded.mapping_status,
+                    mapping_notes=excluded.mapping_notes,
+                    updated_at=CURRENT_TIMESTAMP
+            """), mapping)
+            session.commit()
+    print("[OK] subtopic_resources: 已插入 {} 条记录".format(len(mappings_data)))
+
+
+def insert_block_resources(db: SQLiteClient, mappings_data: list):
+    for mapping in mappings_data:
+        with db.Session() as session:
+            session.execute(text("""
+                INSERT INTO block_resources (
+                    resource_id, block_id, role, sequence_index,
+                    relevance_score, mapping_status, mapping_notes
+                ) VALUES (
+                    :resource_id, :block_id, :role, :sequence_index,
+                    :relevance_score, :mapping_status, :mapping_notes
+                )
+                ON CONFLICT(resource_id, block_id) DO UPDATE SET
+                    role=excluded.role, sequence_index=excluded.sequence_index,
+                    relevance_score=excluded.relevance_score,
+                    mapping_status=excluded.mapping_status,
+                    mapping_notes=excluded.mapping_notes,
+                    updated_at=CURRENT_TIMESTAMP
+            """), mapping)
+            session.commit()
+    print("[OK] block_resources: 已插入 {} 条记录".format(len(mappings_data)))
 
 
 def main():
@@ -175,6 +261,7 @@ def main():
     subtopics_data = load_required_list(SUBTOPICS_FILE_PATH)
     faq_data = load_required_list(FAQ_FILE_PATH)
     questions_data = load_required_list(QUESTIONS_FILE_PATH)
+    resources_data, subtopic_resources_data, block_resources_data = load_video_catalog(VIDEO_CATALOG_PATH)
 
     print("[INFO] 正在初始化数据库连接...")
     db = SQLiteClient()
@@ -193,6 +280,15 @@ def main():
 
     print("[INFO] 5. 插入测试题 (test_questions)...")
     insert_test_questions(db, questions_data)
+
+    print("[INFO] 6. 插入学习资源数据 (learning_resources)...")
+    insert_learning_resources(db, resources_data)
+
+    print("[INFO] 7. 插入资源与子知识点关联 (subtopic_resources)...")
+    insert_subtopic_resources(db, subtopic_resources_data)
+
+    print("[INFO] 8. 插入资源与知识板块关联 (block_resources)...")
+    insert_block_resources(db, block_resources_data)
 
     db.close()
     print("[DONE] 知识库数据导入完成！")
