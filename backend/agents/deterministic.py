@@ -30,11 +30,14 @@ from models.material import TestQuestion
 from models.profile import KnowledgeGap, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
 from models.stage import Claim, LearningPackage, Source, StageInfo
+from tools.learning_resource_tool import LearningResourceTool
 from agents.agent_04_tech_review import TechnicalReviewAgent
 from skills import load_skills
 from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
 from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
 from tools.agent1_tools.graph_query_tool import GraphQueryTool
+from tools.agent1_tools.knowledge_catalog_tool import KnowledgeCatalogTool
+from tools.agent1_tools.semantic_knowledge_recall_tool import SemanticKnowledgeRecallTool
 from tools.agent1_tools.knowledge_block_query_tool import KnowledgeBlockQueryTool
 from tools.agent1_tools.stage_generator_tool import StageGeneratorTool
 from tools.agent3_tools.faq_search_tool import FAQSearchTool
@@ -78,6 +81,8 @@ class DeterministicDiagnosticAgent:
         self.extract_skills_tool = ExtractSkillsTool()
         self.calculate_confidence_tool = CalculateConfidenceTool()
         self.graph_query_tool = GraphQueryTool()
+        self.knowledge_catalog_tool = KnowledgeCatalogTool()
+        self.semantic_knowledge_recall_tool = SemanticKnowledgeRecallTool()
         self.knowledge_block_query_tool = KnowledgeBlockQueryTool()
         self.stage_generator_tool = StageGeneratorTool()
         self.db_client = db_client or SQLiteClient()
@@ -86,48 +91,36 @@ class DeterministicDiagnosticAgent:
         _agent_log("Agent1", f"diagnostic:start | session={request.session_id}")
         text = request.user_input.strip()
         structured = self._parse_structured_input(text)
-        target_text = self._target_text(text)
-        targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
-        mentioned = [skill for skill in SKILL_NAMES if skill.lower() in text.lower()]
-        mastered = [skill for skill in mentioned if skill not in targets]
-        followup_questions: list[str] = []
-        try:
-            extracted_tags = await self.extract_skills_tool.extract_skills(text)
-            extracted_gaps = await self.extract_skills_tool.extract_gaps(text)
-            if extracted_tags:
-                mastered = extracted_tags
-            if extracted_gaps:
-                targets = [gap.get("skill", "") for gap in extracted_gaps if gap.get("skill")]
-        except Exception:
-            extracted_gaps = []
+        target_text = structured.get("goal") or self._target_text(text)
+        mastered = structured.get("skill_tags") or self._extract_mastered_skills(text, target_text)
+        target_candidates = self._select_target_candidates(target_text)
+        gaps = await self._build_grounded_gaps(target_text, target_candidates, mastered)
+        if not gaps:
+            fallback_targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
+            gaps = await self._build_grounded_gaps(
+                target_text,
+                [
+                    resolved
+                    for skill in fallback_targets
+                    if (resolved := self.knowledge_catalog_tool.resolve_block(skill))
+                ],
+                mastered,
+            )
+        if not gaps:
+            gaps = [KnowledgeGap(skill=target_text or "通用学习目标")]
+        gaps = await self._insert_unmet_direct_prerequisite_gaps(gaps, mastered)
 
-        if structured.get("skill_tags"):
-            mastered = structured["skill_tags"]
-        if structured.get("goal"):
-            target_text = structured["goal"]
-            structured_targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
-            if structured_targets:
-                targets = structured_targets
-
-        if not targets:
-            targets = [mentioned[-1]] if mentioned else ["通用学习目标"]
-            mastered = [skill for skill in mentioned if skill not in targets]
-
-        gaps = []
-        for skill in targets:
-            prerequisites: list[str] = []
-            try:
-                prerequisites = await self.graph_query_tool.query_prerequisites(skill)
-            except Exception:
-                prerequisites = []
-            gaps.append(KnowledgeGap(skill=skill, prerequisites=prerequisites))
-
-        confidence = 0.9 if mentioned and target_text != text else 0.75
+        explicit_hours = self._has_daily_hours(text)
+        explicit_style = self._has_learning_style(text)
+        confidence = 0.75 if target_text else 0.5
         try:
             confidence_result = await self.calculate_confidence_tool.calculate(
                 text,
                 mastered,
                 [gap.model_dump(mode="json") for gap in gaps],
+                goal=target_text,
+                daily_hours=structured.get("daily_hours") if explicit_hours else None,
+                learning_style=structured.get("learning_style", "") if explicit_style else "",
             )
             confidence = max(confidence, confidence_result)
         except Exception:
@@ -139,14 +132,18 @@ class DeterministicDiagnosticAgent:
             structured.get("daily_hours"),
             structured.get("learning_style"),
         ]
-        if all(required_structured_fields):
+        if (
+            all(required_structured_fields)
+            and gaps
+            and all(gap.block_id and gap.mapping_confidence >= 0.8 for gap in gaps)
+        ):
             confidence = max(confidence, 0.9)
-        if confidence < 0.7 and not mentioned:
-            followup_questions = [
-                "你希望优先解决哪一类问题？",
-                "你目前有哪些相关基础？",
-                "你每天大约能投入多久学习？",
-            ]
+        followup_questions = self._build_followup_questions(
+            structured=structured,
+            has_hours=explicit_hours,
+            has_style=explicit_style,
+            mapped=any(gap.block_id for gap in gaps),
+        ) if confidence < 0.7 else []
         profile = UserProfile(
             session_id=request.session_id,
             grade=structured.get("grade", ""),
@@ -160,6 +157,178 @@ class DeterministicDiagnosticAgent:
         )
         _agent_log("Agent1", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
         return DiagnosticOutput(profile=profile, followup_questions=followup_questions)
+
+    def _select_target_candidates(self, target_text: str) -> list[dict[str, Any]]:
+        candidates = self._recall_candidates(target_text)
+        if not candidates:
+            return []
+        top_score = float(candidates[0].get("score") or 0)
+        threshold = max(20.0, top_score * 0.35)
+        return [candidate for candidate in candidates if float(candidate.get("score") or 0) >= threshold][:4]
+
+    def _recall_candidates(self, target_text: str) -> list[dict[str, Any]]:
+        lexical_candidates = self.knowledge_catalog_tool.search(target_text, top_k=8)
+        try:
+            semantic_hits = self.semantic_knowledge_recall_tool.search(target_text, top_k=8)
+        except Exception:
+            semantic_hits = []
+        return self.knowledge_catalog_tool.merge_recall_results(
+            lexical_candidates,
+            semantic_hits,
+            top_k=8,
+        )
+
+    async def _build_grounded_gaps(
+        self,
+        target_text: str,
+        candidates: list[dict[str, Any]],
+        mastered_skills: list[str],
+    ) -> list[KnowledgeGap]:
+        gaps: list[KnowledgeGap] = []
+        seen_block_ids: set[str] = set()
+        for candidate in candidates:
+            block_id = str(candidate.get("block_id", ""))
+            if not block_id or block_id in seen_block_ids:
+                continue
+            seen_block_ids.add(block_id)
+            resolved = self.knowledge_catalog_tool.get_block(block_id) or candidate
+            skill_label = self.knowledge_catalog_tool.canonical_skill_label(resolved, target_text)
+            matched_subtopics = candidate.get("matched_subtopics", [])
+            target_subtopic_ids = [
+                str(item.get("subtopic_id", ""))
+                for item in matched_subtopics
+                if item.get("subtopic_id")
+            ]
+            prerequisites = self._immediate_prerequisite_names(resolved, mastered_skills)
+            raw_score = float(candidate.get("score") or 0)
+            mapping_confidence = float(candidate.get("mapping_confidence") or min(0.99, 0.7 + raw_score / 200))
+            gaps.append(KnowledgeGap(
+                skill=skill_label,
+                block_id=block_id,
+                block_name=str(resolved.get("block_name", skill_label)),
+                target_subtopic_ids=target_subtopic_ids,
+                mapping_confidence=round(mapping_confidence, 3),
+                level=self._infer_gap_level(target_text, str(resolved.get("difficulty", ""))),
+                prerequisites=prerequisites,
+            ))
+        return gaps
+
+    def _immediate_prerequisite_names(self, block: dict[str, Any], mastered_skills: list[str]) -> list[str]:
+        mastered_block_ids = {
+            resolved.get("block_id")
+            for skill in mastered_skills
+            if (resolved := self.knowledge_catalog_tool.resolve_block(skill))
+        }
+        names: list[str] = []
+        for prerequisite_id in block.get("prerequisites", []):
+            if prerequisite_id in mastered_block_ids:
+                continue
+            prerequisite = self.knowledge_catalog_tool.get_block(str(prerequisite_id))
+            names.append(str(prerequisite.get("block_name", prerequisite_id)) if prerequisite else str(prerequisite_id))
+        return names
+
+    async def _insert_unmet_direct_prerequisite_gaps(
+        self,
+        gaps: list[KnowledgeGap],
+        mastered_skills: list[str],
+    ) -> list[KnowledgeGap]:
+        """Insert only the target's unmet direct prerequisites before that target."""
+        mastered_block_ids = {
+            str(resolved.get("block_id"))
+            for skill in mastered_skills
+            if (resolved := self.knowledge_catalog_tool.resolve_block(skill))
+        }
+        known_block_ids = {gap.block_id for gap in gaps if gap.block_id}
+        ordered: list[KnowledgeGap] = []
+        inserted_block_ids: set[str] = set()
+        for gap in gaps:
+            if not gap.block_id:
+                ordered.append(gap)
+                continue
+            try:
+                prerequisites = await self.graph_query_tool.query_direct_prerequisites(gap.block_id)
+            except Exception:
+                prerequisites = []
+            for prerequisite in prerequisites:
+                prerequisite_id = str(prerequisite.get("block_id", ""))
+                if not prerequisite_id or prerequisite_id in mastered_block_ids or prerequisite_id in known_block_ids or prerequisite_id in inserted_block_ids:
+                    continue
+                block = self.knowledge_catalog_tool.get_block(prerequisite_id) or prerequisite
+                ordered.append(KnowledgeGap(
+                    skill=str(block.get("block_name", prerequisite_id)),
+                    block_id=prerequisite_id,
+                    block_name=str(block.get("block_name", prerequisite_id)),
+                    mapping_confidence=1.0,
+                    level="beginner",
+                    prerequisites=[],
+                ))
+                inserted_block_ids.add(prerequisite_id)
+            ordered.append(gap)
+        return ordered
+
+    def _extract_mastered_skills(self, text: str, target_text: str) -> list[str]:
+        mastery_text = text
+        cue = re.search(
+            r"(?:want to learn|想学习|想学|学习目标|目标|不会|不熟悉|希望掌握|计划学习)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if cue:
+            mastery_text = text[:cue.start()]
+        elif target_text and target_text != text:
+            mastery_text = text.replace(target_text, "")
+
+        target_block_ids = {
+            candidate.get("block_id")
+            for candidate in self.knowledge_catalog_tool.search(target_text, top_k=8)
+        }
+        mastered: list[str] = []
+        for candidate in self.knowledge_catalog_tool.search(mastery_text, top_k=8):
+            if candidate.get("block_id") in target_block_ids:
+                continue
+            resolved = self.knowledge_catalog_tool.get_block(str(candidate.get("block_id", ""))) or candidate
+            mastered.append(self.knowledge_catalog_tool.canonical_skill_label(resolved, mastery_text))
+        if not mastered:
+            mastered = [skill for skill in SKILL_NAMES if skill.lower() in mastery_text.lower()]
+        return list(dict.fromkeys(mastered))
+
+    @staticmethod
+    def _infer_gap_level(target_text: str, difficulty: str) -> str:
+        lowered = target_text.lower()
+        if any(keyword in lowered for keyword in ("零基础", "入门", "beginner", "从头学")):
+            return "beginner"
+        if any(keyword in lowered for keyword in ("精通", "深入", "高级", "advanced", "生产环境", "性能优化")):
+            return "advanced"
+        if any(keyword in lowered for keyword in ("进阶", "提升", "intermediate", "有基础")):
+            return "intermediate"
+        return {"初级": "beginner", "中级": "intermediate", "高级": "advanced"}.get(difficulty, "beginner")
+
+    @staticmethod
+    def _has_daily_hours(text: str) -> bool:
+        return bool(re.search(r"(?:每天|每日)?.{0,8}?[0-9]+(?:\.[0-9]+)?\s*(?:小时|h|H)", text))
+
+    @staticmethod
+    def _has_learning_style(text: str) -> bool:
+        lowered = text.lower()
+        return any(keyword in lowered for keyword in ("实操", "实践", "动手", "理论", "混合", "practice", "theory", "mixed"))
+
+    @staticmethod
+    def _build_followup_questions(
+        structured: dict,
+        has_hours: bool,
+        has_style: bool,
+        mapped: bool,
+    ) -> list[str]:
+        questions: list[str] = []
+        if not structured.get("goal") and not mapped:
+            questions.append("你希望最终完成哪一种微调或部署任务？")
+        if not structured.get("skill_tags"):
+            questions.append("你目前已经掌握哪些相关技能？例如 Python、PyTorch、Transformer。")
+        if not has_hours:
+            questions.append("你每天大约能投入多少小时学习？")
+        if not has_style:
+            questions.append("你更偏好理论讲解、动手实操，还是两者结合？")
+        return questions
 
     def _target_text(self, text: str) -> str:
         match = re.search(
@@ -182,9 +351,11 @@ class DeterministicDiagnosticAgent:
 
         preferred_block = {}
         try:
-            preferred_block = await self.knowledge_block_query_tool.query_block(gap.skill)
+            preferred_block = await self.knowledge_block_query_tool.query_block(gap.block_id or gap.skill)
         except Exception:
             preferred_block = {}
+        if not preferred_block and gap.block_id:
+            preferred_block = self.knowledge_catalog_tool.get_block(gap.block_id) or {}
         preferred_block = preferred_block or {}
 
         generated_stage = {}
@@ -208,19 +379,28 @@ class DeterministicDiagnosticAgent:
         if not candidates:
             raise ValueError("No learnable subtopics remain for current session")
 
-        subtopic = candidates[0]
+        preferred_subtopic_ids = set(gap.target_subtopic_ids)
+        subtopic = next(
+            (item for item in candidates if item.get("subtopic_id") in preferred_subtopic_ids),
+            candidates[0],
+        )
         block_info = preferred_block
         if subtopic.get("block_id") and subtopic.get("block_id") != preferred_block.get("block_id"):
             try:
                 block_info = await self.knowledge_block_query_tool.query_block(subtopic["block_id"])
             except Exception:
                 block_info = preferred_block
+        if not block_info and subtopic.get("block_id"):
+            block_info = self.knowledge_catalog_tool.get_block(subtopic["block_id"]) or {}
         block_info = block_info or preferred_block or {}
 
         stable_key = f"{request.session_id}:{request.stage_num}:{subtopic['subtopic_id']}"
         stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
-        block_id = block_info.get("block_id") or subtopic.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
-        block_name = gap.skill or block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name")
+        block_id = subtopic.get("block_id") or block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
+        if block_id == (gap.block_id or preferred_block.get("block_id")):
+            block_name = gap.skill or gap.block_name or block_info.get("block_name") or generated_stage.get("block_name")
+        else:
+            block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
         estimated_hours = float(
             subtopic.get("estimated_hours")
             or block_info.get("estimated_hours")
@@ -304,54 +484,157 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
         fallback = await super().run(request)
-        prompt = f"""请分析下面的学习者描述，并只返回一个JSON对象，不要添加说明文字。
+        candidate_query = fallback.profile.goal or request.user_input
+        recalled_candidates = self._recall_candidates(candidate_query)
+        candidates = [self.knowledge_catalog_tool._prompt_candidate(item) for item in recalled_candidates]
+        authoritative_profile = {
+            "grade": fallback.profile.grade,
+            "skill_tags": fallback.profile.skill_tags,
+            "goal": fallback.profile.goal,
+            "daily_hours": fallback.profile.daily_hours,
+            "learning_style": fallback.profile.learning_style,
+            "hardware": fallback.profile.hardware,
+        }
+        prompt = f"""你只负责在候选知识目录中细化学习者的知识盲区，不得改写用户已经明确填写的画像字段。
 
-学习者描述：{request.user_input}
+用户原始描述：
+{request.user_input}
 
-JSON字段要求：
-- skill_tags: 已掌握技能字符串数组
-- knowledge_gaps: 待学习知识数组，每项包含 skill 和 level
-- grade: 身份或学习背景
-- goal: 学习目标
-- daily_hours: 每日学习小时数，未知时为2
-- learning_style: theory、practice 或 mixed
-- hardware: 设备条件，未知时为空字符串
+已由确定性解析得到的事实字段（只读，不得修改）：
+{json.dumps(authoritative_profile, ensure_ascii=False)}
 
-示例：
-{{"grade":"研二","skill_tags":["Python"],"knowledge_gaps":[{{"skill":"LoRA","level":"beginner"}}],"goal":"掌握LoRA微调","daily_hours":2,"learning_style":"mixed","hardware":"RTX 4060"}}
+候选知识板块与子知识点：
+{json.dumps(candidates, ensure_ascii=False)}
+
+只返回严格 JSON：
+{{"knowledge_gaps":[{{"block_id":"KB-12","level":"beginner","target_subtopic_ids":["KBS-12-01"]}}]}}
+
+规则：
+1. block_id 只能从候选目录选择，禁止创造新板块或自由改名。
+2. 保留目标里明确提到的多个独立方向，例如 LoRA/QLoRA 与 vLLM 部署应分别覆盖。
+3. target_subtopic_ids 只能填写该板块候选中真实存在的 ID；无法确定时返回空数组。
+4. level 只能是 beginner、intermediate、advanced。
+5. 已有基础不能误判为知识盲区，除非目标明确要求继续进阶。
 """
         response = await self.llm_client.complete(
             prompt,
-            system_prompt="你是学习者画像诊断专家，必须输出严格JSON。",
+            system_prompt="你是知识目录分类器。只做候选选择和细化，必须输出严格JSON。",
             temperature=0.2,
             json_mode=True,
         )
-        data = self._parse_json(response)
-        if not data:
-            return fallback
+        data = self._parse_json(response) or {}
+        normalized_gaps = await self._merge_grounded_gaps(
+            fallback.profile.knowledge_gaps,
+            data.get("knowledge_gaps", []),
+            candidates,
+            candidate_query,
+        )
+        normalized_gaps = await self._insert_unmet_direct_prerequisite_gaps(
+            normalized_gaps,
+            fallback.profile.skill_tags,
+        )
+        profile = fallback.profile.model_copy(update={"knowledge_gaps": normalized_gaps})
+        confidence = self._hybrid_profile_confidence(request.user_input, profile)
+        profile = profile.model_copy(update={"confidence": confidence})
+        structured = self._parse_structured_input(request.user_input)
+        structured["skill_tags"] = structured.get("skill_tags") or profile.skill_tags
+        followup_questions = self._build_followup_questions(
+            structured=structured,
+            has_hours=self._has_daily_hours(request.user_input),
+            has_style=self._has_learning_style(request.user_input),
+            mapped=any(gap.block_id for gap in normalized_gaps),
+        ) if confidence < 0.7 else []
+        return DiagnosticOutput(profile=profile, followup_questions=followup_questions)
 
-        try:
-            gaps = data.get("knowledge_gaps", [])
-            normalized_gaps = [
-                {"skill": gap, "level": "beginner"} if isinstance(gap, str) else gap
-                for gap in gaps
-            ]
-            if not normalized_gaps:
-                return fallback
-            profile = UserProfile(
-                session_id=request.session_id,
-                grade=data.get("grade") or fallback.profile.grade,
-                skill_tags=data.get("skill_tags", []),
-                knowledge_gaps=normalized_gaps,
-                goal=data.get("goal") or fallback.profile.goal,
-                daily_hours=data.get("daily_hours", 2.0),
-                learning_style=data.get("learning_style", "mixed"),
-                hardware=data.get("hardware") or fallback.profile.hardware,
-                confidence=0.9,
+    async def _merge_grounded_gaps(
+        self,
+        fallback_gaps: list[KnowledgeGap],
+        llm_gaps: list[Any],
+        candidates: list[dict[str, Any]],
+        target_text: str,
+    ) -> list[KnowledgeGap]:
+        by_block_id = {gap.block_id: gap for gap in fallback_gaps if gap.block_id}
+        ungrounded = [gap for gap in fallback_gaps if not gap.block_id]
+        allowed_ids = {
+            str(candidate.get("block_id", ""))
+            for candidate in candidates
+            if candidate.get("block_id")
+        }
+
+        for raw_gap in llm_gaps if isinstance(llm_gaps, list) else []:
+            if isinstance(raw_gap, str):
+                raw_gap = {"skill": raw_gap}
+            if not isinstance(raw_gap, dict):
+                continue
+            raw_block = str(raw_gap.get("block_id") or raw_gap.get("skill") or raw_gap.get("block_name") or "")
+            resolved = self.knowledge_catalog_tool.resolve_block(raw_block, candidates)
+            if not resolved:
+                continue
+            block_id = str(resolved.get("block_id", ""))
+            if allowed_ids and block_id not in allowed_ids:
+                continue
+            subtopic_values = raw_gap.get("target_subtopic_ids") or raw_gap.get("subtopics") or []
+            target_subtopic_ids = self.knowledge_catalog_tool.resolve_subtopic_ids(block_id, subtopic_values)
+            level = self._normalize_level(raw_gap.get("level"), target_text, str(resolved.get("difficulty", "")))
+            existing = by_block_id.get(block_id)
+            candidate = next((item for item in candidates if item.get("block_id") == block_id), {})
+            candidate_confidence = float(candidate.get("mapping_confidence") or resolved.get("mapping_confidence") or 0.7)
+            if existing:
+                by_block_id[block_id] = existing.model_copy(update={
+                    "level": level,
+                    "target_subtopic_ids": target_subtopic_ids or existing.target_subtopic_ids,
+                    "mapping_confidence": max(existing.mapping_confidence, candidate_confidence),
+                })
+                continue
+            try:
+                prerequisites = await self.graph_query_tool.query_prerequisites(block_id)
+            except Exception:
+                prerequisites = []
+            by_block_id[block_id] = KnowledgeGap(
+                skill=self.knowledge_catalog_tool.canonical_skill_label(resolved, target_text),
+                block_id=block_id,
+                block_name=str(resolved.get("block_name", block_id)),
+                target_subtopic_ids=target_subtopic_ids,
+                mapping_confidence=candidate_confidence,
+                level=level,
+                prerequisites=prerequisites,
             )
-            return DiagnosticOutput(profile=profile)
-        except (TypeError, ValueError):
-            return fallback
+
+        grounded = list(by_block_id.values())
+        return grounded or ungrounded
+
+    def _hybrid_profile_confidence(self, text: str, profile: UserProfile) -> float:
+        structured = self._parse_structured_input(text)
+        score = 0.15
+        if profile.goal and any(gap.block_id for gap in profile.knowledge_gaps):
+            score += 0.3
+        if structured.get("grade"):
+            score += 0.1
+        if profile.skill_tags:
+            score += 0.15
+        if self._has_daily_hours(text):
+            score += 0.15
+        if self._has_learning_style(text):
+            score += 0.1
+        if structured.get("hardware"):
+            score += 0.05
+        if profile.knowledge_gaps and all(gap.mapping_confidence >= 0.8 for gap in profile.knowledge_gaps):
+            score += 0.1
+        return round(max(0.3, min(0.95, score)), 3)
+
+    def _normalize_level(self, value: Any, target_text: str, difficulty: str) -> str:
+        normalized = str(value or "").strip().lower()
+        aliases = {
+            "beginner": "beginner",
+            "intermediate": "intermediate",
+            "advanced": "advanced",
+            "初级": "beginner",
+            "中级": "intermediate",
+            "高级": "advanced",
+            "入门": "beginner",
+            "进阶": "intermediate",
+        }
+        return aliases.get(normalized) or self._infer_gap_level(target_text, difficulty)
 
     def _parse_json(self, response: str) -> dict | None:
         if not response or response.startswith("Error:"):
@@ -375,6 +658,7 @@ class DeterministicContentAgent:
         self.question_extract_tool = QuestionExtractTool()
         self.faq_search_tool = FAQSearchTool()
         self.video_search_tool = VideoSearchTool()
+        self.learning_resource_tool = LearningResourceTool()
 
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
         _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
@@ -384,6 +668,9 @@ class DeterministicContentAgent:
             related_docs = await self.vector_search_tool.search_by_block(stage.block_id)
         except Exception:
             related_docs = []
+        recommended_videos = await self.learning_resource_tool.get_recommended_videos(
+            stage.block_id, stage.subtopic_id
+        )
         tutorial = (
             f"# {stage.block_name}\n\n"
             f"本阶段目标是理解 {stage.block_name} 的核心概念，并完成一次基础练习。\n\n"
@@ -430,39 +717,57 @@ class DeterministicContentAgent:
                     locator=doc.get("chunk_id") or doc_id,
                 ))
 
-        # 视频资源检索：按 block_id / block_name 关联视频
-        video_sources = []
-        try:
-            video_results = await self.video_search_tool.search_by_block(
-                block_id=stage.block_id,
-                block_name=stage.block_name,
-                top_k=5,
-            )
-            for v in video_results:
-                video_sources.append(Source(
-                    source_id=v["video_id"],
-                    source_type="video",
-                    title=v["title"],
-                    locator=v["url"],
-                    content_ref=v.get("topic", ""),
-                    metadata_json={
-                        "topic": v.get("topic", ""),
-                        "duration_hours": v.get("duration_hours", 0),
-                        "block_id": v.get("block_id", ""),
-                    },
-                ))
-        except Exception:
-            pass
-        sources.extend(video_sources)
+        for video in recommended_videos:
+            sources.append(Source(
+                source_id=f"src_video_{video['resource_id']}",
+                source_type="video",
+                title=video["title"],
+                locator=f"learning_resources:{video['resource_id']}",
+                content_ref=video["url"],
+                metadata_json={
+                    "block_id": video["block_id"],
+                    "subtopic_id": video["subtopic_id"],
+                    "review_status": video["review_status"],
+                },
+            ))
+
+        # 视频资源兜底：若 learning_resource_tool 未返回视频，用 video_search_tool 补充
+        if not recommended_videos:
+            try:
+                video_results = await self.video_search_tool.search_by_block(
+                    block_id=stage.block_id,
+                    block_name=stage.block_name,
+                    top_k=5,
+                )
+                for v in video_results:
+                    sources.append(Source(
+                        source_id=v["video_id"],
+                        source_type="video",
+                        title=v["title"],
+                        locator=v["url"],
+                        content_ref=v.get("topic", ""),
+                        metadata_json={
+                            "topic": v.get("topic", ""),
+                            "duration_hours": v.get("duration_hours", 0),
+                            "block_id": v.get("block_id", ""),
+                        },
+                    ))
+            except Exception:
+                pass
+
+        technical_source = next(
+            (source for source in sources if source.source_type == "knowledge_doc"),
+            None,
+        )
 
         claims = [
             Claim(
                 claim_id="clm_001",
                 text=f"{stage.block_name}的核心概念和学习步骤",
-                source_ref=sources[0].source_id if sources else None,
+                source_ref=technical_source.source_id if technical_source else None,
                 section_ref="tutorial:sec_0",
                 claim_type="concept",
-                is_key_technical=bool(sources),
+                is_key_technical=technical_source is not None,
                 confidence=0.8,
             )
         ]
@@ -476,8 +781,9 @@ class DeterministicContentAgent:
             questions=questions,
             sources=sources,
             claims=claims,
+            recommended_videos=recommended_videos,
         )
-        _agent_log("Agent3", f"content:done | docs={len(related_docs)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
+        _agent_log("Agent3", f"content:done | docs={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
@@ -792,11 +1098,13 @@ class DeterministicTechnicalReviewAgent:
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.learning_resource_tool = LearningResourceTool()
         # 委托 Agent4 协议字段补全（对接需求清单 2.1）
         self._protocol_agent = TechnicalReviewAgent()
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         errors = []
+        video_resource_errors = []
         if not request.content.strip():
             errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
             return TechnicalReviewResult(passed=False, errors=errors)
@@ -829,13 +1137,24 @@ class DeterministicTechnicalReviewAgent:
                 errors.extend(normalize_review_errors(tool_errors))
             except Exception:
                 pass
-
+            # 步骤5：推荐视频资源审核（technical_review.skill.md 规则5）— 异常兜底，
+            # tool 内部仅捕获 sqlite3.Error，此处再兜住 OSError 等非 sqlite3 异常，避免中断审核链路。
+            try:
+                video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                    request.recommended_videos,
+                    request.stage.block_id,
+                    request.stage.subtopic_id,
+                )
+                errors.extend(normalize_review_errors(video_resource_errors))
+            except Exception:
+                video_resource_errors = []
         # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
         errors = self._protocol_agent._enrich_debate_fields(
             errors,
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
+            raw_errors=video_resource_errors,
         )
 
         # 步骤6：综合裁决（有critical错误或errors非空则不通过）
@@ -863,6 +1182,7 @@ class HybridTechnicalReviewAgent:
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.learning_resource_tool = LearningResourceTool()
         self.skill_context = get_skill_context([
             "technical_review",
             "industry_standards",
@@ -876,6 +1196,7 @@ class HybridTechnicalReviewAgent:
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         print(f"=== Agent4(合并后) 技术+质量审核开始：{request.target_type} ===")
+        video_resource_errors = []
         # 步骤1：硬性检查（规则检查）— 异常兜底
         try:
             rule_errors = normalize_review_errors(
@@ -902,8 +1223,25 @@ class HybridTechnicalReviewAgent:
                 quality_tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
             except Exception:
                 pass
+            # 步骤5：推荐视频资源审核（technical_review.skill.md 规则5）— 异常兜底，
+            # tool 内部仅捕获 sqlite3.Error，此处再兜住 OSError 等非 sqlite3 异常，避免中断审核链路。
+            try:
+                video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                    request.recommended_videos,
+                    request.stage.block_id,
+                    request.stage.subtopic_id,
+                )
+                video_errors = normalize_review_errors(video_resource_errors)
+            except Exception:
+                video_resource_errors = []
+                video_errors = []
+        else:
+            video_errors = []
 
         quality_tool_errors_normalized = normalize_review_errors(quality_tool_errors)
+
+        if video_errors:
+            quality_tool_errors_normalized.extend(video_errors)
 
         prompt = self._build_prompt(request)
         response = await self.llm_client.complete(
@@ -934,6 +1272,7 @@ class HybridTechnicalReviewAgent:
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
+            raw_errors=video_resource_errors,
         )
 
         print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
@@ -953,12 +1292,27 @@ class HybridTechnicalReviewAgent:
 
     def _build_prompt(self, request: ReviewInput) -> str:
         domain_reference = self._domain_reference(request.stage.block_name)
+        video_context = "无"
+        if request.recommended_videos:
+            video_context = "\n".join(
+                "- {resource_id}: {title} | {url} | 审核状态={review_status} | 摘要={content_summary}".format(
+                    resource_id=video.get("resource_id", "未提供ID"),
+                    title=video.get("title", "未提供标题"),
+                    url=video.get("url", "未提供URL"),
+                    review_status=video.get("review_status", "unknown"),
+                    content_summary=video.get("content_summary", "未提供摘要"),
+                )
+                for video in request.recommended_videos
+            )
         return f"""请审核以下{request.target_type}的技术正确性。
 
 学习阶段：{request.stage.block_name}
 用户问题：{request.question or '无'}
 待审核内容：
 {request.content[:12000]}
+
+当前阶段推荐视频：
+{video_context}
 
 审核规范：
 {self.skill_context}
@@ -968,6 +1322,7 @@ class HybridTechnicalReviewAgent:
 2. 重新计算所有参数量、比例和数值示例；
 3. 区分“分解原权重”和“增加可训练低秩更新”等不同机制；
 4. 任何无法确认的关键声明不得直接判定通过。
+5. 推荐视频必须属于当前知识点；视频摘要未审核时，明确指出其不能作为技术事实依据。
 
 当前领域校验基线：
 {domain_reference}

@@ -201,11 +201,24 @@ class CalculateConfidenceTool:
     def __init__(self):
         self._default_config = {"use_mock": False}
 
-    async def calculate(self, user_input: str, skill_tags: List[str], knowledge_gaps: List[Dict[str, Any]]) -> float:
+    async def calculate(
+        self,
+        user_input: str,
+        skill_tags: List[str],
+        knowledge_gaps: List[Dict[str, Any]],
+        goal: str = "",
+        daily_hours: float | None = None,
+        learning_style: str = "",
+        parsed_by_llm: bool = False,
+    ) -> float:
         result = calculate_confidence({
             "user_input": user_input,
             "skill_tags": skill_tags,
             "knowledge_gaps": knowledge_gaps,
+            "goal": goal,
+            "daily_hours": daily_hours,
+            "learning_style": learning_style,
+            "parsed_by_llm": parsed_by_llm,
         }, config=self._default_config)
         if result.get("status") != "success":
             return 0.3

@@ -6,6 +6,10 @@ from pydantic import BaseModel, Field
 
 class KnowledgeGap(BaseModel):
     skill: str
+    block_id: str = ""
+    block_name: str = ""
+    target_subtopic_ids: List[str] = Field(default_factory=list)
+    mapping_confidence: float = 0.0
     level: str = "beginner"
     status: str = "未掌握"
     progress: float = 0.0

@@ -140,6 +140,21 @@ DEFAULT_TUTORIAL = (
 )
 
 
+# 默认推荐视频（取自 data/knowledge_base/video_resources.json 真实 seed 记录 RES-VID-064，
+# 映射到 KB-12/KBS-12-01）。随学习包进入辩论，触发 Agent4「推荐视频资源审核」（规则5）：
+#   资源库已 seed -> video_content_unverified(minor)；未 seed(当前 project.db) -> video_resource_mismatch(major,must_fix)。
+DEFAULT_RECOMMENDED_VIDEOS = [{
+    "resource_id": "RES-VID-064",
+    "title": "LoRA微调：从原理到调参，7 个问题彻底理解 LoRA",
+    "url": "https://www.bilibili.com/video/BV1waZ2YDEcp",
+    "review_status": "pending",
+    "content_summary": "用于学习“理解LoRA的低秩分解原理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-01",
+    "role": "primary",
+}]
+
+
 def build_default_package(session_id: str, stage: StageInfo) -> LearningPackage:
     sources = [
         Source(
@@ -155,6 +170,21 @@ def build_default_package(session_id: str, stage: StageInfo) -> LearningPackage:
             locator="doc_qlora_01",
         ),
     ]
+    # 为每个推荐视频补一条 source_type="video" 的 source（对齐 Agent3 真实产出 src_video_{id}），
+    # 使视频错误的 source_ref=src_video_RES-VID-064 能在辩论协议字段补全时命中 sources。
+    for video in DEFAULT_RECOMMENDED_VIDEOS:
+        sources.append(Source(
+            source_id=f"src_video_{video['resource_id']}",
+            source_type="video",
+            title=video["title"],
+            locator=f"learning_resources:{video['resource_id']}",
+            content_ref=video["url"],
+            metadata_json={
+                "block_id": video.get("block_id"),
+                "subtopic_id": video.get("subtopic_id"),
+                "review_status": video.get("review_status"),
+            },
+        ))
     # 说明：Claim 模型强制「is_key_technical=True 时 source_ref 不可空」（models/stage.py 校验器，
     # 对齐协议 2.2 与数据库 CHECK 约束）。clm_002 用来模拟“已绑定来源、但陈述本身是事实错误”
     # 的关键技术声明——Agent4 的错误检测来自 tutorial 正文的规则/幻觉命中，不依赖 claim 是否缺来源，
@@ -196,6 +226,7 @@ def build_default_package(session_id: str, stage: StageInfo) -> LearningPackage:
         tutorial=DEFAULT_TUTORIAL,
         sources=sources,
         claims=claims,
+        recommended_videos=[dict(v) for v in DEFAULT_RECOMMENDED_VIDEOS],
         version=1,
     )
 
@@ -240,6 +271,7 @@ async def run_debate(args: argparse.Namespace):
     stage = StageInfo(
         stage_id="stage-test-34", stage_num=1, block_id="KB-12",
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA",
+        subtopic_id="KBS-12-01",  # 对齐 RES-VID-064 映射的子主题，供 Agent4 视频归属校验
     )
     profile = UserProfile(session_id=session_id, goal="掌握LoRA微调")
 
@@ -260,8 +292,10 @@ async def run_debate(args: argparse.Namespace):
         "tutorial_length": len(package.tutorial),
         "sources_count": len(package.sources),
         "claims_count": len(package.claims),
+        "recommended_videos_count": len(package.recommended_videos),
         "sources": [s.model_dump(mode="json") for s in package.sources],
         "claims": [c.model_dump(mode="json") for c in package.claims],
+        "recommended_videos": [dict(v) for v in package.recommended_videos],
     })
 
     history: list[dict] = []
@@ -281,6 +315,7 @@ async def run_debate(args: argparse.Namespace):
             profile=profile,
             sources=[s.model_dump(mode="json") for s in package.sources],
             claims=[c.model_dump(mode="json") for c in package.claims],
+            recommended_videos=[dict(v) for v in package.recommended_videos],
             round_index=iteration,
         )
         review_result = await agent4.run(review_request)

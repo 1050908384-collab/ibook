@@ -30,7 +30,7 @@ project-root/
 ├── data/             # 数据存储
 │   ├── seeds/        # 结构化种子数据
 │   ├── sqlite_data/  # 主库 project.db
-│   ├── chroma_db/    # FAQ 向量库
+│   ├── chroma_db/    # FAQ 与 Agent1 知识语义索引
 │   ├── graph_data/   # 知识图谱结果层
 │   └── test_data/    # 测试样例数据
 ├── scripts/          # 工具脚本
@@ -63,6 +63,7 @@ cp .env.example .env
 ```bash
 python scripts/init_db.py
 python scripts/init_knowledge_base.py
+python scripts/init_agent1_semantic_index.py
 python scripts/build_knowledge_graph.py
 python scripts/seed_test_data.py
 python scripts/init_faq_vectors.py
@@ -97,6 +98,7 @@ python scripts/check_review_schema.py
 ```bash
 python scripts/init_db.py
 python scripts/init_knowledge_base.py
+python scripts/init_agent1_semantic_index.py
 python scripts/build_knowledge_graph.py
 python scripts/seed_test_data.py
 python scripts/init_faq_vectors.py
@@ -110,6 +112,7 @@ python scripts/check_review_schema.py
 - 历史库 `data/knowledge.db` 不再参与运行链路，仅保留备份归档用途
 - 所有后端代码、初始化脚本、FAQ 向量化脚本统一读取 `DATABASE_URL`
 - 所有 Chroma 数据统一读取 `CHROMA_PATH`
+- Agent1 使用 `agent1_knowledge_docs` collection 对 `knowledge_docs` 的 68 条文档做语义召回；初始化或更新种子文档后执行 `python scripts/init_agent1_semantic_index.py`
 
 ## Agent3-4 审核辩论协议
 

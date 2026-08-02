@@ -69,3 +69,4 @@ class LearningPackage(BaseModel):
     review_trace_id: Optional[str] = None
     sources: List[Source] = Field(default_factory=list)
     claims: List[Claim] = Field(default_factory=list)
+    recommended_videos: List[dict] = Field(default_factory=list)

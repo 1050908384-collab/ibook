@@ -169,6 +169,58 @@ class SQLiteClient:
                 )
             """))
             conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS learning_resources (
+                    resource_id VARCHAR(50) PRIMARY KEY,
+                    resource_type VARCHAR(20) CHECK (resource_type IN ('video', 'article')) NOT NULL,
+                    title VARCHAR(300) NOT NULL,
+                    raw_url TEXT NOT NULL,
+                    canonical_url TEXT NOT NULL UNIQUE,
+                    platform VARCHAR(50),
+                    external_id VARCHAR(100),
+                    external_part VARCHAR(30),
+                    content_summary TEXT NOT NULL,
+                    recommendation_level VARCHAR(20) CHECK (recommendation_level IN ('primary', 'supplementary')) NOT NULL DEFAULT 'supplementary',
+                    review_status VARCHAR(20) CHECK (review_status IN ('pending', 'confirmed', 'rejected', 'unavailable')) NOT NULL DEFAULT 'pending',
+                    metadata_json TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS subtopic_resources (
+                    resource_id VARCHAR(50) NOT NULL,
+                    block_id VARCHAR(50) NOT NULL,
+                    subtopic_id VARCHAR(50) NOT NULL,
+                    role VARCHAR(20) CHECK (role IN ('primary', 'supplementary')) NOT NULL DEFAULT 'supplementary',
+                    sequence_index INT NOT NULL DEFAULT 1,
+                    relevance_score FLOAT CHECK (relevance_score >= 0 AND relevance_score <= 1) NOT NULL DEFAULT 0.5,
+                    mapping_status VARCHAR(20) CHECK (mapping_status IN ('pending', 'confirmed', 'rejected')) NOT NULL DEFAULT 'pending',
+                    mapping_notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (resource_id, subtopic_id),
+                    FOREIGN KEY (resource_id) REFERENCES learning_resources(resource_id),
+                    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id),
+                    FOREIGN KEY (subtopic_id) REFERENCES knowledge_subtopics(subtopic_id)
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS block_resources (
+                    resource_id VARCHAR(50) NOT NULL,
+                    block_id VARCHAR(50) NOT NULL,
+                    role VARCHAR(20) CHECK (role IN ('primary', 'supplementary')) NOT NULL DEFAULT 'supplementary',
+                    sequence_index INT NOT NULL DEFAULT 1,
+                    relevance_score FLOAT CHECK (relevance_score >= 0 AND relevance_score <= 1) NOT NULL DEFAULT 0.5,
+                    mapping_status VARCHAR(20) CHECK (mapping_status IN ('pending', 'confirmed', 'rejected')) NOT NULL DEFAULT 'pending',
+                    mapping_notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (resource_id, block_id),
+                    FOREIGN KEY (resource_id) REFERENCES learning_resources(resource_id),
+                    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
+                )
+            """))
+            conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS subtopic_status (
                     session_id VARCHAR(50) NOT NULL,
                     subtopic_id VARCHAR(50) NOT NULL,
@@ -221,6 +273,9 @@ class SQLiteClient:
                 )
             """))
             self._create_review_protocol_tables(conn)
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_learning_resources_type_status ON learning_resources(resource_type, review_status)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_subtopic_resources_lookup ON subtopic_resources(block_id, subtopic_id, role, sequence_index)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_block_resources_lookup ON block_resources(block_id, role, sequence_index)"))
             conn.commit()
 
     def _migrate_tables(self):
@@ -234,7 +289,37 @@ class SQLiteClient:
             self._ensure_column(conn, "knowledge_docs", "subtopic_id", "VARCHAR(50)")
             self._migrate_test_questions_table(conn)
             self._migrate_review_protocol_tables(conn)
+            self._migrate_learning_package_source_types(conn)
             conn.commit()
+
+    def _migrate_learning_package_source_types(self, conn) -> None:
+        """安全扩展 learning_package_sources 的 CHECK 枚举以支持 video。"""
+        table_sql = conn.execute(text("SELECT sql FROM sqlite_master WHERE type='table' AND name='learning_package_sources'")).scalar() or ""
+        if "'video'" in table_sql:
+            return
+
+        tables = [
+            "learning_package_sources", "learning_package_claims",
+            "review_debate_issues", "review_debate_responses",
+        ]
+        snapshots = {}
+        for table in tables:
+            columns = [row[1] for row in conn.execute(text(f"PRAGMA table_info({table})")).fetchall()]
+            if columns:
+                snapshots[table] = (columns, [dict(row._mapping) for row in conn.execute(text(f"SELECT * FROM {table}")).fetchall()])
+
+        conn.execute(text("PRAGMA foreign_keys = OFF"))
+        for table in ("review_debate_responses", "review_debate_issues", "learning_package_claims", "learning_package_sources"):
+            conn.execute(text(f"DROP TABLE IF EXISTS {table}"))
+        self._create_review_protocol_tables(conn)
+        for table in tables:
+            columns, rows = snapshots.get(table, ([], []))
+            if not rows:
+                continue
+            column_sql = ", ".join(columns)
+            value_sql = ", ".join(f":{column}" for column in columns)
+            conn.execute(text(f"INSERT INTO {table} ({column_sql}) VALUES ({value_sql})"), rows)
+        conn.execute(text("PRAGMA foreign_keys = ON"))
 
 
     @staticmethod
@@ -329,7 +414,7 @@ class SQLiteClient:
             CREATE TABLE IF NOT EXISTS learning_package_sources (
                 trace_id VARCHAR(50) NOT NULL,
                 source_id VARCHAR(50) NOT NULL,
-                source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example')) NOT NULL,
+                source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
                 title VARCHAR(200),
                 locator TEXT,
                 content_ref TEXT,
@@ -493,7 +578,7 @@ class SQLiteClient:
                     CREATE TABLE learning_package_sources (
                         trace_id VARCHAR(50) NOT NULL,
                         source_id VARCHAR(50) NOT NULL,
-                        source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example')) NOT NULL,
+                        source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
                         title VARCHAR(200),
                         locator TEXT,
                         content_ref TEXT,
