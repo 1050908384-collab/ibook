@@ -241,4 +241,4 @@ class KnowledgeBlockQueryTool:
         result = knowledge_block_query({"skill_name": skill_name}, config=self._default_config)
         if result.get("status") != "success":
             return {}
-        return result["data"].get("block", {})
+        return result["data"].get("block") or {}
