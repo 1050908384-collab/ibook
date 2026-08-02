@@ -127,7 +127,7 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
         initial = await first.process_initial_input(
             session_id,
-            "I know Python and want to learn LoRA",
+            "I know Python, PyTorch, and HuggingFace and want to learn LoRA",
         )
         self.assertEqual("ready", initial["status"])
         self.assertEqual("LoRA", initial["stage_info"]["block_name"])

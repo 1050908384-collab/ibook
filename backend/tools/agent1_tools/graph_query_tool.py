@@ -243,5 +243,27 @@ class GraphQueryTool:
         deps = result["data"].get("dependencies", [])
         return [item["block_name"] for item in deps]
 
+    async def query_direct_prerequisites(self, skill_name: str) -> List[Dict[str, Any]]:
+        """Return only direct block predecessors for Agent1 stage ordering."""
+        try:
+            graph_client = GraphClient()
+            seed_index = _load_seed_index()
+            block_id = _resolve_block_id(skill_name, seed_index) or _find_block_id(graph_client.graph, skill_name)
+            if not block_id:
+                return []
+            return [
+                {
+                    "block_id": prerequisite_id,
+                    "block_name": _canonical_block_name(
+                        prerequisite_id,
+                        dict(graph_client.graph.nodes[prerequisite_id]),
+                        seed_index,
+                    ),
+                }
+                for prerequisite_id in graph_client.get_prerequisites(block_id)
+            ]
+        except Exception:
+            return []
+
     async def query_dependencies(self, skill_name: str) -> List[str]:
         return await self.query_prerequisites(skill_name)

@@ -1,0 +1,145 @@
+﻿============================================================
+Agent1 ��� Agent �������ԣ����� + �׶ι滮��
+============================================================
+
+ѡ��ִ��ģʽ��
+  1) hybrid        ʹ�ñ��� LLM��Ollama�����鿴��ʵģ�������Ĭ�ϣ�
+  2) deterministic ������/������·�������� LLM���ٶȿ�
+������ 1 �� 2���س�=1��: 
+������ѧϰ��������ֱ�ӻس�ʹ��Ĭ��ʾ������
+------------------------------------------------------------
+�ҵ���ݱ������о�������PyTorch�������ù�transformer��
+�ҵ����л�����Python��PyTorch
+�ҵ�ѧϰĿ�꣺����LoRA΢�����ܶ���������������
+��ÿ�����ѧϰ��2Сʱ
+�ҵ�ѧϰ��ʽ��ƫ������ʵ��
+�ҵ��豸������RTX 4060
+------------------------------------------------------------
+>>> 
+������������������������������������������������������������������������������������������������������������������������
+  Agent ����
+������������������������������������������������������������������������������������������������������������������������
+  agent_type:    HybridDiagnosticAgent
+  has_llm:       True
+  tools/attrs (7):
+    .calculate_confidence_tool  ��  CalculateConfidenceTool
+    .db_client  ��  SQLiteClient
+    .extract_skills_tool  ��  ExtractSkillsTool
+    .graph_query_tool  ��  GraphQueryTool
+    .knowledge_block_query_tool  ��  KnowledgeBlockQueryTool
+    .llm_client  ��  LLMClient
+    .stage_generator_tool  ��  StageGeneratorTool
+
+============================================================
+�����롿DiagnosticInput
+============================================================
+{
+  "session_id": "test-agent1-session",
+  "user_input": "�ҵ���ݱ������о�������PyTorch�������ù�transformer��\n�ҵ����л�����Python��PyTorch\n�ҵ�ѧϰĿ�꣺����LoRA΢�����ܶ���������������\n��ÿ�����ѧϰ��2Сʱ\n�ҵ�ѧϰ��ʽ��ƫ������ʵ��\n�ҵ��豸������RTX 4060"
+}
+
+������������������������������������������������������������������������������������������������������������������������
+  ��������Ҫ������Agent1 �ڲ����ߵ���Ԥ����
+������������������������������������������������������������������������������������������������������������������������
+
+  [����] extract_skills_tool.extract_skills(text)
+    �� extracted_skills: ['transformer', 'python', 'pytorch']
+
+  [����] extract_skills_tool.extract_gaps(text)
+    �� extracted_gaps: [{"skill": "��ģ��΢��", "level": "beginner"}]
+
+  [����] graph_query_tool.query_prerequisites(skill)
+    �� LoRA: ['���ѧϰ���PyTorch����', 'HuggingFace��̬������', 'Python��̻���', '���ݴ������', '�Ӵ��з���ִ�����Tokenizer��', 'Linux�����������в���', '��Ȼ���Դ����NLP����������']
+
+  [����] calculate_confidence_tool.calculate(text, mastered, gaps)
+    �� confidence: 0.5750
+
+============================================================
+�����в������ܡ�
+============================================================
+{
+  "extracted_skills": [
+    "transformer",
+    "python",
+    "pytorch"
+  ],
+  "extracted_gaps": [
+    {
+      "skill": "��ģ��΢��",
+      "level": "beginner"
+    }
+  ],
+  "prerequisites[LoRA]": [
+    "���ѧϰ���PyTorch����",
+    "HuggingFace��̬������",
+    "Python��̻���",
+    "���ݴ������",
+    "�Ӵ��з���ִ�����Tokenizer��",
+    "Linux�����������в���",
+    "��Ȼ���Դ����NLP����������"
+  ],
+  "calculated_confidence": 0.575
+}
+
+������������������������������������������������������������������������������������������������������������������������
+  [Step 1] ���� run() ���� UserProfile
+������������������������������������������������������������������������������������������������������������������������
+[Agent1] diagnostic:start | session=test-agent1-session
+[Agent1] diagnostic:done | goal=����LoRA΢�����ܶ��������������� | gaps=1 | confidence=0.90
+=== ���͸�Ollama��prompt��ǰ200�ַ���=== ����������ѧϰ����������ֻ����һ��JSON���󣬲�Ҫ���˵�����֡�
+
+ѧϰ���������ҵ���ݱ������о�������PyTorch�������ù�transformer��
+�ҵ����л�����Python��PyTorch
+�ҵ�ѧϰĿ�꣺����LoRA΢�����ܶ���������������
+��ÿ�����ѧϰ��2Сʱ
+�ҵ�ѧϰ��ʽ��ƫ������ʵ��
+�ҵ��豸������RTX 4060
+
+JSON�ֶ�Ҫ��
+- skill_tags: �����ռ���
+=== Ollama��Ӧ��ǰ500�ַ���===
+{ "grade": "�ж�", "skill_tags": ["Python", "PyTorch"], "knowledge_gaps": [ { "skill": "LoRA", "level": "beginner" }, { "skill": "΢��", "level": "����" } ], "goal": "����LoRA΢�����ܶ���������������", "daily_hours": 2, "learning_style": "mixed", "hardware": "" }
+=== ��Ӧ���� ===
+
+============================================================
+�������DiagnosticOutput.profile
+============================================================
+{
+  "session_id": "test-agent1-session",
+  "grade": "�ж�",
+  "skill_tags": [
+    "Python",
+    "PyTorch"
+  ],
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "level": "beginner",
+      "status": "δ����",
+      "progress": 0.0,
+      "prerequisites": []
+    },
+    {
+      "skill": "΢��",
+      "level": "����",
+      "status": "δ����",
+      "progress": 0.0,
+      "prerequisites": []
+    }
+  ],
+  "goal": "����LoRA΢�����ܶ���������������",
+  "daily_hours": 2.0,
+  "learning_style": "mixed",
+  "hardware": "RTX 4060",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
+  "confusion_markers": [],
+  "confidence": 0.9,
+  "version": 1
+}
+
+���� followup_questions����ʾ���Ŷȴ�꣩
+
+profile.confidence = 0.90
+
+�Ƿ��������ѧϰ�׶� StageInfo��(y/N): �ѽ�����
