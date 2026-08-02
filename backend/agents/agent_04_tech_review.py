@@ -15,6 +15,7 @@ from tools.agent4_tools.rule_check_tool import RuleCheckTool
 from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
 from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
 from tools.agent4_tools.style_match_tool import StyleMatchTool
+from tools.learning_resource_tool import LearningResourceTool
 
 _ERROR_CLASSIFICATION_MAP: Dict[str, Dict[str, str]] = {
     "SyntaxError": {"category": "SyntaxError", "severity": "critical"},
@@ -317,6 +318,7 @@ class TechnicalReviewAgent(BaseAgent):
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.learning_resource_tool = LearningResourceTool()
         self.load_tools([
             self.code_executor_tool,
             self.code_parser_tool,
@@ -336,6 +338,19 @@ class TechnicalReviewAgent(BaseAgent):
             return profile
         return {}
 
+    @staticmethod
+    def _extract_stage_scope(stage: Any) -> tuple:
+        """从 stage（dict / 含同名属性的对象 / None）提取 (block_id, subtopic_id)，供视频归属校验。
+
+        兼容 harness 传 StageInfo 对象与测试传 dict 两种形态；缺失时返回 (None, None)，
+        learning_resource_tool 会据此安全降级（空 block_id -> 不查询/空基线）。
+        """
+        if stage is None:
+            return None, None
+        if isinstance(stage, dict):
+            return stage.get("block_id"), stage.get("subtopic_id")
+        return getattr(stage, "block_id", None), getattr(stage, "subtopic_id", None)
+
     async def review(
         self,
         session_id: str,
@@ -344,6 +359,8 @@ class TechnicalReviewAgent(BaseAgent):
         sources: Optional[List[Dict[str, Any]]] = None,
         claims: Optional[List[Dict[str, Any]]] = None,
         round_index: int = 1,
+        recommended_videos: Optional[List[Dict[str, Any]]] = None,
+        stage: Optional[Dict[str, Any]] = None,
     ) -> TechnicalReviewResult:
         """审核学习包 / 回答，产出带证据可追溯的 issues（审核辩论协议 Agent4→Agent3）。
 
@@ -351,11 +368,17 @@ class TechnicalReviewAgent(BaseAgent):
         - sources：学习包来源清单（Agent3 产出），每条含 source_id 等字段
         - claims：Agent3 的可验证陈述声明，每条含 claim_id / section_ref / is_key_technical 等
         - round_index：当前审核轮次（用于生成 error_id 后缀 _r{round_index}），跨轮稳定 canonical 不变
+        - recommended_videos：Agent3 从资源库挑选的推荐视频列表（仅学习包场景，
+          对应 technical_review.skill.md 规则5「推荐视频资源审核」）
+        - stage：当前阶段信息（含 block_id / subtopic_id），供视频归属校验；dict 或含同名属性的对象均可
 
         每个 error 强制携带：canonical_error_id、error_id、source_refs、change_request、
         must_fix、must_fix_reason、claim_id（协议 2.3 / 2.4 / 第 6 节）。
+        视频错误（video_resource_mismatch/video_url_mismatch/video_content_unverified）
+        由 learning_resource_tool.validate_recommended_videos 产出后一并补全协议字段。
         """
         raw_errors = []
+        video_resource_errors: List[Dict[str, Any]] = []
         print(f"=== Agent4(合并后) TechnicalReviewAgent 开始审核 ===")
 
         profile_dict = self._profile_to_dict(profile) if profile else {}
@@ -454,10 +477,26 @@ class TechnicalReviewAgent(BaseAgent):
             except Exception:
                 pass
 
-        # 步骤5：综合裁决 — 将原始dict转为ReviewError，按规则4裁决优先级
+        # 步骤5：推荐视频资源审核（仅学习包场景，technical_review.skill.md 规则5）
+        # 视频归属越界/URL不一致/内容未审核，比对资源库权威记录 learning_resources。
+        # answer 场景不涉及视频；video 分支不构成"已知分支"guard（tutorial/code_examples/answer 仍需存在）。
+        if "answer" not in content and recommended_videos:
+            block_id, subtopic_id = self._extract_stage_scope(stage)
+            print(f"=== 审核推荐视频资源（block_id={block_id}, subtopic_id={subtopic_id}, "
+                  f"共{len(recommended_videos)}个）===")
+            try:
+                video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                    recommended_videos, block_id, subtopic_id
+                )
+                raw_errors.extend(video_resource_errors)
+            except Exception:
+                pass
+
+        # 步骤6：综合裁决 — 将原始dict转为ReviewError，按规则4裁决优先级
         errors = self._normalize_errors(raw_errors)
-        # 步骤6：审核辩论协议增强 — 为每个 error 强制补全
+        # 步骤7：审核辩论协议增强 — 为每个 error 强制补全
         #   source_refs / change_request / canonical_error_id / error_id / must_fix / claim_id
+        #   raw_errors 已含视频错误（携带 source_ref=src_video_{id} 与 change_request）
         errors = self._enrich_debate_fields(
             errors, sources=sources, claims=claims, round_index=round_index, raw_errors=raw_errors
         )

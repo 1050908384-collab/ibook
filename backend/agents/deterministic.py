@@ -829,13 +829,17 @@ class DeterministicTechnicalReviewAgent:
                 errors.extend(normalize_review_errors(tool_errors))
             except Exception:
                 pass
-            video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
-                request.recommended_videos,
-                request.stage.block_id,
-                request.stage.subtopic_id,
-            )
-            errors.extend(normalize_review_errors(video_resource_errors))
-
+            # 步骤5：推荐视频资源审核（technical_review.skill.md 规则5）— 异常兜底，
+            # tool 内部仅捕获 sqlite3.Error，此处再兜住 OSError 等非 sqlite3 异常，避免中断审核链路。
+            try:
+                video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                    request.recommended_videos,
+                    request.stage.block_id,
+                    request.stage.subtopic_id,
+                )
+                errors.extend(normalize_review_errors(video_resource_errors))
+            except Exception:
+                video_resource_errors = []
         # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
         errors = self._protocol_agent._enrich_debate_fields(
             errors,
@@ -911,12 +915,18 @@ class HybridTechnicalReviewAgent:
                 quality_tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
             except Exception:
                 pass
-            video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
-                request.recommended_videos,
-                request.stage.block_id,
-                request.stage.subtopic_id,
-            )
-            video_errors = normalize_review_errors(video_resource_errors)
+            # 步骤5：推荐视频资源审核（technical_review.skill.md 规则5）— 异常兜底，
+            # tool 内部仅捕获 sqlite3.Error，此处再兜住 OSError 等非 sqlite3 异常，避免中断审核链路。
+            try:
+                video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                    request.recommended_videos,
+                    request.stage.block_id,
+                    request.stage.subtopic_id,
+                )
+                video_errors = normalize_review_errors(video_resource_errors)
+            except Exception:
+                video_resource_errors = []
+                video_errors = []
         else:
             video_errors = []
 

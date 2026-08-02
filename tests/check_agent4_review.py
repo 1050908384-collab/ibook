@@ -126,6 +126,22 @@ DEFAULT_CONTENT_LP = (
 )
 DEFAULT_CONTENT_ANS = "LoRA 通过对权重矩阵做 SVD 分解来减少参数量，训练 U、Σ、V 三个矩阵。"
 
+# 默认推荐视频（取自 data/knowledge_base/video_resources.json 的真实 seed 记录 RES-VID-064，
+# 映射到 KB-12/KBS-12-01）。用于触发 Agent4 的「推荐视频资源审核」（technical_review.skill.md 规则5）：
+#   - 资源库已 seed（learning_resources 有该记录，mapping_status=confirmed）时 -> video_content_unverified（minor，review_status=pending）
+#   - 资源库未 seed（当前 project.db 尚无 learning_resources 表）时      -> video_resource_mismatch（major，must_fix）
+# 两种资源库状态下都会命中视频校验路径，测试保持稳健。answer 场景不涉及视频，videos 传空。
+DEFAULT_RECOMMENDED_VIDEOS = [{
+    "resource_id": "RES-VID-064",
+    "title": "LoRA微调：从原理到调参，7 个问题彻底理解 LoRA",
+    "url": "https://www.bilibili.com/video/BV1waZ2YDEcp",
+    "review_status": "pending",
+    "content_summary": "用于学习“理解LoRA的低秩分解原理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-01",
+    "role": "primary",
+}]
+
 
 async def show_tool_chain(
     agent: DeterministicTechnicalReviewAgent,
@@ -173,6 +189,7 @@ async def show_tool_chain(
     raw_errors.extend(hallucination_errors)
 
     # 3. 质量审核（仅 learning_package，与 run() 分支一致）
+    video_raw_errors: list = []
     if request.target_type == "learning_package":
         print("\n[Tool 3] difficulty_analyzer_tool.analyze")
         print(f"  输入 profile: {json.dumps(profile, ensure_ascii=False)}")
@@ -201,18 +218,37 @@ async def show_tool_chain(
             print(f"  [异常兜底] {type(exc).__name__}: {exc}")
         print(f"  输出 style_errors（{len(style_errors)}条）: {_dump_errors(style_errors)}")
         raw_errors.extend(style_errors)
-    else:
-        print("\n[Tool 3-5] （target=answer，跳过 difficulty/cognitive_load/style，与 run() 一致）")
 
-    # 4. 综合裁决 + 辩论协议字段补全
+        # 步骤5：推荐视频资源审核（technical_review.skill.md 规则5，与 run() 分支一致）
+        print("\n[Tool 5.5] learning_resource_tool.validate_recommended_videos")
+        print(f"  输入 recommended_videos（{len(request.recommended_videos)}个）: "
+              f"{json.dumps(request.recommended_videos, ensure_ascii=False)}")
+        print(f"  输入 block_id={request.stage.block_id} | subtopic_id={request.stage.subtopic_id}")
+        try:
+            video_raw_errors = await agent.learning_resource_tool.validate_recommended_videos(
+                request.recommended_videos,
+                request.stage.block_id,
+                request.stage.subtopic_id,
+            )
+        except Exception as exc:
+            video_raw_errors = []
+            print(f"  [异常兜底] {type(exc).__name__}: {exc}")
+        print(f"  输出 video_resource_errors（{len(video_raw_errors)}条）: {_dump_errors(video_raw_errors)}")
+        print("  说明：资源库已 seed -> video_content_unverified(minor)；未 seed -> video_resource_mismatch(major,must_fix)")
+        raw_errors.extend(video_raw_errors)
+    else:
+        print("\n[Tool 3-5.5] （target=answer，跳过 difficulty/cognitive_load/style/视频审核，与 run() 一致）")
+
+    # 4. 综合裁决 + 辩论协议字段补全（raw_errors 含视频错误，与 run() 传 raw_errors=video_resource_errors 对齐）
     print("\n[Tool 6] normalize_review_errors + _protocol_agent._enrich_debate_fields")
-    print(f"  输入 raw_errors（{len(raw_errors)}条，未归一化）")
+    print(f"  输入 raw_errors（{len(raw_errors)}条，未归一化，含视频错误 {len(video_raw_errors)} 条）")
     normalized = normalize_review_errors(raw_errors)
     enriched = agent._protocol_agent._enrich_debate_fields(
         normalized,
         sources=request.sources,
         claims=request.claims,
         round_index=request.round_index,
+        raw_errors=video_raw_errors,
     )
     print(f"  输出 enriched errors（{len(enriched)}条，含 canonical_error_id/must_fix/change_request）:")
     print(f"  {_dump_errors(enriched)}")
@@ -246,6 +282,7 @@ async def main(args: argparse.Namespace):
     stage = StageInfo(
         stage_id="stage-test-04", stage_num=1, block_id="KB-12",
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA",
+        subtopic_id="KBS-12-01",
     )
     profile = UserProfile(session_id=session_id, goal="掌握LoRA微调")
 
@@ -267,6 +304,19 @@ async def main(args: argparse.Namespace):
         "status": "active",
     }]
 
+    # 推荐视频：仅 learning_package 场景传入（answer 场景不涉及视频）。
+    # 同步为每个视频补一条 source_type="video" 的 source（对齐 Agent3 产出 src_video_{id}），
+    # 使视频错误的 source_ref=src_video_RES-VID-064 能命中 sources，辩论协议字段可完整补全。
+    recommended_videos = DEFAULT_RECOMMENDED_VIDEOS if target_type == "learning_package" else []
+    for video in recommended_videos:
+        sources.append({
+            "source_id": f"src_video_{video['resource_id']}",
+            "source_type": "video",
+            "title": video["title"],
+            "locator": f"learning_resources:{video['resource_id']}",
+            "content_ref": video["url"],
+        })
+
     request = ReviewInput(
         session_id=session_id,
         target_type=target_type,
@@ -275,6 +325,7 @@ async def main(args: argparse.Namespace):
         profile=profile,
         sources=sources,
         claims=claims,
+        recommended_videos=recommended_videos,
         round_index=1,
     )
     pretty("【输入】ReviewInput（Agent4 审核入参）", {
@@ -284,6 +335,7 @@ async def main(args: argparse.Namespace):
         "stage": stage.model_dump(mode="json"),
         "sources": sources,
         "claims": claims,
+        "recommended_videos": recommended_videos,
         "round_index": 1,
     })
 
