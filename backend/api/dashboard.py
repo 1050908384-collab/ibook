@@ -1,0 +1,123 @@
+# -*- coding: utf-8 -*-
+"""仪表盘 API（Agent46_API接口任务说明.md 第 4 节）。
+
+由 Agent4/6 队友承担工程实现：后端聚合 user_profiles / stage_progress /
+subtopic_status / assessment_attempts / user_qa，不属于 Agent4 的运行职责。
+"""
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, HTTPException
+
+from api.dependencies import get_harness
+
+router = APIRouter()
+harness = get_harness()
+
+
+def _build_dashboard(session_id: str, db=None) -> Dict[str, Any]:
+    db = db or harness.state_manager.db_client
+
+    profile = db.get_latest_profile(session_id)
+    stages = db.list_stage_progress(session_id)
+    mastered_count, total_count = db.get_subtopic_mastery_counts(session_id)
+    block_progress = db.get_block_progress(session_id)
+    attempts = db.list_assessment_attempts(session_id)
+    recent_qa = db.get_recent_qa(session_id, limit=5)
+
+    if profile is None and not stages and total_count == 0:
+        raise HTTPException(status_code=404, detail=f"Session dashboard not found: {session_id}")
+
+    # 当前阶段摘要：取最大 stage_num 的阶段
+    current_stage: Optional[Dict[str, Any]] = stages[-1] if stages else None
+    current_stage_summary: Optional[Dict[str, Any]] = None
+    if current_stage:
+        current_stage_summary = {
+            "stage_id": current_stage["stage_id"],
+            "stage_num": current_stage["stage_num"],
+            "block_id": current_stage["block_id"],
+            "block_name": current_stage["block_name"],
+            "subtopic_id": current_stage["subtopic_id"],
+            "status": current_stage["status"],
+            "accuracy": current_stage["accuracy"],
+            "strategy_used": current_stage["strategy_used"],
+        }
+
+    # 画像摘要
+    profile_summary: Optional[Dict[str, Any]] = None
+    confidence_index = 0.5
+    learning_rhythm = "medium"
+    if profile:
+        confidence_index = profile.get("confidence_index", 0.5) or 0.5
+        learning_rhythm = profile.get("learning_rhythm", "medium") or "medium"
+        profile_summary = {
+            "goal": profile.get("goal", ""),
+            "grade": profile.get("grade", ""),
+            "skill_tags": profile.get("skill_tags", []),
+            "knowledge_gaps": profile.get("knowledge_gaps", []),
+            "daily_hours": profile.get("daily_hours"),
+            "learning_style": profile.get("learning_style"),
+            "version": profile.get("version"),
+        }
+
+    # 总体进度：已掌握子知识点占比
+    overall_progress = round(mastered_count / total_count, 3) if total_count else 0.0
+
+    # 当前正确率：只从已提交的完整 attempt 计算（约束 7）
+    submitted = db.get_submitted_attempt_accuracy(session_id)
+    current_accuracy = submitted["accuracy"] if submitted else None
+
+    # 阶段历史：所有阶段的精简记录
+    stage_history: List[Dict[str, Any]] = [
+        {
+            "stage_num": s["stage_num"],
+            "block_id": s["block_id"],
+            "block_name": s["block_name"],
+            "status": s["status"],
+            "accuracy": s["accuracy"],
+            "strategy_used": s["strategy_used"],
+            "completed_at": s["completed_at"],
+        }
+        for s in stages
+    ]
+
+    # 正确率趋势：只取已提交 attempt，按提交顺序
+    accuracy_trend: List[Dict[str, Any]] = [
+        {
+            "attempt_id": a["attempt_id"],
+            "stage_num": a["stage_num"],
+            "accuracy": a["accuracy"],
+            "correct_count": a["correct_count"],
+            "total_questions": a["total_questions"],
+            "submitted_at": a["submitted_at"],
+        }
+        for a in attempts
+        if a["status"] == "submitted"
+    ]
+
+    return {
+        "session_id": session_id,
+        "profile_summary": profile_summary,
+        "current_stage_summary": current_stage_summary,
+        "overall_progress": overall_progress,
+        "current_accuracy": current_accuracy,
+        "confidence_index": confidence_index,
+        "learning_rhythm": learning_rhythm,
+        "mastered_count": mastered_count,
+        "total_count": total_count,
+        "block_progress": block_progress,
+        "stage_history": stage_history,
+        "accuracy_trend": accuracy_trend,
+        "recent_qa": recent_qa,
+    }
+
+
+@router.get("/sessions/{session_id}/dashboard")
+async def get_dashboard(session_id: str):
+    """获取仪表盘主数据（聚合多表）。"""
+    try:
+        print(f"[API][GET /sessions/{session_id}/dashboard]", flush=True)
+        return _build_dashboard(session_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

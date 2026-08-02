@@ -174,10 +174,18 @@ class Harness:
             latest_review.quality.passed,
         )
         self.state_manager.add_interaction(session_id, "question_asked", {"question": question})
+        # 答疑审核摘要（Agent46_API接口任务说明.md 第 1 节）：由合并后的 Agent4 产出
+        # technical_passed / quality_passed / iterations / status / needs_human_review，
+        # 供前端 qa 返回体的 review_summary 使用（审核逻辑仍归属 Agent4，harness 仅透传）。
+        review_summary = self.agent4._protocol_agent.build_answer_review_summary(
+            latest_review.technical,
+            iterations=len(review_history),
+        )
         self._log(
             session_id,
             "handle_question:done",
-            f"tech_pass={latest_review.technical.passed}, quality_pass={latest_review.quality.passed}",
+            f"tech_pass={latest_review.technical.passed}, quality_pass={latest_review.quality.passed}, "
+            f"review_status={review_summary['status']}, needs_human_review={review_summary['needs_human_review']}",
         )
         return {
             "answer": answer,
@@ -185,6 +193,8 @@ class Harness:
             "quality_pass": latest_review.quality.passed,
             "iterations": len(review_history),
             "review_history": [item.model_dump(mode="json") for item in review_history],
+            # 第 1 节答疑审核摘要（前端 review_summary 字段来源）
+            "review_summary": review_summary,
         }
 
     async def submit_answer(self, session_id: str, question_id: str, user_answer: str) -> Dict[str, Any]:
@@ -200,6 +210,34 @@ class Harness:
         self._log(session_id, "submit_answer", f"question_id={question_id}, correct={is_correct}")
         return {"is_correct": is_correct, "correct_answer": question.correct_answer}
 
+    def _resolve_stage_accuracy(self, session_id: str, stage: StageInfo) -> float:
+        """确定本阶段用于 Agent6 决策的正确率（Agent46_API接口任务说明.md 第 2/3 节）。
+
+        - §3 complete 流程要求「读取已提交测试的准确率」，§2 约束 7 要求正确率只能来自
+          已提交的完整 attempt，不能从零散答题记录计算。
+        - 因此优先取当前阶段已提交 attempt 的正确率；找不到时（例如仍走旧的 submit_answer
+          零散答题链路）再退化为 StateManager.calculate_accuracy，保证向后兼容不阻断流程。
+        """
+        try:
+            stage_id = getattr(stage, "stage_id", None)
+            submitted = self.state_manager.db_client.get_submitted_attempt_accuracy(
+                session_id, stage_id=stage_id
+            )
+            # 阶段维度没有已提交 attempt 时，退回会话维度最近一次已提交 attempt
+            if submitted is None and stage_id is not None:
+                submitted = self.state_manager.db_client.get_submitted_attempt_accuracy(session_id)
+            if submitted and submitted.get("accuracy") is not None:
+                self._log(
+                    session_id,
+                    "complete_stage:accuracy_source",
+                    f"submitted_attempt={submitted.get('attempt_id')}, accuracy={submitted['accuracy']}",
+                )
+                return float(submitted["accuracy"])
+        except Exception as exc:
+            self._log(session_id, "complete_stage:accuracy_fallback", f"reason={exc}")
+        # 兜底：旧的零散答题链路
+        return self.state_manager.calculate_accuracy(session_id)
+
     async def complete_stage(self, session_id: str) -> Dict[str, Any]:
         """
         complete_stage 新职责（P3 按需阶段规划）：
@@ -207,12 +245,13 @@ class Harness:
         2. 保存 Agent6 更新后的用户画像 / 个性化数据
         3. 只有在全部知识盲区都掌握时，才真正结束 session
         4. 返回 status/session_id/accuracy/updated_profile/stage_summary/
-           next_strategy/can_plan_next_stage/session_status/all_mastered
+           next_strategy/can_plan_next_stage/session_status/all_mastered/
+           final_report/phase/available_actions
         5. 不直接推进当前阶段到下一个阶段编号，不生成 next_stage
         """
         profile = UserProfile.model_validate(self._require_profile(session_id))
         stage = StageInfo.model_validate(self._require_stage(session_id))
-        accuracy = self.state_manager.calculate_accuracy(session_id)
+        accuracy = self._resolve_stage_accuracy(session_id, stage)
         self._log(session_id, "complete_stage:start", f"stage={stage.stage_num}, accuracy={accuracy:.2f}")
         decision = await self.agent6.run(StageDecisionInput(
             session_id=session_id,
@@ -267,6 +306,15 @@ class Harness:
         can_plan_next_stage = not all_mastered and session_status == "active"
 
         result_status = "completed" if all_mastered else ("repeat" if accuracy < 0.8 else "continue")
+        # 阶段结果的 phase / available_actions（Agent46_API接口任务说明.md 第 3 节）：
+        # - 结业（all_mastered）：phase=completed，无后续动作
+        # - 未结业：phase=stage_result，开放 plan_next_stage（前端据此展示“生成下一阶段”）
+        if all_mastered:
+            phase = "completed"
+            available_actions: List[str] = []
+        else:
+            phase = "stage_result"
+            available_actions = ["plan_next_stage"] if can_plan_next_stage else []
         return {
             "status": result_status,
             "session_id": session_id,
@@ -278,6 +326,8 @@ class Harness:
             "session_status": session_status,
             "all_mastered": all_mastered,
             "final_report": final_report,
+            "phase": phase,
+            "available_actions": available_actions,
         }
 
     async def plan_next_stage(self, session_id: str, adjustment_notes: str | None = None) -> Dict[str, Any]:
@@ -336,6 +386,9 @@ class Harness:
             "updated_profile": profile.model_dump(mode="json"),
             "planning_notes": planning_notes,
             "session_status": session_status,
+            # plan-next 成功后的 phase / available_actions（Agent46_API接口任务说明.md 第 3 节）
+            "phase": "next_stage_ready",
+            "available_actions": ["start_stage"],
         }
 
     async def _review_learning_package(

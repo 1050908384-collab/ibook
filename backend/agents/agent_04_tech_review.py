@@ -521,6 +521,66 @@ class TechnicalReviewAgent(BaseAgent):
 
         return TechnicalReviewResult(passed=passed, errors=errors, review_details={"summary": summary})
 
+    def build_answer_review_summary(
+        self,
+        technical_result: TechnicalReviewResult,
+        iterations: int = 1,
+        max_iterations: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """产出答疑链路的审核摘要（Agent46_API接口任务说明.md 第 1 节）。
+
+        Agent4 在答疑链路中的职责仅是审核 `answer`，并返回审核摘要，字段固定为：
+            technical_passed / quality_passed / iterations / status / needs_human_review
+
+        说明（与合并后 Agent4 事实一致）：
+        - 质量审核已合并进 Agent4，`quality_passed` 与 `technical_passed` 共享同一份
+          审核结论（technical_result.passed），不再存在独立的质量审核体。
+        - status 取值：
+            "passed"              —— 审核通过（无遗留问题）
+            "passed_with_warnings"—— 未达上限即结束但仍有非 must_fix 的 minor 问题
+            "needs_human_review"  —— 达到最大审核轮次仍有未决 must_fix（协议第 7 节）
+        - needs_human_review：仅当达到 max_iterations 且仍存在 must_fix 的问题时为 True，
+          与学习包审核链路的降级判定口径一致（不阻塞用户，交由人工复核）。
+
+        参数：
+        - technical_result：Agent4 最后一轮审核结果（含 errors / passed）
+        - iterations：答疑审核实际迭代轮次
+        - max_iterations：允许的最大审核轮次；缺省时从 config.settings 读取，
+          读取失败兜底为 iterations（即视为「已到上限」，保守判定）
+        """
+        errors = technical_result.errors or []
+        passed = bool(technical_result.passed)
+        must_fix_count = sum(1 for e in errors if getattr(e, "must_fix", False))
+
+        if max_iterations is None:
+            try:
+                from config import settings
+                max_iterations = int(getattr(settings, "MAX_REVIEW_ITERATIONS", iterations))
+            except Exception:
+                max_iterations = iterations
+
+        reached_limit = iterations >= max_iterations
+        needs_human_review = (not passed) and reached_limit and must_fix_count > 0
+
+        if passed:
+            status = "passed"
+        elif needs_human_review:
+            status = "needs_human_review"
+        elif must_fix_count == 0:
+            # 仍有问题但无未决 must_fix（仅 minor）→ 允许降级放行，标记警告
+            status = "passed_with_warnings"
+        else:
+            # 未通过、未到上限、仍有 must_fix：审核链路尚未收敛
+            status = "in_progress"
+
+        return {
+            "technical_passed": passed,
+            "quality_passed": passed,
+            "iterations": int(iterations),
+            "status": status,
+            "needs_human_review": needs_human_review,
+        }
+
     def _normalize_errors(self, raw_errors: List[Dict[str, Any]]) -> List[ReviewError]:
         """将工具返回的原始dict列表转为ReviewError对象列表。
 

@@ -133,6 +133,17 @@ class StageDecisionAgent(BaseAgent):
             "stage_summary": str,       # Markdown格式的阶段总结
             "strategy": str,            # 可能含 backtrack（回溯）策略标签
             "update_rationale": str,
+
+            # === 阶段结果契约字段（Agent46_API接口任务说明.md 第 3 节）===
+            "status": str,              # continue/repeat/completed（= decision 的对外别名）
+            "accuracy": float,          # 本阶段已提交测试的正确率
+            "next_strategy": str,       # 下一阶段策略（= strategy 的对外别名）
+            "updated_profile": {...},   # 更新后的画像片段（= profile_updates）
+            "can_plan_next_stage": bool,# 未结业且可继续规划下一阶段
+            "all_mastered": bool,       # 是否全部知识盲区都已掌握（结业条件）
+            "final_report": dict|None,  # 结业时给出的总报告，未结业为 None
+            "phase": str,               # 未结业=stage_result；结业=completed
+            "available_actions": list,  # 未结业=["plan_next_stage"]；结业=[]
         }
         """
         # 1. 执行原有画像更新逻辑（透传 iteration_history 激活 backtrack/终止逻辑）
@@ -234,10 +245,67 @@ class StageDecisionAgent(BaseAgent):
         else:
             decision = "repeat"
 
+        # 5. 阶段结果契约字段（Agent46_API接口任务说明.md 第 3 节）
+        # - all_mastered：全部知识盲区已掌握 → 结业
+        # - can_plan_next_stage：未结业即可按需规划下一阶段（含 repeat 场景重规划本阶段）
+        # - phase / available_actions：未结业时进入 stage_result 状态并开放 plan_next_stage
+        can_plan_next_stage = not all_mastered
+        if all_mastered:
+            phase = "completed"
+            available_actions: List[str] = []
+            final_report = self._build_final_report(
+                profile_dict, accuracy, gaps_with_mastery
+            )
+        else:
+            phase = "stage_result"
+            available_actions = ["plan_next_stage"]
+            final_report = None
+
         return {
             "decision": decision,
             "profile_updates": profile_updates,
             "stage_summary": stage_summary,
             "strategy": next_strategy,
             "update_rationale": f"阶段{stage_name}完成：正确率{accuracy:.0%}，策略{next_strategy}，共{len(knowledge_gaps)}个知识点",
+            # === 阶段结果契约字段（对外别名 + 结业/规划状态）===
+            "status": decision,
+            "accuracy": accuracy,
+            "next_strategy": next_strategy,
+            "updated_profile": profile_updates,
+            "can_plan_next_stage": can_plan_next_stage,
+            "all_mastered": all_mastered,
+            "final_report": final_report,
+            "phase": phase,
+            "available_actions": available_actions,
+        }
+
+    @staticmethod
+    def _build_final_report(
+        profile: Dict[str, Any],
+        accuracy: float,
+        gaps_with_mastery: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """结业总报告（Agent6 结业职责，全部知识盲区掌握时产出）。
+
+        仅使用 Agent6 已持有的数据（画像 + 更新后的知识盲区），不依赖外部服务：
+        - goal：学习目标（画像缺失时留空字符串）
+        - accuracy：最后一阶段正确率
+        - mastered_skills：掌握度达标（status=已掌握 或 mastery/progress>=1.0）的技能
+        - total_skills：知识盲区总数
+        """
+        mastered_skills: List[str] = []
+        for gap in gaps_with_mastery:
+            if not isinstance(gap, dict):
+                continue
+            mastered = (
+                gap.get("status") == "已掌握"
+                or float(gap.get("mastery", gap.get("progress", 0.0)) or 0.0) >= 1.0
+            )
+            if mastered and gap.get("skill"):
+                mastered_skills.append(gap["skill"])
+        return {
+            "goal": profile.get("goal", "") if isinstance(profile, dict) else "",
+            "accuracy": accuracy,
+            "mastered_skills": mastered_skills,
+            "total_skills": len(gaps_with_mastery),
         }

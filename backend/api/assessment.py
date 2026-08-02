@@ -1,0 +1,66 @@
+# -*- coding: utf-8 -*-
+"""测试服务 API（Agent46_API接口任务说明.md 第 2 节）。
+
+由 Agent4/6 队友承担工程实现。路径遵循文档定义的 /api/v1 前缀。
+"""
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from api.dependencies import get_assessment_service
+from services.assessment_service import AssessmentError
+
+router = APIRouter()
+assessment_service = get_assessment_service()
+
+
+class SaveAnswerRequest(BaseModel):
+    user_answer: str = Field(..., description="本题的作答内容，提交前可反复覆盖")
+    time_spent: int = Field(default=0, description="本题作答用时（秒），可选")
+
+
+def _raise(error: Exception):
+    status_code = 400 if isinstance(error, AssessmentError) else 500
+    raise HTTPException(status_code=status_code, detail=str(error))
+
+
+@router.post("/sessions/{session_id}/stages/current/assessment-attempts")
+async def create_assessment_attempt(session_id: str):
+    """根据当前学习包创建一次测试（冻结题目，返回独立 attempt_id）。"""
+    try:
+        print(f"[API][POST /assessment-attempts] session_id={session_id}", flush=True)
+        return assessment_service.create_attempt(session_id)
+    except Exception as e:
+        _raise(e)
+
+
+@router.get("/assessment-attempts/{attempt_id}")
+async def get_assessment_attempt(attempt_id: str):
+    """刷新后恢复测试进度（未提交不返回答案/解析，提交后返回完整结果）。"""
+    try:
+        return assessment_service.get_attempt(attempt_id)
+    except Exception as e:
+        _raise(e)
+
+
+@router.put("/assessment-attempts/{attempt_id}/answers/{question_id}")
+async def save_assessment_answer(attempt_id: str, question_id: str, request: SaveAnswerRequest):
+    """保存或覆盖单题答案（提交前可改，只保存一条最终答案）。"""
+    try:
+        return assessment_service.save_answer(
+            attempt_id=attempt_id,
+            question_id=question_id,
+            user_answer=request.user_answer,
+            time_spent=request.time_spent,
+        )
+    except Exception as e:
+        _raise(e)
+
+
+@router.post("/assessment-attempts/{attempt_id}/submit")
+async def submit_assessment_attempt(attempt_id: str):
+    """检查完整性、统一判题并公布结果（提交后不可再改）。"""
+    try:
+        print(f"[API][POST /assessment-attempts/submit] attempt_id={attempt_id}", flush=True)
+        return assessment_service.submit_attempt(attempt_id)
+    except Exception as e:
+        _raise(e)
