@@ -259,10 +259,10 @@ def map_pedagogy(section_completeness: int, has_scaffold: bool, has_case: bool) 
 | 多红线触发（认知负荷>85且环境不可行） | 以认知负荷红线为最高优先级，red_line_triggered取 `"cognitive_load_overload"`，suggestions优先给出认知负荷拆分建议，环境建议列为次要 |
 | 总分接近及格线（65~69分） | 判定 status=`"review_needed"`，passed=false，suggestions标注"边缘通过，建议优化提升至70分以上" |
 | 内容过短（`content.strip()`<40字符） | `DeterministicQualityReviewAgent` 直接返回 passed=false，error_type=`"too_short"`，不执行LLM六维评分，所有dimension_scores=0 |
-| LLM审核结果无法解析 | 添加 ReviewError(error_type=`"review_system_error"`, severity=critical, description="Agent5评分结果无法解析")，passed=false，status=`"fail"` |
+| LLM审核结果无法解析 | 添加 ReviewError(error_type=`"review_system_error"`, severity=critical, description="Agent4统一质量评分结果无法解析")，passed=false，status=`"fail"` |
 | LLM返回的severity值不在 `{"critical","major","minor"}` 范围内 | 自动修正为 `"major"` |
 | 六维数据全部缺失 | 降级为仅检查内容长度红线，返回 status=`"fail"`，review_details标注"评分数据完全缺失，请检查工具链" |
-| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
+| 内容审核循环达上限（Agent4统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 

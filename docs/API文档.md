@@ -187,7 +187,7 @@
 
 **POST** `/api/stage/complete/{session_id}`
 
-完成当前阶段，进入下一阶段或结业。
+完成当前阶段并调用 Agent6 决策。该接口只保存当前阶段结果和更新后的画像，不直接生成下一阶段；仍有未掌握内容时返回 `can_plan_next_stage=true`。
 
 响应：
 ```json
@@ -195,7 +195,36 @@
   "status": "continue",
   "accuracy": 0.85,
   "updated_profile": { ... },
-  "next_stage": { ... }
+  "next_strategy": "continue",
+  "can_plan_next_stage": true,
+  "all_mastered": false,
+  "session_status": "active"
+}
+```
+
+### 4.4 规划下一阶段
+
+**POST** `/api/stage/plan-next`
+
+用户确认继续后调用。Orchestrator 基于 Agent6 更新后的画像调用 Agent1 的 `generate_stage`（逻辑 Agent2 的阶段规划职责），生成并保存 `next_stage`；不会立即覆盖当前阶段。
+
+请求体：
+```json
+{
+  "session_id": "会话ID",
+  "adjustment_notes": "可选，例如先学 QLoRA 再看部署"
+}
+```
+
+响应：
+```json
+{
+  "status": "planned",
+  "session_id": "会话ID",
+  "next_stage": { ... },
+  "updated_profile": { ... },
+  "planning_notes": "...",
+  "session_status": "active"
 }
 ```
 
@@ -212,7 +241,17 @@
 {
   "session_id": "会话ID",
   "skill_tags": ["PyTorch基础", "Transformer"],
-  "knowledge_gaps": [...],
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "LoRA/QLoRA参数高效微调",
+      "target_subtopic_ids": ["KBS-12-01"],
+      "mapping_confidence": 0.9,
+      "status": "未掌握",
+      "progress": 0.0
+    }
+  ],
   "goal": "掌握LoRA微调",
   "daily_hours": 2.0,
   "learning_style": "mixed",
@@ -298,4 +337,9 @@ curl -X POST http://localhost:8500/api/stage/submit-answer \
 
 # 6. 完成阶段
 curl -X POST http://localhost:8500/api/stage/complete/xxx
+
+# 7. 用户确认后规划下一阶段（未全部掌握时）
+curl -X POST http://localhost:8500/api/stage/plan-next \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "xxx", "adjustment_notes": "先学QLoRA再看部署"}'
 ```

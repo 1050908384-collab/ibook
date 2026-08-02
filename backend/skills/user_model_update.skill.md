@@ -167,7 +167,7 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 - `profile_updates.confusion_tags`：追加代码错误相关的困惑标签
 
 **与其他规则的协作**：
-- 本规则的 `code_proficiency_level` 输出与 `learner_model.skill.md` 规则5保持一致，供 Agent5 调整难度匹配度评估
+- 本规则的 `code_proficiency_level` 输出与 `learner_model.skill.md` 规则5保持一致，供 Agent4 统一审核调整难度匹配度评估
 - 本规则的 `code_skill_gaps` 和 `confusion_tags` 传递给 `iteration_strategy.skill.md`，用于触发代码错误专项策略（见 iteration_strategy 规则1补充）
 
 ### 规则10：阶段总结报告生成规则

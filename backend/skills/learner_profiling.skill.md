@@ -113,7 +113,7 @@ confidence = clamp(base * 0.5 + completeness * 0.5, 0.3, 0.95)
 | 用户输入过短/无有效信息 | 降低confidence<0.7，触发追问 |
 | LLM返回非JSON | 回退 `DeterministicDiagnosticAgent` 正则匹配 `SKILL_NAMES`，confidence=0.75 |
 | 无识别到目标 | 默认"通用学习目标"，confidence=0.75 |
-| knowledge_gaps为空 | 不阻断，confidence正常，由 Agent2 后续处理（无盲区时抛异常） |
+| knowledge_gaps为空 | 不生成阶段，置信度压低并由 Agent1 返回追问或完成状态（无盲区时阶段选路抛异常） |
 | LLM提取的level非枚举值 | 自动修正为 beginner |
 
 ## 6. 附录

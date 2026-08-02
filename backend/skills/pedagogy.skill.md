@@ -165,8 +165,8 @@ LLM返回JSON格式：
 | 无法提取结构（内容无明确段落分隔，缺少 `##` 标题） | 标记 issue_type=`"unclear_structure"`，severity=major，suggestion="结构不清晰，建议使用Markdown二级标题划分五段式结构"，pedagogy_score上限封顶60 |
 | 用户画像skill_tags为空 | 跳过"已知回顾"匹配检查，但仍要求内容开头有引导性回顾段落，标记 issue_type=`"missing_review"`，severity降级为minor |
 | 新概念术语词典未覆盖（无法识别新概念） | 启发式统计（大写首字母+英文单词+中文术语后缀如"矩阵/系数/函数"），cognitive_load_score标注"估算值"，建议人工复核 |
-| LLM审核结果无法解析 | 添加 ReviewError(error_type=`"review_system_error"`, severity=critical, description="Agent5教学法审核结果无法解析")，passed=false |
-| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
+| LLM审核结果无法解析 | 添加 ReviewError(error_type=`"review_system_error"`, severity=critical, description="Agent4统一教学质量审核结果无法解析")，passed=false |
+| 内容审核循环达上限（Agent4统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 

@@ -270,7 +270,7 @@ CodeErrorClassification对象，JSON格式：
 | `rule_check_tool` 执行异常 | 记录日志，继续执行LLM审核，在review_details中标注"规则检查缺失" |
 | LLM审核结果无法解析（`parse_json_object` 返回None） | 添加 `ReviewError(error_type="review_system_error", severity="critical", description="Agent4审核结果无法解析", suggestion="重新执行技术审核")`，passed=false |
 | LLM返回的severity值不在 `{"critical","major","minor"}` 范围内 | 自动修正为 `"major"` |
-| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容"，不再发回Agent3修改 |
+| 内容审核循环达上限（Agent4统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容"，不再发回Agent3修改 |
 | 学习资源库不可读（`learning_resource_tool` 查询 `learning_resources` 抛 `sqlite3.Error`） | `get_recommended_videos` 安全降级返回空列表，`validate_recommended_videos` 因基线为空对所有视频判 `video_resource_mismatch`（major）；不中断其余审核步骤，在 review_details 中注明"视频资源库不可读，视频归属无法核验" |
 | `recommended_videos` 为空或 `target_type="answer"` | 跳过步骤5视频审核，不产出任何视频类错误 |
 | 视频缺失 `resource_id` 字段 | 判 `video_resource_mismatch`（major），description 标注"未提供资源ID"，要求 Agent3 补齐资源库 `resource_id` |

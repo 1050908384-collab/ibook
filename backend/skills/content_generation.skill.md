@@ -1,21 +1,21 @@
 # SKILL名称：content_generation
 
 ## 1. 能力描述
-- 功能：为Agent3（HybridContentAgent）提供**教程生成与改稿的方法论**——定义"一篇合格阶段教程长什么样"：五段式结构规范、内容要素清单、改稿优先级。Agent3调用本SKILL生成结构化Markdown教程，并依据Agent4技术审核与Agent5教学审核的意见迭代修订。在 `HybridContentAgent.run` 中被加载为 `content_skill_context`（与 code_style 一同注入），作为LLM生成 tutorial 的 prompt 规范；在 `revise_learning_package` 中作为改稿依据
+- 功能：为Agent3（HybridContentAgent）提供**教程生成与改稿的方法论**——定义"一篇合格阶段教程长什么样"：五段式结构规范、内容要素清单、改稿优先级。Agent3调用本SKILL生成结构化Markdown教程，并依据Agent4统一技术与教学质量审核的意见迭代修订。在 `HybridContentAgent.run` 中被加载为 `content_skill_context`（与 code_style 一同注入），作为LLM生成 tutorial 的 prompt 规范；在 `revise_learning_package` 中作为改稿依据
 - 适用场景（3个）：
   1. **初始化教程**：阶段开始时由 `HybridContentAgent.run` 触发，根据 `stage.block_name` 与 `profile.goal` 生成结构化Markdown教程，交 `DeterministicContentAgent` 包装为 LearningPackage
-  2. **审核后改稿**：Agent4/Agent5审核未通过时由 `revise_learning_package` 触发，接收 `technical_errors` 与 `quality_errors` 逐条修订
+2. **审核后改稿**：Agent4统一审核未通过时由 `revise_learning_package` 触发，接收兼容性的 `technical_errors` 与 `quality_errors` 字段逐条修订
   3. **版本迭代**：每次修订 `learning_package.version` 自增，记录迭代轮次直至 `MAX_REVIEW_ITERATIONS`
 - 前置依赖：
   - 当前阶段 StageInfo（`block_name`、`gap_skill`、`estimated_hours`）
   - 用户画像 UserProfile（`goal`、`learning_style`、`skill_tags` 用于难度适配与已知回顾）
   - code_style 技能（代码片段风格约束，作为 `content_skill_context` 一同注入）
-  - 审核反馈（修订时：`technical_errors` 来自 Agent4，`quality_errors` 来自 Agent5）
+- 审核反馈（修订时：`technical_errors` 与 `quality_errors` 均来自 Agent4 的统一审核结果）
 
 ## 2. 核心方法论
 - **步骤1：定位教程主题与难度面向**——读取 `stage.block_name` 作为教程主题，结合 `profile.goal` 确定面向（如"掌握LoRA微调"），参照 `profile.skill_tags` 判断已知基线，避免重复已掌握内容或跨度太大
 - **步骤2：一次性生成四段式结构教程**——调用LLM按"已知回顾→核心概念拆解→实操演示→常见坑点"四段生成Markdown；核心概念配代码示例（遵循 code_style）；自测题由用户主动点击自测时从 `test_questions` 表抽取，教程中不包含
-- **步骤3：交付审核**——tutorial 交 `DeterministicContentAgent` 包装为 `LearningPackage(tutorial, questions, code_examples, version=1)`，由 Orchestrator 送 Agent4/Agent5 双重审核
+- **步骤3：交付审核**——tutorial 交 `DeterministicContentAgent` 包装为 `LearningPackage(tutorial, questions, code_examples, version=1)`，由 Orchestrator 送 Agent4 统一审核
 - **步骤4：格式化审核反馈**——将 `technical_errors`（ReviewError数组）与 `quality_errors`（QualityIssue数组）合并为反馈清单，按 severity 降序排列（critical > major > minor）
 - **步骤5：逐条修订**——调用LLM按反馈清单逐条修订教程，保留正确内容，仅修改 errors 指向的 location，返回完整新 tutorial，`version` 自增
 - **步骤6：迭代终止判定**——审核通过或迭代轮次达 `MAX_REVIEW_ITERATIONS`（默认3）时终止；未通过则保留最后版本并标注未通过状态
@@ -94,7 +94,7 @@
 | 异常场景 | 处置方式 |
 |:---|:---|
 | LLM返回空或Error前缀 | 回退 `DeterministicContentAgent` 生成基础三段式教程（概述/概念/示例），version=1 |
-| LLM生成的tutorial无五段结构 | 保留内容，标记结构问题交Agent5审核，由 quality_errors 反馈后改稿补全 |
+| LLM生成的tutorial无五段结构 | 保留内容，标记结构问题交 Agent4 的教学质量检查，由 `quality_errors` 反馈后改稿补全 |
 | 修订后LLM响应无效 | 保留原tutorial，追加"审核修订"清单到末尾，version自增 |
 | 审核轮次达 `MAX_REVIEW_ITERATIONS`(3) | 保留最后版本，标注"未通过审核"，终止迭代 |
 | `technical_errors` 与 `quality_errors` 均为空 | 保留原tutorial，仅version自增，判通过 |
@@ -125,7 +125,7 @@
 **处理过程**：
 1. 步骤1：主题=LoRA，面向=掌握LoRA微调，已知基线=[Transformer,注意力机制]
 2. 步骤2：LLM生成四段式——已知回顾链接Transformer注意力机制；核心概念讲ΔW=(α/r)BA；实操给LoRALayer代码；坑点讲r过大过拟合；questions为空（自测题由用户主动点击时从 `test_questions` 表抽取）
-3. 步骤3：包装为 LearningPackage(version=1)，送 Agent4/Agent5 审核
+3. 步骤3：包装为 LearningPackage(version=1)，送 Agent4 统一审核
 
 **输出**：tutorial（四段式）+ questions(空) + code_examples(LoRALayer)，version=1
 
