@@ -15,3 +15,4 @@ python-docx==1.1.2
 beautifulsoup4==4.12.3
 markdown==3.7
 chromadb==0.5.5
+fastembed==0.6.1

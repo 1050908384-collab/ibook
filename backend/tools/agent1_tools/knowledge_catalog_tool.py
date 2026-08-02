@@ -89,6 +89,8 @@ class KnowledgeCatalogTool:
             score = 0.0
             for alias in self._block_aliases(block):
                 normalized_alias = _normalize(alias)
+                if block_id == "KB-09" and normalized_alias == "llm" and "vllm" in normalized_query:
+                    continue
                 if len(normalized_alias) < 2 or normalized_alias not in normalized_query:
                     continue
                 matched_terms.append(alias)
@@ -124,7 +126,13 @@ class KnowledgeCatalogTool:
     def prompt_candidates(self, query: str, top_k: int = 8) -> list[dict[str, Any]]:
         matches = self.search(query, top_k=top_k)
         if matches:
-            return [self._prompt_candidate(item) for item in matches]
+            enriched_matches = []
+            for item in matches:
+                block = self.get_block(str(item.get("block_id", ""))) or {}
+                enriched = dict(item)
+                enriched["subtopics"] = block.get("subtopics", [])
+                enriched_matches.append(enriched)
+            return [self._prompt_candidate(item) for item in enriched_matches]
 
         blocks, subtopics_by_block = _catalog()
         return [
@@ -166,7 +174,7 @@ class KnowledgeCatalogTool:
             })
             candidate.setdefault("subtopics", block.get("subtopics", []))
             candidate.setdefault("semantic_hits", []).append(hit)
-            candidate["score"] = float(candidate.get("score") or 0.0) + float(hit.get("similarity") or 0.0) * 30.0
+            candidate["score"] = float(candidate.get("score") or 0.0) + float(hit.get("similarity") or 0.0) * 24.0
             subtopic_id = str(hit.get("subtopic_id", ""))
             if subtopic_id and all(item.get("subtopic_id") != subtopic_id for item in candidate["matched_subtopics"]):
                 candidate["matched_subtopics"].append({
@@ -175,6 +183,7 @@ class KnowledgeCatalogTool:
                     "difficulty": hit.get("difficulty", ""),
                     "estimated_hours": 0,
                     "content_summary": hit.get("content_summary", ""),
+                    "direct_prerequisite_ids": hit.get("direct_prerequisite_ids", []),
                 })
 
         results = []
@@ -273,6 +282,8 @@ class KnowledgeCatalogTool:
             *[str(item) for item in block.get("corresponding_gaps", [])],
             *EXTRA_BLOCK_ALIASES.get(block_id, ()),
         ]
+        if block_id == "KB-06":
+            aliases = [alias for alias in aliases if _normalize(alias) != "transformer"]
         return self._dedupe([alias for alias in aliases if alias])
 
     @staticmethod
@@ -283,7 +294,7 @@ class KnowledgeCatalogTool:
             "difficulty": subtopic.get("difficulty", ""),
             "estimated_hours": subtopic.get("estimated_hours", 0),
             "sequence_index": subtopic.get("sequence_index", 0),
-            "prerequisites": list(subtopic.get("prerequisites", [])),
+            "direct_prerequisite_ids": list(subtopic.get("prerequisites", [])),
             "content_summary": subtopic.get("content_summary", ""),
         }
 

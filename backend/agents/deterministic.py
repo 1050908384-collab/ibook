@@ -93,9 +93,10 @@ class DeterministicDiagnosticAgent:
         structured = self._parse_structured_input(text)
         target_text = structured.get("goal") or self._target_text(text)
         mastered = structured.get("skill_tags") or self._extract_mastered_skills(text, target_text)
-        target_candidates = self._select_target_candidates(target_text)
+        needs_domain_clarification = self._needs_domain_clarification(target_text)
+        target_candidates = [] if needs_domain_clarification else self._select_target_candidates(target_text)
         gaps = await self._build_grounded_gaps(target_text, target_candidates, mastered)
-        if not gaps:
+        if not gaps and not needs_domain_clarification:
             fallback_targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
             gaps = await self._build_grounded_gaps(
                 target_text,
@@ -138,12 +139,19 @@ class DeterministicDiagnosticAgent:
             and all(gap.block_id and gap.mapping_confidence >= 0.8 for gap in gaps)
         ):
             confidence = max(confidence, 0.9)
+        if not gaps or any(
+            not gap.block_id or float(gap.mapping_confidence or 0.0) < 0.6
+            for gap in gaps
+        ):
+            confidence = min(confidence, 0.65)
         followup_questions = self._build_followup_questions(
             structured=structured,
             has_hours=explicit_hours,
             has_style=explicit_style,
             mapped=any(gap.block_id for gap in gaps),
         ) if confidence < 0.7 else []
+        if confidence < 0.7 and needs_domain_clarification:
+            followup_questions = self._with_domain_clarification_question(followup_questions)
         profile = UserProfile(
             session_id=request.session_id,
             grade=structured.get("grade", ""),
@@ -214,11 +222,7 @@ class DeterministicDiagnosticAgent:
         return gaps
 
     def _immediate_prerequisite_names(self, block: dict[str, Any], mastered_skills: list[str]) -> list[str]:
-        mastered_block_ids = {
-            resolved.get("block_id")
-            for skill in mastered_skills
-            if (resolved := self.knowledge_catalog_tool.resolve_block(skill))
-        }
+        mastered_block_ids = self._resolve_mastered_block_ids(mastered_skills)
         names: list[str] = []
         for prerequisite_id in block.get("prerequisites", []):
             if prerequisite_id in mastered_block_ids:
@@ -233,11 +237,7 @@ class DeterministicDiagnosticAgent:
         mastered_skills: list[str],
     ) -> list[KnowledgeGap]:
         """Insert only the target's unmet direct prerequisites before that target."""
-        mastered_block_ids = {
-            str(resolved.get("block_id"))
-            for skill in mastered_skills
-            if (resolved := self.knowledge_catalog_tool.resolve_block(skill))
-        }
+        mastered_block_ids = self._resolve_mastered_block_ids(mastered_skills)
         known_block_ids = {gap.block_id for gap in gaps if gap.block_id}
         ordered: list[KnowledgeGap] = []
         inserted_block_ids: set[str] = set()
@@ -258,13 +258,39 @@ class DeterministicDiagnosticAgent:
                     skill=str(block.get("block_name", prerequisite_id)),
                     block_id=prerequisite_id,
                     block_name=str(block.get("block_name", prerequisite_id)),
-                    mapping_confidence=1.0,
+                    mapping_confidence=0.85,
                     level="beginner",
                     prerequisites=[],
                 ))
                 inserted_block_ids.add(prerequisite_id)
             ordered.append(gap)
         return ordered
+
+    def _resolve_mastered_block_ids(self, mastered_skills: list[str]) -> set[str]:
+        """Resolve only catalog-backed mastered skills before skipping prerequisites."""
+        block_ids: set[str] = set()
+        for skill in mastered_skills:
+            resolved = self.knowledge_catalog_tool.resolve_block(skill)
+            if resolved and resolved.get("block_id"):
+                block_ids.add(str(resolved["block_id"]))
+                continue
+            candidates = self.knowledge_catalog_tool.search(skill, top_k=1)
+            if candidates and candidates[0].get("matched_terms"):
+                block_ids.add(str(candidates[0].get("block_id", "")))
+        return {block_id for block_id in block_ids if block_id}
+
+    @staticmethod
+    def _needs_domain_clarification(target_text: str) -> bool:
+        lowered = target_text.casefold()
+        return "lora" in lowered and any(
+            term in lowered
+            for term in ("wireless", "radio", "lorawan", "iot", "通信", "无线", "物联网")
+        )
+
+    @staticmethod
+    def _with_domain_clarification_question(questions: list[str]) -> list[str]:
+        question = "你提到的 LoRa 是指大模型参数高效微调 LoRA，还是物联网无线通信 LoRa？"
+        return list(dict.fromkeys([question, *questions]))
 
     def _extract_mastered_skills(self, text: str, target_text: str) -> list[str]:
         mastery_text = text
@@ -507,7 +533,7 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
 {json.dumps(candidates, ensure_ascii=False)}
 
 只返回严格 JSON：
-{{"knowledge_gaps":[{{"block_id":"KB-12","level":"beginner","target_subtopic_ids":["KBS-12-01"]}}]}}
+{{"knowledge_gaps":[{{"block_id":"KB-12","level":"beginner","target_subtopic_ids":["KBS-12-01"]}}],"low_confidence":false}}
 
 规则：
 1. block_id 只能从候选目录选择，禁止创造新板块或自由改名。
@@ -515,6 +541,7 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
 3. target_subtopic_ids 只能填写该板块候选中真实存在的 ID；无法确定时返回空数组。
 4. level 只能是 beginner、intermediate、advanced。
 5. 已有基础不能误判为知识盲区，除非目标明确要求继续进阶。
+6. 若候选中没有与目标明确匹配的板块，或用户语境属于候选目录外领域，返回 {{"knowledge_gaps":[],"low_confidence":true}}，不要硬选。
 """
         response = await self.llm_client.complete(
             prompt,
@@ -523,18 +550,24 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
             json_mode=True,
         )
         data = self._parse_json(response) or {}
+        low_confidence = bool(data.get("low_confidence", False)) or self._needs_domain_clarification(candidate_query)
         normalized_gaps = await self._merge_grounded_gaps(
             fallback.profile.knowledge_gaps,
             data.get("knowledge_gaps", []),
             candidates,
             candidate_query,
+            low_confidence=low_confidence,
         )
         normalized_gaps = await self._insert_unmet_direct_prerequisite_gaps(
             normalized_gaps,
             fallback.profile.skill_tags,
         )
         profile = fallback.profile.model_copy(update={"knowledge_gaps": normalized_gaps})
-        confidence = self._hybrid_profile_confidence(request.user_input, profile)
+        confidence = self._hybrid_profile_confidence(
+            request.user_input,
+            profile,
+            low_confidence=low_confidence,
+        )
         profile = profile.model_copy(update={"confidence": confidence})
         structured = self._parse_structured_input(request.user_input)
         structured["skill_tags"] = structured.get("skill_tags") or profile.skill_tags
@@ -544,6 +577,8 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
             has_style=self._has_learning_style(request.user_input),
             mapped=any(gap.block_id for gap in normalized_gaps),
         ) if confidence < 0.7 else []
+        if confidence < 0.7 and self._needs_domain_clarification(candidate_query):
+            followup_questions = self._with_domain_clarification_question(followup_questions)
         return DiagnosticOutput(profile=profile, followup_questions=followup_questions)
 
     async def _merge_grounded_gaps(
@@ -552,6 +587,7 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
         llm_gaps: list[Any],
         candidates: list[dict[str, Any]],
         target_text: str,
+        low_confidence: bool = False,
     ) -> list[KnowledgeGap]:
         by_block_id = {gap.block_id: gap for gap in fallback_gaps if gap.block_id}
         ungrounded = [gap for gap in fallback_gaps if not gap.block_id]
@@ -561,7 +597,8 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
             if candidate.get("block_id")
         }
 
-        for raw_gap in llm_gaps if isinstance(llm_gaps, list) else []:
+        llm_candidates = [] if low_confidence else llm_gaps
+        for raw_gap in llm_candidates if isinstance(llm_candidates, list) else []:
             if isinstance(raw_gap, str):
                 raw_gap = {"skill": raw_gap}
             if not isinstance(raw_gap, dict):
@@ -603,7 +640,12 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
         grounded = list(by_block_id.values())
         return grounded or ungrounded
 
-    def _hybrid_profile_confidence(self, text: str, profile: UserProfile) -> float:
+    def _hybrid_profile_confidence(
+        self,
+        text: str,
+        profile: UserProfile,
+        low_confidence: bool = False,
+    ) -> float:
         structured = self._parse_structured_input(text)
         score = 0.15
         if profile.goal and any(gap.block_id for gap in profile.knowledge_gaps):
@@ -620,7 +662,12 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
             score += 0.05
         if profile.knowledge_gaps and all(gap.mapping_confidence >= 0.8 for gap in profile.knowledge_gaps):
             score += 0.1
-        return round(max(0.3, min(0.95, score)), 3)
+        score = round(max(0.3, min(0.95, score)), 3)
+        has_low_evidence = low_confidence or not profile.knowledge_gaps or any(
+            not gap.block_id or float(gap.mapping_confidence or 0.0) < 0.6
+            for gap in profile.knowledge_gaps
+        )
+        return min(score, 0.6) if has_low_evidence else score
 
     def _normalize_level(self, value: Any, target_text: str, difficulty: str) -> str:
         normalized = str(value or "").strip().lower()

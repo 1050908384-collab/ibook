@@ -113,6 +113,9 @@ python scripts/check_review_schema.py
 - 所有后端代码、初始化脚本、FAQ 向量化脚本统一读取 `DATABASE_URL`
 - 所有 Chroma 数据统一读取 `CHROMA_PATH`
 - Agent1 使用 `agent1_knowledge_docs` collection 对 `knowledge_docs` 的 68 条文档做语义召回；初始化或更新种子文档后执行 `python scripts/init_agent1_semantic_index.py`
+- Agent1 索引独立使用 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（约 90MB、CPU 运行）与 cosine 距离，不依赖 Ollama，也不影响 FAQ 的默认向量空间。
+- **源码开发/部署者**：执行一次 `python scripts/init_agent1_semantic_index.py` 与 `python scripts/evaluate_agent1_retrieval.py`，模型缓存和索引会生成在 `data/fastembed_models/`、`data/chroma_db/`。
+- **普通用户**：发行包应预置上述两个目录；不需要下载模型或执行初始化。两个目录被 Git 忽略，不能依赖源码仓库自动提供。
 
 ## Agent3-4 审核辩论协议
 
