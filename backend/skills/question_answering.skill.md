@@ -1,22 +1,22 @@
 # SKILL名称：question_answering
 
 ## 1. 能力描述
-- 功能：为Agent3（HybridContentAgent）提供**答疑生成与改稿的方法论**——定义"一次合格的学习答疑长什么样"：结论先行、原理支撑、不编造来源、聚焦当前阶段。Agent3调用本SKILL针对用户提问生成简明答疑，并依据Agent4技术审核与Agent5教学审核意见迭代修订。在 `HybridContentAgent.generate_answer` 中作为 prompt 规范；在 `revise_answer` 中作为改稿依据
+- 功能：为Agent3（HybridContentAgent）提供**答疑生成与改稿的方法论**——定义"一次合格的学习答疑长什么样"：结论先行、原理支撑、不编造来源、聚焦当前阶段。Agent3调用本SKILL针对用户提问生成简明答疑，并依据Agent4统一技术与教学质量审核意见迭代修订。在 `HybridContentAgent.generate_answer` 中作为 prompt 规范；在 `revise_answer` 中作为改稿依据
 - 适用场景（3个）：
   1. **实时答疑**：用户在学习过程中提问，由 `generate_answer` 触发，结合 `stage` 与 `profile` 生成回答
-  2. **审核后改稿**：Agent4/Agent5审核答疑未通过时由 `revise_answer` 触发，接收 `technical_errors` 与 `quality_errors` 逐条修订
+2. **审核后改稿**：Agent4统一审核答疑未通过时由 `revise_answer` 触发，接收兼容性的 `technical_errors` 与 `quality_errors` 字段逐条修订
   3. **跨阶段问题处理**：用户提问与当前阶段无关时，简短作答并提示聚焦本阶段
 - 前置依赖：
   - 用户提问文本（`question`）
   - 当前阶段 StageInfo（`block_name`，判断问题相关性）
   - 用户画像 UserProfile（`goal`、`learning_style`，调整答疑深度）
-  - 审核反馈（修订时：`technical_errors` 来自 Agent4，`quality_errors` 来自 Agent5）
+- 审核反馈（修订时：`technical_errors` 与 `quality_errors` 均来自 Agent4 的统一审核结果）
 
 ## 2. 核心方法论
 - **步骤1：定位问题与当前阶段关系**——读取 `stage.block_name` 与 `profile.goal`，判断提问是否属于当前阶段；属于则深入答，无关则简短答并提示聚焦
 - **步骤1.5：先走 FAQ 轻量检索**——仅在用户提问时触发，直接使用完整问题查询 FAQ 向量库；若最高相似度达到阈值，则直接返回 FAQ 标准答案；若未达到阈值，则继续普通答疑流程
 - **步骤2：调用LLM生成简明答疑**——先给结论，再解释原理，需要时配示例；遵循"结论→原理→示例"三段结构
-- **步骤3：交付审核**——answer 交 Orchestrator 送 Agent4（技术准确性、幻觉检测）与 Agent5（教学清晰度）双重审核
+- **步骤3：交付审核**——answer 交 Orchestrator 送 Agent4 做统一技术准确性、幻觉检测与教学清晰度审核
 - **步骤4：格式化审核反馈**——将 `technical_errors` 与 `quality_errors` 合并为反馈清单，按 severity 降序排列
 - **步骤5：逐条修订**——调用LLM按反馈清单逐条修订回答，保留正确内容，仅修改 errors 指向部分，返回完整新 answer
 - **步骤6：迭代终止判定**——审核通过或迭代轮次达 `MAX_REVIEW_ITERATIONS`（默认3）时终止
@@ -128,7 +128,7 @@
 **处理过程**：
 1. 步骤1：提问与当前阶段(LoRA)强相关，深入答
 2. 步骤2：LLM生成——结论"训练A和B两矩阵非W"；原理"冻结W训练ΔW=BA，参数r(d_in+d_out)"；示例"d_in=d_out=4096,r=8降幅99%"
-3. 步骤3：送 Agent4（技术准确+幻觉检测）与 Agent5（教学清晰）审核
+3. 步骤3：送 Agent4 做技术准确、幻觉检测与教学清晰度统一审核
 
 **输出**：answer（结论→原理→示例三段），审核通过
 

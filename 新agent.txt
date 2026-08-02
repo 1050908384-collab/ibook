@@ -1,87 +1,43 @@
-6个agent功能简述
-agent1：把所有个性化数据（用户填的+Agent6更新的）统一转成个性化用户数据（画像）
-Agent2：看画像，告诉用户“下一阶段学什么”
-Agent3：生产内容：生成学习包、修改学习包、回答用户问题
-Agent4：检查内容技术对不对（幻觉、语法、规范）
-Agent5：检查内容教得好不好（难度、负荷、风格）
-Agent6：阶段结束后分析所有数据，更新用户个性化数据
-每一个agent的联系（简易版）——O代表Orchestrator
-Agent1：
-输入：用户发的信息
-输出：画像JSON（各类数据，包括有的个性化词汇转化为数据）
-Agent2：
-输入：Agent1输出的画像（仅取knowledge_gaps + goal）
-输出：下一学习阶段目录信息
-Agent3：
-输入：学习阶段内容，agent4、5报错信息，用户问题
-输出：学习资料包，用户问题答案
-Agent4：
-输入：agent3输出的学习包，agent3输出的用户问题答案
-输出：技术问题报错
-Agent5：
-输入：agent3输出的学习包，agent3输出的用户问题答案
-输出：报错
-Agent6：
-输入：正确率+用户画像+用户交互
-输出：用户个性化数据+用户个性化词汇
-Orchestrator
+当前运行时 Agent 协作简述
 
-输入：agent1输出中的一个数据置信度太小（这个度具体多少要探究一下）  输出：数据库中追问问题
-输入：agent1处理好后的数据，并且置信度OK    输出：调用agent2
-输入：agent2的输出，并且用户点击开始     输出：调用agent3
-输入：agent3的输出        输出：启动agent4，5
-输入：agent4和5的报错信息（如有）    输出：中和报错信息，并且将报错信息给到agent3，调用agent3
-输入：agent4和5的报错信息（如OK）   输出：agent3的输出
-输入：用户问题内容        输出：提取关键词，并且关键词和内容一起给agent3，调用agent3；并且针对用户的问题，调整数据库部分用户数据
-输入：用户点击“问题“    输出：调取数据库的问题
-输入：用户答案          输出：正确率
-输入：正确率             输出：调用agent6，正确率+用户画像+用户交互给他
-输入：agent6输出         输出：修改数据+不动数据给到agent1
-总结流程：
-用户首次输入 → Orchestrator提取个性化词汇和数据
-  ↓
-Orchestrator → Agent1（输入：个性化词汇+数据）
-Agent1输出：画像JSON
-  ↓
-前端展示：画像卡片 + 多边形雷达图
-Orchestrator → Agent2（输入：画像中的knowledge_gaps + goal）
-Agent2输出：下一阶段目录信息
-  ↓
-前端展示：下一阶段信息 + "开始学习"按钮
-用户点击"开始学习阶段N"
-  ↓
-Orchestrator → Agent3（输入：阶段内容）
-Agent3输出：学习包V1
-  ↓
-Orchestrator同时启动Agent4 + Agent5（并行审核V1）
-Agent4输出：技术报错清单
-Agent5输出：教学报错清单
-  ↓
-Orchestrator汇总报错 → 有报错 → 给Agent3修改
-Agent3（输入：原学习包 + 报错清单）→ 输出：学习包V2
-→ 回到Agent4+5审核V2 → 循环直到通过
-  ↓
-审核通过 → 学习包展示给用户
-  ↓
-用户学习过程中提问：
-  Orchestrator → Agent3（输入：用户问题）
-  Agent3输出：回答
-  同时Agent4+5守护审核回答 → 通过后展示给用户
-  ↓
-用户点击"题目" → 提交答案
-Orchestrator计算正确率
-  ↓
-Orchestrator → Agent6（输入：正确率 + qa_history + interactions + 当前画像）
-Agent6输出：用户个性化数据（更新后的知识盲区、学习节奏、信心指数、困惑标记、下一阶段策略）
-  ↓
-Orchestrator将Agent6输出 → Agent1（输入：Agent6的更新数据）
-Agent1输出：新画像
-  ↓
-前端更新：多边形图（对应盲区颜色变化）
-Orchestrator → Agent2（输入：新画像中的knowledge_gaps + goal）
-Agent2输出：下一阶段目录信息
-  ↓
-前端展示：下一阶段信息 + "开始学习"按钮
-→ 回到循环，直到所有knowledge_gaps状态为"已掌握"
-  ↓
-结业报告
+说明：本文件已按当前 Harness 运行链路更新。Agent2 保留为逻辑职责名称，但当前实际阶段规划调用由 Agent1 的 generate_stage 承担；Agent5 的质量审核能力已合并到 Agent4。
+
+Agent1：学情诊断与阶段选路
+- 输入：用户表单字段、用户原始描述、当前画像
+- 处理：表单字段作为事实源；别名精确匹配与 Agent1 专用轻量中文语义索引联合召回；LLM 只在候选板块内细化知识盲区
+- 输出：画像 JSON、受约束的 knowledge_gaps、画像置信度、必要时的追问
+- 规则：不能自由创造 block_id；证据不足或属于目录外领域时返回低置信度，不硬选板块
+- 阶段：通过 generate_stage 根据 subtopic_status、板块级先修和子知识点直接先修选择当前/下一阶段
+
+Agent2：路径规划逻辑角色
+- 当前 Harness 不直接实例化 Agent2 文件
+- 运行时选路由 Agent1.generate_stage 完成，仍遵循知识图谱、daily_hours 和 subtopic_status 约束
+
+Agent3：内容生成与答疑
+- 输入：当前阶段 block_id/subtopic_id、用户画像、审核意见或用户问题
+- 输出：学习资料包、代码、题库题目、用户问题答案
+
+Agent4：统一技术与教学质量审核
+- 输入：Agent3 的学习包或答案
+- 处理：技术准确性、幻觉、代码、行业规范、难度、认知负荷、风格和资源关联审核
+- 输出：审核结果与结构化 issue；原 Agent5 的质量审核能力已合并在此
+
+Agent6：阶段决策与学习状态更新
+- 输入：正确率、qa_history、interactions、当前画像
+- 输出：阶段总结、策略、更新后的学习状态
+- 允许更新：status、progress、skill、prerequisites 等学习状态字段
+- 必须保留：Agent1 生成的 block_id、block_name、target_subtopic_ids、mapping_confidence；Agent6 不重新映射知识板块
+
+Orchestrator：流程编排
+- 低置信画像：返回 Agent1 的追问，不生成阶段
+- 画像达标：调用 Agent1.generate_stage，生成当前阶段
+- 阶段开始：调用 Agent3，再交 Agent4 统一审核
+- 阶段完成：只调用 Agent6 保存结果；complete_stage 不自动生成下一阶段
+- 用户确认继续：调用 plan-next，由 Agent1.generate_stage 生成并保存 next_stage
+- 全部 knowledge_gaps 掌握后：结束 session 并生成结业报告
+
+初始化与交付
+- 开发/部署侧执行：python scripts/init_agent1_semantic_index.py
+- 首次执行会下载约 90MB 的 FastEmbed BAAI/bge-small-zh-v1.5，并缓存到 data/fastembed_models/
+- 评测命令：python scripts/evaluate_agent1_retrieval.py
+- 普通用户发行包应预置 data/fastembed_models/ 与已初始化的 data/chroma_db/；用户不需要下载 embedding 模型、启动 embedding Ollama 或执行初始化脚本

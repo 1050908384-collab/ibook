@@ -71,7 +71,7 @@ python scripts/init_faq_vectors.py
 
 ### Agent1 轻量语义索引
 
-`python scripts/init_agent1_semantic_index.py` 首次执行会下载并缓存 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（约 90MB，CPU 运行），然后为 68 条 `knowledge_docs` 建立 Agent1 专用索引。下载与建索引只应由源码开发者或部署方执行；可用下面的命令检查中文召回：
+`python scripts/init_agent1_semantic_index.py` 首次执行会下载并缓存 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（模型文件约 90MB，CPU 运行，运行时通常额外占用约 200MB 内存），然后为 68 条 `knowledge_docs` 建立 Agent1 专用索引。首次下载耗时取决于网络，通常是几十秒级。下载与建索引只应由源码开发者或部署方执行；可用下面的命令检查中文召回：
 
 ```bash
 python scripts/evaluate_agent1_retrieval.py

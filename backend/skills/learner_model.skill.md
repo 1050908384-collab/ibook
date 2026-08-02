@@ -151,7 +151,7 @@
 | `knowledge_gaps[].level` 为空 | 默认按 `"beginner"` 处理，difficulty_match按初级基准计算 |
 | 内容无代码块（无法统计代码行数） | 跳过代码行数检查，仅按概念密度评估difficulty_match，在summary中注明"无代码块，仅按概念密度评估" |
 | 用户环境经验字段缺失 | 默认按"无特殊环境经验"处理，environment_fit检查时若内容涉及Docker/GPU则标记待人工确认 |
-| 内容审核循环达上限（Agent4+5并行审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
+| 内容审核循环达上限（Agent4统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 
