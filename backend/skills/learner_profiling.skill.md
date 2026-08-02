@@ -16,7 +16,7 @@
 - **步骤1：识别输入中的画像要素**——识别技术术语（已掌握技能）、学习目标、每日时长、学习基础与风格偏好
 - **步骤2：输出标准化画像字段**——`skill_tags`（已掌握技能列表）、`knowledge_gaps`（待学项，每项含 `skill` 与 `level`：beginner/intermediate/advanced）
 - **步骤3：提取补充字段**——`goal`、`daily_hours`（未知取2）、`learning_style`（theory/practice/mixed，未知取 mixed）
-- **步骤4：评估置信度**——综合信息完整度评估 `confidence`（LLM路径默认0.9）；低于 `CONFIDENCE_THRESHOLD`(0.7) 时生成 `follow_up_questions` 补齐
+- **步骤4：评估置信度**——按加权公式计算 `confidence = clamp(base×0.5 + completeness×0.5, 0.3, 0.95)`（base：LLM=0.9/回退=0.75；completeness 为各维度评分之和，详见规则2）；低于 `CONFIDENCE_THRESHOLD`(0.7) 时生成 `follow_up_questions` 补齐
 - **步骤5：LLM失败回退**——LLM返回非JSON或解析失败时，回退 `DeterministicDiagnosticAgent` 用正则匹配 `SKILL_NAMES` 提取技能标签，confidence=0.75
 
 ## 3. 知识/规则定义
@@ -31,17 +31,46 @@
 | `learning_style` | str | theory/practice/mixed | 未知时取 mixed |
 | `confidence` | float | 0~1 置信度 | <0.7触发追问 |
 
-### 规则2：置信度与追问机制
-| 路径 | confidence | 触发条件 | 处置 |
-|:---|:---|:---|:---|
-| LLM正常返回 | 0.9 | LLM返回合法JSON | 直接输出画像 |
-| LLM回退正则 | 0.75 | LLM返回非JSON | 用 `SKILL_NAMES` 正则提取，标注"估算画像" |
-| 信息不足 | <0.7 | 输入过短或无有效要素 | 返回 `needs_more_info` + follow_up_questions |
+### 规则2：置信度计算公式与追问机制
+
+置信度采用**加权公式**（对齐 `calculate_confidence_tool._calculate`），非固定值：
+
+```
+base = 0.9（LLM正常返回）| 0.75（LLM回退正则）
+completeness = skills_score + gaps_score + goal_score + hours_score + style_score
+confidence = clamp(base * 0.5 + completeness * 0.5, 0.3, 0.95)
+```
+
+**完整度各维度评分**：
+| 维度 | 分值 | 条件 |
+|:---|:---|:---|
+| skills_score | min(len(skill_tags) × 0.1, 0.3) | 已掌握技能标签，最多0.3 |
+| gaps_score | min(len(knowledge_gaps) × 0.1, 0.3) | 知识盲区，最多0.3 |
+| goal_score | 0.2 | 有学习目标 |
+| hours_score | 0.1 | 有每日时长且>0 |
+| style_score | 0.1 | 有学习风格 |
+
+**置信度边界**：
+| 场景 | base | completeness | confidence | 处置 |
+|:---|:---|:---|:---|:---|
+| LLM+信息完整(理论最大) | 0.9 | 1.0 | 0.95 | 直接输出画像 |
+| LLM+典型完整(2技能1盲区+目标+时长+风格) | 0.9 | 0.7 | 0.80 | 直接输出画像 |
+| LLM+部分信息 | 0.9 | 0.3~0.5 | 0.45~0.55 | <0.7 触发追问 |
+| LLM+无信息 | 0.9 | 0.0 | 0.45 | <0.7 触发追问 |
+| LLM回退+信息完整(理论最大) | 0.75 | 1.0 | 0.875 | 标注"估算画像"，输出 |
+| LLM回退+典型完整 | 0.75 | 0.6~0.7 | 0.675~0.725 | 临界，可能触发追问 |
+| LLM回退+无信息 | 0.75 | 0.0 | 0.375 | <0.7 触发追问 |
+| 信息严重不足 | — | — | clamp下限0.3 | 触发追问 |
+
+> **注**：completeness 理论最大值 1.0 需同时满足 3+技能(0.3) + 3+盲区(0.3) + 目标(0.2) + 时长(0.1) + 风格(0.1)
+
+**追问触发条件**：confidence < `CONFIDENCE_THRESHOLD`(0.7) 时返回 `needs_more_info=true` + follow_up_questions
 
 **追问生成规则**：
 - 缺目标 → 追问"你希望达成什么学习目标？"
 - 缺基础 → 追问"你目前已掌握哪些技能？"
 - 缺时长 → 追问"你每天可投入多少小时学习？"
+- 缺风格 → 追问"你偏好哪种学习方式？（理论学习/动手实践/两者结合）"
 
 ### 规则3：UserProfile 契约对齐
 - 画像字段须符合 `UserProfile` 契约（`backend/models/contracts.py` 与 `profile.py`）
@@ -129,5 +158,5 @@
 **说明**：场景2体现规则2的回退机制——LLM失败时不阻断流程，用确定性正则保底产出可用画像，confidence降级标注估算。
 
 ## 7. 版本信息
-- 版本：v3.0，更新日期：2026-07-23
-- 变更记录：能力描述明确3个适用场景与休眠状态说明（对齐 `HybridDiagnosticAgent` 行为）；核心方法论重构为5步（识别要素→输出画像→提取补充→评估置信→LLM失败回退）；规则1新增画像字段规范表；规则2新增置信度与追问机制表（含LLM/回退/追问三路径）；规则3明确 UserProfile 契约对齐；输入输出规范补完整 DiagnosticOutput JSON示例；异常处理扩展为5场景表格；附录A补4个学习者画像理论（BKT/DKT/ZPD/VARK）；附录B新增2个完整场景（LLM正常诊断+失败回退正则）
+- 版本：v3.1，更新日期：2026-08-02
+- 变更记录：v3.0基础同上；v3.1修订：规则2置信度从固定值（LLM=0.9/回退=0.75）改为加权公式 `clamp(base×0.5 + completeness×0.5, 0.3, 0.95)`，新增完整度各维度评分表与置信度边界表，追问规则补充"缺风格"分支，对齐 `calculate_confidence_tool._calculate` 实际实现

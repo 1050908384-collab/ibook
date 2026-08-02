@@ -168,7 +168,26 @@ async def show_runtime_params_stage(agent, profile, stage_num: int, session_id: 
         params["subtopic_candidates"] = f"[ERROR] {e}"
         print(f"    → [ERROR] {e}")
 
-    # 3. 阶段生成器
+    # 3. 阶段可用视频资源
+    block_id_for_video = preferred_block.get("block_id") if isinstance(preferred_block, dict) else None
+    block_name_for_video = preferred_block.get("block_name", gap.skill) if isinstance(preferred_block, dict) else gap.skill
+    print(f"\n  [视频] video_search_tool.search_by_block(block_id='{block_id_for_video}', block_name='{block_name_for_video}')")
+    try:
+        from tools.agent3_tools.video_search_tool import search_videos
+        video_list = search_videos(block_id=block_id_for_video, block_name=block_name_for_video, top_k=5)
+        params["available_videos"] = video_list
+        print(f"    → 可用视频: {len(video_list)} 个")
+        for i, v in enumerate(video_list[:5]):
+            vid = v.get("video_id", "?")
+            tp = v.get("topic", "?")
+            tt = v.get("title", "?")[:50]
+            dur = v.get("duration_hours", 0)
+            print(f"      [{i}] {vid} | {tp} ({dur}h) - {tt}")
+    except Exception as e:
+        params["available_videos"] = f"[ERROR] {e}"
+        print(f"    → [ERROR] {e}")
+
+    # 4. 阶段生成器
     print(f"\n  [工具] stage_generator_tool.generate_stage(...)")
     try:
         generated_stage = await agent.stage_generator_tool.generate_stage(

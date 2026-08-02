@@ -115,19 +115,85 @@ def extract_skills(input_data: dict, config: dict = None) -> dict:
 # ------------------------------------------------------------------
 # 真实模式：LLM 结构化提取
 # ------------------------------------------------------------------
+_LLM_SYSTEM_PROMPT = """你是一位专业的学习者画像分析专家。从用户输入中提取：
+1. skill_tags：用户已掌握的技能标签列表（如["Python", "PyTorch", "Transformer"]）
+2. knowledge_gaps：用户想学习的知识盲区列表，每项含 skill 和 level（beginner/intermediate/advanced）
+只返回严格JSON格式，不要额外文本。"""
+
+_LLM_PROMPT_TEMPLATE = """请从以下用户输入中提取画像信息：
+
+用户输入：{user_input}
+
+返回JSON格式：
+{{
+  "skill_tags": ["技能1", "技能2"],
+  "knowledge_gaps": [{{"skill": "想学的技能", "level": "beginner"}}]
+}}"""
+
+
 def _extract_both(user_input: str) -> dict:
-    """同时提取技能标签和知识盲区。"""
+    """同时提取技能标签和知识盲区（LLM优先，失败回退）。"""
+    try:
+        llm_result = _llm_extract(user_input)
+        if llm_result is not None:
+            return llm_result
+    except Exception as e:
+        logger.warning("LLM提取失败，回退确定性提取: %s", e)
     return _fallback_extract(user_input)
 
 
 def _extract_skill_tags(user_input: str) -> List[str]:
     """仅提取已掌握技能标签。"""
+    try:
+        result = _llm_extract(user_input)
+        if result is not None:
+            return result.get("skill_tags", [])
+    except Exception:
+        pass
     return _fallback_skills(user_input)
 
 
 def _extract_knowledge_gaps(user_input: str) -> List[Dict[str, Any]]:
     """仅提取知识盲区。"""
+    try:
+        result = _llm_extract(user_input)
+        if result is not None:
+            return result.get("knowledge_gaps", [])
+    except Exception:
+        pass
     return _fallback_gaps(user_input)
+
+
+def _llm_extract(user_input: str) -> dict | None:
+    """调用 LLM 做结构化提取，失败返回 None。"""
+    import httpx
+    from config import settings
+
+    prompt = _LLM_PROMPT_TEMPLATE.format(user_input=user_input)
+    payload = {
+        "model": settings.OLLMA_MODEL,
+        "prompt": prompt,
+        "system": _LLM_SYSTEM_PROMPT,
+        "options": {"num_predict": 1024, "temperature": 0.3},
+        "stream": False,
+        "format": "json",
+    }
+    try:
+        with httpx.Client(timeout=30) as client:
+            resp = client.post(f"{settings.OLLMA_BASE_URL}/api/generate", json=payload)
+            resp.raise_for_status()
+            text = resp.json().get("response", "")
+        text = _clean_response(text)
+        parsed = json.loads(text)
+        if "skill_tags" in parsed or "knowledge_gaps" in parsed:
+            return {
+                "skill_tags": parsed.get("skill_tags", []),
+                "knowledge_gaps": parsed.get("knowledge_gaps", []),
+            }
+        return None
+    except Exception as e:
+        logger.warning("LLM提取解析失败: %s", e)
+        return None
 
 
 # ------------------------------------------------------------------
@@ -156,12 +222,32 @@ def _fallback_skills(user_input: str) -> List[str]:
 
 
 def _fallback_gaps(user_input: str) -> List[Dict[str, Any]]:
-    """基于关键词的知识盲区回退提取。"""
-    gap_keywords = {
-        "想学", "学习", "掌握", "入门", "了解", "熟悉", "精通", "提升",
+    """基于关键词的知识盲区回退提取（动态推导，非硬编码）。"""
+    gap_patterns = [
+        (r"(?:想学|学习|入门|了解|熟悉)\s*(.+)", "beginner"),
+        (r"(?:提升|掌握|精通)\s*(.+)", "intermediate"),
+        (r"(?:进阶|深入)\s*(.+)", "advanced"),
+    ]
+    for pattern, level in gap_patterns:
+        m = re.search(pattern, user_input)
+        if m:
+            skill_text = m.group(1).strip()[:20]
+            if skill_text:
+                return [{"skill": skill_text, "level": level}]
+
+    topic_keywords = {
+        "LoRA": ["lora", "qlora", "高效微调"],
+        "Transformer": ["transformer", "注意力机制"],
+        "RAG": ["rag", "检索增强"],
+        "微调": ["微调", "fine-tune", "finetune"],
+        "大模型": ["大模型", "llm", "llm"],
+        "PyTorch": ["pytorch"],
+        "深度学习": ["深度学习", "dl"],
+        "强化学习": ["强化学习", "rl"],
     }
-    if any(kw in user_input for kw in gap_keywords):
-        return [{"skill": "大模型微调", "level": "beginner"}]
+    for skill, kws in topic_keywords.items():
+        if any(kw.lower() in user_input.lower() for kw in kws):
+            return [{"skill": skill, "level": "beginner"}]
     return []
 
 

@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from agents.base_agent import BaseAgent
 from models.stage import Claim, LearningPackage, Source
 from tools.agent3_tools.vector_search_tool import VectorSearchTool
+from tools.agent3_tools.video_search_tool import VideoSearchTool
 from tools.agent3_tools.llm_generate_tool import LLMGenerateTool
 from tools.agent3_tools.code_generation_tool import CodeGenerationTool
 from tools.agent3_tools.question_extract_tool import QuestionExtractTool
@@ -92,6 +93,7 @@ class ContentGeneratorAgent(BaseAgent):
             "knowledge_graph", "content_strategy", "language_models"
         ])
         self.vector_search_tool = VectorSearchTool()
+        self.video_search_tool = VideoSearchTool()
         self.llm_generate_tool = LLMGenerateTool()
         self.code_generation_tool = CodeGenerationTool()
         self.question_extract_tool = QuestionExtractTool()
@@ -99,7 +101,7 @@ class ContentGeneratorAgent(BaseAgent):
         self.format_converter_tool = FormatConverterTool()
         self.code_executor_tool = CodeExecutorTool()
         self.load_tools([
-            self.vector_search_tool, self.llm_generate_tool,
+            self.vector_search_tool, self.video_search_tool, self.llm_generate_tool,
             self.code_generation_tool, self.question_extract_tool,
             self.template_render_tool, self.format_converter_tool,
             self.code_executor_tool,
@@ -109,6 +111,7 @@ class ContentGeneratorAgent(BaseAgent):
         self, session_id: str, stage_info: Dict[str, Any]
     ) -> Dict[str, Any]:
         block_id = stage_info.get("block_id", "")
+        block_name = stage_info.get("block_name", "")
         gap = stage_info.get("gap", {})
 
         related_docs = await self.vector_search_tool.search_by_block(block_id)
@@ -117,6 +120,28 @@ class ContentGeneratorAgent(BaseAgent):
         questions = await self.question_extract_tool.extract_questions(tutorial, stage_info)
 
         sources = _generate_sources(block_id, related_docs)
+
+        # 视频资源检索
+        try:
+            video_results = await self.video_search_tool.search_by_block(
+                block_id=block_id, block_name=block_name, top_k=5
+            )
+            for v in video_results:
+                sources.append(Source(
+                    source_id=v["video_id"],
+                    source_type="video",
+                    title=v["title"],
+                    locator=v["url"],
+                    content_ref=v.get("topic", ""),
+                    metadata_json={
+                        "topic": v.get("topic", ""),
+                        "duration_hours": v.get("duration_hours", 0),
+                        "block_id": v.get("block_id", ""),
+                    },
+                ))
+        except Exception:
+            pass
+
         claims = _extract_claims_from_tutorial(tutorial, sources)
 
         return {

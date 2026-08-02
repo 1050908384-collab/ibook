@@ -40,6 +40,7 @@ from tools.agent1_tools.stage_generator_tool import StageGeneratorTool
 from tools.agent3_tools.faq_search_tool import FAQSearchTool
 from tools.agent3_tools.question_extract_tool import QuestionExtractTool
 from tools.agent3_tools.vector_search_tool import VectorSearchTool
+from tools.agent3_tools.video_search_tool import VideoSearchTool
 from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
 from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
 from tools.agent4_tools.style_match_tool import StyleMatchTool
@@ -373,6 +374,7 @@ class DeterministicContentAgent:
         self.vector_search_tool = VectorSearchTool()
         self.question_extract_tool = QuestionExtractTool()
         self.faq_search_tool = FAQSearchTool()
+        self.video_search_tool = VideoSearchTool()
 
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
         _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
@@ -427,6 +429,31 @@ class DeterministicContentAgent:
                     title=doc.get("title", ""),
                     locator=doc.get("chunk_id") or doc_id,
                 ))
+
+        # 视频资源检索：按 block_id / block_name 关联视频
+        video_sources = []
+        try:
+            video_results = await self.video_search_tool.search_by_block(
+                block_id=stage.block_id,
+                block_name=stage.block_name,
+                top_k=5,
+            )
+            for v in video_results:
+                video_sources.append(Source(
+                    source_id=v["video_id"],
+                    source_type="video",
+                    title=v["title"],
+                    locator=v["url"],
+                    content_ref=v.get("topic", ""),
+                    metadata_json={
+                        "topic": v.get("topic", ""),
+                        "duration_hours": v.get("duration_hours", 0),
+                        "block_id": v.get("block_id", ""),
+                    },
+                ))
+        except Exception:
+            pass
+        sources.extend(video_sources)
 
         claims = [
             Claim(

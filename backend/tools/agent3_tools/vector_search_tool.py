@@ -109,17 +109,74 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
 
 
 # ------------------------------------------------------------------
-# 真实模式：数据库检索（关键词匹配模拟）
+# 真实模式：Chroma 向量检索
 # ------------------------------------------------------------------
 def _search_chunks(query: str, block_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
     """
-    SQL: 从 knowledge_chunks 表检索相关片段（关键词匹配+按更新时间排序）。
-    注：真实向量检索需集成向量数据库（如 Pinecone/Chroma），当前用关键词匹配模拟。
-    通过 JOIN knowledge_docs 获取 source、title、created_at 字段。
+    Chroma 向量检索：从 knowledge_base 集合做语义检索。
+    注：SQLite knowledge_chunks 表作为回退（Chroma 无数据时）。
     """
+    chroma_results = _search_chroma(query, block_id, top_k)
+    if chroma_results:
+        return chroma_results, True
+
+    logger.info("Chroma 无结果，回退 SQLite 关键词检索")
+    return _search_sqlite_fallback(query, block_id, top_k)
+
+
+def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]]:
+    """Chroma 向量检索 knowledge_base 集合。"""
+    try:
+        from chromadb import PersistentClient
+
+        chroma_path = _get_chroma_path()
+        if not chroma_path.exists():
+            return []
+
+        chroma_client = PersistentClient(path=str(chroma_path))
+        collection = chroma_client.get_or_create_collection("knowledge_base")
+        if collection.count() == 0:
+            return []
+
+        where_filter = {"block_id": block_id} if block_id else None
+        results = collection.query(
+            query_texts=[query],
+            n_results=top_k,
+            where=where_filter,
+        )
+
+        if not results or not results.get("documents") or not results["documents"][0]:
+            return []
+
+        output = []
+        for doc, metadata, distance in zip(
+            results["documents"][0],
+            results["metadatas"][0] if results.get("metadatas") and results["metadatas"] else [{}] * len(results["documents"][0]),
+            results["distances"][0],
+        ):
+            similarity = round(max(0.0, 1.0 - float(distance)), 4) if distance is not None else 0.5
+            output.append({
+                "chunk_id": metadata.get("chunk_id", "") if metadata else "",
+                "block_id": metadata.get("block_id", "") if metadata else "",
+                "content": (doc[:500] + "...") if len(doc) > 500 else doc,
+                "source": metadata.get("source", "") if metadata else "",
+                "similarity": similarity,
+                "title": metadata.get("title", "") if metadata else "",
+            })
+        return sorted(output, key=lambda x: x["similarity"], reverse=True)
+    except ImportError:
+        logger.info("chromadb not installed, skip vector search")
+        return []
+    except Exception as e:
+        logger.warning("Chroma 向量检索失败: %s", e)
+        return []
+
+
+def _search_sqlite_fallback(query: str, block_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
+    """SQLite 关键词检索回退（Chroma 无数据时使用）。"""
     db_path = _get_db_path()
     if not db_path.exists():
-        logger.warning("数据库不存在: %s，vector_search 无可用片段", db_path)
+        logger.warning("数据库不存在: %s", db_path)
         return [], False
 
     try:
@@ -161,20 +218,29 @@ def _search_chunks(query: str, block_id: str, top_k: int) -> tuple[List[Dict[str
 
         results = []
         for i, r in enumerate(rows):
-            similarity = max(0.6, 1.0 - i * 0.1)
+            overlap = sum(1 for w in query_words if w.lower() in (r[2] or "").lower())
+            similarity = round(min(1.0, 0.3 + overlap / max(len(query_words), 1) * 0.7), 4)
             results.append({
                 "chunk_id": r[0],
                 "block_id": r[1],
                 "content": r[2][:500] + "..." if len(r[2]) > 500 else r[2],
                 "source": r[3] or "",
-                "similarity": round(similarity, 4),
+                "similarity": similarity,
                 "title": r[5] or "",
             })
-
         return results, True
     except sqlite3.Error as e:
-        logger.warning("查询 knowledge_chunks 失败: %s", e)
+        logger.warning("SQLite 回退检索失败: %s", e)
         return [], False
+
+
+def _get_chroma_path() -> Path:
+    """解析 Chroma 路径。"""
+    raw = settings.CHROMA_PATH
+    p = Path(raw)
+    if not p.is_absolute():
+        p = (BACKEND_DIR / p).resolve()
+    return p
 
 
 # ------------------------------------------------------------------

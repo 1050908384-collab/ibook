@@ -103,6 +103,27 @@ async def show_runtime_params_content(agent, stage: StageInfo) -> dict:
         params["extracted_questions"] = f"[ERROR] {e}"
         print(f"    → [ERROR] {e}")
 
+    # 3. 视频资源检索
+    print(f"\n  [工具] video_search_tool.search_by_block(block_id='{stage.block_id}', block_name='{stage.block_name}')")
+    try:
+        video_results = await agent.video_search_tool.search_by_block(
+            block_id=stage.block_id, block_name=stage.block_name, top_k=5
+        )
+        params["video_results"] = video_results
+        print(f"    → 检索到 {len(video_results)} 个视频")
+        for i, v in enumerate(video_results[:5]):
+            vid = v.get("video_id", "?")
+            tp = v.get("topic", "?")
+            tt = v.get("title", "?")[:60]
+            url = v.get("url", "?")[:80]
+            dur = v.get("duration_hours", 0)
+            print(f"      [{i}] {vid} | {tp} ({dur}h)")
+            print(f"          {tt}")
+            print(f"          url: {url}")
+    except Exception as e:
+        params["video_results"] = f"[ERROR] {e}"
+        print(f"    → [ERROR] {e}")
+
     return params
 
 
@@ -211,9 +232,21 @@ async def main():
     print(json.dumps([q.model_dump(mode="json") for q in pkg.questions], ensure_ascii=False, indent=2, default=str))
     print("\n--- sources ---")
     if pkg.sources:
-        print(json.dumps([s.model_dump(mode="json") for s in pkg.sources], ensure_ascii=False, indent=2, default=str))
+        doc_sources = [s for s in pkg.sources if s.source_type != "video"]
+        video_sources = [s for s in pkg.sources if s.source_type == "video"]
+        print(f"  文档来源: {len(doc_sources)} 条")
+        for s in doc_sources:
+            print(f"    [{s.source_id}] type={s.source_type}, title={s.title}")
+        print(f"  视频来源: {len(video_sources)} 条")
+        for s in video_sources:
+            meta = s.metadata_json or {}
+            topic = meta.get("topic", "")
+            dur = meta.get("duration_hours", 0)
+            print(f"    [{s.source_id}] {topic} ({dur}h)")
+            print(f"      title: {s.title}")
+            print(f"      url: {s.locator}")
     else:
-        print("  (空) — 向量检索未返回文档，Agent3 未生成 sources")
+        print("  (空)")
     print("\n--- claims ---")
     if pkg.claims:
         for c in pkg.claims:
