@@ -1307,6 +1307,34 @@ class SQLiteClient:
             """), {"attempt_id": attempt_id}).mappings().first()
         return dict(row) if row else None
 
+    def get_in_progress_attempt(
+        self,
+        session_id: str,
+        stage_id: str | None = None,
+    ) -> dict | None:
+        """查同一 session（可选叠加 stage）当前未提交的 attempt（取最近一条）。
+
+        用于 create_attempt 幂等复用：同一 session+stage 未正式交卷前只保留一份
+        in_progress attempt，避免前端双击/刷新重复创建多份未完成试卷。
+        复用现有 idx_assessment_attempts_session(session_id, status) 索引，只读查询。
+        """
+        params: dict = {"session_id": session_id}
+        stage_filter = ""
+        if stage_id:
+            stage_filter = " AND stage_id = :stage_id"
+            params["stage_id"] = stage_id
+        with self.Session() as session:
+            row = session.execute(text(f"""
+                SELECT attempt_id, session_id, stage_id, stage_num, block_id, subtopic_id,
+                       status, total_questions, answered_count, correct_count, accuracy,
+                       created_at, submitted_at
+                FROM assessment_attempts
+                WHERE session_id = :session_id AND status = 'in_progress'{stage_filter}
+                ORDER BY created_at DESC
+                LIMIT 1
+            """), params).mappings().first()
+        return dict(row) if row else None
+
     def get_assessment_attempt_questions(self, attempt_id: str) -> list[dict]:
         """读取冻结题目快照（含正确答案/解析，供提交后公布使用）。"""
         with self.Session() as session:

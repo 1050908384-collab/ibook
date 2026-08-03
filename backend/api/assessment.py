@@ -6,11 +6,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from api.dependencies import get_assessment_service
+from api.dependencies import get_assessment_service, get_harness
 from services.assessment_service import AssessmentError
 
 router = APIRouter()
 assessment_service = get_assessment_service()
+harness = get_harness()
 
 
 class SaveAnswerRequest(BaseModel):
@@ -64,3 +65,40 @@ async def submit_assessment_attempt(attempt_id: str):
         return assessment_service.submit_attempt(attempt_id)
     except Exception as e:
         _raise(e)
+
+
+@router.post("/sessions/{session_id}/stages/current/complete")
+async def complete_current_stage_v1(session_id: str):
+    """v1 统一链路的阶段完成接口。
+
+    硬前置：当前阶段必须存在 status=submitted 的 assessment_attempt，否则返回 409
+    ASSESSMENT_NOT_SUBMITTED，杜绝未交卷绕过完成阶段。校验仅在此接口层完成，
+    harness.complete_stage 及其内部 fallback 不改，旧 /api/stage/complete 行为不变。
+    """
+    print(f"[API][POST /api/v1/.../stages/current/complete] session_id={session_id}", flush=True)
+    # 1) 取当前阶段
+    stage = harness.state_manager.get_current_stage(session_id)
+    if not stage:
+        raise HTTPException(status_code=404, detail="当前会话没有进行中的阶段")
+    stage_id = stage.get("stage_id")
+
+    # 2) 前置校验：当前阶段必须已交卷
+    if not assessment_service.has_submitted_attempt(session_id, stage_id):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "ASSESSMENT_NOT_SUBMITTED",
+                "message": "当前阶段测试未提交，无法完成阶段",
+            },
+        )
+
+    # 3) 交卷已满足，走既有阶段完成链路
+    try:
+        result = await harness.complete_stage(session_id)
+        return {
+            **result,
+            "state": harness.get_runtime_state(session_id),
+        }
+    except Exception as e:
+        status_code = 404 if isinstance(e, ValueError) else 500
+        raise HTTPException(status_code=status_code, detail=str(e))

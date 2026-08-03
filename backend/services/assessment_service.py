@@ -50,6 +50,16 @@ class AssessmentService:
         if not frozen_questions:
             raise AssessmentError("当前学习包没有可测试的题目，无法创建测试")
 
+        # 幂等复用：同一 session+stage 未正式交卷前只保留一份 in_progress attempt。
+        # 前端双击“开始测试”或刷新重试时返回原 attempt（resumed=True），不重复建卷。
+        existing = self.db.get_in_progress_attempt(
+            session_id, stage_id=stage_meta.get("stage_id")
+        )
+        if existing:
+            result = self.get_attempt(existing["attempt_id"])
+            result["resumed"] = True
+            return result
+
         attempt_id = self.db.create_assessment_attempt(
             session_id=session_id,
             frozen_questions=frozen_questions,
@@ -58,7 +68,9 @@ class AssessmentService:
             block_id=stage_meta.get("block_id"),
             subtopic_id=stage_meta.get("subtopic_id"),
         )
-        return self.get_attempt(attempt_id)
+        result = self.get_attempt(attempt_id)
+        result["resumed"] = False
+        return result
 
     def _collect_current_package_questions(self, session_id: str):
         """从当前学习包收集题目快照及阶段元信息。"""
@@ -225,6 +237,16 @@ class AssessmentService:
     def get_accuracy_from_submitted(self, session_id: str, stage_id: Optional[str] = None) -> Optional[float]:
         row = self.db.get_submitted_attempt_accuracy(session_id, stage_id=stage_id)
         return row["accuracy"] if row else None
+
+    def has_submitted_attempt(self, session_id: str, stage_id: Optional[str] = None) -> bool:
+        """当前阶段是否存在已提交（status=submitted）的完整 attempt。
+
+        供 v1 阶段完成接口做前置硬校验：严格按 stage_id 过滤，不退回会话级，
+        避免用户未提交当前阶段测试就绕过完成阶段。stage_id 为空或无已提交时返回 False。
+        """
+        if not stage_id:
+            return False
+        return self.db.get_submitted_attempt_accuracy(session_id, stage_id=stage_id) is not None
 
     # ------------------------------------------------------------------
     # 内部工具
