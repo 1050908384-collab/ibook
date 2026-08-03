@@ -12,7 +12,9 @@ import {
   Clock,
   Code2,
   Copy,
+  ExternalLink,
   FileQuestion,
+  FileText,
   Folder,
   Gauge,
   Eye,
@@ -25,11 +27,13 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Route,
   Send,
   Settings,
   Sparkles,
   Target,
   UserRound,
+  Video,
   X
 } from 'lucide-react';
 import { apiClient } from './api/client';
@@ -54,6 +58,7 @@ type Message = {
 };
 type KnowledgeGap = {
   skill: string;
+  block_name?: string;
   level?: string;
   status?: string;
   progress?: number;
@@ -95,11 +100,25 @@ type TestQuestion = {
   correct_answer?: string;
   hint?: string;
 };
+type LearningResource = {
+  resource_id?: string;
+  source_id?: string;
+  source_type?: string;
+  title?: string;
+  url?: string;
+  content_ref?: string;
+  locator?: string;
+  content_summary?: string;
+  metadata_json?: Record<string, unknown>;
+};
 type LearningPackage = {
   tutorial?: string;
   code_examples?: Array<{ title?: string; code?: string; language?: string }>;
   questions?: TestQuestion[];
   block_name?: string;
+  sources?: LearningResource[];
+  recommended_videos?: LearningResource[];
+  recommended_articles?: LearningResource[];
 };
 type StageResult = {
   status?: string;
@@ -107,6 +126,11 @@ type StageResult = {
   stage_summary?: string;
   next_strategy?: string;
   final_report?: Record<string, unknown>;
+  can_plan_next_stage?: boolean;
+  all_mastered?: boolean;
+  session_status?: string;
+  phase?: string;
+  available_actions?: string[];
 };
 type LearningProject = {
   sessionId: string;
@@ -204,6 +228,22 @@ def scaled_dot_product_attention(q, k, v):
     scores = q @ k.transpose(-2, -1)
     weights = torch.softmax(scores / d_k ** 0.5, dim=-1)
     return weights @ v, weights`
+    }
+  ],
+  recommended_videos: [
+    {
+      resource_id: 'demo-attention-video',
+      title: 'Visualizing Attention in Transformers',
+      url: 'https://www.youtube.com/watch?v=eMlx5fFNoYc',
+      content_summary: '通过可视化理解注意力层如何在上下文中传递信息。'
+    }
+  ],
+  recommended_articles: [
+    {
+      resource_id: 'demo-lora-paper',
+      title: 'LoRA: Low-Rank Adaptation of Large Language Models',
+      url: 'https://arxiv.org/abs/2106.09685',
+      content_summary: 'LoRA 原始论文，介绍低秩适配的核心方法与实验结果。'
     }
   ],
   questions: [
@@ -456,6 +496,8 @@ function Topbar({
   loading,
   error,
   onCreateGoal,
+  onOpenLearningPath,
+  onOpenProfile,
   onOpenMaterials
 }: {
   title: string;
@@ -463,6 +505,8 @@ function Topbar({
   loading: boolean;
   error: string | null;
   onCreateGoal?: () => void;
+  onOpenLearningPath?: () => void;
+  onOpenProfile?: () => void;
   onOpenMaterials?: () => void;
 }) {
   return (
@@ -483,6 +527,18 @@ function Topbar({
           <button className="switch-goal-button" onClick={onCreateGoal} disabled={loading}>
             <Plus size={15} />
             新建目标
+          </button>
+        )}
+        {onOpenLearningPath && (
+          <button className="topbar-tool-button" onClick={onOpenLearningPath} disabled={loading}>
+            <Route size={15} />
+            学习路径
+          </button>
+        )}
+        {onOpenProfile && (
+          <button className="topbar-tool-button" onClick={onOpenProfile} disabled={loading}>
+            <UserRound size={15} />
+            查看画像
           </button>
         )}
         {onOpenMaterials && (
@@ -616,6 +672,31 @@ function ProfilePanel({
   );
 }
 
+function getResourceUrl(resource: LearningResource) {
+  if (resource.url) return resource.url;
+  if (resource.content_ref?.startsWith('http')) return resource.content_ref;
+  if (resource.locator?.startsWith('http')) return resource.locator;
+  return '';
+}
+
+function uniqueResources(resources: LearningResource[]) {
+  const seen = new Set<string>();
+  return resources.filter((resource) => {
+    const key = resource.resource_id || resource.source_id || getResourceUrl(resource) || resource.title;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getEmbeddedVideoUrl(url: string) {
+  const youtubeMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+  const bilibiliMatch = url.match(/bilibili\.com\/video\/(BV[A-Za-z0-9]+)/i);
+  if (bilibiliMatch) return `https://player.bilibili.com/player.html?bvid=${bilibiliMatch[1]}`;
+  return '';
+}
+
 function MaterialDocument({
   stage,
   learningPackage,
@@ -626,6 +707,16 @@ function MaterialDocument({
   compact?: boolean;
 }) {
   const codeExamples = learningPackage.code_examples || [];
+  const sources = learningPackage.sources || [];
+  const videos = uniqueResources([
+    ...(learningPackage.recommended_videos || []),
+    ...sources.filter((source) => source.source_type === 'video')
+  ]);
+  const articles = uniqueResources([
+    ...(learningPackage.recommended_articles || []),
+    ...sources.filter((source) => ['article', 'external_note', 'manual', 'knowledge_doc'].includes(source.source_type || '') && Boolean(getResourceUrl(source)))
+  ]).filter((article) => Boolean(getResourceUrl(article)));
+  const hasTextContent = Boolean(learningPackage.tutorial?.trim() || codeExamples.length);
   return (
     <article className={`material-document ${compact ? 'compact' : ''}`}>
       <div className="material-document-meta">
@@ -633,18 +724,63 @@ function MaterialDocument({
         <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
       </div>
       <h2>{stage.block_name || learningPackage.block_name || '未命名学习材料'}</h2>
-      <div className="material-markdown">
-        <ReactMarkdown>{learningPackage.tutorial || '当前学习包暂未返回教程内容。'}</ReactMarkdown>
-      </div>
-      {codeExamples.length > 0 && (
-        <section className="material-code-section">
-          <h3>代码示例</h3>
-          {codeExamples.map((example, index) => (
-            <div className="material-code" key={`${example.title}-${index}`}>
-              <div><Code2 size={14} /> {example.title || `代码示例 ${index + 1}`}</div>
-              <pre><code>{example.code}</code></pre>
+      {hasTextContent && (
+        <section className="material-resource-section text-resources">
+          <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
+          {learningPackage.tutorial?.trim() && <div className="material-markdown"><ReactMarkdown>{learningPackage.tutorial}</ReactMarkdown></div>}
+          {codeExamples.length > 0 && (
+            <div className="material-code-section">
+              <h3>代码示例</h3>
+              {codeExamples.map((example, index) => (
+                <div className="material-code" key={`${example.title}-${index}`}>
+                  <div><Code2 size={14} /> {example.title || `代码示例 ${index + 1}`}</div>
+                  <pre><code>{example.code}</code></pre>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+        </section>
+      )}
+      {articles.length > 0 && (
+        <section className="material-resource-section article-resources">
+          <div className="material-section-heading"><FileText size={16} /><h3>文章网址</h3></div>
+          <div className="material-article-list">
+            {articles.map((article, index) => {
+              const url = getResourceUrl(article);
+              return (
+                <a href={url} target="_blank" rel="noreferrer" key={article.resource_id || article.source_id || `${url}-${index}`}>
+                  <span><strong>{article.title || `参考文章 ${index + 1}`}</strong>{article.content_summary && <small>{article.content_summary}</small>}</span>
+                  <ExternalLink size={15} />
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      {videos.length > 0 && (
+        <section className="material-resource-section video-resources">
+          <div className="material-section-heading"><Video size={16} /><h3>视频网址</h3></div>
+          <div className="material-video-list">
+            {videos.map((video, index) => {
+              const url = getResourceUrl(video);
+              const embedUrl = getEmbeddedVideoUrl(url);
+              const directVideo = /\.(mp4|webm|ogg)(?:\?|$)/i.test(url);
+              return (
+                <article key={video.resource_id || video.source_id || `${url}-${index}`}>
+                  {embedUrl ? (
+                    <iframe src={embedUrl} title={video.title || `阶段视频 ${index + 1}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                  ) : directVideo ? (
+                    <video controls preload="metadata" playsInline src={url} />
+                  ) : null}
+                  <div>
+                    <strong>{video.title || `阶段视频 ${index + 1}`}</strong>
+                    {video.content_summary && <p>{video.content_summary}</p>}
+                    {url && <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={13} />跳转播放</a>}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </section>
       )}
     </article>
@@ -706,6 +842,8 @@ function ChatView({
   timerRunning,
   onToggleTimer,
   onCreateGoal,
+  onOpenLearningPath,
+  onOpenProfile,
   learningPackage,
   materialPanelOpen,
   onToggleMaterials,
@@ -728,6 +866,8 @@ function ChatView({
   timerRunning: boolean;
   onToggleTimer: () => void;
   onCreateGoal: () => void;
+  onOpenLearningPath: () => void;
+  onOpenProfile: () => void;
   learningPackage: LearningPackage | null;
   materialPanelOpen: boolean;
   onToggleMaterials: () => void;
@@ -776,6 +916,8 @@ function ChatView({
         loading={loading}
         error={error}
         onCreateGoal={onCreateGoal}
+        onOpenLearningPath={onOpenLearningPath}
+        onOpenProfile={onOpenProfile}
         onOpenMaterials={onToggleMaterials}
       />
       <div
@@ -1147,6 +1289,7 @@ function ProjectSwitcherModal({
 
 function ProfileDetailModal({ project, onClose }: { project: LearningProject; onClose: () => void }) {
   const item = project.profile;
+  const gaps = item?.knowledge_gaps || [];
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="profile-detail-modal" role="dialog" aria-modal="true" aria-labelledby="profile-detail-title">
@@ -1166,6 +1309,78 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
           <div><span>设备条件</span><strong>{item?.hardware || '未提供'}</strong></div>
           <div><span>画像置信度</span><strong>{pct(item?.confidence ?? 0)}%</strong></div>
           <div><span>画像版本</span><strong>v{item?.version ?? 1}</strong></div>
+        </div>
+        {item && (
+          <div className="profile-capability-panel">
+            <div>
+              <span>能力水平</span>
+              <strong>{gaps.length ? `${gaps.filter((gap) => (gap.progress ?? 0) >= 1 || gap.status === '已掌握').length}/${gaps.length} 个知识点已掌握` : '等待学习记录'}</strong>
+            </div>
+            <Radar profile={item} />
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function LearningPathModal({
+  profile,
+  stage,
+  onClose
+}: {
+  profile: Profile;
+  stage: StageInfo;
+  onClose: () => void;
+}) {
+  const currentPoints = Array.from(new Set([
+    ...(stage.prerequisites || []),
+    stage.gap_skill,
+    stage.subtopic_name,
+    stage.block_name
+  ].filter(Boolean))) as string[];
+  const pathItems = [
+    ...(profile.skill_tags || []).map((name) => ({ name, status: 'done' as const, label: '已有基础' })),
+    ...(profile.knowledge_gaps || []).map((gap) => {
+      const done = gap.status === '已掌握' || (gap.progress ?? 0) >= 1;
+      const current = !done && (gap.skill === stage.gap_skill || gap.block_name === stage.block_name);
+      return {
+        name: gap.skill,
+        status: done ? 'done' as const : current ? 'current' as const : 'pending' as const,
+        label: done ? '已完成' : current ? '当前学习' : '待学习'
+      };
+    }),
+    { name: profile.goal || '最终学习目标', status: 'target' as const, label: '目标' }
+  ];
+
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="learning-path-modal" role="dialog" aria-modal="true" aria-labelledby="learning-path-title">
+        <header>
+          <div><span>动态规划</span><h2 id="learning-path-title">学习路径</h2></div>
+          <button onClick={onClose} aria-label="关闭学习路径" title="关闭"><X size={18} /></button>
+        </header>
+        <div className="learning-path-modal-body">
+          <section className="current-knowledge-points">
+            <div><span>当前阶段</span><h3>{stage.block_name || `阶段 ${stage.stage_num ?? 1}`}</h3></div>
+            <div className="knowledge-point-list">
+              {currentPoints.map((point) => <span key={point}>{point}</span>)}
+            </div>
+          </section>
+          <section className="full-learning-path">
+            <h3>从已有基础到最终目标</h3>
+            <div className="path-node-list">
+              {pathItems.map((item, index) => (
+                <div className={`path-node ${item.status}`} key={`${item.name}-${index}`}>
+                  <i>{item.status === 'done' ? <Check size={14} /> : item.status === 'current' ? <Play size={13} /> : item.status === 'target' ? <Target size={14} /> : index + 1}</i>
+                  <div><strong>{item.name}</strong><span>{item.label}</span></div>
+                </div>
+              ))}
+            </div>
+          </section>
+          <footer className="path-legend">
+            <span className="done">已完成</span><span className="current">当前知识点</span><span className="pending">待学习</span>
+          </footer>
         </div>
       </section>
     </div>
@@ -1389,19 +1604,27 @@ function DashboardView({
 function ResultView({
   profile,
   stage,
+  plannedStage,
   result,
-  setView,
+  onPlanNext,
+  onStartNext,
   loading,
   error
 }: {
   profile: Profile;
   stage: StageInfo;
+  plannedStage: StageInfo | null;
   result: StageResult | null;
-  setView: (view: View) => void;
+  onPlanNext: () => void;
+  onStartNext: () => void;
   loading: boolean;
   error: string | null;
 }) {
   const accuracy = result?.accuracy ?? 0.87;
+  const gaps = profile.knowledge_gaps || [];
+  const mastered = gaps.filter((gap) => gap.status === '已掌握' || (gap.progress ?? 0) >= 1);
+  const needsWork = gaps.filter((gap) => gap.status !== '已掌握' && (gap.progress ?? 0) < 1);
+  const canPlanNext = result?.can_plan_next_stage ?? result?.available_actions?.includes('plan_next_stage') ?? false;
   return (
     <div className="page-shell">
       <Topbar title="阶段结果" subtitle="阶段完成后展示画像更新和下一阶段策略" loading={loading} error={error} />
@@ -1413,7 +1636,7 @@ function ResultView({
           <div>
             <span className="success-label"><Check size={14} /> 阶段完成</span>
             <h2>{accuracy >= 0.8 ? '很好，可以进入下一阶段' : '建议先巩固当前阶段'}</h2>
-            <p>{result?.stage_summary || '系统已记录本次阶段表现，并准备基于画像和正确率调整学习策略。'}</p>
+            <p>系统已结合本阶段学习记录和测试结果生成反馈，并更新为画像 v{profile.version ?? 1}。</p>
           </div>
           <div className="strategy">
             <span>下一阶段策略</span>
@@ -1421,30 +1644,48 @@ function ResultView({
             <small>Agent6 综合决策</small>
           </div>
         </section>
-        <div className="result-grid">
+        <div className="feedback-summary-grid">
+          <section className="white-card feedback-overview">
+            <div className="section-title"><div><span>反馈总结</span><h3>本阶段学习情况</h3></div><b>{statusText[stage.status || 'completed'] || stage.status}</b></div>
+            <div className="feedback-facts">
+              <div><span>学习主题</span><strong>{stage.block_name || '当前阶段'}</strong></div>
+              <div><span>测试结果</span><strong>{pct(accuracy)}% 正确率</strong></div>
+              <div><span>策略建议</span><strong>{result?.next_strategy || (accuracy >= 0.8 ? 'advance' : 'reinforce')}</strong></div>
+            </div>
+            <div className="feedback-knowledge-columns">
+              <div><span>已掌握知识点</span><p>{mastered.map((gap) => gap.skill).join('、') || '本阶段暂无新增完全掌握项'}</p></div>
+              <div><span>仍需加强</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
+            </div>
+            <div className="feedback-markdown"><ReactMarkdown>{result?.stage_summary || '本阶段记录已完成。建议根据测试结果巩固薄弱知识点，再继续后续学习。'}</ReactMarkdown></div>
+          </section>
           <section className="white-card">
             <div className="section-title">
               <div><span>画像变化</span><h3>能力掌握度更新</h3></div>
               <b>v{profile.version ?? 1}</b>
             </div>
             <Radar profile={profile} />
+            <div className="updated-profile-facts">
+              <div><span>信心指数</span><strong>{pct(profile.confidence_index ?? 0)}%</strong></div>
+              <div><span>困惑标记</span><strong>{profile.confusion_markers?.join('、') || '暂无'}</strong></div>
+            </div>
           </section>
           <section className="white-card next-stage">
             <div className="stage-eyebrow">
-              <span>下一阶段</span>
-              <b>阶段 {(stage.stage_num ?? 1) + 1}</b>
+              <span>{result?.all_mastered ? '学习目标' : plannedStage ? '下一阶段已就绪' : '下一阶段建议'}</span>
+              <b>{result?.all_mastered ? '已完成' : `阶段 ${plannedStage?.stage_num ?? (stage.stage_num ?? 1) + 1}`}</b>
             </div>
-            <h3>{stage.block_name || '等待后端规划下一阶段'}</h3>
-            <p>继续沿着知识图谱依赖推进，优先处理仍未掌握的知识盲区。</p>
+            <h3>{result?.all_mastered ? profile.goal : plannedStage?.block_name || '根据新画像按需生成'}</h3>
+            <p>{result?.all_mastered ? '全部目标知识点已掌握，本轮学习计划已经完成。' : plannedStage?.gap_skill ? `下一阶段将继续处理「${plannedStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。'}</p>
             <div className="next-facts">
-              <div><span>预计时长</span><strong>{stage.estimated_hours ?? 1} 小时</strong></div>
+              <div><span>预计时长</span><strong>{plannedStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div>
               <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
-              <div><span>前置状态</span><strong className="green">已检查</strong></div>
+              <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
             </div>
-            <button className="primary wide" onClick={() => setView('chat')}>
-              <Play size={17} />
-              继续学习
-            </button>
+            {!result?.all_mastered && (plannedStage ? (
+              <button className="primary wide" onClick={onStartNext} disabled={loading}><Play size={17} />开始下一阶段</button>
+            ) : (
+              <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
+            ))}
           </section>
         </div>
       </main>
@@ -1518,6 +1759,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
   const [result, setResult] = useState<StageResult | null>(null);
+  const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [activeAgent, setActiveAgent] = useState<AgentId | null>(null);
   const [completedAgents, setCompletedAgents] = useState<AgentId[]>(localPreviewDemo ? ['agent1', 'agent3', 'agent4'] : []);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
@@ -1533,6 +1775,8 @@ export default function App() {
   const [selectedConversationId, setSelectedConversationId] = useState(localPreviewDemo ? `${DEMO_SESSION_ID}:1` : '');
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
   const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
+  const [learningPathOpen, setLearningPathOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const completeAgent = (agentId: AgentId) => {
     setCompletedAgents((prev) => prev.includes(agentId) ? prev : [...prev, agentId]);
@@ -1830,12 +2074,10 @@ export default function App() {
       if (!sessionId) throw new Error('尚未创建后端会话');
       const response = await apiClient.startStage({ session_id: sessionId });
       setLearningPackage(response.learning_package);
-      const generatedStage = response.state?.stage_info || stage || fallbackStage;
-      if (response.state?.stage_info) {
-        setStage(response.state.stage_info);
-        setSelectedConversationId(`${sessionId}:${response.state.stage_info.stage_num ?? 1}`);
-        if (profile) rememberProject(sessionId, profile, response.state.stage_info);
-      }
+      const generatedStage = response.state?.stage_info || plannedStage || stage || fallbackStage;
+      setStage(generatedStage);
+      setSelectedConversationId(`${sessionId}:${generatedStage.stage_num ?? 1}`);
+      if (profile) rememberProject(sessionId, profile, generatedStage);
       completeAgent('agent3');
       completeAgent('agent4');
       setMessages((prev) => [...prev, {
@@ -1847,15 +2089,21 @@ export default function App() {
       setWorkflow('learning');
       setView('chat');
       setMaterialPanelOpen(true);
+      setPlannedStage(null);
+      setResult(null);
     } catch (caught) {
       setError(getErrorMessage(caught));
       setLearningPackage(fallbackPackage);
-      setStage({ ...(stage || fallbackStage), status: 'learning' });
+      const fallbackStartedStage = { ...(plannedStage || stage || fallbackStage), status: 'learning' };
+      setStage(fallbackStartedStage);
+      if (sessionId) setSelectedConversationId(`${sessionId}:${fallbackStartedStage.stage_num ?? 1}`);
       completeAgent('agent3');
       completeAgent('agent4');
       setWorkflow('learning');
       setView('chat');
       setMaterialPanelOpen(true);
+      setPlannedStage(null);
+      setResult(null);
     } finally {
       setActiveAgent(null);
       setLoading(false);
@@ -1875,19 +2123,26 @@ export default function App() {
         const response = await apiClient.completeStage(sessionId);
         setResult(response);
         if (response.updated_profile) setProfile(response.updated_profile);
-        if (response.next_stage) {
-          setStage(response.next_stage);
-          setSelectedConversationId(`${sessionId}:${response.next_stage.stage_num ?? 1}`);
-          setMessages(initialMessages);
-        }
-        rememberProject(sessionId, response.updated_profile || profile || fallbackProfile, response.next_stage || stage);
-        void loadDashboardStages(sessionId, response.next_stage || stage);
+        const completedStage = response.state?.stage_info || stage;
+        if (completedStage) setStage(completedStage);
+        setPlannedStage(null);
+        rememberProject(sessionId, response.updated_profile || profile || fallbackProfile, completedStage);
+        void loadDashboardStages(sessionId, completedStage);
       } else {
         throw new Error('尚未创建后端会话');
       }
     } catch (caught) {
       setError(getErrorMessage(caught));
-      setResult({ status: 'continue', accuracy: 0.87, next_strategy: 'advance', stage_summary: '本地演示结果：正确率较高，建议继续推进。' });
+      setResult({
+        status: 'continue',
+        accuracy: 0.87,
+        next_strategy: 'advance',
+        stage_summary: '## 阶段表现\n\n本阶段测试表现良好，核心概念已经基本掌握。\n\n## 加强建议\n\n建议继续复习注意力权重的缩放原因，并进入下一阶段实践。',
+        can_plan_next_stage: true,
+        all_mastered: false,
+        phase: 'stage_result',
+        available_actions: ['plan_next_stage']
+      });
       setProfile({
         ...(profile || fallbackProfile),
         knowledge_gaps: fallbackProfile.knowledge_gaps?.map((gap, index) => index === 0 ? { ...gap, status: '已掌握', progress: 0.86 } : gap)
@@ -1900,6 +2155,39 @@ export default function App() {
     }
   };
 
+  const planNextStage = async () => {
+    if (!sessionId || loading) return;
+    setLoading(true);
+    setError(null);
+    setActiveAgent('agent1');
+    try {
+      const response = await apiClient.planNextStage({ session_id: sessionId });
+      if (!response.next_stage) throw new Error('后端没有返回下一阶段规划');
+      setPlannedStage(response.next_stage);
+      if (response.updated_profile) {
+        setProfile(response.updated_profile);
+        rememberProject(sessionId, response.updated_profile, stage);
+      }
+      completeAgent('agent1');
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+      const nextGap = profile?.knowledge_gaps?.find((gap) => gap.status !== '已掌握' && gap.skill !== stage?.gap_skill);
+      setPlannedStage({
+        stage_id: `DEMO-STG-${(stage?.stage_num ?? 1) + 1}`,
+        stage_num: (stage?.stage_num ?? 1) + 1,
+        block_name: nextGap?.skill || 'LoRA 低秩适配原理',
+        gap_skill: nextGap?.skill || 'LoRA',
+        estimated_hours: 1.5,
+        prerequisites: [stage?.block_name || '当前阶段'],
+        status: 'pending'
+      });
+      completeAgent('agent1');
+    } finally {
+      setActiveAgent(null);
+      setLoading(false);
+    }
+  };
+
   const clearLocalSession = () => {
     localStorage.removeItem('sessionId');
     setError(null);
@@ -1907,6 +2195,7 @@ export default function App() {
     setProfile(null);
     setStage(null);
     setLearningPackage(null);
+    setPlannedStage(null);
     setResult(null);
     setMessages(initialMessages);
     setSelectedConversationId('');
@@ -1917,6 +2206,8 @@ export default function App() {
     setTimerSeconds(0);
     setTimerRunning(false);
     setMaterialPanelOpen(false);
+    setLearningPathOpen(false);
+    setProfileModalOpen(false);
     setActiveAgent(null);
     setCompletedAgents([]);
     setWorkflow('onboarding');
@@ -1947,6 +2238,7 @@ export default function App() {
       setStage(session.stage_info || null);
       setLearningPackage(session.learning_package || null);
       setResult(null);
+      setPlannedStage(null);
       const currentStageNum = session.stage_info?.stage_num ?? 1;
       const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${currentStageNum}`);
       setMessages(restoredConversation?.messages || initialMessages);
@@ -2032,6 +2324,8 @@ export default function App() {
           timerRunning={timerRunning}
           onToggleTimer={toggleStageTimer}
           onCreateGoal={createLearningGoal}
+          onOpenLearningPath={() => setLearningPathOpen(true)}
+          onOpenProfile={() => setProfileModalOpen(true)}
           learningPackage={learningPackage}
           materialPanelOpen={materialPanelOpen}
           onToggleMaterials={() => setMaterialPanelOpen((prev) => !prev)}
@@ -2056,8 +2350,34 @@ export default function App() {
         <DashboardView profile={workspaceProfile} stage={workspaceStage} result={result} setView={setView} loading={loading} error={error} />
       )}
       {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} />}
-      {profile && workflow === 'learning' && view === 'result' && <ResultView profile={workspaceProfile} stage={workspaceStage} result={result} setView={setView} loading={loading} error={error} />}
+      {profile && workflow === 'learning' && view === 'result' && (
+        <ResultView
+          profile={workspaceProfile}
+          stage={workspaceStage}
+          plannedStage={plannedStage}
+          result={result}
+          onPlanNext={planNextStage}
+          onStartNext={startStage}
+          loading={loading}
+          error={error}
+        />
+      )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
+      {learningPathOpen && profile && stage && <LearningPathModal profile={profile} stage={stage} onClose={() => setLearningPathOpen(false)} />}
+      {profileModalOpen && profile && (
+        <ProfileDetailModal
+          project={{
+            sessionId: sessionId || 'current',
+            goal: profile.goal || '当前学习目标',
+            stageName: stage?.block_name || '等待阶段规划',
+            stageNum: stage?.stage_num ?? 1,
+            updatedAt: Date.now(),
+            profile,
+            stages: stage ? [stage] : []
+          }}
+          onClose={() => setProfileModalOpen(false)}
+        />
+      )}
       {projectSwitcherOpen && (
         <ProjectSwitcherModal
           projects={learningProjects}
