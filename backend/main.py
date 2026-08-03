@@ -10,6 +10,8 @@ from api.chat import router as chat_router
 from api.session import router as session_router
 from api.stage import router as stage_router
 from api.visualize import router as visualize_router
+from api.assessment import router as assessment_router
+from api.dashboard import router as dashboard_router
 from config import settings
 
 app = FastAPI(
@@ -39,6 +41,9 @@ app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(session_router, prefix="/api/session", tags=["Session"])
 app.include_router(stage_router, prefix="/api/stage", tags=["Stage"])
 app.include_router(visualize_router, prefix="/api/visualize", tags=["Visualize"])
+# Agent46_API接口任务说明.md 第 2/4 节：测试服务与仪表盘，路径遵循文档 /api/v1 前缀
+app.include_router(assessment_router, prefix="/api/v1", tags=["Assessment"])
+app.include_router(dashboard_router, prefix="/api/v1", tags=["Dashboard"])
 
 @app.get("/")
 def root():

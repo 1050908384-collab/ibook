@@ -17,9 +17,25 @@ Agent3 ↔ Agent4 辩论链路独立测试 —— 完整审核/答辩/复核/裁
   - 某轮 unresolved_must_fix_count=0                   -> passed
   - 达到 MAX_REVIEW_ITERATIONS 仍有未决 must_fix       -> needs_human_review
 
-独立运行：
+运行方式（命令行参数优先，无参数时回退到交互提示）：
+  # 交互模式（手动选择模式 / 输入 tutorial）
   python tests/check_agent34_debate.py
+
+  # 非交互一键跑通（自动化调试常用）
+  python tests/check_agent34_debate.py --mode deterministic
+  python tests/check_agent34_debate.py --mode hybrid --tutorial "自定义教程..."
+  python tests/check_agent34_debate.py --mode deterministic --non-interactive
+
+参数：
+  --mode {hybrid,deterministic}  执行模式；省略则交互询问（默认 hybrid）
+  --tutorial TEXT                自定义待审核 tutorial；省略则用默认（含事实错误）
+  --force-unresolved             调试用：把 Agent3 对 must_fix issue 的答辩强制改为
+                                 rejected（协议允许交 Orchestrator 裁决），触发 Agent4
+                                 rebut=persist，从而演示「多轮辩论 + needs_human_review」
+                                 终止路径（默认 deterministic 链路总在第 1 轮解决，无法覆盖此分支）
+  --non-interactive              强制不读 stdin，全部用参数/默认值（管道/CI 友好）
 """
+import argparse
 import asyncio
 import json
 import os
@@ -50,11 +66,36 @@ def pretty(label: str, obj) -> None:
     print(json.dumps(obj, ensure_ascii=False, indent=2, default=str))
 
 
-def choose_mode() -> str:
+def _can_prompt(non_interactive: bool) -> bool:
+    """仅当未强制非交互、且 stdin 是 TTY 时才读取用户输入，避免管道/CI 下 EOFError。"""
+    if non_interactive:
+        return False
+    try:
+        return sys.stdin is not None and sys.stdin.isatty()
+    except Exception:
+        return False
+
+
+def _safe_input(prompt: str, non_interactive: bool, default: str = "") -> str:
+    """交互可用时读取输入；否则返回默认值（不抛 EOFError）。"""
+    if not _can_prompt(non_interactive):
+        return default
+    try:
+        return input(prompt).strip()
+    except EOFError:
+        return default
+
+
+def choose_mode(cli_mode: str | None, non_interactive: bool) -> str:
+    if cli_mode:
+        return cli_mode
+    if not _can_prompt(non_interactive):
+        print("\n[非交互] 未指定 --mode，默认使用 hybrid。")
+        return "hybrid"
     print("\n选择执行模式：")
     print("  1) hybrid        Agent3/4 使用本地 LLM（Ollama），查看真实辩论（默认）")
     print("  2) deterministic Agent3/4 纯规则/工具链路，不调 LLM，速度快")
-    choice = input("请输入 1 或 2（回车=1）: ").strip()
+    choice = _safe_input("请输入 1 或 2（回车=1）: ", non_interactive, "1")
     return "deterministic" if choice == "2" else "hybrid"
 
 
@@ -99,6 +140,21 @@ DEFAULT_TUTORIAL = (
 )
 
 
+# 默认推荐视频（取自 data/knowledge_base/video_resources.json 真实 seed 记录 RES-VID-064，
+# 映射到 KB-12/KBS-12-01）。随学习包进入辩论，触发 Agent4「推荐视频资源审核」（规则5）：
+#   资源库已 seed -> video_content_unverified(minor)；未 seed(当前 project.db) -> video_resource_mismatch(major,must_fix)。
+DEFAULT_RECOMMENDED_VIDEOS = [{
+    "resource_id": "RES-VID-064",
+    "title": "LoRA微调：从原理到调参，7 个问题彻底理解 LoRA",
+    "url": "https://www.bilibili.com/video/BV1waZ2YDEcp",
+    "review_status": "pending",
+    "content_summary": "用于学习“理解LoRA的低秩分解原理”的推荐视频；导入后需补充视频内容摘要或字幕。",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-01",
+    "role": "primary",
+}]
+
+
 def build_default_package(session_id: str, stage: StageInfo) -> LearningPackage:
     sources = [
         Source(
@@ -114,6 +170,25 @@ def build_default_package(session_id: str, stage: StageInfo) -> LearningPackage:
             locator="doc_qlora_01",
         ),
     ]
+    # 为每个推荐视频补一条 source_type="video" 的 source（对齐 Agent3 真实产出 src_video_{id}），
+    # 使视频错误的 source_ref=src_video_RES-VID-064 能在辩论协议字段补全时命中 sources。
+    for video in DEFAULT_RECOMMENDED_VIDEOS:
+        sources.append(Source(
+            source_id=f"src_video_{video['resource_id']}",
+            source_type="video",
+            title=video["title"],
+            locator=f"learning_resources:{video['resource_id']}",
+            content_ref=video["url"],
+            metadata_json={
+                "block_id": video.get("block_id"),
+                "subtopic_id": video.get("subtopic_id"),
+                "review_status": video.get("review_status"),
+            },
+        ))
+    # 说明：Claim 模型强制「is_key_technical=True 时 source_ref 不可空」（models/stage.py 校验器，
+    # 对齐协议 2.2 与数据库 CHECK 约束）。clm_002 用来模拟“已绑定来源、但陈述本身是事实错误”
+    # 的关键技术声明——Agent4 的错误检测来自 tutorial 正文的规则/幻觉命中，不依赖 claim 是否缺来源，
+    # 因此这里为 clm_002 绑定一个真实 source 并给低 confidence，既合法又保留“待纠错”的语义。
     claims = [
         Claim(
             claim_id="clm_001",
@@ -127,11 +202,11 @@ def build_default_package(session_id: str, stage: StageInfo) -> LearningPackage:
         Claim(
             claim_id="clm_002",
             text="LoRA 对原始权重 W 执行 SVD 分解",  # 事实错误，应被 Agent4 抓出
-            source_ref=None,
+            source_ref="src_kb12_0",
             section_ref="tutorial:sec_1",
             claim_type="fact",
             is_key_technical=True,
-            confidence=0.4,
+            confidence=0.4,  # 低置信度：Agent3 自评把握不足，语义上等价“待核验”
         ),
         Claim(
             claim_id="clm_003",
@@ -151,17 +226,40 @@ def build_default_package(session_id: str, stage: StageInfo) -> LearningPackage:
         tutorial=DEFAULT_TUTORIAL,
         sources=sources,
         claims=claims,
+        recommended_videos=[dict(v) for v in DEFAULT_RECOMMENDED_VIDEOS],
         version=1,
     )
 
 
-async def run_debate():
+def _print_exchange(iteration: int, issues: list[dict], author_replies: list[dict],
+                    verdicts: dict[str, str]) -> None:
+    """按 canonical_error_id 对齐打印 Agent3↔Agent4 的逐条交流，方便直观追踪辩论内容。"""
+    print(f"\n{'-' * 60}\n★ 第{iteration}轮 Agent3 ↔ Agent4 逐条交流对照\n{'-' * 60}")
+    reply_by_cid = {r.get("canonical_error_id"): r for r in author_replies}
+    for idx, iss in enumerate(issues, 1):
+        cid = iss.get("canonical_error_id")
+        reply = reply_by_cid.get(cid, {})
+        verdict = verdicts.get(cid, "—")
+        print(f"\n[{idx}] canonical_error_id={cid}  ({iss.get('error_type')}/{iss.get('severity')}"
+              f", must_fix={iss.get('must_fix')})")
+        print(f"    ┌ Agent4 提出   : {iss.get('description')}")
+        print(f"    │   change_request={iss.get('change_request')}  source_refs={iss.get('source_refs') or '未命中来源'}")
+        print(f"    ├ Agent3 答辩   : disposition={reply.get('disposition', '（无回复）')}")
+        print(f"    │   reason={reply.get('reason', '')}")
+        print(f"    │   补充来源={reply.get('source_refs') or '无'}  patched={reply.get('patched_sections') or '无'}")
+        print(f"    └ Agent4 复核   : verdict={verdict}  "
+              f"({'坚持' if verdict == 'persist' else '撤销' if verdict == 'withdraw' else '降级' if verdict == 'downgrade' else '—'})")
+
+
+async def run_debate(args: argparse.Namespace):
+    non_interactive = bool(args.non_interactive)
     print("=" * 60)
     print("Agent3 ↔ Agent4 辩论链路独立测试")
     print(f"（最多 {settings.MAX_REVIEW_ITERATIONS} 轮，复刻 harness._review_learning_package）")
     print("=" * 60)
 
-    mode = choose_mode()
+    mode = choose_mode(args.mode, non_interactive)
+    print(f"\n>>> 执行模式：{mode}")
     if mode == "hybrid":
         agent3 = HybridContentAgent()
         agent4 = HybridTechnicalReviewAgent()
@@ -173,25 +271,31 @@ async def run_debate():
     stage = StageInfo(
         stage_id="stage-test-34", stage_num=1, block_id="KB-12",
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA",
+        subtopic_id="KBS-12-01",  # 对齐 RES-VID-064 映射的子主题，供 Agent4 视频归属校验
     )
     profile = UserProfile(session_id=session_id, goal="掌握LoRA微调")
 
-    print("\n请输入待审核的 tutorial 内容（直接回车使用默认示例，默认故意包含事实错误以触发辩论）：")
-    print("-" * 60)
-    print(DEFAULT_TUTORIAL)
-    print("-" * 60)
-    custom = input(">>> ").strip()
     package = build_default_package(session_id, stage)
+    custom = args.tutorial
+    if custom is None:
+        print("\n请输入待审核的 tutorial 内容（直接回车使用默认示例，默认故意包含事实错误以触发辩论）：")
+        print("-" * 60)
+        print(DEFAULT_TUTORIAL)
+        print("-" * 60)
+        custom = _safe_input(">>> ", non_interactive, "")
     if custom:
         package.tutorial = custom
 
-    pretty("【初始输入】LearningPackage", {
+    pretty("【初始输入】LearningPackage（Agent3 产出，进入辩论前）", {
         "block_name": package.block_name,
         "version": package.version,
         "tutorial_length": len(package.tutorial),
         "sources_count": len(package.sources),
         "claims_count": len(package.claims),
+        "recommended_videos_count": len(package.recommended_videos),
+        "sources": [s.model_dump(mode="json") for s in package.sources],
         "claims": [c.model_dump(mode="json") for c in package.claims],
+        "recommended_videos": [dict(v) for v in package.recommended_videos],
     })
 
     history: list[dict] = []
@@ -211,6 +315,7 @@ async def run_debate():
             profile=profile,
             sources=[s.model_dump(mode="json") for s in package.sources],
             claims=[c.model_dump(mode="json") for c in package.claims],
+            recommended_videos=[dict(v) for v in package.recommended_videos],
             round_index=iteration,
         )
         review_result = await agent4.run(review_request)
@@ -231,12 +336,36 @@ async def run_debate():
         issues = [e.model_dump(mode="json") for e in review_result.errors]
         package_dict = package.model_dump(mode="json")
         author_replies = await agent3.reply_to_review(session_id, issues, package_dict)
+
+        # 调试路径：强制把 must_fix issue 的答辩改为 rejected（协议允许，交 Orchestrator 裁决），
+        # 使 Agent4._adjudicate_reply 命中 "must_fix && rejected -> persist"，从而让
+        # unresolved_must_fix_count>0，演示「多轮辩论 + needs_human_review」终止分支。
+        if args.force_unresolved:
+            reply_by_cid = {r.get("canonical_error_id"): r for r in author_replies}
+            forced = 0
+            for iss in issues:
+                if not iss.get("must_fix"):
+                    continue
+                cid = iss.get("canonical_error_id")
+                reply = reply_by_cid.get(cid)
+                if reply is None:
+                    continue
+                reply["disposition"] = "rejected"
+                reply["reason"] = "[force-unresolved] 作者坚持原表述，不接受该 must_fix 修改意见"
+                reply["source_refs"] = []  # 无反证：Agent4 将坚持(persist)
+                reply["patched_sections"] = []
+                forced += 1
+            if forced:
+                print(f"    [--force-unresolved] 已将 {forced} 条 must_fix 答辩改为 rejected（触发 persist）")
         pretty(f"【Agent3 输出】author_replies（共{len(author_replies)}条）", author_replies)
 
         # 步骤3：Agent4 复核裁决
         print(f"\n[Step 3] Agent4.rebut（对 Agent3 答辩做 persist/withdraw/downgrade）...")
         verdicts = await agent4.rebut(session_id, issues, author_replies)
         pretty("【Agent4 输出】verdicts（persist=坚持 / withdraw=撤销 / downgrade=降级）", verdicts)
+
+        # 逐条对照打印 Agent3↔Agent4 的交流内容
+        _print_exchange(iteration, issues, author_replies, verdicts)
 
         # 步骤4：Orchestrator 裁决（本地精简版）
         print(f"\n[Step 4] Orchestrator 裁决（adjudicate_issues）...")
@@ -304,13 +433,50 @@ async def run_debate():
     print("\n状态说明：")
     print("  passed              Agent4 通过或所有 must_fix 已解决")
     print("  needs_human_review  达到最大轮次仍有 must_fix 未决（非阻塞，package 降级为 provisional）")
+    return final_status
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Agent3↔Agent4 辩论链路独立测试（命令行参数优先，无参数回退交互）",
+    )
+    parser.add_argument(
+        "--mode", choices=["hybrid", "deterministic"], default=None,
+        help="执行模式；省略则交互询问（非交互默认 hybrid）",
+    )
+    parser.add_argument(
+        "--tutorial", type=str, default=None,
+        help="自定义待审核 tutorial；省略则用默认示例（含事实错误）",
+    )
+    parser.add_argument(
+        "--force-unresolved", action="store_true",
+        help="调试用：把 Agent3 对 must_fix issue 的答辩强制改为 rejected，触发 Agent4 persist，"
+             "演示多轮辩论 + needs_human_review 终止分支",
+    )
+    parser.add_argument(
+        "--non-interactive", action="store_true",
+        help="强制不读 stdin，全部用参数/默认值（管道/CI 友好）",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
+    # 说明：hybrid 模式下 asyncio.run() 关闭事件循环时，底层 httpx/Ollama 连接或
+    # 子进程（code_executor）在解释器退出阶段清理可能抛出非致命异常，导致 Windows 上
+    # 进程返回 -1，使 CI/自动化误判为“测试失败”——即便辩论已完整跑通并打印最终结果。
+    # 因此这里显式区分：辩论逻辑正常结束 -> exit 0；仅在真正的运行期异常时 -> exit 1，
+    # 从而让退出码忠实反映辩论结果，不受事件循环清理噪声干扰。
+    exit_code = 0
     try:
-        asyncio.run(run_debate())
+        asyncio.run(run_debate(parse_args()))
     except KeyboardInterrupt:
         print("\n已中断。")
+        exit_code = 130
     except Exception:
         import traceback
         traceback.print_exc()
+        exit_code = 1
+    # 强制以确定的退出码结束，屏蔽事件循环关闭阶段的清理噪声（Windows 上常见的 -1）。
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(exit_code)

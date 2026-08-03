@@ -148,6 +148,10 @@ def rule_check(input_data: dict, config: dict = None) -> dict:
         violations.extend(_check_lora_mechanism(content))
         violations.extend(_check_parameter_count(content))
 
+        # 1b. industry_standards.skill.md 领域红线（LoRA/QLoRA 微调 + vLLM 部署 + 数据/许可证）
+        #     作为 technical_review 的子检查模块，输出统一 violation（→ ReviewError）结构
+        violations.extend(_check_industry_standards(content))
+
         # 2. 内置正则规则（安全/数据隐私）
         for rule in _BUILTIN_RULES:
             if re.search(rule["pattern"], content, re.IGNORECASE):
@@ -284,6 +288,245 @@ def _check_parameter_count(content: str) -> List[Dict[str, Any]]:
             "suggestion": "重新选择合理维度和秩，并逐步计算参数量。",
         }]
     return []
+
+
+# ------------------------------------------------------------------
+# industry_standards.skill.md 领域红线检查（规则1/2/3）
+# 作为 technical_review 的子检查模块，输出统一 violation（→ ReviewError）结构。
+# 仅在内容涉及 LoRA/QLoRA/vLLM/PEFT 时逐条匹配，否则返回空列表（异常处理表）。
+# ------------------------------------------------------------------
+
+# vLLM 端口安全：常见/易冲突端口（规则2.2）
+_VLLM_COMMON_PORTS = {80, 443, 8080, 8000}
+
+# PEFT target_modules 非法层名（规则1.3）：不属于 Transformer 线性投影层
+_PEFT_INVALID_MODULES = {
+    "embedding", "embeddings", "pooling", "pooler", "layernorm", "layer_norm",
+    "dropout", "softmax", "activation",
+}
+
+
+def _has_domain_context(content: str) -> bool:
+    """判断内容是否涉及 LoRA/QLoRA/vLLM/PEFT 微调、部署或训练数据加载领域。"""
+    return bool(re.search(
+        r"lora|qlora|loraconfig|peft|vllm|bitsandbytes|target_modules|"
+        r"gpu[_\-\s]?memory[_\-\s]?utilization|from_pretrained|quantization_config|"
+        r"load_dataset|read_csv",
+        content, re.IGNORECASE,
+    ))
+
+
+def _check_lora_rules(content: str) -> List[Dict[str, Any]]:
+    """规则1.1 LoRA 秩 r 值安全 + 规则1.3 PEFT 配置合法性。"""
+    violations: List[Dict[str, Any]] = []
+
+    # 规则1.1：在 LoraConfig / lora 上下文中提取 r 值
+    # 允许 LoraConfig(...) 跨行（DOTALL），上下文窗口限定 80 字符避免误匹配无关代码；
+    # 且排除 lora_alpha / lora_dropout 等以 lora_ 开头的邻近参数干扰。
+    for m in re.finditer(
+        r"(?:lora_config|loraconfig|lora)[^=]{0,80}?[\s(,]r\s*=\s*(\d+)",
+        content, re.IGNORECASE | re.DOTALL,
+    ):
+        r_val = int(m.group(1))
+        if r_val <= 1:
+            violations.append({
+                "error_type": "lora_r_invalid",
+                "severity": "critical",
+                "category": "technical",
+                "location": "LoRA配置行",
+                "description": f"LoRA秩r={r_val}无效，r≤1时LoRA退化为原始矩阵，失去低秩适应意义。",
+                "evidence": "industry_standards规则1.1：r≤1触发critical，推荐r∈[2,32]。",
+                "suggestion": "将r值调整到推荐范围r∈[2,32]，如r=16。",
+                "matched_text": m.group(0)[:80],
+            })
+        elif r_val >= 64:
+            violations.append({
+                "error_type": "lora_r_too_high",
+                "severity": "minor",
+                "category": "technical",
+                "location": "LoRA配置行",
+                "description": f"LoRA秩r={r_val}过大，容易导致过拟合。",
+                "evidence": "industry_standards规则1.1：r≥64触发过拟合警告，推荐r∈[2,32]。",
+                "suggestion": "将r值调整为8~32之间，如r=16。",
+                "matched_text": m.group(0)[:80],
+            })
+
+    # 规则1.3：PEFT target_modules 合法性（拼写错误 / 空列表 / 非法层名）
+    if re.search(r"target_moduels|targetmodules|target_module\b", content, re.IGNORECASE):
+        violations.append({
+            "error_type": "peft_typo",
+            "severity": "critical",
+            "category": "technical",
+            "location": "PEFT配置行",
+            "description": "PEFT配置字段疑似拼写错误（应为 target_modules），会导致配置未生效。",
+            "evidence": "industry_standards异常处理：target_modules拼写错误触发peft_typo(critical)。",
+            "suggestion": "将字段名更正为 target_modules。",
+        })
+    for m in re.finditer(r"target_modules\s*=\s*\[(.*?)\]", content, re.IGNORECASE | re.DOTALL):
+        inner = m.group(1).strip()
+        if not inner:
+            violations.append({
+                "error_type": "peft_empty_target",
+                "severity": "critical",
+                "category": "technical",
+                "location": "PEFT配置行",
+                "description": "PEFT target_modules 为空列表，LoRA 不会注入任何层，微调无效。",
+                "evidence": "industry_standards规则1.3：target_modules为空触发critical。",
+                "suggestion": '指定注入层，如 target_modules=["q_proj","k_proj","v_proj","o_proj"]。',
+                "matched_text": m.group(0)[:80],
+            })
+            continue
+        modules = [t.strip().strip("\"'").lower() for t in inner.split(",") if t.strip()]
+        invalid = [t for t in modules if t in _PEFT_INVALID_MODULES]
+        if invalid:
+            violations.append({
+                "error_type": "peft_invalid_target",
+                "severity": "major",
+                "category": "technical",
+                "location": "PEFT配置行",
+                "description": f"PEFT target_modules 含无效层名 {invalid}，这些层不是可注入的线性投影层。",
+                "evidence": "industry_standards规则1.3：target_modules含不存在的层触发major。",
+                "suggestion": '仅注入线性投影层，如 ["q_proj","k_proj","v_proj","o_proj"]。',
+                "matched_text": m.group(0)[:80],
+            })
+    return violations
+
+
+def _check_qlora_quantize(content: str) -> List[Dict[str, Any]]:
+    """规则1.2 QLoRA 量化精度安全：load_in_4bit 与 compute_dtype=float32 不匹配。"""
+    violations: List[Dict[str, Any]] = []
+    normalized = content.lower()
+    has_4bit = bool(re.search(r"load_in_4bit\s*=\s*true", normalized))
+    # compute_dtype 命中 float32（含 torch.float32），排除已使用 bfloat16/float16 的情况
+    uses_float32 = bool(re.search(r"compute_dtype\s*=\s*(?:torch\.)?float32", normalized))
+    if has_4bit and uses_float32:
+        violations.append({
+            "error_type": "quantize_mismatch",
+            "severity": "major",
+            "category": "technical",
+            "location": "BitsAndBytesConfig行",
+            "description": "QLoRA使用load_in_4bit量化，但compute_dtype设为float32，存在数值溢出与显存浪费风险。",
+            "evidence": "industry_standards规则1.2：4位量化推荐搭配bfloat16或float16计算精度。",
+            "suggestion": "将 bnb_4bit_compute_dtype 改为 torch.bfloat16 或 torch.float16。",
+        })
+    return violations
+
+
+def _check_vllm_rules(content: str) -> List[Dict[str, Any]]:
+    """规则2.1 vLLM 显存分配安全（四档）+ 规则2.2 端口安全。"""
+    violations: List[Dict[str, Any]] = []
+
+    # 规则2.1：gpu_memory_utilization / --gpu-memory-utilization
+    for m in re.finditer(
+        r"(?:gpu[_\-]memory[_\-]utilization\s*=\s*|--gpu-memory-utilization\s+)([0-9.]+)",
+        content, re.IGNORECASE,
+    ):
+        try:
+            util = float(m.group(1))
+        except ValueError:
+            continue
+        if util > 0.95:
+            violations.append({
+                "error_type": "vllm_vram_overallocation",
+                "severity": "critical",
+                "category": "deployment",
+                "location": "LLM初始化行",
+                "description": f"vLLM显存分配率{util}过高，可能导致OOM崩溃。",
+                "evidence": "industry_standards规则2.1：gpu_memory_utilization>0.95触发critical。",
+                "suggestion": "将gpu_memory_utilization调整为0.85~0.90之间。",
+                "matched_text": m.group(0)[:80],
+            })
+        elif util > 0.90:
+            violations.append({
+                "error_type": "vllm_vram_high",
+                "severity": "major",
+                "category": "deployment",
+                "location": "LLM初始化行",
+                "description": f"vLLM显存分配率{util}偏高，存在OOM风险。",
+                "evidence": "industry_standards规则2.1：gpu_memory_utilization>0.90触发major。",
+                "suggestion": "将gpu_memory_utilization调整为≤0.90。",
+                "matched_text": m.group(0)[:80],
+            })
+        elif util < 0.50:
+            violations.append({
+                "error_type": "vllm_vram_low",
+                "severity": "minor",
+                "category": "deployment",
+                "location": "LLM初始化行",
+                "description": f"vLLM显存分配率{util}过低，显存利用效率未达最优。",
+                "evidence": "industry_standards规则2.1：gpu_memory_utilization<0.50触发minor。",
+                "suggestion": "在不引发OOM的前提下适当提高至0.80~0.90。",
+                "matched_text": m.group(0)[:80],
+            })
+
+    # 规则2.2：端口安全（仅在 vLLM/服务部署上下文中检测，避免误伤普通示例）
+    if re.search(r"vllm|llm\s*\(|serve|--port", content, re.IGNORECASE):
+        for m in re.finditer(r"(?:port\s*=\s*|--port\s+)(\d+)", content, re.IGNORECASE):
+            try:
+                port = int(m.group(1))
+            except ValueError:
+                continue
+            if port < 1024:
+                violations.append({
+                    "error_type": "vllm_port_privileged",
+                    "severity": "major",
+                    "category": "deployment",
+                    "location": "端口配置行",
+                    "description": f"使用特权端口{port}（<1024），需要root权限，存在安全与部署风险。",
+                    "evidence": "industry_standards规则2.2：端口<1024需要root权限，触发major。",
+                    "suggestion": "改用10000+高位端口，如18080。",
+                    "matched_text": m.group(0)[:80],
+                })
+            elif port in _VLLM_COMMON_PORTS:
+                violations.append({
+                    "error_type": "vllm_port_conflict",
+                    "severity": "major",
+                    "category": "deployment",
+                    "location": "端口配置行",
+                    "description": f"使用端口{port}为常见端口，在生产环境中存在冲突风险。",
+                    "evidence": "industry_standards规则2.2：建议使用10000+高位端口避免冲突。",
+                    "suggestion": "将port改为18080或其他高位端口。",
+                    "matched_text": m.group(0)[:80],
+                })
+    return violations
+
+
+def _check_data_privacy(content: str) -> List[Dict[str, Any]]:
+    """规则3.1 训练数据脱敏：加载含个人信息的数据集且未标注脱敏。"""
+    violations: List[Dict[str, Any]] = []
+    loads_dataset = bool(re.search(r"load_dataset\s*\(|read_csv\s*\(", content, re.IGNORECASE))
+    if not loads_dataset:
+        return violations
+    has_pii = bool(re.search(r"user_id|phone|email|personal|身份证|手机号|敏感", content, re.IGNORECASE))
+    has_desensitize = bool(re.search(r"anonymize|脱敏|desensitiz|mask|hash", content, re.IGNORECASE))
+    if has_pii and not has_desensitize:
+        violations.append({
+            "error_type": "data_desensitization_missing",
+            "severity": "major",
+            "category": "privacy",
+            "location": "数据加载/预处理行",
+            "description": "加载含个人信息字段的数据集，但预处理步骤未见脱敏操作。",
+            "evidence": "industry_standards规则3.1：涉及用户个人信息的数据必须脱敏。",
+            "suggestion": "在预处理中加入 anonymize/mask/hash 等脱敏步骤后再用于训练。",
+        })
+    return violations
+
+
+def _check_industry_standards(content: str) -> List[Dict[str, Any]]:
+    """industry_standards.skill.md 领域红线总入口（规则1/2/3）。
+
+    异常处理（skill 第5节）：内容无 LoRA/QLoRA/vLLM/PEFT 相关代码时跳过，返回空列表。
+    每条子检查独立 try-except，单条规则异常不影响其余规则。
+    """
+    if not content or not _has_domain_context(content):
+        return []
+    violations: List[Dict[str, Any]] = []
+    for checker in (_check_lora_rules, _check_qlora_quantize, _check_vllm_rules, _check_data_privacy):
+        try:
+            violations.extend(checker(content))
+        except Exception:
+            logger.exception("industry_standards 子检查 %s 执行失败", getattr(checker, "__name__", "?"))
+    return violations
 
 
 # ------------------------------------------------------------------

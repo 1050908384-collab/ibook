@@ -1,21 +1,21 @@
 # SKILL名称：content_generation
 
 ## 1. 能力描述
-- 功能：为Agent3（HybridContentAgent）提供**教程生成与改稿的方法论**——定义"一篇合格阶段教程长什么样"：五段式结构规范、内容要素清单、改稿优先级。Agent3调用本SKILL生成结构化Markdown教程，并依据Agent4技术审核与Agent5教学审核的意见迭代修订。在 `HybridContentAgent.run` 中被加载为 `content_skill_context`（与 code_style 一同注入），作为LLM生成 tutorial 的 prompt 规范；在 `revise_learning_package` 中作为改稿依据
+- 功能：为Agent3（HybridContentAgent）提供**教程生成与改稿的方法论**——定义"一篇合格阶段教程长什么样"：五段式结构规范、内容要素清单、改稿优先级。Agent3调用本SKILL生成结构化Markdown教程，并依据Agent4统一技术与教学质量审核的意见迭代修订。在 `HybridContentAgent.run` 中被加载为 `content_skill_context`（与 code_style 一同注入），作为LLM生成 tutorial 的 prompt 规范；在 `revise_learning_package` 中作为改稿依据
 - 适用场景（3个）：
   1. **初始化教程**：阶段开始时由 `HybridContentAgent.run` 触发，根据 `stage.block_name` 与 `profile.goal` 生成结构化Markdown教程，交 `DeterministicContentAgent` 包装为 LearningPackage
-  2. **审核后改稿**：Agent4/Agent5审核未通过时由 `revise_learning_package` 触发，接收 `technical_errors` 与 `quality_errors` 逐条修订
+2. **审核后改稿**：Agent4统一审核未通过时由 `revise_learning_package` 触发，接收兼容性的 `technical_errors` 与 `quality_errors` 字段逐条修订
   3. **版本迭代**：每次修订 `learning_package.version` 自增，记录迭代轮次直至 `MAX_REVIEW_ITERATIONS`
 - 前置依赖：
   - 当前阶段 StageInfo（`block_name`、`gap_skill`、`estimated_hours`）
   - 用户画像 UserProfile（`goal`、`learning_style`、`skill_tags` 用于难度适配与已知回顾）
   - code_style 技能（代码片段风格约束，作为 `content_skill_context` 一同注入）
-  - 审核反馈（修订时：`technical_errors` 来自 Agent4，`quality_errors` 来自 Agent5）
+- 审核反馈（修订时：`technical_errors` 与 `quality_errors` 均来自 Agent4 的统一审核结果）
 
 ## 2. 核心方法论
 - **步骤1：定位教程主题与难度面向**——读取 `stage.block_name` 作为教程主题，结合 `profile.goal` 确定面向（如"掌握LoRA微调"），参照 `profile.skill_tags` 判断已知基线，避免重复已掌握内容或跨度太大
 - **步骤2：一次性生成四段式结构教程**——调用LLM按"已知回顾→核心概念拆解→实操演示→常见坑点"四段生成Markdown；核心概念配代码示例（遵循 code_style）；自测题由用户主动点击自测时从 `test_questions` 表抽取，教程中不包含
-- **步骤3：交付审核**——tutorial 交 `DeterministicContentAgent` 包装为 `LearningPackage(tutorial, questions, code_examples, version=1)`，由 Orchestrator 送 Agent4/Agent5 双重审核
+- **步骤3：交付审核**——tutorial 交 `DeterministicContentAgent` 包装为 `LearningPackage(tutorial, questions, code_examples, version=1)`，由 Orchestrator 送 Agent4 统一审核
 - **步骤4：格式化审核反馈**——将 `technical_errors`（ReviewError数组）与 `quality_errors`（QualityIssue数组）合并为反馈清单，按 severity 降序排列（critical > major > minor）
 - **步骤5：逐条修订**——调用LLM按反馈清单逐条修订教程，保留正确内容，仅修改 errors 指向的 location，返回完整新 tutorial，`version` 自增
 - **步骤6：迭代终止判定**——审核通过或迭代轮次达 `MAX_REVIEW_ITERATIONS`（默认3）时终止；未通过则保留最后版本并标注未通过状态
@@ -94,7 +94,7 @@
 | 异常场景 | 处置方式 |
 |:---|:---|
 | LLM返回空或Error前缀 | 回退 `DeterministicContentAgent` 生成基础三段式教程（概述/概念/示例），version=1 |
-| LLM生成的tutorial无五段结构 | 保留内容，标记结构问题交Agent5审核，由 quality_errors 反馈后改稿补全 |
+| LLM生成的tutorial无五段结构 | 保留内容，标记结构问题交 Agent4 的教学质量检查，由 `quality_errors` 反馈后改稿补全 |
 | 修订后LLM响应无效 | 保留原tutorial，追加"审核修订"清单到末尾，version自增 |
 | 审核轮次达 `MAX_REVIEW_ITERATIONS`(3) | 保留最后版本，标注"未通过审核"，终止迭代 |
 | `technical_errors` 与 `quality_errors` 均为空 | 保留原tutorial，仅version自增，判通过 |
@@ -125,7 +125,7 @@
 **处理过程**：
 1. 步骤1：主题=LoRA，面向=掌握LoRA微调，已知基线=[Transformer,注意力机制]
 2. 步骤2：LLM生成四段式——已知回顾链接Transformer注意力机制；核心概念讲ΔW=(α/r)BA；实操给LoRALayer代码；坑点讲r过大过拟合；questions为空（自测题由用户主动点击时从 `test_questions` 表抽取）
-3. 步骤3：包装为 LearningPackage(version=1)，送 Agent4/Agent5 审核
+3. 步骤3：包装为 LearningPackage(version=1)，送 Agent4 统一审核
 
 **输出**：tutorial（四段式）+ questions(空) + code_examples(LoRALayer)，version=1
 
@@ -152,14 +152,14 @@
 
 **说明**：场景2体现规则3改稿优先级——critical的LoRA机制错误必须先修复，正确内容保留不改。自测题由用户主动点击自测时从 `test_questions` 表抽取，不纳入教程生成与改稿阶段。
 
-## 8. 代码纠错场景
+## 7. 代码纠错场景
 
-### 8.1 触发条件
+### 7.1 触发条件
 当用户输入包含以下关键词时，触发代码纠错流程：
 - "纠错"、"修改代码"、"报错"、"bug"、"错误"、"修复"
 - 用户提供了代码片段
 
-### 8.2 处理流程
+### 7.2 处理流程
 1. **识别意图**：检测用户输入是否为代码纠错请求
 2. **提取代码**：从用户输入中提取代码片段
 3. **执行验证**：调用 `code_executor_tool` 执行代码，获取真实执行反馈或报错信息
@@ -167,19 +167,19 @@
 5. **生成回答**：按照"错误分析→修改步骤→修改后完整代码→修改说明"四个板块输出
 6. **验证修改**：对修改后的代码再次执行验证，确保修复成功
 
-### 8.3 注意事项
+### 7.3 注意事项
 - **必须执行验证**：严禁凭空猜测错误原因，必须先通过 `code_executor_tool` 获取真实反馈
 - **结合当前阶段**：错误分析应联系当前学习阶段的知识点
 - **遵循教学法**：严格按照 `code_correction_pedagogy.skill.md` 的解释风格和输出结构
 - **仅修改必要部分**：保留用户代码中的正确部分，只修改有问题的地方
 
-### 8.4 与 Agent3 的衔接
+### 7.4 与 Agent3 的衔接
 Agent3 在 `generate_answer` 方法中检测到代码纠错意图时：
 1. 调用 `code_executor_tool.execute_code()` 获取执行结果
 2. 加载 `code_correction_pedagogy` 技能作为 prompt 规范
 3. 生成结构化纠错回答
 
-### 8.5 输入输出示例
+### 7.5 输入输出示例
 
 **输入**：
 ```json
@@ -197,55 +197,41 @@ Agent3 在 `generate_answer` 方法中检测到代码纠错意图时：
 }
 ```
 
-## 10. FAQ混合检索规则
+## 8. FAQ 检索规则
 
-### 10.1 触发条件
-仅在用户主动提问时触发FAQ检索，其他场景（生成学习包、修改学习包、修改回答）不触发。
+> **注意**：FAQ 检索的完整规范定义在 `question_answering.skill.md` 规则1.5，此处仅做摘要引用。
 
-### 10.2 混合检索流程
+### 8.1 触发条件
+仅在用户主动提问时触发 FAQ 检索，其他场景（生成学习包、修改学习包、修改回答）不触发。
+
+### 8.2 检索流程（对齐 `faq_search_tool.py` 实际实现）
 ```
 用户问题
     ↓
-步骤1：LLM提取关键词（3-5个）
+步骤1：直接使用完整问题做 Chroma 向量检索（faq_collection 集合）
     ↓
-步骤2：Chroma向量检索（faq_collection集合）
-    ↓ 命中 → 返回FAQ答案
-    ↓ 未命中
-步骤3：SQL LIKE关键词匹配兜底
-    ↓ 命中 → 返回FAQ答案
-    ↓ 未命中
-步骤4：返回空列表（由上层调用LLM生成答案）
+步骤2：按最高相似度阈值（默认 0.78）判定是否采用
+    ↓ 命中（similarity >= 0.78）→ 返回 FAQ 标准答案
+    ↓ 未命中（similarity < 0.78）→ 返回空列表，由上层走知识库检索 + LLM 生成
 ```
 
-### 10.3 检索优先级
-| 优先级 | 检索方式 | 适用场景 |
-|:---|:---|:---|
-| 1 | Chroma向量检索 | 语义相似度高的查询 |
-| 2 | SQL LIKE关键词匹配 | 向量检索未命中时兜底 |
+### 8.3 关键约束
+- **直接向量检索**：使用完整问题查询，不先调用 LLM 提取关键词（避免额外 token 消耗）
+- **禁止 SQL LIKE 兜底**：向量检索未命中后不再追加 SQL LIKE FAQ 搜索（已废弃）
+- **阈值判定**：`DEFAULT_MIN_SIMILARITY = 0.78`，低于阈值视为未命中
+- **返回空列表**：未命中时返回空列表，由上层继续执行知识库检索 + LLM 生成流程
 
-### 10.4 关键词提取规则
-- 使用轻量prompt，仅提取3-5个关键词
-- 控制token消耗：max_tokens=50，temperature=0.1
-- 提取失败时，使用原始问题作为关键词
-
-### 10.5 命中判定与返回
-- 向量检索：similarity >= 0.6 视为命中
-- SQL LIKE：匹配到任意关键词视为命中
-- 命中时直接返回FAQ中的answer字段
-- 未命中时返回空列表，由上层继续执行向量检索+LLM生成流程
-
-### 10.6 与Agent3的衔接
+### 8.4 与 Agent3 的衔接
 Agent3 在 `answer_question` 方法中：
-1. 先检测是否为代码纠错场景
-2. 若非代码纠错，调用 `faq_search_tool.search()` 执行混合检索
-3. 命中FAQ则直接返回答案
-4. 未命中则继续执行原有的向量检索+LLM生成流程
+1. 先检测是否为代码纠错场景（见第7章）
+2. 若非代码纠错，调用 `faq_search_tool.search()` 执行向量检索
+3. 命中 FAQ（similarity >= 0.78）则直接返回标准答案
+4. 未命中则继续执行知识库检索 + LLM 生成流程
 
-### 10.7 注意事项
-- **Token消耗控制**：LLM关键词提取仅在用户提问时触发，且使用轻量prompt
-- **性能保障**：向量检索失败时自动降级为SQL LIKE，不影响系统可用性
-- **数据一致性**：FAQ数据变更后需重新运行 `scripts/init_faq_vectors.py` 更新向量库
+### 8.5 数据一致性
+- FAQ 数据变更后需重新运行 `scripts/init_faq_vectors.py` 更新 Chroma 向量库
+- 向量库不可用时 `faq_search_tool` 返回空列表，不阻断答疑流程
 
 ## 9. 版本信息
-- 版本：v3.3，更新日期：2026-07-25
-- 变更记录：能力描述明确3个适用场景与 `content_skill_context` 加载机制；核心方法论重构为6步（定位主题→生成四段式→送审→格式化反馈→逐条修订→迭代终止）；规则1新增四段式结构表（含缺失处置/severity）；规则2新增内容要素规范表；规则3新增改稿优先级与改稿规则；输入输出规范补完整 LearningPackage JSON示例与字段说明；异常处理扩展为6场景表格；附录A补4个教程生成理论（Sweller/Bloom/Piaget/Vygotsky）；附录B新增2个完整场景（首次生成+审核改稿，含输入JSON→处理过程→输出）；v3.1修订：自测题从教程生成阶段移除，改为用户主动点击自测时从 `test_questions` 表抽取；教程结构从五段式调整为四段式（已知回顾→核心概念拆解→实操演示→常见坑点）；v3.2修订：新增第8章代码纠错场景，定义代码纠错触发条件、处理流程、与Agent3的衔接方式及输入输出示例；v3.3修订：新增第10章FAQ混合检索规则，定义触发条件、混合检索流程、检索优先级、关键词提取规则、命中判定与返回、与Agent3的衔接方式及注意事项
+- 版本：v3.4，更新日期：2026-08-02
+- 变更记录：v3.0~v3.3基础同上；v3.4修订：第8章代码纠错重编号为第7章（修复章节编号错乱）；原第10章FAQ检索规则重写为第8章——删除已废弃的LLM关键词提取步骤和SQL LIKE兜底，改为直接Chroma向量检索+0.78阈值判定，对齐 `faq_search_tool.py` 实际实现与 `question_answering.skill.md` 规则1.5；章节顺序修正为 6附录→7代码纠错→8FAQ检索→9版本信息

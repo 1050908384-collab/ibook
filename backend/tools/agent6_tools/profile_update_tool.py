@@ -16,7 +16,6 @@ profile_update_tool — Agent6 画像更新工具
 """
 
 import logging
-import math
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -508,33 +507,65 @@ class ProfileUpdateTool:
     def __init__(self):
         pass
 
-    async def update_gaps(self, gaps: List[Dict[str, Any]], accuracy: float) -> List[Dict[str, Any]]:
+    async def update_gaps(
+        self,
+        gaps: List[Dict[str, Any]],
+        accuracy: float,
+        question_records: Optional[List[Dict[str, Any]]] = None,
+        emotion_score: Optional[float] = None,
+        expected_avg_time: float = 100.0,
+        skill_tags: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
         """
         更新知识点掌握状态。
-        逐知识点基于自身掌握进度（progress + correct/total）计算，不使用全局accuracy统一覆盖。
+
+        当提供原始答题记录 question_records 时，逐知识点走**完整 BKT 引擎**
+        （_compute_skill_bkt 序列更新 + Wt 时长修正 + We 情绪修正 + P_corrected），
+        与 profile_update() 使用同一套计算，使 Wt/We 修正因子真正生效
+        （user_model_update.skill.md 规则2/3）。
+
+        当无原始记录时，退回到基于聚合统计（total_answered/correct_count/progress）
+        的简化近似公式，仅作兜底，不再是唯一路径。
+
         判定规则（与 profile_update() 的 _map_status 阈值统一对齐）：
         - corrected >= MASTERED_THRESHOLD(0.8) → 已掌握
         - LEARNING_LOW(0.4) <= corrected < 0.8 → 学习中
         - corrected < 0.4 → 未掌握
         """
+        # 有原始答题记录 → 走完整 BKT 引擎，按 skill 分组复用函数式核心
+        records = question_records or []
+        skill_groups = _group_by_skill(records) if records else {}
+        we_global = _compute_we(emotion_score)
+        # 学习者已有经验标签（用于 BKT 初始概率 P(L₀)）；缺省为空=无经验，
+        # 严禁用 [skill] 自引用（会导致 _get_p_l0 恒命中、初始掌握被高估）
+        learner_tags = skill_tags or []
+
         updated = []
         for gap in gaps:
             gap_copy = dict(gap)
-            # 优先读取该知识点自身的答题统计
-            total_answered = int(gap_copy.get("total_answered") or 0)
-            correct_count = int(gap_copy.get("correct_count") or 0)
-            current_progress = float(gap_copy.get("progress") or 0.0)
+            skill = gap_copy.get("skill") or gap_copy.get("topic")
+            skill_records = skill_groups.get(skill, []) if skill else []
 
-            if total_answered > 0:
-                skill_acc = correct_count / total_answered
-                # 带学习跃迁的近似更新（简化版BKT）
-                if skill_acc >= 0.67:
-                    corrected = min(1.0, max(current_progress, skill_acc) + 0.05 * total_answered / max(1, total_answered + 3))
-                else:
-                    corrected = max(0.0, (current_progress + skill_acc) / 2)
+            if skill_records:
+                # 完整 BKT：序列贝叶斯更新 + Wt（时长）+ We（情绪）修正
+                p_bkt, wt, _we_local, _sc = _compute_skill_bkt(
+                    skill, skill_records, learner_tags, expected_avg_time
+                )
+                corrected = _compute_corrected_p(p_bkt, wt, we_global)
             else:
-                # 无答题记录：使用全局accuracy做弱提示（加权，不强行覆盖）
-                corrected = (current_progress * 0.6 + accuracy * 0.4) if current_progress < accuracy else current_progress
+                # 无该知识点的原始记录 → 退回聚合统计近似（兜底）
+                total_answered = int(gap_copy.get("total_answered") or 0)
+                correct_count = int(gap_copy.get("correct_count") or 0)
+                current_progress = float(gap_copy.get("progress") or 0.0)
+
+                if total_answered > 0:
+                    skill_acc = correct_count / total_answered
+                    if skill_acc >= 0.67:
+                        corrected = min(1.0, max(current_progress, skill_acc) + 0.05 * total_answered / max(1, total_answered + 3))
+                    else:
+                        corrected = max(0.0, (current_progress + skill_acc) / 2)
+                else:
+                    corrected = (current_progress * 0.6 + accuracy * 0.4) if current_progress < accuracy else current_progress
 
             # 逐知识点状态映射（复用 _map_status 的统一阈值常量，消除两套阈值分歧）
             status, progress = _map_status(corrected)
@@ -617,7 +648,9 @@ class ProfileUpdateTool:
             question_count = sum(1 for r in records if r.get("is_question", False))
             
             if wrong_count >= CONFUSION_WRONG_THRESHOLD or question_count >= CONFUSION_QUESTION_THRESHOLD:
-                confusion.append(skill)
+                # 复用函数式核心的困惑细节提取，输出 "skill（concept_detail）" 统一格式
+                # （与 _detect_confusion 一致，消除两套输出格式分歧；无细节时退化为纯 skill 名）
+                confusion.append(_extract_confusion_detail(skill, records))
         
         return confusion
 

@@ -22,7 +22,7 @@ class StageInfo(BaseModel):
 
 class Source(BaseModel):
     source_id: str
-    source_type: Literal["knowledge_doc", "faq", "best_practice", "manual", "external_note", "code_example"]
+    source_type: Literal["knowledge_doc", "faq", "best_practice", "manual", "external_note", "code_example", "video"]
     title: Optional[str] = None
     locator: Optional[str] = None
     content_ref: Optional[str] = None
@@ -40,6 +40,7 @@ class Claim(BaseModel):
     is_key_technical: bool = False
     confidence: float = 0.5
     status: Literal["active", "revised", "dropped"] = "active"
+    metadata_json: Optional[dict] = None
 
     @field_validator("confidence")
     @classmethod
@@ -68,3 +69,4 @@ class LearningPackage(BaseModel):
     review_trace_id: Optional[str] = None
     sources: List[Source] = Field(default_factory=list)
     claims: List[Claim] = Field(default_factory=list)
+    recommended_videos: List[dict] = Field(default_factory=list)

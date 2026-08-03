@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Agent3 ????????
-- ?????? test_questions ?? block_id / block_name ?? 1~3 ??
-- ??????fill_blank / single_choice / true_false??? short_answer / practical
+question_extract_tool — Agent3 自测题提取工具
+==============================================
+功能：从 test_questions 表按 block_id / block_name 提取 1~3 道题目。
+题型优先级：客观题（填空/选择/判断/简答）优先，主观题（简答/实操）其次。
 """
 
 import json
@@ -21,8 +22,8 @@ if not logger.handlers:
 MOCK_FILE = DATA_DIR / "test_data" / "mock_question_extract_tool.json"
 
 
-OBJECTIVE_TYPES = {"fill_blank", "single_choice", "true_false", "???", "???", "???"}
-SUBJECTIVE_TYPES = {"short_answer", "practical", "????", "???"}
+OBJECTIVE_TYPES = {"fill_blank", "single_choice", "true_false", "multi_choice", "match", "ordering"}
+SUBJECTIVE_TYPES = {"short_answer", "practical", "essay", "case_analysis"}
 
 
 def question_extract(input_data: dict, config: dict = None) -> dict:
@@ -78,8 +79,8 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
                     FROM test_questions
                     WHERE block_id = ?
                     ORDER BY CASE
-                        WHEN question_type IN ('fill_blank', 'single_choice', 'true_false', '???', '???', '???') THEN 0
-                        WHEN question_type IN ('short_answer', 'practical', '????', '???') THEN 1
+                        WHEN question_type IN ('fill_blank', 'single_choice', 'true_false', 'multi_choice', 'match', 'ordering') THEN 0
+                        WHEN question_type IN ('short_answer', 'practical', 'essay', 'case_analysis') THEN 1
                         ELSE 2
                     END, difficulty ASC, question_id ASC
                     LIMIT ?
@@ -93,8 +94,8 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
                     JOIN knowledge_blocks b ON q.block_id = b.block_id
                     WHERE b.block_name = ?
                     ORDER BY CASE
-                        WHEN q.question_type IN ('fill_blank', 'single_choice', 'true_false', '???', '???', '???') THEN 0
-                        WHEN q.question_type IN ('short_answer', 'practical', '????', '???') THEN 1
+                        WHEN q.question_type IN ('fill_blank', 'single_choice', 'true_false', 'multi_choice', 'match', 'ordering') THEN 0
+                        WHEN q.question_type IN ('short_answer', 'practical', 'essay', 'case_analysis') THEN 1
                         ELSE 2
                     END, q.difficulty ASC, q.question_id ASC
                     LIMIT ?
@@ -123,11 +124,11 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
                 "options": options,
                 "correct_answer": row[6],
                 "difficulty": row[7],
-                "explanation": row[8] or row[12] or "",
+                "explanation": row[8] or (row[12] if len(row) > 12 else "") or "",
                 "expected_output": row[9],
                 "grading_mode": row[10],
                 "source": row[11],
-                "hint": row[12],
+                "hint": row[12] if len(row) > 12 else "",
             })
         return questions, True
     except sqlite3.Error as exc:

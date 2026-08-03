@@ -169,6 +169,58 @@ class SQLiteClient:
                 )
             """))
             conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS learning_resources (
+                    resource_id VARCHAR(50) PRIMARY KEY,
+                    resource_type VARCHAR(20) CHECK (resource_type IN ('video', 'article')) NOT NULL,
+                    title VARCHAR(300) NOT NULL,
+                    raw_url TEXT NOT NULL,
+                    canonical_url TEXT NOT NULL UNIQUE,
+                    platform VARCHAR(50),
+                    external_id VARCHAR(100),
+                    external_part VARCHAR(30),
+                    content_summary TEXT NOT NULL,
+                    recommendation_level VARCHAR(20) CHECK (recommendation_level IN ('primary', 'supplementary')) NOT NULL DEFAULT 'supplementary',
+                    review_status VARCHAR(20) CHECK (review_status IN ('pending', 'confirmed', 'rejected', 'unavailable')) NOT NULL DEFAULT 'pending',
+                    metadata_json TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS subtopic_resources (
+                    resource_id VARCHAR(50) NOT NULL,
+                    block_id VARCHAR(50) NOT NULL,
+                    subtopic_id VARCHAR(50) NOT NULL,
+                    role VARCHAR(20) CHECK (role IN ('primary', 'supplementary')) NOT NULL DEFAULT 'supplementary',
+                    sequence_index INT NOT NULL DEFAULT 1,
+                    relevance_score FLOAT CHECK (relevance_score >= 0 AND relevance_score <= 1) NOT NULL DEFAULT 0.5,
+                    mapping_status VARCHAR(20) CHECK (mapping_status IN ('pending', 'confirmed', 'rejected')) NOT NULL DEFAULT 'pending',
+                    mapping_notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (resource_id, subtopic_id),
+                    FOREIGN KEY (resource_id) REFERENCES learning_resources(resource_id),
+                    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id),
+                    FOREIGN KEY (subtopic_id) REFERENCES knowledge_subtopics(subtopic_id)
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS block_resources (
+                    resource_id VARCHAR(50) NOT NULL,
+                    block_id VARCHAR(50) NOT NULL,
+                    role VARCHAR(20) CHECK (role IN ('primary', 'supplementary')) NOT NULL DEFAULT 'supplementary',
+                    sequence_index INT NOT NULL DEFAULT 1,
+                    relevance_score FLOAT CHECK (relevance_score >= 0 AND relevance_score <= 1) NOT NULL DEFAULT 0.5,
+                    mapping_status VARCHAR(20) CHECK (mapping_status IN ('pending', 'confirmed', 'rejected')) NOT NULL DEFAULT 'pending',
+                    mapping_notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (resource_id, block_id),
+                    FOREIGN KEY (resource_id) REFERENCES learning_resources(resource_id),
+                    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
+                )
+            """))
+            conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS subtopic_status (
                     session_id VARCHAR(50) NOT NULL,
                     subtopic_id VARCHAR(50) NOT NULL,
@@ -220,7 +272,11 @@ class SQLiteClient:
                     FOREIGN KEY (session_id) REFERENCES sessions(session_id)
                 )
             """))
+            self._create_assessment_tables(conn)
             self._create_review_protocol_tables(conn)
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_learning_resources_type_status ON learning_resources(resource_type, review_status)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_subtopic_resources_lookup ON subtopic_resources(block_id, subtopic_id, role, sequence_index)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_block_resources_lookup ON block_resources(block_id, role, sequence_index)"))
             conn.commit()
 
     def _migrate_tables(self):
@@ -233,8 +289,39 @@ class SQLiteClient:
             self._ensure_column(conn, "stage_progress", "subtopic_id", "VARCHAR(50)")
             self._ensure_column(conn, "knowledge_docs", "subtopic_id", "VARCHAR(50)")
             self._migrate_test_questions_table(conn)
+            self._create_assessment_tables(conn)
             self._migrate_review_protocol_tables(conn)
+            self._migrate_learning_package_source_types(conn)
             conn.commit()
+
+    def _migrate_learning_package_source_types(self, conn) -> None:
+        """安全扩展 learning_package_sources 的 CHECK 枚举以支持 video。"""
+        table_sql = conn.execute(text("SELECT sql FROM sqlite_master WHERE type='table' AND name='learning_package_sources'")).scalar() or ""
+        if "'video'" in table_sql:
+            return
+
+        tables = [
+            "learning_package_sources", "learning_package_claims",
+            "review_debate_issues", "review_debate_responses",
+        ]
+        snapshots = {}
+        for table in tables:
+            columns = [row[1] for row in conn.execute(text(f"PRAGMA table_info({table})")).fetchall()]
+            if columns:
+                snapshots[table] = (columns, [dict(row._mapping) for row in conn.execute(text(f"SELECT * FROM {table}")).fetchall()])
+
+        conn.execute(text("PRAGMA foreign_keys = OFF"))
+        for table in ("review_debate_responses", "review_debate_issues", "learning_package_claims", "learning_package_sources"):
+            conn.execute(text(f"DROP TABLE IF EXISTS {table}"))
+        self._create_review_protocol_tables(conn)
+        for table in tables:
+            columns, rows = snapshots.get(table, ([], []))
+            if not rows:
+                continue
+            column_sql = ", ".join(columns)
+            value_sql = ", ".join(f":{column}" for column in columns)
+            conn.execute(text(f"INSERT INTO {table} ({column_sql}) VALUES ({value_sql})"), rows)
+        conn.execute(text("PRAGMA foreign_keys = ON"))
 
 
     @staticmethod
@@ -304,6 +391,65 @@ class SQLiteClient:
         """))
         conn.execute(text("DROP TABLE test_questions_legacy"))
 
+    def _create_assessment_tables(self, conn) -> None:
+        """测试服务（AssessmentService）三张表（Agent46_API接口任务说明.md 第 2 节）。
+
+        - assessment_attempts：一次测试的生命周期（每次独立 attempt_id、状态、正确率）。
+        - assessment_attempt_questions：测试开始时冻结的题目快照（正确答案/解析随快照保存，
+          用于提交后统一判题与公布，不再依赖 test_questions 的后续变更）。
+        - assessment_answers：每题只保存一条最终答案（PRIMARY KEY 保证覆盖而非追加）。
+        """
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS assessment_attempts (
+                attempt_id VARCHAR(50) PRIMARY KEY,
+                session_id VARCHAR(50) NOT NULL,
+                stage_id VARCHAR(50),
+                stage_num INT,
+                block_id VARCHAR(50),
+                subtopic_id VARCHAR(50),
+                status VARCHAR(20) CHECK (status IN ('in_progress', 'submitted')) NOT NULL DEFAULT 'in_progress',
+                total_questions INT NOT NULL DEFAULT 0,
+                answered_count INT NOT NULL DEFAULT 0,
+                correct_count INT,
+                accuracy FLOAT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                submitted_at TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS assessment_attempt_questions (
+                attempt_id VARCHAR(50) NOT NULL,
+                question_id VARCHAR(50) NOT NULL,
+                sequence_index INT NOT NULL DEFAULT 0,
+                block_id VARCHAR(50),
+                subtopic_id VARCHAR(50),
+                difficulty VARCHAR(20),
+                question_type VARCHAR(50),
+                question_text TEXT NOT NULL,
+                options TEXT,
+                correct_answer TEXT NOT NULL,
+                explanation TEXT,
+                hint TEXT,
+                is_required BOOLEAN NOT NULL DEFAULT 1,
+                PRIMARY KEY (attempt_id, question_id),
+                FOREIGN KEY (attempt_id) REFERENCES assessment_attempts(attempt_id)
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS assessment_answers (
+                attempt_id VARCHAR(50) NOT NULL,
+                question_id VARCHAR(50) NOT NULL,
+                user_answer TEXT,
+                is_correct BOOLEAN,
+                time_spent INT DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (attempt_id, question_id),
+                FOREIGN KEY (attempt_id) REFERENCES assessment_attempts(attempt_id)
+            )
+        """))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_assessment_attempts_session ON assessment_attempts(session_id, status)"))
+
     def _create_review_protocol_tables(self, conn) -> None:
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS review_traces (
@@ -329,7 +475,7 @@ class SQLiteClient:
             CREATE TABLE IF NOT EXISTS learning_package_sources (
                 trace_id VARCHAR(50) NOT NULL,
                 source_id VARCHAR(50) NOT NULL,
-                source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example')) NOT NULL,
+                source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
                 title VARCHAR(200),
                 locator TEXT,
                 content_ref TEXT,
@@ -493,7 +639,7 @@ class SQLiteClient:
                     CREATE TABLE learning_package_sources (
                         trace_id VARCHAR(50) NOT NULL,
                         source_id VARCHAR(50) NOT NULL,
-                        source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example')) NOT NULL,
+                        source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
                         title VARCHAR(200),
                         locator TEXT,
                         content_ref TEXT,
@@ -1082,6 +1228,363 @@ class SQLiteClient:
                 "time_spent": time_spent
             })
             session.commit()
+
+    # ========================================================================
+    # 测试服务（AssessmentService）落库接口（Agent46_API接口任务说明.md 第 2 节）
+    # 约束：独立 attempt_id / 开始冻结题目 / 单题只存一条最终答案 /
+    #      未答完必答题不能提交 / 提交后不能改 / 只从已提交完整 attempt 算正确率。
+    # 本层只做落库与查询，判题与生命周期约束由 AssessmentService 负责。
+    # ========================================================================
+
+    def create_assessment_attempt(
+        self,
+        session_id: str,
+        frozen_questions: list[dict],
+        stage_id: str | None = None,
+        stage_num: int | None = None,
+        block_id: str | None = None,
+        subtopic_id: str | None = None,
+    ) -> str:
+        """创建一次测试并冻结题目快照，返回独立 attempt_id。"""
+        attempt_id = f"att_{uuid.uuid4().hex[:16]}"
+        with self.Session() as session:
+            session.execute(text("""
+                INSERT INTO assessment_attempts (
+                    attempt_id, session_id, stage_id, stage_num, block_id, subtopic_id,
+                    status, total_questions, answered_count
+                ) VALUES (
+                    :attempt_id, :session_id, :stage_id, :stage_num, :block_id, :subtopic_id,
+                    'in_progress', :total_questions, 0
+                )
+            """), {
+                "attempt_id": attempt_id,
+                "session_id": session_id,
+                "stage_id": stage_id,
+                "stage_num": stage_num,
+                "block_id": block_id,
+                "subtopic_id": subtopic_id,
+                "total_questions": len(frozen_questions),
+            })
+            for index, question in enumerate(frozen_questions):
+                options = question.get("options")
+                session.execute(text("""
+                    INSERT INTO assessment_attempt_questions (
+                        attempt_id, question_id, sequence_index, block_id, subtopic_id,
+                        difficulty, question_type, question_text, options, correct_answer,
+                        explanation, hint, is_required
+                    ) VALUES (
+                        :attempt_id, :question_id, :sequence_index, :block_id, :subtopic_id,
+                        :difficulty, :question_type, :question_text, :options, :correct_answer,
+                        :explanation, :hint, :is_required
+                    )
+                """), {
+                    "attempt_id": attempt_id,
+                    "question_id": question.get("question_id") or f"q_{index}",
+                    "sequence_index": index,
+                    "block_id": question.get("block_id"),
+                    "subtopic_id": question.get("subtopic_id"),
+                    "difficulty": question.get("difficulty"),
+                    "question_type": question.get("question_type"),
+                    "question_text": question.get("question_text", ""),
+                    "options": json.dumps(options, ensure_ascii=False) if options is not None else None,
+                    "correct_answer": question.get("correct_answer", ""),
+                    "explanation": question.get("explanation"),
+                    "hint": question.get("hint"),
+                    "is_required": bool(question.get("is_required", True)),
+                })
+            session.commit()
+        return attempt_id
+
+    def get_assessment_attempt(self, attempt_id: str) -> dict | None:
+        """读取 attempt 元信息（不含题目/答案）。"""
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT attempt_id, session_id, stage_id, stage_num, block_id, subtopic_id,
+                       status, total_questions, answered_count, correct_count, accuracy,
+                       created_at, submitted_at
+                FROM assessment_attempts
+                WHERE attempt_id = :attempt_id
+            """), {"attempt_id": attempt_id}).mappings().first()
+        return dict(row) if row else None
+
+    def get_assessment_attempt_questions(self, attempt_id: str) -> list[dict]:
+        """读取冻结题目快照（含正确答案/解析，供提交后公布使用）。"""
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT question_id, sequence_index, block_id, subtopic_id, difficulty,
+                       question_type, question_text, options, correct_answer, explanation,
+                       hint, is_required
+                FROM assessment_attempt_questions
+                WHERE attempt_id = :attempt_id
+                ORDER BY sequence_index ASC
+            """), {"attempt_id": attempt_id}).mappings().all()
+        results = []
+        for row in rows:
+            item = dict(row)
+            item["options"] = json.loads(item["options"]) if item["options"] else None
+            item["is_required"] = bool(item["is_required"])
+            results.append(item)
+        return results
+
+    def get_assessment_answers(self, attempt_id: str) -> dict[str, dict]:
+        """读取当前已保存答案，按 question_id 索引（每题一条）。"""
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT question_id, user_answer, is_correct, time_spent, updated_at
+                FROM assessment_answers
+                WHERE attempt_id = :attempt_id
+            """), {"attempt_id": attempt_id}).mappings().all()
+        return {row["question_id"]: dict(row) for row in rows}
+
+    def upsert_assessment_answer(
+        self,
+        attempt_id: str,
+        question_id: str,
+        user_answer: str,
+        is_correct: bool | None = None,
+        time_spent: int = 0,
+    ) -> None:
+        """保存/覆盖单题答案（每题只保留一条最终答案），并刷新 answered_count。"""
+        with self.Session() as session:
+            session.execute(text("""
+                INSERT INTO assessment_answers (attempt_id, question_id, user_answer, is_correct, time_spent, updated_at)
+                VALUES (:attempt_id, :question_id, :user_answer, :is_correct, :time_spent, CURRENT_TIMESTAMP)
+                ON CONFLICT(attempt_id, question_id) DO UPDATE SET
+                    user_answer = excluded.user_answer,
+                    is_correct = excluded.is_correct,
+                    time_spent = excluded.time_spent,
+                    updated_at = CURRENT_TIMESTAMP
+            """), {
+                "attempt_id": attempt_id,
+                "question_id": question_id,
+                "user_answer": user_answer,
+                "is_correct": is_correct,
+                "time_spent": time_spent,
+            })
+            session.execute(text("""
+                UPDATE assessment_attempts
+                SET answered_count = (
+                    SELECT COUNT(*) FROM assessment_answers
+                    WHERE attempt_id = :attempt_id
+                      AND user_answer IS NOT NULL AND TRIM(user_answer) != ''
+                )
+                WHERE attempt_id = :attempt_id
+            """), {"attempt_id": attempt_id})
+            session.commit()
+
+    def finalize_assessment_attempt(
+        self,
+        attempt_id: str,
+        graded_answers: list[dict],
+        correct_count: int,
+        accuracy: float,
+    ) -> None:
+        """提交测试：写回逐题判题结果、置 status=submitted、记录正确率。"""
+        with self.Session() as session:
+            for graded in graded_answers:
+                session.execute(text("""
+                    INSERT INTO assessment_answers (attempt_id, question_id, user_answer, is_correct, time_spent, updated_at)
+                    VALUES (:attempt_id, :question_id, :user_answer, :is_correct, :time_spent, CURRENT_TIMESTAMP)
+                    ON CONFLICT(attempt_id, question_id) DO UPDATE SET
+                        user_answer = excluded.user_answer,
+                        is_correct = excluded.is_correct,
+                        updated_at = CURRENT_TIMESTAMP
+                """), {
+                    "attempt_id": attempt_id,
+                    "question_id": graded["question_id"],
+                    "user_answer": graded.get("user_answer"),
+                    "is_correct": graded.get("is_correct"),
+                    "time_spent": graded.get("time_spent", 0),
+                })
+            session.execute(text("""
+                UPDATE assessment_attempts
+                SET status = 'submitted',
+                    correct_count = :correct_count,
+                    accuracy = :accuracy,
+                    answered_count = total_questions,
+                    submitted_at = CURRENT_TIMESTAMP
+                WHERE attempt_id = :attempt_id
+            """), {
+                "attempt_id": attempt_id,
+                "correct_count": correct_count,
+                "accuracy": accuracy,
+            })
+            session.commit()
+
+    def get_submitted_attempt_accuracy(
+        self,
+        session_id: str,
+        stage_id: str | None = None,
+    ) -> dict | None:
+        """只从已提交的完整 attempt 计算正确率（取最近一次提交）。
+
+        约束（第 2 节）：正确率不能从零散答题记录计算，必须来自已提交 attempt。
+        """
+        params: dict = {"session_id": session_id}
+        stage_filter = ""
+        if stage_id:
+            stage_filter = " AND stage_id = :stage_id"
+            params["stage_id"] = stage_id
+        with self.Session() as session:
+            row = session.execute(text(f"""
+                SELECT attempt_id, accuracy, correct_count, total_questions, submitted_at
+                FROM assessment_attempts
+                WHERE session_id = :session_id AND status = 'submitted'{stage_filter}
+                ORDER BY submitted_at DESC
+                LIMIT 1
+            """), params).mappings().first()
+        return dict(row) if row else None
+
+    def get_submitted_attempt_records(
+        self,
+        session_id: str,
+        stage_id: str | None = None,
+    ) -> dict | None:
+        """读取最近一次已提交 attempt 的「逐题判题记录（含耗时）」，供 Agent6 决策使用。
+
+        - 定位口径与 get_submitted_attempt_accuracy 一致：阶段维度优先，退回会话维度，
+          均取最近一次已提交（submitted_at DESC）的完整 attempt（约束 7）。
+        - JOIN 冻结题目快照与逐题答案，输出每题 question_id / skill(=subtopic_id) /
+          question_type / is_correct / time_spent，供 BKT Wt 修正与阶段总结用时统计使用。
+        - 返回 {attempt_id, accuracy, question_records: [...], total_time_spent(秒)}；
+          没有已提交 attempt 时返回 None（调用方退化为交互耗时估算）。
+        """
+        attempt = self.get_submitted_attempt_accuracy(session_id, stage_id=stage_id)
+        # 阶段维度无已提交 attempt 时，退回会话维度最近一次
+        if attempt is None and stage_id is not None:
+            attempt = self.get_submitted_attempt_accuracy(session_id)
+        if not attempt:
+            return None
+
+        attempt_id = attempt["attempt_id"]
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT q.question_id      AS question_id,
+                       q.subtopic_id      AS skill,
+                       q.question_type    AS question_type,
+                       a.is_correct       AS is_correct,
+                       a.time_spent       AS time_spent
+                FROM assessment_attempt_questions q
+                LEFT JOIN assessment_answers a
+                    ON a.attempt_id = q.attempt_id AND a.question_id = q.question_id
+                WHERE q.attempt_id = :attempt_id
+                ORDER BY q.sequence_index ASC
+            """), {"attempt_id": attempt_id}).mappings().all()
+
+        question_records: list[dict] = []
+        total_time_spent = 0
+        for row in rows:
+            time_spent = int(row["time_spent"] or 0)
+            total_time_spent += time_spent
+            question_records.append({
+                "question_id": row["question_id"],
+                "skill": row["skill"],
+                "question_type": row["question_type"],
+                "is_correct": bool(row["is_correct"]) if row["is_correct"] is not None else False,
+                "time_spent": time_spent,
+            })
+        return {
+            "attempt_id": attempt_id,
+            "accuracy": attempt.get("accuracy"),
+            "question_records": question_records,
+            "total_time_spent": total_time_spent,
+        }
+
+    def list_assessment_attempts(self, session_id: str) -> list[dict]:
+        """列出会话下的所有 attempt（供仪表盘正确率趋势聚合）。"""
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT attempt_id, stage_id, stage_num, block_id, status,
+                       total_questions, correct_count, accuracy, created_at, submitted_at
+                FROM assessment_attempts
+                WHERE session_id = :session_id
+                ORDER BY created_at ASC
+            """), {"session_id": session_id}).mappings().all()
+        return [dict(row) for row in rows]
+
+    # ========================================================================
+    # 仪表盘聚合查询（Agent46_API接口任务说明.md 第 4 节）
+    # 后端直接从 user_profiles / stage_progress / subtopic_status /
+    # assessment_attempts / user_qa 聚合，不属于 Agent4 运行职责。
+    # ========================================================================
+
+    def get_latest_profile(self, session_id: str) -> dict | None:
+        """读取最新版本的用户画像（version 最大者）。"""
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT profile_id, session_id, version, skill_tags, knowledge_gaps, goal,
+                       daily_hours, learning_style, learning_rhythm, confidence_index,
+                       confusion_markers, confidence, grade, hardware, created_at
+                FROM user_profiles
+                WHERE session_id = :session_id
+                ORDER BY version DESC
+                LIMIT 1
+            """), {"session_id": session_id}).mappings().first()
+        if not row:
+            return None
+        result = dict(row)
+        for field in ("skill_tags", "knowledge_gaps", "confusion_markers"):
+            result[field] = json.loads(result[field]) if result[field] else []
+        return result
+
+    def list_stage_progress(self, session_id: str) -> list[dict]:
+        """读取会话所有阶段记录（供当前阶段摘要与阶段历史聚合）。"""
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT stage_id, stage_num, block_id, block_name, subtopic_id,
+                       status, accuracy, strategy_used, started_at, completed_at
+                FROM stage_progress
+                WHERE session_id = :session_id
+                ORDER BY stage_num ASC
+            """), {"session_id": session_id}).mappings().all()
+        return [dict(row) for row in rows]
+
+    def get_recent_qa(self, session_id: str, limit: int = 5) -> list[dict]:
+        """读取最近问答记录（供仪表盘 recent_qa）。"""
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT qa_id, stage, question, answer, tech_pass, quality_pass, created_at
+                FROM user_qa
+                WHERE session_id = :session_id
+                ORDER BY created_at DESC, qa_id DESC
+                LIMIT :limit
+            """), {"session_id": session_id, "limit": limit}).mappings().all()
+        return [dict(row) for row in rows]
+
+    def get_subtopic_mastery_counts(self, session_id: str) -> tuple[int, int]:
+        """统计已掌握子知识点数量与总数（mastered_count / total_count）。"""
+        self.ensure_subtopic_status(session_id)
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT
+                    COALESCE(SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END), 0) AS mastered,
+                    COUNT(*) AS total
+                FROM subtopic_status
+                WHERE session_id = :session_id
+            """), {"session_id": session_id}).mappings().first()
+        return int(row["mastered"]), int(row["total"])
+
+    def get_block_progress(self, session_id: str) -> list[dict]:
+        """按知识块聚合掌握进度（block_progress）。"""
+        rows = self.list_subtopic_statuses(session_id)
+        blocks: dict[str, dict] = {}
+        for row in rows:
+            block_id = row["block_id"]
+            bucket = blocks.setdefault(block_id, {"block_id": block_id, "mastered": 0, "total": 0})
+            bucket["total"] += 1
+            if int(row["status"]) == 1:
+                bucket["mastered"] += 1
+        result = []
+        for block_id, bucket in blocks.items():
+            total = bucket["total"]
+            mastered = bucket["mastered"]
+            result.append({
+                "block_id": block_id,
+                "mastered_count": mastered,
+                "total_count": total,
+                "progress": round(mastered / total, 3) if total else 0.0,
+            })
+        return result
 
     def search_faq(self, block_id: str = None, query: str = None, limit: int = 5) -> list[dict]:
         with self.Session() as session:

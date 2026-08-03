@@ -36,23 +36,52 @@ class StageDecisionAgent(BaseAgent):
         qa_history: List[Dict[str, Any]],
         interactions: List[Dict[str, Any]],
         iteration_history: Optional[List[Dict[str, Any]]] = None,
+        emotion_score: Optional[float] = None,
+        gap_skill: str = "",
     ) -> Dict[str, Any]:
         updated_data = {}
 
         profile_dict = self._profile_to_dict(profile) if profile else {}
 
         # 策略选择：透传 iteration_history，激活 backtrack/终止逻辑（iteration_strategy.skill.md 规则2/3）
+        # 使用 full 版本，回溯目标（backtrack_target）与终止/重置信号一并透传，不再丢弃
         try:
-            strategy = await self.strategy_selector_tool.select_strategy(
+            strategy_full = await self.strategy_selector_tool.select_strategy_full(
                 accuracy, profile_dict, iteration_history=iteration_history
             )
+            strategy = strategy_full.get("strategy_label", "reinforce")
         except Exception:
             strategy = "reinforce" if accuracy >= 0.6 else "simplify"
+            strategy_full = {
+                "strategy_label": strategy,
+                "backtrack_target": None,
+                "iteration_reset": False,
+                "should_terminate": False,
+            }
         updated_data["strategy"] = strategy
+        updated_data["backtrack_target"] = strategy_full.get("backtrack_target")
+        updated_data["iteration_reset"] = strategy_full.get("iteration_reset", False)
+        updated_data["should_terminate"] = strategy_full.get("should_terminate", False)
+        updated_data["decision"] = strategy_full.get("decision")
 
         try:
             knowledge_gaps = profile_dict.get("knowledge_gaps", [])
-            updated_gaps = await self.profile_update_tool.update_gaps(knowledge_gaps, accuracy)
+            # 透传原始答题记录、情绪均分与学习者经验标签，激活完整 BKT 引擎（Wt/We 修正）
+            # 只读层记录不含 skill 字段，用当前阶段 gap_skill 补齐归属，避免 _group_by_skill
+            # 全部归入 "unknown" 导致 BKT 退化为聚合兜底（与 DeterministicStageDecisionAgent 对齐）
+            bkt_records = []
+            for qa in (qa_history or []):
+                if isinstance(qa, dict):
+                    rec = dict(qa)
+                    if not rec.get("skill") and not rec.get("knowledge_point") and gap_skill:
+                        rec["skill"] = gap_skill
+                    bkt_records.append(rec)
+            updated_gaps = await self.profile_update_tool.update_gaps(
+                knowledge_gaps, accuracy,
+                question_records=bkt_records,
+                emotion_score=emotion_score,
+                skill_tags=profile_dict.get("skill_tags", []),
+            )
             updated_data["knowledge_gaps"] = updated_gaps
         except Exception:
             updated_data["knowledge_gaps"] = profile_dict.get("knowledge_gaps", [])
@@ -92,6 +121,7 @@ class StageDecisionAgent(BaseAgent):
         total_knowledge_points: int = 0,
         total_answers: int = 0,
         iteration_history: Optional[List[Dict[str, Any]]] = None,
+        gap_skill: str = "",
     ) -> Dict[str, Any]:
         """
         处理阶段结束后的全部更新工作，包括画像更新和阶段总结生成。
@@ -103,6 +133,17 @@ class StageDecisionAgent(BaseAgent):
             "stage_summary": str,       # Markdown格式的阶段总结
             "strategy": str,            # 可能含 backtrack（回溯）策略标签
             "update_rationale": str,
+
+            # === 阶段结果契约字段（Agent46_API接口任务说明.md 第 3 节）===
+            "status": str,              # continue/repeat/completed（= decision 的对外别名）
+            "accuracy": float,          # 本阶段已提交测试的正确率
+            "next_strategy": str,       # 下一阶段策略（= strategy 的对外别名）
+            "updated_profile": {...},   # 更新后的画像片段（= profile_updates）
+            "can_plan_next_stage": bool,# 未结业且可继续规划下一阶段
+            "all_mastered": bool,       # 是否全部知识盲区都已掌握（结业条件）
+            "final_report": dict|None,  # 结业时给出的总报告，未结业为 None
+            "phase": str,               # 未结业=stage_result；结业=completed
+            "available_actions": list,  # 未结业=["plan_next_stage"]；结业=[]
         }
         """
         # 1. 执行原有画像更新逻辑（透传 iteration_history 激活 backtrack/终止逻辑）
@@ -111,9 +152,23 @@ class StageDecisionAgent(BaseAgent):
             profile_dict_preview = self._profile_to_dict(profile) if profile else {}
             iteration_history = profile_dict_preview.get("iteration_history") or []
 
+        # 先推断情绪均分，供 BKT 的 We 修正因子使用（须在 update_user_data 之前）
+        if emotion_score is None and qa_history:
+            _emotion_scores = []
+            for qa in qa_history:
+                if isinstance(qa, dict) and "emotion_score" in qa:
+                    try:
+                        _emotion_scores.append(float(qa["emotion_score"]))
+                    except (ValueError, TypeError):
+                        pass
+            if _emotion_scores:
+                emotion_score = sum(_emotion_scores) / len(_emotion_scores)
+
         updated_data = await self.update_user_data(
             session_id, accuracy, profile, qa_history, interactions,
             iteration_history=iteration_history,
+            emotion_score=emotion_score,
+            gap_skill=gap_skill,
         )
 
         # 2. 准备总结生成所需的数据
@@ -124,19 +179,9 @@ class StageDecisionAgent(BaseAgent):
         confusion_tags = updated_data.get("confusion_markers", [])
         pace_adjustment = updated_data.get("learning_rhythm", "medium")
         next_strategy = updated_data.get("strategy", "reinforce")
-        
-        # 从输入数据推断情绪（如果未直接提供）
-        if emotion_score is None and qa_history:
-            emotion_scores = []
-            for qa in qa_history:
-                if isinstance(qa, dict) and "emotion_score" in qa:
-                    try:
-                        emotion_scores.append(float(qa["emotion_score"]))
-                    except (ValueError, TypeError):
-                        pass
-            if emotion_scores:
-                emotion_score = sum(emotion_scores) / len(emotion_scores)
-        
+        backtrack_target = updated_data.get("backtrack_target")
+        iteration_reset = updated_data.get("iteration_reset", False)
+
         # 如果未提供答题记录，从qa_history推断
         if question_records is None:
             question_records = qa_history or []
@@ -175,15 +220,24 @@ class StageDecisionAgent(BaseAgent):
             "confusion_tags": confusion_tags,
             "next_strategy": next_strategy,
         }
+        # 回溯策略时透传前置知识目标与迭代重置信号（iteration_strategy.skill.md 规则2）
+        if next_strategy == "backtrack":
+            profile_updates["backtrack_target"] = backtrack_target
+            profile_updates["iteration_reset"] = iteration_reset
 
         # 决策判定（与 DeterministicStageDecisionAgent.run 逻辑一致）
+        # 优先级：终止信号/工具权威 decision > backtrack > accuracy 推进
         # next_strategy 为 backtrack（回溯）时，decision 映射为 repeat（回退重学前置知识）
         # next_strategy 为 finish（结业）时，decision 映射为 completed
+        # 达到最大轮次/死循环停滞会触发 should_terminate，此时尊重策略工具的终止裁决，
+        # 不再仅用 accuracy 重算而丢弃规范的结业结果（iteration_strategy.skill.md 规则3）。
+        should_terminate = bool(updated_data.get("should_terminate", False))
+        tool_decision = updated_data.get("decision")
         all_mastered = all(
             gap.get("status") == "已掌握" for gap in knowledge_gaps if isinstance(gap, dict)
         ) if knowledge_gaps else False
-        if next_strategy == "finish" or all_mastered:
-            decision = "completed"
+        if next_strategy == "finish" or all_mastered or should_terminate:
+            decision = tool_decision or "completed"
         elif next_strategy == "backtrack":
             decision = "repeat"
         elif accuracy >= 0.8:
@@ -191,10 +245,67 @@ class StageDecisionAgent(BaseAgent):
         else:
             decision = "repeat"
 
+        # 5. 阶段结果契约字段（Agent46_API接口任务说明.md 第 3 节）
+        # - all_mastered：全部知识盲区已掌握 → 结业
+        # - can_plan_next_stage：未结业即可按需规划下一阶段（含 repeat 场景重规划本阶段）
+        # - phase / available_actions：未结业时进入 stage_result 状态并开放 plan_next_stage
+        can_plan_next_stage = not all_mastered
+        if all_mastered:
+            phase = "completed"
+            available_actions: List[str] = []
+            final_report = self._build_final_report(
+                profile_dict, accuracy, gaps_with_mastery
+            )
+        else:
+            phase = "stage_result"
+            available_actions = ["plan_next_stage"]
+            final_report = None
+
         return {
             "decision": decision,
             "profile_updates": profile_updates,
             "stage_summary": stage_summary,
             "strategy": next_strategy,
             "update_rationale": f"阶段{stage_name}完成：正确率{accuracy:.0%}，策略{next_strategy}，共{len(knowledge_gaps)}个知识点",
+            # === 阶段结果契约字段（对外别名 + 结业/规划状态）===
+            "status": decision,
+            "accuracy": accuracy,
+            "next_strategy": next_strategy,
+            "updated_profile": profile_updates,
+            "can_plan_next_stage": can_plan_next_stage,
+            "all_mastered": all_mastered,
+            "final_report": final_report,
+            "phase": phase,
+            "available_actions": available_actions,
+        }
+
+    @staticmethod
+    def _build_final_report(
+        profile: Dict[str, Any],
+        accuracy: float,
+        gaps_with_mastery: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """结业总报告（Agent6 结业职责，全部知识盲区掌握时产出）。
+
+        仅使用 Agent6 已持有的数据（画像 + 更新后的知识盲区），不依赖外部服务：
+        - goal：学习目标（画像缺失时留空字符串）
+        - accuracy：最后一阶段正确率
+        - mastered_skills：掌握度达标（status=已掌握 或 mastery/progress>=1.0）的技能
+        - total_skills：知识盲区总数
+        """
+        mastered_skills: List[str] = []
+        for gap in gaps_with_mastery:
+            if not isinstance(gap, dict):
+                continue
+            mastered = (
+                gap.get("status") == "已掌握"
+                or float(gap.get("mastery", gap.get("progress", 0.0)) or 0.0) >= 1.0
+            )
+            if mastered and gap.get("skill"):
+                mastered_skills.append(gap["skill"])
+        return {
+            "goal": profile.get("goal", "") if isinstance(profile, dict) else "",
+            "accuracy": accuracy,
+            "mastered_skills": mastered_skills,
+            "total_skills": len(gaps_with_mastery),
         }

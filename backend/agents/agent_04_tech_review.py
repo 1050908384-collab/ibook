@@ -15,6 +15,7 @@ from tools.agent4_tools.rule_check_tool import RuleCheckTool
 from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
 from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
 from tools.agent4_tools.style_match_tool import StyleMatchTool
+from tools.learning_resource_tool import LearningResourceTool
 
 _ERROR_CLASSIFICATION_MAP: Dict[str, Dict[str, str]] = {
     "SyntaxError": {"category": "SyntaxError", "severity": "critical"},
@@ -188,6 +189,23 @@ def _matches_must_fix_error_type(error_type: Optional[str]) -> bool:
     return any(kw in et for kw in _MUST_FIX_ERROR_TYPE_KEYWORDS)
 
 
+# 「质量红线」类错误：其成因是物理度量（认知负荷/难度超载），只能靠改写正文
+# （patched_sections）真正缓解——补一条来源引用（source_refs）并不能降低概念密度或
+# 难度不匹配。rebut 复核时这类问题的「部分整改」必须以正文 patch 为证据，不能仅凭
+# 来源引用就降级（否则关键红线会被无实质整改的「部分接受」放松）。
+_QUALITY_REDLINE_ERROR_TYPE_KEYWORDS = (
+    "cognitive_load", "认知负荷", "负荷超载", "overload",
+    "difficulty_mismatch", "难度不匹配", "难度", "too_hard", "too_easy",
+    "concept_density", "概念密度",
+)
+
+
+def _is_quality_redline_error_type(error_type: Optional[str]) -> bool:
+    """判断 error_type 是否属于「只能靠改写正文缓解」的质量红线类问题。"""
+    et = (error_type or "").lower()
+    return any(kw in et for kw in _QUALITY_REDLINE_ERROR_TYPE_KEYWORDS)
+
+
 def _build_source_index(sources: Optional[List[Dict[str, Any]]]) -> Dict[str, Dict[str, Any]]:
     """把 sources 列表转为 {source_id: source} 索引，供命中匹配。"""
     index: Dict[str, Dict[str, Any]] = {}
@@ -250,19 +268,42 @@ def _build_change_request(raw: Dict[str, Any], must_fix: bool, source_refs: List
     return {"required": bool(must_fix), "action": action}
 
 
+def _extract_source_supports_claim(raw: Dict[str, Any]) -> bool:
+    """读取工具原始信号：来源是否支持该 Claim（协议第 6 节规则3）。
+
+    默认 True（假定来源支持）；仅当工具显式给出以下任一信号时判定为「不支持」：
+      - raw["source_supports_claim"] is False
+      - raw["source_supported"] is False
+      - error_type 属于「来源不支持/来源不相关/来源矛盾」一类
+    """
+    for key in ("source_supports_claim", "source_supported"):
+        if raw.get(key) is False:
+            return False
+    et = str(raw.get("error_type") or raw.get("type") or "").lower()
+    unsupported_markers = (
+        "source_mismatch", "source_unsupported", "unsupported_source",
+        "source_irrelevant", "source_conflict", "来源不支持", "来源不相关", "来源矛盾",
+    )
+    if any(m in et for m in unsupported_markers):
+        return False
+    return True
+
+
 def derive_must_fix(
     error_type: Optional[str],
     severity: str,
     source_refs: List[str],
     is_key_technical: bool,
     change_request_required: bool,
+    source_supports_claim: bool = True,
 ) -> tuple[bool, Optional[str]]:
     """must_fix 派生规则（协议第 6 节 / Agent4任务说明 第 5 点）。
 
     满足任一条件即自动进入 must_fix：
       - severity = critical
       - error_type 属于事实错误/来源缺失/代码不可执行/违反安全或规范
-      - source_refs 为空但该 claim 是 is_key_technical=true
+      - 关键技术陈述缺少来源（source_refs 为空且 is_key_technical=true）
+      - 关键技术陈述的来源存在但不支持该 Claim（协议第 6 节规则3）
       - change_request.required = true
     返回 (must_fix, must_fix_reason)。
     """
@@ -272,6 +313,9 @@ def derive_must_fix(
         return True, f"error_type={error_type} 属于事实错误/来源缺失/代码不可执行/违反安全规范"
     if not source_refs and is_key_technical:
         return True, "关键技术陈述（is_key_technical=true）缺少有效来源支撑"
+    # 协议第 6 节规则(3)：来源存在（source_refs 非空）但不支持该关键技术 Claim
+    if source_refs and is_key_technical and not source_supports_claim:
+        return True, "关键技术陈述的来源存在但不支持该 Claim（协议第 6 节规则3）"
     if change_request_required:
         return True, "change_request.required=true，明确要求 Agent3 修改"
     return False, None
@@ -291,6 +335,7 @@ class TechnicalReviewAgent(BaseAgent):
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.learning_resource_tool = LearningResourceTool()
         self.load_tools([
             self.code_executor_tool,
             self.code_parser_tool,
@@ -310,6 +355,19 @@ class TechnicalReviewAgent(BaseAgent):
             return profile
         return {}
 
+    @staticmethod
+    def _extract_stage_scope(stage: Any) -> tuple:
+        """从 stage（dict / 含同名属性的对象 / None）提取 (block_id, subtopic_id)，供视频归属校验。
+
+        兼容 harness 传 StageInfo 对象与测试传 dict 两种形态；缺失时返回 (None, None)，
+        learning_resource_tool 会据此安全降级（空 block_id -> 不查询/空基线）。
+        """
+        if stage is None:
+            return None, None
+        if isinstance(stage, dict):
+            return stage.get("block_id"), stage.get("subtopic_id")
+        return getattr(stage, "block_id", None), getattr(stage, "subtopic_id", None)
+
     async def review(
         self,
         session_id: str,
@@ -318,6 +376,8 @@ class TechnicalReviewAgent(BaseAgent):
         sources: Optional[List[Dict[str, Any]]] = None,
         claims: Optional[List[Dict[str, Any]]] = None,
         round_index: int = 1,
+        recommended_videos: Optional[List[Dict[str, Any]]] = None,
+        stage: Optional[Dict[str, Any]] = None,
     ) -> TechnicalReviewResult:
         """审核学习包 / 回答，产出带证据可追溯的 issues（审核辩论协议 Agent4→Agent3）。
 
@@ -325,11 +385,17 @@ class TechnicalReviewAgent(BaseAgent):
         - sources：学习包来源清单（Agent3 产出），每条含 source_id 等字段
         - claims：Agent3 的可验证陈述声明，每条含 claim_id / section_ref / is_key_technical 等
         - round_index：当前审核轮次（用于生成 error_id 后缀 _r{round_index}），跨轮稳定 canonical 不变
+        - recommended_videos：Agent3 从资源库挑选的推荐视频列表（仅学习包场景，
+          对应 technical_review.skill.md 规则5「推荐视频资源审核」）
+        - stage：当前阶段信息（含 block_id / subtopic_id），供视频归属校验；dict 或含同名属性的对象均可
 
         每个 error 强制携带：canonical_error_id、error_id、source_refs、change_request、
         must_fix、must_fix_reason、claim_id（协议 2.3 / 2.4 / 第 6 节）。
+        视频错误（video_resource_mismatch/video_url_mismatch/video_content_unverified）
+        由 learning_resource_tool.validate_recommended_videos 产出后一并补全协议字段。
         """
         raw_errors = []
+        video_resource_errors: List[Dict[str, Any]] = []
         print(f"=== Agent4(合并后) TechnicalReviewAgent 开始审核 ===")
 
         profile_dict = self._profile_to_dict(profile) if profile else {}
@@ -428,14 +494,31 @@ class TechnicalReviewAgent(BaseAgent):
             except Exception:
                 pass
 
-        # 步骤5：综合裁决 — 将原始dict转为ReviewError，按规则4裁决优先级
+        # 步骤5：推荐视频资源审核（仅学习包场景，technical_review.skill.md 规则5）
+        # 视频归属越界/URL不一致/内容未审核，比对资源库权威记录 learning_resources。
+        # answer 场景不涉及视频；video 分支不构成"已知分支"guard（tutorial/code_examples/answer 仍需存在）。
+        if "answer" not in content and recommended_videos:
+            block_id, subtopic_id = self._extract_stage_scope(stage)
+            print(f"=== 审核推荐视频资源（block_id={block_id}, subtopic_id={subtopic_id}, "
+                  f"共{len(recommended_videos)}个）===")
+            try:
+                video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
+                    recommended_videos, block_id, subtopic_id
+                )
+                raw_errors.extend(video_resource_errors)
+            except Exception:
+                pass
+
+        # 步骤6：综合裁决 — 将原始dict转为ReviewError，按规则4裁决优先级
         errors = self._normalize_errors(raw_errors)
-        # 步骤6：审核辩论协议增强 — 为每个 error 强制补全
+        # 步骤7：审核辩论协议增强 — 为每个 error 强制补全
         #   source_refs / change_request / canonical_error_id / error_id / must_fix / claim_id
+        #   raw_errors 已含视频错误（携带 source_ref=src_video_{id} 与 change_request）
         errors = self._enrich_debate_fields(
             errors, sources=sources, claims=claims, round_index=round_index, raw_errors=raw_errors
         )
-        passed = not any(e.severity == "critical" for e in errors) and len(errors) == 0
+        # 审核通过 = 未发现任何问题（len==0 时必然无 critical，无需重复判定 critical）
+        passed = len(errors) == 0
         must_fix_count = sum(1 for e in errors if e.must_fix)
         critical_count = sum(1 for e in errors if e.severity == "critical")
         summary = (
@@ -454,6 +537,66 @@ class TechnicalReviewAgent(BaseAgent):
                 )
 
         return TechnicalReviewResult(passed=passed, errors=errors, review_details={"summary": summary})
+
+    def build_answer_review_summary(
+        self,
+        technical_result: TechnicalReviewResult,
+        iterations: int = 1,
+        max_iterations: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """产出答疑链路的审核摘要（Agent46_API接口任务说明.md 第 1 节）。
+
+        Agent4 在答疑链路中的职责仅是审核 `answer`，并返回审核摘要，字段固定为：
+            technical_passed / quality_passed / iterations / status / needs_human_review
+
+        说明（与合并后 Agent4 事实一致）：
+        - 质量审核已合并进 Agent4，`quality_passed` 与 `technical_passed` 共享同一份
+          审核结论（technical_result.passed），不再存在独立的质量审核体。
+        - status 取值：
+            "passed"              —— 审核通过（无遗留问题）
+            "passed_with_warnings"—— 未达上限即结束但仍有非 must_fix 的 minor 问题
+            "needs_human_review"  —— 达到最大审核轮次仍有未决 must_fix（协议第 7 节）
+        - needs_human_review：仅当达到 max_iterations 且仍存在 must_fix 的问题时为 True，
+          与学习包审核链路的降级判定口径一致（不阻塞用户，交由人工复核）。
+
+        参数：
+        - technical_result：Agent4 最后一轮审核结果（含 errors / passed）
+        - iterations：答疑审核实际迭代轮次
+        - max_iterations：允许的最大审核轮次；缺省时从 config.settings 读取，
+          读取失败兜底为 iterations（即视为「已到上限」，保守判定）
+        """
+        errors = technical_result.errors or []
+        passed = bool(technical_result.passed)
+        must_fix_count = sum(1 for e in errors if getattr(e, "must_fix", False))
+
+        if max_iterations is None:
+            try:
+                from config import settings
+                max_iterations = int(getattr(settings, "MAX_REVIEW_ITERATIONS", iterations))
+            except Exception:
+                max_iterations = iterations
+
+        reached_limit = iterations >= max_iterations
+        needs_human_review = (not passed) and reached_limit and must_fix_count > 0
+
+        if passed:
+            status = "passed"
+        elif needs_human_review:
+            status = "needs_human_review"
+        elif must_fix_count == 0:
+            # 仍有问题但无未决 must_fix（仅 minor）→ 允许降级放行，标记警告
+            status = "passed_with_warnings"
+        else:
+            # 未通过、未到上限、仍有 must_fix：审核链路尚未收敛
+            status = "in_progress"
+
+        return {
+            "technical_passed": passed,
+            "quality_passed": passed,
+            "iterations": int(iterations),
+            "status": status,
+            "needs_human_review": needs_human_review,
+        }
 
     def _normalize_errors(self, raw_errors: List[Dict[str, Any]]) -> List[ReviewError]:
         """将工具返回的原始dict列表转为ReviewError对象列表。
@@ -552,12 +695,14 @@ class TechnicalReviewAgent(BaseAgent):
 
             # 3. must_fix 派生（先看工具是否已提示 change_request.required）
             change_request_required = _extract_change_request_required(raw)
+            source_supports_claim = _extract_source_supports_claim(raw)
             must_fix, must_fix_reason = derive_must_fix(
                 error_type=err.error_type,
                 severity=err.severity,
                 source_refs=source_refs,
                 is_key_technical=is_key_technical,
                 change_request_required=change_request_required,
+                source_supports_claim=source_supports_claim,
             )
             err.must_fix = must_fix
             err.must_fix_reason = must_fix_reason
@@ -643,6 +788,7 @@ class TechnicalReviewAgent(BaseAgent):
         disposition = str(reply.get("disposition", "")).lower()
         must_fix = bool(issue.get("must_fix", False))
         severity = str(issue.get("severity", "major")).lower()
+        error_type = issue.get("error_type") or issue.get("type")
         reply_source_refs = reply.get("source_refs") or []
         if isinstance(reply_source_refs, str):
             reply_source_refs = [reply_source_refs]
@@ -662,7 +808,19 @@ class TechnicalReviewAgent(BaseAgent):
             return "persist"
 
         if disposition == "partially_accepted":
-            # 部分整改：风险下降但未完全消除 → 降级（critical→major，或解除 must_fix）
+            # 部分整改：风险下降但未完全消除 → 降级（critical→major，或解除 must_fix）。
+            # 但「降级」会经 Orchestrator 解除 must_fix 并降 severity，一轮即放松红线，
+            # 因此必须以「真实整改证据」为前提，避免无实质动作的口头「部分接受」放松关键错误：
+            #   1) 无任何证据（既无新来源也无 patch）→ 不予降级，保守 persist；
+            #   2) 质量红线类（认知负荷/难度超载）只能靠改写正文缓解，补来源无效 →
+            #      必须提供正文 patch 才降级，否则 persist；
+            #   3) 事实/来源类的部分整改（有新来源或 patch）→ 按原规则降级。
+            has_evidence = bool(reply_source_refs or patched)
+            if not has_evidence:
+                return "persist"
+            if _is_quality_redline_error_type(error_type) and not patched:
+                # 质量红线：仅补来源不算整改，需正文 patch
+                return "persist"
             return "downgrade"
 
         if disposition == "rejected":

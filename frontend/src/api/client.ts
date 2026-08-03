@@ -42,6 +42,11 @@ export const apiClient = {
     const response = await axios.post(`${BASE_URL}/stage/complete/${sessionId}`);
     return response.data;
   },
+
+  planNextStage: async (data: { session_id: string; adjustment_notes?: string }) => {
+    const response = await axios.post(`${BASE_URL}/stage/plan-next`, data);
+    return response.data;
+  },
   
   getProfile: async (sessionId: string) => {
     const response = await axios.get(`${BASE_URL}/visualize/profile/${sessionId}`);
@@ -55,6 +60,11 @@ export const apiClient = {
   
   getProgress: async (sessionId: string) => {
     const response = await axios.get(`${BASE_URL}/visualize/progress/${sessionId}`);
+    return response.data;
+  },
+
+  getDashboard: async (sessionId: string) => {
+    const response = await axios.get(`${BASE_URL}/v1/sessions/${sessionId}/dashboard`);
     return response.data;
   }
 };
