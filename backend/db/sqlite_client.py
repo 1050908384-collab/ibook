@@ -1435,6 +1435,61 @@ class SQLiteClient:
             """), params).mappings().first()
         return dict(row) if row else None
 
+    def get_submitted_attempt_records(
+        self,
+        session_id: str,
+        stage_id: str | None = None,
+    ) -> dict | None:
+        """读取最近一次已提交 attempt 的「逐题判题记录（含耗时）」，供 Agent6 决策使用。
+
+        - 定位口径与 get_submitted_attempt_accuracy 一致：阶段维度优先，退回会话维度，
+          均取最近一次已提交（submitted_at DESC）的完整 attempt（约束 7）。
+        - JOIN 冻结题目快照与逐题答案，输出每题 question_id / skill(=subtopic_id) /
+          question_type / is_correct / time_spent，供 BKT Wt 修正与阶段总结用时统计使用。
+        - 返回 {attempt_id, accuracy, question_records: [...], total_time_spent(秒)}；
+          没有已提交 attempt 时返回 None（调用方退化为交互耗时估算）。
+        """
+        attempt = self.get_submitted_attempt_accuracy(session_id, stage_id=stage_id)
+        # 阶段维度无已提交 attempt 时，退回会话维度最近一次
+        if attempt is None and stage_id is not None:
+            attempt = self.get_submitted_attempt_accuracy(session_id)
+        if not attempt:
+            return None
+
+        attempt_id = attempt["attempt_id"]
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT q.question_id      AS question_id,
+                       q.subtopic_id      AS skill,
+                       q.question_type    AS question_type,
+                       a.is_correct       AS is_correct,
+                       a.time_spent       AS time_spent
+                FROM assessment_attempt_questions q
+                LEFT JOIN assessment_answers a
+                    ON a.attempt_id = q.attempt_id AND a.question_id = q.question_id
+                WHERE q.attempt_id = :attempt_id
+                ORDER BY q.sequence_index ASC
+            """), {"attempt_id": attempt_id}).mappings().all()
+
+        question_records: list[dict] = []
+        total_time_spent = 0
+        for row in rows:
+            time_spent = int(row["time_spent"] or 0)
+            total_time_spent += time_spent
+            question_records.append({
+                "question_id": row["question_id"],
+                "skill": row["skill"],
+                "question_type": row["question_type"],
+                "is_correct": bool(row["is_correct"]) if row["is_correct"] is not None else False,
+                "time_spent": time_spent,
+            })
+        return {
+            "attempt_id": attempt_id,
+            "accuracy": attempt.get("accuracy"),
+            "question_records": question_records,
+            "total_time_spent": total_time_spent,
+        }
+
     def list_assessment_attempts(self, session_id: str) -> list[dict]:
         """列出会话下的所有 attempt（供仪表盘正确率趋势聚合）。"""
         with self.Session() as session:

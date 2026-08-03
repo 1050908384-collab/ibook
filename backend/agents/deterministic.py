@@ -1467,7 +1467,11 @@ class DeterministicStageDecisionAgent:
         # 的 gap_skill 给缺失 skill 的记录补齐归属，使 BKT 引擎真正作用于当前知识点。
         current_skill = request.stage.gap_skill
         pre_question_records: list[dict] = []
-        for qa in request.qa_history:
+        # 优先使用已提交测试的逐题记录（含 time_spent），来源：assessment_answers.time_spent，
+        # 由前端 PUT .../answers/{qid} 的 time_spent 提供；缺失时退回从 qa_history 提取。
+        assessment_records = getattr(request, "assessment_records", None) or []
+        source_records = assessment_records if assessment_records else request.qa_history
+        for qa in source_records:
             if isinstance(qa, dict) and ("question_id" in qa or "skill" in qa or "is_correct" in qa):
                 rec = dict(qa)
                 if not rec.get("skill") and not rec.get("knowledge_point") and current_skill:
@@ -1588,7 +1592,13 @@ class DeterministicStageDecisionAgent:
                 expected_seconds += float(interaction.get("expected_time", 100) or 100)
             except (ValueError, TypeError):
                 continue
-        time_spent_hours = round(total_seconds / 3600.0, 2)
+        # 优先使用已提交测试聚合用时（来自 assessment_answers.time_spent 汇总），
+        # 无测试用时（=0）时退回 interactions 估算，保持向后兼容。
+        request_time_spent_hours = float(getattr(request, "time_spent_hours", 0) or 0)
+        if request_time_spent_hours > 0:
+            time_spent_hours = round(request_time_spent_hours, 2)
+        else:
+            time_spent_hours = round(total_seconds / 3600.0, 2)
         expected_time_hours = round(expected_seconds / 3600.0, 2)
 
         # 生成qa历史转化为question_records（复用已补齐 skill 归属的 pre_question_records，

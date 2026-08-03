@@ -113,6 +113,10 @@ class StageDecisionInput(BaseModel):
     accuracy: float
     qa_history: List[dict] = Field(default_factory=list)
     interactions: List[dict] = Field(default_factory=list)
+    # 已提交测试逐题记录（含 time_spent），优先于 qa_history 作为 BKT/总结的答题记录来源
+    assessment_records: List[dict] = Field(default_factory=list)
+    # 已提交测试聚合实际用时（小时），>0 时优先于 interactions 估算的耗时
+    time_spent_hours: float = 0.0
 
 
 class StageDecisionOutput(BaseModel):

@@ -266,6 +266,34 @@ class Harness:
         # 兜底：旧的零散答题链路
         return self.state_manager.calculate_accuracy(session_id)
 
+    def _resolve_stage_records(self, session_id: str, stage: StageInfo):
+        """取本阶段已提交测试的逐题记录与聚合用时，供 Agent6 决策使用。
+
+        - 与 _resolve_stage_accuracy 同源同口径（Agent46_API接口任务说明.md 第 2/3 节）：
+          优先当前阶段已提交 attempt，退回会话维度最近一次已提交 attempt。
+        - 逐题记录含 time_spent（前端 PUT .../answers/{qid} 提交的答题用时），
+          聚合用时换算为小时透传给 Agent6，替代仅从 interactions 估算的耗时。
+        - 无已提交 attempt 时返回 ([], 0.0)，Agent6 退化为旧的 interactions 估算，不阻断流程。
+        """
+        try:
+            stage_id = getattr(stage, "stage_id", None)
+            records = self.state_manager.db_client.get_submitted_attempt_records(
+                session_id, stage_id=stage_id
+            )
+            if records and records.get("question_records"):
+                total_seconds = float(records.get("total_time_spent", 0) or 0)
+                time_spent_hours = round(total_seconds / 3600.0, 2)
+                self._log(
+                    session_id,
+                    "complete_stage:records_source",
+                    f"submitted_attempt={records.get('attempt_id')}, "
+                    f"questions={len(records['question_records'])}, time_spent_hours={time_spent_hours}",
+                )
+                return records["question_records"], time_spent_hours
+        except Exception as exc:
+            self._log(session_id, "complete_stage:records_fallback", f"reason={exc}")
+        return [], 0.0
+
     async def complete_stage(self, session_id: str) -> Dict[str, Any]:
         """
         complete_stage 新职责（P3 按需阶段规划）：
@@ -280,6 +308,7 @@ class Harness:
         profile = UserProfile.model_validate(self._require_profile(session_id))
         stage = StageInfo.model_validate(self._require_stage(session_id))
         accuracy = self._resolve_stage_accuracy(session_id, stage)
+        assessment_records, time_spent_hours = self._resolve_stage_records(session_id, stage)
         self._log(session_id, "complete_stage:start", f"stage={stage.stage_num}, accuracy={accuracy:.2f}")
         decision = await self.agent6.run(StageDecisionInput(
             session_id=session_id,
@@ -288,6 +317,8 @@ class Harness:
             accuracy=accuracy,
             qa_history=self.state_manager.get_qa_history(session_id),
             interactions=self.state_manager.get_interactions(session_id),
+            assessment_records=assessment_records,
+            time_spent_hours=time_spent_hours,
         ))
 
         # 更新当前阶段的结果状态（只改当前 stage，不推进编号）
