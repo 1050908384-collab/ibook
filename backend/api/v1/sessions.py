@@ -1,0 +1,165 @@
+# -*- coding: utf-8 -*-
+"""
+v1/sessions.py - Agent1/3 前端 API：会话管理接口
+================================================
+对应文档：Agent13_API接口任务说明.md 第 1 节
+"""
+
+from fastapi import APIRouter, HTTPException
+
+from api.dependencies import get_harness
+
+router = APIRouter(prefix="/sessions", tags=["Sessions"])
+harness = get_harness()
+
+
+@router.post("")
+async def create_session():
+    """
+    创建新会话
+    
+    POST /api/v1/sessions
+    """
+    try:
+        session = harness.create_session(None)
+        return {
+            "session_id": session["session_id"],
+            "title": session.get("title", ""),
+            "status": session.get("status", "active"),
+            "phase": session.get("phase", "diagnosing"),
+            "profile": None,
+            "current_stage": None,
+            "next_stage": None,
+            "learning_package": None,
+            "assessment_summary": None,
+            "progress_summary": None,
+            "recent_qa": [],
+            "available_actions": ["submit_diagnosis"],
+            "created_at": session.get("created_at"),
+            "updated_at": session.get("updated_at"),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("")
+async def list_sessions():
+    """
+    获取所有会话列表（左侧对话栏 + 账号级"所有学习画像/所有项目"列表）
+    
+    GET /api/v1/sessions
+    
+    返回字段（文档要求 items[]）：
+    session_id, title, goal, grade, skill_tags[], knowledge_gaps[],
+    daily_hours, learning_style, version, status, phase,
+    current_stage_num, current_stage_name, progress, updated_at
+    
+    其中 profile_summary 嵌套对象包含画像摘要信息。
+    """
+    try:
+        # 使用 harness 的 state_manager 确保一致性
+        sm = harness.state_manager
+        sessions = sm.list_sessions()
+        items = []
+        for s in sessions:
+            ps = s.get("profile_summary", {}) or {}
+            items.append({
+                "session_id": s.get("session_id"),
+                "title": s.get("title", ""),
+                # profile_summary 字段（按文档要求平铺到 items[]）
+                "goal": ps.get("goal", ""),
+                "grade": ps.get("grade", ""),
+                "skill_tags": ps.get("skill_tags", []),
+                "knowledge_gaps": ps.get("knowledge_gaps", []),
+                "daily_hours": ps.get("daily_hours"),
+                "learning_style": ps.get("learning_style", ""),
+                "version": ps.get("version", 1),
+                "status": s.get("status", "active"),
+                "phase": s.get("phase", ""),
+                "current_stage_num": ps.get("current_stage_num", 0),
+                "current_stage_name": ps.get("current_stage_name", ""),
+                "progress": ps.get("progress", 0),
+                "updated_at": s.get("updated_at"),
+                # 保留 profile_summary 嵌套对象，便于前端按需读取
+                "profile_summary": ps,
+            })
+        return {"sessions": items}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{session_id}")
+async def get_session_snapshot(session_id: str):
+    """
+    获取完整会话快照（页面恢复）
+    
+    GET /api/v1/sessions/{session_id}
+    """
+    try:
+        session = harness.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # 构建完整快照
+        snapshot = {
+            "session_id": session["session_id"],
+            "title": session.get("title", ""),
+            "status": session.get("status", "active"),
+            "phase": session.get("phase", "diagnosing"),
+            "profile": session.get("profile"),
+            "profile_modified": session.get("profile_modified", False),
+            "current_stage": session.get("stage_info"),
+            "next_stage": session.get("next_stage"),
+            "learning_package": session.get("learning_package"),
+            "assessment_summary": {
+                "answer_records": session.get("answer_records", []),
+                "current_stage": session.get("current_stage", 1),
+            },
+            "progress_summary": {
+                "total_stages": 1 if session.get("stage_info") is not None else 0,
+                "current_stage": session.get("current_stage", 1),
+                "qa_count": len(session.get("qa_history", [])),
+            },
+            "recent_qa": session.get("qa_history", [])[-5:] if session.get("qa_history") else [],
+            "available_actions": session.get("available_actions", []),
+            "created_at": session.get("created_at"),
+            "updated_at": session.get("updated_at"),
+        }
+        
+        # 确保个性化字段在 current_stage 中
+        if snapshot["current_stage"]:
+            stage = snapshot["current_stage"]
+            # 个性化字段已在 StageInfo 模型中定义，会自动包含
+            # recommended_daily_hours, suggested_study_days, learning_style_notes,
+            # hardware_notes, personalization_summary
+        
+        return snapshot
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{session_id}/abandon")
+async def abandon_session(session_id: str):
+    """
+    放弃当前学习
+
+    POST /api/v1/sessions/{session_id}/abandon
+    """
+    try:
+        # 先检查会话是否存在，给出明确的 404
+        session = harness.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        harness.abandon_session(session_id)
+        return {
+            "session_id": session_id,
+            "status": "abandoned",
+        }
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

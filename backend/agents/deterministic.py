@@ -384,6 +384,7 @@ class DeterministicDiagnosticAgent:
             preferred_block = self.knowledge_catalog_tool.get_block(gap.block_id) or {}
         preferred_block = preferred_block or {}
 
+        profile_dict = request.profile.model_dump(mode="json")
         generated_stage = {}
         try:
             generated_stage = await self.stage_generator_tool.generate_stage(
@@ -392,6 +393,7 @@ class DeterministicDiagnosticAgent:
                 preferred_block,
                 request.profile.goal,
                 request.stage_num,
+                profile=profile_dict,
             )
         except Exception:
             generated_stage = {}
@@ -402,8 +404,50 @@ class DeterministicDiagnosticAgent:
             preferred_block_id=preferred_block.get("block_id"),
             max_hours=request.profile.daily_hours,
         )
+        
+        # Fallback: 当没有可学习的 subtopic 时，直接使用 gap 信息生成阶段
         if not candidates:
-            raise ValueError("No learnable subtopics remain for current session")
+            profile_dict = request.profile.model_dump(mode="json")
+            fallback_stage = await self.stage_generator_tool.generate_stage(
+                request.session_id,
+                gap.model_dump(mode="json"),
+                preferred_block,
+                request.profile.goal,
+                request.stage_num,
+                profile=profile_dict,
+            )
+            if not fallback_stage:
+                fallback_stage = {}
+            
+            stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{request.session_id}:{request.stage_num}:{gap.skill}"))
+            block_id = gap.block_id or preferred_block.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
+            block_name = gap.skill or gap.block_name or preferred_block.get("block_name")
+            
+            stage = StageInfo(
+                stage_id=stage_id,
+                stage_num=request.stage_num,
+                block_id=block_id,
+                block_name=block_name,
+                subtopic_id=None,
+                subtopic_name=None,
+                gap_skill=gap.skill,
+                estimated_hours=fallback_stage.get("estimated_hours", 2.0),
+                prerequisites=gap.prerequisites,
+                title=fallback_stage.get("title"),
+                description=fallback_stage.get("description"),
+                objectives=fallback_stage.get("objectives", []),
+                difficulty=fallback_stage.get("difficulty"),
+                recommended_daily_hours=fallback_stage.get("recommended_daily_hours"),
+                suggested_study_days=fallback_stage.get("suggested_study_days"),
+                learning_style_notes=fallback_stage.get("learning_style_notes"),
+                hardware_notes=fallback_stage.get("hardware_notes"),
+                personalization_summary=fallback_stage.get("personalization_summary"),
+            )
+            _agent_log(
+                "Agent1",
+                f"stage_planning:fallback | block={stage.block_name} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
+            )
+            return StagePlanningOutput(stage=stage)
 
         preferred_subtopic_ids = set(gap.target_subtopic_ids)
         subtopic = next(
@@ -447,10 +491,19 @@ class DeterministicDiagnosticAgent:
             gap_skill=gap.skill,
             estimated_hours=estimated_hours,
             prerequisites=prerequisites,
+            title=generated_stage.get("title"),
+            description=generated_stage.get("description"),
+            objectives=generated_stage.get("objectives", []),
+            difficulty=generated_stage.get("difficulty"),
+            recommended_daily_hours=generated_stage.get("recommended_daily_hours"),
+            suggested_study_days=generated_stage.get("suggested_study_days"),
+            learning_style_notes=generated_stage.get("learning_style_notes"),
+            hardware_notes=generated_stage.get("hardware_notes"),
+            personalization_summary=generated_stage.get("personalization_summary"),
         )
         _agent_log(
             "Agent1",
-            f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'}",
+            f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
         )
         return StagePlanningOutput(stage=stage)
 

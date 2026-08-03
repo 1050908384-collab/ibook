@@ -12,6 +12,10 @@ from api.stage import router as stage_router
 from api.visualize import router as visualize_router
 from api.assessment import router as assessment_router
 from api.dashboard import router as dashboard_router
+from api.v1.sessions import router as v1_sessions_router
+from api.v1.diagnosis import router as v1_diagnosis_router
+from api.v1.profile import router as v1_profile_router
+from api.v1.stages import router as v1_stages_router
 from config import settings
 
 app = FastAPI(
@@ -44,6 +48,11 @@ app.include_router(visualize_router, prefix="/api/visualize", tags=["Visualize"]
 # Agent46_API接口任务说明.md 第 2/4 节：测试服务与仪表盘，路径遵循文档 /api/v1 前缀
 app.include_router(assessment_router, prefix="/api/v1", tags=["Assessment"])
 app.include_router(dashboard_router, prefix="/api/v1", tags=["Dashboard"])
+# Agent13_API接口任务说明.md：会话/诊断/画像/阶段管理接口
+app.include_router(v1_sessions_router, prefix="/api/v1", tags=["Sessions"])
+app.include_router(v1_diagnosis_router, prefix="/api/v1", tags=["Diagnosis"])
+app.include_router(v1_profile_router, prefix="/api/v1", tags=["Profile"])
+app.include_router(v1_stages_router, prefix="/api/v1", tags=["Stages"])
 
 @app.get("/")
 def root():

@@ -153,6 +153,18 @@ class StateManager:
     def abandon_session(self, session_id: str) -> None:
         self.set_status(session_id, "abandoned")
 
+    def list_sessions(self) -> List[Dict[str, Any]]:
+        """获取所有会话列表"""
+        return self.db_client.list_sessions()
+
+    def update_field(self, session_id: str, field: str, value: Any) -> None:
+        """更新 SessionData 的任意字段"""
+        state = self._get(session_id)
+        if not state:
+            raise ValueError(f"Session not found: {session_id}")
+        setattr(state, field, value)
+        self._save(state)
+
     def _get(self, session_id: str) -> SessionData | None:
         if session_id in self._cache:
             return self._cache[session_id]

@@ -930,6 +930,81 @@ class SQLiteClient:
                            {"status": status, "session_id": session_id})
             session.commit()
 
+    def list_sessions(self) -> list[dict]:
+        """获取所有会话列表（含 profile_summary，供账号级"所有学习画像/所有项目"列表使用）"""
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT s.session_id, s.status, s.current_stage, s.updated_at,
+                       ss.state_json
+                FROM sessions s
+                LEFT JOIN session_states ss ON s.session_id = ss.session_id
+                ORDER BY s.updated_at DESC
+            """)).mappings().all()
+            
+            result = []
+            for row in rows:
+                state_json = json.loads(row["state_json"]) if row["state_json"] else {}
+                profile = state_json.get("profile") or {}
+                stage_info = state_json.get("stage_info") or {}
+                knowledge_gaps = profile.get("knowledge_gaps") or []
+                phase = state_json.get("phase", "diagnosing")
+                status = row["status"]
+
+                # 只有 stage_info 非空（含 block_name 或 stage_id）才算有阶段，否则 stage_num=0
+                has_real_stage = bool(stage_info and (
+                    stage_info.get("stage_id") or
+                    stage_info.get("block_name") or
+                    stage_info.get("subtopic_name")
+                ))
+                current_stage_num = (stage_info.get("stage_num") if has_real_stage else 0) or 0
+
+                # progress 计算规则：
+                # - abandoned: 0
+                # - completed: 100
+                # - diagnosing（未生成阶段）: 0
+                # - 其余: 阶段号粗估（最多80，留20给最终评估）
+                if status == "abandoned":
+                    progress = 0
+                elif status == "completed":
+                    progress = 100
+                elif phase == "diagnosing" or current_stage_num == 0:
+                    progress = 0
+                else:
+                    progress = min(current_stage_num * 20, 80)
+
+                # current_stage_name: 只在有真实阶段时填
+                current_stage_name = stage_info.get("block_name", "") if has_real_stage else ""
+
+                result.append({
+                    "session_id": row["session_id"],
+                    "title": state_json.get("title", ""),
+                    "status": status,
+                    "phase": phase,
+                    "updated_at": row["updated_at"],
+                    # profile_summary：账号级"所有学习画像/所有项目"列表
+                    "profile_summary": {
+                        "goal": profile.get("goal", ""),
+                        "grade": profile.get("grade", ""),
+                        "skill_tags": profile.get("skill_tags", []),
+                        "knowledge_gaps": [
+                            {
+                                "skill": gap.get("skill", ""),
+                                "status": gap.get("status", "pending"),
+                                "progress": progress,
+                            }
+                            for gap in knowledge_gaps
+                            if isinstance(gap, dict)
+                        ] if knowledge_gaps else [],
+                        "daily_hours": profile.get("daily_hours"),
+                        "learning_style": profile.get("learning_style", ""),
+                        "version": profile.get("version", 1),
+                        "current_stage_num": current_stage_num,
+                        "current_stage_name": current_stage_name,
+                        "progress": progress,
+                    },
+                })
+            return result
+
     def save_profile(self, session_id: str, profile: dict) -> None:
         with self.Session() as session:
             profile_id = str(uuid.uuid4())

@@ -58,22 +58,27 @@ class Harness:
         self._log(session_id, "process_initial_input:start", f"message={user_input[:60]}")
         self.state_manager.require_session(session_id)
         diagnostic = await self.agent1.run(DiagnosticInput(session_id=session_id, user_input=user_input))
+        # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
+        self.state_manager.update_profile(session_id, diagnostic.profile)
+        self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
         if diagnostic.profile.confidence < settings.CONFIDENCE_THRESHOLD:
             self._log(
                 session_id,
                 "process_initial_input:needs_more_info",
                 f"confidence={diagnostic.profile.confidence:.2f}",
             )
-            return {"status": "needs_more_info", "questions": diagnostic.followup_questions}
+            return {
+                "status": "needs_more_info",
+                "questions": diagnostic.followup_questions,
+                "profile": diagnostic.profile.model_dump(mode="json"),
+            }
 
-        self.state_manager.update_profile(session_id, diagnostic.profile)
         stage = await self.agent1.generate_stage(StagePlanningInput(
             session_id=session_id,
             profile=diagnostic.profile,
             stage_num=1,
         ))
         self.state_manager.update_stage(session_id, stage.stage)
-        self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
         self._log(
             session_id,
             "process_initial_input:ready",

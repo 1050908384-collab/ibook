@@ -25,9 +25,13 @@ class AnswerRecord(BaseModel):
 
 class SessionData(BaseModel):
     session_id: str
+    title: Optional[str] = None
     current_stage: int = 1
     status: Literal["active", "completed", "abandoned"] = "active"
+    phase: str = "diagnosing"
     profile: Optional[UserProfile] = None
+    profile_confirmed: bool = False
+    profile_modified: bool = False
     stage_info: Optional[StageInfo] = None
     learning_package: Optional[LearningPackage] = None
     next_stage: Optional[StageInfo] = None
@@ -35,5 +39,6 @@ class SessionData(BaseModel):
     qa_history: List[Dict[str, Any]] = Field(default_factory=list)
     answer_records: List[Dict[str, Any]] = Field(default_factory=list)
     interactions: List[Dict[str, Any]] = Field(default_factory=list)
+    available_actions: List[str] = Field(default_factory=list)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

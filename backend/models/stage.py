@@ -18,6 +18,15 @@ class StageInfo(BaseModel):
     status: str = "pending"
     accuracy: Optional[float] = None
     strategy_used: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    objectives: List[str] = Field(default_factory=list)
+    difficulty: Optional[str] = None
+    recommended_daily_hours: Optional[float] = None
+    suggested_study_days: Optional[int] = None
+    learning_style_notes: Optional[str] = None
+    hardware_notes: Optional[str] = None
+    personalization_summary: Optional[str] = None
 
 
 class Source(BaseModel):
