@@ -1,0 +1,130 @@
+[Normal] AI 实训导师页面数据需求文档
+[Subtitle] 页面 → 业务模块 → 页面需要的数据 → 字段 → 来源 → 接口
+[Heading 2] 页面清单
+[Heading 2] 优先确认
+[Heading 1] 01  创建学习目标
+[Normal] 本页面需要的数据
+[Normal] 待确认：现接口只接收 message；结构化提交需新增 DTO。
+[Heading 1] 02  画像确认页
+[Normal] 本页面需要的数据
+[Normal] 待确认：雷达图由前端根据 progress 计算。
+[Heading 1] 03  所有学习画像
+[Normal] 本页面需要的数据
+[Normal] 待确认：缺少账号级学习项目列表接口。
+[Heading 1] 04  学习对话页
+[Normal] 本页面需要的数据
+[Normal] 待确认：历史对话目前保存在 localStorage。
+[Heading 1] 05  学习材料面板
+[Normal] 本页面需要的数据
+[Normal] 待确认：recommended_articles 前后端字段不一致。
+[Heading 1] 06  阶段测试
+[Normal] 本页面需要的数据
+[Normal] 待确认：建议统一使用 assessment-attempt 新链路。
+[Heading 1] 07  阶段结果页
+[Normal] 本页面需要的数据
+[Normal] 待确认：流程为 complete → plan-next → stage/start。
+[Heading 1] 08  学习仪表盘
+[Normal] 本页面需要的数据
+[Normal] 待确认：前端 /api/dashboard 与后端 /api/v1 路径冲突。
+[Heading 1] 09  设置页与辅助弹层
+[Normal] 本页面需要的数据
+[Normal] 待确认：目前缺少画像与偏好更新接口。
+
+[TABLE 1]
+代码基线 | ai_agent-trainer-code-20260803.zip
+整理范围 | 9 个主要页面，粒度到业务组件
+
+[TABLE 2]
+序号 | 页面 | 主要业务模块
+01-03 | 目标与画像 | 创建学习目标、画像确认、所有学习画像
+04-06 | 阶段学习 | 学习对话、学习材料、阶段测试
+07-09 | 结果与管理 | 阶段结果、学习仪表盘、设置与辅助弹层
+
+[TABLE 3]
+仪表盘路径 | /api/dashboard 与 /api/v1 不一致
+测试链路 | 旧 submit-answer 与新 assessment-attempt 并存
+推荐文章 | recommended_articles 仅前端声明
+本地数据 | 项目、历史对话、设置主要存于 localStorage
+
+[TABLE 4]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+用户信息 | 年级、已有技能、学习目标、每日时长、学习风格、设备条件 | grade；skill_tags[]；goal；daily_hours；learning_style；hardware | 前端提交 | POST /api/chat/
+会话 | 会话 ID、会话状态 | session_id?；status | 后端返回 | POST /api/chat/
+诊断结果 | 用户画像、首个阶段、诊断状态 | response.profile；response.stage_info；response.status | 后端返回 | POST /api/chat/
+补充追问 | 仍需用户补充的问题 | questions[] | 后端返回 | POST /api/chat/
+高亮字段 | 表单中需要补充的项目 | highlighted_fields[] | 前端派生 | 无
+
+[TABLE 5]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+用户画像 | 年级、技能、目标、学习偏好、设备条件 | session_id；grade；skill_tags[]；goal；daily_hours；learning_style；hardware | 后端返回 | response.profile
+知识盲区 | 薄弱技能、所属知识块、等级、掌握进度、前置知识 | skill；block_id；block_name；level；status；progress；prerequisites[] | 后端返回 | profile.knowledge_gaps[]
+画像指标 | 画像置信度、信心指数、学习节奏、画像版本 | confidence；confidence_index；learning_rhythm；version | 后端返回 | response.profile
+首个阶段 | 阶段名称、知识点、预计时长、阶段状态 | stage_id；stage_num；block_id/name；subtopic_id/name；gap_skill；estimated_hours；status | 后端返回 | response.stage_info
+开始学习 | 当前会话 ID | session_id | 前端提交 | POST /api/stage/start
+
+[TABLE 6]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+目标列表 | 学习目标、当前阶段、阶段序号、更新时间 | sessionId；goal；stageName；stageNum；updatedAt | 本地保存 | localStorage: learningProjects
+阶段列表 | 该项目的全部学习阶段 | stages: StageInfo[] | 混合 | localStorage + dashboard
+画像详情 | 完整画像、置信度、版本、知识盲区 | profile；confidence；version；knowledge_gaps[] | 混合 | 本地缓存 / GET session
+切换项目 | 目标会话及要恢复的阶段 | session_id；可选 stage_num | 前端提交 | GET /api/session/{session_id}
+项目总数 | 学习项目数量 | projects.length | 前端派生 | 无
+跨设备同步 | 账号下的项目和历史阶段 | 项目列表 + 历史阶段 | 待统一 | 尚无列表接口
+
+[TABLE 7]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+当前阶段 | 阶段名称、序号、知识点、预计时长、状态 | stage_id；stage_num；block_name；subtopic_name；estimated_hours；status | 后端返回 | GET session / stage
+历史阶段 | 历史阶段及选中的历史会话 | sessionId；stage；selectedConversationId | 本地保存 | localStorage: stageConversations
+对话消息 | 发送者、消息正文、补充说明 | id；role；content；note | 本地保存 | 前端 Message[]
+发送问题 | 当前会话和用户问题 | session_id；message | 前端提交 | POST /api/chat/question
+回答与审核 | AI 回答、技术审核、质量审核、审核摘要 | answer；tech_pass；quality_pass；iterations；review_summary | 后端返回 | POST /api/chat/question
+学习计时 | 剩余时间、计时状态 | estimated_hours -> timerSeconds；timerRunning | 前端派生 | 无
+Agent 状态 | 当前运行 Agent、已完成 Agent | activeAgent；completedAgents[] | 前端派生 | 无
+
+[TABLE 8]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+学习包主信息 | 学习包所属阶段、知识块、格式、版本、审核追踪 ID | session_id；stage_id；block_id；block_name；format；version；review_trace_id | 后端返回 | POST /api/stage/start
+教程 | 教程正文 | tutorial | 后端返回 | learning_package.tutorial
+代码示例 | 示例标题、代码、编程语言 | code_examples[]: title；code；language | 后端返回 | learning_package.code_examples
+来源与声明 | 内容来源和关键声明 | sources[]；claims[] | 后端返回 | learning_package
+推荐视频 | 推荐视频列表 | recommended_videos[] | 后端返回 | learning_package
+推荐文章 | 推荐文章列表 | recommended_articles[] | 待统一 | 后端模型目前没有
+测试题 | 题目、题型、选项、提示 | questions[]: question_id；type；text；options；hint | 后端返回 | learning_package.questions
+审核状态 | 学习包是否通过、审核轮次、人工复核状态 | review_passed；iterations；package_status；needs_human_review；unresolved_* | 后端返回 | POST /api/stage/start
+
+[TABLE 9]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+题目 | 题目正文、题型、选项、难度、提示 | question_id；question_type；question_text；options[]；hint；difficulty | 后端返回 | learning_package.questions
+旧链路答题 | 用户对单题的答案 | session_id；question_id；user_answer | 前端提交 | POST /api/stage/submit-answer
+旧链路完成 | 要完成的会话 | session_id | 前端提交 | POST /api/stage/complete/{id}
+新链路建卷 | 测试卷 ID、冻结题目、已答数量、状态 | session_id -> attempt_id；questions[]；answered_count；status | 后端返回 | POST /api/v1/sessions/{id}/stages/current/assessment-attempts
+新链路存答案 | 题目答案和答题用时 | attempt_id；question_id；user_answer；time_spent | 前端提交 | PUT /api/v1/assessment-attempts/{aid}/answers/{qid}
+新链路交卷 | 正确数、正确率、正确答案、解析、判题结果 | correct_count；accuracy；correct_answer；explanation；is_correct | 后端返回 | POST /api/v1/assessment-attempts/{aid}/submit
+
+[TABLE 10]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+阶段结果 | 完成状态、正确率、阶段总结、下一步策略 | status；accuracy；stage_summary；next_strategy；phase | 后端返回 | POST /api/stage/complete/{id}
+画像更新 | 更新后的画像、信心指数、困惑标记、版本 | updated_profile；confidence_index；confusion_markers；version | 后端返回 | complete stage
+后续权限 | 能否规划下一阶段、是否全部掌握、可执行动作 | can_plan_next_stage；all_mastered；session_status；available_actions[] | 后端返回 | complete stage
+结业报告 | 最终学习报告 | final_report? | 后端返回 | complete stage
+规划下一阶段 | 当前会话及用户调整意见 | session_id；adjustment_notes? | 前端提交 | POST /api/stage/plan-next
+规划响应 | 下一阶段、更新画像、规划说明、可执行动作 | next_stage；updated_profile；planning_notes；phase；available_actions | 后端返回 | POST /api/stage/plan-next
+
+[TABLE 11]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+画像摘要 | 目标、年级、技能、盲区、每日时长、学习风格 | goal；grade；skill_tags[]；knowledge_gaps[]；daily_hours；learning_style；version | 后端返回 | dashboard.profile_summary
+核心指标 | 总进度、当前正确率、信心指数、掌握知识点数量 | overall_progress；current_accuracy；confidence_index；learning_rhythm；mastered_count；total_count | 后端返回 | GET dashboard
+当前阶段 | 阶段名称、序号、知识点、预计时长、状态 | current_stage_summary | 后端返回 | GET dashboard
+进度分布 | 各知识块进度和阶段历史 | block_progress[]；stage_history[] | 后端返回 | GET dashboard
+趋势与问答 | 正确率趋势和最近问答 | accuracy_trend[]；recent_qa[] | 后端返回 | GET dashboard
+前端展示 | 格式化百分比、掌握数量、雷达图坐标、中文状态 | 百分比格式；掌握 2/4；雷达图坐标；状态中文 | 前端派生 | 无
+路径不一致 | 前端请求路径与后端实际路径 | 前端请求 /api/dashboard/sessions/{id}/dashboard | 待统一 | 后端实际 /api/v1/sessions/{id}/dashboard
+
+[TABLE 12]
+业务模块 | 页面需要的数据 | 对应字段名 | 数据来源 | 现有接口
+学习设置 | 每日时长和学习风格 | daily_hours；learning_style | 本地保存 | 当前无保存接口
+会话设置 | 当前会话及清理操作 | session_id；清除本地会话 | 前端提交 | 仅清 localStorage
+结束会话 | 会话 ID 和结束状态 | session_id；status | 后端返回 | PUT /api/session/{id}/end
+学习路径 | 学习目标、技能、知识盲区、阶段 | skill_tags[]；knowledge_gaps[]；stage；goal | 混合 | 复用 Profile + Stage
+画像详情 | 完整画像、置信度、版本、知识盲区 | Profile；confidence；version；knowledge_gaps.progress | 混合 | 复用已有响应
+偏好持久化 | 每日时长、学习风格、设备条件 | daily_hours；learning_style；hardware? | 待统一 | 尚无 PATCH profile
