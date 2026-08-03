@@ -164,16 +164,19 @@ Agent3 送来的学习包除 tutorial/code/视频外，还携带 **`claims`（�
 | 1（最高） | issue `must_fix=true` 且 `disposition=rejected` | **persist** | 违反协议约束（must_fix 不允许直接驳回），一律坚持，交 Orchestrator 最终裁决 |
 | 2 | `disposition=accepted` 且提供了新 `source_refs` 或 `patched_sections` | **withdraw** | Agent3 已按要求整改，Agent4 认可并撤销 |
 | 3 | `disposition=accepted` 但无任何整改证据 | **persist** | 声称接受却无证据，保守坚持 |
-| 4 | `disposition=partially_accepted` | **downgrade** | 部分整改，风险下降但未完全消除（critical→major 或解除 must_fix） |
-| 5 | 非 must_fix 且 `disposition=rejected`，给出有效反证（新 `source_refs`） | **withdraw** | 反证成立，Agent4 认错撤销 |
-| 6 | 非 must_fix 且 `disposition=rejected`，无反证但 `severity=minor` 且给出 `reason` | **downgrade** | minor 且有理由，可降级 |
-| 7 | 其余 rejected / disposition 缺失或非法 | **persist** | 无有效反证，保守坚持 |
+| 4 | `disposition=partially_accepted` 且**无任何整改证据**（既无新 `source_refs` 也无 `patched_sections`） | **persist** | 口头「部分接受」但零实质动作，不足以放松 issue（降级会解除 must_fix，一轮即放松红线） |
+| 5 | `disposition=partially_accepted` 且属**质量红线类**（认知负荷/难度超载），但**只补了 `source_refs`、无 `patched_sections`** | **persist** | 质量红线成因是物理度量（概念密度/难度），只能靠改写正文缓解，补来源无效，须提供正文 patch 才可降级 |
+| 6 | `disposition=partially_accepted` 且提供了有效整改证据（新 `source_refs` 或 `patched_sections`；质量红线类须含 `patched_sections`） | **downgrade** | 部分整改，风险下降但未完全消除（critical→major 或解除 must_fix） |
+| 7 | 非 must_fix 且 `disposition=rejected`，给出有效反证（新 `source_refs`） | **withdraw** | 反证成立，Agent4 认错撤销 |
+| 8 | 非 must_fix 且 `disposition=rejected`，无反证但 `severity=minor` 且给出 `reason` | **downgrade** | minor 且有理由，可降级 |
+| 9 | 其余 rejected / disposition 缺失或非法 | **persist** | 无有效反证，保守坚持 |
 
 **判定要点**：
 1. **must_fix 保护**：must_fix issue 被直接 rejected 一律 persist，绝不因 Agent3 单方拒绝而撤销——这是防止关键错误被强行忽略的护栏
-2. **撤销需证据**：withdraw 必须有整改证据（新来源/patch）或有效反证，"口头接受"不足以撤销
-3. **单条裁决异常兜底**：某条回复裁决抛异常时兜底为 `persist`（保守坚持，避免误撤销）
-4. **裁决只针对已存在的 canonical_error_id**：回复中缺 `canonical_error_id` 的条目跳过，不产生裁决
+2. **撤销/降级需证据**：withdraw 与 partially_accepted 的 downgrade 都必须有整改证据（新来源/patch）或有效反证，"口头接受/口头部分接受"不足以放松 issue（协议第 5 节「证据优先」）
+3. **质量红线只认正文 patch**：认知负荷超载 / 难度不匹配一类问题成因是正文度量，补来源无法缓解，`partially_accepted` 须带 `patched_sections` 才能降级，否则 persist
+4. **单条裁决异常兜底**：某条回复裁决抛异常时兜底为 `persist`（保守坚持，避免误撤销）
+5. **裁决只针对已存在的 canonical_error_id**：回复中缺 `canonical_error_id` 的条目跳过，不产生裁决
 
 ## 4. 输入输出规范
 

@@ -17,6 +17,13 @@ harness = get_harness()
 def _build_dashboard(session_id: str, db=None) -> Dict[str, Any]:
     db = db or harness.state_manager.db_client
 
+    # 会话不存在时直接 404：必须在任何聚合调用之前判断，因为部分聚合
+    # （get_subtopic_mastery_counts / get_block_progress）会触发
+    # ensure_subtopic_status → INSERT subtopic_status，对不存在的 session
+    # 会因外键约束抛 IntegrityError（被上层误判为 500）。
+    if not db.session_exists(session_id):
+        raise HTTPException(status_code=404, detail=f"Session dashboard not found: {session_id}")
+
     profile = db.get_latest_profile(session_id)
     stages = db.list_stage_progress(session_id)
     mastered_count, total_count = db.get_subtopic_mastery_counts(session_id)

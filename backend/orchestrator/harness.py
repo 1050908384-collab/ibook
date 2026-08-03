@@ -177,7 +177,7 @@ class Harness:
         # 答疑审核摘要（Agent46_API接口任务说明.md 第 1 节）：由合并后的 Agent4 产出
         # technical_passed / quality_passed / iterations / status / needs_human_review，
         # 供前端 qa 返回体的 review_summary 使用（审核逻辑仍归属 Agent4，harness 仅透传）。
-        review_summary = self.agent4._protocol_agent.build_answer_review_summary(
+        review_summary = self._build_answer_review_summary(
             latest_review.technical,
             iterations=len(review_history),
         )
@@ -196,6 +196,34 @@ class Harness:
             # 第 1 节答疑审核摘要（前端 review_summary 字段来源）
             "review_summary": review_summary,
         }
+
+    def _build_answer_review_summary(
+        self,
+        technical_result: TechnicalReviewResult,
+        iterations: int = 1,
+    ) -> Dict[str, Any]:
+        """解析并调用 Agent4 的答疑审核摘要生成器（第 1 节 review_summary）。
+
+        build_answer_review_summary 是无状态方法（仅由 TechnicalReviewResult + iterations
+        推导 5 个固定字段），故按以下优先级健壮解析，避免对具体 reviewer 实现的强耦合：
+          1. self.agent4._protocol_agent（真实 Deterministic/Hybrid 审核体持有的协议 Agent）
+          2. self.agent4 本身直接暴露 build_answer_review_summary（直接注入 TechnicalReviewAgent）
+          3. 兜底：用 TechnicalReviewAgent 的实现（stateless），兼容测试注入的精简/桩 reviewer
+        """
+        builder = None
+        protocol_agent = getattr(self.agent4, "_protocol_agent", None)
+        if protocol_agent is not None and hasattr(protocol_agent, "build_answer_review_summary"):
+            builder = protocol_agent.build_answer_review_summary
+        elif hasattr(self.agent4, "build_answer_review_summary"):
+            builder = self.agent4.build_answer_review_summary
+        if builder is None:
+            from agents.agent_04_tech_review import TechnicalReviewAgent
+            # build_answer_review_summary 不访问 self，直接以 None 作 self 调用底层函数即可，
+            # 避免实例化 TechnicalReviewAgent（会加载全部工具链）。
+            return TechnicalReviewAgent.build_answer_review_summary(
+                None, technical_result, iterations=iterations
+            )
+        return builder(technical_result, iterations=iterations)
 
     async def submit_answer(self, session_id: str, question_id: str, user_answer: str) -> Dict[str, Any]:
         package = LearningPackage.model_validate(self._require_package(session_id))

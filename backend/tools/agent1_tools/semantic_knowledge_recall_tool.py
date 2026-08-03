@@ -5,10 +5,34 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from chromadb import PersistentClient
-from fastembed import TextEmbedding
+# chromadb / fastembed 是重依赖（向量库 + 本地 embedding），仅 Agent1 语义召回真正需要。
+# 为了让不依赖向量库的链路（如 Agent4/6 审核与决策测试）能在未安装这两个包的环境下
+# 正常 import，这里改为惰性加载：模块导入不再强依赖，只有真正调用到时才导入并报清晰错误。
+if TYPE_CHECKING:  # 仅供类型检查，运行期不导入
+    from chromadb import PersistentClient
+    from fastembed import TextEmbedding
+
+
+def _load_persistent_client():
+    try:
+        from chromadb import PersistentClient
+    except ModuleNotFoundError as exc:  # 缺依赖时给出可操作的提示
+        raise ModuleNotFoundError(
+            "语义召回需要 chromadb，请先安装：pip install chromadb"
+        ) from exc
+    return PersistentClient
+
+
+def _load_text_embedding():
+    try:
+        from fastembed import TextEmbedding
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "语义召回需要 fastembed，请先安装：pip install fastembed"
+        ) from exc
+    return TextEmbedding
 
 try:
     from config import BACKEND_DIR, DATA_DIR, settings
@@ -70,7 +94,7 @@ class FastEmbedChineseEmbeddingFunction:
                 model_kwargs["specific_model_path"] = str(cached_model_path)
             elif not self.allow_model_load:
                 raise RuntimeError("Agent1 FastEmbed model files are unavailable.")
-            self._model = TextEmbedding(
+            self._model = _load_text_embedding()(
                 model_name=EMBEDDING_MODEL,
                 cache_dir=str(MODEL_CACHE_DIR),
                 cuda=False,
@@ -94,7 +118,7 @@ class Agent1ChromaClient:
         chroma_path = Path(settings.CHROMA_PATH)
         if not chroma_path.is_absolute():
             chroma_path = (BACKEND_DIR / chroma_path).resolve()
-        self.client = PersistentClient(path=str(chroma_path))
+        self.client = _load_persistent_client()(path=str(chroma_path))
         self.embedding_function = FastEmbedChineseEmbeddingFunction()
 
     def get_collection(self):

@@ -189,6 +189,23 @@ def _matches_must_fix_error_type(error_type: Optional[str]) -> bool:
     return any(kw in et for kw in _MUST_FIX_ERROR_TYPE_KEYWORDS)
 
 
+# 「质量红线」类错误：其成因是物理度量（认知负荷/难度超载），只能靠改写正文
+# （patched_sections）真正缓解——补一条来源引用（source_refs）并不能降低概念密度或
+# 难度不匹配。rebut 复核时这类问题的「部分整改」必须以正文 patch 为证据，不能仅凭
+# 来源引用就降级（否则关键红线会被无实质整改的「部分接受」放松）。
+_QUALITY_REDLINE_ERROR_TYPE_KEYWORDS = (
+    "cognitive_load", "认知负荷", "负荷超载", "overload",
+    "difficulty_mismatch", "难度不匹配", "难度", "too_hard", "too_easy",
+    "concept_density", "概念密度",
+)
+
+
+def _is_quality_redline_error_type(error_type: Optional[str]) -> bool:
+    """判断 error_type 是否属于「只能靠改写正文缓解」的质量红线类问题。"""
+    et = (error_type or "").lower()
+    return any(kw in et for kw in _QUALITY_REDLINE_ERROR_TYPE_KEYWORDS)
+
+
 def _build_source_index(sources: Optional[List[Dict[str, Any]]]) -> Dict[str, Dict[str, Any]]:
     """把 sources 列表转为 {source_id: source} 索引，供命中匹配。"""
     index: Dict[str, Dict[str, Any]] = {}
@@ -771,6 +788,7 @@ class TechnicalReviewAgent(BaseAgent):
         disposition = str(reply.get("disposition", "")).lower()
         must_fix = bool(issue.get("must_fix", False))
         severity = str(issue.get("severity", "major")).lower()
+        error_type = issue.get("error_type") or issue.get("type")
         reply_source_refs = reply.get("source_refs") or []
         if isinstance(reply_source_refs, str):
             reply_source_refs = [reply_source_refs]
@@ -790,7 +808,19 @@ class TechnicalReviewAgent(BaseAgent):
             return "persist"
 
         if disposition == "partially_accepted":
-            # 部分整改：风险下降但未完全消除 → 降级（critical→major，或解除 must_fix）
+            # 部分整改：风险下降但未完全消除 → 降级（critical→major，或解除 must_fix）。
+            # 但「降级」会经 Orchestrator 解除 must_fix 并降 severity，一轮即放松红线，
+            # 因此必须以「真实整改证据」为前提，避免无实质动作的口头「部分接受」放松关键错误：
+            #   1) 无任何证据（既无新来源也无 patch）→ 不予降级，保守 persist；
+            #   2) 质量红线类（认知负荷/难度超载）只能靠改写正文缓解，补来源无效 →
+            #      必须提供正文 patch 才降级，否则 persist；
+            #   3) 事实/来源类的部分整改（有新来源或 patch）→ 按原规则降级。
+            has_evidence = bool(reply_source_refs or patched)
+            if not has_evidence:
+                return "persist"
+            if _is_quality_redline_error_type(error_type) and not patched:
+                # 质量红线：仅补来源不算整改，需正文 patch
+                return "persist"
             return "downgrade"
 
         if disposition == "rejected":
