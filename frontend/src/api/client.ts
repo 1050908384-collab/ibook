@@ -56,5 +56,10 @@ export const apiClient = {
   getProgress: async (sessionId: string) => {
     const response = await axios.get(`${BASE_URL}/visualize/progress/${sessionId}`);
     return response.data;
+  },
+
+  getDashboard: async (sessionId: string) => {
+    const response = await axios.get(`${BASE_URL}/dashboard/sessions/${sessionId}/dashboard`);
+    return response.data;
   }
 };
