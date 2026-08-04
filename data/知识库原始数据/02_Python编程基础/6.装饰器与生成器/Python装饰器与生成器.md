@@ -138,7 +138,10 @@ bye("李四")     # 没有日志输出
 
 ### 第三章：多装饰器叠加——由里到外包裹
 
-多个装饰器可以同时作用于一个函数，执行顺序是**由内到外**（先执行靠近函数的装饰器）。
+多个装饰器可以同时作用于一个函数。这里要分清**两个不同的"顺序"**：
+
+- **装饰（包裹）的顺序**：**从靠近函数的装饰器开始，自下而上**地一层层包上去。即 `@dec_3` 先包住 `target`，再被 `@dec_2` 包住，最后被 `@dec_1` 包住。
+- **调用（执行）的顺序**：真正调用 `target()` 时，**最外层的包装器先执行**，然后逐层向内进入原函数，返回时再逐层向外退出。
 
 ```python
 def dec_1(func):
@@ -185,7 +188,9 @@ target()
 装饰器 1 结束
 ```
 
-**为什么这样写**：`@dec_1 @dec_2 @dec_3` 等价于 `target = dec_1(dec_2(dec_3(target)))`。就像俄罗斯套娃，最里面的先执行，然后一层层向外展开。
+**为什么这样写**：`@dec_1 @dec_2 @dec_3` 的**包裹**过程等价于 `target = dec_1(dec_2(dec_3(target)))`——最靠近函数的 `dec_3` 最先包上，`dec_1` 在最外层。
+
+但**调用** `target()` 时的执行流是相反方向：先进入**最外层**的 `dec_1.inner`（所以"装饰器 1 开始"最先打印），再进入 `dec_2`、`dec_3`，到达原函数后，`return` 时再从内向外依次退出（所以"装饰器 3 结束→2 结束→1 结束"）。就像俄罗斯套娃：**拆的时候从最外层拆起，最外层的动作最先发生**。上面的输出正是这个顺序。
 
 ---
 
@@ -407,7 +412,7 @@ for value in delegator():
     print(value)   # 1 2 3
 ```
 
-**为什么这样写**：`yield from sub_gen()` 等价于手动写：
+**为什么这样写**：仅就"把子生成器的产出逐个转交给调用者"这一点而言，`yield from sub_gen()` **近似**于下面这段手写代码：
 
 ```python
 def delegator_manual():
@@ -420,7 +425,14 @@ def delegator_manual():
         pass
 ```
 
-`yield from` 自动处理了子生成器的启动、迭代和 `StopIteration`，代码更简洁。
+但请注意：**上面这段只是普通迭代转发，并不等价于完整的 `yield from`**。真正的 `yield from` 还会做这段代码没有做到的几件事：
+
+- **转发 `send()` 的值**：调用方 `send(x)` 进来的值会被送给子生成器，而上面固定写死了 `gen.send(None)`；
+- **转发 `throw()` 抛入的异常**：外部向委托生成器 `throw` 的异常会被传进子生成器处理；
+- **转发 `close()`**：关闭委托生成器时会正确关闭子生成器；
+- **拿到子生成器的返回值**：`result = yield from gen` 能取到子生成器 `return` 的值（见下一节），而上面的写法把它丢弃在 `StopIteration.value` 里没有取出。
+
+所以这段手写代码只能用来"直观理解基本转发行为"，实际开发中应直接用 `yield from`。
 
 #### 8.2 获取子生成器的返回值
 
@@ -497,7 +509,9 @@ def foo():
         yield 1
     except GeneratorExit:
         print("捕获到 GeneratorExit，执行清理")
-        raise   # 必须重新抛出，不能吞掉！
+        # 这里可以直接 return（或什么都不做，自然结束），
+        # 也可以 raise 把 GeneratorExit 继续抛出——两种都合法。
+        # 唯一禁止的是：在这之后再 yield 一个值。
 
 g = foo()
 print(next(g))   # 1
@@ -505,8 +519,9 @@ g.close()        # 输出: 捕获到 GeneratorExit，执行清理
 ```
 
 **⚠️ 避坑提醒**：
-- 捕获 `GeneratorExit` 后**必须重新抛出**，否则 Python 会报 `RuntimeError`
-- `close()` 后不能再调用 `next()` 或 `send()`，否则会报 `StopIteration` 或 `RuntimeError`
+- 捕获 `GeneratorExit` 后**不是必须重新抛出**：你可以做完清理后直接 `return` 或让函数正常结束，也可以选择 `raise` 继续向上抛，两者都被允许。真正的**禁忌是在响应 `GeneratorExit` 后再 `yield` 一个值**——那样才会触发 `RuntimeError: generator ignored GeneratorExit`。
+- 换句话说：`RuntimeError` 是由"关闭时又产出值"引起的，而**不是**由"没有重新抛出"引起的。
+- `close()` 后再调用 `next()` 或 `send()` 通常会得到 `StopIteration`（生成器已结束）。
 
 #### 9.3 throw()——向生成器抛异常
 
@@ -682,10 +697,10 @@ for py_file in find_files('.'):
 |------|----------|
 | 装饰器没加 `@wraps(func)` | wrapper 上必须加 `@wraps(func)`，保留元数据 |
 | 带参数装饰器只写两层 | 需要三层嵌套：外层收参数 → 中层收函数 → 内层执行逻辑 |
-| 多装饰器顺序搞反 | 执行顺序由内到外，靠近函数的最先执行 |
+| 混淆多装饰器的两种顺序 | 包裹自下而上（靠近函数的先包）；调用时最外层的包装器先执行 |
 | 类装饰器没写 `__call__` | 必须实现 `__call__`，否则实例不可调用 |
 | 用 `send(value)` 启动生成器 | 第一次必须用 `send(None)` 或 `next()` |
-| 捕获 `GeneratorExit` 不重新抛出 | 必须 `raise`，否则报 `RuntimeError` |
+| 以为捕获 `GeneratorExit` 必须 `raise` | 不必须重新抛出；真正的禁忌是响应后再 `yield`，那才会报 `RuntimeError` |
 | `close()` 后再调用 `next()` | 生成器已关闭，会报 `StopIteration` |
 | 列表推导式处理大数据 | 改用生成器表达式 `(x for x in ...)` 节省内存 |
 

@@ -540,11 +540,11 @@ class Student:
 | 要素 | 说明 |
 |------|------|
 | 类名 | 首字母大写，驼峰式（如 `Student`、`UserInfo`） |
-| `__init__` | 初始化方法，创建对象时**自动调用** |
+| `__init__` | 初始化方法，在对象**创建之后被自动调用**，用来给对象设置初始属性 |
 | `self` | 代表"当前对象"，通过 `self.属性名` 绑定属性 |
-| 方法 | 第一个参数必须是 `self`（名字可以改，但约定用 `self`） |
+| 方法 | 这里指**实例方法**：按约定第一个参数是 `self`（名字可改，但约定用 `self`）。注意并非所有方法都有 `self`——类方法（`@classmethod`）第一个参数是 `cls`，静态方法（`@staticmethod`）则既不要 `self` 也不要 `cls` |
 
-**为什么这样写**：`__init__` 是 Python 的"构造方法"，在 `Student("张三", 17, "高二")` 时自动执行，把传入的参数变成对象的属性。
+**为什么这样写**：`__init__` 常被叫作"构造方法"，但更准确地说它是**初始化方法**——它**不负责创建对象**。真正创建实例（分配内存、生成对象）的是 `__new__`；Python 先调用 `__new__` 造出对象，再把这个对象作为 `self` 传给 `__init__` 做初始化。以 `Student("张三", 17, "高二")` 为例，解释器先执行 `__new__` 得到实例，随后自动调用 `__init__`，把传入的参数变成对象的属性。日常开发几乎只需重写 `__init__`，但要清楚二者分工。
 
 #### 9.3 创建对象（实例化）
 
@@ -625,7 +625,9 @@ print(acc._Account__balance)  # 100（不推荐直接访问）
 ```python
 class Temperature:
     def __init__(self, celsius):
-        self._celsius = celsius
+        # 用 self.celsius（属性）赋值，会走下面的 setter 校验，
+        # 而不是直接写 self._celsius = celsius 绕过校验
+        self.celsius = celsius
 
     @property
     def celsius(self):
@@ -649,13 +651,16 @@ t = Temperature(25)
 print(t.celsius)       # 25（像访问属性一样）
 t.celsius = 30         # 调用setter
 print(t.fahrenheit)    # 86.0
-# t.celsius = -300     # ValueError!
+# t.celsius = -300     # ValueError!（赋值时触发校验）
+# Temperature(-300)    # 同样会 ValueError！因为 __init__ 里用的是 self.celsius，
+                       # 也会经过 setter 校验
 ```
 
 **为什么这样写**：
 - `@property` 把 `celsius()` 方法变成只读属性 `t.celsius`
 - `@celsius.setter` 定义赋值时的逻辑（如验证）
 - 没有 setter 的属性就是**只读属性**（如 `fahrenheit`）
+- **关键**：`__init__` 中要写 `self.celsius = celsius`（走属性）而**不是** `self._celsius = celsius`（直接写底层字段）。否则构造对象时会**绕过 setter 校验**，像 `Temperature(-300)` 这种非法值就能被创建出来，校验形同虚设
 
 ---
 
@@ -912,8 +917,16 @@ acc = BankAccount("Alice", 100)
 acc.deposit(50)
 print(acc.balance)           # 150
 print(acc.get_history())     # ['存款 +50']
-# acc.__balance = 999       # ❌ 无法直接修改
+
+# 注意：下面这行【不会报错】，也【改不了真正的余额】！
+acc.__balance = 999          # 只是在 acc 上新建了一个名为 "__balance" 的普通属性
+print(acc.__balance)         # 999  ← 这是你新建的属性
+print(acc.balance)           # 150  ← 真正的余额没变
+# 真正的余额被名称修饰藏在 _BankAccount__balance 里，和上面的 __balance 是两回事
+print(acc._BankAccount__balance)   # 150
 ```
+
+> **为什么不会报错**：在类**外部**写 `acc.__balance = 999` 时，Python **不会**做名称修饰（名称修饰只发生在类定义体内部）。所以它并没有去动那个被改名为 `_BankAccount__balance` 的私有属性，而是**在实例上新建了一个字面就叫 `__balance` 的新属性**。结果就是：不报错、真正的余额也没被改。这也说明双下划线私有属性并非"锁死不可改"，而是靠改名来**降低误碰概率**。
 
 ---
 

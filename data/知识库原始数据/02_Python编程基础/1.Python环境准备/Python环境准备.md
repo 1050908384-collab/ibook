@@ -83,7 +83,7 @@ pip --version
 
 ### 2.2 macOS 用户
 
-macOS 通常预装了旧版 Python（可能是 2.7 或 3.9），**强烈建议安装最新版**，避免与系统自带版本冲突。
+较老的 macOS 曾预装 Python 2.7，但**现代 macOS（Catalina 10.15 起）已不再预装 Python 2**；部分系统可能带有供系统脚本使用的旧版 `python3`。无论哪种情况，都**强烈建议自行安装最新版 Python**，避免直接依赖系统自带版本。
 
 **方法一：官方安装包（推荐新手）**
 
@@ -96,7 +96,7 @@ python3 --version
 pip3 --version
 ```
 
-**为什么用 `python3` 而不是 `python`**：macOS 系统自带的 `python` 命令通常指向旧版 Python 2，而新版安装后默认使用 `python3` 命令，避免冲突。
+**为什么用 `python3` 而不是 `python`**：在现代 macOS 上，命令行默认**并不提供** `python` 命令（早期版本曾指向系统自带的 Python 2，现已移除），系统与官方安装包统一使用 `python3`。因此请始终用 `python3` / `pip3`，避免踩到"命令不存在"或误用系统版本的坑。
 
 **方法二：Homebrew（适合已有 Homebrew 的开发者）**
 
@@ -127,15 +127,39 @@ python3 --version
 
 **为什么这样写**：`-y` 参数表示自动确认安装，不需要你手动输入 `y`。`python3-venv` 是创建虚拟环境所需的模块，一起安装避免后续补装。
 
+### 2.4 操作系统与实训环境该怎么选
+
+不同学习阶段对环境的要求不同，选对环境能少走很多弯路：
+
+- **日常写 Python、练命令行（Windows 用户）**：推荐启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它在 Windows 里提供一个接近真实生产的 Linux 环境，命令、路径、包管理都和后续的服务器一致，比在 Windows 原生 CMD 里练命令更贴近实战。安装只需管理员 PowerShell 执行 `wsl --install` 即可。
+- **日常写 Python（macOS / Linux 用户）**：直接使用本机终端即可，本身就是类 Unix 环境。
+- **LoRA / QLoRA 微调、vLLM 部署等 GPU 实训**：应使用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态的支持最成熟、文档最全。
+
+> **⚠️ 不推荐的做法**：不要把 **"CentOS + VirtualBox 虚拟机"当作最佳方案**。CentOS 8 已停止维护、生态逐渐落后；而 VirtualBox 这类桌面虚拟机**默认无法直通 NVIDIA GPU**，跑不了真正的 GPU 训练，只适合做纯 CPU 的隔离小实验。命令练习用 WSL2/Ubuntu LTS，GPU 实训用云上或实体的 Ubuntu LTS，才是稳妥路线。
+
 ---
 
-## 第三章：配置 pip 国内镜像源——让下载飞起来
+## 第三章：pip 下载太慢？——按需使用国内镜像源
 
-### 3.1 为什么要配置镜像源
+### 3.1 什么时候才需要镜像源
 
-`pip` 是 Python 的包管理工具，用于安装第三方库（如 `numpy`、`pandas`）。默认情况下，`pip` 从国外的 PyPI 官方服务器下载，速度极慢，甚至超时失败。**配置国内镜像源**后，下载速度可以从几分钟缩短到几秒。
+`pip` 是 Python 的包管理工具，用于安装第三方库（如 `numpy`、`pandas`）。默认情况下，`pip` 从官方的 PyPI 服务器（`pypi.org`）下载，这是**最权威、最完整、最应保留的默认源**。
 
-### 3.2 永久配置（推荐）
+只有当你处在网络受限环境、访问官方源明显变慢或经常超时时，才考虑临时切换到国内镜像。**镜像是"网络不好时的临时加速手段"，不是必须永久替换的默认设置**——官方源始终应作为首选。
+
+### 3.2 首选做法：临时指定镜像源（推荐）
+
+如果只是某次安装慢，最干净的做法是**只对这一次安装临时指定镜像**，不改动任何全局配置：
+
+```bash
+pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+**为什么推荐这种方式**：它不会影响你平时的默认行为，官方 PyPI 仍是默认源；哪天网络恢复正常或镜像出问题，你无需再去清理配置。
+
+### 3.3 进阶：将镜像设为默认（仅在长期网络受限时）
+
+只有当你**长期处于网络受限环境**、几乎每次都要用镜像时，才考虑把它写入配置作为默认源。配置后请记得：官方 PyPI 仍是最可靠的来源，网络恢复后建议改回或删除该配置。
 
 **Windows 用户：**
 
@@ -147,10 +171,11 @@ python3 --version
 ```ini
 [global]
 index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-trusted-host = pypi.tuna.tsinghua.edu.cn
 ```
 
-**为什么这样写**：`index-url` 告诉 pip 以后从这个地址下载包；`trusted-host` 是告诉系统信任这个域名，避免 HTTPS 证书验证问题。
+**为什么这样写**：`index-url` 告诉 pip 默认从这个地址下载包。
+
+> **⚠️ 关于 `trusted-host`**：网上很多教程会顺手加一行 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——`trusted-host` 会让 pip 跳过对该域名的 TLS 校验，等于放弃了传输安全。清华、阿里等主流镜像都提供合法的 HTTPS 证书，正常使用**无需** `trusted-host`。只有在企业内网自建源、或确实遇到证书报错且已确认来源可信时，才临时加它。
 
 **macOS / Linux 用户：**
 
@@ -171,12 +196,11 @@ nano ~/.config/pip/pip.conf
 ```ini
 [global]
 index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-trusted-host = pypi.tuna.tsinghua.edu.cn
 ```
 
 4. 按 `Ctrl + O` 保存，`Ctrl + X` 退出。
 
-### 3.3 验证配置是否生效
+### 3.4 验证配置是否生效
 
 在命令行输入：
 
@@ -186,12 +210,12 @@ pip config list
 
 如果看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'`，说明配置成功。
 
-### 3.4 临时使用（不配置永久源时）
+### 3.5 改回官方源
 
-如果你不想改全局配置，某次安装时临时指定源：
+如果你想恢复默认的官方 PyPI，删除上面创建的 `pip.ini` / `pip.conf` 文件即可，或执行：
 
 ```bash
-pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip config unset global.index-url
 ```
 
 ---
@@ -261,10 +285,10 @@ pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
 1. 访问 https://docs.conda.io/en/latest/miniconda.html。
 2. 下载对应系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）。
 3. 运行安装程序：
-   - **Windows**：一路下一步，建议勾选 **"Add Miniconda3 to my PATH environment variable"**。
-   - **macOS/Linux**：运行 `.sh` 文件后，按提示输入 `yes` 同意协议，选择安装路径。
+   - **Windows**：一路下一步，**保持默认、不要勾选 "Add Miniconda3 to my PATH environment variable"**（该选项被安装器标为"不推荐"）。把 Miniconda 直接塞进系统 PATH 容易和系统已有的 Python / 其他工具冲突，导致 `python`、`pip` 指向不明。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 来使用 conda 即可。
+   - **macOS/Linux**：运行 `.sh` 文件后，按提示输入 `yes` 同意协议、选择安装路径，并在最后一步选择 `yes` 让安装器执行 **`conda init`**（完成 shell 初始化）。这样每次打开终端时 conda 会通过初始化脚本正确接管，而不是靠把目录硬加进 PATH。
 
-4. **验证安装**：打开一个新的终端（Windows 用 `Anaconda Prompt` 或 `CMD`），输入：
+4. **验证安装**：打开一个**新的**终端（Windows 用 **"Anaconda Prompt (Miniconda3)"**；macOS/Linux 关闭并重开终端使 `conda init` 生效），输入：
 
 ```bash
 conda --version
@@ -407,8 +431,8 @@ print("Hello from VS Code!")
 | 问题现象 | 可能原因 | 解决方案 |
 |----------|----------|----------|
 | 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选择 "Modify"，勾选 "Add Python to environment variables" |
-| `pip install` 速度极慢或超时 | 未配置国内镜像源 | 按第三章配置清华源 |
-| `conda` 命令找不到 | 未加入环境变量 / 未使用 Anaconda Prompt | Windows 用户优先使用 `Anaconda Prompt` 或 `Miniconda Prompt` |
+| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 按第三章临时加 `-i` 指定国内镜像（如清华源）；长期受限再考虑设为默认源 |
+| `conda` 命令找不到 | 未使用 Anaconda/Miniconda Prompt（Windows）/ 未执行 `conda init`（macOS/Linux） | Windows 用户使用开始菜单的 `Anaconda Prompt (Miniconda3)`；macOS/Linux 运行 `conda init` 后重开终端 |
 | VS Code 提示"未选择 Python 解释器" | 未配置解释器路径 | 按 `Ctrl + Shift + P` → `Python: Select Interpreter` 手动选择 |
 | 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 使用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
 | pip 安装后，Python 里 `import` 报错 | pip 装到了错误的环境 | 激活目标 conda 环境后，使用 `python -m pip install 包名` 安装 |
@@ -422,7 +446,7 @@ print("Hello from VS Code!")
 | 组件 | 状态 | 验证命令 |
 |------|------|----------|
 | Python 3.10+ | ✅ 已安装 | `python --version` |
-| pip 国内镜像源 | ✅ 已配置 | `pip config list` |
+| pip 国内镜像源 | ⭕ 可选（网络受限时） | `pip config list` |
 | VS Code 或 PyCharm | ✅ 已安装 | 打开软件确认 |
 | Miniconda / Anaconda | ✅ 已安装 | `conda --version` |
 | Conda 虚拟环境 `llm-learn` | ✅ 已创建 | `conda env list` |
