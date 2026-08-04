@@ -18,6 +18,14 @@ SUBTOPICS_FILE_PATH = SEEDS_DIR / "knowledge_subtopics.json"
 FAQ_FILE_PATH = SEEDS_DIR / "faq_items.json"
 QUESTIONS_FILE_PATH = SEEDS_DIR / "test_questions.json"
 VIDEO_CATALOG_PATH = PROJECT_ROOT / "data" / "knowledge_base" / "video_resources.json"
+RETIRED_SUBTOPIC_REPLACEMENTS = {
+    "KBS-01-05": "KBS-01-04",
+    "KBS-02-06": "KBS-02-05",
+    "KBS-03-05": "KBS-03-04",
+    "KBS-09-06": "KBS-09-05",
+    "KBS-10-04": "KBS-10-03",
+    "KBS-12-06": "KBS-12-05",
+}
 
 def load_seed_data(file_path: Path):
     with open(file_path, "r", encoding="utf-8") as f:
@@ -126,6 +134,41 @@ def insert_knowledge_subtopics(db: SQLiteClient, subtopics_data: list):
     print("[OK] knowledge_subtopics: 已插入 {} 条记录".format(count))
 
 
+def remove_retired_subtopics(db: SQLiteClient, active_subtopic_ids: set[str]) -> None:
+    """Migrate references and remove obsolete catalogue nodes."""
+    with db.Session() as session:
+        rows = session.execute(text("SELECT subtopic_id FROM knowledge_subtopics")).mappings().all()
+        retired_ids = [row["subtopic_id"] for row in rows if row["subtopic_id"] not in active_subtopic_ids]
+        removed = 0
+        for subtopic_id in retired_ids:
+            replacement_id = RETIRED_SUBTOPIC_REPLACEMENTS.get(subtopic_id)
+            if replacement_id is None:
+                raise ValueError("未定义过期知识点迁移目标: {}".format(subtopic_id))
+            session.execute(text("UPDATE knowledge_docs SET subtopic_id = :replacement_id WHERE subtopic_id = :subtopic_id"), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
+            session.execute(text("UPDATE test_questions SET subtopic_id = :replacement_id WHERE subtopic_id = :subtopic_id"), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
+            session.execute(text("UPDATE stage_progress SET subtopic_id = :replacement_id WHERE subtopic_id = :subtopic_id"), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
+            session.execute(text("""
+                INSERT INTO subtopic_status (
+                    session_id, subtopic_id, block_id, status, mastery_score,
+                    last_accuracy, attempt_count, updated_at, started_at, completed_at
+                )
+                SELECT session_id, :replacement_id, block_id, status, mastery_score,
+                       last_accuracy, attempt_count, updated_at, started_at, completed_at
+                FROM subtopic_status WHERE subtopic_id = :subtopic_id
+                ON CONFLICT(session_id, subtopic_id) DO UPDATE SET
+                    status = MAX(subtopic_status.status, excluded.status),
+                    mastery_score = MAX(subtopic_status.mastery_score, excluded.mastery_score),
+                    attempt_count = subtopic_status.attempt_count + excluded.attempt_count,
+                    updated_at = MAX(subtopic_status.updated_at, excluded.updated_at)
+            """), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
+            session.execute(text("DELETE FROM subtopic_status WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
+            session.execute(text("DELETE FROM subtopic_resources WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
+            session.execute(text("DELETE FROM knowledge_subtopics WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
+            removed += 1
+        session.commit()
+    print("[OK] 已迁移并删除 {} 个过期知识点".format(removed))
+
+
 def insert_faq_items(db: SQLiteClient, faq_data: list):
     count = 0
     for faq in faq_data:
@@ -209,6 +252,26 @@ def insert_learning_resources(db: SQLiteClient, resources_data: list):
     print("[OK] learning_resources: 已插入 {} 条记录".format(len(resources_data)))
 
 
+def clear_video_catalog(db: SQLiteClient) -> None:
+    """Replace video resources and their mappings as one catalogue snapshot."""
+    with db.Session() as session:
+        session.execute(text("""
+            DELETE FROM subtopic_resources
+            WHERE resource_id IN (
+                SELECT resource_id FROM learning_resources WHERE resource_type = 'video'
+            )
+        """))
+        session.execute(text("""
+            DELETE FROM block_resources
+            WHERE resource_id IN (
+                SELECT resource_id FROM learning_resources WHERE resource_type = 'video'
+            )
+        """))
+        session.execute(text("DELETE FROM learning_resources WHERE resource_type = 'video'"))
+        session.commit()
+    print("[OK] 已清理旧视频资源目录与关联映射")
+
+
 def insert_subtopic_resources(db: SQLiteClient, mappings_data: list):
     for mapping in mappings_data:
         with db.Session() as session:
@@ -274,6 +337,7 @@ def main():
 
     print("[INFO] 3. 插入子知识点 (knowledge_subtopics)...")
     insert_knowledge_subtopics(db, subtopics_data)
+    remove_retired_subtopics(db, {item["subtopic_id"] for item in subtopics_data})
 
     print("[INFO] 4. 插入FAQ数据 (faq_items)...")
     insert_faq_items(db, faq_data)
@@ -282,6 +346,7 @@ def main():
     insert_test_questions(db, questions_data)
 
     print("[INFO] 6. 插入学习资源数据 (learning_resources)...")
+    clear_video_catalog(db)
     insert_learning_resources(db, resources_data)
 
     print("[INFO] 7. 插入资源与子知识点关联 (subtopic_resources)...")

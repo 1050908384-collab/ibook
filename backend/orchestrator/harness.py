@@ -353,11 +353,12 @@ class Harness:
             )
 
         synced_profile = await self._sync_profile_from_subtopic_status(decision.profile)
-        if accuracy >= 0.8:
-            for gap in synced_profile.knowledge_gaps:
-                if gap.skill == stage.gap_skill:
-                    gap.status = "已掌握"
-                    gap.progress = 1.0
+        # A stage can be an inserted prerequisite node for a later target
+        # block.  Its ``gap_skill`` still names that target, so marking the
+        # whole gap as mastered here would prematurely end the session.
+        # ``_sync_profile_from_subtopic_status`` is the sole authority for
+        # block completion and only reports mastery after every subtopic in
+        # the target block has actually been completed.
         self.state_manager.update_stage(session_id, stage)
         self.state_manager.update_profile(session_id, synced_profile)
 

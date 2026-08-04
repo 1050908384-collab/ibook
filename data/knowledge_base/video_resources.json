@@ -11,7 +11,7 @@
       "platform": "bilibili",
       "external_id": "BV1n84y1i7td",
       "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
@@ -28,7 +28,7 @@
       "platform": "bilibili",
       "external_id": "BV1cq421w72c",
       "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "supplementary",
       "review_status": "pending",
       "metadata": {
@@ -45,7 +45,7 @@
       "platform": "bilibili",
       "external_id": "BV1iwgY6jEjs",
       "external_part": null,
-      "content_summary": "用于学习“常用Shell命令”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“常用Shell命令（cd/ls/mkdir/cp/mv）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
@@ -62,7 +62,7 @@
       "platform": "bilibili",
       "external_id": "BV1Uv4y127tU",
       "external_part": null,
-      "content_summary": "用于学习“常用Shell命令”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“常用Shell命令（cd/ls/mkdir/cp/mv）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "supplementary",
       "review_status": "pending",
       "metadata": {
@@ -169,7 +169,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 37
+        "line_number": 35
       }
     },
     {
@@ -186,7 +186,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 46
+        "line_number": 44
       }
     },
     {
@@ -203,7 +203,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 48
+        "line_number": 46
       }
     },
     {
@@ -220,7 +220,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 56
+        "line_number": 54
       }
     },
     {
@@ -237,7 +237,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 58
+        "line_number": 56
       }
     },
     {
@@ -249,12 +249,12 @@
       "platform": "bilibili",
       "external_id": "BV1ywpgz3EZv",
       "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“（环境准备：在Python环境中安装Pandas、NumPy、Matplotlib、re库）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 68
+        "line_number": 64
       }
     },
     {
@@ -271,7 +271,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 72
+        "line_number": 68
       }
     },
     {
@@ -288,7 +288,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 76
+        "line_number": 72
       }
     },
     {
@@ -305,7 +305,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 78
+        "line_number": 74
       }
     },
     {
@@ -322,7 +322,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 80
+        "line_number": 76
       }
     },
     {
@@ -339,7 +339,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 84
+        "line_number": 80
       }
     },
     {
@@ -356,7 +356,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 86
+        "line_number": 82
       }
     },
     {
@@ -373,7 +373,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 90
+        "line_number": 86
       }
     },
     {
@@ -390,7 +390,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 92
+        "line_number": 88
       }
     },
     {
@@ -407,7 +407,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 100
+        "line_number": 94
       }
     },
     {
@@ -419,12 +419,12 @@
       "platform": "bilibili",
       "external_id": "BV1S5411X7FY",
       "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
-      "recommendation_level": "supplementary",
+      "content_summary": "用于学习“（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 105
+        "line_number": 99
       }
     },
     {
@@ -436,12 +436,12 @@
       "platform": "bilibili",
       "external_id": "BV1Wqr5BUEVU",
       "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "supplementary",
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 107
+        "line_number": 101
       }
     },
     {
@@ -458,7 +458,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 111
+        "line_number": 105
       }
     },
     {
@@ -475,7 +475,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 113
+        "line_number": 107
       }
     },
     {
@@ -492,7 +492,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 117
+        "line_number": 111
       }
     },
     {
@@ -509,7 +509,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 120
+        "line_number": 114
       }
     },
     {
@@ -526,7 +526,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 124
+        "line_number": 118
       }
     },
     {
@@ -543,7 +543,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 126
+        "line_number": 120
       }
     },
     {
@@ -560,7 +560,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 139
+        "line_number": 133
       }
     },
     {
@@ -577,7 +577,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 142
+        "line_number": 136
       }
     },
     {
@@ -594,7 +594,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 143
+        "line_number": 137
       }
     },
     {
@@ -611,7 +611,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 149
+        "line_number": 143
       }
     },
     {
@@ -623,16 +623,33 @@
       "platform": "bilibili",
       "external_id": "BV1oWnZeNEaF",
       "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“（环境准备：在Python环境中安装transformers、tokenizers库）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 161
+        "line_number": 155
       }
     },
     {
       "resource_id": "RES-VID-038",
+      "resource_type": "video",
+      "title": "大模型必刷教程！计算机大佬大白话教学Transformers开源库基础及实操，适合小白学习的喂饭教程！",
+      "raw_url": "https://www.bilibili.com/video/BV1y7wezdESG?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
+      "canonical_url": "https://www.bilibili.com/video/BV1y7wezdESG",
+      "platform": "bilibili",
+      "external_id": "BV1y7wezdESG",
+      "external_part": null,
+      "content_summary": "用于学习“（环境准备：在Python环境中安装transformers、tokenizers库）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "supplementary",
+      "review_status": "pending",
+      "metadata": {
+        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
+        "line_number": 157
+      }
+    },
+    {
+      "resource_id": "RES-VID-039",
       "resource_type": "video",
       "title": "大模型保姆级教程 - 1.1.1分词方式",
       "raw_url": "https://www.bilibili.com/video/BV1PNTiz3Enh?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
@@ -645,11 +662,11 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 165
+        "line_number": 161
       }
     },
     {
-      "resource_id": "RES-VID-039",
+      "resource_id": "RES-VID-040",
       "resource_type": "video",
       "title": "手把手带你实战HuggingFace Transformers-入门篇】基础组件之Tokenizer",
       "raw_url": "https://www.bilibili.com/video/BV1NX4y1177c?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
@@ -662,24 +679,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 169
-      }
-    },
-    {
-      "resource_id": "RES-VID-040",
-      "resource_type": "video",
-      "title": "大模型必刷教程！计算机大佬大白话教学Transformers开源库基础及实操，适合小白学习的喂饭教程！",
-      "raw_url": "https://www.bilibili.com/video/BV1y7wezdESG?vd\\_source=7b5c701ca778c7536599b5f75db33ea3",
-      "canonical_url": "https://www.bilibili.com/video/BV1y7wezdESG",
-      "platform": "bilibili",
-      "external_id": "BV1y7wezdESG",
-      "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
-      "recommendation_level": "primary",
-      "review_status": "pending",
-      "metadata": {
-        "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 181
+        "line_number": 165
       }
     },
     {
@@ -696,7 +696,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 185
+        "line_number": 179
       }
     },
     {
@@ -713,7 +713,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 189
+        "line_number": 183
       }
     },
     {
@@ -730,7 +730,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 193
+        "line_number": 187
       }
     },
     {
@@ -747,7 +747,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 197
+        "line_number": 191
       }
     },
     {
@@ -764,7 +764,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 201
+        "line_number": 195
       }
     },
     {
@@ -781,7 +781,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 203
+        "line_number": 197
       }
     },
     {
@@ -798,7 +798,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 207
+        "line_number": 201
       }
     },
     {
@@ -815,7 +815,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 209
+        "line_number": 203
       }
     },
     {
@@ -832,7 +832,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 213
+        "line_number": 207
       }
     },
     {
@@ -849,7 +849,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 215
+        "line_number": 209
       }
     },
     {
@@ -866,7 +866,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 223
+        "line_number": 217
       }
     },
     {
@@ -883,7 +883,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 242
+        "line_number": 234
       }
     },
     {
@@ -900,7 +900,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 244
+        "line_number": 236
       }
     },
     {
@@ -917,7 +917,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 248
+        "line_number": 240
       }
     },
     {
@@ -934,7 +934,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 252
+        "line_number": 244
       }
     },
     {
@@ -951,7 +951,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 254
+        "line_number": 246
       }
     },
     {
@@ -968,7 +968,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 258
+        "line_number": 250
       }
     },
     {
@@ -985,7 +985,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 260
+        "line_number": 252
       }
     },
     {
@@ -997,12 +997,12 @@
       "platform": "bilibili",
       "external_id": "BV1n3gpz6ESH",
       "external_part": "2",
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“（环境准备：安装transformers、datasets、accelerate库，建议使用 huggingface_hub 配置缓存路径与Token）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 270
+        "line_number": 260
       }
     },
     {
@@ -1019,7 +1019,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 274
+        "line_number": 264
       }
     },
     {
@@ -1036,7 +1036,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 278
+        "line_number": 268
       }
     },
     {
@@ -1053,7 +1053,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 282
+        "line_number": 272
       }
     },
     {
@@ -1070,7 +1070,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 284
+        "line_number": 274
       }
     },
     {
@@ -1087,7 +1087,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 296
+        "line_number": 286
       }
     },
     {
@@ -1104,7 +1104,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 298
+        "line_number": 288
       }
     },
     {
@@ -1121,7 +1121,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 306
+        "line_number": 296
       }
     },
     {
@@ -1138,7 +1138,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 308
+        "line_number": 298
       }
     },
     {
@@ -1155,7 +1155,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 312
+        "line_number": 302
       }
     },
     {
@@ -1172,7 +1172,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 316
+        "line_number": 306
       }
     },
     {
@@ -1189,7 +1189,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 318
+        "line_number": 308
       }
     },
     {
@@ -1206,7 +1206,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 330
+        "line_number": 318
       }
     },
     {
@@ -1223,7 +1223,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 334
+        "line_number": 322
       }
     },
     {
@@ -1240,7 +1240,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 338
+        "line_number": 326
       }
     },
     {
@@ -1257,7 +1257,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 342
+        "line_number": 330
       }
     },
     {
@@ -1274,7 +1274,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 344
+        "line_number": 332
       }
     },
     {
@@ -1291,7 +1291,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 350
+        "line_number": 338
       }
     },
     {
@@ -1303,12 +1303,12 @@
       "platform": "bilibili",
       "external_id": "BV1QV2FBiEh1",
       "external_part": "9",
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
-      "recommendation_level": "supplementary",
+      "content_summary": "用于学习“（环境准备：安装deepspeed库，配置多GPU环境（至少2卡），编写ds_config.json文件，使用 deepspeed --num_gpus=N 启动训练）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+      "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 356
+        "line_number": 344
       }
     },
     {
@@ -1320,12 +1320,12 @@
       "platform": "bilibili",
       "external_id": "BV1pjwFzbE6i",
       "external_part": null,
-      "content_summary": "用于当前知识板块的总览或环境准备视频；导入后需补充视频内容摘要或字幕。",
+      "content_summary": "用于学习“（环境准备：安装vLLM库，注意其PyTorch版本兼容性，GPU显存建议≥16GB；安装前需确保CUDA环境正确）”的推荐视频；导入后需补充视频内容摘要或字幕。",
       "recommendation_level": "primary",
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 370
+        "line_number": 358
       }
     },
     {
@@ -1342,7 +1342,7 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 378
+        "line_number": 366
       }
     },
     {
@@ -1359,20 +1359,40 @@
       "review_status": "pending",
       "metadata": {
         "raw_file": "data\\知识库原始数据\\知识清单-学习视频链接收集.md",
-        "line_number": 382
+        "line_number": 370
       }
     }
   ],
   "subtopic_mappings": [
+    {
+      "resource_id": "RES-VID-001",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-00",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-002",
+      "block_id": "KB-01",
+      "subtopic_id": "KBS-01-00",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令”自动匹配。"
+    },
     {
       "resource_id": "RES-VID-003",
       "block_id": "KB-01",
       "subtopic_id": "KBS-01-01",
       "role": "primary",
       "sequence_index": 1,
-      "relevance_score": 0.95,
+      "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“常用Shell命令（cd/ls/mkdir/cp/mv）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“常用Shell命令（cd/ls/mkdir/cp/mv）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-004",
@@ -1380,9 +1400,9 @@
       "subtopic_id": "KBS-01-01",
       "role": "supplementary",
       "sequence_index": 2,
-      "relevance_score": 0.95,
+      "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“常用Shell命令（cd/ls/mkdir/cp/mv）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“常用Shell命令（cd/ls/mkdir/cp/mv）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-005",
@@ -1392,7 +1412,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“环境变量配置-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“环境变量配置”自动匹配。"
     },
     {
       "resource_id": "RES-VID-006",
@@ -1402,7 +1422,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理”自动匹配。"
     },
     {
       "resource_id": "RES-VID-007",
@@ -1412,7 +1432,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理”自动匹配。"
     },
     {
       "resource_id": "RES-VID-008",
@@ -1422,7 +1442,7 @@
       "sequence_index": 3,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“conda/pip虚拟环境管理”自动匹配。"
     },
     {
       "resource_id": "RES-VID-009",
@@ -1432,7 +1452,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“nvidia-smi显存监控-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“nvidia-smi显存监控”自动匹配。"
     },
     {
       "resource_id": "RES-VID-011",
@@ -1442,7 +1462,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“数据结构-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“数据结构”自动匹配。"
     },
     {
       "resource_id": "RES-VID-012",
@@ -1452,7 +1472,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“数据结构-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“数据结构”自动匹配。"
     },
     {
       "resource_id": "RES-VID-013",
@@ -1462,7 +1482,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“装饰器与生成器-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“装饰器与生成器”自动匹配。"
     },
     {
       "resource_id": "RES-VID-014",
@@ -1472,7 +1492,17 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“装饰器与生成器-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“装饰器与生成器”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-015",
+      "block_id": "KB-03",
+      "subtopic_id": "KBS-03-00",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：在Python环境中安装Pandas、NumPy、Matplotlib、re库”自动匹配。"
     },
     {
       "resource_id": "RES-VID-016",
@@ -1482,7 +1512,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“使用Pandas进行数据清洗-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“使用Pandas进行数据清洗”自动匹配。"
     },
     {
       "resource_id": "RES-VID-017",
@@ -1492,7 +1522,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-018",
@@ -1502,7 +1532,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-019",
@@ -1512,7 +1542,7 @@
       "sequence_index": 3,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“格式转换（JSON/CSV读写）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-020",
@@ -1522,7 +1552,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“NumPy进行基本数组运算-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“NumPy进行基本数组运算”自动匹配。"
     },
     {
       "resource_id": "RES-VID-021",
@@ -1532,7 +1562,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“NumPy进行基本数组运算-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“NumPy进行基本数组运算”自动匹配。"
     },
     {
       "resource_id": "RES-VID-022",
@@ -1542,7 +1572,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“正则表达式进行文本预处理-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“正则表达式进行文本预处理”自动匹配。"
     },
     {
       "resource_id": "RES-VID-023",
@@ -1552,7 +1582,27 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“正则表达式进行文本预处理-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“正则表达式进行文本预处理”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-025",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-00",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-026",
+      "block_id": "KB-04",
+      "subtopic_id": "KBS-04-00",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1”自动匹配。"
     },
     {
       "resource_id": "RES-VID-027",
@@ -1562,7 +1612,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“张量操作-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“张量操作”自动匹配。"
     },
     {
       "resource_id": "RES-VID-028",
@@ -1572,7 +1622,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“张量操作-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“张量操作”自动匹配。"
     },
     {
       "resource_id": "RES-VID-029",
@@ -1582,7 +1632,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“自动求导机制-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“自动求导机制”自动匹配。"
     },
     {
       "resource_id": "RES-VID-030",
@@ -1592,7 +1642,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“torch.nn模块-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“torch.nn模块”自动匹配。"
     },
     {
       "resource_id": "RES-VID-031",
@@ -1602,7 +1652,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“Dataset/DataLoader数据装载-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“Dataset/DataLoader数据装载”自动匹配。"
     },
     {
       "resource_id": "RES-VID-032",
@@ -1612,7 +1662,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“Dataset/DataLoader数据装载-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“Dataset/DataLoader数据装载”自动匹配。"
     },
     {
       "resource_id": "RES-VID-033",
@@ -1622,7 +1672,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“理解分词、词性标注、命名实体识别（NER）等基础任务-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“理解分词、词性标注、命名实体识别（NER）等基础任务”自动匹配。"
     },
     {
       "resource_id": "RES-VID-034",
@@ -1632,7 +1682,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-035",
@@ -1642,27 +1692,47 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握文本的数值化表示方法（Bag-of-Words、TF-IDF、Word2Vec）”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-037",
+      "block_id": "KB-07",
+      "subtopic_id": "KBS-07-00",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：在Python环境中安装transformers、tokenizers库”自动匹配。"
     },
     {
       "resource_id": "RES-VID-038",
+      "block_id": "KB-07",
+      "subtopic_id": "KBS-07-00",
+      "role": "supplementary",
+      "sequence_index": 2,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：在Python环境中安装transformers、tokenizers库”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-039",
       "block_id": "KB-07",
       "subtopic_id": "KBS-07-01",
       "role": "primary",
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“理解BPE、WordPiece、SentencePiece算法原理-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“理解BPE、WordPiece、SentencePiece算法原理”自动匹配。"
     },
     {
-      "resource_id": "RES-VID-039",
+      "resource_id": "RES-VID-040",
       "block_id": "KB-07",
       "subtopic_id": "KBS-07-02",
       "role": "primary",
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握HuggingFace Tokenizer的加载与使用-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握HuggingFace Tokenizer的加载与使用”自动匹配。"
     },
     {
       "resource_id": "RES-VID-041",
@@ -1672,7 +1742,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握Transformer的Encoder-Decoder结构-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握Transformer的Encoder-Decoder结构”自动匹配。"
     },
     {
       "resource_id": "RES-VID-042",
@@ -1682,7 +1752,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“重点理解Decoder-Only架构（如GPT/Llama/Qwen）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“重点理解Decoder-Only架构（如GPT/Llama/Qwen）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-043",
@@ -1692,7 +1762,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“RMSNorm与残差连接-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“RMSNorm与残差连接”自动匹配。"
     },
     {
       "resource_id": "RES-VID-044",
@@ -1702,7 +1772,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“前馈网络（FFN）与SwiGLU激活函数-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“前馈网络（FFN）与SwiGLU激活函数”自动匹配。"
     },
     {
       "resource_id": "RES-VID-045",
@@ -1712,7 +1782,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“旋转位置编码（RoPE）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“旋转位置编码（RoPE）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-046",
@@ -1722,7 +1792,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“旋转位置编码（RoPE）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“旋转位置编码（RoPE）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-047",
@@ -1732,7 +1802,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“KV Cache机制-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“KV Cache机制”自动匹配。"
     },
     {
       "resource_id": "RES-VID-048",
@@ -1742,7 +1812,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“KV Cache机制-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“KV Cache机制”自动匹配。"
     },
     {
       "resource_id": "RES-VID-049",
@@ -1752,7 +1822,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“前向传播实验（加载GPT-2验证理解）-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“前向传播实验（加载GPT-2验证理解）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-050",
@@ -1762,7 +1832,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“前向传播实验（加载GPT-2验证理解）-0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“前向传播实验（加载GPT-2验证理解）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-054",
@@ -1772,7 +1842,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握预训练（Pretrain）整体流程与目标-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握预训练（Pretrain）整体流程与目标”自动匹配。"
     },
     {
       "resource_id": "RES-VID-055",
@@ -1782,7 +1852,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“有监督微调（SFT）整体流程与目标-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“有监督微调（SFT）整体流程与目标”自动匹配。"
     },
     {
       "resource_id": "RES-VID-056",
@@ -1792,7 +1862,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“有监督微调（SFT）整体流程与目标-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“有监督微调（SFT）整体流程与目标”自动匹配。"
     },
     {
       "resource_id": "RES-VID-057",
@@ -1802,7 +1872,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“基于人类反馈的强化学习（RLHF）整体流程与目标-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“基于人类反馈的强化学习（RLHF）整体流程与目标”自动匹配。"
     },
     {
       "resource_id": "RES-VID-058",
@@ -1812,7 +1882,17 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“基于人类反馈的强化学习（RLHF）整体流程与目标-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“基于人类反馈的强化学习（RLHF）整体流程与目标”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-059",
+      "block_id": "KB-11",
+      "subtopic_id": "KBS-11-00",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：安装transformers、datasets、accelerate库，建议使用 huggingface\\_hub 配置缓存路径与Token”自动匹配。"
     },
     {
       "resource_id": "RES-VID-060",
@@ -1822,7 +1902,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握transformers库的AutoModel/AutoTokenizer加载方式-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握transformers库的AutoModel/AutoTokenizer加载方式”自动匹配。"
     },
     {
       "resource_id": "RES-VID-061",
@@ -1830,9 +1910,9 @@
       "subtopic_id": "KBS-11-02",
       "role": "primary",
       "sequence_index": 1,
-      "relevance_score": 0.95,
+      "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“datasets库的数据处理（map/filter/shuffle）1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“datasets库的数据处理（map/filter/shuffle）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-062",
@@ -1842,7 +1922,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“Trainer训练器的使用及TrainingArguments参数配置-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“Trainer训练器的使用及TrainingArguments参数配置”自动匹配。"
     },
     {
       "resource_id": "RES-VID-063",
@@ -1852,7 +1932,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“Trainer训练器的使用及TrainingArguments参数配置-2h”自动匹配。"
+      "mapping_notes": "从原始清单标题“Trainer训练器的使用及TrainingArguments参数配置”自动匹配。"
     },
     {
       "resource_id": "RES-VID-064",
@@ -1862,7 +1942,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“理解LoRA的低秩分解原理-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“理解LoRA的低秩分解原理”自动匹配。"
     },
     {
       "resource_id": "RES-VID-065",
@@ -1872,7 +1952,7 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“理解LoRA的低秩分解原理-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“理解LoRA的低秩分解原理”自动匹配。"
     },
     {
       "resource_id": "RES-VID-066",
@@ -1882,7 +1962,7 @@
       "sequence_index": 1,
       "relevance_score": 0.95,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“（target\\_modules、r、lora\\_alpha、lora\\_dropout）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“（target\\_modules、r、lora\\_alpha、lora\\_dropout）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-067",
@@ -1892,7 +1972,7 @@
       "sequence_index": 2,
       "relevance_score": 0.95,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“（target\\_modules、r、lora\\_alpha、lora\\_dropout）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“（target\\_modules、r、lora\\_alpha、lora\\_dropout）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-068",
@@ -1902,7 +1982,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“理解QLoRA的4-bit量化（NF4、双重量化）与分页优化器原理-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“理解QLoRA的4-bit量化（NF4、双重量化）与分页优化器原理”自动匹配。"
     },
     {
       "resource_id": "RES-VID-069",
@@ -1910,9 +1990,9 @@
       "subtopic_id": "KBS-12-05",
       "role": "primary",
       "sequence_index": 1,
-      "relevance_score": 0.95,
+      "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握LoRA权重合并与导出（merge\\_and\\_unload）0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握LoRA权重合并与导出（merge\\_and\\_unload）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-070",
@@ -1920,9 +2000,9 @@
       "subtopic_id": "KBS-12-05",
       "role": "supplementary",
       "sequence_index": 2,
-      "relevance_score": 0.95,
+      "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握LoRA权重合并与导出（merge\\_and\\_unload）0.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握LoRA权重合并与导出（merge\\_and\\_unload）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-071",
@@ -1932,7 +2012,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“掌握梯度累积（Gradient Accumulation）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“掌握梯度累积（Gradient Accumulation）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-072",
@@ -1942,7 +2022,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“混合精度训练（AMP）-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“混合精度训练（AMP）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-073",
@@ -1952,7 +2032,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“梯度检查点（Gradient Checkpointing）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“梯度检查点（Gradient Checkpointing）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-074",
@@ -1962,7 +2042,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“学习率调度（Warmup + 余弦退火）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“学习率调度（Warmup + 余弦退火）”自动匹配。"
     },
     {
       "resource_id": "RES-VID-075",
@@ -1972,7 +2052,27 @@
       "sequence_index": 2,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“学习率调度（Warmup + 余弦退火）-1h”自动匹配。"
+      "mapping_notes": "从原始清单标题“学习率调度（Warmup + 余弦退火）”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-077",
+      "block_id": "KB-14",
+      "subtopic_id": "KBS-14-00",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：安装deepspeed库，配置多GPU环境（至少2卡），编写ds\\_config.json文件，使用 deepspeed --num\\_gpus=N 启动训练”自动匹配。"
+    },
+    {
+      "resource_id": "RES-VID-078",
+      "block_id": "KB-15",
+      "subtopic_id": "KBS-15-00",
+      "role": "primary",
+      "sequence_index": 1,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "从原始清单标题“环境准备：安装vLLM库，注意其PyTorch版本兼容性，GPU显存建议≥16GB；安装前需确保CUDA环境正确”自动匹配。"
     },
     {
       "resource_id": "RES-VID-079",
@@ -1982,7 +2082,7 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“理解vLLM的PagedAttention与Continuous Batching机制-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“理解vLLM的PagedAttention与Continuous Batching机制”自动匹配。"
     },
     {
       "resource_id": "RES-VID-080",
@@ -1992,40 +2092,13 @@
       "sequence_index": 1,
       "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "从原始清单标题“能够使用vLLM加载模型并配置gpu\\_memory\\_utilization等关键参数进行推理部署-1.5h”自动匹配。"
+      "mapping_notes": "从原始清单标题“能够使用vLLM加载模型并配置gpu\\_memory\\_utilization等关键参数进行推理部署”自动匹配。"
     }
   ],
   "block_mappings": [
     {
-      "resource_id": "RES-VID-001",
-      "block_id": "KB-01",
-      "role": "primary",
-      "sequence_index": 1,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
-      "resource_id": "RES-VID-002",
-      "block_id": "KB-01",
-      "role": "supplementary",
-      "sequence_index": 2,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
       "resource_id": "RES-VID-010",
       "block_id": "KB-02",
-      "role": "primary",
-      "sequence_index": 1,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
-      "resource_id": "RES-VID-015",
-      "block_id": "KB-03",
       "role": "primary",
       "sequence_index": 1,
       "relevance_score": 0.9,
@@ -2042,44 +2115,8 @@
       "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
     },
     {
-      "resource_id": "RES-VID-025",
-      "block_id": "KB-04",
-      "role": "supplementary",
-      "sequence_index": 2,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
-      "resource_id": "RES-VID-026",
-      "block_id": "KB-04",
-      "role": "supplementary",
-      "sequence_index": 3,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
       "resource_id": "RES-VID-036",
       "block_id": "KB-06",
-      "role": "primary",
-      "sequence_index": 1,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
-      "resource_id": "RES-VID-037",
-      "block_id": "KB-07",
-      "role": "primary",
-      "sequence_index": 1,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
-      "resource_id": "RES-VID-040",
-      "block_id": "KB-08",
       "role": "primary",
       "sequence_index": 1,
       "relevance_score": 0.9,
@@ -2114,15 +2151,6 @@
       "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
     },
     {
-      "resource_id": "RES-VID-059",
-      "block_id": "KB-11",
-      "role": "primary",
-      "sequence_index": 1,
-      "relevance_score": 0.9,
-      "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
-    },
-    {
       "resource_id": "RES-VID-076",
       "block_id": "KB-14",
       "role": "primary",
@@ -2132,22 +2160,85 @@
       "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
     },
     {
-      "resource_id": "RES-VID-077",
-      "block_id": "KB-14",
+      "resource_id": "RES-VID-001",
+      "block_id": "KB-01",
       "role": "supplementary",
-      "sequence_index": 2,
-      "relevance_score": 0.9,
+      "sequence_index": 99,
+      "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
+    },
+    {
+      "resource_id": "RES-VID-015",
+      "block_id": "KB-03",
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
+    },
+    {
+      "resource_id": "RES-VID-033",
+      "block_id": "KB-05",
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
+    },
+    {
+      "resource_id": "RES-VID-037",
+      "block_id": "KB-07",
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
+    },
+    {
+      "resource_id": "RES-VID-041",
+      "block_id": "KB-08",
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
+    },
+    {
+      "resource_id": "RES-VID-059",
+      "block_id": "KB-11",
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
+    },
+    {
+      "resource_id": "RES-VID-064",
+      "block_id": "KB-12",
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
+    },
+    {
+      "resource_id": "RES-VID-071",
+      "block_id": "KB-13",
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
+      "mapping_status": "confirmed",
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
     },
     {
       "resource_id": "RES-VID-078",
       "block_id": "KB-15",
-      "role": "primary",
-      "sequence_index": 1,
-      "relevance_score": 0.9,
+      "role": "supplementary",
+      "sequence_index": 99,
+      "relevance_score": 1.0,
       "mapping_status": "confirmed",
-      "mapping_notes": "原始清单位于板块标题之后、首个子知识点之前，按板块级总览/环境准备资源处理。"
+      "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。"
     }
   ],
   "manual_review": []

@@ -130,7 +130,9 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
             "I know Python, PyTorch, and HuggingFace and want to learn LoRA",
         )
         self.assertEqual("ready", initial["status"])
-        self.assertEqual("LoRA", initial["stage_info"]["block_name"])
+        # LoRA 目标现在显式展开其环境先修，第一阶段必须先完成 Linux 安装。
+        self.assertEqual("Linux环境与命令行操作", initial["stage_info"]["block_name"])
+        self.assertEqual("KBS-01-00", initial["stage_info"]["subtopic_id"])
 
         started = await first.start_stage(session_id)
         self.assertTrue(started["review_passed"])
@@ -138,25 +140,24 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         submitted = await first.submit_answer(
             session_id,
             question["question_id"],
-            "LoRA",
+            question["correct_answer"],
         )
         self.assertTrue(submitted["is_correct"])
 
         restored = self.create_harness()
         restored_session = restored.state_manager.get_session(session_id)
-        self.assertEqual("LoRA", restored_session["learning_package"]["block_name"])
+        self.assertEqual("Linux环境与命令行操作", restored_session["learning_package"]["block_name"])
 
         completed = await restored.complete_stage(session_id)
-        # 单一知识盲区 LoRA：答对后 all_mastered=True → session 真正结束
-        self.assertEqual("completed", completed["status"])
+        # 环境节点完成后仍有后续先修，必须保持会话并允许继续规划。
+        self.assertEqual("continue", completed["status"])
         self.assertEqual(1.0, completed["accuracy"])
-        self.assertTrue(completed.get("all_mastered"))
-        self.assertEqual("completed", completed.get("session_status"))
-        self.assertFalse(completed.get("can_plan_next_stage"))
+        self.assertFalse(completed.get("all_mastered"))
+        self.assertEqual("active", completed.get("session_status"))
+        self.assertTrue(completed.get("can_plan_next_stage"))
 
         final = self.create_harness().state_manager.get_session(session_id)
-        self.assertEqual("completed", final["status"])
-        self.assertEqual("已掌握", final["profile"]["knowledge_gaps"][0]["status"])
+        self.assertEqual("active", final["status"])
 
     async def test_incorrect_answer_repeats_stage(self):
         harness = self.create_harness()

@@ -47,7 +47,7 @@
     "doc_type": "tutorial",
     "source": "实战练习",
     "difficulty": "初级",
-    "subtopic_id": "KBS-01-05"
+    "subtopic_id": "KBS-01-04"
   },
   {
     "doc_id": "DOC-02-01",
@@ -107,7 +107,7 @@
     "doc_type": "tutorial",
     "source": "实战练习",
     "difficulty": "初级",
-    "subtopic_id": "KBS-02-06"
+    "subtopic_id": "KBS-02-05"
   },
   {
     "doc_id": "DOC-03-01",
@@ -157,7 +157,7 @@
     "doc_type": "tutorial",
     "source": "实战练习",
     "difficulty": "初级",
-    "subtopic_id": "KBS-03-05"
+    "subtopic_id": "KBS-03-04"
   },
   {
     "doc_id": "DOC-04-01",
@@ -437,7 +437,7 @@
     "doc_type": "tutorial",
     "source": "实战练习",
     "difficulty": "高级",
-    "subtopic_id": "KBS-09-06"
+    "subtopic_id": "KBS-09-05"
   },
   {
     "doc_id": "DOC-10-01",
@@ -477,7 +477,7 @@
     "doc_type": "tutorial",
     "source": "LLM综述",
     "difficulty": "高级",
-    "subtopic_id": "KBS-10-04"
+    "subtopic_id": "KBS-10-03"
   },
   {
     "doc_id": "DOC-11-01",
@@ -567,7 +567,7 @@
     "doc_type": "tutorial",
     "source": "实战练习",
     "difficulty": "高级",
-    "subtopic_id": "KBS-12-06"
+    "subtopic_id": "KBS-12-05"
   },
   {
     "doc_id": "DOC-13-01",

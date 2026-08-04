@@ -56,7 +56,16 @@ class LearningResourceTool:
             return []
 
         rows = block_rows + subtopic_rows
-        rows.sort(key=lambda row: (0 if row[11] == "block" else 1, 0 if row[7] == "primary" else 1, row[8], row[0]))
+        # A resource can intentionally be both a block fallback and a precise
+        # subtopic mapping.  Return it once, preferring the precise mapping.
+        rows.sort(key=lambda row: (0 if row[11] == "subtopic" else 1, 0 if row[7] == "primary" else 1, row[8], row[0]))
+        unique_rows = []
+        seen_resource_ids = set()
+        for row in rows:
+            if row[0] in seen_resource_ids:
+                continue
+            seen_resource_ids.add(row[0])
+            unique_rows.append(row)
         return [
             {
                 "resource_id": row[0],
@@ -72,7 +81,7 @@ class LearningResourceTool:
                 "mapping_status": row[10],
                 "scope": row[11],
             }
-            for row in rows
+            for row in unique_rows
         ]
 
     async def validate_recommended_videos(
