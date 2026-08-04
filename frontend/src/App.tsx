@@ -1,5 +1,6 @@
 ﻿import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Award,
   BookOpen,
@@ -116,7 +117,7 @@ type TestQuestion = {
   question_id: string;
   question_type?: string;
   question_text: string;
-  options?: string[];
+  options?: Array<string | { key?: string; text?: string }>;
   hint?: string;
 };
 type LearningResource = {
@@ -164,6 +165,7 @@ type LearningProject = {
   goal: string;
   stageName: string;
   stageNum: number;
+  phase?: string;
   updatedAt: number;
   profile?: Profile;
   stages?: StageInfo[];
@@ -198,17 +200,28 @@ type AssessmentState = {
 
 const PROJECTS_STORAGE_KEY = 'learningProjects';
 const CONVERSATIONS_STORAGE_KEY = 'stageConversations';
+const OWNED_SESSION_IDS_STORAGE_KEY = 'ownedSessionIds';
 const DEMO_SESSION_ID = 'demo-preview';
 
-function canUseLocalPreviewDemo() {
-  if (!import.meta.env.DEV) return false;
-  const localHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const onboardingRequested = new URLSearchParams(window.location.search).get('onboarding') === '1';
-  return localHost && !onboardingRequested;
+function isLocalSessionId(sessionId?: string) {
+  return Boolean(sessionId?.startsWith('local-goal-') || sessionId === DEMO_SESSION_ID);
 }
 
-function shouldUseLocalPreviewDemo() {
-  return canUseLocalPreviewDemo() && !localStorage.getItem('sessionId');
+function readOwnedSessionIds() {
+  try {
+    const stored = localStorage.getItem(OWNED_SESSION_IDS_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function rememberOwnedSessionId(sessionId: string) {
+  if (!sessionId || isLocalSessionId(sessionId)) return;
+  const sessionIds = readOwnedSessionIds();
+  sessionIds.add(sessionId);
+  localStorage.setItem(OWNED_SESSION_IDS_STORAGE_KEY, JSON.stringify([...sessionIds]));
 }
 
 function readLearningProjects(): LearningProject[] {
@@ -263,6 +276,10 @@ const fallbackStage: StageInfo = {
   status: 'learning'
 };
 
+// Used only while a real stage response is still unavailable. It deliberately
+// contains no mock topic, resource, or learning goal.
+const unavailableStage: StageInfo = { status: 'pending', estimated_hours: 0 };
+
 const fallbackPackage: LearningPackage = {
   block_name: 'Self-Attention 计算机制',
   tutorial:
@@ -280,14 +297,7 @@ def scaled_dot_product_attention(q, k, v):
     return weights @ v, weights`
     }
   ],
-  recommended_videos: [
-    {
-      resource_id: 'demo-attention-video',
-      title: 'Visualizing Attention in Transformers',
-      url: 'https://www.youtube.com/watch?v=eMlx5fFNoYc',
-      content_summary: '通过可视化理解注意力层如何在上下文中传递信息。'
-    }
-  ],
+  recommended_videos: [],
   recommended_articles: [
     {
       resource_id: 'demo-lora-paper',
@@ -441,6 +451,10 @@ function createStageConversationMessages(nextStage: StageInfo, nextProfile?: Pro
 }
 
 function getErrorMessage(error: unknown) {
+  if (typeof error === 'object' && error && 'response' in error) {
+    const response = (error as { response?: { data?: { detail?: unknown } } }).response;
+    if (response?.data?.detail) return String(response.data.detail);
+  }
   if (typeof error === 'object' && error && 'message' in error) {
     return String((error as { message?: unknown }).message);
   }
@@ -555,8 +569,7 @@ function Topbar({
   error,
   onReturnToChat,
   onOpenLearningPath,
-  onOpenProfile,
-  onOpenMaterials
+  onOpenProfile
 }: {
   title: string;
   subtitle: string;
@@ -565,7 +578,6 @@ function Topbar({
   onReturnToChat?: () => void;
   onOpenLearningPath?: () => void;
   onOpenProfile?: () => void;
-  onOpenMaterials?: () => void;
 }) {
   return (
     <header className="topbar">
@@ -597,12 +609,6 @@ function Topbar({
           <button className="topbar-tool-button" onClick={onOpenProfile} disabled={loading}>
             <UserRound size={15} />
             查看画像
-          </button>
-        )}
-        {onOpenMaterials && (
-          <button className="open-material-button" onClick={onOpenMaterials} disabled={loading}>
-            <BookOpen size={15} />
-            打开学习材料
           </button>
         )}
       </div>
@@ -672,7 +678,11 @@ function ProfilePanel({
           <b>阶段 {stage.stage_num ?? 1}</b>
         </div>
         <h3>{stage.block_name || '等待阶段规划'}</h3>
-        <p>{stage.gap_skill ? `围绕「${stage.gap_skill}」补齐关键知识点，并准备进入后续实操。` : '完成初始画像后，系统会自动生成第一阶段学习内容。'}</p>
+        <p>{stage.gap_skill
+          ? `围绕「${stage.gap_skill}」补齐关键知识点，并准备进入后续实操。`
+          : stage.subtopic_name
+            ? `当前聚焦：${stage.subtopic_name}`
+            : '正在同步当前学习阶段。'}</p>
         <div className="stage-meta">
           <span>
             <Clock size={15} />
@@ -795,11 +805,18 @@ function toStageInfo(stage?: ApiStage | StageInfo | null): StageInfo | null {
 
 function toLearningPackage(pkg?: ApiLearningPackage | LearningPackage | null): LearningPackage | null {
   if (!pkg) return null;
+  const declaredResources = Array.isArray(pkg.learning_resources) ? pkg.learning_resources : [];
+  const recommendedVideos = Array.isArray((pkg as LearningPackage).recommended_videos)
+    ? ((pkg as LearningPackage).recommended_videos || []).map((video) => ({
+      ...video,
+      resource_type: video.resource_type || 'video'
+    }))
+    : [];
   return {
     ...pkg,
     tutorial: pkg.tutorial ?? undefined,
     code_examples: Array.isArray(pkg.code_examples) ? pkg.code_examples as LearningPackage['code_examples'] : undefined,
-    learning_resources: Array.isArray(pkg.learning_resources) ? pkg.learning_resources as LearningResource[] : undefined,
+    learning_resources: (declaredResources.length ? declaredResources : recommendedVideos) as LearningResource[],
     questions: Array.isArray(pkg.questions) ? pkg.questions as TestQuestion[] : undefined
   };
 }
@@ -820,6 +837,7 @@ function sessionSummaryToProject(item: SessionListItem): LearningProject | null 
     goal: item.goal || item.title || '未命名学习目标',
     stageName: item.current_stage_name || '等待阶段规划',
     stageNum: item.current_stage_num || 1,
+    phase: item.phase,
     updatedAt: item.updated_at ? Date.parse(item.updated_at) || Date.now() : Date.now(),
     profile: profile || undefined
   };
@@ -860,7 +878,13 @@ function MaterialDocument({
   compact?: boolean;
 }) {
   const codeExamples = learningPackage.code_examples || [];
-  const learningResources = learningPackage.learning_resources || [];
+  const recommendedVideos = (learningPackage.recommended_videos || []).map((video) => ({
+    ...video,
+    resource_type: video.resource_type || 'video'
+  }));
+  const learningResources = learningPackage.learning_resources?.length
+    ? learningPackage.learning_resources
+    : recommendedVideos;
   const documentationResources = uniqueResources(
     learningResources.filter((resource) => resource.resource_type === 'documentation' && Boolean(resource.content_summary || getResourceUrl(resource)))
   );
@@ -986,37 +1010,24 @@ function MaterialDocument({
 function CurrentMaterialPanel({
   stage,
   learningPackage,
-  onClose,
   onTest,
   stageResultReady,
-  onOpenResult,
-  onResizeStart
+  onOpenResult
 }: {
   stage: StageInfo;
   learningPackage: LearningPackage | null;
-  onClose: () => void;
   onTest: () => void;
   stageResultReady: boolean;
   onOpenResult: () => void;
-  onResizeStart: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 }) {
   const content = learningPackage || fallbackPackage;
   return (
     <aside className="current-material-panel">
-      <button
-        className="material-resize-handle"
-        onPointerDown={onResizeStart}
-        aria-label="拖动调整学习资料宽度"
-        title="拖动调整学习资料宽度"
-      />
       <header>
         <div>
           <span>当前阶段学习包</span>
           <strong>{stage.block_name || content.block_name}</strong>
         </div>
-        <button onClick={onClose} aria-label="关闭学习材料" title="关闭">
-          <X size={17} />
-        </button>
       </header>
       <div className="current-material-scroll">
         <MaterialDocument stage={stage} learningPackage={content} compact />
@@ -1045,8 +1056,6 @@ function ChatView({
   onOpenLearningPath,
   onOpenProfile,
   learningPackage,
-  materialPanelOpen,
-  onToggleMaterials,
   onTest,
   stageResultReady,
   onOpenResult,
@@ -1072,8 +1081,6 @@ function ChatView({
   onOpenLearningPath: () => void;
   onOpenProfile: () => void;
   learningPackage: LearningPackage | null;
-  materialPanelOpen: boolean;
-  onToggleMaterials: () => void;
   onTest: () => void;
   stageResultReady: boolean;
   onOpenResult: () => void;
@@ -1087,27 +1094,40 @@ function ChatView({
   error: string | null;
 }) {
   const [contextPanelCollapsed, setContextPanelCollapsed] = useState(false);
-  const [materialPanelWidth, setMaterialPanelWidth] = useState(380);
+  const [materialPanelWidth, setMaterialPanelWidth] = useState(600);
 
-  const resizeMaterialPanel = (event: ReactPointerEvent<HTMLButtonElement>) => {
+  const clampMaterialWidth = (width: number, layoutWidth: number) => {
+    const contextWidth = contextPanelCollapsed ? 48 : 260;
+    const maxMaterialWidth = Math.max(440, layoutWidth - contextWidth - 300 - 10);
+    return Math.round(Math.max(440, Math.min(maxMaterialWidth, width)));
+  };
+
+  const resizePanels = (event: ReactPointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    const layout = event.currentTarget.parentElement;
+    if (!layout) return;
     const startX = event.clientX;
     const startWidth = materialPanelWidth;
-    const maxWidth = Math.min(720, window.innerWidth * 0.65);
-
+    const layoutWidth = layout.getBoundingClientRect().width;
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      const nextWidth = Math.max(300, Math.min(maxWidth, startWidth + startX - moveEvent.clientX));
-      setMaterialPanelWidth(Math.round(nextWidth));
+      setMaterialPanelWidth(clampMaterialWidth(startWidth + moveEvent.clientX - startX, layoutWidth));
     };
     const handlePointerUp = () => {
-      document.body.classList.remove('resizing-material-panel');
+      document.body.classList.remove('resizing-workspace-panels');
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-
-    document.body.classList.add('resizing-material-panel');
+    document.body.classList.add('resizing-workspace-panels');
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp, { once: true });
+  };
+
+  const resizePanelsByKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    const layoutWidth = event.currentTarget.parentElement?.getBoundingClientRect().width ?? window.innerWidth;
+    const delta = event.key === 'ArrowRight' ? 24 : -24;
+    setMaterialPanelWidth((width) => clampMaterialWidth(width + delta, layoutWidth));
   };
 
   const layoutStyle = {
@@ -1123,10 +1143,9 @@ function ChatView({
         error={error}
         onOpenLearningPath={onOpenLearningPath}
         onOpenProfile={onOpenProfile}
-        onOpenMaterials={onToggleMaterials}
       />
       <div
-        className={`chat-layout ${materialPanelOpen ? 'materials-open' : ''} ${contextPanelCollapsed ? 'context-collapsed' : ''}`}
+        className={`chat-layout ${contextPanelCollapsed ? 'context-collapsed' : ''}`}
         style={layoutStyle}
       >
         <ProfilePanel
@@ -1144,7 +1163,30 @@ function ChatView({
           onToggleTimer={onToggleTimer}
         />
 
+        <CurrentMaterialPanel
+          stage={stage}
+          learningPackage={learningPackage}
+          onTest={onTest}
+          stageResultReady={stageResultReady}
+          onOpenResult={onOpenResult}
+        />
+
+        <button
+          className="workspace-resize-handle"
+          onPointerDown={resizePanels}
+          onKeyDown={resizePanelsByKeyboard}
+          aria-label="拖动调整学习资料与答疑栏宽度"
+          title="拖动调整学习资料与答疑栏宽度"
+        />
+
         <main className="chat-main">
+          <header className="chat-assistant-header">
+            <MessageCircle size={16} />
+            <div>
+              <span>学习助手</span>
+              <strong>阶段内答疑</strong>
+            </div>
+          </header>
           <div className="conversation">
             <div className="date-separator">
               <span>今天</span>
@@ -1200,17 +1242,6 @@ function ChatView({
             </form>
           )}
         </main>
-        {materialPanelOpen && (
-          <CurrentMaterialPanel
-            stage={stage}
-            learningPackage={learningPackage}
-            onClose={onToggleMaterials}
-            onTest={onTest}
-            stageResultReady={stageResultReady}
-            onOpenResult={onOpenResult}
-            onResizeStart={resizeMaterialPanel}
-          />
-        )}
       </div>
     </div>
   );
@@ -1348,8 +1379,10 @@ function TestModal({
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const current = questions[index] || fallbackPackage.questions![0];
+  const current = questions[index];
   const done = questions.length > 0 && questions.every((question) => answers[question.question_id]);
+
+  if (!current) return null;
 
   return (
     <div className="modal-backdrop">
@@ -1371,6 +1404,7 @@ function TestModal({
             <div className="question-grid">
               {questions.map((question, questionIndex) => (
                 <button
+                  type="button"
                   key={question.question_id}
                   className={`${questionIndex === index ? 'current' : ''} ${answers[question.question_id] ? 'answered' : ''}`}
                   onClick={() => setIndex(questionIndex)}
@@ -1386,17 +1420,24 @@ function TestModal({
             <h2>{current.question_text}</h2>
             {current.options?.length ? (
               <div className="options">
-                {current.options.map((option, optionIndex) => (
-                  <button
-                    key={option}
-                    className={answers[current.question_id] === option ? 'selected' : ''}
-                    onClick={() => setAnswers((prev) => ({ ...prev, [current.question_id]: option }))}
-                  >
-                    <span>{String.fromCharCode(65 + optionIndex)}</span>
-                    {option}
-                    {answers[current.question_id] === option && <Check size={18} />}
-                  </button>
-                ))}
+                {current.options.map((option, optionIndex) => {
+                  const optionKey = typeof option === 'string'
+                    ? String.fromCharCode(65 + optionIndex)
+                    : option.key || String.fromCharCode(65 + optionIndex);
+                  const optionText = typeof option === 'string' ? option : option.text || optionKey;
+                  return (
+                    <button
+                      type="button"
+                      key={optionKey}
+                      className={answers[current.question_id] === optionKey ? 'selected' : ''}
+                      onClick={() => setAnswers((prev) => ({ ...prev, [current.question_id]: optionKey }))}
+                    >
+                      <span>{optionKey}</span>
+                      {optionText}
+                      {answers[current.question_id] === optionKey && <Check size={18} />}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <textarea
@@ -1408,14 +1449,14 @@ function TestModal({
             )}
             {current.hint && <p className="question-hint">提示：{current.hint}</p>}
             <div className="test-nav">
-              <button className="ghost" disabled={index === 0} onClick={() => setIndex(index - 1)}>上一题</button>
+              <button type="button" className="ghost" disabled={index === 0} onClick={() => setIndex(index - 1)}>上一题</button>
               {index < questions.length - 1 ? (
-                <button className="primary" onClick={() => setIndex(index + 1)}>
+                <button type="button" className="primary" onClick={() => setIndex(index + 1)}>
                   下一题
                   <ChevronRight size={15} />
                 </button>
               ) : (
-                <button className="primary" disabled={!done} onClick={() => onComplete(answers)}>完成测试</button>
+                <button type="button" className="primary" disabled={!done} onClick={() => onComplete(answers)}>完成测试</button>
               )}
             </div>
           </main>
@@ -1966,17 +2007,16 @@ function SettingsView({
 }
 
 export default function App() {
-  const localPreviewDemo = shouldUseLocalPreviewDemo();
   const [view, setView] = useState<View>('chat');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [workflow, setWorkflow] = useState<WorkflowState>(localPreviewDemo ? 'learning' : 'onboarding');
-  const [sessionId, setSessionId] = useState<string | null>(localPreviewDemo ? DEMO_SESSION_ID : null);
-  const [profile, setProfile] = useState<Profile | null>(localPreviewDemo ? fallbackProfile : null);
-  const [stage, setStage] = useState<StageInfo | null>(localPreviewDemo ? fallbackStage : null);
-  const [learningPackage, setLearningPackage] = useState<LearningPackage | null>(localPreviewDemo ? fallbackPackage : null);
-  const [messages, setMessages] = useState<Message[]>(localPreviewDemo ? demoMessages : initialMessages);
+  const [workflow, setWorkflow] = useState<WorkflowState>('onboarding');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [stage, setStage] = useState<StageInfo | null>(null);
+  const [learningPackage, setLearningPackage] = useState<LearningPackage | null>(null);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
-  const [onboardingForm, setOnboardingForm] = useState<OnboardingFormData>(localPreviewDemo ? formDataFromProfile(fallbackProfile) : emptyOnboardingForm);
+  const [onboardingForm, setOnboardingForm] = useState<OnboardingFormData>(emptyOnboardingForm);
   const [followupQuestions, setFollowupQuestions] = useState<string[]>([]);
   const [highlightedFields, setHighlightedFields] = useState<OnboardingField[]>([]);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -1988,18 +2028,22 @@ export default function App() {
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
   const [activeAgent, setActiveAgent] = useState<AgentId | null>(null);
-  const [completedAgents, setCompletedAgents] = useState<AgentId[]>(localPreviewDemo ? ['agent1', 'agent3', 'agent4'] : []);
+  const [completedAgents, setCompletedAgents] = useState<AgentId[]>([]);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
-    const projects = readLearningProjects();
-    if (!localPreviewDemo) return projects.filter((item) => item.sessionId !== DEMO_SESSION_ID);
-    return [createDemoProject(), ...projects.filter((item) => item.sessionId !== DEMO_SESSION_ID)];
+    const activeSessionId = localStorage.getItem('sessionId');
+    const ownedSessionIds = readOwnedSessionIds();
+    const projects = readLearningProjects().filter((item) =>
+      isLocalSessionId(item.sessionId)
+      || ownedSessionIds.has(item.sessionId)
+      || item.sessionId === activeSessionId
+    );
+    return projects.filter((item) => item.sessionId !== DEMO_SESSION_ID);
   });
   const [stageConversations, setStageConversations] = useState<StoredStageConversation[]>(() => {
     const conversations = readStageConversations();
-    if (!localPreviewDemo) return conversations.filter((item) => item.sessionId !== DEMO_SESSION_ID);
-    return [createDemoConversation(), ...conversations.filter((item) => item.sessionId !== DEMO_SESSION_ID)];
+    return conversations.filter((item) => item.sessionId !== DEMO_SESSION_ID);
   });
-  const [selectedConversationId, setSelectedConversationId] = useState(localPreviewDemo ? `${DEMO_SESSION_ID}:1` : '');
+  const [selectedConversationId, setSelectedConversationId] = useState('');
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
   const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);
@@ -2010,7 +2054,13 @@ export default function App() {
     setCompletedAgents((prev) => prev.includes(agentId) ? prev : [...prev, agentId]);
   };
 
-  const rememberProject = (nextSessionId: string, nextProfile: Profile, nextStage?: StageInfo | null) => {
+  const rememberProject = (
+    nextSessionId: string,
+    nextProfile: Profile,
+    nextStage?: StageInfo | null,
+    phase?: string
+  ) => {
+    rememberOwnedSessionId(nextSessionId);
     setLearningProjects((prev) => {
       const existing = prev.find((item) => item.sessionId === nextSessionId);
       const knownStages = [...(existing?.stages || [])];
@@ -2023,12 +2073,11 @@ export default function App() {
       const project: LearningProject = {
         sessionId: nextSessionId,
         goal: nextProfile.goal || '未命名学习目标',
-        stageName: nextStage?.status === 'pending' && existing
-          ? existing.stageName
-          : nextStage?.block_name || existing?.stageName || '等待阶段规划',
-        stageNum: nextStage?.status === 'pending' && existing
-          ? existing.stageNum
-          : nextStage?.stage_num ?? existing?.stageNum ?? 1,
+        // A pending stage is a real plan returned by the backend. Keep it in
+        // the summary so a planned next stage cannot look like stale onboarding.
+        stageName: nextStage?.block_name || existing?.stageName || '等待阶段规划',
+        stageNum: nextStage?.stage_num ?? existing?.stageNum ?? 1,
+        phase: phase || existing?.phase,
         updatedAt: Date.now(),
         profile: nextProfile,
         stages: knownStages.sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1))
@@ -2080,34 +2129,63 @@ export default function App() {
   const refreshRemoteProjects = async () => {
     try {
       const response = await apiClient.listSessions();
+      const ownedSessionIds = readOwnedSessionIds();
+      const activeSessionId = localStorage.getItem('sessionId');
+      if (activeSessionId && !isLocalSessionId(activeSessionId)) ownedSessionIds.add(activeSessionId);
       const remoteProjects = (response.sessions || [])
         .map(sessionSummaryToProject)
-        .filter((item): item is LearningProject => Boolean(item));
+        .filter((item): item is LearningProject => Boolean(item && ownedSessionIds.has(item.sessionId)));
       setLearningProjects((prev) => {
-        const localOnly = prev.filter((item) => item.sessionId.startsWith('local-goal-') || (localPreviewDemo && item.sessionId === DEMO_SESSION_ID));
-        const merged = [...remoteProjects, ...localOnly];
-        const deduped = merged.filter((item, index) => merged.findIndex((candidate) => candidate.sessionId === item.sessionId) === index);
-        return deduped.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 20);
+        const localOnly = prev.filter((item) => isLocalSessionId(item.sessionId));
+        const remoteBySession = new Map(remoteProjects.map((item) => [item.sessionId, item]));
+        const mergedOwned = [...ownedSessionIds].map((ownedSessionId) => {
+          const remote = remoteBySession.get(ownedSessionId);
+          const cached = prev.find((item) => item.sessionId === ownedSessionId);
+          if (!remote) return cached;
+          if (!cached) return remote;
+          return {
+            ...cached,
+            ...remote,
+            // The list API is compact. Retain local history and a just-planned
+            // stage until a full session snapshot has replaced it.
+            stages: cached.stages,
+            stageName: remote.stageName !== '等待阶段规划' ? remote.stageName : cached.stageName,
+            stageNum: remote.stageName !== '等待阶段规划' ? remote.stageNum : cached.stageNum,
+          };
+        }).filter((item): item is LearningProject => Boolean(item));
+        return [...mergedOwned, ...localOnly]
+          .sort((a, b) => b.updatedAt - a.updatedAt)
+          .slice(0, 20);
       });
     } catch {
       // Keep local cache if the session list endpoint is unavailable.
     }
   };
 
-  const restoreQaConversation = async (nextSessionId: string, nextStage: StageInfo, nextProfile?: Profile | null) => {
+  const restoreQaConversation = async (
+    nextSessionId: string,
+    nextStage: StageInfo,
+    nextProfile?: Profile | null,
+    replaceCurrentMessages = false
+  ) => {
     try {
       const history = await apiClient.getQaHistory(nextSessionId);
       const qaMessages = qaItemsToMessages(history.items);
-      if (!qaMessages.length) return;
       const id = `${nextSessionId}:${nextStage.stage_num ?? 1}`;
+      const restoredMessages = qaMessages.length
+        ? qaMessages
+        : createStageConversationMessages(nextStage, nextProfile);
+      if (replaceCurrentMessages) {
+        setMessages(restoredMessages);
+        setSelectedConversationId(id);
+      }
       setStageConversations((prev) => {
-        const fallback = createStageConversationMessages(nextStage, nextProfile);
         const existing = prev.find((item) => item.id === id);
         const conversation: StoredStageConversation = {
           id,
           sessionId: nextSessionId,
           stage: nextStage,
-          messages: qaMessages.length ? qaMessages : existing?.messages || fallback,
+          messages: qaMessages.length ? qaMessages : existing?.messages || restoredMessages,
           updatedAt: Date.now()
         };
         return [conversation, ...prev.filter((item) => item.id !== id)].slice(0, 100);
@@ -2194,29 +2272,13 @@ export default function App() {
   useEffect(() => {
     const savedSessionId = localStorage.getItem('sessionId');
     if (!savedSessionId) return;
-    const restoreLocalGoal = () => {
-      const savedProject = learningProjects.find((item) => item.sessionId === savedSessionId);
-      if (!savedProject?.profile || !savedSessionId.startsWith('local-goal-')) return false;
-      const savedStages = [...(savedProject.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
-      const restoredStage = [...savedStages].reverse().find((item) => item.status === 'learning' || item.status === 'in_progress')
-        || savedStages.find((item) => item.status !== 'pending')
-        || savedStages[0]
-        || fallbackStage;
-      const restoredConversationId = `${savedSessionId}:${restoredStage.stage_num ?? 1}`;
-      const restoredConversation = stageConversations.find((item) => item.id === restoredConversationId);
-      setSessionId(savedSessionId);
-      setProfile(savedProject.profile);
-      setOnboardingForm(formDataFromProfile(savedProject.profile));
-      setStage(restoredStage);
-      setLearningPackage(fallbackPackage);
-      setMessages(restoredConversation?.messages || createStageConversationMessages(restoredStage, savedProject.profile));
-      setSelectedConversationId(restoredConversationId);
-      setWorkflow('learning');
-      setView('chat');
-      setCompletedAgents(['agent1', 'agent3', 'agent4']);
-      return true;
-    };
-    if (restoreLocalGoal()) return;
+    if (isLocalSessionId(savedSessionId)) {
+      localStorage.removeItem('sessionId');
+      setLearningProjects((projects) => projects.filter((project) => !isLocalSessionId(project.sessionId)));
+      setStageConversations((conversations) => conversations.filter((conversation) => !isLocalSessionId(conversation.sessionId)));
+      setWorkflow('onboarding');
+      return;
+    }
     setSessionId(savedSessionId);
     apiClient.getSession(savedSessionId)
       .then((session) => {
@@ -2228,7 +2290,7 @@ export default function App() {
           if (!nextProfile) throw new Error('会话画像解析失败');
           setProfile(nextProfile);
           setOnboardingForm(formDataFromProfile(nextProfile));
-          rememberProject(savedSessionId, nextProfile, activeStage);
+          rememberProject(savedSessionId, nextProfile, session.next_stage || activeStage, session.phase);
           void loadDashboardStages(savedSessionId, activeStage);
           completeAgent('agent1');
           setWorkflow(nextWorkflow);
@@ -2246,11 +2308,18 @@ export default function App() {
           completeAgent('agent3');
           completeAgent('agent4');
           setView('chat');
-          void restoreQaConversation(savedSessionId, activeStage || session.next_stage || fallbackStage, session?.profile ? toProfile(session.profile) : profile);
+          const conversationStage = activeStage || session.next_stage;
+          if (conversationStage) {
+            void restoreQaConversation(
+              savedSessionId,
+              conversationStage,
+              session?.profile ? toProfile(session.profile) : profile,
+              true
+            );
+          }
         }
       })
       .catch(() => {
-        if (restoreLocalGoal()) return;
         localStorage.removeItem('sessionId');
         setSessionId(null);
         setWorkflow('onboarding');
@@ -2262,7 +2331,7 @@ export default function App() {
       ? assessmentState.questions
       : learningPackage?.questions?.length
         ? learningPackage.questions
-        : fallbackPackage.questions || [];
+        : [];
     return questions;
   }, [assessmentState.questions, learningPackage]);
 
@@ -2330,22 +2399,7 @@ export default function App() {
       setWorkflow('profile_ready');
     } catch (caught) {
       setError(getErrorMessage(caught));
-      const fallbackSessionId = sessionId || `local-goal-${shortId()}`;
-      const fallbackNewProfile = buildDemoProfile(onboardingForm);
-      const fallbackNewStage = {
-        ...fallbackStage,
-        stage_id: `LOCAL-STG-${shortId()}`,
-        stage_num: 1,
-        status: 'pending'
-      };
-      setSessionId(fallbackSessionId);
-      localStorage.setItem('sessionId', fallbackSessionId);
-      setProfile(fallbackNewProfile);
-      setStage(fallbackNewStage);
-      setSelectedConversationId(`${fallbackSessionId}:1`);
-      rememberProject(fallbackSessionId, fallbackNewProfile, fallbackNewStage);
-      completeAgent('agent1');
-      setWorkflow('profile_ready');
+      setWorkflow('onboarding');
     } finally {
       setActiveAgent(null);
       setLoading(false);
@@ -2403,20 +2457,19 @@ export default function App() {
       }
     } catch (caught) {
       setError(getErrorMessage(caught));
-      setProfile(fallbackProfile);
-      setStage(fallbackStage);
-      if (initialDiagnosis) {
-        completeAgent('agent1');
-      } else {
-        completeAgent('agent3');
-        completeAgent('agent4');
+      if (!initialDiagnosis) {
+        setMessages((prev) => [...prev, {
+          id: shortId(),
+          role: 'assistant',
+          content: '本次答疑请求未完成，请检查后端服务后重试。',
+          note: '请求失败'
+        }]);
+        return;
       }
-      setMessages((prev) => [...prev, {
-        id: shortId(),
-        role: 'assistant',
-        content: '后端当前没有响应，我先用本地演示数据生成一版学习工作台。等后端服务启动后，这里会自动接入真实画像、阶段和学习包。',
-        note: '本地演示'
-      }]);
+      setSessionId(null);
+      setProfile(null);
+      setStage(null);
+      setWorkflow('onboarding');
     } finally {
       setActiveAgent(null);
       setLoading(false);
@@ -2441,7 +2494,8 @@ export default function App() {
         apiClient.getCurrentStage(sessionId)
       ]);
       setLearningPackage(toLearningPackage(packageResponse.package));
-      generatedStage = toStageInfo(stageResponse.stage) || generatedStage || fallbackStage;
+      generatedStage = toStageInfo(stageResponse.stage) || generatedStage;
+      if (!generatedStage) throw new Error('后端未返回当前阶段，无法启动学习包');
       setStage(generatedStage);
       const generatedConversationId = `${sessionId}:${generatedStage.stage_num ?? 1}`;
       const existingConversation = stageConversations.find((item) => item.id === generatedConversationId);
@@ -2467,25 +2521,7 @@ export default function App() {
       void refreshRemoteProjects();
     } catch (caught) {
       setError(getErrorMessage(caught));
-      setLearningPackage(fallbackPackage);
-      const fallbackStartedStage = { ...(plannedStage || stage || fallbackStage), status: 'learning' };
-      setStage(fallbackStartedStage);
-      if (sessionId) {
-        const fallbackConversationId = `${sessionId}:${fallbackStartedStage.stage_num ?? 1}`;
-        const existingConversation = stageConversations.find((item) => item.id === fallbackConversationId);
-        setMessages(existingConversation?.messages || createStageConversationMessages(fallbackStartedStage, profile));
-        setSelectedConversationId(fallbackConversationId);
-        if (profile) rememberProject(sessionId, profile, fallbackStartedStage);
-        rememberStageConversation(sessionId, fallbackStartedStage, profile);
-      }
-      completeAgent('agent3');
-      completeAgent('agent4');
-      setWorkflow('learning');
-      setView('chat');
-      setMaterialPanelOpen(true);
-      setPlannedStage(null);
-      setResult(null);
-      setNewGoalReturnState(null);
+      setWorkflow('profile_ready');
     } finally {
       setActiveAgent(null);
       setLoading(false);
@@ -2493,17 +2529,19 @@ export default function App() {
   };
 
   const completeStage = async (answers: Record<string, string>) => {
-    setTestOpen(false);
     setLoading(true);
     setError(null);
     setActiveAgent('agent6');
     try {
       if (sessionId) {
         const attemptId = assessmentState.attemptId || (await apiClient.createAssessmentAttempt(sessionId)).attempt_id;
-        for (const [question_id, user_answer] of Object.entries(answers)) {
-          await apiClient.saveAssessmentAnswer(attemptId, question_id, { user_answer, time_spent: 0 });
+        const attempt = await apiClient.getAssessmentAttempt(attemptId);
+        if (attempt.status !== 'submitted') {
+          for (const [question_id, user_answer] of Object.entries(answers)) {
+            await apiClient.saveAssessmentAnswer(attemptId, question_id, { user_answer, time_spent: 0 });
+          }
+          await apiClient.submitAssessmentAttempt(attemptId);
         }
-        await apiClient.submitAssessmentAttempt(attemptId);
         const response = await apiClient.completeStage(sessionId);
         setResult(response);
         if (response.updated_profile) setProfile(toProfile(response.updated_profile));
@@ -2511,34 +2549,20 @@ export default function App() {
         if (completedStage) setStage(completedStage);
         setPlannedStage(null);
         setAssessmentState({ attemptId: null, questions: [] });
-        rememberProject(sessionId, toProfile(response.updated_profile) || profile || fallbackProfile, completedStage);
+        rememberProject(sessionId, toProfile(response.updated_profile) || profile || fallbackProfile, completedStage, response.phase);
         void loadDashboardStages(sessionId, completedStage);
         void refreshRemoteProjects();
+        setTestOpen(false);
+        setView('result');
       } else {
         throw new Error('尚未创建后端会话');
       }
     } catch (caught) {
       setError(getErrorMessage(caught));
-      setResult({
-        status: 'continue',
-        accuracy: 0.87,
-        next_strategy: 'advance',
-        stage_summary: '## 阶段表现\n\n本阶段测试表现良好，核心概念已经基本掌握。\n\n## 加强建议\n\n建议继续复习注意力权重的缩放原因，并进入下一阶段实践。',
-        can_plan_next_stage: true,
-        all_mastered: false,
-        phase: 'stage_result',
-        available_actions: ['plan_next_stage']
-      });
-      setProfile({
-        ...(profile || fallbackProfile),
-        knowledge_gaps: fallbackProfile.knowledge_gaps?.map((gap, index) => index === 0 ? { ...gap, status: '已掌握', progress: 0.86 } : gap)
-      });
-      setAssessmentState({ attemptId: null, questions: [] });
     } finally {
       completeAgent('agent6');
       setActiveAgent(null);
       setLoading(false);
-      setView('result');
     }
   };
 
@@ -2585,27 +2609,12 @@ export default function App() {
       if (!nextStage) throw new Error('下一阶段仍在生成中，请稍后再试');
 
       setPlannedStage(nextStage);
-      rememberProject(sessionId, nextProfile, nextStage);
+      rememberProject(sessionId, nextProfile, nextStage, response.phase);
       rememberStageConversation(sessionId, nextStage, nextProfile);
       void refreshRemoteProjects();
       completeAgent('agent1');
     } catch (caught) {
       setError(getErrorMessage(caught));
-      const nextGap = profile?.knowledge_gaps?.find((gap) => gap.status !== '已掌握' && gap.skill !== stage?.gap_skill);
-      const fallbackNextStage = {
-        stage_id: `DEMO-STG-${(stage?.stage_num ?? 1) + 1}`,
-        stage_num: (stage?.stage_num ?? 1) + 1,
-        block_name: nextGap?.skill || 'LoRA 低秩适配原理',
-        gap_skill: nextGap?.skill || 'LoRA',
-        estimated_hours: 1.5,
-        prerequisites: [stage?.block_name || '当前阶段'],
-        status: 'pending'
-      };
-      setPlannedStage(fallbackNextStage);
-      const fallbackNextProfile = profile || fallbackProfile;
-      rememberProject(sessionId, fallbackNextProfile, fallbackNextStage);
-      rememberStageConversation(sessionId, fallbackNextStage, fallbackNextProfile);
-      completeAgent('agent1');
     } finally {
       setActiveAgent(null);
       setLoading(false);
@@ -2669,7 +2678,7 @@ export default function App() {
 
   const openTestModal = async () => {
     if (!sessionId) {
-      setTestOpen(true);
+      setError('当前没有真实学习会话，无法开始测试。');
       return;
     }
     setLoading(true);
@@ -2679,13 +2688,13 @@ export default function App() {
       const attemptDetail = await apiClient.getAssessmentAttempt(attempt.attempt_id);
       setAssessmentState({
         attemptId: attempt.attempt_id,
-        questions: Array.isArray(attemptDetail.questions) ? attemptDetail.questions as TestQuestion[] : currentQuestions
+        questions: Array.isArray(attemptDetail.questions) ? attemptDetail.questions as TestQuestion[] : []
       });
+      if (!attemptDetail.questions?.length) throw new Error('当前阶段没有可测试的数据库题目。');
       setTestOpen(true);
     } catch (caught) {
-      setAssessmentState({ attemptId: null, questions: currentQuestions });
+      setAssessmentState({ attemptId: null, questions: [] });
       setError(getErrorMessage(caught));
-      setTestOpen(true);
     } finally {
       setLoading(false);
     }
@@ -2768,32 +2777,15 @@ export default function App() {
       }
       return;
     }
-    const savedProject = learningProjects.find((item) => item.sessionId === nextSessionId);
-    const canRestoreLocally = Boolean(
-      savedProject?.profile
-      && (nextSessionId.startsWith('local-goal-') || (localPreviewDemo && nextSessionId === DEMO_SESSION_ID))
-    );
-    if (savedProject?.profile && canRestoreLocally) {
-      const savedStages = [...(savedProject.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
-      const activeStage = [...savedStages].reverse().find((item) => item.status === 'learning' || item.status === 'in_progress')
-        || savedStages.find((item) => (item.stage_num ?? 1) === savedProject.stageNum)
-        || savedStages[0]
-        || fallbackStage;
-      const activeConversationId = `${nextSessionId}:${activeStage.stage_num ?? 1}`;
-      const activeConversation = stageConversations.find((item) => item.id === activeConversationId);
-      setError(null);
-      setSessionId(nextSessionId);
-      localStorage.setItem('sessionId', nextSessionId);
-      setProfile(savedProject.profile);
-      setOnboardingForm(formDataFromProfile(savedProject.profile));
-      setStage(activeStage);
-      setLearningPackage(fallbackPackage);
-      setMessages(activeConversation?.messages || createStageConversationMessages(activeStage, savedProject.profile));
-      setSelectedConversationId(`${nextSessionId}:${requestedStageNum ?? activeStage.stage_num ?? 1}`);
-      setResult(null);
-      setPlannedStage(null);
-      setCompletedAgents(['agent1', 'agent3', 'agent4']);
-      setWorkflow('learning');
+    if (isLocalSessionId(nextSessionId)) {
+      localStorage.removeItem('sessionId');
+      setLearningProjects((projects) => projects.filter((project) => project.sessionId !== nextSessionId));
+      setStageConversations((conversations) => conversations.filter((conversation) => conversation.sessionId !== nextSessionId));
+      setSessionId(null);
+      setProfile(null);
+      setStage(null);
+      setLearningPackage(null);
+      setWorkflow('onboarding');
       setView('chat');
       return;
     }
@@ -2821,9 +2813,9 @@ export default function App() {
       setCompletedAgents(hasLearningPackage ? ['agent1', 'agent3', 'agent4'] : ['agent1']);
       setWorkflow(isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready');
       setView('chat');
-      rememberProject(nextSessionId, nextProfile, activeStage);
+      rememberProject(nextSessionId, nextProfile, session.next_stage || activeStage, session.phase);
       void loadDashboardStages(nextSessionId, activeStage);
-      if (activeStage) void restoreQaConversation(nextSessionId, activeStage, nextProfile);
+      if (activeStage) void restoreQaConversation(nextSessionId, activeStage, nextProfile, true);
       setMaterialPanelOpen(false);
       setProjectSwitcherOpen(false);
     } catch (caught) {
@@ -2847,7 +2839,7 @@ export default function App() {
   };
 
   const workspaceProfile = profile || fallbackProfile;
-  const workspaceStage = stage || fallbackStage;
+  const workspaceStage = stage || unavailableStage;
   const currentConversationId = sessionId && stage ? `${sessionId}:${stage.stage_num ?? 1}` : '';
   const selectedConversation = stageConversations.find((item) => item.id === selectedConversationId);
   const conversationStage = selectedConversation?.stage || workspaceStage;
@@ -2905,14 +2897,12 @@ export default function App() {
           conversationStage={conversationStage}
           timerSeconds={timerSeconds}
           timerRunning={timerRunning}
-          onToggleTimer={toggleStageTimer}
-          onCreateGoal={createLearningGoal}
-          onOpenLearningPath={() => setLearningPathOpen(true)}
-          onOpenProfile={() => setProfileModalOpen(true)}
-          learningPackage={learningPackage}
-          materialPanelOpen={materialPanelOpen}
-          onToggleMaterials={() => setMaterialPanelOpen((prev) => !prev)}
-          onTest={openTestModal}
+        onToggleTimer={toggleStageTimer}
+        onCreateGoal={createLearningGoal}
+        onOpenLearningPath={() => setLearningPathOpen(true)}
+        onOpenProfile={() => setProfileModalOpen(true)}
+        learningPackage={learningPackage}
+        onTest={openTestModal}
           stageResultReady={Boolean(result)}
           onOpenResult={() => setView('result')}
           projects={learningProjects}

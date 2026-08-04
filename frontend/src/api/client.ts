@@ -1,7 +1,27 @@
 import axios from 'axios';
 
-const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8500/api/v1';
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
+  || `${window.location.protocol}//${window.location.hostname}:8500/api/v1`;
 const BASE_URL = configuredBaseUrl.replace(/\/$/, '');
+
+axios.interceptors.response.use(
+  (response) => {
+    if (import.meta.env.DEV) {
+      console.debug('[API response]', response.config.method?.toUpperCase(), response.config.url, response.status);
+    }
+    return response;
+  },
+  (error) => {
+    const response = error.response;
+    console.error('[API request failed]', {
+      method: error.config?.method?.toUpperCase(),
+      url: error.config?.url,
+      status: response?.status ?? 'network-error',
+      detail: response?.data ?? error.message
+    });
+    return Promise.reject(error);
+  }
+);
 
 export type ApiProfile = {
   profile_id?: string;

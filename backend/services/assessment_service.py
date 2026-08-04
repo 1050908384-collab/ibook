@@ -89,17 +89,26 @@ class AssessmentService:
                 }
             if package and package.get("questions"):
                 for q in package["questions"]:
+                    question_id = q.get("question_id")
+                    db_question = self.db.get_question(question_id) if question_id else None
+                    # The assessment is a frozen snapshot of test_questions,
+                    # never an Agent3-generated question that happens to be in
+                    # the learning package.
+                    if not db_question:
+                        continue
+                    if stage_meta.get("block_id") and db_question.get("block_id") != stage_meta["block_id"]:
+                        continue
                     questions.append({
-                        "question_id": q.get("question_id"),
-                        "block_id": q.get("block_id") or stage_meta.get("block_id"),
-                        "subtopic_id": q.get("subtopic_id") or stage_meta.get("subtopic_id"),
-                        "difficulty": q.get("difficulty"),
-                        "question_type": q.get("question_type"),
-                        "question_text": q.get("question_text", ""),
-                        "options": q.get("options"),
-                        "correct_answer": q.get("correct_answer", ""),
-                        "explanation": q.get("explanation"),
-                        "hint": q.get("hint"),
+                        "question_id": db_question["question_id"],
+                        "block_id": db_question["block_id"],
+                        "subtopic_id": db_question.get("subtopic_id") or stage_meta.get("subtopic_id"),
+                        "difficulty": db_question.get("difficulty"),
+                        "question_type": db_question.get("question_type"),
+                        "question_text": db_question["question_text"],
+                        "options": db_question.get("options"),
+                        "correct_answer": db_question["correct_answer"],
+                        "explanation": db_question.get("explanation"),
+                        "hint": db_question.get("hint"),
                         "is_required": True,
                     })
         return questions, stage_meta

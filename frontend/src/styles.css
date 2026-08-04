@@ -553,7 +553,7 @@ select:focus-visible {
 
 .chat-layout {
   display: grid;
-  grid-template-columns: 290px minmax(460px, 1fr);
+  grid-template-columns: 260px minmax(440px, min(var(--material-panel-width, 600px), calc(100% - 570px))) 10px minmax(300px, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -561,16 +561,47 @@ select:focus-visible {
   position: relative;
 }
 
-.chat-layout.materials-open {
-  grid-template-columns: 290px minmax(420px, 1fr) var(--material-panel-width, 380px);
-}
-
 .chat-layout.context-collapsed {
-  grid-template-columns: 48px minmax(460px, 1fr);
+  grid-template-columns: 48px minmax(440px, min(var(--material-panel-width, 600px), calc(100% - 358px))) 10px minmax(300px, 1fr);
 }
 
-.chat-layout.materials-open.context-collapsed {
-  grid-template-columns: 48px minmax(420px, 1fr) var(--material-panel-width, 380px);
+.workspace-resize-handle {
+  position: relative;
+  z-index: 5;
+  width: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.workspace-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 2px;
+  height: 48px;
+  border-radius: 2px;
+  background: #c9cdd8;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.workspace-resize-handle:hover::after,
+.workspace-resize-handle:focus-visible::after,
+body.resizing-workspace-panels .workspace-resize-handle::after {
+  background: #766ee0;
+  opacity: 1;
+}
+
+body.resizing-workspace-panels,
+body.resizing-workspace-panels * {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 .chat-main {
@@ -580,6 +611,34 @@ select:focus-visible {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+.chat-assistant-header {
+  min-height: 62px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--violet);
+}
+
+.chat-assistant-header div,
+.chat-assistant-header span,
+.chat-assistant-header strong {
+  display: block;
+}
+
+.chat-assistant-header span {
+  color: #8b92a2;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.chat-assistant-header strong {
+  margin-top: 3px;
+  color: var(--ink);
+  font-size: 13px;
 }
 
 .conversation {
@@ -2458,54 +2517,12 @@ select:focus-visible {
 .current-material-panel {
   min-width: 0;
   min-height: 0;
-  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
   background: #fff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -10px 0 30px rgba(26, 32, 51, 0.05);
-  position: relative;
-}
-
-.material-resize-handle {
-  position: absolute;
-  z-index: 5;
-  top: 0;
-  bottom: 0;
-  left: -5px;
-  width: 10px;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.material-resize-handle::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 4px;
-  width: 2px;
-  height: 42px;
-  border-radius: 2px;
-  background: #c9cdd8;
-  transform: translateY(-50%);
-  opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease;
-}
-
-.material-resize-handle:hover::after,
-.material-resize-handle:focus-visible::after,
-body.resizing-material-panel .material-resize-handle::after {
-  background: #766ee0;
-  opacity: 1;
-}
-
-body.resizing-material-panel,
-body.resizing-material-panel * {
-  cursor: col-resize !important;
-  user-select: none !important;
+  box-shadow: 10px 0 30px rgba(26, 32, 51, 0.035);
 }
 
 .current-material-panel > header {
@@ -2539,19 +2556,6 @@ body.resizing-material-panel * {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-}
-
-.current-material-panel header button {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  border: 0;
-  border-radius: 7px;
-  background: #f2f3f6;
-  color: #70788a;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
 }
 
 .current-material-scroll {
@@ -4192,22 +4196,12 @@ body.resizing-material-panel * {
 }
 
 @media (max-width: 1280px) {
-  .chat-layout.materials-open {
-    grid-template-columns: 250px minmax(360px, 1fr);
+  .chat-layout {
+    grid-template-columns: 230px minmax(400px, min(var(--material-panel-width, 540px), calc(100% - 520px))) 10px minmax(280px, 1fr);
   }
 
-  .chat-layout.context-collapsed,
-  .chat-layout.materials-open.context-collapsed {
-    grid-template-columns: 48px minmax(360px, 1fr);
-  }
-
-  .current-material-panel {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 25;
-    width: min(var(--material-panel-width, 380px), 65vw);
+  .chat-layout.context-collapsed {
+    grid-template-columns: 48px minmax(400px, min(var(--material-panel-width, 540px), calc(100% - 338px))) 10px minmax(280px, 1fr);
   }
 }
 
@@ -4218,11 +4212,11 @@ body.resizing-material-panel * {
   }
 
   .chat-layout {
-    grid-template-columns: 250px minmax(360px, 1fr);
+    grid-template-columns: 210px minmax(360px, 1fr) 10px minmax(290px, 1fr);
   }
 
   .chat-layout.context-collapsed {
-    grid-template-columns: 48px minmax(360px, 1fr);
+    grid-template-columns: 48px minmax(360px, 1fr) 10px minmax(290px, 1fr);
   }
 
   .context-panel {
@@ -4260,13 +4254,6 @@ body.resizing-material-panel * {
     align-self: center;
   }
 
-  .current-material-panel {
-    position: fixed;
-    top: 78px;
-    width: min(420px, 100vw);
-    z-index: 50;
-  }
-
   .material-library {
     grid-template-columns: 250px minmax(0, 1fr);
     min-height: calc(100dvh - 78px);
@@ -4283,18 +4270,17 @@ body.resizing-material-panel * {
     overflow: visible;
   }
 
-  .chat-layout.materials-open {
-    grid-template-columns: 1fr;
-  }
-
-  .chat-layout.context-collapsed,
-  .chat-layout.materials-open.context-collapsed {
+  .chat-layout.context-collapsed {
     grid-template-columns: 1fr;
   }
 
   .chat-main {
-    min-height: calc(100dvh - 78px);
+    min-height: min(620px, calc(100dvh - 78px));
     overflow: visible;
+  }
+
+  .current-material-panel {
+    min-height: min(760px, calc(100dvh - 78px));
   }
 
   .context-panel {
@@ -4314,7 +4300,7 @@ body.resizing-material-panel * {
     border-top: 0;
   }
 
-  .material-resize-handle {
+  .workspace-resize-handle {
     display: none;
   }
 

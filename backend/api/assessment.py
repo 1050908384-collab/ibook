@@ -95,8 +95,16 @@ async def complete_current_stage_v1(session_id: str):
     # 3) 交卷已满足，走既有阶段完成链路
     try:
         result = await harness.complete_stage(session_id)
+        phase = result.get("phase", "stage_result")
+        available_actions = result.get("available_actions", ["plan_next_stage"])
+        # This route is registered before the legacy stage router, so it is
+        # the effective /complete handler and must persist the phase itself.
+        harness.state_manager.update_field(session_id, "phase", phase)
+        harness.state_manager.update_field(session_id, "available_actions", available_actions)
         return {
             **result,
+            "phase": phase,
+            "available_actions": available_actions,
             "state": harness.get_runtime_state(session_id),
         }
     except Exception as e:

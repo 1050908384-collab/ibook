@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
+import logging
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,28 +21,57 @@ from api.v1.stages import router as v1_stages_router
 from api.v1.qa import router as v1_qa_router
 from config import settings
 
+# Reuse Uvicorn's configured logger so request diagnostics are visible in the
+# same terminal that runs the backend.
+logger = logging.getLogger("uvicorn.error")
+
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0",
     description="AI Agent Trainer - 多Agent个性化辅导系统"
 )
 
+@app.middleware("http")
+async def add_utf8_json_charset(request, call_next):
+    started_at = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        if request.url.path.startswith("/api/"):
+            logger.exception(
+                "api_request_failed method=%s path=%s origin=%s",
+                request.method,
+                request.url.path,
+                request.headers.get("origin", "-"),
+            )
+        raise
+
+    content_type = response.headers.get("content-type", "")
+    if content_type.startswith("application/json") and "charset=" not in content_type:
+        response.headers["content-type"] = "application/json; charset=utf-8"
+    if request.url.path.startswith("/api/"):
+        logger.info(
+            "api_request method=%s path=%s status=%s duration_ms=%.1f origin=%s",
+            request.method,
+            request.url.path,
+            response.status_code,
+            (time.perf_counter() - started_at) * 1000,
+            request.headers.get("origin", "-"),
+        )
+    return response
+
+
+# Register CORS after the diagnostic middleware so it also decorates error
+# responses. The regex permits private-LAN frontend hosts without hard-coding
+# an individual machine address.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
+    allow_origin_regex=r"^https?://(?:localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(?::\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.middleware("http")
-async def add_utf8_json_charset(request, call_next):
-    response = await call_next(request)
-    content_type = response.headers.get("content-type", "")
-    if content_type.startswith("application/json") and "charset=" not in content_type:
-        response.headers["content-type"] = "application/json; charset=utf-8"
-    return response
 
 app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(session_router, prefix="/api/session", tags=["Session"])

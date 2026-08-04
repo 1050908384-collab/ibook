@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Agent Trainer"
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8500
+    # Comma-separated browser origins.  Keep this configurable for LAN and
+    # production deployments instead of relying on a wildcard with cookies.
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 
     OLLMA_BASE_URL: str = "http://localhost:11434"
     OLLMA_MODEL: str = "deepseek-r1:7b"

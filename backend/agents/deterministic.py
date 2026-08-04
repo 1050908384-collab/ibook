@@ -800,19 +800,12 @@ class DeterministicContentAgent:
         except Exception:
             extracted_questions = []
 
-        questions = [TestQuestion(
-            question_id=f"Q-{stage.block_id.replace('KB-', '')}-01",
-            block_id=stage.block_id,
-            question_type="填空",
-            question_text="本阶段的学习主题是什么？",
-            correct_answer=stage.block_name,
-            hint="答案就是当前阶段名称。",
-        )]
-        questions.extend(
+        # Assessment questions are sourced exclusively from test_questions.
+        questions = [
             TestQuestion.model_validate(question)
             for question in extracted_questions
             if isinstance(question, dict)
-        )
+        ]
 
         sources = []
         if related_docs:

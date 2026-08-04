@@ -24,5 +24,8 @@ def get_assessment_service():
     if _assessment_service_instance is None:
         from services.assessment_service import AssessmentService
         db_client = SQLiteClient()
-        _assessment_service_instance = AssessmentService(db_client=db_client)
+        _assessment_service_instance = AssessmentService(
+            db_client=db_client,
+            state_manager=get_harness().state_manager,
+        )
     return _assessment_service_instance

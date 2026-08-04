@@ -946,17 +946,22 @@ class SQLiteClient:
                 state_json = json.loads(row["state_json"]) if row["state_json"] else {}
                 profile = state_json.get("profile") or {}
                 stage_info = state_json.get("stage_info") or {}
+                next_stage = state_json.get("next_stage") or {}
                 knowledge_gaps = profile.get("knowledge_gaps") or []
                 phase = state_json.get("phase", "diagnosing")
                 status = row["status"]
 
+                # A planned stage is the learner's actual next destination.
+                # Surface it in project summaries before it is formally started.
+                display_stage = next_stage if phase == "next_stage_ready" and next_stage else stage_info
+
                 # 只有 stage_info 非空（含 block_name 或 stage_id）才算有阶段，否则 stage_num=0
-                has_real_stage = bool(stage_info and (
-                    stage_info.get("stage_id") or
-                    stage_info.get("block_name") or
-                    stage_info.get("subtopic_name")
+                has_real_stage = bool(display_stage and (
+                    display_stage.get("stage_id") or
+                    display_stage.get("block_name") or
+                    display_stage.get("subtopic_name")
                 ))
-                current_stage_num = (stage_info.get("stage_num") if has_real_stage else 0) or 0
+                current_stage_num = (display_stage.get("stage_num") if has_real_stage else 0) or 0
 
                 # progress 计算规则：
                 # - abandoned: 0
@@ -973,7 +978,7 @@ class SQLiteClient:
                     progress = min(current_stage_num * 20, 80)
 
                 # current_stage_name: 只在有真实阶段时填
-                current_stage_name = stage_info.get("block_name", "") if has_real_stage else ""
+                current_stage_name = display_stage.get("block_name", "") if has_real_stage else ""
 
                 result.append({
                     "session_id": row["session_id"],

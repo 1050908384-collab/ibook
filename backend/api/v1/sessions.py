@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from api.dependencies import get_harness
 from api.v1.schemas import PublicLearningPackage, to_public_learning_package
+from tools.learning_resource_tool import LearningResourceTool
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 harness = get_harness()
@@ -50,6 +51,33 @@ class SessionSnapshot(BaseModel):
     updated_at: Optional[str] = None
 
 
+async def _get_snapshot_resources(package: Optional[dict[str, Any]], stage: Optional[dict[str, Any]]) -> Optional[list[dict[str, Any]]]:
+    """Backfill video resources for packages generated before resource persistence."""
+    if not package or not stage:
+        return None
+    if package.get("learning_resources") or package.get("recommended_videos"):
+        return None
+
+    block_id = stage.get("block_id")
+    if not block_id:
+        return None
+    videos = await LearningResourceTool().get_recommended_videos(block_id, stage.get("subtopic_id"))
+    return [
+        {
+            "resource_id": video["resource_id"],
+            "resource_type": "video",
+            "title": video["title"],
+            "url": video["url"],
+            "platform": "bilibili" if "bilibili.com" in video["url"] else "",
+            "description": video.get("content_summary", ""),
+            "recommendation_level": video.get("role", "supplementary"),
+            "role": video.get("role", "supplementary"),
+            "order": video.get("sequence_index", 1),
+        }
+        for video in videos
+    ]
+
+
 @router.post("", response_model=SessionSnapshot)
 async def create_session():
     """
@@ -61,15 +89,15 @@ async def create_session():
         session = harness.create_session(None)
         return {
             "session_id": session["session_id"],
-            "title": session.get("title", ""),
+            "title": session.get("title") or "",
             "status": session.get("status", "active"),
             "phase": session.get("phase", "diagnosing"),
             "profile": None,
             "current_stage": None,
             "next_stage": None,
             "learning_package": None,
-            "assessment_summary": None,
-            "progress_summary": None,
+            "assessment_summary": {},
+            "progress_summary": {},
             "recent_qa": [],
             "available_actions": ["submit_diagnosis"],
             "created_at": session.get("created_at"),
@@ -99,10 +127,15 @@ async def list_sessions():
         sessions = sm.list_sessions()
         items = []
         for s in sessions:
+            session_id = s.get("session_id")
+            # Old imports may contain incomplete rows.  They cannot form a
+            # usable API session and must not invalidate the complete list.
+            if not isinstance(session_id, str) or not session_id.strip():
+                continue
             ps = s.get("profile_summary", {}) or {}
             items.append({
-                "session_id": s.get("session_id"),
-                "title": s.get("title", ""),
+                "session_id": session_id,
+                "title": s.get("title") or "",
                 # profile_summary 字段（按文档要求平铺到 items[]）
                 "goal": ps.get("goal", ""),
                 "grade": ps.get("grade", ""),
@@ -111,8 +144,8 @@ async def list_sessions():
                 "daily_hours": ps.get("daily_hours"),
                 "learning_style": ps.get("learning_style", ""),
                 "version": ps.get("version", 1),
-                "status": s.get("status", "active"),
-                "phase": s.get("phase", ""),
+                "status": s.get("status") or "active",
+                "phase": s.get("phase") or "diagnosing",
                 "current_stage_num": ps.get("current_stage_num", 0),
                 "current_stage_name": ps.get("current_stage_name", ""),
                 "progress": ps.get("progress", 0),
@@ -138,17 +171,20 @@ async def get_session_snapshot(session_id: str):
             raise HTTPException(status_code=404, detail="Session not found")
         
         # 构建完整快照
+        stage = session.get("stage_info")
+        learning_package = session.get("learning_package")
+        snapshot_resources = await _get_snapshot_resources(learning_package, stage)
         snapshot = {
             "session_id": session["session_id"],
-            "title": session.get("title", ""),
-            "status": session.get("status", "active"),
-            "phase": session.get("phase", "diagnosing"),
+            "title": session.get("title") or "",
+            "status": session.get("status") or "active",
+            "phase": session.get("phase") or "diagnosing",
             "profile": session.get("profile"),
             "profile_modified": session.get("profile_modified", False),
-            "current_stage": session.get("stage_info"),
+            "current_stage": stage,
             "next_stage": session.get("next_stage"),
             "learning_package": to_public_learning_package(
-                session.get("learning_package"), session.get("stage_info")
+                learning_package, stage, snapshot_resources
             ),
             "assessment_summary": {
                 "answer_records": session.get("answer_records", []),

@@ -93,6 +93,25 @@ def to_public_learning_package(
 
     stage = stage or {}
     resources = learning_resources if learning_resources is not None else package.get("learning_resources", [])
+    if not resources:
+        # Agent3 persists videos under recommended_videos.  Normalise them at
+        # the public API boundary so a restored session matches a newly
+        # generated package from /stages/current/package.
+        resources = [
+            {
+                "resource_id": video.get("resource_id", f"video_{index}"),
+                "resource_type": "video",
+                "title": video.get("title", ""),
+                "url": video.get("url", video.get("canonical_url", "")),
+                "platform": video.get("platform", ""),
+                "description": video.get("description", video.get("content_summary", "")),
+                "recommendation_level": video.get("recommendation_level", video.get("role", "supplementary")),
+                "role": video.get("role", "supplementary"),
+                "order": video.get("order", video.get("sequence_index", index + 1)),
+            }
+            for index, video in enumerate(package.get("recommended_videos", []), start=1)
+            if isinstance(video, dict)
+        ]
     return PublicLearningPackage(
         stage_id=stage.get("stage_id", package.get("stage_id")),
         stage_num=stage.get("stage_num", 1),
