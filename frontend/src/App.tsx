@@ -19,6 +19,7 @@ import {
   Gauge,
   Eye,
   LayoutDashboard,
+  ListTree,
   Loader2,
   MessageCircle,
   PanelLeftClose,
@@ -27,16 +28,17 @@ import {
   Play,
   Plus,
   RefreshCw,
-  Route,
   Send,
   Settings,
   Sparkles,
+  SquarePen,
   Target,
   UserRound,
   Video,
   X
 } from 'lucide-react';
 import { apiClient } from './api/client';
+import { findKnowledgeGraphBlock } from './data/knowledgeGraph';
 import OnboardingPage from './pages/OnboardingPage';
 import ProfileConfirmPage from './pages/ProfileConfirmPage';
 import {
@@ -56,9 +58,21 @@ type Message = {
   content: string;
   note?: string;
 };
+type KnowledgeSubtopic = {
+  subtopic_id?: string;
+  subtopic_name: string;
+  sequence_index?: number;
+  status?: string;
+  progress?: number;
+  prerequisites?: string[];
+};
 type KnowledgeGap = {
   skill: string;
+  block_id?: string;
   block_name?: string;
+  target_subtopic_ids?: string[];
+  subtopics?: KnowledgeSubtopic[];
+  target_subtopics?: KnowledgeSubtopic[];
   level?: string;
   status?: string;
   progress?: number;
@@ -148,6 +162,21 @@ type StoredStageConversation = {
   messages: Message[];
   updatedAt: number;
 };
+type WorkspaceSnapshot = {
+  sessionId: string | null;
+  profile: Profile;
+  stage: StageInfo | null;
+  learningPackage: LearningPackage | null;
+  messages: Message[];
+  selectedConversationId: string;
+  input: string;
+  result: StageResult | null;
+  plannedStage: StageInfo | null;
+  timerSeconds: number;
+  timerRunning: boolean;
+  materialPanelOpen: boolean;
+  completedAgents: AgentId[];
+};
 
 const PROJECTS_STORAGE_KEY = 'learningProjects';
 const CONVERSATIONS_STORAGE_KEY = 'stageConversations';
@@ -188,10 +217,10 @@ const fallbackProfile: Profile = {
   grade: '算法工程师（转向大模型应用）',
   skill_tags: ['PyTorch', 'Transformer', 'Python'],
   knowledge_gaps: [
-    { skill: '注意力机制', status: '学习中', progress: 0.68 },
-    { skill: 'PEFT', status: '未掌握', progress: 0.34 },
-    { skill: 'LoRA', status: '未开始', progress: 0.18 },
-    { skill: '推理部署', status: '未开始', progress: 0.08 }
+    { skill: '注意力机制', block_id: 'KB-06', block_name: '注意力机制', status: '学习中', progress: 0.68 },
+    { skill: 'PEFT', block_id: 'KB-12', block_name: '参数高效微调（LoRA与QLoRA）', status: '未掌握', progress: 0.34 },
+    { skill: 'LoRA', block_id: 'KB-12', block_name: '参数高效微调（LoRA与QLoRA）', status: '未开始', progress: 0.18 },
+    { skill: '推理部署', block_id: 'KB-15', block_name: '模型推理部署（vLLM）', status: '未开始', progress: 0.08 }
   ],
   goal: '掌握 LoRA 微调并能独立部署到生产环境',
   daily_hours: 2,
@@ -206,7 +235,10 @@ const fallbackProfile: Profile = {
 const fallbackStage: StageInfo = {
   stage_id: 'STG-001',
   stage_num: 1,
+  block_id: 'KB-06',
   block_name: 'Self-Attention 计算机制',
+  subtopic_id: 'KBS-06-02',
+  subtopic_name: '掌握Self-Attention与Multi-Head Attention的计算原理与公式',
   estimated_hours: 1,
   gap_skill: '注意力机制',
   prerequisites: ['Python', 'PyTorch 张量基础'],
@@ -382,6 +414,17 @@ function shortId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function createStageConversationMessages(nextStage: StageInfo, nextProfile?: Profile | null): Message[] {
+  const stageName = nextStage.block_name || `学习阶段 ${nextStage.stage_num ?? 1}`;
+  const subtopicName = nextStage.subtopic_name || nextStage.gap_skill;
+  return [{
+    id: `stage-welcome-${shortId()}`,
+    role: 'assistant',
+    content: `欢迎进入${stageName}。${subtopicName ? `本阶段将围绕「${subtopicName}」展开。` : ''}你可以在这里记录问题并获得实时答疑。`,
+    note: nextProfile?.goal ? `目标：${nextProfile.goal}` : '阶段导学'
+  }];
+}
+
 function getErrorMessage(error: unknown) {
   if (typeof error === 'object' && error && 'message' in error) {
     return String((error as { message?: unknown }).message);
@@ -495,7 +538,7 @@ function Topbar({
   subtitle,
   loading,
   error,
-  onCreateGoal,
+  onReturnToChat,
   onOpenLearningPath,
   onOpenProfile,
   onOpenMaterials
@@ -504,7 +547,7 @@ function Topbar({
   subtitle: string;
   loading: boolean;
   error: string | null;
-  onCreateGoal?: () => void;
+  onReturnToChat?: () => void;
   onOpenLearningPath?: () => void;
   onOpenProfile?: () => void;
   onOpenMaterials?: () => void;
@@ -523,16 +566,16 @@ function Topbar({
             Agent 处理中
           </span>
         )}
-        {onCreateGoal && (
-          <button className="switch-goal-button" onClick={onCreateGoal} disabled={loading}>
-            <Plus size={15} />
-            新建目标
+        {onReturnToChat && (
+          <button className="topbar-tool-button" onClick={onReturnToChat} disabled={loading}>
+            <MessageCircle size={15} />
+            返回学习对话
           </button>
         )}
         {onOpenLearningPath && (
           <button className="topbar-tool-button" onClick={onOpenLearningPath} disabled={loading}>
-            <Route size={15} />
-            学习路径
+            <ListTree size={15} />
+            阶段知识点
           </button>
         )}
         {onOpenProfile && (
@@ -558,6 +601,8 @@ function ProfilePanel({
   currentSessionId,
   selectedConversationId,
   onSelectProjectStage,
+  onCreateGoal,
+  loading,
   collapsed,
   onToggleCollapsed,
   timerSeconds,
@@ -569,6 +614,8 @@ function ProfilePanel({
   currentSessionId: string | null;
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
+  onCreateGoal: () => void;
+  loading: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   timerSeconds: number;
@@ -627,6 +674,16 @@ function ProfilePanel({
           <b>{formatTimer(timerSeconds)}</b>
         </button>
       </section>
+
+      <button
+        className="context-new-goal-button"
+        onClick={onCreateGoal}
+        disabled={loading}
+        aria-label="新建学习目标"
+      >
+        <SquarePen size={18} />
+        <span>新建学习目标</span>
+      </button>
 
       <section className="goal-stage-nav" aria-label="学习目标与阶段对话">
         <div className="goal-stage-nav-heading">
@@ -792,12 +849,16 @@ function CurrentMaterialPanel({
   learningPackage,
   onClose,
   onTest,
+  stageResultReady,
+  onOpenResult,
   onResizeStart
 }: {
   stage: StageInfo;
   learningPackage: LearningPackage | null;
   onClose: () => void;
   onTest: () => void;
+  stageResultReady: boolean;
+  onOpenResult: () => void;
   onResizeStart: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 }) {
   const content = learningPackage || fallbackPackage;
@@ -822,9 +883,9 @@ function CurrentMaterialPanel({
         <MaterialDocument stage={stage} learningPackage={content} compact />
       </div>
       <footer>
-        <button onClick={onTest}>
-          <FileQuestion size={16} />
-          开始阶段测试
+        <button onClick={stageResultReady ? onOpenResult : onTest}>
+          {stageResultReady ? <ChevronRight size={16} /> : <FileQuestion size={16} />}
+          {stageResultReady ? '去进行下一阶段' : '开始阶段测试'}
         </button>
       </footer>
     </aside>
@@ -848,11 +909,14 @@ function ChatView({
   materialPanelOpen,
   onToggleMaterials,
   onTest,
+  stageResultReady,
+  onOpenResult,
   projects,
   currentSessionId,
   selectedConversationId,
   onSelectProjectStage,
   readOnly,
+  readOnlyNotice,
   loading,
   error
 }: {
@@ -872,11 +936,14 @@ function ChatView({
   materialPanelOpen: boolean;
   onToggleMaterials: () => void;
   onTest: () => void;
+  stageResultReady: boolean;
+  onOpenResult: () => void;
   projects: LearningProject[];
   currentSessionId: string | null;
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
   readOnly: boolean;
+  readOnlyNotice: string;
   loading: boolean;
   error: string | null;
 }) {
@@ -915,7 +982,6 @@ function ChatView({
         subtitle={conversationStage.subtopic_name || conversationStage.gap_skill || '阶段学习与实时答疑'}
         loading={loading}
         error={error}
-        onCreateGoal={onCreateGoal}
         onOpenLearningPath={onOpenLearningPath}
         onOpenProfile={onOpenProfile}
         onOpenMaterials={onToggleMaterials}
@@ -930,6 +996,8 @@ function ChatView({
           currentSessionId={currentSessionId}
           selectedConversationId={selectedConversationId}
           onSelectProjectStage={onSelectProjectStage}
+          onCreateGoal={onCreateGoal}
+          loading={loading}
           collapsed={contextPanelCollapsed}
           onToggleCollapsed={() => setContextPanelCollapsed((prev) => !prev)}
           timerSeconds={timerSeconds}
@@ -975,7 +1043,7 @@ function ChatView({
           </div>
 
           {readOnly ? (
-            <div className="historical-conversation-note">这是已结束阶段的对话记录，仅供查看。</div>
+            <div className="historical-conversation-note">{readOnlyNotice}</div>
           ) : (
             <form className="composer" onSubmit={onSend}>
               <textarea
@@ -999,6 +1067,8 @@ function ChatView({
             learningPackage={learningPackage}
             onClose={onToggleMaterials}
             onTest={onTest}
+            stageResultReady={stageResultReady}
+            onOpenResult={onOpenResult}
             onResizeStart={resizeMaterialPanel}
           />
         )}
@@ -1333,50 +1403,68 @@ function LearningPathModal({
   stage: StageInfo;
   onClose: () => void;
 }) {
-  const currentPoints = Array.from(new Set([
-    ...(stage.prerequisites || []),
-    stage.gap_skill,
-    stage.subtopic_name,
-    stage.block_name
-  ].filter(Boolean))) as string[];
-  const pathItems = [
-    ...(profile.skill_tags || []).map((name) => ({ name, status: 'done' as const, label: '已有基础' })),
-    ...(profile.knowledge_gaps || []).map((gap) => {
-      const done = gap.status === '已掌握' || (gap.progress ?? 0) >= 1;
-      const current = !done && (gap.skill === stage.gap_skill || gap.block_name === stage.block_name);
-      return {
-        name: gap.skill,
-        status: done ? 'done' as const : current ? 'current' as const : 'pending' as const,
-        label: done ? '已完成' : current ? '当前学习' : '待学习'
-      };
-    }),
-    { name: profile.goal || '最终学习目标', status: 'target' as const, label: '目标' }
-  ];
+  const currentGraphBlock = findKnowledgeGraphBlock(stage.block_id, stage.block_name, stage.gap_skill);
+  const currentGap = (profile.knowledge_gaps || []).find((gap) => (
+    Boolean(stage.block_id && gap.block_id === stage.block_id)
+    || gap.skill === stage.gap_skill
+    || gap.block_name === stage.block_name
+    || Boolean(currentGraphBlock && findKnowledgeGraphBlock(gap.block_id, gap.block_name, gap.skill)?.block_id === currentGraphBlock.block_id)
+  ));
+  const apiSubtopics = currentGap?.subtopics || currentGap?.target_subtopics || [];
+  const targetIds = new Set(currentGap?.target_subtopic_ids || []);
+  const catalogSubtopics = currentGraphBlock?.subtopics || [];
+  const selectedCatalogSubtopics = targetIds.size
+    ? catalogSubtopics.filter((topic) => targetIds.has(topic.subtopic_id))
+    : catalogSubtopics;
+  const subtopics: KnowledgeSubtopic[] = (apiSubtopics.length ? apiSubtopics : selectedCatalogSubtopics)
+    .map((topic) => ({ ...topic }))
+    .sort((a, b) => (a.sequence_index ?? 0) - (b.sequence_index ?? 0));
+  const currentTopicIndex = subtopics.findIndex((candidate) => (
+      Boolean(stage.subtopic_id && candidate.subtopic_id === stage.subtopic_id)
+      || Boolean(stage.subtopic_name && candidate.subtopic_name === stage.subtopic_name)
+  ));
+  const stageCompleted = ['completed', 'complete', '已完成'].includes(stage.status || '');
+  const gapCompleted = currentGap?.status === '已掌握' || (currentGap?.progress ?? 0) >= 1;
+  const inferredCompletedCount = Math.min(
+    Math.max(subtopics.length - 1, 0),
+    Math.floor((currentGap?.progress || 0) * subtopics.length)
+  );
+  const getSubtopicStatus = (topic: KnowledgeSubtopic, index: number): 'done' | 'current' | 'pending' => {
+    if (stageCompleted || gapCompleted || topic.status === '已掌握' || (topic.progress ?? 0) >= 1) return 'done';
+    if (currentTopicIndex >= 0) return index < currentTopicIndex ? 'done' : index === currentTopicIndex ? 'current' : 'pending';
+    return index < inferredCompletedCount ? 'done' : index === inferredCompletedCount ? 'current' : 'pending';
+  };
+  const completedCount = subtopics.filter((topic, index) => getSubtopicStatus(topic, index) === 'done').length;
+  const prerequisites = Array.from(new Set(stage.prerequisites || []));
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="learning-path-modal" role="dialog" aria-modal="true" aria-labelledby="learning-path-title">
         <header>
-          <div><span>动态规划</span><h2 id="learning-path-title">学习路径</h2></div>
-          <button onClick={onClose} aria-label="关闭学习路径" title="关闭"><X size={18} /></button>
+          <div><span>当前阶段</span><h2 id="learning-path-title">阶段知识点</h2></div>
+          <button onClick={onClose} aria-label="关闭阶段知识点" title="关闭"><X size={18} /></button>
         </header>
         <div className="learning-path-modal-body">
-          <section className="current-knowledge-points">
-            <div><span>当前阶段</span><h3>{stage.block_name || `阶段 ${stage.stage_num ?? 1}`}</h3></div>
-            <div className="knowledge-point-list">
-              {currentPoints.map((point) => <span key={point}>{point}</span>)}
+          <section className="stage-knowledge-panel">
+            <div className="stage-knowledge-heading">
+              <div><span>阶段 {stage.stage_num ?? 1}</span><h3>{stage.block_name || currentGraphBlock?.block_name || '当前学习阶段'}</h3></div>
+              <strong>{completedCount}/{subtopics.length} 已完成</strong>
             </div>
-          </section>
-          <section className="full-learning-path">
-            <h3>从已有基础到最终目标</h3>
-            <div className="path-node-list">
-              {pathItems.map((item, index) => (
-                <div className={`path-node ${item.status}`} key={`${item.name}-${index}`}>
-                  <i>{item.status === 'done' ? <Check size={14} /> : item.status === 'current' ? <Play size={13} /> : item.status === 'target' ? <Target size={14} /> : index + 1}</i>
-                  <div><strong>{item.name}</strong><span>{item.label}</span></div>
-                </div>
-              ))}
-            </div>
+            {prerequisites.length > 0 && <div className="stage-knowledge-prerequisites"><span>前置要求</span>{prerequisites.map((name) => <b key={name}>{name}</b>)}</div>}
+            {subtopics.length > 0 ? (
+              <div className="stage-knowledge-list">
+                {subtopics.map((topic, index) => {
+                  const topicStatus = getSubtopicStatus(topic, index);
+                  return (
+                    <div className={`path-subtopic ${topicStatus}`} key={topic.subtopic_id || `${topic.subtopic_name}-${index}`}>
+                      <i>{topicStatus === 'done' ? <Check size={12} /> : topicStatus === 'current' ? <Play size={10} /> : index + 1}</i>
+                      <span>{topic.subtopic_name}</span>
+                      <small>{topicStatus === 'done' ? '已完成' : topicStatus === 'current' ? '当前' : '待学习'}</small>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : <p className="stage-knowledge-empty">等待后端返回当前阶段知识点</p>}
           </section>
           <footer className="path-legend">
             <span className="done">已完成</span><span className="current">当前知识点</span><span className="pending">待学习</span>
@@ -1492,7 +1580,7 @@ function DashboardView({
 
   return (
     <div className="page-shell">
-      <Topbar title="学习仪表盘" subtitle="画像、阶段、掌握度和策略决策汇总" loading={loading} error={error} />
+      <Topbar title="学习仪表盘" subtitle="阶段、掌握度和策略决策汇总" loading={loading} error={error} />
       <main className="dashboard">
         <div className="dashboard-head">
           <div>
@@ -1524,41 +1612,6 @@ function DashboardView({
           </div>
         </div>
 
-        <section className="dashboard-profile-card">
-          <div className="dashboard-profile-head">
-            <div>
-              <span className="metric-icon blue"><UserRound size={20} /></span>
-              <div>
-                <small>学习画像</small>
-                <h3>{profile.grade || '当前学习者'}</h3>
-              </div>
-            </div>
-            <b>{pct(profile.confidence ?? 0.7)}% 可信</b>
-          </div>
-          <div className="dashboard-profile-details">
-            <div>
-              <span>已有基础</span>
-              <strong>{profile.skill_tags?.join(' · ') || '等待诊断'}</strong>
-            </div>
-            <div>
-              <span>知识盲区</span>
-              <strong>{gaps.slice(0, 3).map((gap) => gap.skill).join(' · ') || '暂无'}</strong>
-            </div>
-            <div>
-              <span>每日时长</span>
-              <strong>{profile.daily_hours ?? 2} 小时</strong>
-            </div>
-            <div>
-              <span>学习方式</span>
-              <strong>{styleText[profile.learning_style || 'mixed'] || profile.learning_style}</strong>
-            </div>
-            <div>
-              <span>设备条件</span>
-              <strong>{profile.hardware || '未提供'}</strong>
-            </div>
-          </div>
-        </section>
-
         <div className="dashboard-grid">
           <section className="white-card">
             <div className="card-title">
@@ -1572,7 +1625,7 @@ function DashboardView({
           <section className="white-card">
             <div className="card-title">
               <div>
-                <h3>动态学习路径</h3>
+                <h3>阶段学习进度</h3>
                 <p>当前阶段和下一阶段策略</p>
               </div>
               <span>实时调整</span>
@@ -1608,6 +1661,7 @@ function ResultView({
   result,
   onPlanNext,
   onStartNext,
+  onReturnToChat,
   loading,
   error
 }: {
@@ -1617,6 +1671,7 @@ function ResultView({
   result: StageResult | null;
   onPlanNext: () => void;
   onStartNext: () => void;
+  onReturnToChat: () => void;
   loading: boolean;
   error: string | null;
 }) {
@@ -1627,7 +1682,13 @@ function ResultView({
   const canPlanNext = result?.can_plan_next_stage ?? result?.available_actions?.includes('plan_next_stage') ?? false;
   return (
     <div className="page-shell">
-      <Topbar title="阶段结果" subtitle="阶段完成后展示画像更新和下一阶段策略" loading={loading} error={error} />
+      <Topbar
+        title="阶段结果"
+        subtitle="阶段完成后展示画像更新和下一阶段策略"
+        loading={loading}
+        error={error}
+        onReturnToChat={onReturnToChat}
+      />
       <main className="result-page">
         <section className="result-hero">
           <div className="score-ring">
@@ -1777,6 +1838,7 @@ export default function App() {
   const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
 
   const completeAgent = (agentId: AgentId) => {
     setCompletedAgents((prev) => prev.includes(agentId) ? prev : [...prev, agentId]);
@@ -1795,13 +1857,32 @@ export default function App() {
       const project: LearningProject = {
         sessionId: nextSessionId,
         goal: nextProfile.goal || '未命名学习目标',
-        stageName: nextStage?.block_name || existing?.stageName || '等待阶段规划',
-        stageNum: nextStage?.stage_num ?? existing?.stageNum ?? 1,
+        stageName: nextStage?.status === 'pending' && existing
+          ? existing.stageName
+          : nextStage?.block_name || existing?.stageName || '等待阶段规划',
+        stageNum: nextStage?.status === 'pending' && existing
+          ? existing.stageNum
+          : nextStage?.stage_num ?? existing?.stageNum ?? 1,
         updatedAt: Date.now(),
         profile: nextProfile,
         stages: knownStages.sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1))
       };
       return [project, ...prev.filter((item) => item.sessionId !== nextSessionId)].slice(0, 20);
+    });
+  };
+
+  const rememberStageConversation = (nextSessionId: string, nextStage: StageInfo, nextProfile?: Profile | null) => {
+    const stageNum = nextStage.stage_num ?? 1;
+    const id = `${nextSessionId}:${stageNum}`;
+    setStageConversations((prev) => {
+      if (prev.some((item) => item.id === id)) return prev;
+      return [{
+        id,
+        sessionId: nextSessionId,
+        stage: nextStage,
+        messages: createStageConversationMessages(nextStage, nextProfile),
+        updatedAt: Date.now()
+      }, ...prev].slice(0, 100);
     });
   };
 
@@ -1890,6 +1971,29 @@ export default function App() {
   useEffect(() => {
     const savedSessionId = localStorage.getItem('sessionId');
     if (!savedSessionId) return;
+    const restoreLocalGoal = () => {
+      const savedProject = learningProjects.find((item) => item.sessionId === savedSessionId);
+      if (!savedProject?.profile || !savedSessionId.startsWith('local-goal-')) return false;
+      const savedStages = [...(savedProject.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
+      const restoredStage = [...savedStages].reverse().find((item) => item.status === 'learning' || item.status === 'in_progress')
+        || savedStages.find((item) => item.status !== 'pending')
+        || savedStages[0]
+        || fallbackStage;
+      const restoredConversationId = `${savedSessionId}:${restoredStage.stage_num ?? 1}`;
+      const restoredConversation = stageConversations.find((item) => item.id === restoredConversationId);
+      setSessionId(savedSessionId);
+      setProfile(savedProject.profile);
+      setOnboardingForm(formDataFromProfile(savedProject.profile));
+      setStage(restoredStage);
+      setLearningPackage(fallbackPackage);
+      setMessages(restoredConversation?.messages || createStageConversationMessages(restoredStage, savedProject.profile));
+      setSelectedConversationId(restoredConversationId);
+      setWorkflow('learning');
+      setView('chat');
+      setCompletedAgents(['agent1', 'agent3', 'agent4']);
+      return true;
+    };
+    if (restoreLocalGoal()) return;
     setSessionId(savedSessionId);
     apiClient.getSession(savedSessionId)
       .then((session) => {
@@ -1915,6 +2019,7 @@ export default function App() {
         }
       })
       .catch(() => {
+        if (restoreLocalGoal()) return;
         localStorage.removeItem('sessionId');
         setSessionId(null);
         setWorkflow('onboarding');
@@ -1987,8 +2092,20 @@ export default function App() {
       setWorkflow('profile_ready');
     } catch (caught) {
       setError(getErrorMessage(caught));
-      setProfile(buildDemoProfile(onboardingForm));
-      setStage({ ...fallbackStage, status: 'pending' });
+      const fallbackSessionId = sessionId || `local-goal-${shortId()}`;
+      const fallbackNewProfile = buildDemoProfile(onboardingForm);
+      const fallbackNewStage = {
+        ...fallbackStage,
+        stage_id: `LOCAL-STG-${shortId()}`,
+        stage_num: 1,
+        status: 'pending'
+      };
+      setSessionId(fallbackSessionId);
+      localStorage.setItem('sessionId', fallbackSessionId);
+      setProfile(fallbackNewProfile);
+      setStage(fallbackNewStage);
+      setSelectedConversationId(`${fallbackSessionId}:1`);
+      rememberProject(fallbackSessionId, fallbackNewProfile, fallbackNewStage);
       completeAgent('agent1');
       setWorkflow('profile_ready');
     } finally {
@@ -2076,8 +2193,12 @@ export default function App() {
       setLearningPackage(response.learning_package);
       const generatedStage = response.state?.stage_info || plannedStage || stage || fallbackStage;
       setStage(generatedStage);
-      setSelectedConversationId(`${sessionId}:${generatedStage.stage_num ?? 1}`);
+      const generatedConversationId = `${sessionId}:${generatedStage.stage_num ?? 1}`;
+      const existingConversation = stageConversations.find((item) => item.id === generatedConversationId);
+      setMessages(existingConversation?.messages || createStageConversationMessages(generatedStage, profile));
+      setSelectedConversationId(generatedConversationId);
       if (profile) rememberProject(sessionId, profile, generatedStage);
+      rememberStageConversation(sessionId, generatedStage, profile);
       completeAgent('agent3');
       completeAgent('agent4');
       setMessages((prev) => [...prev, {
@@ -2091,12 +2212,20 @@ export default function App() {
       setMaterialPanelOpen(true);
       setPlannedStage(null);
       setResult(null);
+      setNewGoalReturnState(null);
     } catch (caught) {
       setError(getErrorMessage(caught));
       setLearningPackage(fallbackPackage);
       const fallbackStartedStage = { ...(plannedStage || stage || fallbackStage), status: 'learning' };
       setStage(fallbackStartedStage);
-      if (sessionId) setSelectedConversationId(`${sessionId}:${fallbackStartedStage.stage_num ?? 1}`);
+      if (sessionId) {
+        const fallbackConversationId = `${sessionId}:${fallbackStartedStage.stage_num ?? 1}`;
+        const existingConversation = stageConversations.find((item) => item.id === fallbackConversationId);
+        setMessages(existingConversation?.messages || createStageConversationMessages(fallbackStartedStage, profile));
+        setSelectedConversationId(fallbackConversationId);
+        if (profile) rememberProject(sessionId, profile, fallbackStartedStage);
+        rememberStageConversation(sessionId, fallbackStartedStage, profile);
+      }
       completeAgent('agent3');
       completeAgent('agent4');
       setWorkflow('learning');
@@ -2104,6 +2233,7 @@ export default function App() {
       setMaterialPanelOpen(true);
       setPlannedStage(null);
       setResult(null);
+      setNewGoalReturnState(null);
     } finally {
       setActiveAgent(null);
       setLoading(false);
@@ -2164,15 +2294,15 @@ export default function App() {
       const response = await apiClient.planNextStage({ session_id: sessionId });
       if (!response.next_stage) throw new Error('后端没有返回下一阶段规划');
       setPlannedStage(response.next_stage);
-      if (response.updated_profile) {
-        setProfile(response.updated_profile);
-        rememberProject(sessionId, response.updated_profile, stage);
-      }
+      const nextProfile = response.updated_profile || profile || fallbackProfile;
+      if (response.updated_profile) setProfile(response.updated_profile);
+      rememberProject(sessionId, nextProfile, response.next_stage);
+      rememberStageConversation(sessionId, response.next_stage, nextProfile);
       completeAgent('agent1');
     } catch (caught) {
       setError(getErrorMessage(caught));
       const nextGap = profile?.knowledge_gaps?.find((gap) => gap.status !== '已掌握' && gap.skill !== stage?.gap_skill);
-      setPlannedStage({
+      const fallbackNextStage = {
         stage_id: `DEMO-STG-${(stage?.stage_num ?? 1) + 1}`,
         stage_num: (stage?.stage_num ?? 1) + 1,
         block_name: nextGap?.skill || 'LoRA 低秩适配原理',
@@ -2180,7 +2310,11 @@ export default function App() {
         estimated_hours: 1.5,
         prerequisites: [stage?.block_name || '当前阶段'],
         status: 'pending'
-      });
+      };
+      setPlannedStage(fallbackNextStage);
+      const fallbackNextProfile = profile || fallbackProfile;
+      rememberProject(sessionId, fallbackNextProfile, fallbackNextStage);
+      rememberStageConversation(sessionId, fallbackNextStage, fallbackNextProfile);
       completeAgent('agent1');
     } finally {
       setActiveAgent(null);
@@ -2216,7 +2350,72 @@ export default function App() {
 
   const createLearningGoal = () => {
     setProjectSwitcherOpen(false);
-    clearLocalSession();
+    if (profile) {
+      setNewGoalReturnState({
+        sessionId,
+        profile,
+        stage,
+        learningPackage,
+        messages,
+        selectedConversationId,
+        input,
+        result,
+        plannedStage,
+        timerSeconds,
+        timerRunning,
+        materialPanelOpen,
+        completedAgents
+      });
+    }
+    setError(null);
+    setSessionId(null);
+    setProfile(null);
+    setStage(null);
+    setLearningPackage(null);
+    setPlannedStage(null);
+    setResult(null);
+    setMessages(initialMessages);
+    setSelectedConversationId('');
+    setInput('');
+    setOnboardingForm(emptyOnboardingForm);
+    setFollowupQuestions([]);
+    setHighlightedFields([]);
+    setTimerSeconds(0);
+    setTimerRunning(false);
+    setMaterialPanelOpen(false);
+    setLearningPathOpen(false);
+    setProfileModalOpen(false);
+    setActiveAgent(null);
+    setCompletedAgents([]);
+    setWorkflow('onboarding');
+    setView('chat');
+  };
+
+  const cancelCreateLearningGoal = () => {
+    if (!newGoalReturnState) return;
+    const previous = newGoalReturnState;
+    setSessionId(previous.sessionId);
+    if (previous.sessionId) localStorage.setItem('sessionId', previous.sessionId);
+    setProfile(previous.profile);
+    setStage(previous.stage);
+    setLearningPackage(previous.learningPackage);
+    setMessages(previous.messages);
+    setSelectedConversationId(previous.selectedConversationId);
+    setInput(previous.input);
+    setResult(previous.result);
+    setPlannedStage(previous.plannedStage);
+    setTimerSeconds(previous.timerSeconds);
+    setTimerRunning(previous.timerRunning);
+    setMaterialPanelOpen(previous.materialPanelOpen);
+    setCompletedAgents(previous.completedAgents);
+    setOnboardingForm(formDataFromProfile(previous.profile));
+    setFollowupQuestions([]);
+    setHighlightedFields([]);
+    setError(null);
+    setActiveAgent(null);
+    setWorkflow('learning');
+    setView('chat');
+    setNewGoalReturnState(null);
   };
 
   const switchLearningProject = async (nextSessionId: string, requestedStageNum?: number) => {
@@ -2224,6 +2423,35 @@ export default function App() {
       if (nextSessionId === sessionId && requestedStageNum) {
         setSelectedConversationId(`${nextSessionId}:${requestedStageNum}`);
       }
+      return;
+    }
+    const savedProject = learningProjects.find((item) => item.sessionId === nextSessionId);
+    const canRestoreLocally = Boolean(
+      savedProject?.profile
+      && (nextSessionId.startsWith('local-goal-') || (localPreviewDemo && nextSessionId === DEMO_SESSION_ID))
+    );
+    if (savedProject?.profile && canRestoreLocally) {
+      const savedStages = [...(savedProject.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
+      const activeStage = [...savedStages].reverse().find((item) => item.status === 'learning' || item.status === 'in_progress')
+        || savedStages.find((item) => (item.stage_num ?? 1) === savedProject.stageNum)
+        || savedStages[0]
+        || fallbackStage;
+      const activeConversationId = `${nextSessionId}:${activeStage.stage_num ?? 1}`;
+      const activeConversation = stageConversations.find((item) => item.id === activeConversationId);
+      setError(null);
+      setSessionId(nextSessionId);
+      localStorage.setItem('sessionId', nextSessionId);
+      setProfile(savedProject.profile);
+      setOnboardingForm(formDataFromProfile(savedProject.profile));
+      setStage(activeStage);
+      setLearningPackage(fallbackPackage);
+      setMessages(activeConversation?.messages || createStageConversationMessages(activeStage, savedProject.profile));
+      setSelectedConversationId(`${nextSessionId}:${requestedStageNum ?? activeStage.stage_num ?? 1}`);
+      setResult(null);
+      setPlannedStage(null);
+      setCompletedAgents(['agent1', 'agent3', 'agent4']);
+      setWorkflow('learning');
+      setView('chat');
       return;
     }
     setLoading(true);
@@ -2279,6 +2507,11 @@ export default function App() {
     ? selectedConversation?.messages || []
     : messages;
   const historicalConversationSelected = Boolean(selectedConversationId && selectedConversationId !== currentConversationId);
+  const selectedConversationStageNum = selectedConversation?.stage.stage_num ?? 0;
+  const currentStageNum = stage?.stage_num ?? 1;
+  const readOnlyConversationNotice = selectedConversationStageNum > currentStageNum
+    ? '该阶段已规划，开始学习后可在此继续对话。'
+    : '这是已结束阶段的对话记录，仅供查看。';
 
   return (
     <div className="app">
@@ -2295,6 +2528,7 @@ export default function App() {
           formData={onboardingForm}
           onChange={setOnboardingForm}
           onSubmit={submitOnboarding}
+          onCancel={newGoalReturnState ? cancelCreateLearningGoal : undefined}
           loading={loading}
           mode={workflow === 'diagnosing' ? 'diagnosing' : workflow === 'needs_more_info' ? 'needs_more_info' : 'onboarding'}
           questions={followupQuestions}
@@ -2310,6 +2544,7 @@ export default function App() {
           error={error}
           onEdit={editProfile}
           onStart={startStage}
+          onCancel={newGoalReturnState ? cancelCreateLearningGoal : undefined}
         />
       )}
       {profile && workflow === 'learning' && view === 'chat' && (
@@ -2330,11 +2565,14 @@ export default function App() {
           materialPanelOpen={materialPanelOpen}
           onToggleMaterials={() => setMaterialPanelOpen((prev) => !prev)}
           onTest={() => setTestOpen(true)}
+          stageResultReady={Boolean(result)}
+          onOpenResult={() => setView('result')}
           projects={learningProjects}
           currentSessionId={sessionId}
           selectedConversationId={selectedConversationId || currentConversationId}
           onSelectProjectStage={selectProjectStage}
           readOnly={historicalConversationSelected}
+          readOnlyNotice={readOnlyConversationNotice}
           loading={loading}
           error={error}
         />
@@ -2358,6 +2596,10 @@ export default function App() {
           result={result}
           onPlanNext={planNextStage}
           onStartNext={startStage}
+          onReturnToChat={() => {
+            setView('chat');
+            setMaterialPanelOpen(true);
+          }}
           loading={loading}
           error={error}
         />
