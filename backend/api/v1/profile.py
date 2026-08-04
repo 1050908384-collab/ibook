@@ -230,14 +230,14 @@ async def update_profile(
         if updated_fields:
             sm.update_profile(session_id, profile)
             # 标记画像已修改：下次 confirm 时会重新生成阶段以同步个性化字段
-            # 但 PATCH 本身不触发重新规划，保持当前阶段不变
-            sm.update_field(session_id, "profile_modified", False)
+            # 但 PATCH 本身不触发重新规划，保持当前阶段不变。
+            sm.update_field(session_id, "profile_modified", True)
         
         return {
             "profile_id": f"profile_{session_id[:8]}",
             "session_id": session_id,
             "updated_fields": updated_fields,
-            "profile_modified": False,
+            "profile_modified": bool(updated_fields),
             "message": f"已更新 {len(updated_fields)} 个字段，如需同步到学习阶段请重新确认画像",
         }
     except HTTPException:

@@ -117,7 +117,6 @@ type TestQuestion = {
   question_type?: string;
   question_text: string;
   options?: string[];
-  correct_answer?: string;
   hint?: string;
 };
 type LearningResource = {
@@ -302,22 +301,19 @@ def scaled_dot_product_attention(q, k, v):
       question_id: 'Q-DEMO-1',
       question_type: '选择',
       question_text: '在缩放点积注意力中，除以 sqrt(d_k) 的主要目的是什么？',
-      options: ['减少参数量', '避免点积过大导致 Softmax 梯度过小', '增加注意力头数量', '消除位置编码'],
-      correct_answer: '避免点积过大导致 Softmax 梯度过小'
+      options: ['减少参数量', '避免点积过大导致 Softmax 梯度过小', '增加注意力头数量', '消除位置编码']
     },
     {
       question_id: 'Q-DEMO-2',
       question_type: '选择',
       question_text: '哪两个矩阵的点积决定注意力权重？',
-      options: ['Q 与 K', 'K 与 V', 'Q 与 V', 'V 与输出'],
-      correct_answer: 'Q 与 K'
+      options: ['Q 与 K', 'K 与 V', 'Q 与 V', 'V 与输出']
     },
     {
       question_id: 'Q-DEMO-3',
       question_type: '选择',
       question_text: 'LoRA 通常可以注入 Transformer 的哪个位置？',
-      options: ['数据加载器', 'Q、K、V 的线性映射层', '损失函数', 'Tokenizer 词表'],
-      correct_answer: 'Q、K、V 的线性映射层'
+      options: ['数据加载器', 'Q、K、V 的线性映射层', '损失函数', 'Tokenizer 词表']
     }
   ]
 };

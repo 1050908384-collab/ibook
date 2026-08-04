@@ -384,21 +384,6 @@ class DeterministicDiagnosticAgent:
             preferred_block = self.knowledge_catalog_tool.get_block(gap.block_id) or {}
         preferred_block = preferred_block or {}
 
-        profile_dict = request.profile.model_dump(mode="json")
-        generated_stage = {}
-        try:
-            generated_stage = await self.stage_generator_tool.generate_stage(
-                request.session_id,
-                gap.model_dump(mode="json"),
-                preferred_block,
-                request.profile.goal,
-                request.stage_num,
-                profile=profile_dict,
-            )
-        except Exception:
-            generated_stage = {}
-        generated_stage = generated_stage or {}
-
         candidates = self.db_client.list_learnable_subtopics(
             session_id=request.session_id,
             preferred_block_id=preferred_block.get("block_id"),
@@ -464,16 +449,39 @@ class DeterministicDiagnosticAgent:
             block_info = self.knowledge_catalog_tool.get_block(subtopic["block_id"]) or {}
         block_info = block_info or preferred_block or {}
 
+        # 阶段内容必须以最终选中的子知识点为准。gap_skill 保留目标缺口，
+        # 用于后续阶段推进；它不能覆盖当前阶段的教学主题。
+        stage_gap = gap.model_dump(mode="json")
+        stage_gap["skill"] = subtopic.get("subtopic_name") or block_info.get("block_name") or gap.skill
+        stage_block_info = dict(block_info)
+        if subtopic.get("estimated_hours") is not None:
+            stage_block_info["estimated_hours"] = subtopic["estimated_hours"]
+
+        try:
+            generated_stage = await self.stage_generator_tool.generate_stage(
+                request.session_id,
+                stage_gap,
+                stage_block_info,
+                request.profile.goal,
+                request.stage_num,
+                profile=request.profile.model_dump(mode="json"),
+            )
+        except Exception:
+            generated_stage = {}
+        generated_stage = generated_stage or {}
+
         stable_key = f"{request.session_id}:{request.stage_num}:{subtopic['subtopic_id']}"
-        stage_id = generated_stage.get("stage_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
+        stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
         block_id = subtopic.get("block_id") or block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
         if block_id == (gap.block_id or preferred_block.get("block_id")):
             block_name = gap.skill or gap.block_name or block_info.get("block_name") or generated_stage.get("block_name")
         else:
             block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
+        subtopic_hours = subtopic.get("estimated_hours")
         estimated_hours = float(
-            subtopic.get("estimated_hours")
-            or block_info.get("estimated_hours")
+            subtopic_hours
+            if subtopic_hours is not None
+            else block_info.get("estimated_hours")
             or generated_stage.get("estimated_hours")
             or 2.0
         )

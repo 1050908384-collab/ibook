@@ -159,6 +159,31 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         final = self.create_harness().state_manager.get_session(session_id)
         self.assertEqual("active", final["status"])
 
+    async def test_subtopic_status_persists_after_database_client_reloads(self):
+        client = SQLiteClient(self.database_url)
+        self._seed_reference_data(client)
+        self.clients.append(client)
+        session_id = "subtopic-status-persistence"
+        client.create_session(session_id)
+
+        client.set_subtopic_status(
+            session_id=session_id,
+            subtopic_id="KBS-01-00",
+            status=1,
+            mastery_score=1.0,
+            last_accuracy=1.0,
+            increment_attempt=True,
+        )
+
+        reloaded = SQLiteClient(self.database_url)
+        self.clients.append(reloaded)
+        persisted = reloaded.get_subtopic_status(session_id, "KBS-01-00")
+        self.assertIsNotNone(persisted)
+        self.assertEqual(1, persisted["status"])
+        self.assertEqual(1.0, persisted["mastery_score"])
+        self.assertEqual(1.0, persisted["last_accuracy"])
+        self.assertEqual(1, persisted["attempt_count"])
+
     async def test_incorrect_answer_repeats_stage(self):
         harness = self.create_harness()
         session_id = harness.state_manager.create_session()["session_id"]

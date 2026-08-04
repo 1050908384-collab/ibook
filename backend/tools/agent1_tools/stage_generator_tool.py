@@ -203,6 +203,7 @@ def _adjust_hours_by_profile(base_hours: float, daily_hours: float, level: str) 
 def _generate_style_notes(learning_style: str, skill_name: str) -> str:
     """根据学习风格生成建议。"""
     style_map = {
+        "practice": f"动手型学习者：建议先完成{skill_name}的最小可运行操作，再记录命令、报错与解决过程",
         "visual": f"视觉型学习者：建议多关注{skill_name}的架构图、流程图和可视化演示",
         "auditory": f"听觉型学习者：建议配合{skill_name}的视频讲解和语音教程",
         "reading": f"阅读型学习者：建议详细阅读{skill_name}的官方文档和技术书籍",
@@ -217,6 +218,8 @@ def _generate_hardware_notes(hardware: str, skill_name: str) -> str:
     if not hardware:
         return ""
     hardware_lower = hardware.lower()
+    if any(keyword in skill_name for keyword in ("安装", "环境准备", "环境配置", "Linux环境")):
+        return f"当前设备为 {hardware}：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。"
     # NVIDIA GPU 检测：包含 RTX、GTX、或具体型号
     if any(gpu in hardware_lower for gpu in ["rtx", "gtx", "gpu", "cuda", "nvidia", 
                                                "4090", "4080", "4070", "4060", "4050",
@@ -243,7 +246,7 @@ def _generate_summary(grade: str, daily_hours: float, learning_style: str,
     parts.append(f"建议分{study_days}天学习")
     if daily_hours:
         parts.append(f"每天{daily_hours}小时")
-    style_label = {"visual": "视觉型", "auditory": "听觉型", "reading": "阅读型",
+    style_label = {"practice": "动手型", "visual": "视觉型", "auditory": "听觉型", "reading": "阅读型",
                    "kinesthetic": "动手型", "mixed": "综合型"}.get(learning_style, "综合型")
     parts.append(f"{style_label}学习风格")
     return " | ".join(parts)
