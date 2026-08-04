@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from api.dependencies import get_harness
+from api.v1.schemas import ProfileResponse, ProfileUpdateResponse
 
 router = APIRouter(prefix="/sessions/{session_id}", tags=["Profile"])
 harness = get_harness()
@@ -27,7 +28,7 @@ class ProfileUpdateRequest(BaseModel):
     hardware: Optional[str] = None
 
 
-@router.get("/profile")
+@router.get("/profile", response_model=ProfileResponse)
 async def get_profile(session_id: str):
     """
     获取用户画像
@@ -48,10 +49,14 @@ async def get_profile(session_id: str):
             "session_id": session_id,
             "goal": profile.get("goal", ""),
             "grade": profile.get("grade", ""),
+            "skill_tags": profile.get("skill_tags", []),
             "daily_hours": profile.get("daily_hours", 2.0),
             "learning_style": profile.get("learning_style", "mixed"),
             "hardware": profile.get("hardware", ""),
             "knowledge_gaps": profile.get("knowledge_gaps", []),
+            "learning_rhythm": profile.get("learning_rhythm", "medium"),
+            "confidence_index": profile.get("confidence_index", 0.5),
+            "confusion_markers": profile.get("confusion_markers", []),
             "confidence": profile.get("confidence", 0.0),
             "version": profile.get("version", 1),
             "confirmed": session.get("profile_confirmed", False),
@@ -177,7 +182,7 @@ async def confirm_profile(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.patch("/profile")
+@router.patch("/profile", response_model=ProfileUpdateResponse)
 async def update_profile(
     session_id: str,
     request: ProfileUpdateRequest,
@@ -226,13 +231,13 @@ async def update_profile(
             sm.update_profile(session_id, profile)
             # 标记画像已修改：下次 confirm 时会重新生成阶段以同步个性化字段
             # 但 PATCH 本身不触发重新规划，保持当前阶段不变
-            sm.update_field(session_id, "profile_modified", True)
+            sm.update_field(session_id, "profile_modified", False)
         
         return {
             "profile_id": f"profile_{session_id[:8]}",
             "session_id": session_id,
             "updated_fields": updated_fields,
-            "profile_modified": bool(updated_fields),  # 提示前端画像已变更
+            "profile_modified": False,
             "message": f"已更新 {len(updated_fields)} 个字段，如需同步到学习阶段请重新确认画像",
         }
     except HTTPException:

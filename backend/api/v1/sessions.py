@@ -5,15 +5,52 @@ v1/sessions.py - Agent1/3 前端 API：会话管理接口
 对应文档：Agent13_API接口任务说明.md 第 1 节
 """
 
+from typing import Any, Optional
+
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
 
 from api.dependencies import get_harness
+from api.v1.schemas import PublicLearningPackage, to_public_learning_package
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 harness = get_harness()
 
 
-@router.post("")
+class SessionSummary(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    session_id: str
+    title: str = ""
+    status: str
+    phase: str
+    profile_summary: dict[str, Any] = Field(default_factory=dict)
+    updated_at: Optional[str] = None
+
+
+class SessionListResponse(BaseModel):
+    sessions: list[SessionSummary]
+
+
+class SessionSnapshot(BaseModel):
+    session_id: str
+    title: str = ""
+    status: str
+    phase: str
+    profile: Optional[dict[str, Any]] = None
+    profile_modified: bool = False
+    current_stage: Optional[dict[str, Any]] = None
+    next_stage: Optional[dict[str, Any]] = None
+    learning_package: Optional[PublicLearningPackage] = None
+    assessment_summary: dict[str, Any] = Field(default_factory=dict)
+    progress_summary: dict[str, Any] = Field(default_factory=dict)
+    recent_qa: list[dict[str, Any]] = Field(default_factory=list)
+    available_actions: list[str] = Field(default_factory=list)
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+@router.post("", response_model=SessionSnapshot)
 async def create_session():
     """
     创建新会话
@@ -42,7 +79,7 @@ async def create_session():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("")
+@router.get("", response_model=SessionListResponse)
 async def list_sessions():
     """
     获取所有会话列表（左侧对话栏 + 账号级"所有学习画像/所有项目"列表）
@@ -88,7 +125,7 @@ async def list_sessions():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{session_id}")
+@router.get("/{session_id}", response_model=SessionSnapshot)
 async def get_session_snapshot(session_id: str):
     """
     获取完整会话快照（页面恢复）
@@ -110,7 +147,9 @@ async def get_session_snapshot(session_id: str):
             "profile_modified": session.get("profile_modified", False),
             "current_stage": session.get("stage_info"),
             "next_stage": session.get("next_stage"),
-            "learning_package": session.get("learning_package"),
+            "learning_package": to_public_learning_package(
+                session.get("learning_package"), session.get("stage_info")
+            ),
             "assessment_summary": {
                 "answer_records": session.get("answer_records", []),
                 "current_stage": session.get("current_stage", 1),

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from api.dependencies import get_harness
+from api.v1.schemas import to_public_learning_package, to_public_question
 
 router = APIRouter(prefix="/sessions/{session_id}/stages", tags=["Stages"])
 harness = get_harness()
@@ -34,9 +35,7 @@ class PlanNextStageRequest(BaseModel):
 
 def _sanitize_question(question: dict) -> dict:
     """移除问题中的敏感字段（correct_answer, explanation, expected_output）"""
-    sensitive_fields = ["correct_answer", "explanation", "expected_output", "reference_answer"]
-    sanitized = {k: v for k, v in question.items() if k not in sensitive_fields}
-    return sanitized
+    return to_public_question(question)
 
 
 def _build_learning_resources(stage_info: dict, package: dict) -> list[dict]:
@@ -281,6 +280,8 @@ async def get_current_stage_package(session_id: str):
             "personalization_summary": stage_info.get("personalization_summary"),
         }
         
+        package_response = to_public_learning_package(package, stage_info, learning_resources)
+
         return {
             "package": package_response,
             "total_questions": len(sanitized_questions),
@@ -307,12 +308,14 @@ async def start_current_stage(session_id: str):
             raise HTTPException(status_code=404, detail="Session not found")
         if not session.get("stage_info"):
             raise HTTPException(status_code=409, detail="当前没有可开始的阶段，请先完成诊断与画像确认")
+        if not session.get("profile_confirmed", False):
+            raise HTTPException(status_code=409, detail="Profile must be confirmed before starting a stage")
 
         result = await harness.start_stage(session_id)
 
         # 更新 session 状态
         harness.state_manager.update_field(session_id, "phase", "learning")
-        harness.state_manager.update_field(session_id, "available_actions", ["submit_answer", "complete_stage"])
+        harness.state_manager.update_field(session_id, "available_actions", ["ask_question", "start_assessment"])
 
         # 获取当前阶段信息（含个性化字段）
         session = harness.get_session(session_id)
@@ -324,7 +327,7 @@ async def start_current_stage(session_id: str):
             "status": "started",
             "phase": "learning",
             "package_id": result.get("package_id"),
-            "available_actions": ["submit_answer", "complete_stage"],
+            "available_actions": ["ask_question", "start_assessment"],
             # 个性化字段
             "stage_info": {
                 "recommended_daily_hours": stage.get("recommended_daily_hours"),
@@ -342,7 +345,6 @@ async def start_current_stage(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/current/answer")
 async def submit_stage_answer(
     session_id: str,
     request: AnswerRequest,
@@ -377,7 +379,6 @@ async def submit_stage_answer(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/current/complete")
 async def complete_current_stage(
     session_id: str,
     request: CompleteStageRequest = None,
@@ -438,7 +439,7 @@ async def complete_current_stage(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/current/plan-next")
+@router.post("/next/plan")
 async def plan_next_stage(
     session_id: str,
     request: PlanNextStageRequest,

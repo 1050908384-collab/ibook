@@ -16,6 +16,7 @@ from api.v1.sessions import router as v1_sessions_router
 from api.v1.diagnosis import router as v1_diagnosis_router
 from api.v1.profile import router as v1_profile_router
 from api.v1.stages import router as v1_stages_router
+from api.v1.qa import router as v1_qa_router
 from config import settings
 
 app = FastAPI(
@@ -53,6 +54,7 @@ app.include_router(v1_sessions_router, prefix="/api/v1", tags=["Sessions"])
 app.include_router(v1_diagnosis_router, prefix="/api/v1", tags=["Diagnosis"])
 app.include_router(v1_profile_router, prefix="/api/v1", tags=["Profile"])
 app.include_router(v1_stages_router, prefix="/api/v1", tags=["Stages"])
+app.include_router(v1_qa_router, prefix="/api/v1", tags=["Q&A"])
 
 @app.get("/")
 def root():

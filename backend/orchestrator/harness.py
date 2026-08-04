@@ -57,7 +57,18 @@ class Harness:
     async def process_initial_input(self, session_id: str, user_input: str) -> Dict[str, Any]:
         self._log(session_id, "process_initial_input:start", f"message={user_input[:60]}")
         self.state_manager.require_session(session_id)
-        diagnostic = await self.agent1.run(DiagnosticInput(session_id=session_id, user_input=user_input))
+        previous_inputs = []
+        for interaction in self.state_manager.get_interactions(session_id):
+            if interaction.get("type") != "initial_diagnostic":
+                continue
+            data = interaction.get("data", {})
+            previous_input = data.get("user_input") if isinstance(data, dict) else None
+            if previous_input:
+                previous_inputs.append(previous_input)
+        diagnostic_input = "\n".join([*previous_inputs, user_input])
+        diagnostic = await self.agent1.run(
+            DiagnosticInput(session_id=session_id, user_input=diagnostic_input)
+        )
         # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
         self.state_manager.update_profile(session_id, diagnostic.profile)
         self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})

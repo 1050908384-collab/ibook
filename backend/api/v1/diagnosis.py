@@ -6,7 +6,7 @@ v1/diagnosis.py - Agent1/3 前端 API：诊断接口
 """
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 from api.dependencies import get_harness
@@ -20,7 +20,28 @@ class DiagnosisMessageRequest(BaseModel):
     message_type: str = "user"
 
 
-@router.post("/messages")
+class DiagnosisMessage(BaseModel):
+    message_id: str
+    role: str
+    content: str
+    created_at: Optional[str] = None
+
+
+class DiagnosisResultResponse(BaseModel):
+    status: str
+    assistant_message: str
+    missing_fields: list[str] = Field(default_factory=list)
+    followup_questions: list[str] = Field(default_factory=list)
+    profile_draft: dict = Field(default_factory=dict)
+    confidence: float = 0.0
+
+
+class DiagnosisHistoryResponse(BaseModel):
+    messages: list[DiagnosisMessage] = Field(default_factory=list)
+    total: int = 0
+
+
+@router.post("/messages", response_model=DiagnosisResultResponse)
 async def submit_diagnosis_message(
     session_id: str,
     request: DiagnosisMessageRequest,
@@ -109,7 +130,7 @@ async def submit_diagnosis_message(
         status = result.get("status", "needs_more_info")
         
         if status == "ready":
-            return {
+            response = {
                 "status": "profile_ready",
                 "assistant_message": "诊断完成，画像已生成。",
                 "missing_fields": [],
@@ -129,7 +150,7 @@ async def submit_diagnosis_message(
             if not profile.get("learning_style"):
                 missing_fields.append("learning_style")
             
-            return {
+            response = {
                 "status": "needs_more_info",
                 "assistant_message": "需要更多信息来完善您的画像。",
                 "missing_fields": missing_fields,
@@ -137,6 +158,11 @@ async def submit_diagnosis_message(
                 "profile_draft": profile,
                 "confidence": profile.get("confidence", 0.0),
             }
+        harness.state_manager.add_interaction(session_id, "diagnosis_assistant", {
+            "content": response["assistant_message"],
+            "followup_questions": response["followup_questions"],
+        })
+        return response
     except HTTPException:
         raise
     except ValueError as e:
@@ -149,7 +175,7 @@ async def submit_diagnosis_message(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/messages")
+@router.get("/messages", response_model=DiagnosisHistoryResponse)
 async def get_diagnosis_messages(session_id: str):
     """
     获取诊断消息历史
@@ -165,12 +191,22 @@ async def get_diagnosis_messages(session_id: str):
         messages = []
         for idx, interaction in enumerate(interactions):
             msg_type = interaction.get("type", "")
-            if msg_type in ("user_input", "initial_diagnostic", "followup"):
+            data = interaction.get("data", {})
+            if not isinstance(data, dict):
+                continue
+            if msg_type == "initial_diagnostic" and data.get("user_input"):
                 messages.append({
                     "message_id": f"msg_{idx}",
-                    "content": str(interaction.get("user_input", interaction.get("content", ""))),
-                    "timestamp": interaction.get("timestamp", session.get("updated_at")),
-                    "message_type": "user" if msg_type == "user_input" else "system",
+                    "role": "user",
+                    "content": str(data["user_input"]),
+                    "created_at": session.get("updated_at"),
+                })
+            elif msg_type == "diagnosis_assistant" and data.get("content"):
+                messages.append({
+                    "message_id": f"msg_{idx}",
+                    "role": "assistant",
+                    "content": str(data["content"]),
+                    "created_at": session.get("updated_at"),
                 })
         
         return {
