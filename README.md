@@ -69,6 +69,25 @@ python scripts/seed_test_data.py
 python scripts/init_faq_vectors.py
 ```
 
+### 知识目录与视频资源同步
+
+首次使用项目，以及修改 `知识清单-带学习时长版（新版）.md`、知识点种子或学习视频清单后，必须按以下顺序执行。它会同步 15 个知识板块、知识点时长、知识图谱和视频资源到唯一主库 `data/sqlite_data/project.db`：
+
+```bash
+python scripts/sync_knowledge_catalog.py
+python scripts/build_knowledge_graph.py
+python scripts/prepare_video_resources.py
+python scripts/insert_knowledge_data.py
+python scripts/render_knowledge_graph.py
+python scripts/verify_catalog_runtime.py
+```
+
+- `sync_knowledge_catalog.py`：从新版清单同步知识点、安装节点及学习时长。
+- `build_knowledge_graph.py`：生成 Agent1 使用的运行时图谱。
+- `prepare_video_resources.py` 与 `insert_knowledge_data.py`：重建视频目录和视频映射并导入主库。
+- `render_knowledge_graph.py`：生成 `docs/知识图谱可视化.html`，可直接在浏览器打开查看。
+- `verify_catalog_runtime.py`：校验 Agent1 图谱依赖查询，以及 Agent3 的数据库/目录视频 URL 查询。
+
 ### Agent1 轻量语义索引
 
 `python scripts/init_agent1_semantic_index.py` 首次执行会下载并缓存 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（模型文件约 90MB，CPU 运行，运行时通常额外占用约 200MB 内存），然后为 68 条 `knowledge_docs` 建立 Agent1 专用索引。首次下载耗时取决于网络，通常是几十秒级。下载与建索引只应由源码开发者或部署方执行；可用下面的命令检查中文召回：

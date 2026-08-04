@@ -1,13 +1,25 @@
 [
   {
+    "subtopic_id": "KBS-01-00",
+    "block_id": "KB-01",
+    "subtopic_name": "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "初级",
+    "prerequisites": [],
+    "content_summary": "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）"
+  },
+  {
     "subtopic_id": "KBS-01-01",
     "block_id": "KB-01",
-    "subtopic_name": "常用Shell命令",
+    "subtopic_name": "常用Shell命令（cd/ls/mkdir/cp/mv）",
     "estimated_hours": 1.0,
     "sequence_index": 1,
     "difficulty": "初级",
-    "prerequisites": [],
-    "content_summary": "常用Shell命令"
+    "prerequisites": [
+      "KBS-01-00"
+    ],
+    "content_summary": "常用Shell命令（cd/ls/mkdir/cp/mv）"
   },
   {
     "subtopic_id": "KBS-01-02",
@@ -46,16 +58,16 @@
     "content_summary": "nvidia-smi显存监控"
   },
   {
-    "subtopic_id": "KBS-01-05",
-    "block_id": "KB-01",
-    "subtopic_name": "实际操作与练习",
-    "estimated_hours": 0.5,
-    "sequence_index": 5,
+    "subtopic_id": "KBS-02-00",
+    "block_id": "KB-02",
+    "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
     "difficulty": "初级",
     "prerequisites": [
-      "KBS-01-04"
+      "KBS-01-00"
     ],
-    "content_summary": "实际操作与练习"
+    "content_summary": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
   },
   {
     "subtopic_id": "KBS-02-01",
@@ -64,7 +76,9 @@
     "estimated_hours": 2.0,
     "sequence_index": 1,
     "difficulty": "初级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-02-00"
+    ],
     "content_summary": "语法"
   },
   {
@@ -116,16 +130,16 @@
     "content_summary": "装饰器与生成器"
   },
   {
-    "subtopic_id": "KBS-02-06",
-    "block_id": "KB-02",
-    "subtopic_name": "综合练习与实战",
-    "estimated_hours": 2.0,
-    "sequence_index": 6,
+    "subtopic_id": "KBS-03-00",
+    "block_id": "KB-03",
+    "subtopic_name": "（环境准备：在Python环境中安装Pandas、NumPy、Matplotlib、re库）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
     "difficulty": "初级",
     "prerequisites": [
-      "KBS-02-05"
+      "KBS-02-00"
     ],
-    "content_summary": "综合练习与实战"
+    "content_summary": "（环境准备：在Python环境中安装Pandas、NumPy、Matplotlib、re库）"
   },
   {
     "subtopic_id": "KBS-03-01",
@@ -134,7 +148,9 @@
     "estimated_hours": 1.0,
     "sequence_index": 1,
     "difficulty": "初级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-03-00"
+    ],
     "content_summary": "使用Pandas进行数据清洗"
   },
   {
@@ -174,16 +190,17 @@
     "content_summary": "正则表达式进行文本预处理"
   },
   {
-    "subtopic_id": "KBS-03-05",
-    "block_id": "KB-03",
-    "subtopic_name": "综合练习",
-    "estimated_hours": 1.0,
-    "sequence_index": 5,
-    "difficulty": "初级",
+    "subtopic_id": "KBS-04-00",
+    "block_id": "KB-04",
+    "subtopic_name": "（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "中级",
     "prerequisites": [
-      "KBS-03-04"
+      "KBS-01-04",
+      "KBS-02-00"
     ],
-    "content_summary": "综合练习"
+    "content_summary": "（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）"
   },
   {
     "subtopic_id": "KBS-04-01",
@@ -192,7 +209,9 @@
     "estimated_hours": 1.5,
     "sequence_index": 1,
     "difficulty": "中级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-04-00"
+    ],
     "content_summary": "张量操作"
   },
   {
@@ -312,13 +331,27 @@
     "content_summary": "掌握Self-Attention与Multi-Head Attention的计算原理与公式"
   },
   {
+    "subtopic_id": "KBS-07-00",
+    "block_id": "KB-07",
+    "subtopic_name": "（环境准备：在Python环境中安装transformers、tokenizers库）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "中级",
+    "prerequisites": [
+      "KBS-02-00"
+    ],
+    "content_summary": "（环境准备：在Python环境中安装transformers、tokenizers库）"
+  },
+  {
     "subtopic_id": "KBS-07-01",
     "block_id": "KB-07",
     "subtopic_name": "理解BPE、WordPiece、SentencePiece算法原理",
     "estimated_hours": 1.5,
     "sequence_index": 1,
     "difficulty": "中级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-07-00"
+    ],
     "content_summary": "理解BPE、WordPiece、SentencePiece算法原理"
   },
   {
@@ -358,13 +391,27 @@
     "content_summary": "了解ChatTemplate对话模板格式"
   },
   {
+    "subtopic_id": "KBS-08-00",
+    "block_id": "KB-08",
+    "subtopic_name": "（环境准备：可选安装transformers库，加载小型模型（如GPT-2）进行前向传播实验）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "高级",
+    "prerequisites": [
+      "KBS-07-00"
+    ],
+    "content_summary": "（环境准备：可选安装transformers库，加载小型模型（如GPT-2）进行前向传播实验）"
+  },
+  {
     "subtopic_id": "KBS-08-01",
     "block_id": "KB-08",
     "subtopic_name": "掌握Transformer的Encoder-Decoder结构",
     "estimated_hours": 0.5,
     "sequence_index": 1,
     "difficulty": "高级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-08-00"
+    ],
     "content_summary": "掌握Transformer的Encoder-Decoder结构"
   },
   {
@@ -498,18 +545,6 @@
     "content_summary": "幻觉问题"
   },
   {
-    "subtopic_id": "KBS-09-06",
-    "block_id": "KB-09",
-    "subtopic_name": "综合理解与案例",
-    "estimated_hours": 0.5,
-    "sequence_index": 6,
-    "difficulty": "高级",
-    "prerequisites": [
-      "KBS-09-05"
-    ],
-    "content_summary": "综合理解与案例"
-  },
-  {
     "subtopic_id": "KBS-10-01",
     "block_id": "KB-10",
     "subtopic_name": "掌握预训练（Pretrain）整体流程与目标",
@@ -544,16 +579,16 @@
     "content_summary": "基于人类反馈的强化学习（RLHF）整体流程与目标"
   },
   {
-    "subtopic_id": "KBS-10-04",
-    "block_id": "KB-10",
-    "subtopic_name": "三阶段串联理解",
-    "estimated_hours": 0.5,
-    "sequence_index": 4,
-    "difficulty": "高级",
+    "subtopic_id": "KBS-11-00",
+    "block_id": "KB-11",
+    "subtopic_name": "（环境准备：安装transformers、datasets、accelerate库，建议使用 huggingface_hub 配置缓存路径与Token）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "中级",
     "prerequisites": [
-      "KBS-10-03"
+      "KBS-07-00"
     ],
-    "content_summary": "三阶段串联理解"
+    "content_summary": "（环境准备：安装transformers、datasets、accelerate库，建议使用 huggingface_hub 配置缓存路径与Token）"
   },
   {
     "subtopic_id": "KBS-11-01",
@@ -562,7 +597,9 @@
     "estimated_hours": 1.0,
     "sequence_index": 1,
     "difficulty": "中级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-11-00"
+    ],
     "content_summary": "掌握transformers库的AutoModel/AutoTokenizer加载方式"
   },
   {
@@ -590,13 +627,28 @@
     "content_summary": "Trainer训练器的使用及TrainingArguments参数配置"
   },
   {
+    "subtopic_id": "KBS-12-00",
+    "block_id": "KB-12",
+    "subtopic_name": "（环境准备：在上述基础上额外安装peft、bitsandbytes库，确保bitsandbytes能与CUDA版本兼容，QLoRA需要GPU显存≥12GB）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "高级",
+    "prerequisites": [
+      "KBS-04-00",
+      "KBS-11-00"
+    ],
+    "content_summary": "（环境准备：在上述基础上额外安装peft、bitsandbytes库，确保bitsandbytes能与CUDA版本兼容，QLoRA需要GPU显存≥12GB）"
+  },
+  {
     "subtopic_id": "KBS-12-01",
     "block_id": "KB-12",
     "subtopic_name": "理解LoRA的低秩分解原理",
     "estimated_hours": 1.5,
     "sequence_index": 1,
     "difficulty": "高级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-12-00"
+    ],
     "content_summary": "理解LoRA的低秩分解原理"
   },
   {
@@ -648,16 +700,16 @@
     "content_summary": "掌握LoRA权重合并与导出（merge_and_unload）"
   },
   {
-    "subtopic_id": "KBS-12-06",
-    "block_id": "KB-12",
-    "subtopic_name": "实战演练",
-    "estimated_hours": 1.0,
-    "sequence_index": 6,
+    "subtopic_id": "KBS-13-00",
+    "block_id": "KB-13",
+    "subtopic_name": "（环境准备：复用上述PyTorch环境，确保torch版本支持AMP混合精度训练）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
     "difficulty": "高级",
     "prerequisites": [
-      "KBS-12-05"
+      "KBS-04-00"
     ],
-    "content_summary": "实战演练"
+    "content_summary": "（环境准备：复用上述PyTorch环境，确保torch版本支持AMP混合精度训练）"
   },
   {
     "subtopic_id": "KBS-13-01",
@@ -666,7 +718,9 @@
     "estimated_hours": 1.0,
     "sequence_index": 1,
     "difficulty": "高级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-13-00"
+    ],
     "content_summary": "掌握梯度累积（Gradient Accumulation）"
   },
   {
@@ -706,13 +760,27 @@
     "content_summary": "学习率调度（Warmup + 余弦退火）"
   },
   {
+    "subtopic_id": "KBS-14-00",
+    "block_id": "KB-14",
+    "subtopic_name": "（环境准备：安装deepspeed库，配置多GPU环境（至少2卡），编写ds_config.json文件，使用 deepspeed --num_gpus=N 启动训练）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "高级",
+    "prerequisites": [
+      "KBS-13-00"
+    ],
+    "content_summary": "（环境准备：安装deepspeed库，配置多GPU环境（至少2卡），编写ds_config.json文件，使用 deepspeed --num_gpus=N 启动训练）"
+  },
+  {
     "subtopic_id": "KBS-14-01",
     "block_id": "KB-14",
     "subtopic_name": "掌握DeepSpeed的ZeRO-1/2/3优化策略配置",
     "estimated_hours": 1.5,
     "sequence_index": 1,
     "difficulty": "高级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-14-00"
+    ],
     "content_summary": "掌握DeepSpeed的ZeRO-1/2/3优化策略配置"
   },
   {
@@ -740,13 +808,28 @@
     "content_summary": "能够编写ds_config.json并启动deepspeed训练"
   },
   {
+    "subtopic_id": "KBS-15-00",
+    "block_id": "KB-15",
+    "subtopic_name": "（环境准备：安装vLLM库，注意其PyTorch版本兼容性，GPU显存建议≥16GB；安装前需确保CUDA环境正确）",
+    "estimated_hours": 0.0,
+    "sequence_index": 0,
+    "difficulty": "高级",
+    "prerequisites": [
+      "KBS-04-00",
+      "KBS-11-00"
+    ],
+    "content_summary": "（环境准备：安装vLLM库，注意其PyTorch版本兼容性，GPU显存建议≥16GB；安装前需确保CUDA环境正确）"
+  },
+  {
     "subtopic_id": "KBS-15-01",
     "block_id": "KB-15",
     "subtopic_name": "掌握模型生成策略（贪心搜索、束搜索）",
     "estimated_hours": 1.0,
     "sequence_index": 1,
     "difficulty": "高级",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-15-00"
+    ],
     "content_summary": "掌握模型生成策略（贪心搜索、束搜索）"
   },
   {

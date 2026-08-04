@@ -47,19 +47,20 @@ const ChatPage: React.FC = () => {
     try {
       let response;
       if (!sessionId) {
-        response = await apiClient.chat({ message: inputValue });
-        setSessionId(response.session_id);
-        localStorage.setItem('sessionId', response.session_id);
+        const created = await apiClient.createSession();
+        response = await apiClient.submitDiagnosis(created.session_id, inputValue);
+        setSessionId(created.session_id);
+        localStorage.setItem('sessionId', created.session_id);
       } else {
-        response = await apiClient.handleQuestion({ session_id: sessionId, message: inputValue });
+        response = await apiClient.askQuestion(sessionId, inputValue);
       }
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response.response?.answer || JSON.stringify(response.response),
+        content: response.answer || response.assistant_message || JSON.stringify(response),
         isUser: false,
-        techPass: response.response?.tech_pass,
-        qualityPass: response.response?.quality_pass,
+        techPass: response.review_summary?.technical_passed,
+        qualityPass: response.review_summary?.quality_passed,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, botMessage]);
@@ -74,8 +75,9 @@ const ChatPage: React.FC = () => {
     if (!sessionId) return;
     setIsTyping(true);
     try {
-      const response = await apiClient.startStage({ session_id: sessionId });
-      setLearningPackage(response.learning_package);
+      await apiClient.startStage(sessionId);
+      const response = await apiClient.getStagePackage(sessionId);
+      setLearningPackage(response.package);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         content: '学习包已生成，请开始学习！',

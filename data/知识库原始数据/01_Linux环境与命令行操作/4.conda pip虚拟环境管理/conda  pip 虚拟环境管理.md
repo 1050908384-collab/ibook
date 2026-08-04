@@ -51,19 +51,37 @@ Conda 有两个发行版：（②）
 #### 安装步骤（②）
 
 ```bash
-# 1. 查看系统架构（通常是 x86_64）
+# 1. 查看系统架构（通常是 x86_64 或 aarch64）
 uname -m
 
-# 2. 下载 Miniconda 安装脚本（官方源）
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# 2. 根据架构下载对应的 Miniconda 安装脚本
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+elif [ "$ARCH" = "aarch64" ]; then
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh
+else
+    echo "不支持的架构: $ARCH"
+    exit 1
+fi
 
-# 如果官方源下载慢，可用北大镜像：
-# wget -c https://mirrors.pku.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# 如果官方源下载慢，可用清华镜像（将 URL 中的域名替换即可）：
+# wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-${ARCH}.sh
 ```
 
 ```bash
-# 3. 运行安装脚本
-bash Miniconda3-latest-Linux-x86_64.sh
+# 3. 校验文件完整性（推荐）
+# 先查看下载文件的 SHA-256 值
+sha256sum Miniconda3-latest-Linux-${ARCH}.sh
+
+# 将输出结果与官方公布的值对比：
+# 官方校验值查询：https://docs.conda.io/en/latest/miniconda.html
+# 如果一致，说明文件完整未被篡改；如果不一致，请重新下载。
+```
+
+```bash
+# 4. 运行安装脚本
+bash Miniconda3-latest-Linux-${ARCH}.sh
 ```
 
 安装过程中的交互提示：（②）
@@ -93,10 +111,11 @@ conda --version
 
 默认官方源在国外，下载包时可能很慢甚至超时。配置国内镜像源能显著提升速度。（①+②）
 
+> **注意**：镜像源地址和可用频道可能随时间变化，以下配置仅供参考。如果某天发现镜像失效或报错，请查阅清华/中科大等镜像站的最新文档，或临时移除镜像恢复官方源。（①+②）
+
 ```bash
 # 添加清华镜像源（推荐）
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
 
 # 设置显示下载源地址（方便排查问题）
@@ -106,7 +125,7 @@ conda config --set show_channel_urls yes
 conda clean -i
 ```
 
-> **注意**：部分教程会让你删除默认源 `conda config --remove channels defaults`。建议保留默认源作为 fallback，国内源优先即可。（②）
+> **注意**：`pkgs/free` 等旧频道已被 Anaconda 官方停止维护，不建议再添加。建议保留默认源 `defaults` 作为 fallback，国内源优先即可。（②）
 
 ### 2.3 环境管理核心命令（①+③）
 
@@ -198,15 +217,14 @@ conda search pytorch
 # 更新单个包
 conda update numpy
 
-# 更新所有包
-conda update --all
-
 # 卸载包
 conda remove numpy
 
 # 强制重装（解决诡异依赖问题）
 conda install --force-reinstall numpy=1.24.0
 ```
+
+> **为什么不建议新手使用 `conda update --all`？** 该命令会一次性升级环境中所有包到最新版，极易引发依赖版本漂移，破坏实验环境的可复现性。如果需要更新，建议只更新单个有需求的包，或新建环境重新安装指定版本。（①+④）
 
 ### 2.5 环境导出与复现（①）
 
@@ -435,7 +453,7 @@ tail -n 20 ~/.bashrc
 |---|---|---|
 | `conda: command not found` | conda 未加入 PATH | 执行 `~/miniconda3/bin/conda init bash`，然后 `source ~/.bashrc`（②） |
 | 环境激活失败 | Shell 未初始化 conda | 运行 `conda init bash` 并重启终端（②） |
-| 包安装缓慢或超时 | 未配置国内镜像源 | 按 2.2 节配置清华/北大镜像源（①+②） |
+| 包安装缓慢或超时 | 未配置国内镜像源 | 按 2.2 节配置清华镜像源（①+②） |
 | 依赖冲突 | 多个包版本要求矛盾 | 新建干净环境，逐步安装排查（①） |
 | pip 安装提示权限不足 | 在系统 Python 中安装 | 先激活虚拟环境，再用 pip 安装（④） |
 | 每次打开终端自动进 (base) | conda 默认设置 | `conda config --set auto_activate_base false`（③） |
@@ -448,10 +466,10 @@ tail -n 20 ~/.bashrc
 恭喜你完成了 conda / pip 虚拟环境管理章节的学习！你现在应该掌握了：
 
 - ✅ 虚拟环境的核心价值：隔离依赖、避免冲突、环境可复现
-- ✅ Miniconda 的下载、安装与验证（`conda --version`）
+- ✅ Miniconda 的下载、安装与验证（`conda --version`），支持 x86_64 / aarch64 架构
 - ✅ conda 环境管理（create、activate、deactivate、remove、clone、export）
 - ✅ conda 包管理（install、list、search、update、remove）
-- ✅ conda 国内镜像源配置（清华源）
+- ✅ conda 国内镜像源配置（清华源），并了解镜像源可能随时间变化
 - ✅ pip + venv 的轻量替代方案
 - ✅ pip 国内镜像源配置
 - ✅ 环境导出与复现（`environment.yml`、`requirements.txt`）

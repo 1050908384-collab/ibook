@@ -1,4 +1,4 @@
-import { Brain, CheckCircle2, FileText, Sparkles } from 'lucide-react';
+import { ArrowLeft, Brain, CheckCircle2, FileText, Sparkles } from 'lucide-react';
 import ProfileSetupForm from '../components/ProfileSetupForm';
 import { OnboardingField, OnboardingFormData } from '../utils/buildDiagnosticMessage';
 
@@ -6,6 +6,7 @@ type OnboardingPageProps = {
   formData: OnboardingFormData;
   onChange: (value: OnboardingFormData) => void;
   onSubmit: () => void;
+  onCancel?: () => void;
   loading: boolean;
   mode: 'onboarding' | 'diagnosing' | 'needs_more_info';
   questions: string[];
@@ -17,6 +18,7 @@ export default function OnboardingPage({
   formData,
   onChange,
   onSubmit,
+  onCancel,
   loading,
   mode,
   questions,
@@ -26,10 +28,18 @@ export default function OnboardingPage({
   return (
     <div className="page-shell onboarding-shell">
       <main className="onboarding-page">
-        <div className="onboarding-steps" aria-label="创建学习目标步骤">
-          <span className="active"><FileText size={15} />填写信息</span>
-          <span className={mode === 'diagnosing' ? 'active' : ''}><Brain size={15} />生成画像</span>
-          <span><CheckCircle2 size={15} />开始学习</span>
+        <div className="onboarding-toolbar">
+          <div className="onboarding-steps" aria-label="创建学习目标步骤">
+            <span className="active"><FileText size={15} />填写信息</span>
+            <span className={mode === 'diagnosing' ? 'active' : ''}><Brain size={15} />生成画像</span>
+            <span><CheckCircle2 size={15} />开始学习</span>
+          </div>
+          {onCancel && (
+            <button className="cancel-goal-creation" type="button" onClick={onCancel} disabled={loading}>
+              <ArrowLeft size={16} />
+              返回原学习目标
+            </button>
+          )}
         </div>
 
         <section className="onboarding-hero">

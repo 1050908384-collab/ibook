@@ -1,4 +1,4 @@
-# 常用 Shell 命令（cd / ls / mkdir / cp / mv）
+# 常用 Shell 命令（cd / ls / mkdir / cp / mv / pwd / touch / rm）
 
 ① 底稿：《cd, ls, mkdir, touch, cp, mv, rm_cd文件夹》  
 　　网址：https://blog.csdn.net/Aaron_neil/article/details/125324594
@@ -110,8 +110,9 @@ drwxr-xr-x 2 zhangsan zhangsan 4096 Aug  3 10:00 Documents
 ### 3.3 其他常用选项（①）
 
 ```bash
-# 以人类可读格式显示文件大小（KB, MB, GB）
-ls -h
+# 以详细列表+人类可读格式显示文件大小（KB, MB, GB）
+# 注意：-h 必须与 -l 配合使用才能看到大小，单独 ls -h 无效果
+ls -lh
 
 # 以完整时间格式输出
 ls --full-time
@@ -329,6 +330,9 @@ rm hello.py
 # 删除多个文件
 rm file1.txt file2.txt
 
+# 删除文件名以 - 开头的文件（必须用 -- 告诉 rm 后面是文件名而非选项）
+rm -- -file.txt
+
 # 删除文件夹（必须加 -r，递归删除其中的所有内容）
 rm -r myproject/
 
@@ -424,11 +428,33 @@ ls ~/llm-learning/
 
 **2. 路径写错**：切换目录或复制文件时，路径写错会提示 "No such file or directory"，可先用 `pwd` 和 `ls` 确认当前位置和目录内容。（②）
 
-**3. rm 命令慎用**：`rm -rf` 没有回收站，删除即永久消失。删除前务必用 `ls` 确认目标。（①）
+**3. 路径中包含空格必须用引号包裹**：如果文件夹或文件名包含空格，命令行会把它当成多个参数。务必用双引号包裹：（②）
 
-**4. 复制目录忘加 `-r`**：新手常犯 `cp mydir ./backup/` 然后报错。记住：**文件夹复制必须加 `-r`**。（①+②）
+```bash
+# 错误：mkdir my folder 会创建两个文件夹 my 和 folder
+# 正确：
+mkdir "my folder"
+cd "my folder"
+touch "my file.txt"
+cp "my file.txt" ./backup/
+rm "my file.txt"
+```
 
-**5. 命令记不住？**：输入命令前按 `Tab` 键自动补全（文件/目录名）；忘记命令语法时，用 `命令 --help` 查看帮助，或 `man 命令` 查看详细手册。（②）
+**4. 文件名以 `-` 开头时使用 `--`**：Linux 命令中 `-` 开头通常表示选项。如果文件名本身以 `-` 开头，命令会误把文件名当选项解析。用 `--` 告诉命令"后面都是文件名，不是选项"：（②）
+
+```bash
+# 错误：rm -file.txt 会把 -file.txt 当成选项，报错
+# 正确：
+rm -- -file.txt
+touch -- -data.csv
+mv -- -old.txt new.txt
+```
+
+**5. rm 命令慎用**：`rm -rf` 没有回收站，删除即永久消失。删除前务必用 `ls` 确认目标。（①）
+
+**6. 复制目录忘加 `-r`**：新手常犯 `cp mydir ./backup/` 然后报错。记住：**文件夹复制必须加 `-r`**。（①+②）
+
+**7. 命令记不住？**：输入命令前按 `Tab` 键自动补全（文件/目录名）；忘记命令语法时，用 `命令 --help` 查看帮助，或 `man 命令` 查看详细手册。（②）
 
 ---
 
@@ -443,6 +469,7 @@ ls ~/llm-learning/
 - ✅ `touch` 快速创建空文件
 - ✅ `cp` 复制文件与目录（`-r`、`-p`、`-i`）
 - ✅ `mv` 移动与重命名文件（`-i`、`-f`）
-- ✅ `rm` 删除文件与目录（`-r`、`-f`、`-d`）
+- ✅ `rm` 删除文件与目录（`-r`、`-f`、`-d`、`--`）
+- ✅ 带空格路径的引号包裹、`-` 开头文件名的 `--` 处理
 
 > **下一步预告**：在下一节 **"环境变量配置"** 中，我们将学习如何用 `echo`、`export` 等命令查看和修改环境变量，并编辑 `~/.bashrc` 文件让配置永久生效——这些操作都会用到本节学到的 `cd`、`ls`、`touch` 等命令。现在，打开你的终端，把本章的命令都敲一遍吧！

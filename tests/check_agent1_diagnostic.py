@@ -247,6 +247,8 @@ async def main():
         user_input = DEFAULT_INPUT
 
     session_id = "test-agent1-session"
+    # 独立脚本不经过 Harness；先创建会话，满足 subtopic_status 的外键约束。
+    agent.db_client.create_session(session_id)
 
     # ========== 1. Agent 配置 ==========
     show_agent_config(agent)

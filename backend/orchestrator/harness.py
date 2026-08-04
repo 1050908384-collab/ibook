@@ -57,23 +57,39 @@ class Harness:
     async def process_initial_input(self, session_id: str, user_input: str) -> Dict[str, Any]:
         self._log(session_id, "process_initial_input:start", f"message={user_input[:60]}")
         self.state_manager.require_session(session_id)
-        diagnostic = await self.agent1.run(DiagnosticInput(session_id=session_id, user_input=user_input))
+        previous_inputs = []
+        for interaction in self.state_manager.get_interactions(session_id):
+            if interaction.get("type") != "initial_diagnostic":
+                continue
+            data = interaction.get("data", {})
+            previous_input = data.get("user_input") if isinstance(data, dict) else None
+            if previous_input:
+                previous_inputs.append(previous_input)
+        diagnostic_input = "\n".join([*previous_inputs, user_input])
+        diagnostic = await self.agent1.run(
+            DiagnosticInput(session_id=session_id, user_input=diagnostic_input)
+        )
+        # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
+        self.state_manager.update_profile(session_id, diagnostic.profile)
+        self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
         if diagnostic.profile.confidence < settings.CONFIDENCE_THRESHOLD:
             self._log(
                 session_id,
                 "process_initial_input:needs_more_info",
                 f"confidence={diagnostic.profile.confidence:.2f}",
             )
-            return {"status": "needs_more_info", "questions": diagnostic.followup_questions}
+            return {
+                "status": "needs_more_info",
+                "questions": diagnostic.followup_questions,
+                "profile": diagnostic.profile.model_dump(mode="json"),
+            }
 
-        self.state_manager.update_profile(session_id, diagnostic.profile)
         stage = await self.agent1.generate_stage(StagePlanningInput(
             session_id=session_id,
             profile=diagnostic.profile,
             stage_num=1,
         ))
         self.state_manager.update_stage(session_id, stage.stage)
-        self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
         self._log(
             session_id,
             "process_initial_input:ready",
@@ -337,11 +353,12 @@ class Harness:
             )
 
         synced_profile = await self._sync_profile_from_subtopic_status(decision.profile)
-        if accuracy >= 0.8:
-            for gap in synced_profile.knowledge_gaps:
-                if gap.skill == stage.gap_skill:
-                    gap.status = "已掌握"
-                    gap.progress = 1.0
+        # A stage can be an inserted prerequisite node for a later target
+        # block.  Its ``gap_skill`` still names that target, so marking the
+        # whole gap as mastered here would prematurely end the session.
+        # ``_sync_profile_from_subtopic_status`` is the sole authority for
+        # block completion and only reports mastery after every subtopic in
+        # the target block has actually been completed.
         self.state_manager.update_stage(session_id, stage)
         self.state_manager.update_profile(session_id, synced_profile)
 

@@ -76,7 +76,8 @@ class DiagnosticAgent(BaseAgent):
         generated_stage = {}
         try:
             generated_stage = await self.stage_generator_tool.generate_stage(
-                session_id, gap, block_info, profile.get("goal", ""), stage_num
+                session_id, gap, block_info, profile.get("goal", ""), stage_num,
+                profile=profile
             )
         except Exception:
             generated_stage = {}
@@ -90,4 +91,13 @@ class DiagnosticAgent(BaseAgent):
             "gap_skill": skill_name,
             "prerequisites": block_info.get("prerequisites", []),
             "status": "pending",
+            "title": generated_stage.get("title"),
+            "description": generated_stage.get("description"),
+            "objectives": generated_stage.get("objectives", []),
+            "difficulty": generated_stage.get("difficulty"),
+            "recommended_daily_hours": generated_stage.get("recommended_daily_hours"),
+            "suggested_study_days": generated_stage.get("suggested_study_days"),
+            "learning_style_notes": generated_stage.get("learning_style_notes"),
+            "hardware_notes": generated_stage.get("hardware_notes"),
+            "personalization_summary": generated_stage.get("personalization_summary"),
         }

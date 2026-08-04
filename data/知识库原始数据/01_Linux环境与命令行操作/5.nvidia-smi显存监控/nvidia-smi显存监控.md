@@ -30,7 +30,7 @@
 | **查看进程绑定** | 谁占了 GPU？哪个 PID？占了多少显存？ |
 | **释放显存** | 找到僵尸进程并杀掉，回收显存 |
 
-> **前提条件**：`nvidia-smi` 只有在安装了 NVIDIA GPU 驱动后才能使用。如果你的机器没有 NVIDIA 显卡（如纯 CPU 环境、Mac、部分云服务器），命令会提示找不到。后续学习 PyTorch 和模型部署时，GPU 环境是必需的。（①+④）
+> **前提条件**：`nvidia-smi` 只有在安装了 NVIDIA GPU 驱动后才能使用。如果你的机器没有 NVIDIA 显卡（如纯 CPU 环境、Mac、部分云服务器），命令会提示找不到。**但 CPU 推理和不带 GPU 的基础学习仍可进行**，本 GPU 实训与高性能 vLLM 部署需要 NVIDIA GPU 环境。（①+④）
 
 ---
 
@@ -284,7 +284,7 @@ nohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv 
 |---|---|---|
 | `nvidia-smi: command not found` | 未安装 NVIDIA 驱动 | 安装驱动，或确认机器是否有 NVIDIA 显卡（④） |
 | 显示 `No running processes found` | GPU 空闲，没有程序在跑 | 正常状态，开始训练后会显示进程 |
-| 显存占用高但 GPU-Util 为 0% | 数据加载瓶颈（CPU 预处理太慢）| 增加 DataLoader 的 `num_workers`，或用 SSD 加速数据读取（④） |
+| 显存占用高但 GPU-Util 为 0% | 可能是采样时机、同步等待、训练流程暂停，或 DataLoader 瓶颈 | 持续观察 `nvitop` 确认趋势；如长期为 0%，可尝试增加 DataLoader 的 `num_workers`，或用 SSD 加速数据读取（④） |
 | 训练报错 CUDA out of memory | 显存不足 | `nvidia-smi` 查看剩余显存，减小 batch size 或模型规模 |
 | 杀死进程后显存未释放 | 有多个关联进程 | `nvidia-smi` 再次确认 PID，全部杀掉 |
 | `nvidia-smi` 显示驱动版本与 CUDA 版本不匹配 | 驱动太旧 | 升级 NVIDIA 驱动到与目标 CUDA 版本兼容的版本 |

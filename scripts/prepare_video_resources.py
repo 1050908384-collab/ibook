@@ -57,6 +57,7 @@ def parse_resources(subtopics_by_block: dict[str, list[dict]]) -> tuple[list[dic
     current_heading = None
     mapping_order = defaultdict(int)
     block_mapping_order = defaultdict(int)
+    seen_canonical_urls: set[str] = set()
 
     for line_number, raw_line in enumerate(RAW_FILE.read_text(encoding="utf-8").splitlines(), start=1):
         line = raw_line.strip()
@@ -67,7 +68,10 @@ def parse_resources(subtopics_by_block: dict[str, list[dict]]) -> tuple[list[dic
             continue
 
         heading_match = re.match(r"^\*\*(.+?)\*\*\s*$", line)
-        if heading_match and not any(marker in line for marker in ("环境准备", "~~")):
+        # Environment preparation is a real ``-00`` learning node, not a
+        # board-level decoration.  Its videos must be reachable by Agent3
+        # when the installation stage is scheduled.
+        if heading_match and "~~" not in line:
             current_heading = heading_match.group(1)
             continue
 
@@ -78,6 +82,9 @@ def parse_resources(subtopics_by_block: dict[str, list[dict]]) -> tuple[list[dic
         raw_url = url_match.group(0).rstrip("。）；")
         title = line[:url_match.start()].strip(" 【】") or "未命名视频"
         canonical_url = canonicalize_url(raw_url)
+        if canonical_url in seen_canonical_urls:
+            continue
+        seen_canonical_urls.add(canonical_url)
         video_match = re.search(r"/video/(BV[0-9A-Za-z]+)", canonical_url)
         part_match = re.search(r"(?:[?&])p=(\d+)", canonical_url)
         resource_id = f"RES-VID-{len(resources) + 1:03d}"
@@ -146,6 +153,33 @@ def parse_resources(subtopics_by_block: dict[str, list[dict]]) -> tuple[list[dic
                 "match_confidence": round(confidence, 3),
                 "reason": "未检测到子知识点标题或自动匹配置信度低于 0.85。",
             })
+    # Every stage, including an installation node with no dedicated video,
+    # needs a safe video fallback.  Reuse the highest-confidence confirmed
+    # subtopic resource as a block-level recommendation when necessary.
+    mapped_blocks = {mapping["block_id"] for mapping in block_mappings}
+    for block_id, subtopics in subtopics_by_block.items():
+        if block_id in mapped_blocks:
+            continue
+        candidates = [
+            mapping for mapping in mappings
+            if mapping["block_id"] == block_id and mapping["mapping_status"] == "confirmed"
+        ]
+        if not candidates:
+            continue
+        fallback = sorted(
+            candidates,
+            key=lambda item: (-item["relevance_score"], item["sequence_index"], item["resource_id"]),
+        )[0]
+        block_mappings.append({
+            "resource_id": fallback["resource_id"],
+            "block_id": block_id,
+            "role": "supplementary",
+            "sequence_index": 99,
+            "relevance_score": fallback["relevance_score"],
+            "mapping_status": "confirmed",
+            "mapping_notes": "该板块没有独立总览视频，复用已确认子知识点视频作为阶段回退资源。",
+        })
+
     return resources, mappings, block_mappings, review_items
 
 

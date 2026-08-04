@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-02T16:36:43.825471+00:00",
+  "generated_at": "2026-08-04T13:02:47.570041+00:00",
   "missing_block_prerequisites": [],
   "missing_subtopic_prerequisites": [],
   "block_cycles": [],
@@ -7,8 +7,8 @@
   "isolated_blocks": [],
   "isolated_subtopics": [],
   "edge_counts": {
-    "contains": 68,
-    "prerequisite": 75,
-    "progresses_to": 67
+    "contains": 73,
+    "prerequisite": 93,
+    "progresses_to": 72
   }
 }

@@ -37,6 +37,7 @@ type ProfileConfirmPageProps = {
   error: string | null;
   onEdit: () => void;
   onStart: () => void;
+  onCancel?: () => void;
 };
 
 function pct(value = 0) {
@@ -50,7 +51,7 @@ function displayStyle(style?: string) {
   return style || '混合型';
 }
 
-export default function ProfileConfirmPage({ profile, stage, loading, error, onEdit, onStart }: ProfileConfirmPageProps) {
+export default function ProfileConfirmPage({ profile, stage, loading, error, onEdit, onStart, onCancel }: ProfileConfirmPageProps) {
   const gaps = profile.knowledge_gaps || [];
   const radarData = {
     labels: gaps.length ? gaps.slice(0, 5).map((gap) => gap.skill) : ['基础', '目标', '实践', '部署', '复盘'],
@@ -119,6 +120,12 @@ export default function ProfileConfirmPage({ profile, stage, loading, error, onE
         </section>
 
         <div className="confirm-actions">
+          {onCancel && (
+            <button className="ghost" onClick={onCancel} disabled={loading}>
+              <ArrowLeft size={16} />
+              取消新建
+            </button>
+          )}
           <button className="ghost" onClick={onEdit} disabled={loading}>
             <ArrowLeft size={16} />
             修改信息
