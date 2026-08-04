@@ -67,8 +67,9 @@ export const useSessionStore = () => {
   const startStage = useCallback(async (sessionId: string) => {
     setStore(prev => ({ ...prev, loading: true }));
     try {
-      const response = await apiClient.startStage({ session_id: sessionId });
-      setStore(prev => ({ ...prev, learningPackage: response.learning_package, loading: false }));
+      await apiClient.startStage(sessionId);
+      const response = await apiClient.getStagePackage(sessionId);
+      setStore(prev => ({ ...prev, learningPackage: response.package, loading: false }));
       return response;
     } catch (error) {
       setStore(prev => ({ ...prev, loading: false }));

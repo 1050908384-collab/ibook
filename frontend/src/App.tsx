@@ -1,4 +1,4 @@
-import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
+﻿import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Award,
@@ -37,7 +37,13 @@ import {
   Video,
   X
 } from 'lucide-react';
-import { apiClient } from './api/client';
+import {
+  apiClient,
+  type ApiLearningPackage,
+  type ApiProfile,
+  type ApiStage,
+  type SessionListItem
+} from './api/client';
 import { findKnowledgeGraphBlock } from './data/knowledgeGraph';
 import OnboardingPage from './pages/OnboardingPage';
 import ProfileConfirmPage from './pages/ProfileConfirmPage';
@@ -116,10 +122,16 @@ type TestQuestion = {
 };
 type LearningResource = {
   resource_id?: string;
+  resource_type?: 'video' | 'article' | 'documentation' | 'code';
   source_id?: string;
   source_type?: string;
   title?: string;
   url?: string;
+  platform?: string;
+  description?: string;
+  recommendation_level?: string;
+  role?: string;
+  order?: number;
   content_ref?: string;
   locator?: string;
   content_summary?: string;
@@ -130,6 +142,8 @@ type LearningPackage = {
   code_examples?: Array<{ title?: string; code?: string; language?: string }>;
   questions?: TestQuestion[];
   block_name?: string;
+  learning_resources?: LearningResource[];
+  review_summary?: Record<string, unknown>;
   sources?: LearningResource[];
   recommended_videos?: LearningResource[];
   recommended_articles?: LearningResource[];
@@ -176,6 +190,11 @@ type WorkspaceSnapshot = {
   timerRunning: boolean;
   materialPanelOpen: boolean;
   completedAgents: AgentId[];
+};
+
+type AssessmentState = {
+  attemptId: string | null;
+  questions: TestQuestion[];
 };
 
 const PROJECTS_STORAGE_KEY = 'learningProjects';
@@ -754,6 +773,87 @@ function getEmbeddedVideoUrl(url: string) {
   return '';
 }
 
+function resolveSessionStage(session: {
+  current_stage?: StageInfo | null;
+  stage_info?: StageInfo | null;
+  next_stage?: StageInfo | null;
+}) {
+  return session.current_stage || session.stage_info || session.next_stage || null;
+}
+
+function isLearningPhase(phase?: string) {
+  return ['learning', 'stage_result', 'next_stage_ready', 'completed'].includes(phase || '');
+}
+
+function toProfile(profile?: ApiProfile | Profile | null): Profile | null {
+  if (!profile) return null;
+  return {
+    ...profile,
+    knowledge_gaps: Array.isArray(profile.knowledge_gaps) ? profile.knowledge_gaps as KnowledgeGap[] : undefined
+  };
+}
+
+function toStageInfo(stage?: ApiStage | StageInfo | null): StageInfo | null {
+  return stage ? stage as StageInfo : null;
+}
+
+function toLearningPackage(pkg?: ApiLearningPackage | LearningPackage | null): LearningPackage | null {
+  if (!pkg) return null;
+  return {
+    ...pkg,
+    tutorial: pkg.tutorial ?? undefined,
+    code_examples: Array.isArray(pkg.code_examples) ? pkg.code_examples as LearningPackage['code_examples'] : undefined,
+    learning_resources: Array.isArray(pkg.learning_resources) ? pkg.learning_resources as LearningResource[] : undefined,
+    questions: Array.isArray(pkg.questions) ? pkg.questions as TestQuestion[] : undefined
+  };
+}
+
+function sessionSummaryToProject(item: SessionListItem): LearningProject | null {
+  if (!item.session_id) return null;
+  const profile = toProfile({
+    goal: item.goal,
+    grade: item.grade,
+    skill_tags: item.skill_tags,
+    knowledge_gaps: item.knowledge_gaps,
+    daily_hours: item.daily_hours,
+    learning_style: item.learning_style,
+    version: item.version
+  });
+  return {
+    sessionId: item.session_id,
+    goal: item.goal || item.title || '未命名学习目标',
+    stageName: item.current_stage_name || '等待阶段规划',
+    stageNum: item.current_stage_num || 1,
+    updatedAt: item.updated_at ? Date.parse(item.updated_at) || Date.now() : Date.now(),
+    profile: profile || undefined
+  };
+}
+
+function qaItemsToMessages(items?: Array<{
+  qa_id?: string;
+  question?: string;
+  answer?: string;
+  review_summary?: {
+    technical_passed?: boolean;
+    quality_passed?: boolean;
+    status?: string;
+  };
+}>): Message[] {
+  if (!Array.isArray(items) || items.length === 0) return [];
+  return items.flatMap((item, index) => {
+    const seed = item.qa_id || `qa-${index}`;
+    return [
+      item.question ? { id: `${seed}-q`, role: 'user' as const, content: item.question } : null,
+      item.answer ? {
+        id: `${seed}-a`,
+        role: 'assistant' as const,
+        content: item.answer,
+        note: item.review_summary?.technical_passed && item.review_summary?.quality_passed ? '审核通过' : item.review_summary?.status
+      } : null
+    ].filter(Boolean) as Message[];
+  });
+}
+
 function MaterialDocument({
   stage,
   learningPackage,
@@ -764,16 +864,25 @@ function MaterialDocument({
   compact?: boolean;
 }) {
   const codeExamples = learningPackage.code_examples || [];
-  const sources = learningPackage.sources || [];
-  const videos = uniqueResources([
-    ...(learningPackage.recommended_videos || []),
-    ...sources.filter((source) => source.source_type === 'video')
-  ]);
-  const articles = uniqueResources([
-    ...(learningPackage.recommended_articles || []),
-    ...sources.filter((source) => ['article', 'external_note', 'manual', 'knowledge_doc'].includes(source.source_type || '') && Boolean(getResourceUrl(source)))
-  ]).filter((article) => Boolean(getResourceUrl(article)));
-  const hasTextContent = Boolean(learningPackage.tutorial?.trim() || codeExamples.length);
+  const learningResources = learningPackage.learning_resources || [];
+  const documentationResources = uniqueResources(
+    learningResources.filter((resource) => resource.resource_type === 'documentation' && Boolean(resource.content_summary || getResourceUrl(resource)))
+  );
+  const codeResourceItems = uniqueResources(
+    learningResources.filter((resource) => resource.resource_type === 'code' && Boolean(resource.content_summary || getResourceUrl(resource)))
+  );
+  const videos = uniqueResources(
+    learningResources.filter((resource) => resource.resource_type === 'video' && Boolean(getResourceUrl(resource)))
+  );
+  const articles = uniqueResources(
+    learningResources.filter((resource) => resource.resource_type === 'article' && Boolean(getResourceUrl(resource)))
+  );
+  const hasTextContent = Boolean(
+    learningPackage.tutorial?.trim()
+    || codeExamples.length
+    || documentationResources.length
+    || codeResourceItems.length
+  );
   return (
     <article className={`material-document ${compact ? 'compact' : ''}`}>
       <div className="material-document-meta">
@@ -781,26 +890,60 @@ function MaterialDocument({
         <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
       </div>
       <h2>{stage.block_name || learningPackage.block_name || '未命名学习材料'}</h2>
-      {hasTextContent && (
-        <section className="material-resource-section text-resources">
-          <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
-          {learningPackage.tutorial?.trim() && <div className="material-markdown"><ReactMarkdown>{learningPackage.tutorial}</ReactMarkdown></div>}
-          {codeExamples.length > 0 && (
-            <div className="material-code-section">
-              <h3>代码示例</h3>
-              {codeExamples.map((example, index) => (
-                <div className="material-code" key={`${example.title}-${index}`}>
-                  <div><Code2 size={14} /> {example.title || `代码示例 ${index + 1}`}</div>
-                  <pre><code>{example.code}</code></pre>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-      {articles.length > 0 && (
-        <section className="material-resource-section article-resources">
-          <div className="material-section-heading"><FileText size={16} /><h3>文章网址</h3></div>
+      <section className="material-resource-section text-resources">
+        <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
+        {hasTextContent ? (
+          <>
+            {learningPackage.tutorial?.trim() && <div className="material-markdown"><ReactMarkdown>{learningPackage.tutorial}</ReactMarkdown></div>}
+            {documentationResources.length > 0 && (
+              <div className="material-article-list">
+                {documentationResources.map((resource, index) => {
+                  const url = getResourceUrl(resource);
+                  return (
+                    <article key={resource.resource_id || `${resource.title}-${index}`}>
+                      <span>
+                        <strong>{resource.title || `学习文本 ${index + 1}`}</strong>
+                        {resource.content_summary && <small>{resource.content_summary}</small>}
+                      </span>
+                      {url && <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />查看原文</a>}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+            {codeExamples.length > 0 && (
+              <div className="material-code-section">
+                <h3>代码示例</h3>
+                {codeExamples.map((example, index) => (
+                  <div className="material-code" key={`${example.title}-${index}`}>
+                    <div><Code2 size={14} /> {example.title || `代码示例 ${index + 1}`}</div>
+                    <pre><code>{example.code}</code></pre>
+                  </div>
+                ))}
+              </div>
+            )}
+            {codeResourceItems.length > 0 && (
+              <div className="material-article-list">
+                {codeResourceItems.map((resource, index) => {
+                  const url = getResourceUrl(resource);
+                  return (
+                    <article key={resource.resource_id || `${resource.title}-${index}`}>
+                      <span>
+                        <strong>{resource.title || `代码材料 ${index + 1}`}</strong>
+                        {resource.content_summary && <small>{resource.content_summary}</small>}
+                      </span>
+                      {url && <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />打开链接</a>}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ) : <p className="material-empty">无</p>}
+      </section>
+      <section className="material-resource-section article-resources">
+        <div className="material-section-heading"><FileText size={16} /><h3>文章网址</h3></div>
+        {articles.length > 0 ? (
           <div className="material-article-list">
             {articles.map((article, index) => {
               const url = getResourceUrl(article);
@@ -812,11 +955,11 @@ function MaterialDocument({
               );
             })}
           </div>
-        </section>
-      )}
-      {videos.length > 0 && (
-        <section className="material-resource-section video-resources">
-          <div className="material-section-heading"><Video size={16} /><h3>视频网址</h3></div>
+        ) : <p className="material-empty">无</p>}
+      </section>
+      <section className="material-resource-section video-resources">
+        <div className="material-section-heading"><Video size={16} /><h3>视频网址</h3></div>
+        {videos.length > 0 ? (
           <div className="material-video-list">
             {videos.map((video, index) => {
               const url = getResourceUrl(video);
@@ -838,8 +981,8 @@ function MaterialDocument({
               );
             })}
           </div>
-        </section>
-      )}
+        ) : <p className="material-empty">无</p>}
+      </section>
     </article>
   );
 }
@@ -1758,25 +1901,37 @@ function SettingsView({
   profile,
   loading,
   error,
-  onClear
+  onClear,
+  onSave
 }: {
   profile: Profile;
   loading: boolean;
   error: string | null;
   onClear: () => void;
+  onSave: (data: { daily_hours?: number; learning_style?: string; hardware?: string }) => void;
 }) {
+  const [dailyHours, setDailyHours] = useState(String(profile.daily_hours ?? 2));
+  const [learningStyle, setLearningStyle] = useState(profile.learning_style || 'mixed');
+  const [hardware, setHardware] = useState(profile.hardware || '');
+
+  useEffect(() => {
+    setDailyHours(String(profile.daily_hours ?? 2));
+    setLearningStyle(profile.learning_style || 'mixed');
+    setHardware(profile.hardware || '');
+  }, [profile.daily_hours, profile.learning_style, profile.hardware]);
+
   return (
     <div className="page-shell">
       <Topbar title="设置" subtitle="调整本地会话体验和学习偏好展示" loading={loading} error={error} />
       <main className="settings-page">
         <div className="settings-intro">
           <h2>学习偏好</h2>
-          <p>初版先做前端展示，后续可把这些设置写入画像更新请求。</p>
+          <p>这些设置会写回当前学习目标画像，用于后续阶段规划。</p>
         </div>
         <section className="settings-card">
           <div className="setting-row">
             <div><strong>每日学习时长</strong><p>用于规划阶段内容量</p></div>
-            <select defaultValue={String(profile.daily_hours ?? 2)}>
+            <select value={dailyHours} onChange={(event) => setDailyHours(event.target.value)}>
               <option value="1">1 小时</option>
               <option value="2">2 小时</option>
               <option value="3">3 小时</option>
@@ -1785,10 +1940,24 @@ function SettingsView({
           <div className="setting-row">
             <div><strong>学习风格</strong><p>影响教程理论、代码与练习比例</p></div>
             <div className="segmented">
-              <button>理论型</button>
-              <button className="active">实操型</button>
-              <button>混合型</button>
+              <button className={learningStyle === 'theory' ? 'active' : ''} onClick={() => setLearningStyle('theory')}>理论型</button>
+              <button className={learningStyle === 'practice' ? 'active' : ''} onClick={() => setLearningStyle('practice')}>实操型</button>
+              <button className={learningStyle === 'mixed' ? 'active' : ''} onClick={() => setLearningStyle('mixed')}>混合型</button>
             </div>
+          </div>
+          <div className="setting-row">
+            <div><strong>设备条件</strong><p>影响视频、代码与部署建议</p></div>
+            <input value={hardware} onChange={(event) => setHardware(event.target.value)} placeholder="例如 RTX 4060 / MacBook / 无独显" />
+          </div>
+          <div className="setting-row">
+            <div><strong>保存画像偏好</strong><p>仅更新目标画像设置，不会重跑首次诊断</p></div>
+            <button
+              className="primary"
+              onClick={() => onSave({ daily_hours: Number(dailyHours), learning_style: learningStyle, hardware })}
+              disabled={loading}
+            >
+              保存设置
+            </button>
           </div>
           <div className="setting-row">
             <div><strong>当前会话</strong><p>清除后会回到本地演示状态</p></div>
@@ -1821,6 +1990,7 @@ export default function App() {
   const [testOpen, setTestOpen] = useState(false);
   const [result, setResult] = useState<StageResult | null>(null);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
+  const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
   const [activeAgent, setActiveAgent] = useState<AgentId | null>(null);
   const [completedAgents, setCompletedAgents] = useState<AgentId[]>(localPreviewDemo ? ['agent1', 'agent3', 'agent4'] : []);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
@@ -1911,6 +2081,59 @@ export default function App() {
     }
   };
 
+  const refreshRemoteProjects = async () => {
+    try {
+      const response = await apiClient.listSessions();
+      const remoteProjects = (response.sessions || [])
+        .map(sessionSummaryToProject)
+        .filter((item): item is LearningProject => Boolean(item));
+      setLearningProjects((prev) => {
+        const localOnly = prev.filter((item) => item.sessionId.startsWith('local-goal-') || (localPreviewDemo && item.sessionId === DEMO_SESSION_ID));
+        const merged = [...remoteProjects, ...localOnly];
+        const deduped = merged.filter((item, index) => merged.findIndex((candidate) => candidate.sessionId === item.sessionId) === index);
+        return deduped.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 20);
+      });
+    } catch {
+      // Keep local cache if the session list endpoint is unavailable.
+    }
+  };
+
+  const restoreQaConversation = async (nextSessionId: string, nextStage: StageInfo, nextProfile?: Profile | null) => {
+    try {
+      const history = await apiClient.getQaHistory(nextSessionId);
+      const qaMessages = qaItemsToMessages(history.items);
+      if (!qaMessages.length) return;
+      const id = `${nextSessionId}:${nextStage.stage_num ?? 1}`;
+      setStageConversations((prev) => {
+        const fallback = createStageConversationMessages(nextStage, nextProfile);
+        const existing = prev.find((item) => item.id === id);
+        const conversation: StoredStageConversation = {
+          id,
+          sessionId: nextSessionId,
+          stage: nextStage,
+          messages: qaMessages.length ? qaMessages : existing?.messages || fallback,
+          updatedAt: Date.now()
+        };
+        return [conversation, ...prev.filter((item) => item.id !== id)].slice(0, 100);
+      });
+    } catch {
+      // Leave local conversation state intact when QA history is unavailable.
+    }
+  };
+
+  const restoreDiagnosisState = async (nextSessionId: string) => {
+    try {
+      const history = await apiClient.getDiagnosisMessages(nextSessionId);
+      const assistantMessages = (history.messages || []).filter((item) => item.role === 'assistant' && item.content).map((item) => item.content as string);
+      if (assistantMessages.length) {
+        setFollowupQuestions(assistantMessages.slice(-3));
+        setHighlightedFields(inferHighlightedFields(assistantMessages));
+      }
+    } catch {
+      // Keep onboarding usable even if diagnosis history cannot be recovered.
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(learningProjects));
   }, [learningProjects]);
@@ -1918,6 +2141,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(CONVERSATIONS_STORAGE_KEY, JSON.stringify(stageConversations));
   }, [stageConversations]);
+
+  useEffect(() => {
+    void refreshRemoteProjects();
+  }, []);
 
   useEffect(() => {
     if (!sessionId || !stage || workflow !== 'learning' || view !== 'chat') return;
@@ -1997,25 +2224,33 @@ export default function App() {
     setSessionId(savedSessionId);
     apiClient.getSession(savedSessionId)
       .then((session) => {
+        const activeStage = resolveSessionStage(session);
+        const hasLearningPackage = Boolean(session?.learning_package);
+        const nextWorkflow = isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready';
         if (session?.profile) {
-          setProfile(session.profile);
-          setOnboardingForm(formDataFromProfile(session.profile));
-          rememberProject(savedSessionId, session.profile, session.stage_info);
-          void loadDashboardStages(savedSessionId, session.stage_info);
+          const nextProfile = toProfile(session.profile);
+          if (!nextProfile) throw new Error('会话画像解析失败');
+          setProfile(nextProfile);
+          setOnboardingForm(formDataFromProfile(nextProfile));
+          rememberProject(savedSessionId, nextProfile, activeStage);
+          void loadDashboardStages(savedSessionId, activeStage);
           completeAgent('agent1');
-          setWorkflow(session.learning_package ? 'learning' : 'profile_ready');
+          setWorkflow(nextWorkflow);
         } else {
           localStorage.removeItem('sessionId');
           setSessionId(null);
+          void restoreDiagnosisState(savedSessionId);
           setWorkflow('onboarding');
         }
-        if (session?.stage_info) setStage(session.stage_info);
-        if (session?.stage_info) setSelectedConversationId(`${savedSessionId}:${session.stage_info.stage_num ?? 1}`);
-        if (session?.learning_package) {
-          setLearningPackage(session.learning_package);
+        if (activeStage) setStage(activeStage);
+        if (session?.next_stage) setPlannedStage(session.next_stage);
+        if (activeStage) setSelectedConversationId(`${savedSessionId}:${activeStage.stage_num ?? 1}`);
+        if (hasLearningPackage) {
+          setLearningPackage(toLearningPackage(session.learning_package));
           completeAgent('agent3');
           completeAgent('agent4');
           setView('chat');
+          void restoreQaConversation(savedSessionId, activeStage || session.next_stage || fallbackStage, session?.profile ? toProfile(session.profile) : profile);
         }
       })
       .catch(() => {
@@ -2027,9 +2262,13 @@ export default function App() {
   }, []);
 
   const currentQuestions = useMemo(() => {
-    const questions = learningPackage?.questions?.length ? learningPackage.questions : fallbackPackage.questions || [];
+    const questions = assessmentState.questions.length
+      ? assessmentState.questions
+      : learningPackage?.questions?.length
+        ? learningPackage.questions
+        : fallbackPackage.questions || [];
     return questions;
-  }, [learningPackage]);
+  }, [assessmentState.questions, learningPackage]);
 
   const inferHighlightedFields = (questions: string[]) => {
     const combined = questions.join(' ');
@@ -2064,30 +2303,33 @@ export default function App() {
     setActiveAgent('agent1');
 
     try {
-      const response = await apiClient.chat({
-        session_id: sessionId || undefined,
-        message: buildDiagnosticMessage(onboardingForm)
-      });
-      setSessionId(response.session_id);
-      localStorage.setItem('sessionId', response.session_id);
+      const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
+      const response = await apiClient.submitDiagnosis(activeSessionId, buildDiagnosticMessage(onboardingForm));
+      setSessionId(activeSessionId);
+      localStorage.setItem('sessionId', activeSessionId);
 
-      if (response.response?.status === 'needs_more_info') {
-        const questions = response.response.questions || [];
+      if (response.status === 'needs_more_info') {
+        const questions = response.followup_questions || [];
         setFollowupQuestions(questions);
-        setHighlightedFields(inferHighlightedFields(questions));
+        setHighlightedFields(response.missing_fields?.length ? response.missing_fields as OnboardingField[] : inferHighlightedFields(questions));
+        if (response.profile_draft) {
+          const draftProfile = toProfile(response.profile_draft);
+          if (draftProfile) {
+            setProfile(draftProfile);
+            setOnboardingForm((current) => ({ ...current, ...formDataFromProfile(draftProfile) }));
+          }
+        }
         setWorkflow('needs_more_info');
         return;
       }
 
-      if (response.response?.profile) {
-        setProfile(response.response.profile);
-        setOnboardingForm(formDataFromProfile(response.response.profile));
-        rememberProject(response.session_id, response.response.profile, response.response.stage_info);
+      if (response.profile_draft) {
+        const nextProfile = { ...(toProfile(response.profile_draft) || fallbackProfile), confidence: response.confidence } as Profile;
+        setProfile(nextProfile);
+        setOnboardingForm(formDataFromProfile(nextProfile));
+        rememberProject(activeSessionId, nextProfile, null);
       }
-      if (response.response?.stage_info) {
-        setStage(response.response.stage_info);
-        setSelectedConversationId(`${response.session_id}:${response.response.stage_info.stage_num ?? 1}`);
-      }
+      void refreshRemoteProjects();
       completeAgent('agent1');
       setWorkflow('profile_ready');
     } catch (caught) {
@@ -2127,19 +2369,22 @@ export default function App() {
 
     try {
       if (initialDiagnosis) {
-        const response = await apiClient.chat({ session_id: sessionId || undefined, message: text });
-        setSessionId(response.session_id);
-        localStorage.setItem('sessionId', response.session_id);
-        if (response.response?.status === 'needs_more_info') {
+        const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
+        const response = await apiClient.submitDiagnosis(activeSessionId, text);
+        setSessionId(activeSessionId);
+        localStorage.setItem('sessionId', activeSessionId);
+        if (response.status === 'needs_more_info') {
           setMessages((prev) => [...prev, {
             id: shortId(),
             role: 'assistant',
-            content: `我还需要补充一点信息：\n${(response.response.questions || []).join('\n')}`,
+            content: `我还需要补充一点信息：\n${(response.followup_questions || []).join('\n')}`,
             note: '需要追问'
           }]);
         } else {
-          if (response.response?.profile) setProfile(response.response.profile);
-          if (response.response?.stage_info) setStage(response.response.stage_info);
+          if (response.profile_draft) {
+            const nextProfile = { ...(toProfile(response.profile_draft) || fallbackProfile), confidence: response.confidence } as Profile;
+            setProfile(nextProfile);
+          }
           completeAgent('agent1');
           setMessages((prev) => [...prev, {
             id: shortId(),
@@ -2150,14 +2395,14 @@ export default function App() {
         }
       } else {
         if (!sessionId) throw new Error('尚未创建后端会话');
-        const response = await apiClient.handleQuestion({ session_id: sessionId, message: text });
+        const response = await apiClient.askQuestion(sessionId, text);
         completeAgent('agent3');
         completeAgent('agent4');
         setMessages((prev) => [...prev, {
           id: shortId(),
           role: 'assistant',
-          content: response.response?.answer || '已收到问题，但后端没有返回回答内容。',
-          note: response.response?.tech_pass && response.response?.quality_pass ? '审核通过' : '待复核'
+          content: response.answer || '已收到问题，但后端没有返回回答内容。',
+          note: response.review_summary?.technical_passed && response.review_summary?.quality_passed ? '审核通过' : '待复核'
         }]);
       }
     } catch (caught) {
@@ -2189,9 +2434,18 @@ export default function App() {
     setActiveAgent('agent3');
     try {
       if (!sessionId) throw new Error('尚未创建后端会话');
-      const response = await apiClient.startStage({ session_id: sessionId });
-      setLearningPackage(response.learning_package);
-      const generatedStage = response.state?.stage_info || plannedStage || stage || fallbackStage;
+      let generatedStage = plannedStage || stage;
+      if (workflow === 'profile_ready') {
+        const confirmation = await apiClient.confirmProfile(sessionId);
+        generatedStage = toStageInfo(confirmation.stage_info) || generatedStage;
+      }
+      await apiClient.startStage(sessionId);
+      const [packageResponse, stageResponse] = await Promise.all([
+        apiClient.getStagePackage(sessionId),
+        apiClient.getCurrentStage(sessionId)
+      ]);
+      setLearningPackage(toLearningPackage(packageResponse.package));
+      generatedStage = toStageInfo(stageResponse.stage) || generatedStage || fallbackStage;
       setStage(generatedStage);
       const generatedConversationId = `${sessionId}:${generatedStage.stage_num ?? 1}`;
       const existingConversation = stageConversations.find((item) => item.id === generatedConversationId);
@@ -2204,7 +2458,7 @@ export default function App() {
       setMessages((prev) => [...prev, {
         id: shortId(),
         role: 'assistant',
-        content: `学习包已生成，审核轮次：${response.iterations ?? 1}，审核结果：${response.review_passed ? '通过' : '待复核'}。`,
+        content: `学习包已生成，审核结果：${packageResponse.package?.review_summary?.status || '已完成'}。`,
         note: '学习包'
       }]);
       setWorkflow('learning');
@@ -2213,6 +2467,8 @@ export default function App() {
       setPlannedStage(null);
       setResult(null);
       setNewGoalReturnState(null);
+      setAssessmentState({ attemptId: null, questions: [] });
+      void refreshRemoteProjects();
     } catch (caught) {
       setError(getErrorMessage(caught));
       setLearningPackage(fallbackPackage);
@@ -2247,17 +2503,21 @@ export default function App() {
     setActiveAgent('agent6');
     try {
       if (sessionId) {
+        const attemptId = assessmentState.attemptId || (await apiClient.createAssessmentAttempt(sessionId)).attempt_id;
         for (const [question_id, user_answer] of Object.entries(answers)) {
-          await apiClient.submitAnswer({ session_id: sessionId, question_id, user_answer });
+          await apiClient.saveAssessmentAnswer(attemptId, question_id, { user_answer, time_spent: 0 });
         }
+        await apiClient.submitAssessmentAttempt(attemptId);
         const response = await apiClient.completeStage(sessionId);
         setResult(response);
-        if (response.updated_profile) setProfile(response.updated_profile);
+        if (response.updated_profile) setProfile(toProfile(response.updated_profile));
         const completedStage = response.state?.stage_info || stage;
         if (completedStage) setStage(completedStage);
         setPlannedStage(null);
-        rememberProject(sessionId, response.updated_profile || profile || fallbackProfile, completedStage);
+        setAssessmentState({ attemptId: null, questions: [] });
+        rememberProject(sessionId, toProfile(response.updated_profile) || profile || fallbackProfile, completedStage);
         void loadDashboardStages(sessionId, completedStage);
+        void refreshRemoteProjects();
       } else {
         throw new Error('尚未创建后端会话');
       }
@@ -2277,6 +2537,7 @@ export default function App() {
         ...(profile || fallbackProfile),
         knowledge_gaps: fallbackProfile.knowledge_gaps?.map((gap, index) => index === 0 ? { ...gap, status: '已掌握', progress: 0.86 } : gap)
       });
+      setAssessmentState({ attemptId: null, questions: [] });
     } finally {
       completeAgent('agent6');
       setActiveAgent(null);
@@ -2291,13 +2552,46 @@ export default function App() {
     setError(null);
     setActiveAgent('agent1');
     try {
-      const response = await apiClient.planNextStage({ session_id: sessionId });
-      if (!response.next_stage) throw new Error('后端没有返回下一阶段规划');
-      setPlannedStage(response.next_stage);
-      const nextProfile = response.updated_profile || profile || fallbackProfile;
-      if (response.updated_profile) setProfile(response.updated_profile);
-      rememberProject(sessionId, nextProfile, response.next_stage);
-      rememberStageConversation(sessionId, response.next_stage, nextProfile);
+      const response = await apiClient.planNextStage(sessionId);
+      const canStartNextStage =
+        response.phase === 'next_stage_ready' ||
+        response.available_actions?.includes('start_stage');
+
+      if (!canStartNextStage) throw new Error('下一阶段规划请求未成功');
+
+      let nextStage = response.next_stage;
+      let nextProfile: Profile = toProfile(response.updated_profile) || profile || fallbackProfile;
+
+      if (!nextStage) {
+        const maxRetries = 12;
+        const retryDelay = 1000;
+
+        for (let i = 0; i < maxRetries; i += 1) {
+          const session = await apiClient.getSession(sessionId);
+
+          if (session.profile) {
+            nextProfile = toProfile(session.profile) || nextProfile;
+            setProfile(nextProfile);
+          }
+
+          if (session.next_stage) {
+            nextStage = session.next_stage;
+            break;
+          }
+
+          await new Promise((resolve) => window.setTimeout(resolve, retryDelay));
+        }
+      } else if (response.updated_profile) {
+        const updatedProfile = toProfile(response.updated_profile);
+        if (updatedProfile) setProfile(updatedProfile);
+      }
+
+      if (!nextStage) throw new Error('下一阶段仍在生成中，请稍后再试');
+
+      setPlannedStage(nextStage);
+      rememberProject(sessionId, nextProfile, nextStage);
+      rememberStageConversation(sessionId, nextStage, nextProfile);
+      void refreshRemoteProjects();
       completeAgent('agent1');
     } catch (caught) {
       setError(getErrorMessage(caught));
@@ -2322,7 +2616,14 @@ export default function App() {
     }
   };
 
-  const clearLocalSession = () => {
+  const clearLocalSession = async () => {
+    if (sessionId && !sessionId.startsWith('local-goal-') && sessionId !== DEMO_SESSION_ID) {
+      try {
+        await apiClient.abandonSession(sessionId);
+      } catch {
+        // Keep local reset usable even if abandon fails remotely.
+      }
+    }
     localStorage.removeItem('sessionId');
     setError(null);
     setSessionId(null);
@@ -2346,6 +2647,52 @@ export default function App() {
     setCompletedAgents([]);
     setWorkflow('onboarding');
     setView('chat');
+    void refreshRemoteProjects();
+  };
+
+  const saveProfileSettings = async (data: { daily_hours?: number; learning_style?: string; hardware?: string }) => {
+    if (!sessionId || sessionId.startsWith('local-goal-')) {
+      setProfile((current) => current ? { ...current, ...data } : current);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await apiClient.updateProfile(sessionId, data);
+      const nextProfile = toProfile(updated) || { ...(profile || fallbackProfile), ...data };
+      setProfile(nextProfile);
+      setOnboardingForm(formDataFromProfile(nextProfile));
+      rememberProject(sessionId, nextProfile, stage);
+      void refreshRemoteProjects();
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openTestModal = async () => {
+    if (!sessionId) {
+      setTestOpen(true);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const attempt = await apiClient.createAssessmentAttempt(sessionId);
+      const attemptDetail = await apiClient.getAssessmentAttempt(attempt.attempt_id);
+      setAssessmentState({
+        attemptId: attempt.attempt_id,
+        questions: Array.isArray(attemptDetail.questions) ? attemptDetail.questions as TestQuestion[] : currentQuestions
+      });
+      setTestOpen(true);
+    } catch (caught) {
+      setAssessmentState({ attemptId: null, questions: currentQuestions });
+      setError(getErrorMessage(caught));
+      setTestOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createLearningGoal = () => {
@@ -2459,23 +2806,28 @@ export default function App() {
     try {
       const session = await apiClient.getSession(nextSessionId);
       if (!session?.profile) throw new Error('该学习项目尚未生成有效画像');
+      const activeStage = resolveSessionStage(session);
+      const hasLearningPackage = Boolean(session.learning_package);
+      const nextProfile = toProfile(session.profile);
+      if (!nextProfile) throw new Error('学习项目画像解析失败');
       setSessionId(nextSessionId);
       localStorage.setItem('sessionId', nextSessionId);
-      setProfile(session.profile);
-      setOnboardingForm(formDataFromProfile(session.profile));
-      setStage(session.stage_info || null);
-      setLearningPackage(session.learning_package || null);
+      setProfile(nextProfile);
+      setOnboardingForm(formDataFromProfile(nextProfile));
+      setStage(activeStage);
+      setLearningPackage(toLearningPackage(session.learning_package));
       setResult(null);
-      setPlannedStage(null);
-      const currentStageNum = session.stage_info?.stage_num ?? 1;
+      setPlannedStage(session.next_stage || null);
+      const currentStageNum = activeStage?.stage_num ?? 1;
       const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${currentStageNum}`);
       setMessages(restoredConversation?.messages || initialMessages);
       setSelectedConversationId(`${nextSessionId}:${requestedStageNum ?? currentStageNum}`);
-      setCompletedAgents(session.learning_package ? ['agent1', 'agent3', 'agent4'] : ['agent1']);
-      setWorkflow(session.learning_package ? 'learning' : 'profile_ready');
+      setCompletedAgents(hasLearningPackage ? ['agent1', 'agent3', 'agent4'] : ['agent1']);
+      setWorkflow(isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready');
       setView('chat');
-      rememberProject(nextSessionId, session.profile, session.stage_info);
-      void loadDashboardStages(nextSessionId, session.stage_info);
+      rememberProject(nextSessionId, nextProfile, activeStage);
+      void loadDashboardStages(nextSessionId, activeStage);
+      if (activeStage) void restoreQaConversation(nextSessionId, activeStage, nextProfile);
       setMaterialPanelOpen(false);
       setProjectSwitcherOpen(false);
     } catch (caught) {
@@ -2564,7 +2916,7 @@ export default function App() {
           learningPackage={learningPackage}
           materialPanelOpen={materialPanelOpen}
           onToggleMaterials={() => setMaterialPanelOpen((prev) => !prev)}
-          onTest={() => setTestOpen(true)}
+          onTest={openTestModal}
           stageResultReady={Boolean(result)}
           onOpenResult={() => setView('result')}
           projects={learningProjects}
@@ -2587,7 +2939,7 @@ export default function App() {
       {profile && workflow === 'learning' && view === 'dashboard' && (
         <DashboardView profile={workspaceProfile} stage={workspaceStage} result={result} setView={setView} loading={loading} error={error} />
       )}
-      {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} />}
+      {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} />}
       {profile && workflow === 'learning' && view === 'result' && (
         <ResultView
           profile={workspaceProfile}
