@@ -14,8 +14,7 @@
 
 ## 2. 核心方法论
 - **步骤1：定位问题与当前阶段关系**——读取 `stage.block_name` 与 `profile.goal`，判断提问是否属于当前阶段；属于则深入答，无关则简短答并提示聚焦
-- **步骤1.5：先走 FAQ 轻量检索**——仅在用户提问时触发，直接使用完整问题查询 FAQ 向量库；若最高相似度达到阈值，则直接返回 FAQ 标准答案；若未达到阈值，则继续普通答疑流程
-- **步骤2：调用LLM生成简明答疑**——先给结论，再解释原理，需要时配示例；遵循"结论→原理→示例"三段结构
+- **步骤2：调用LLM生成简明答疑**——可使用知识文档检索结果作为上下文；先给结论，再解释原理，需要时配示例；遵循"结论→原理→示例"三段结构
 - **步骤3：交付审核**——answer 交 Orchestrator 送 Agent4 做统一技术准确性、幻觉检测与教学清晰度审核
 - **步骤4：格式化审核反馈**——将 `technical_errors` 与 `quality_errors` 合并为反馈清单，按 severity 降序排列
 - **步骤5：逐条修订**——调用LLM按反馈清单逐条修订回答，保留正确内容，仅修改 errors 指向部分，返回完整新 answer
@@ -26,21 +25,11 @@
 ### 规则1：答疑内容规范
 | 检查项 | 要求 | 违规处置 | severity |
 |:---|:---|:---|:---|
-| FAQ 优先命中 | 用户提问先查 FAQ 向量库；仅当最高相似度达到阈值时直返 FAQ 标准答案 | 标记 `faq_routing_error` | major |
 | 结论先行 | 首句给明确结论，再展开原理 | 标记 `missing_conclusion` | major |
 | 不编造来源 | 不得编造参数、模型原理、论文；无法确认时明确说明"暂无确切依据" | 标记 `hallucination`，交Agent4 sim<0.65判critical | critical |
 | 原理支撑 | 结论后须有原理/机制解释，非空泛断言 | 标记 `unsupported_claim` | major |
 | 示例佐证 | 需要时配代码/数值示例（代码遵循code_style） | 标记 `missing_example` | minor |
 | 聚焦阶段 | 与当前阶段无关的问题简短作答，提示回归本阶段 | 标记 `off_topic` | minor |
-
-### 规则1.5：FAQ 路由规范
-| 检查项 | 要求 | 违规处置 | severity |
-|:---|:---|:---|:---|
-| 触发范围 | 仅在 `generate_answer` 的用户提问场景调用 FAQ 检索 | 标记 `faq_scope_error` | major |
-| 检索方式 | 直接使用完整问题做向量检索，不先调用 LLM 提取关键词 | 标记 `faq_overdesign` | minor |
-| 阈值判定 | FAQ 返回候选后，必须按最高相似度阈值决定是否采用 | 标记 `faq_threshold_missing` | major |
-| 未命中回退 | FAQ 未命中或低于阈值时，直接回退到知识库检索 / LLM | 标记 `low_confidence_faq_answer` | major |
-| 禁止 SQL FAQ 兜底 | FAQ 语义检索未命中后，不再追加 SQL LIKE FAQ 搜索 | 标记 `faq_legacy_fallback` | minor |
 
 ### 规则2：答疑风格规范
 | 检查项 | 要求 | 违规处置 | severity |
@@ -93,8 +82,6 @@
 ## 5. 异常处理
 | 异常场景 | 处置方式 |
 |:---|:---|
-| FAQ 向量库为空 / `chromadb` 不可用 | 视为 FAQ 未命中，直接回退到知识库检索与 LLM 普通答疑 |
-| FAQ 有候选但最高相似度低于阈值 | 不采用 FAQ 答案，直接继续普通答疑链路 |
 | LLM返回空或Error前缀 | 回退 `DeterministicContentAgent.generate_answer` 基础话术（"关于该问题，建议参考当前阶段教程的XX部分"） |
 | 提问与当前阶段无关 | 简短作答（1-2句），提示"建议在XX阶段深入学习此问题" |
 | LLM疑似编造来源/参数 | 交 Agent4 幻觉检测（sim<0.65），回流 critical error 后改稿删除或补依据 |

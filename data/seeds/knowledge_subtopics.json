@@ -64,9 +64,7 @@
     "estimated_hours": 0.0,
     "sequence_index": 0,
     "difficulty": "初级",
-    "prerequisites": [
-      "KBS-01-00"
-    ],
+    "prerequisites": [],
     "content_summary": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
   },
   {

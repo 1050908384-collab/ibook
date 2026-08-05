@@ -1,14 +1,18 @@
 {
-  "generated_at": "2026-08-04T13:02:47.570041+00:00",
+  "generated_at": "2026-08-05T18:48:17.708216+00:00",
   "missing_block_prerequisites": [],
   "missing_subtopic_prerequisites": [],
   "block_cycles": [],
   "subtopic_cycles": [],
-  "isolated_blocks": [],
+  "isolated_blocks": [
+    "KB-01"
+  ],
   "isolated_subtopics": [],
   "edge_counts": {
     "contains": 73,
-    "prerequisite": 93,
+    "hard_prerequisite": 87,
+    "recommended_prerequisite": 3,
+    "goal_condition": 2,
     "progresses_to": 72
   }
 }

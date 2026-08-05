@@ -22,6 +22,7 @@ DERIVED_DIR = CURRENT_DIR / "derived"
 
 BLOCKS_FILE = SEEDS_DIR / "knowledge_blocks.json"
 SUBTOPICS_FILE = SEEDS_DIR / "knowledge_subtopics.json"
+RELATIONS_FILE = SEEDS_DIR / "knowledge_graph_relations.json"
 
 
 def _load_required_json(path: Path) -> list[dict]:
@@ -30,6 +31,20 @@ def _load_required_json(path: Path) -> list[dict]:
     if not isinstance(data, list):
         raise ValueError(f"{path} 必须是数组")
     return data
+
+
+def _load_relationships() -> dict:
+    with RELATIONS_FILE.open("r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        raise ValueError(f"{RELATIONS_FILE} 必须是对象")
+    return data
+
+
+def _hard_prerequisites(subtopic: dict, relationships: dict) -> list[str]:
+    """The relationship seed is authoritative where it explicitly declares a node."""
+    overrides = relationships.get("hard_prerequisites", {})
+    return list(overrides.get(subtopic["subtopic_id"], subtopic.get("prerequisites", [])))
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -108,7 +123,7 @@ def _build_validation_report(
                 )
 
     for subtopic in subtopics:
-        for prerequisite_id in subtopic.get("prerequisites", []):
+        for prerequisite_id in subtopic.get("hard_prerequisites", []):
             if prerequisite_id not in subtopic_index:
                 missing_subtopic_prereqs.append(
                     {
@@ -117,17 +132,23 @@ def _build_validation_report(
                     }
                 )
 
-    prerequisite_edges = [edge for edge in edges if edge["relation_type"] == "PREREQUISITE_OF"]
+    block_prerequisite_edges = [
+        edge for edge in edges
+        if edge["relation_type"] == "PREREQUISITE_OF" and edge["scope"] == "block"
+    ]
+    hard_subtopic_edges = [
+        edge for edge in edges
+        if edge["relation_type"] == "HARD_PREREQUISITE_OF" and edge["scope"] == "subtopic"
+    ]
     block_graph = nx.DiGraph()
     subtopic_graph = nx.DiGraph()
     block_graph.add_nodes_from(block_index)
     subtopic_graph.add_nodes_from(subtopic_index)
 
-    for edge in prerequisite_edges:
-        if edge["scope"] == "block":
-            block_graph.add_edge(edge["source_id"], edge["target_id"])
-        if edge["scope"] == "subtopic":
-            subtopic_graph.add_edge(edge["source_id"], edge["target_id"])
+    for edge in block_prerequisite_edges:
+        block_graph.add_edge(edge["source_id"], edge["target_id"])
+    for edge in hard_subtopic_edges:
+        subtopic_graph.add_edge(edge["source_id"], edge["target_id"])
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -139,7 +160,9 @@ def _build_validation_report(
         "isolated_subtopics": sorted(list(nx.isolates(subtopic_graph))),
         "edge_counts": {
             "contains": sum(edge["relation_type"] == "CONTAINS" for edge in edges),
-            "prerequisite": sum(edge["relation_type"] == "PREREQUISITE_OF" for edge in edges),
+            "hard_prerequisite": sum(edge["relation_type"] == "HARD_PREREQUISITE_OF" for edge in edges),
+            "recommended_prerequisite": sum(edge["relation_type"] == "RECOMMENDED_PREREQUISITE_OF" for edge in edges),
+            "goal_condition": sum(edge["relation_type"] == "GOAL_CONDITION_OF" for edge in edges),
             "progresses_to": sum(edge["relation_type"] == "PROGRESSES_TO" for edge in edges),
         },
     }
@@ -156,7 +179,7 @@ def _build_prerequisite_closure(
     subtopic_graph.add_nodes_from(subtopic_index)
 
     for edge in edges:
-        if edge["relation_type"] != "PREREQUISITE_OF":
+        if edge["relation_type"] != "HARD_PREREQUISITE_OF":
             continue
         if edge["scope"] == "block":
             block_graph.add_edge(edge["source_id"], edge["target_id"])
@@ -192,7 +215,7 @@ def _build_learning_levels(
         subtopic_graph.add_node(subtopic["subtopic_id"])
 
     for edge in edges:
-        if edge["relation_type"] != "PREREQUISITE_OF":
+        if edge["relation_type"] != "HARD_PREREQUISITE_OF":
             continue
         if edge["scope"] == "block":
             block_graph.add_edge(edge["source_id"], edge["target_id"])
@@ -223,6 +246,9 @@ def build_knowledge_graph() -> dict:
 
     blocks = _load_required_json(BLOCKS_FILE)
     subtopics = _load_required_json(SUBTOPICS_FILE)
+    relationships = _load_relationships()
+    for subtopic in subtopics:
+        subtopic["hard_prerequisites"] = _hard_prerequisites(subtopic, relationships)
     block_index = _build_node_index(blocks, "block_id")
     subtopic_index = _build_node_index(subtopics, "subtopic_id")
 
@@ -279,16 +305,23 @@ def build_knowledge_graph() -> dict:
             strength="structural",
             source_type="seed_declared",
         )
-        for prerequisite_id in subtopic.get("prerequisites", []):
+        for prerequisite_id in subtopic["hard_prerequisites"]:
             _append_edge(
                 edges,
                 prerequisite_id,
                 subtopic["subtopic_id"],
-                relation_type="PREREQUISITE_OF",
+                relation_type="HARD_PREREQUISITE_OF",
                 scope="subtopic",
                 strength="required",
                 source_type="seed_declared",
             )
+
+    for source_id, target_id in relationships.get("recommended_prerequisites", []):
+        _append_edge(edges, source_id, target_id, "RECOMMENDED_PREREQUISITE_OF", "subtopic", strength="recommended", source_type="relationship_seed")
+    for source_id, target_id in relationships.get("contextual_relations", []):
+        _append_edge(edges, source_id, target_id, "CONTEXTUAL_RELATION", "subtopic", strength="contextual", source_type="relationship_seed")
+    for condition in relationships.get("goal_conditions", []):
+        _append_edge(edges, condition["source_id"], condition["target_id"], "GOAL_CONDITION_OF", "subtopic", strength="conditional", source_type="relationship_seed", goal=condition["goal"])
 
     for block_id, block_subtopics in subtopics_by_block.items():
         ordered_subtopics = sorted(block_subtopics, key=lambda item: item["sequence_index"])
@@ -338,6 +371,7 @@ def build_knowledge_graph() -> dict:
         "seed_files": {
             "blocks": str(BLOCKS_FILE.relative_to(ROOT_DIR)).replace("\\", "/"),
             "subtopics": str(SUBTOPICS_FILE.relative_to(ROOT_DIR)).replace("\\", "/"),
+            "relationships": str(RELATIONS_FILE.relative_to(ROOT_DIR)).replace("\\", "/"),
         },
         "node_counts": {
             "total": len(nodes),

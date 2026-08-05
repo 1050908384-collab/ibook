@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import uuid
 
 from db.sqlite_client import SQLiteClient
-from models.profile import UserProfile
+from models.profile import PracticeProfile, UserProfile
 from models.stage import LearningPackage, StageInfo
 from models.user_data import SessionData
 
@@ -44,6 +44,15 @@ class StateManager:
     def get_profile(self, session_id: str) -> Optional[Dict[str, Any]]:
         state = self._get(session_id)
         return state.profile.model_dump(mode="json") if state and state.profile else None
+
+    def update_practice_profile(self, session_id: str, profile: PracticeProfile | dict) -> None:
+        state = self.require_session(session_id)
+        state.practice_profile = PracticeProfile.model_validate(profile)
+        self._save(state)
+
+    def get_practice_profile(self, session_id: str) -> Dict[str, Any]:
+        state = self.require_session(session_id)
+        return state.practice_profile.model_dump(mode="json")
 
     def update_stage(self, session_id: str, stage: StageInfo | dict) -> None:
         state = self.require_session(session_id)

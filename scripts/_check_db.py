@@ -6,7 +6,7 @@ from sqlalchemy import text
 db = SQLiteClient()
 conn = db.engine.connect()
 
-tables = ['knowledge_blocks', 'knowledge_subtopics', 'knowledge_docs', 'faq_items', 'test_questions']
+tables = ['knowledge_blocks', 'knowledge_subtopics', 'knowledge_docs', 'test_questions']
 for table in tables:
     try:
         count = conn.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar()

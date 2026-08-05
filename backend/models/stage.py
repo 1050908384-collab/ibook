@@ -31,7 +31,7 @@ class StageInfo(BaseModel):
 
 class Source(BaseModel):
     source_id: str
-    source_type: Literal["knowledge_doc", "faq", "best_practice", "manual", "external_note", "code_example", "video"]
+    source_type: Literal["knowledge_doc", "best_practice", "manual", "external_note", "code_example", "video"]
     title: Optional[str] = None
     locator: Optional[str] = None
     content_ref: Optional[str] = None

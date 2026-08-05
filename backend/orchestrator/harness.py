@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import json
+import re
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -24,7 +26,7 @@ from models.contracts import (
     StageDecisionInput,
     StagePlanningInput,
 )
-from models.profile import UserProfile
+from models.profile import PracticeProfile, UserProfile
 from models.review import QualityReviewResult, ReviewError, ReviewRound, TechnicalReviewResult
 from models.stage import LearningPackage, StageInfo
 from orchestrator.state_manager import StateManager
@@ -54,6 +56,51 @@ class Harness:
         suffix = f" | {detail}" if detail else ""
         print(f"[Harness][session={session_id}] {event}{suffix}", flush=True)
 
+    @staticmethod
+    def _extract_user_facing_answer(raw_answer: str) -> str:
+        """Keep model prompt examples and review traces out of the learner UI."""
+        text = (raw_answer or "").strip()
+        if not text:
+            return ""
+
+        # Some local models copy the JSON example embedded in a skill file.
+        # Prefer the final fenced JSON answer when it is present.
+        for block in reversed(re.findall(r"```(?:json)?\s*(\{.*?\})\s*```", text, flags=re.DOTALL | re.IGNORECASE)):
+            try:
+                value = json.loads(block)
+            except json.JSONDecodeError:
+                continue
+            answer = value.get("answer") if isinstance(value, dict) else None
+            if isinstance(answer, str) and answer.strip():
+                return answer.strip()
+
+        # Also accept an unfenced JSON object without exposing its wrapper.
+        matches = re.findall(r'"answer"\s*:\s*"((?:\\.|[^"\\])*)"', text, flags=re.DOTALL)
+        for value in reversed(matches):
+            try:
+                answer = json.loads(f'"{value}"')
+            except json.JSONDecodeError:
+                answer = value.replace(r"\\n", "\n").replace(r'\\"', '"')
+            if answer.strip():
+                return answer.strip()
+
+        return text
+
+    @staticmethod
+    def _is_greeting(question: str) -> bool:
+        return bool(re.fullmatch(r"(?:你好|您好|嗨|哈喽|hello|hi)[！!。．，,？?\\s]*", question.strip(), flags=re.IGNORECASE))
+
+    @staticmethod
+    def _is_greeting(question: str) -> bool:
+        return bool(re.fullmatch(r"(?:\u4f60\u597d|\u60a8\u597d|\u55e8|\u54c8\u558e|hello|hi)[!\uff01.\u3002,\uff0c?\uff1f\s]*", question.strip(), flags=re.IGNORECASE))
+
+    @staticmethod
+    def _greeting_answer(stage_name: str) -> str:
+        return (
+            f"你好，我是你的实训导师。你当前正在学习「{stage_name or '当前阶段'}」。"
+            "可以直接问我概念、实操步骤或当前学习材料中的疑问。"
+        )
+
     async def process_initial_input(self, session_id: str, user_input: str) -> Dict[str, Any]:
         self._log(session_id, "process_initial_input:start", f"message={user_input[:60]}")
         self.state_manager.require_session(session_id)
@@ -68,6 +115,9 @@ class Harness:
         diagnostic_input = "\n".join([*previous_inputs, user_input])
         diagnostic = await self.agent1.run(
             DiagnosticInput(session_id=session_id, user_input=diagnostic_input)
+        )
+        self.state_manager.update_practice_profile(
+            session_id, PracticeProfile.from_user_input(user_input)
         )
         # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
         self.state_manager.update_profile(session_id, diagnostic.profile)
@@ -112,8 +162,16 @@ class Harness:
 
         stage = StageInfo.model_validate(self._require_stage(session_id))
         profile = UserProfile.model_validate(self._require_profile(session_id))
+        practice_profile = PracticeProfile.model_validate(
+            self.state_manager.get_practice_profile(session_id)
+        )
         self._log(session_id, "start_stage:start", f"stage={stage.stage_num}, block={stage.block_name}")
-        generated = await self.agent3.run(ContentGenerationInput(session_id=session_id, stage=stage))
+        generated = await self.agent3.run(ContentGenerationInput(
+            session_id=session_id,
+            stage=stage,
+            learning_profile=profile,
+            practice_profile=practice_profile,
+        ))
         learning_package, review_history = await self._review_learning_package(
             session_id,
             generated.learning_package,
@@ -168,19 +226,28 @@ class Harness:
         stage = StageInfo.model_validate(self._require_stage(session_id))
         profile = UserProfile.model_validate(self._require_profile(session_id))
         self._log(session_id, "handle_question:start", f"question={question[:60]}")
-        generated = await self.agent3.generate_answer(AnswerGenerationInput(
-            session_id=session_id,
-            question=question,
-            stage=stage,
-            profile=profile,
-        ))
+        is_greeting = self._is_greeting(question)
+        if is_greeting:
+            raw_answer = self._greeting_answer(stage.block_name)
+        else:
+            generated = await self.agent3.generate_answer(AnswerGenerationInput(
+                session_id=session_id,
+                question=question,
+                stage=stage,
+                profile=profile,
+            ))
+            raw_answer = generated.answer
         answer, review_history = await self._review_answer(
             session_id,
             question,
-            generated.answer,
+            self._extract_user_facing_answer(raw_answer),
             stage,
             profile,
         )
+        # A greeting is a conversational turn, not a technical answer. Agent4
+        # may classify it as off-topic and ask Agent3 to rewrite it; preserve
+        # the deterministic greeting instead of exposing that rewrite.
+        answer = self._extract_user_facing_answer(raw_answer if is_greeting else answer)
         latest_review = review_history[-1]
         self.state_manager.add_qa_record(
             session_id,

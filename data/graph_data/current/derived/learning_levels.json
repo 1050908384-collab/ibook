@@ -6,59 +6,59 @@
     },
     {
       "block_id": "KB-02",
-      "level": 1
+      "level": 0
     },
     {
       "block_id": "KB-03",
-      "level": 2
+      "level": 0
     },
     {
       "block_id": "KB-04",
-      "level": 3
+      "level": 0
     },
     {
       "block_id": "KB-05",
-      "level": 3
+      "level": 0
     },
     {
       "block_id": "KB-06",
-      "level": 4
+      "level": 0
     },
     {
       "block_id": "KB-07",
-      "level": 4
+      "level": 0
     },
     {
       "block_id": "KB-08",
-      "level": 5
+      "level": 0
     },
     {
       "block_id": "KB-09",
-      "level": 6
+      "level": 0
     },
     {
       "block_id": "KB-10",
-      "level": 7
+      "level": 0
     },
     {
       "block_id": "KB-11",
-      "level": 5
+      "level": 0
     },
     {
       "block_id": "KB-12",
-      "level": 6
+      "level": 0
     },
     {
       "block_id": "KB-13",
-      "level": 4
+      "level": 0
     },
     {
       "block_id": "KB-14",
-      "level": 5
+      "level": 0
     },
     {
       "block_id": "KB-15",
-      "level": 6
+      "level": 0
     }
   ],
   "subtopics": [
@@ -90,57 +90,57 @@
     {
       "subtopic_id": "KBS-02-00",
       "block_id": "KB-02",
-      "level": 1
+      "level": 0
     },
     {
       "subtopic_id": "KBS-02-01",
       "block_id": "KB-02",
-      "level": 2
+      "level": 1
     },
     {
       "subtopic_id": "KBS-02-02",
       "block_id": "KB-02",
-      "level": 3
+      "level": 2
     },
     {
       "subtopic_id": "KBS-02-03",
       "block_id": "KB-02",
-      "level": 4
+      "level": 3
     },
     {
       "subtopic_id": "KBS-02-04",
       "block_id": "KB-02",
-      "level": 5
+      "level": 4
     },
     {
       "subtopic_id": "KBS-02-05",
       "block_id": "KB-02",
-      "level": 6
+      "level": 5
     },
     {
       "subtopic_id": "KBS-03-00",
       "block_id": "KB-03",
-      "level": 2
+      "level": 1
     },
     {
       "subtopic_id": "KBS-03-01",
       "block_id": "KB-03",
-      "level": 3
+      "level": 2
     },
     {
       "subtopic_id": "KBS-03-02",
       "block_id": "KB-03",
-      "level": 4
+      "level": 3
     },
     {
       "subtopic_id": "KBS-03-03",
       "block_id": "KB-03",
-      "level": 5
+      "level": 4
     },
     {
       "subtopic_id": "KBS-03-04",
       "block_id": "KB-03",
-      "level": 6
+      "level": 5
     },
     {
       "subtopic_id": "KBS-04-00",
@@ -205,127 +205,127 @@
     {
       "subtopic_id": "KBS-07-00",
       "block_id": "KB-07",
-      "level": 2
+      "level": 1
     },
     {
       "subtopic_id": "KBS-07-01",
       "block_id": "KB-07",
-      "level": 3
+      "level": 2
     },
     {
       "subtopic_id": "KBS-07-02",
       "block_id": "KB-07",
-      "level": 4
+      "level": 3
     },
     {
       "subtopic_id": "KBS-07-03",
       "block_id": "KB-07",
-      "level": 5
+      "level": 4
     },
     {
       "subtopic_id": "KBS-07-04",
       "block_id": "KB-07",
-      "level": 6
+      "level": 4
     },
     {
       "subtopic_id": "KBS-08-00",
       "block_id": "KB-08",
-      "level": 3
+      "level": 2
     },
     {
       "subtopic_id": "KBS-08-01",
       "block_id": "KB-08",
-      "level": 4
+      "level": 3
     },
     {
       "subtopic_id": "KBS-08-02",
       "block_id": "KB-08",
-      "level": 5
+      "level": 4
     },
     {
       "subtopic_id": "KBS-08-03",
       "block_id": "KB-08",
-      "level": 6
+      "level": 5
     },
     {
       "subtopic_id": "KBS-08-04",
       "block_id": "KB-08",
-      "level": 7
+      "level": 6
     },
     {
       "subtopic_id": "KBS-08-05",
       "block_id": "KB-08",
-      "level": 8
+      "level": 7
     },
     {
       "subtopic_id": "KBS-08-06",
       "block_id": "KB-08",
-      "level": 9
+      "level": 8
     },
     {
       "subtopic_id": "KBS-08-07",
       "block_id": "KB-08",
-      "level": 10
+      "level": 9
     },
     {
       "subtopic_id": "KBS-09-01",
       "block_id": "KB-09",
-      "level": 0
+      "level": 5
     },
     {
       "subtopic_id": "KBS-09-02",
       "block_id": "KB-09",
-      "level": 1
+      "level": 5
     },
     {
       "subtopic_id": "KBS-09-03",
       "block_id": "KB-09",
-      "level": 2
+      "level": 6
     },
     {
       "subtopic_id": "KBS-09-04",
       "block_id": "KB-09",
-      "level": 3
+      "level": 7
     },
     {
       "subtopic_id": "KBS-09-05",
       "block_id": "KB-09",
-      "level": 4
+      "level": 8
     },
     {
       "subtopic_id": "KBS-10-01",
       "block_id": "KB-10",
-      "level": 0
+      "level": 12
     },
     {
       "subtopic_id": "KBS-10-02",
       "block_id": "KB-10",
-      "level": 1
+      "level": 13
     },
     {
       "subtopic_id": "KBS-10-03",
       "block_id": "KB-10",
-      "level": 2
+      "level": 14
     },
     {
       "subtopic_id": "KBS-11-00",
       "block_id": "KB-11",
-      "level": 3
+      "level": 2
     },
     {
       "subtopic_id": "KBS-11-01",
       "block_id": "KB-11",
-      "level": 4
+      "level": 3
     },
     {
       "subtopic_id": "KBS-11-02",
       "block_id": "KB-11",
-      "level": 5
+      "level": 4
     },
     {
       "subtopic_id": "KBS-11-03",
       "block_id": "KB-11",
-      "level": 6
+      "level": 5
     },
     {
       "subtopic_id": "KBS-12-00",
@@ -335,17 +335,17 @@
     {
       "subtopic_id": "KBS-12-01",
       "block_id": "KB-12",
-      "level": 7
+      "level": 9
     },
     {
       "subtopic_id": "KBS-12-02",
       "block_id": "KB-12",
-      "level": 8
+      "level": 10
     },
     {
       "subtopic_id": "KBS-12-03",
       "block_id": "KB-12",
-      "level": 9
+      "level": 11
     },
     {
       "subtopic_id": "KBS-12-04",
@@ -355,7 +355,7 @@
     {
       "subtopic_id": "KBS-12-05",
       "block_id": "KB-12",
-      "level": 11
+      "level": 13
     },
     {
       "subtopic_id": "KBS-13-00",
@@ -365,42 +365,42 @@
     {
       "subtopic_id": "KBS-13-01",
       "block_id": "KB-13",
-      "level": 7
+      "level": 12
     },
     {
       "subtopic_id": "KBS-13-02",
       "block_id": "KB-13",
-      "level": 8
+      "level": 12
     },
     {
       "subtopic_id": "KBS-13-03",
       "block_id": "KB-13",
-      "level": 9
+      "level": 12
     },
     {
       "subtopic_id": "KBS-13-04",
       "block_id": "KB-13",
-      "level": 10
+      "level": 12
     },
     {
       "subtopic_id": "KBS-14-00",
       "block_id": "KB-14",
-      "level": 7
+      "level": 6
     },
     {
       "subtopic_id": "KBS-14-01",
       "block_id": "KB-14",
-      "level": 8
+      "level": 13
     },
     {
       "subtopic_id": "KBS-14-02",
       "block_id": "KB-14",
-      "level": 9
+      "level": 14
     },
     {
       "subtopic_id": "KBS-14-03",
       "block_id": "KB-14",
-      "level": 10
+      "level": 15
     },
     {
       "subtopic_id": "KBS-15-00",
@@ -410,12 +410,12 @@
     {
       "subtopic_id": "KBS-15-01",
       "block_id": "KB-15",
-      "level": 7
+      "level": 5
     },
     {
       "subtopic_id": "KBS-15-02",
       "block_id": "KB-15",
-      "level": 8
+      "level": 6
     },
     {
       "subtopic_id": "KBS-15-03",

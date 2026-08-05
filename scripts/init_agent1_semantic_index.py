@@ -32,6 +32,11 @@ def build_agent1_semantic_index() -> int:
     subtopics = json.loads((ROOT_DIR / "data" / "seeds" / "knowledge_subtopics.json").read_text(encoding="utf-8"))
     block_index = {str(row.get("block_id", "")): row for row in blocks}
     subtopic_index = {str(row.get("subtopic_id", "")): row for row in subtopics}
+    active_subtopic_ids = set(subtopic_index)
+    rows = [
+        row for row in rows
+        if not row.get("subtopic_id") or str(row["subtopic_id"]) in active_subtopic_ids
+    ]
     collection = Agent1ChromaClient().rebuild_collection()
     ids = [str(row["doc_id"]) for row in rows]
     documents = []

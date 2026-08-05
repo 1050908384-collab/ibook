@@ -16,7 +16,7 @@ SEEDS_DIR = Path(__file__).resolve().parent.parent / "data" / "seeds"
 BLOCKS_FILE_PATH = SEEDS_DIR / "knowledge_blocks.json"
 DOCS_FILE_PATH = SEEDS_DIR / "knowledge_docs.json"
 SUBTOPICS_FILE_PATH = SEEDS_DIR / "knowledge_subtopics.json"
-FAQ_FILE_PATH = SEEDS_DIR / "faq_items.json"
+RELATIONS_FILE_PATH = SEEDS_DIR / "knowledge_graph_relations.json"
 QUESTIONS_FILE_PATH = SEEDS_DIR / "test_questions.json"
 VIDEO_CATALOG_PATH = PROJECT_ROOT / "data" / "knowledge_base" / "video_resources.json"
 RETIRED_SUBTOPIC_REPLACEMENTS = {
@@ -26,6 +26,13 @@ RETIRED_SUBTOPIC_REPLACEMENTS = {
     "KBS-09-06": "KBS-09-05",
     "KBS-10-04": "KBS-10-03",
     "KBS-12-06": "KBS-12-05",
+}
+LEGACY_BLOCK_REPLACEMENTS = {
+    "KB-001": "KB-02",
+    "KB-002": "KB-04",
+    "KB-003": "KB-08",
+    "KB-004": "KB-12",
+    "KB-005": "KB-15",
 }
 
 def load_seed_data(file_path: Path):
@@ -83,6 +90,28 @@ def insert_knowledge_blocks(db: SQLiteClient, blocks_data: list):
     print("[OK] knowledge_blocks: 已插入 {} 条记录".format(count))
 
 
+def migrate_legacy_blocks(db: SQLiteClient) -> None:
+    """Remove obsolete KB-00x aliases after preserving their linked records."""
+    with db.Session() as session:
+        for legacy_id, active_id in LEGACY_BLOCK_REPLACEMENTS.items():
+            exists = session.execute(
+                text("SELECT 1 FROM knowledge_blocks WHERE block_id = :block_id"),
+                {"block_id": legacy_id},
+            ).scalar()
+            if not exists:
+                continue
+            for table in ("knowledge_docs", "test_questions", "stage_progress", "subtopic_status", "subtopic_resources", "block_resources"):
+                session.execute(
+                    text(f"UPDATE {table} SET block_id = :active_id WHERE block_id = :legacy_id"),
+                    {"active_id": active_id, "legacy_id": legacy_id},
+                )
+            session.execute(
+                text("DELETE FROM knowledge_blocks WHERE block_id = :block_id"),
+                {"block_id": legacy_id},
+            )
+        session.commit()
+
+
 def insert_knowledge_docs(db: SQLiteClient, docs_data: list):
     count = 0
     for doc in docs_data:
@@ -109,6 +138,8 @@ def insert_knowledge_docs(db: SQLiteClient, docs_data: list):
 
 
 def insert_knowledge_subtopics(db: SQLiteClient, subtopics_data: list):
+    relationship_data = load_seed_data(RELATIONS_FILE_PATH)
+    hard_prerequisites = relationship_data.get("hard_prerequisites", {})
     count = 0
     for subtopic in subtopics_data:
         with db.Session() as session:
@@ -127,7 +158,7 @@ def insert_knowledge_subtopics(db: SQLiteClient, subtopics_data: list):
                 "estimated_hours": subtopic["estimated_hours"],
                 "sequence_index": subtopic["sequence_index"],
                 "difficulty": subtopic.get("difficulty"),
-                "prerequisites": json.dumps(subtopic.get("prerequisites", []), ensure_ascii=False),
+                "prerequisites": json.dumps(hard_prerequisites.get(subtopic["subtopic_id"], subtopic.get("prerequisites", [])), ensure_ascii=False),
                 "content_summary": subtopic.get("content_summary", ""),
             })
             session.commit()
@@ -168,29 +199,6 @@ def remove_retired_subtopics(db: SQLiteClient, active_subtopic_ids: set[str]) ->
             removed += 1
         session.commit()
     print("[OK] 已迁移并删除 {} 个过期知识点".format(removed))
-
-
-def insert_faq_items(db: SQLiteClient, faq_data: list):
-    count = 0
-    for faq in faq_data:
-        with db.Session() as session:
-            session.execute(text("""
-                INSERT OR REPLACE INTO faq_items (
-                    faq_id, block_id, question, answer, difficulty, tags
-                ) VALUES (
-                    :faq_id, :block_id, :question, :answer, :difficulty, :tags
-                )
-            """), {
-                "faq_id": faq["faq_id"],
-                "block_id": faq["block_id"],
-                "question": faq["question"],
-                "answer": faq["answer"],
-                "difficulty": faq["difficulty"],
-                "tags": json.dumps(faq["tags"], ensure_ascii=False)
-            })
-            session.commit()
-        count += 1
-    print("[OK] faq_items: 已插入 {} 条记录".format(count))
 
 
 def insert_test_questions(db: SQLiteClient, questions_data: list):
@@ -323,7 +331,6 @@ def main():
     blocks_data = load_required_list(BLOCKS_FILE_PATH)
     docs_data = load_required_list(DOCS_FILE_PATH)
     subtopics_data = load_required_list(SUBTOPICS_FILE_PATH)
-    faq_data = load_required_list(FAQ_FILE_PATH)
     questions_data = load_required_list(QUESTIONS_FILE_PATH)
     resources_data, subtopic_resources_data, block_resources_data = load_video_catalog(VIDEO_CATALOG_PATH)
 
@@ -332,6 +339,7 @@ def main():
 
     print("[INFO] 1. 插入知识块 (knowledge_blocks)...")
     insert_knowledge_blocks(db, blocks_data)
+    migrate_legacy_blocks(db)
 
     print("[INFO] 2. 插入知识文档 (knowledge_docs)...")
     insert_knowledge_docs(db, docs_data)
@@ -340,20 +348,17 @@ def main():
     insert_knowledge_subtopics(db, subtopics_data)
     remove_retired_subtopics(db, {item["subtopic_id"] for item in subtopics_data})
 
-    print("[INFO] 4. 插入FAQ数据 (faq_items)...")
-    insert_faq_items(db, faq_data)
-
-    print("[INFO] 5. 插入测试题 (test_questions)...")
+    print("[INFO] 4. 插入测试题 (test_questions)...")
     insert_test_questions(db, questions_data)
 
-    print("[INFO] 6. 插入学习资源数据 (learning_resources)...")
+    print("[INFO] 5. 插入学习资源数据 (learning_resources)...")
     clear_video_catalog(db)
     insert_learning_resources(db, resources_data)
 
-    print("[INFO] 7. 插入资源与子知识点关联 (subtopic_resources)...")
+    print("[INFO] 6. 插入资源与子知识点关联 (subtopic_resources)...")
     insert_subtopic_resources(db, subtopic_resources_data)
 
-    print("[INFO] 8. 插入资源与知识板块关联 (block_resources)...")
+    print("[INFO] 7. 插入资源与知识板块关联 (block_resources)...")
     insert_block_resources(db, block_resources_data)
 
     db.close()

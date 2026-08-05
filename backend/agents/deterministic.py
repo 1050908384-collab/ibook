@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # ← 实际运行的 Agent 实现（含确定性版+混合版）
 import json
+import math
 import re
 import uuid
 from typing import Any, Dict, List, Optional
@@ -27,7 +28,7 @@ from models.contracts import (
     StagePlanningOutput,
 )
 from models.material import TestQuestion
-from models.profile import KnowledgeGap, UserProfile
+from models.profile import KnowledgeGap, PracticeProfile, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
 from models.stage import Claim, LearningPackage, Source, StageInfo
 from tools.learning_resource_tool import LearningResourceTool
@@ -40,7 +41,6 @@ from tools.agent1_tools.knowledge_catalog_tool import KnowledgeCatalogTool
 from tools.agent1_tools.semantic_knowledge_recall_tool import SemanticKnowledgeRecallTool
 from tools.agent1_tools.knowledge_block_query_tool import KnowledgeBlockQueryTool
 from tools.agent1_tools.stage_generator_tool import StageGeneratorTool
-from tools.agent3_tools.faq_search_tool import FAQSearchTool
 from tools.agent3_tools.question_extract_tool import QuestionExtractTool
 from tools.agent3_tools.vector_search_tool import VectorSearchTool
 from tools.agent3_tools.video_search_tool import VideoSearchTool
@@ -96,6 +96,16 @@ class DeterministicDiagnosticAgent:
         needs_domain_clarification = self._needs_domain_clarification(target_text)
         target_candidates = [] if needs_domain_clarification else self._select_target_candidates(target_text)
         gaps = await self._build_grounded_gaps(target_text, target_candidates, mastered)
+        if self._needs_training_optimization(target_text):
+            optimization_block = self.knowledge_catalog_tool.get_block("KB-13")
+            if optimization_block and all(gap.block_id != "KB-13" for gap in gaps):
+                gaps.append(KnowledgeGap(
+                    skill=str(optimization_block["block_name"]),
+                    block_id="KB-13",
+                    block_name=str(optimization_block["block_name"]),
+                    mapping_confidence=0.85,
+                    level="advanced",
+                ))
         if not gaps and not needs_domain_clarification:
             fallback_targets = [skill for skill in SKILL_NAMES if skill.lower() in target_text.lower()]
             gaps = await self._build_grounded_gaps(
@@ -109,7 +119,8 @@ class DeterministicDiagnosticAgent:
             )
         if not gaps:
             gaps = [KnowledgeGap(skill=target_text or "通用学习目标")]
-        gaps = await self._insert_unmet_direct_prerequisite_gaps(gaps, mastered)
+        # Stages expand the target's subtopic-level hard closure. Do not inject
+        # coarse block prerequisites into the diagnostic profile.
 
         explicit_hours = self._has_daily_hours(text)
         explicit_style = self._has_learning_style(text)
@@ -160,7 +171,6 @@ class DeterministicDiagnosticAgent:
             goal=target_text or text,
             daily_hours=structured.get("daily_hours", self._extract_daily_hours(text)),
             learning_style=structured.get("learning_style", self._extract_learning_style(text)),
-            hardware=structured.get("hardware", ""),
             confidence=confidence,
         )
         _agent_log("Agent1", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
@@ -207,6 +217,16 @@ class DeterministicDiagnosticAgent:
                 for item in matched_subtopics
                 if item.get("subtopic_id")
             ]
+            recalled_subtopic_ids = self.knowledge_catalog_tool.resolve_subtopic_ids(
+                block_id, target_subtopic_ids
+            )
+            canonical_target_ids = self.knowledge_catalog_tool.default_target_subtopic_ids(
+                block_id, target_text
+            )
+            # Intent-level targets are more precise than a semantically similar
+            # article such as a LoRA export guide. Fall back to recalled IDs for
+            # blocks without an explicit canonical target.
+            target_subtopic_ids = canonical_target_ids or recalled_subtopic_ids
             prerequisites = self._immediate_prerequisite_names(resolved, mastered_skills)
             raw_score = float(candidate.get("score") or 0)
             mapping_confidence = float(candidate.get("mapping_confidence") or min(0.99, 0.7 + raw_score / 200))
@@ -292,6 +312,14 @@ class DeterministicDiagnosticAgent:
         question = "你提到的 LoRa 是指大模型参数高效微调 LoRA，还是物联网无线通信 LoRa？"
         return list(dict.fromkeys([question, *questions]))
 
+    @staticmethod
+    def _needs_training_optimization(target_text: str) -> bool:
+        normalized = target_text.casefold()
+        return any(keyword in normalized for keyword in (
+            "high efficiency", "efficient finetuning", "stable training",
+            "production training", "高效微调", "稳定训练", "生产训练",
+        ))
+
     def _extract_mastered_skills(self, text: str, target_text: str) -> list[str]:
         mastery_text = text
         cue = re.search(
@@ -357,12 +385,7 @@ class DeterministicDiagnosticAgent:
         return questions
 
     def _target_text(self, text: str) -> str:
-        match = re.search(
-            r"(?:想学习|想学|学习目标(?:是|为)?|目标(?:是|为)?|want to learn|learn)(.+)",
-            text,
-            flags=re.IGNORECASE,
-        )
-        return match.group(1).strip(" ，。,.！!") if match else text
+        return self._extract_goal_from_sentences(text) or text
 
     async def generate_stage(self, request: StagePlanningInput) -> StagePlanningOutput:
         """Stage planning functionality merged from Agent2 into Agent1."""
@@ -384,22 +407,44 @@ class DeterministicDiagnosticAgent:
             preferred_block = self.knowledge_catalog_tool.get_block(gap.block_id) or {}
         preferred_block = preferred_block or {}
 
+        # Plan from the target's reverse hard-prerequisite closure.  The DB
+        # supplies the currently unlocked nodes; neither block order nor soft
+        # graph relations are allowed to make a node blocking.
+        target_subtopic_ids = list(gap.target_subtopic_ids)
+        if not target_subtopic_ids:
+            target_subtopic_ids = [
+                item["subtopic_id"] for item in preferred_block.get("subtopics", [])
+                if item.get("subtopic_id")
+            ]
+        hard_levels = await self.graph_query_tool.minimal_hard_prerequisite_subgraph(
+            target_subtopic_ids,
+            request.profile.goal,
+        )
+
         candidates = self.db_client.list_learnable_subtopics(
             session_id=request.session_id,
-            preferred_block_id=preferred_block.get("block_id"),
             max_hours=request.profile.daily_hours,
         )
+        if hard_levels:
+            candidates = [item for item in candidates if item["subtopic_id"] in hard_levels]
+            candidates.sort(
+                key=lambda item: (
+                    hard_levels[item["subtopic_id"]],
+                    0 if item.get("estimated_hours", 0) <= request.profile.daily_hours else 1,
+                    item.get("sequence_index", 0),
+                    item["subtopic_id"],
+                )
+            )
         
         # Fallback: 当没有可学习的 subtopic 时，直接使用 gap 信息生成阶段
         if not candidates:
-            profile_dict = request.profile.model_dump(mode="json")
             fallback_stage = await self.stage_generator_tool.generate_stage(
                 request.session_id,
                 gap.model_dump(mode="json"),
                 preferred_block,
                 request.profile.goal,
                 request.stage_num,
-                profile=profile_dict,
+                profile=request.profile.model_dump(mode="json"),
             )
             if not fallback_stage:
                 fallback_stage = {}
@@ -434,11 +479,7 @@ class DeterministicDiagnosticAgent:
             )
             return StagePlanningOutput(stage=stage)
 
-        preferred_subtopic_ids = set(gap.target_subtopic_ids)
-        subtopic = next(
-            (item for item in candidates if item.get("subtopic_id") in preferred_subtopic_ids),
-            candidates[0],
-        )
+        subtopic = candidates[0]
         block_info = preferred_block
         if subtopic.get("block_id") and subtopic.get("block_id") != preferred_block.get("block_id"):
             try:
@@ -473,10 +514,7 @@ class DeterministicDiagnosticAgent:
         stable_key = f"{request.session_id}:{request.stage_num}:{subtopic['subtopic_id']}"
         stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
         block_id = subtopic.get("block_id") or block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
-        if block_id == (gap.block_id or preferred_block.get("block_id")):
-            block_name = gap.skill or gap.block_name or block_info.get("block_name") or generated_stage.get("block_name")
-        else:
-            block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
+        block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
         subtopic_hours = subtopic.get("estimated_hours")
         estimated_hours = float(
             subtopic_hours
@@ -484,6 +522,10 @@ class DeterministicDiagnosticAgent:
             else block_info.get("estimated_hours")
             or generated_stage.get("estimated_hours")
             or 2.0
+        )
+        estimated_hours, recommended_daily_hours, suggested_study_days = self._stage_time_plan(
+            estimated_hours,
+            request.profile.daily_hours,
         )
         prerequisites = subtopic.get("prerequisites")
         if prerequisites is None:
@@ -503,8 +545,8 @@ class DeterministicDiagnosticAgent:
             description=generated_stage.get("description"),
             objectives=generated_stage.get("objectives", []),
             difficulty=generated_stage.get("difficulty"),
-            recommended_daily_hours=generated_stage.get("recommended_daily_hours"),
-            suggested_study_days=generated_stage.get("suggested_study_days"),
+            recommended_daily_hours=recommended_daily_hours,
+            suggested_study_days=suggested_study_days,
             learning_style_notes=generated_stage.get("learning_style_notes"),
             hardware_notes=generated_stage.get("hardware_notes"),
             personalization_summary=generated_stage.get("personalization_summary"),
@@ -515,21 +557,41 @@ class DeterministicDiagnosticAgent:
         )
         return StagePlanningOutput(stage=stage)
 
+    @staticmethod
+    def _stage_time_plan(estimated_hours: float, daily_hours: float) -> tuple[float, float, int]:
+        """Turn one atomic knowledge point into a learner-visible time plan."""
+        effective_hours = max(0.0, round(float(estimated_hours or 0.0), 1))
+        daily_budget = max(0.5, min(8.0, float(daily_hours or 2.0)))
+        recommended_daily_hours = min(effective_hours, daily_budget)
+        suggested_study_days = max(1, math.ceil(effective_hours / daily_budget))
+        return effective_hours, recommended_daily_hours, suggested_study_days
+
     def _parse_structured_input(self, text: str) -> dict:
-        goal = self._labeled_value(text, ("我的学习目标", "学习目标"))
+        goal = self._labeled_value(
+            text,
+            ("我的学习目标", "学习目标", "learning goal", "goal"),
+        ) or self._extract_goal_from_sentences(text)
         return {
-            "grade": self._labeled_value(text, ("我的身份背景", "身份背景", "学习背景")),
-            "skill_tags": self._parse_tags(self._labeled_value(text, ("我的已有基础", "已有基础", "知识基础"))),
+            "grade": self._labeled_value(text, ("我的身份背景", "身份背景", "学习背景", "background")),
+            "skill_tags": self._parse_tags(self._labeled_value(
+                text,
+                ("我的已有基础", "已有基础", "知识基础", "mastered skills", "mastered"),
+            )),
             "goal": goal,
-            "daily_hours": self._extract_daily_hours(self._labeled_value(text, ("我每天可以学习", "每天可以学习", "每日学习时长")) or text),
-            "learning_style": self._extract_learning_style(self._labeled_value(text, ("我的学习方式", "学习方式")) or text),
-            "hardware": self._labeled_value(text, ("我的设备条件", "设备条件")),
+            "daily_hours": self._extract_daily_hours(self._labeled_value(
+                text,
+                ("我每天可以学习", "每天可以学习", "每日学习时长", "daily study hours", "daily hours"),
+            ) or text),
+            "learning_style": self._extract_learning_style(self._labeled_value(
+                text,
+                ("我的学习方式", "学习方式", "learning style"),
+            ) or text),
         }
 
     @staticmethod
     def _labeled_value(text: str, labels: tuple[str, ...]) -> str:
         for label in labels:
-            pattern = rf"{re.escape(label)}\s*[：:]\s*(.+)"
+            pattern = rf"{re.escape(label)}\s*[：:]\s*([^\n]+)"
             match = re.search(pattern, text)
             if match:
                 return match.group(1).strip(" \t，。,.；;")
@@ -539,8 +601,24 @@ class DeterministicDiagnosticAgent:
     def _parse_tags(raw: str) -> list[str]:
         if not raw:
             return []
-        parts = re.split(r"[、,，/|；;\s]+", raw)
+        normalized = raw.strip().casefold()
+        if normalized in {"none", "no foundation", "no prior knowledge", "0基础", "零基础", "无", "无基础"}:
+            return []
+        parts = re.split(r"[、,，/|；;\n]+", raw)
         return [part.strip() for part in parts if part.strip()]
+
+    @staticmethod
+    def _extract_goal_from_sentences(text: str) -> str:
+        patterns = (
+            r"(?:我想要掌握|我想掌握|我想学习|我想学|我希望掌握|我希望学习)\s*(.+)",
+            r"\b(?:i\s+)?want\s+to\s+(?:learn|master)\s+(.+)",
+        )
+        for line in text.splitlines():
+            for pattern in patterns:
+                match = re.search(pattern, line, flags=re.IGNORECASE)
+                if match:
+                    return match.group(1).strip(" \t，。,.；;")
+        return ""
 
     @staticmethod
     def _extract_daily_hours(text: str) -> float:
@@ -580,7 +658,6 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
             "goal": fallback.profile.goal,
             "daily_hours": fallback.profile.daily_hours,
             "learning_style": fallback.profile.learning_style,
-            "hardware": fallback.profile.hardware,
         }
         prompt = f"""你只负责在候选知识目录中细化学习者的知识盲区，不得改写用户已经明确填写的画像字段。
 
@@ -618,10 +695,6 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
             candidates,
             candidate_query,
             low_confidence=low_confidence,
-        )
-        normalized_gaps = await self._insert_unmet_direct_prerequisite_gaps(
-            normalized_gaps,
-            fallback.profile.skill_tags,
         )
         profile = fallback.profile.model_copy(update={"knowledge_gaps": normalized_gaps})
         confidence = self._hybrid_profile_confidence(
@@ -719,8 +792,6 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
             score += 0.15
         if self._has_learning_style(text):
             score += 0.1
-        if structured.get("hardware"):
-            score += 0.05
         if profile.knowledge_gaps and all(gap.mapping_confidence >= 0.8 for gap in profile.knowledge_gaps):
             score += 0.1
         score = round(max(0.3, min(0.95, score)), 3)
@@ -764,7 +835,6 @@ class DeterministicContentAgent:
     def __init__(self):
         self.vector_search_tool = VectorSearchTool()
         self.question_extract_tool = QuestionExtractTool()
-        self.faq_search_tool = FAQSearchTool()
         self.video_search_tool = VideoSearchTool()
         self.learning_resource_tool = LearningResourceTool()
 
@@ -787,6 +857,9 @@ class DeterministicContentAgent:
             "2. 用自己的语言复述。\n"
             "3. 完成阶段测试题。\n"
         )
+        practice_note = self._practice_note(request.practice_profile)
+        if practice_note:
+            tutorial += f"\n## 实训提示\n\n{practice_note}\n"
         if related_docs:
             excerpts = "\n".join(f"- {item.get('content', '')[:120]}" for item in related_docs[:3])
             tutorial += f"\n\n## 相关知识片段\n\n{excerpts}\n"
@@ -887,23 +960,30 @@ class DeterministicContentAgent:
         _agent_log("Agent3", f"content:done | docs={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
 
+    @staticmethod
+    def _practice_note(practice_profile: PracticeProfile) -> str:
+        """Adapt executable examples to stated conditions without selecting a setup."""
+        hardware = practice_profile.hardware.strip()
+        if not hardware:
+            return ""
+        normalized = hardware.casefold()
+        if any(marker in normalized for marker in ("rtx", "gtx", "nvidia", "cuda")):
+            return (
+                f"已记录你的实训条件：{hardware}。示例会按本地 NVIDIA GPU 可执行的"
+                "参数和验证方式组织，并保留与本知识点直接相关的最小步骤。"
+            )
+        if any(marker in normalized for marker in ("cloud", "云", "colab")):
+            return (
+                f"已记录你的实训条件：{hardware}。示例会按你已使用的云端环境给出"
+                "可执行参数和验证方式，不改变本阶段的知识点目标。"
+            )
+        return (
+            f"已记录你的实训条件：{hardware}。示例会据此调整可执行范围和验证方式，"
+            "不改变本阶段的知识点目标。"
+        )
+
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
         _agent_log("Agent3", f"answer:start | question={request.question[:60]}")
-        faq_results = []
-        try:
-            faq_results = await self.faq_search_tool.search(
-                request.question,
-                block_id=request.stage.block_id,
-                top_k=1,
-            )
-        except Exception:
-            faq_results = []
-        if faq_results:
-            answer = faq_results[0].get("answer") or faq_results[0].get("question") or ""
-            if answer:
-                _agent_log("Agent3", f"answer:faq_hit | similarity={faq_results[0].get('similarity')}")
-                return AnswerGenerationOutput(answer=answer)
-
         related_docs = []
         try:
             related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
@@ -1065,13 +1145,18 @@ class HybridContentAgent(DeterministicContentAgent):
         output = await super().run(request)
         _agent_log("Agent3", f"content:llm_enhance | block={request.stage.block_name}")
         stage = request.stage
+        learning_profile = request.learning_profile.model_dump(mode="json") if request.learning_profile else {}
         prompt = f"""请为学习阶段“{stage.block_name}”生成一份Markdown教程。
+
+学习者画像：{json.dumps(learning_profile, ensure_ascii=False)}
+实训条件：{json.dumps(request.practice_profile.model_dump(mode="json"), ensure_ascii=False)}
 
 要求：
 1. 解释核心概念和适用场景；
 2. 给出清晰的学习步骤；
 3. 提供一个简短示例；
-4. 面向初学者，避免没有解释的术语。
+4. 根据学习者画像和资料库选择内容、示例难度和表达方式；
+5. 实训条件仅用于内容可执行性，不得改变 Agent1 的知识点路径，也不得将本地或云端选择作为教程目标。
 
 内容生成规范：
 {self.content_skill_context}
@@ -1088,21 +1173,6 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
         _agent_log("Agent3", f"answer:hybrid_start | question={request.question[:60]}")
-        faq_results = []
-        try:
-            faq_results = await self.faq_search_tool.search(
-                request.question,
-                block_id=request.stage.block_id,
-                top_k=1,
-            )
-        except Exception:
-            faq_results = []
-        if faq_results:
-            answer = faq_results[0].get("answer") or faq_results[0].get("question") or ""
-            if answer:
-                _agent_log("Agent3", f"answer:faq_hit | similarity={faq_results[0].get('similarity')}")
-                return AnswerGenerationOutput(answer=answer)
-
         related_docs = []
         try:
             related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)

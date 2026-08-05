@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from models.profile import UserProfile
+from models.profile import PracticeProfile, UserProfile
 from models.stage import LearningPackage, StageInfo
 
 class QARecord(BaseModel):
@@ -30,6 +30,7 @@ class SessionData(BaseModel):
     status: Literal["active", "completed", "abandoned"] = "active"
     phase: str = "diagnosing"
     profile: Optional[UserProfile] = None
+    practice_profile: PracticeProfile = Field(default_factory=PracticeProfile)
     profile_confirmed: bool = False
     profile_modified: bool = False
     stage_info: Optional[StageInfo] = None

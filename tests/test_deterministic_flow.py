@@ -21,10 +21,8 @@ from tools.agent4_tools.rule_check_tool import RuleCheckTool
 from scripts.insert_knowledge_data import (
     BLOCKS_FILE_PATH,
     DOCS_FILE_PATH,
-    FAQ_FILE_PATH,
     QUESTIONS_FILE_PATH,
     SUBTOPICS_FILE_PATH,
-    insert_faq_items,
     insert_knowledge_blocks,
     insert_knowledge_docs,
     insert_knowledge_subtopics,
@@ -118,7 +116,6 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         insert_knowledge_blocks(client, load_required_list(BLOCKS_FILE_PATH))
         insert_knowledge_docs(client, load_required_list(DOCS_FILE_PATH))
         insert_knowledge_subtopics(client, load_required_list(SUBTOPICS_FILE_PATH))
-        insert_faq_items(client, load_required_list(FAQ_FILE_PATH))
         insert_test_questions(client, load_required_list(QUESTIONS_FILE_PATH))
 
     async def test_complete_flow_survives_new_harness(self):

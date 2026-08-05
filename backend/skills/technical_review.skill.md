@@ -6,12 +6,11 @@
   1. **内容审核**：Agent3生成的学习包（tutorial、code_examples）发布前审核技术正确性，由Orchestrator在 `_review_learning_package` 时触发
   2. **回答审核**：用户问题回答（answer）发送前审核，由Orchestrator在 `_review_answer` 时触发
   3. **推荐视频资源审核**：审核学习包时，Agent3 从资源库（`learning_resources` 表）挑选并随学习包一起送来的推荐视频（`ReviewInput.recommended_videos`），需校验其**是否属于当前学习阶段**、**URL 是否与资源库一致**、**内容摘要/字幕是否已完成人工审核**。仅在 `target_type="learning_package"` 时触发，`answer` 场景不涉及视频
-  4. **多工具结果冲突裁决**：当 `rule_check_tool` 与LLM语义审核、知识库相似度检索（`knowledge_verify_tool`）与知识库标准答案条目结论不一致时，按裁决优先级输出最终结论
+  4. **多工具结果冲突裁决**：当 `rule_check_tool`、知识库依据校验和 LLM 审核结论不一致时，按裁决优先级输出最终结论
 - 前置依赖：
   - 待审核内容（`ReviewInput.content`）
   - 待审核推荐视频（`ReviewInput.recommended_videos`：Agent3 产出的视频列表，每条含 `resource_id / title / url / review_status / content_summary / block_id / subtopic_id`）
   - 知识库（`knowledge_verify_tool` 提供的语义相似度检索）
-  - 知识库标准答案条目（`knowledge_base` 中人工策展的高置信度领域基线条目，如"LoRA冻结W训练ΔW=(α/r)BA"。**非独立资源**，是知识库的策展子集，用于解决相似度检索不足时的判定回退）
   - 学习资源库（`learning_resource_tool.get_recommended_videos(block_id, subtopic_id)` 只读查询 `learning_resources / block_resources / subtopic_resources` 表中 `mapping_status='confirmed'` 且 `resource_type='video'` 的资源，作为视频归属与 URL 校验的权威基线）
   - 规范规则库（`rule_check_tool` 的正则规则、`industry_standards.skill.md` 的红线条款）
   - 当前学习阶段信息（`ReviewInput.stage.block_name` / `block_id` / `subtopic_id`）和用户画像（`ReviewInput.profile`）
@@ -95,13 +94,12 @@
 **优先级顺序（从高到低）**：
 1. **硬性阻断**：语法错误 / 依赖冲突 / 安全违规 / LoRA机制错误 / 参数量计算错误（来自 `rule_check_tool` 确定性检查）
 2. **规范红线**：硬编码密钥 / 端口暴露 / 权限缺失 / 许可证违规（来自 `industry_standards`）
-3. **语义冲突**：知识库相似度检索 vs 知识库标准答案条目——**标准答案条目优先于相似度检索**
+3. **语义冲突**：知识库依据校验与 LLM 审核结论冲突时，保留冲突证据并要求人工复核
 
 **裁决规则**：
 - 若硬性检查发现critical错误，`passed` 必须为 `false`，**且事实检查（语义检查）结果仍须附加在errors数组中**，不得因硬性错误已fail而省略事实核查
 - 当 `rule_check_tool` 与LLM审核结论冲突时，以 `rule_check_tool` 的确定性规则为准
-- 当知识库相似度检索无依据（sim<0.65）但知识库标准答案条目命中时，**以标准答案条目为准**判通过，并在evidence中标注"知识库标准答案条目依据"
-- 当知识库相似度检索有依据但标准答案条目明确反对时，以标准答案条目为准判fail
+- 知识库依据不足或工具结果冲突时，不得通过未实现的标准答案兜底放行；应保留审核错误并要求补充可靠来源或人工复核
 
 ### 规则5：推荐视频资源审核
 Agent3 从资源库挑选并随学习包一起送来的 `recommended_videos`，必须逐条比对资源库权威记录（`learning_resource_tool.get_recommended_videos` 返回的当前阶段已确认视频），产出以下三类 `ReviewError`。
@@ -344,40 +342,7 @@ CodeErrorClassification对象，JSON格式：
 }
 ```
 
-#### 场景2：语义冲突（知识库相似度无依据但标准答案条目有依据）
-**输入**：
-```json
-{
-  "target_type": "answer",
-  "content": "LoRA通过冻结原权重W，仅训练低秩增量ΔW=(α/r)BA实现高效微调，其中A和B是两个低秩矩阵，r远小于d_in和d_out。",
-  "stage": {"block_name": "LoRA"},
-  "profile": {"goal": "掌握LoRA微调"}
-}
-```
-
-**处理过程**：
-1. 步骤1解析：识别技术声明"LoRA冻结W训练ΔW=(α/r)BA"
-2. 步骤2硬性检查：`rule_check_tool` 正则未命中（无SVD、无U/Σ/V描述），无critical
-3. 步骤2语义检查：`knowledge_verify_tool` 计算相似度=0.58（< 0.65），按规则1应判"潜在幻觉"（critical）
-4. 步骤2标准答案条目查询：知识库标准答案条目命中"LoRA冻结W训练ΔW=(α/r)BA"条目，明确支持该陈述
-5. 步骤3标记问题：知识库相似度检索 vs 标准答案条目冲突
-6. 步骤4分级：按规则4裁决——标准答案条目优先于相似度检索，判通过，但在evidence中标注"知识库标准答案条目依据"
-7. 步骤5裁决：status=`pass`，passed=true，errors为空数组但review_details记录冲突
-
-**输出**：
-```json
-{
-  "status": "pass",
-  "passed": true,
-  "errors": [],
-  "summary": "知识库相似度0.58低于阈值，但知识库标准答案条目明确支持该陈述，按裁决优先级（标准答案条目>相似度检索）判通过。",
-  "review_details": "知识库sim=0.58（潜在幻觉），标准答案条目命中LoRA冻结W条目，以标准答案条目为准。建议后续扩充知识库覆盖。"
-}
-```
-
-**说明**：场景2体现了规则4的"标准答案条目优先于相似度检索"裁决逻辑——当知识库检索能力不足导致相似度低，但标准答案条目有明确依据时，不应误判为幻觉，而应以标准答案条目为准放行，并在review_details中提示知识库覆盖不足。
-
-#### 场景3：推荐视频资源审核（视频归属 + 内容未审核）
+#### 场景2：推荐视频资源审核（视频归属 + 内容未审核）
 **输入**：
 ```json
 {

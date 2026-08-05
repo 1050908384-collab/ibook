@@ -44,6 +44,7 @@ async def get_profile(session_id: str):
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
         
+        practice_profile = session.get("practice_profile") or {}
         return {
             "profile_id": f"profile_{session_id[:8]}",
             "session_id": session_id,
@@ -52,7 +53,7 @@ async def get_profile(session_id: str):
             "skill_tags": profile.get("skill_tags", []),
             "daily_hours": profile.get("daily_hours", 2.0),
             "learning_style": profile.get("learning_style", "mixed"),
-            "hardware": profile.get("hardware", ""),
+            "hardware": practice_profile.get("hardware", ""),
             "knowledge_gaps": profile.get("knowledge_gaps", []),
             "learning_rhythm": profile.get("learning_rhythm", "medium"),
             "confidence_index": profile.get("confidence_index", 0.5),
@@ -224,10 +225,13 @@ async def update_profile(
             profile["learning_style"] = request.learning_style
             updated_fields["learning_style"] = request.learning_style
         if request.hardware is not None:
-            profile["hardware"] = request.hardware
+            sm.update_practice_profile(session_id, {"hardware": request.hardware})
             updated_fields["hardware"] = request.hardware
         
-        if updated_fields:
+        learning_profile_updated = any(
+            field in updated_fields for field in ("goal", "daily_hours", "learning_style")
+        )
+        if learning_profile_updated:
             sm.update_profile(session_id, profile)
             # 标记画像已修改：下次 confirm 时会重新生成阶段以同步个性化字段
             # 但 PATCH 本身不触发重新规划，保持当前阶段不变。
@@ -237,7 +241,7 @@ async def update_profile(
             "profile_id": f"profile_{session_id[:8]}",
             "session_id": session_id,
             "updated_fields": updated_fields,
-            "profile_modified": bool(updated_fields),
+            "profile_modified": learning_profile_updated,
             "message": f"已更新 {len(updated_fields)} 个字段，如需同步到学习阶段请重新确认画像",
         }
     except HTTPException:

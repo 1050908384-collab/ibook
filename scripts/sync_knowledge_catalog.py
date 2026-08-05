@@ -30,7 +30,7 @@ TOPIC_RE = re.compile(r"^(.*?)(?:-)?(\d+(?:\.\d+)?)h$")
 # Each key is an installation node.  These dependencies represent the actual
 # software/environment condition, not merely the display order of a block.
 INSTALLATION_PREREQUISITES = {
-    "KB-02": ["KBS-01-00"],
+    "KB-02": [],
     "KB-03": ["KBS-02-00"],
     "KB-04": ["KBS-01-04", "KBS-02-00"],
     "KB-07": ["KBS-02-00"],

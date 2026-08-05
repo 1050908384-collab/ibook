@@ -58,7 +58,7 @@ class LearningPackage(BaseModel):
 | 字段 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `source_id` | `str` | ✅ | 在单个 trace 内唯一（**非全局**） |
-| `source_type` | `Literal` | ✅ | `knowledge_doc \| faq \| best_practice \| manual \| external_note \| code_example` |
+| `source_type` | `Literal` | ✅ | `knowledge_doc \| best_practice \| manual \| external_note \| code_example \| video` |
 | `title` | `str` | ❌ | 来源标题 |
 | `locator` | `str` | ❌ | 主定位符（doc_id / chunk_id / 路径） |
 | `content_ref` | `str` | ❌ | 细粒度内容锚点 |
