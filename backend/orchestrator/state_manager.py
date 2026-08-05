@@ -38,6 +38,9 @@ class StateManager:
     def update_profile(self, session_id: str, profile: UserProfile | dict) -> None:
         state = self.require_session(session_id)
         state.profile = UserProfile.model_validate(profile)
+        state.user_id = state.profile.user_id
+        state.goal = state.profile.goal
+        state.target_daily_hours = state.profile.daily_hours
         self.db_client.save_profile(session_id, state.profile.model_dump(mode="json"))
         self._save(state)
 
@@ -165,6 +168,32 @@ class StateManager:
         setattr(state, field, value)
         self._save(state)
 
+    def refresh_cached_user_profile(self, user_id: str) -> None:
+        for session_id, state in self._cache.items():
+            if state.user_id != user_id:
+                continue
+            profile = self.db_client.get_latest_profile(session_id)
+            if profile:
+                state.profile = UserProfile.model_validate(profile)
+
+    def refresh_cached_target(self, session_id: str) -> None:
+        state = self._cache.get(session_id)
+        if not state:
+            return
+        target = self.db_client.get_target_settings(session_id) or {}
+        state.goal = target.get("goal") or ""
+        state.target_total_hours = target.get("target_total_hours") or 0.0
+        state.target_daily_hours = target.get("target_daily_hours") or 2.0
+        state.target_progress = target.get("target_progress") or 0.0
+        profile = self.db_client.get_latest_profile(session_id)
+        if profile:
+            state.profile = UserProfile.model_validate(profile)
+
+    def refresh_cached_stage_duration(self, session_id: str, stage_id: str, estimated_hours: float) -> None:
+        state = self._cache.get(session_id)
+        if state and state.stage_info and state.stage_info.stage_id == stage_id:
+            state.stage_info.estimated_hours = estimated_hours
+
     def _get(self, session_id: str) -> SessionData | None:
         if session_id in self._cache:
             return self._cache[session_id]
@@ -172,10 +201,23 @@ class StateManager:
         if not payload:
             return None
         state = SessionData.model_validate(payload)
+        target = self.db_client.get_target_settings(session_id) or {}
+        state.user_id = target.get("user_id") or state.user_id
+        state.goal = target.get("goal") or state.goal
+        state.target_total_hours = target.get("target_total_hours") or 0.0
+        state.target_daily_hours = target.get("target_daily_hours") or state.target_daily_hours
+        state.target_progress = target.get("target_progress") or 0.0
+        composed_profile = self.db_client.get_latest_profile(session_id)
+        if composed_profile:
+            state.profile = UserProfile.model_validate(composed_profile)
         self._cache[session_id] = state
         return state
 
     def _save(self, state: SessionData) -> None:
         state.updated_at = datetime.now(timezone.utc).isoformat()
         self._cache[state.session_id] = state
-        self.db_client.save_session_state(state.session_id, state.model_dump(mode="json"))
+        payload = state.model_dump(mode="json")
+        # The combined profile is a compatibility DTO. Stable learner fields
+        # live in learner_profiles and must not be duplicated in session JSON.
+        payload["profile"] = None
+        self.db_client.save_session_state(state.session_id, payload)

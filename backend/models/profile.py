@@ -18,6 +18,7 @@ class KnowledgeGap(BaseModel):
 
 class UserProfile(BaseModel):
     session_id: str
+    user_id: str = "local-user"
     grade: str = ""
     skill_tags: List[str] = Field(default_factory=list)
     knowledge_gaps: List[KnowledgeGap] = Field(default_factory=list)

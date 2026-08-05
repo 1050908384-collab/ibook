@@ -26,24 +26,32 @@ export const learningStyleText: Record<LearningStyle, string> = {
   mixed: '混合型'
 };
 
-export function buildDiagnosticMessage(formData: OnboardingFormData) {
+export function buildDiagnosticMessage(formData: OnboardingFormData, targetOnly = false) {
   const lines = [
-    `我的身份背景：${formData.grade.trim()}`,
-    `我的已有基础：${formData.skill_tags.join('、')}`,
     `我的学习目标：${formData.goal.trim()}`,
     `我每天可以学习：${Number(formData.daily_hours)} 小时`,
-    `我的学习方式：${learningStyleText[formData.learning_style]}`,
   ];
 
-  if (formData.hardware.trim()) {
+  if (!targetOnly) {
+    lines.unshift(
+      `我的身份背景：${formData.grade.trim()}`,
+      `我的已有基础：${formData.skill_tags.join('、')}`,
+    );
+    lines.push(`我的学习方式：${learningStyleText[formData.learning_style]}`);
+  }
+
+  if (!targetOnly && formData.hardware.trim()) {
     lines.push(`我的设备条件：${formData.hardware.trim()}`);
   }
 
   return lines.join('\n');
 }
 
-export function getFormCompleteness(formData: OnboardingFormData) {
-  const checks = [
+export function getFormCompleteness(formData: OnboardingFormData, targetOnly = false) {
+  const checks = targetOnly ? [
+    Boolean(formData.goal.trim()),
+    isValidDailyHours(formData.daily_hours),
+  ] : [
     Boolean(formData.grade.trim()),
     formData.skill_tags.length > 0,
     Boolean(formData.goal.trim()),
@@ -53,8 +61,8 @@ export function getFormCompleteness(formData: OnboardingFormData) {
   return checks.filter(Boolean).length / checks.length;
 }
 
-export function isOnboardingFormComplete(formData: OnboardingFormData) {
-  return getFormCompleteness(formData) === 1;
+export function isOnboardingFormComplete(formData: OnboardingFormData, targetOnly = false) {
+  return getFormCompleteness(formData, targetOnly) === 1;
 }
 
 export function isValidDailyHours(value: string) {

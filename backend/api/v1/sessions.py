@@ -49,6 +49,10 @@ class SessionSnapshot(BaseModel):
     available_actions: list[str] = Field(default_factory=list)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    user_id: str = "local-user"
+    user_profile_exists: bool = False
+    requires_full_profile: bool = True
+    target_settings: dict[str, Any] = Field(default_factory=dict)
 
 
 async def _get_snapshot_resources(package: Optional[dict[str, Any]], stage: Optional[dict[str, Any]]) -> Optional[list[dict[str, Any]]]:
@@ -87,6 +91,8 @@ async def create_session():
     """
     try:
         session = harness.create_session(None)
+        user_profile = harness.state_manager.db_client.get_user_profile("local-user")
+        target_settings = harness.state_manager.db_client.get_target_settings(session["session_id"]) or {}
         return {
             "session_id": session["session_id"],
             "title": session.get("title") or "",
@@ -102,6 +108,10 @@ async def create_session():
             "available_actions": ["submit_diagnosis"],
             "created_at": session.get("created_at"),
             "updated_at": session.get("updated_at"),
+            "user_id": "local-user",
+            "user_profile_exists": bool(user_profile),
+            "requires_full_profile": not bool(user_profile),
+            "target_settings": target_settings,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -199,6 +209,10 @@ async def get_session_snapshot(session_id: str):
             "available_actions": session.get("available_actions", []),
             "created_at": session.get("created_at"),
             "updated_at": session.get("updated_at"),
+            "user_id": session.get("user_id", "local-user"),
+            "user_profile_exists": bool(harness.state_manager.db_client.get_user_profile(session.get("user_id", "local-user"))),
+            "requires_full_profile": not bool(harness.state_manager.db_client.get_user_profile(session.get("user_id", "local-user"))),
+            "target_settings": harness.state_manager.db_client.get_target_settings(session_id) or {},
         }
         
         # 确保个性化字段在 current_stage 中

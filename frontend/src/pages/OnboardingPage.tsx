@@ -12,6 +12,7 @@ type OnboardingPageProps = {
   questions: string[];
   error: string | null;
   highlightedFields: OnboardingField[];
+  reuseUserProfile: boolean;
 };
 
 export default function OnboardingPage({
@@ -23,7 +24,8 @@ export default function OnboardingPage({
   mode,
   questions,
   error,
-  highlightedFields
+  highlightedFields,
+  reuseUserProfile
 }: OnboardingPageProps) {
   return (
     <div className="page-shell onboarding-shell">
@@ -48,8 +50,10 @@ export default function OnboardingPage({
           </div>
           <div>
             <span>创建学习目标</span>
-            <h1>先把你的学习背景交给 Agent</h1>
-            <p>系统会根据这些结构化信息调用现有 Agent1 诊断流程，再由 Agent2 规划当前一个学习阶段。</p>
+            <h1>{reuseUserProfile ? '设定这次要完成的学习目标' : '先把你的学习背景交给 Agent'}</h1>
+            <p>{reuseUserProfile
+              ? '已复用你的用户画像和知识点掌握状态，只需填写本次目标和学习时间。'
+              : '系统会根据这些结构化信息生成用户画像，并规划当前学习阶段。'}</p>
           </div>
         </section>
 
@@ -62,6 +66,7 @@ export default function OnboardingPage({
           questions={questions}
           error={error}
           highlightedFields={highlightedFields}
+          targetOnly={reuseUserProfile}
         />
       </main>
     </div>

@@ -18,6 +18,7 @@ type ProfileSetupFormProps = {
   questions: string[];
   error: string | null;
   highlightedFields: OnboardingField[];
+  targetOnly?: boolean;
 };
 
 const fieldLabels: Record<OnboardingField, string> = {
@@ -50,11 +51,12 @@ export default function ProfileSetupForm({
   mode,
   questions,
   error,
-  highlightedFields
+  highlightedFields,
+  targetOnly = false
 }: ProfileSetupFormProps) {
   const [tagDraft, setTagDraft] = useState('');
-  const completeness = useMemo(() => getFormCompleteness(value), [value]);
-  const canSubmit = isOnboardingFormComplete(value) && !loading;
+  const completeness = useMemo(() => getFormCompleteness(value, targetOnly), [value, targetOnly]);
+  const canSubmit = isOnboardingFormComplete(value, targetOnly) && !loading;
 
   const update = <K extends OnboardingField>(field: K, fieldValue: OnboardingFormData[K]) => {
     onChange({ ...value, [field]: fieldValue });
@@ -116,7 +118,7 @@ export default function ProfileSetupForm({
         </div>
       )}
 
-      <section className={`form-section ${isHighlighted('grade') ? 'needs-attention' : ''}`}>
+      {!targetOnly && <section className={`form-section ${isHighlighted('grade') ? 'needs-attention' : ''}`}>
         <label htmlFor="grade">{fieldLabels.grade} *</label>
         <p>告诉 Agent 你现在的身份或学习背景，用来判断适合的起点。</p>
         <input
@@ -125,9 +127,9 @@ export default function ProfileSetupForm({
           onChange={(event) => update('grade', event.target.value)}
           placeholder="例如：研二、算法工程师、后端开发者"
         />
-      </section>
+      </section>}
 
-      <section className={`form-section ${isHighlighted('skill_tags') ? 'needs-attention' : ''}`}>
+      {!targetOnly && <section className={`form-section ${isHighlighted('skill_tags') ? 'needs-attention' : ''}`}>
         <label htmlFor="skill-tags">{fieldLabels.skill_tags} *</label>
         <p>输入你已经掌握或接触过的知识，可用逗号分隔，也可以逐个添加。</p>
         <div className="tag-input-wrap">
@@ -155,7 +157,7 @@ export default function ProfileSetupForm({
             </button>
           </div>
         </div>
-      </section>
+      </section>}
 
       <section className={`form-section ${isHighlighted('goal') ? 'needs-attention' : ''}`}>
         <label htmlFor="goal">{fieldLabels.goal} *</label>
@@ -186,7 +188,7 @@ export default function ProfileSetupForm({
           {value.daily_hours && !isValidDailyHours(value.daily_hours) && <small className="field-error">请输入 0.5 到 8 之间的数值。</small>}
         </section>
 
-        <section className={`form-section ${isHighlighted('hardware') ? 'needs-attention' : ''}`}>
+        {!targetOnly && <section className={`form-section ${isHighlighted('hardware') ? 'needs-attention' : ''}`}>
           <label htmlFor="hardware">{fieldLabels.hardware}</label>
           <p>选填。设备条件会帮助 Agent 适配部署和实验建议。</p>
           <input
@@ -195,10 +197,10 @@ export default function ProfileSetupForm({
             onChange={(event) => update('hardware', event.target.value)}
             placeholder="例如：RTX 4060、MacBook、无独立显卡"
           />
-        </section>
+        </section>}
       </div>
 
-      <section className={`form-section ${isHighlighted('learning_style') ? 'needs-attention' : ''}`}>
+      {!targetOnly && <section className={`form-section ${isHighlighted('learning_style') ? 'needs-attention' : ''}`}>
         <label>{fieldLabels.learning_style} *</label>
         <p>选择你更舒服的学习推进方式。</p>
         <div className="style-segments">
@@ -214,7 +216,7 @@ export default function ProfileSetupForm({
             </button>
           ))}
         </div>
-      </section>
+      </section>}
 
       <button className="primary onboarding-submit" disabled={!canSubmit}>
         {loading ? <Loader2 className="spin" size={17} /> : null}

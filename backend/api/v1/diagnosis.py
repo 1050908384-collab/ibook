@@ -66,7 +66,7 @@ async def submit_diagnosis_message(
         
         # 如果已有 profile，且置信度足够，直接生成阶段
         existing_profile = session.get("profile")
-        if existing_profile and existing_profile.get("confidence", 0) >= 0.7:
+        if existing_profile and existing_profile.get("goal") and existing_profile.get("confidence", 0) >= 0.7:
             print(f"[API] Profile already exists with confidence {existing_profile.get('confidence')}")
             
             from models.contracts import StagePlanningInput

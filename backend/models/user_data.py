@@ -25,7 +25,12 @@ class AnswerRecord(BaseModel):
 
 class SessionData(BaseModel):
     session_id: str
+    user_id: str = "local-user"
     title: Optional[str] = None
+    goal: str = ""
+    target_total_hours: float = 0.0
+    target_daily_hours: float = 2.0
+    target_progress: float = 0.0
     current_stage: int = 1
     status: Literal["active", "completed", "abandoned"] = "active"
     phase: str = "diagnosing"

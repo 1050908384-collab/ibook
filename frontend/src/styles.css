@@ -1093,6 +1093,44 @@ body.resizing-workspace-panels * {
   font-size: 12px;
 }
 
+.learning-dashboard-page {
+  display: block;
+}
+
+.profile-library-section,
+.learning-dashboard-page .dashboard-overview-section {
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.profile-library-section > header {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.profile-library-section > header span {
+  color: #7d8495;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.profile-library-section > header h2 {
+  margin: 5px 0 0;
+  font-size: 22px;
+}
+
+.profile-library-section > header > strong {
+  color: #6258d9;
+  font-size: 12px;
+}
+
+.profile-library-section .profile-goal-list {
+  max-width: none;
+}
+
 .profile-goal-list {
   max-width: 980px;
   margin: 0 auto;
@@ -1111,6 +1149,11 @@ body.resizing-workspace-panels * {
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
+}
+
+.profile-goal-list > article.current {
+  border-color: #cbc7ef;
+  box-shadow: 0 5px 18px rgba(72, 62, 166, 0.08);
 }
 
 .profile-goal-icon {
@@ -1136,6 +1179,21 @@ body.resizing-workspace-panels * {
 .profile-goal-copy h3 {
   font-size: 14px;
   line-height: 1.45;
+}
+
+.profile-goal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-goal-title b {
+  flex: 0 0 auto;
+  border-radius: 4px;
+  background: #edfaf3;
+  color: #23815a;
+  padding: 3px 6px;
+  font-size: 9px;
 }
 
 .profile-goal-copy p {
@@ -1164,6 +1222,77 @@ body.resizing-workspace-panels * {
   cursor: pointer;
   font-size: 11px;
   font-weight: 750;
+}
+
+.profile-goal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-goal-actions button {
+  min-height: 38px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.profile-goal-actions .secondary {
+  border: 1px solid #d8d5f5;
+  background: #fff;
+  color: #5148b9;
+}
+
+.profile-goal-actions .primary {
+  border: 1px solid #6258d9;
+  background: #6258d9;
+  color: #fff;
+}
+
+.profile-goal-actions button:disabled {
+  border-color: #dfe2e8;
+  background: #eef0f4;
+  color: #7d8492;
+  cursor: default;
+}
+
+.learning-dashboard-page .dashboard-overview-section {
+  width: 100%;
+  margin-top: 28px;
+  border-top: 1px solid #e1e4eb;
+  padding: 28px 0 0;
+  overflow: visible;
+}
+
+.dashboard-selection-empty {
+  max-width: 1380px;
+  min-height: 190px;
+  margin: 28px auto 0;
+  border: 1px dashed #d8dbe4;
+  border-radius: 8px;
+  background: #fff;
+  color: #8a91a1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.dashboard-selection-empty strong {
+  color: #4d5567;
+  font-size: 14px;
+}
+
+.dashboard-selection-empty span {
+  font-size: 11px;
 }
 
 .profiles-empty {
@@ -4437,6 +4566,15 @@ body.resizing-workspace-panels * {
   .profile-goal-list > article > button {
     grid-column: 1 / -1;
     justify-content: center;
+  }
+
+  .profile-goal-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .profile-goal-actions button {
+    flex: 1;
   }
 
   .profile-detail-body {

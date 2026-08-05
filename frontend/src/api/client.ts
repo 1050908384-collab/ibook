@@ -70,6 +70,10 @@ export type SessionSnapshot = {
   progress_summary?: Record<string, unknown> | null;
   recent_qa?: Array<Record<string, unknown>>;
   available_actions?: string[];
+  user_id?: string;
+  user_profile_exists?: boolean;
+  requires_full_profile?: boolean;
+  target_settings?: Record<string, unknown>;
 };
 
 export type DiagnosisResponse = {
@@ -149,6 +153,13 @@ export type QaHistoryResponse = {
 };
 
 export const apiClient = {
+  getUserProfile: async () => {
+    const response = await axios.get<ApiProfile & { user_id: string; default_daily_hours?: number }>(
+      `${BASE_URL}/users/local-user/profile`
+    );
+    return response.data;
+  },
+
   createSession: async () => {
     const response = await axios.post<SessionSnapshot>(`${BASE_URL}/sessions`);
     return response.data;

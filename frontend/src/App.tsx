@@ -64,7 +64,7 @@ import {
   type AgentStatusMap
 } from './utils/agentFlowState';
 
-type View = 'chat' | 'learn' | 'dashboard' | 'settings' | 'result';
+type View = 'chat' | 'learn' | 'settings' | 'result';
 type WorkflowState = 'onboarding' | 'diagnosing' | 'needs_more_info' | 'profile_ready' | 'starting_stage' | 'learning';
 type Message = {
   id: string;
@@ -493,9 +493,8 @@ function Sidebar({
   onToggleCollapsed: () => void;
 }) {
   const nav = [
-    { id: 'learn' as View, label: '所有学习画像', icon: UserRound },
+    { id: 'learn' as View, label: '学习仪表盘', icon: LayoutDashboard },
     { id: 'chat' as View, label: '学习对话', icon: MessageCircle },
-    { id: 'dashboard' as View, label: '学习仪表盘', icon: LayoutDashboard },
     { id: 'settings' as View, label: '设置', icon: Settings }
   ];
 
@@ -1672,12 +1671,24 @@ function LearningPathModal({
   );
 }
 
-function AllProfilesView({
+function LearningDashboardView({
   projects,
+  currentSessionId,
+  profile,
+  stage,
+  result,
+  setView,
+  onSelectProject,
   loading,
   error
 }: {
   projects: LearningProject[];
+  currentSessionId: string | null;
+  profile: Profile | null;
+  stage: StageInfo;
+  result: StageResult | null;
+  setView: (view: View) => void;
+  onSelectProject: (sessionId: string) => void;
   loading: boolean;
   error: string | null;
 }) {
@@ -1686,38 +1697,74 @@ function AllProfilesView({
 
   return (
     <div className="page-shell">
-      <Topbar title="所有学习画像" subtitle="每个学习目标保留一份持续更新的独立画像" loading={loading} error={error} />
-      <main className="all-profiles-page">
-        <header>
-          <div>
-            <span>目标画像库</span>
-            <h2>全部学习目标</h2>
-          </div>
-          <strong>{sortedProjects.length} 个目标</strong>
-        </header>
-        <div className="profile-goal-list">
-          {sortedProjects.map((project) => (
-            <article key={project.sessionId}>
-              <span className="profile-goal-icon"><Target size={19} /></span>
-              <div className="profile-goal-copy">
-                <h3>{project.goal}</h3>
-                <p>已生成 {project.stages?.length || 0} 个阶段 · 当前第 {project.stageNum} 阶段</p>
-                <small>{project.stageName || '等待阶段规划'}</small>
-              </div>
-              <button onClick={() => setSelectedProject(project)}>
-                <Eye size={16} />
-                查看画像
-              </button>
-            </article>
-          ))}
-          {sortedProjects.length === 0 && (
-            <div className="profiles-empty">
-              <UserRound size={28} />
-              <strong>暂无学习画像</strong>
-              <span>创建学习目标并完成诊断后，画像会显示在这里。</span>
+      <Topbar title="学习仪表盘" subtitle="学习画像、阶段进度和策略决策汇总" loading={loading} error={error} />
+      <main className="all-profiles-page learning-dashboard-page">
+        <section className="profile-library-section">
+          <header>
+            <div>
+              <span>学习画像</span>
+              <h2>全部学习目标</h2>
             </div>
-          )}
-        </div>
+            <strong>{sortedProjects.length} 个目标</strong>
+          </header>
+          <div className="profile-goal-list">
+            {sortedProjects.map((project) => {
+              const current = project.sessionId === currentSessionId;
+              return (
+                <article className={current ? 'current' : ''} key={project.sessionId}>
+                  <span className="profile-goal-icon"><Target size={19} /></span>
+                  <div className="profile-goal-copy">
+                    <div className="profile-goal-title">
+                      <h3>{project.goal}</h3>
+                      {current && <b>当前项目</b>}
+                    </div>
+                    <p>已生成 {project.stages?.length || 0} 个阶段 · 当前第 {project.stageNum} 阶段</p>
+                    <small>{project.stageName || '等待阶段规划'}</small>
+                  </div>
+                  <div className="profile-goal-actions">
+                    <button className="secondary" onClick={() => setSelectedProject(project)}>
+                      <Eye size={16} />
+                      查看画像
+                    </button>
+                    <button
+                      className="primary"
+                      onClick={() => onSelectProject(project.sessionId)}
+                      disabled={loading || current}
+                    >
+                      {current ? <Check size={16} /> : <LayoutDashboard size={16} />}
+                      {current ? '正在查看' : '查看仪表盘'}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+            {sortedProjects.length === 0 && (
+              <div className="profiles-empty">
+                <UserRound size={28} />
+                <strong>暂无学习画像</strong>
+                <span>创建学习目标并完成诊断后，画像会显示在这里。</span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {profile ? (
+          <DashboardView
+            profile={profile}
+            stage={stage}
+            result={result}
+            setView={setView}
+            loading={loading}
+            error={error}
+            embedded
+          />
+        ) : sortedProjects.length > 0 ? (
+          <section className="dashboard-selection-empty">
+            <LayoutDashboard size={26} />
+            <strong>选择一个学习目标查看仪表盘</strong>
+            <span>画像对应的掌握度、阶段进度和学习策略将在这里显示。</span>
+          </section>
+        ) : null}
       </main>
       {selectedProject && <ProfileDetailModal project={selectedProject} onClose={() => setSelectedProject(null)} />}
     </div>
@@ -1762,7 +1809,8 @@ function DashboardView({
   result,
   setView,
   loading,
-  error
+  error,
+  embedded = false
 }: {
   profile: Profile;
   stage: StageInfo;
@@ -1770,15 +1818,14 @@ function DashboardView({
   setView: (view: View) => void;
   loading: boolean;
   error: string | null;
+  embedded?: boolean;
 }) {
   const gaps = profile.knowledge_gaps || [];
   const mastered = gaps.filter((gap) => gap.status === '已掌握').length;
   const accuracy = result?.accuracy ?? stage.accuracy ?? 0.87;
 
-  return (
-    <div className="page-shell">
-      <Topbar title="学习仪表盘" subtitle="阶段、掌握度和策略决策汇总" loading={loading} error={error} />
-      <main className="dashboard">
+  const content = (
+    <>
         <div className="dashboard-head">
           <div>
             <span>{profile.goal || 'LoRA 微调与部署'}</span>
@@ -1846,7 +1893,17 @@ function DashboardView({
             </div>
           </section>
         </div>
-      </main>
+    </>
+  );
+
+  if (embedded) {
+    return <section className="dashboard dashboard-overview-section">{content}</section>;
+  }
+
+  return (
+    <div className="page-shell">
+      <Topbar title="学习仪表盘" subtitle="阶段、掌握度和策略决策汇总" loading={loading} error={error} />
+      <main className="dashboard">{content}</main>
     </div>
   );
 }
@@ -2065,6 +2122,7 @@ export default function App() {
   const [learningPathOpen, setLearningPathOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
+  const [reuseUserProfile, setReuseUserProfile] = useState(false);
 
   const beginAgentRun = (agentIds: AgentId[], reset = false) => {
     setAgentStatuses((current) => startAgents(current, agentIds, reset));
@@ -2391,7 +2449,10 @@ export default function App() {
 
     try {
       const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
-      const response = await apiClient.submitDiagnosis(activeSessionId, buildDiagnosticMessage(onboardingForm));
+      const response = await apiClient.submitDiagnosis(
+        activeSessionId,
+        buildDiagnosticMessage(onboardingForm, reuseUserProfile)
+      );
       setSessionId(activeSessionId);
       localStorage.setItem('sessionId', activeSessionId);
 
@@ -2725,6 +2786,8 @@ export default function App() {
 
   const createLearningGoal = () => {
     setProjectSwitcherOpen(false);
+    const reusableProfile = profile || learningProjects.find((project) => project.profile)?.profile;
+    setReuseUserProfile(Boolean(reusableProfile));
     if (profile) {
       setNewGoalReturnState({
         sessionId,
@@ -2752,7 +2815,11 @@ export default function App() {
     setMessages(initialMessages);
     setSelectedConversationId('');
     setInput('');
-    setOnboardingForm(emptyOnboardingForm);
+    setOnboardingForm(reusableProfile ? {
+      ...formDataFromProfile(reusableProfile),
+      goal: '',
+      daily_hours: String(reusableProfile.daily_hours ?? 2)
+    } : emptyOnboardingForm);
     setFollowupQuestions([]);
     setHighlightedFields([]);
     setTimerSeconds(0);
@@ -2791,7 +2858,7 @@ export default function App() {
     setNewGoalReturnState(null);
   };
 
-  const switchLearningProject = async (nextSessionId: string, requestedStageNum?: number) => {
+  const switchLearningProject = async (nextSessionId: string, requestedStageNum?: number, destination: View = 'chat') => {
     if (nextSessionId === sessionId || loading) {
       if (nextSessionId === sessionId && requestedStageNum) {
         setSelectedConversationId(`${nextSessionId}:${requestedStageNum}`);
@@ -2808,7 +2875,7 @@ export default function App() {
       setLearningPackage(null);
       setAgentStatuses(createAgentStatusMap());
       setWorkflow('onboarding');
-      setView('chat');
+      setView(destination);
       return;
     }
     setLoading(true);
@@ -2838,7 +2905,7 @@ export default function App() {
         phase: session.phase
       }));
       setWorkflow(isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready');
-      setView('chat');
+      setView(destination);
       rememberProject(nextSessionId, nextProfile, session.next_stage || activeStage, session.phase);
       void loadDashboardStages(nextSessionId, activeStage);
       if (activeStage) void restoreQaConversation(nextSessionId, activeStage, nextProfile, true);
@@ -2857,6 +2924,7 @@ export default function App() {
 
   const editProfile = () => {
     if (profile) setOnboardingForm(formDataFromProfile(profile));
+    setReuseUserProfile(false);
     setError(null);
     setFollowupQuestions([]);
     setHighlightedFields([]);
@@ -2899,6 +2967,7 @@ export default function App() {
           questions={followupQuestions}
           error={error}
           highlightedFields={highlightedFields}
+          reuseUserProfile={reuseUserProfile}
         />
       )}
       {view !== 'learn' && profile && (workflow === 'profile_ready' || workflow === 'starting_stage') && (
@@ -2941,14 +3010,17 @@ export default function App() {
         />
       )}
       {view === 'learn' && (
-        <AllProfilesView
+        <LearningDashboardView
           projects={learningProjects}
+          currentSessionId={sessionId}
+          profile={profile}
+          stage={workspaceStage}
+          result={result}
+          setView={setView}
+          onSelectProject={(nextSessionId) => void switchLearningProject(nextSessionId, undefined, 'learn')}
           loading={loading}
           error={error}
         />
-      )}
-      {profile && workflow === 'learning' && view === 'dashboard' && (
-        <DashboardView profile={workspaceProfile} stage={workspaceStage} result={result} setView={setView} loading={loading} error={error} />
       )}
       {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} />}
       {profile && workflow === 'learning' && view === 'result' && (

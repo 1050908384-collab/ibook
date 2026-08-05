@@ -19,6 +19,7 @@ from api.v1.diagnosis import router as v1_diagnosis_router
 from api.v1.profile import router as v1_profile_router
 from api.v1.stages import router as v1_stages_router
 from api.v1.qa import router as v1_qa_router
+from api.v1.user_scope import router as v1_user_scope_router
 from config import settings
 
 # Reuse Uvicorn's configured logger so request diagnostics are visible in the
@@ -86,6 +87,7 @@ app.include_router(v1_diagnosis_router, prefix="/api/v1", tags=["Diagnosis"])
 app.include_router(v1_profile_router, prefix="/api/v1", tags=["Profile"])
 app.include_router(v1_stages_router, prefix="/api/v1", tags=["Stages"])
 app.include_router(v1_qa_router, prefix="/api/v1", tags=["Q&A"])
+app.include_router(v1_user_scope_router, prefix="/api/v1", tags=["User Scope"])
 
 @app.get("/")
 def root():

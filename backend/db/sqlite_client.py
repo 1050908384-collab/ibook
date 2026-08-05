@@ -7,6 +7,8 @@ from pathlib import Path
 import json
 import uuid
 
+DEFAULT_USER_ID = "local-user"
+
 class SQLiteClient:
     def __init__(self, database_url: str = None):
         self.database_url = self._resolve_database_url(database_url or settings.DATABASE_URL)
@@ -49,6 +51,12 @@ class SQLiteClient:
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS sessions (
                     session_id VARCHAR(50) PRIMARY KEY,
+                    user_id VARCHAR(50) NOT NULL DEFAULT 'local-user',
+                    goal TEXT DEFAULT '',
+                    target_knowledge_gaps TEXT NOT NULL DEFAULT '[]',
+                    target_total_hours FLOAT DEFAULT 0.0,
+                    target_daily_hours FLOAT DEFAULT 2.0,
+                    target_progress FLOAT DEFAULT 0.0,
                     current_stage INT DEFAULT 1,
                     status VARCHAR(20) CHECK (status IN ('active', 'completed', 'abandoned')) DEFAULT 'active',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -81,6 +89,7 @@ class SQLiteClient:
                     block_id VARCHAR(50),
                     block_name VARCHAR(100),
                     subtopic_id VARCHAR(50),
+                    estimated_hours FLOAT DEFAULT 1.0,
                     status VARCHAR(20) CHECK (status IN ('pending', 'learning', 'tested', 'completed', 'retreat')) DEFAULT 'pending',
                     accuracy FLOAT,
                     strategy_used VARCHAR(20),
@@ -272,6 +281,7 @@ class SQLiteClient:
                     FOREIGN KEY (session_id) REFERENCES sessions(session_id)
                 )
             """))
+            self._create_user_scope_tables(conn)
             self._create_assessment_tables(conn)
             self._create_review_protocol_tables(conn)
             conn.execute(text("CREATE INDEX IF NOT EXISTS idx_learning_resources_type_status ON learning_resources(resource_type, review_status)"))
@@ -287,12 +297,159 @@ class SQLiteClient:
             self._ensure_column(conn, "user_profiles", "profile_confidence", "FLOAT")
             self._ensure_column(conn, "user_profiles", "last_updated", "TIMESTAMP")
             self._ensure_column(conn, "stage_progress", "subtopic_id", "VARCHAR(50)")
+            self._ensure_column(conn, "stage_progress", "estimated_hours", "FLOAT DEFAULT 1.0")
             self._ensure_column(conn, "knowledge_docs", "subtopic_id", "VARCHAR(50)")
+            self._ensure_column(conn, "sessions", "user_id", f"VARCHAR(50) DEFAULT '{DEFAULT_USER_ID}'")
+            self._ensure_column(conn, "sessions", "goal", "TEXT")
+            self._ensure_column(conn, "sessions", "target_knowledge_gaps", "TEXT DEFAULT '[]'")
+            self._ensure_column(conn, "sessions", "target_total_hours", "FLOAT DEFAULT 0.0")
+            self._ensure_column(conn, "sessions", "target_daily_hours", "FLOAT DEFAULT 2.0")
+            self._ensure_column(conn, "sessions", "target_progress", "FLOAT DEFAULT 0.0")
+            self._create_user_scope_tables(conn)
+            self._migrate_user_scope_data(conn)
             self._migrate_test_questions_table(conn)
             self._create_assessment_tables(conn)
             self._migrate_review_protocol_tables(conn)
             self._migrate_learning_package_source_types(conn)
             conn.commit()
+
+    def _create_user_scope_tables(self, conn) -> None:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                migration_id VARCHAR(100) PRIMARY KEY,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS learner_profiles (
+                user_id VARCHAR(50) PRIMARY KEY,
+                grade VARCHAR(100) DEFAULT '',
+                skill_tags TEXT NOT NULL DEFAULT '[]',
+                learning_style VARCHAR(20) DEFAULT 'mixed',
+                hardware VARCHAR(200) DEFAULT '',
+                default_daily_hours FLOAT DEFAULT 2.0,
+                learning_rhythm VARCHAR(20) DEFAULT 'medium',
+                confidence_index FLOAT DEFAULT 0.5,
+                confusion_markers TEXT NOT NULL DEFAULT '[]',
+                confidence FLOAT DEFAULT 0.7,
+                version INT DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS user_subtopic_status (
+                user_id VARCHAR(50) NOT NULL,
+                subtopic_id VARCHAR(50) NOT NULL,
+                block_id VARCHAR(50) NOT NULL,
+                status INT NOT NULL DEFAULT -1 CHECK (status IN (-1, 0, 1)),
+                mastery_score FLOAT NOT NULL DEFAULT 0.0,
+                is_initial_foundation BOOLEAN NOT NULL DEFAULT 0,
+                attempt_count INT NOT NULL DEFAULT 0,
+                last_accuracy FLOAT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                PRIMARY KEY (user_id, subtopic_id),
+                FOREIGN KEY (subtopic_id) REFERENCES knowledge_subtopics(subtopic_id),
+                FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
+            )
+        """))
+        if "user_id" in self._get_table_columns(conn, "sessions"):
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_user_subtopic_block ON user_subtopic_status(user_id, block_id, status)"))
+
+    def _migrate_user_scope_data(self, conn) -> None:
+        """Idempotently move legacy session-scoped learner data to local-user."""
+        migration_id = "2026-08-user-scope-v1"
+        applied = conn.execute(
+            text("SELECT 1 FROM schema_migrations WHERE migration_id = :migration_id"),
+            {"migration_id": migration_id},
+        ).first()
+        if applied:
+            return
+        conn.execute(text("UPDATE sessions SET user_id = :user_id WHERE user_id IS NULL OR user_id = ''"), {"user_id": DEFAULT_USER_ID})
+        legacy_profile = conn.execute(text("""
+            SELECT grade, skill_tags, learning_style, hardware, daily_hours,
+                   learning_rhythm, confidence_index, confusion_markers,
+                   confidence, version
+            FROM user_profiles
+            ORDER BY created_at DESC, version DESC
+            LIMIT 1
+        """)).mappings().first()
+        if legacy_profile:
+            conn.execute(text("""
+                INSERT OR IGNORE INTO learner_profiles (
+                    user_id, grade, skill_tags, learning_style, hardware,
+                    default_daily_hours, learning_rhythm, confidence_index,
+                    confusion_markers, confidence, version
+                ) VALUES (
+                    :user_id, :grade, :skill_tags, :learning_style, :hardware,
+                    :daily_hours, :learning_rhythm, :confidence_index,
+                    :confusion_markers, :confidence, :version
+                )
+            """), {"user_id": DEFAULT_USER_ID, **dict(legacy_profile)})
+
+        conn.execute(text("""
+            UPDATE sessions
+            SET goal = COALESCE(NULLIF(goal, ''), (
+                    SELECT up.goal FROM user_profiles up
+                    WHERE up.session_id = sessions.session_id
+                    ORDER BY up.version DESC LIMIT 1
+                ), ''),
+                target_knowledge_gaps = CASE
+                    WHEN target_knowledge_gaps IS NULL OR target_knowledge_gaps = '[]' THEN COALESCE((
+                        SELECT up.knowledge_gaps FROM user_profiles up
+                        WHERE up.session_id = sessions.session_id
+                        ORDER BY up.version DESC LIMIT 1
+                    ), '[]')
+                    ELSE target_knowledge_gaps
+                END,
+                target_daily_hours = COALESCE((
+                    SELECT up.daily_hours FROM user_profiles up
+                    WHERE up.session_id = sessions.session_id
+                    ORDER BY up.version DESC LIMIT 1
+                ), target_daily_hours, 2.0)
+        """))
+        conn.execute(text("""
+            INSERT INTO user_subtopic_status (
+                user_id, subtopic_id, block_id, status, mastery_score,
+                is_initial_foundation, attempt_count, last_accuracy,
+                updated_at, started_at, completed_at
+            )
+            SELECT :user_id, ss.subtopic_id, ss.block_id,
+                   MAX(ss.status), MAX(ss.mastery_score), 0,
+                   SUM(COALESCE(ss.attempt_count, 0)), MAX(ss.last_accuracy),
+                   MAX(ss.updated_at), MIN(ss.started_at), MAX(ss.completed_at)
+            FROM subtopic_status ss
+            GROUP BY ss.subtopic_id, ss.block_id
+            ON CONFLICT(user_id, subtopic_id) DO UPDATE SET
+                status = MAX(user_subtopic_status.status, excluded.status),
+                mastery_score = MAX(user_subtopic_status.mastery_score, excluded.mastery_score),
+                attempt_count = MAX(user_subtopic_status.attempt_count, excluded.attempt_count),
+                last_accuracy = COALESCE(excluded.last_accuracy, user_subtopic_status.last_accuracy),
+                updated_at = CURRENT_TIMESTAMP
+        """), {"user_id": DEFAULT_USER_ID})
+        state_rows = conn.execute(text("SELECT session_id, state_json FROM session_states")).fetchall()
+        for session_id, state_json in state_rows:
+            try:
+                payload = json.loads(state_json)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if payload.get("profile") is None:
+                continue
+            payload["profile"] = None
+            conn.execute(text("""
+                UPDATE session_states SET state_json = :state_json
+                WHERE session_id = :session_id
+            """), {
+                "session_id": session_id,
+                "state_json": json.dumps(payload, ensure_ascii=False),
+            })
+        conn.execute(
+            text("INSERT INTO schema_migrations (migration_id) VALUES (:migration_id)"),
+            {"migration_id": migration_id},
+        )
 
     def _migrate_learning_package_source_types(self, conn) -> None:
         """安全扩展 learning_package_sources 的 CHECK 枚举以支持 video。"""
@@ -862,12 +1019,48 @@ class SQLiteClient:
             for row in conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
         }
 
-    def create_session(self, session_id: str) -> None:
+    def create_session(self, session_id: str, user_id: str = DEFAULT_USER_ID) -> None:
         with self.Session() as session:
-            session.execute(text("INSERT OR IGNORE INTO sessions (session_id) VALUES (:session_id)"),
-                           {"session_id": session_id})
+            session.execute(text("INSERT OR IGNORE INTO sessions (session_id, user_id) VALUES (:session_id, :user_id)"),
+                           {"session_id": session_id, "user_id": user_id})
             session.commit()
-        self.init_subtopic_status(session_id)
+        self.ensure_user_subtopic_status(user_id)
+        self.refresh_target_metrics(session_id)
+
+    def refresh_target_metrics(self, session_id: str) -> dict:
+        target = self.get_target_settings(session_id)
+        if not target:
+            raise ValueError(f"Session not found: {session_id}")
+        with self.Session() as session:
+            gaps_json = session.execute(
+                text("SELECT target_knowledge_gaps FROM sessions WHERE session_id = :session_id"),
+                {"session_id": session_id},
+            ).scalar() or "[]"
+        gaps = json.loads(gaps_json)
+        target_ids = {
+            subtopic_id
+            for gap in gaps if isinstance(gap, dict)
+            for subtopic_id in gap.get("target_subtopic_ids", [])
+            if subtopic_id
+        }
+        target_blocks = {
+            gap.get("block_id") for gap in gaps
+            if isinstance(gap, dict) and gap.get("block_id")
+        }
+        rows = self.list_subtopic_statuses(session_id)
+        selected = [
+            row for row in rows
+            if row["subtopic_id"] in target_ids
+            or (not target_ids and row["block_id"] in target_blocks)
+        ]
+        total_hours = round(sum(float(row.get("estimated_hours") or 0) for row in selected), 2)
+        progress = round(
+            sum(float(row.get("mastery_score") or 0) for row in selected) / len(selected), 4
+        ) if selected else 0.0
+        return self.update_target_settings(session_id, {
+            "target_total_hours": total_hours,
+            "target_progress": progress,
+        })
 
     def session_exists(self, session_id: str) -> bool:
         with self.Session() as session:
@@ -876,6 +1069,122 @@ class SQLiteClient:
                 {"session_id": session_id},
             ).first()
             return row is not None
+
+    def get_session_user_id(self, session_id: str) -> str:
+        with self.Session() as session:
+            user_id = session.execute(
+                text("SELECT user_id FROM sessions WHERE session_id = :session_id"),
+                {"session_id": session_id},
+            ).scalar()
+        if not user_id:
+            if not self.session_exists(session_id):
+                raise ValueError(f"Session not found: {session_id}")
+            return DEFAULT_USER_ID
+        return str(user_id)
+
+    def get_user_profile(self, user_id: str = DEFAULT_USER_ID) -> dict | None:
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT user_id, grade, skill_tags, learning_style, hardware,
+                       default_daily_hours, learning_rhythm, confidence_index,
+                       confusion_markers, confidence, version, created_at, updated_at
+                FROM learner_profiles
+                WHERE user_id = :user_id
+            """), {"user_id": user_id}).mappings().first()
+        if not row:
+            return None
+        result = dict(row)
+        result["skill_tags"] = json.loads(result.get("skill_tags") or "[]")
+        result["confusion_markers"] = json.loads(result.get("confusion_markers") or "[]")
+        return result
+
+    def upsert_user_profile(self, user_id: str, profile: dict) -> dict:
+        existing = self.get_user_profile(user_id) or {}
+        values = {
+            "user_id": user_id,
+            "grade": profile.get("grade", existing.get("grade", "")),
+            "skill_tags": json.dumps(profile.get("skill_tags", existing.get("skill_tags", [])), ensure_ascii=False),
+            "learning_style": profile.get("learning_style", existing.get("learning_style", "mixed")),
+            "hardware": profile.get("hardware", existing.get("hardware", "")),
+            "default_daily_hours": profile.get("default_daily_hours", profile.get("daily_hours", existing.get("default_daily_hours", 2.0))),
+            "learning_rhythm": profile.get("learning_rhythm", existing.get("learning_rhythm", "medium")),
+            "confidence_index": profile.get("confidence_index", existing.get("confidence_index", 0.5)),
+            "confusion_markers": json.dumps(profile.get("confusion_markers", existing.get("confusion_markers", [])), ensure_ascii=False),
+            "confidence": profile.get("confidence", existing.get("confidence", 0.7)),
+        }
+        with self.Session() as session:
+            session.execute(text("""
+                INSERT INTO learner_profiles (
+                    user_id, grade, skill_tags, learning_style, hardware,
+                    default_daily_hours, learning_rhythm, confidence_index,
+                    confusion_markers, confidence, version
+                ) VALUES (
+                    :user_id, :grade, :skill_tags, :learning_style, :hardware,
+                    :default_daily_hours, :learning_rhythm, :confidence_index,
+                    :confusion_markers, :confidence, 1
+                )
+                ON CONFLICT(user_id) DO UPDATE SET
+                    grade = excluded.grade,
+                    skill_tags = excluded.skill_tags,
+                    learning_style = excluded.learning_style,
+                    hardware = excluded.hardware,
+                    default_daily_hours = excluded.default_daily_hours,
+                    learning_rhythm = excluded.learning_rhythm,
+                    confidence_index = excluded.confidence_index,
+                    confusion_markers = excluded.confusion_markers,
+                    confidence = excluded.confidence,
+                    version = learner_profiles.version + 1,
+                    updated_at = CURRENT_TIMESTAMP
+            """), values)
+            session.commit()
+        return self.get_user_profile(user_id) or {}
+
+    def get_target_settings(self, session_id: str) -> dict | None:
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT session_id, user_id, goal, target_total_hours,
+                       target_daily_hours, target_progress, updated_at
+                FROM sessions WHERE session_id = :session_id
+            """), {"session_id": session_id}).mappings().first()
+        return dict(row) if row else None
+
+    def update_target_settings(self, session_id: str, updates: dict) -> dict:
+        allowed = {"goal", "target_total_hours", "target_daily_hours", "target_progress"}
+        fields = {key: value for key, value in updates.items() if key in allowed and value is not None}
+        if fields:
+            assignments = ", ".join(f"{key} = :{key}" for key in fields)
+            with self.Session() as session:
+                result = session.execute(
+                    text(f"UPDATE sessions SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE session_id = :session_id"),
+                    {"session_id": session_id, **fields},
+                )
+                if result.rowcount == 0:
+                    raise ValueError(f"Session not found: {session_id}")
+                session.commit()
+        target = self.get_target_settings(session_id)
+        if not target:
+            raise ValueError(f"Session not found: {session_id}")
+        return target
+
+    def get_stage_duration(self, session_id: str, stage_id: str) -> dict | None:
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT stage_id, session_id, stage_num, estimated_hours
+                FROM stage_progress
+                WHERE session_id = :session_id AND stage_id = :stage_id
+            """), {"session_id": session_id, "stage_id": stage_id}).mappings().first()
+        return dict(row) if row else None
+
+    def update_stage_duration(self, session_id: str, stage_id: str, estimated_hours: float) -> dict:
+        with self.Session() as session:
+            result = session.execute(text("""
+                UPDATE stage_progress SET estimated_hours = :estimated_hours
+                WHERE session_id = :session_id AND stage_id = :stage_id
+            """), {"session_id": session_id, "stage_id": stage_id, "estimated_hours": estimated_hours})
+            if result.rowcount == 0:
+                raise ValueError(f"Stage not found: {stage_id}")
+            session.commit()
+        return self.get_stage_duration(session_id, stage_id) or {}
 
     def save_session_state(self, session_id: str, state: dict) -> None:
         payload = json.dumps(state, ensure_ascii=False)
@@ -891,11 +1200,19 @@ class SQLiteClient:
                 UPDATE sessions
                 SET current_stage = :current_stage,
                     status = :status,
+                    goal = COALESCE(:goal, goal),
+                    target_total_hours = COALESCE(:target_total_hours, target_total_hours),
+                    target_daily_hours = COALESCE(:target_daily_hours, target_daily_hours),
+                    target_progress = COALESCE(:target_progress, target_progress),
                     updated_at = CURRENT_TIMESTAMP
                 WHERE session_id = :session_id
             """), {
                 "current_stage": state.get("current_stage", 1),
                 "status": state.get("status", "active"),
+                "goal": state.get("goal"),
+                "target_total_hours": state.get("target_total_hours"),
+                "target_daily_hours": state.get("target_daily_hours"),
+                "target_progress": state.get("target_progress"),
                 "session_id": session_id,
             })
             session.commit()
@@ -944,7 +1261,7 @@ class SQLiteClient:
             result = []
             for row in rows:
                 state_json = json.loads(row["state_json"]) if row["state_json"] else {}
-                profile = state_json.get("profile") or {}
+                profile = self.get_latest_profile(row["session_id"]) or {}
                 stage_info = state_json.get("stage_info") or {}
                 next_stage = state_json.get("next_stage") or {}
                 knowledge_gaps = profile.get("knowledge_gaps") or []
@@ -1011,51 +1328,36 @@ class SQLiteClient:
             return result
 
     def save_profile(self, session_id: str, profile: dict) -> None:
+        """Split the compatibility profile DTO into user and target records."""
+        user_id = self.get_session_user_id(session_id)
+        self.upsert_user_profile(user_id, profile)
         with self.Session() as session:
-            profile_id = str(uuid.uuid4())
-            version = session.execute(text("""
-                SELECT COALESCE(MAX(version), 0) + 1
-                FROM user_profiles
-                WHERE session_id = :session_id
-            """), {"session_id": session_id}).scalar_one()
             session.execute(text("""
-                INSERT INTO user_profiles (
-                    profile_id, session_id, user_id, version, grade, goal,
-                    daily_hours, learning_style, hardware, skill_tags, knowledge_gaps,
-                    learning_rhythm, confidence_index, confusion_markers,
-                    confidence, profile_confidence, last_updated
-                ) VALUES (
-                    :profile_id, :session_id, :user_id, :version, :grade, :goal,
-                    :daily_hours, :learning_style, :hardware, :skill_tags, :knowledge_gaps,
-                    :learning_rhythm, :confidence_index, :confusion_markers,
-                    :confidence, :profile_confidence, CURRENT_TIMESTAMP
-                )
+                UPDATE sessions
+                SET goal = :goal,
+                    target_knowledge_gaps = :knowledge_gaps,
+                    target_daily_hours = :daily_hours,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE session_id = :session_id
             """), {
-                "profile_id": profile_id,
                 "session_id": session_id,
-                "user_id": profile.get("user_id", session_id),
-                "version": version,
-                "grade": profile.get("grade", ""),
-                "hardware": profile.get("hardware", ""),
-                "skill_tags": json.dumps(profile.get("skill_tags", [])),
-                "knowledge_gaps": json.dumps(profile.get("knowledge_gaps", [])),
                 "goal": profile.get("goal", ""),
+                "knowledge_gaps": json.dumps(profile.get("knowledge_gaps", []), ensure_ascii=False),
                 "daily_hours": profile.get("daily_hours", 2.0),
-                "learning_style": profile.get("learning_style", "mixed"),
-                "learning_rhythm": profile.get("learning_rhythm", "medium"),
-                "confidence_index": profile.get("confidence_index", 0.5),
-                "confusion_markers": json.dumps(profile.get("confusion_markers", [])),
-                "confidence": profile.get("confidence", 0.7),
-                "profile_confidence": profile.get("profile_confidence", profile.get("confidence", 0.7)),
             })
             session.commit()
+        self.refresh_target_metrics(session_id)
 
     def save_stage(self, session_id: str, stage_info: dict) -> None:
         with self.Session() as session:
             session.execute(text("""
                 INSERT OR REPLACE INTO stage_progress (
-                    stage_id, session_id, stage_num, block_id, block_name, subtopic_id, status, accuracy, strategy_used
-                ) VALUES (:stage_id, :session_id, :stage_num, :block_id, :block_name, :subtopic_id, :status, :accuracy, :strategy_used)
+                    stage_id, session_id, stage_num, block_id, block_name, subtopic_id,
+                    estimated_hours, status, accuracy, strategy_used
+                ) VALUES (
+                    :stage_id, :session_id, :stage_num, :block_id, :block_name, :subtopic_id,
+                    :estimated_hours, :status, :accuracy, :strategy_used
+                )
             """), {
                 "stage_id": stage_info.get("stage_id", str(uuid.uuid4())),
                 "session_id": session_id,
@@ -1063,6 +1365,7 @@ class SQLiteClient:
                 "block_id": stage_info.get("block_id", ""),
                 "block_name": stage_info.get("block_name", ""),
                 "subtopic_id": stage_info.get("subtopic_id"),
+                "estimated_hours": stage_info.get("estimated_hours", 1.0),
                 "status": stage_info.get("status", "pending"),
                 "accuracy": stage_info.get("accuracy"),
                 "strategy_used": stage_info.get("strategy_used")
@@ -1070,28 +1373,24 @@ class SQLiteClient:
             session.commit()
 
     def init_subtopic_status(self, session_id: str) -> None:
+        self.ensure_user_subtopic_status(self.get_session_user_id(session_id))
+
+    def ensure_user_subtopic_status(self, user_id: str = DEFAULT_USER_ID) -> None:
         with self.Session() as session:
-            existing = session.execute(text("""
-                SELECT 1
-                FROM subtopic_status
-                WHERE session_id = :session_id
-                LIMIT 1
-            """), {"session_id": session_id}).first()
-            if existing:
-                return
             rows = session.execute(text("""
                 SELECT subtopic_id, block_id
                 FROM knowledge_subtopics
             """)).fetchall()
             for subtopic_id, block_id in rows:
                 session.execute(text("""
-                    INSERT OR IGNORE INTO subtopic_status (
-                        session_id, subtopic_id, block_id, status, mastery_score, updated_at
+                    INSERT OR IGNORE INTO user_subtopic_status (
+                        user_id, subtopic_id, block_id, status, mastery_score,
+                        is_initial_foundation, attempt_count, updated_at
                     ) VALUES (
-                        :session_id, :subtopic_id, :block_id, -1, 0.0, CURRENT_TIMESTAMP
+                        :user_id, :subtopic_id, :block_id, -1, 0.0, 0, 0, CURRENT_TIMESTAMP
                     )
                 """), {
-                    "session_id": session_id,
+                    "user_id": user_id,
                     "subtopic_id": subtopic_id,
                     "block_id": block_id,
                 })
@@ -1101,16 +1400,18 @@ class SQLiteClient:
         self.init_subtopic_status(session_id)
 
     def get_subtopic_status(self, session_id: str, subtopic_id: str) -> dict | None:
-        self.ensure_subtopic_status(session_id)
+        user_id = self.get_session_user_id(session_id)
+        self.ensure_user_subtopic_status(user_id)
         with self.Session() as session:
             row = session.execute(text("""
-                SELECT session_id, subtopic_id, block_id, status, mastery_score,
-                       last_accuracy, attempt_count, updated_at, started_at, completed_at
-                FROM subtopic_status
-                WHERE session_id = :session_id
+                SELECT user_id, subtopic_id, block_id, status, mastery_score,
+                       is_initial_foundation, last_accuracy, attempt_count,
+                       updated_at, started_at, completed_at
+                FROM user_subtopic_status
+                WHERE user_id = :user_id
                   AND subtopic_id = :subtopic_id
             """), {
-                "session_id": session_id,
+                "user_id": user_id,
                 "subtopic_id": subtopic_id,
             }).mappings().first()
         return dict(row) if row else None
@@ -1123,19 +1424,22 @@ class SQLiteClient:
         mastery_score: float | None = None,
         last_accuracy: float | None = None,
         increment_attempt: bool = False,
+        is_initial_foundation: bool | None = None,
     ) -> None:
-        self.ensure_subtopic_status(session_id)
+        user_id = self.get_session_user_id(session_id)
+        self.ensure_user_subtopic_status(user_id)
         existing = self.get_subtopic_status(session_id, subtopic_id)
         if not existing:
             return
         attempt_count = int(existing.get("attempt_count") or 0) + (1 if increment_attempt else 0)
         with self.Session() as session:
             session.execute(text("""
-                UPDATE subtopic_status
+                UPDATE user_subtopic_status
                 SET status = :status,
                     mastery_score = COALESCE(:mastery_score, mastery_score),
                     last_accuracy = COALESCE(:last_accuracy, last_accuracy),
                     attempt_count = :attempt_count,
+                    is_initial_foundation = COALESCE(:is_initial_foundation, is_initial_foundation),
                     started_at = CASE
                         WHEN :status = 0 AND started_at IS NULL THEN CURRENT_TIMESTAMP
                         ELSE started_at
@@ -1145,45 +1449,97 @@ class SQLiteClient:
                         ELSE completed_at
                     END,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE session_id = :session_id
+                WHERE user_id = :user_id
                   AND subtopic_id = :subtopic_id
             """), {
-                "session_id": session_id,
+                "user_id": user_id,
                 "subtopic_id": subtopic_id,
                 "status": status,
                 "mastery_score": mastery_score,
                 "last_accuracy": last_accuracy,
                 "attempt_count": attempt_count,
+                "is_initial_foundation": is_initial_foundation,
             })
             session.commit()
 
+    def set_user_subtopic_status(
+        self,
+        user_id: str,
+        subtopic_id: str,
+        *,
+        status: int,
+        mastery_score: float,
+        is_initial_foundation: bool | None = None,
+        attempt_count: int | None = None,
+    ) -> dict:
+        self.ensure_user_subtopic_status(user_id)
+        with self.Session() as session:
+            result = session.execute(text("""
+                UPDATE user_subtopic_status
+                SET status = :status,
+                    mastery_score = :mastery_score,
+                    is_initial_foundation = COALESCE(:is_initial_foundation, is_initial_foundation),
+                    attempt_count = COALESCE(:attempt_count, attempt_count),
+                    completed_at = CASE WHEN :status = 1 THEN CURRENT_TIMESTAMP ELSE completed_at END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = :user_id AND subtopic_id = :subtopic_id
+            """), {
+                "user_id": user_id,
+                "subtopic_id": subtopic_id,
+                "status": status,
+                "mastery_score": mastery_score,
+                "is_initial_foundation": is_initial_foundation,
+                "attempt_count": attempt_count,
+            })
+            if result.rowcount == 0:
+                raise ValueError(f"Subtopic not found: {subtopic_id}")
+            session.commit()
+        return self.get_user_subtopic_status(user_id, subtopic_id) or {}
+
+    def get_user_subtopic_status(self, user_id: str, subtopic_id: str) -> dict | None:
+        self.ensure_user_subtopic_status(user_id)
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT user_id, subtopic_id, block_id, status, mastery_score,
+                       is_initial_foundation, attempt_count, last_accuracy,
+                       updated_at, started_at, completed_at
+                FROM user_subtopic_status
+                WHERE user_id = :user_id AND subtopic_id = :subtopic_id
+            """), {"user_id": user_id, "subtopic_id": subtopic_id}).mappings().first()
+        return dict(row) if row else None
+
     def get_completed_subtopic_ids(self, session_id: str, block_id: str) -> list[str]:
-        self.ensure_subtopic_status(session_id)
+        user_id = self.get_session_user_id(session_id)
+        self.ensure_user_subtopic_status(user_id)
         with self.Session() as session:
             rows = session.execute(text("""
                 SELECT subtopic_id
-                FROM subtopic_status
-                WHERE session_id = :session_id
+                FROM user_subtopic_status
+                WHERE user_id = :user_id
                   AND block_id = :block_id
                   AND status = 1
             """), {
-                "session_id": session_id,
+                "user_id": user_id,
                 "block_id": block_id,
             }).fetchall()
         return [row[0] for row in rows if row and row[0]]
 
     def list_subtopic_statuses(self, session_id: str) -> list[dict]:
-        self.ensure_subtopic_status(session_id)
+        return self.list_user_subtopic_statuses(self.get_session_user_id(session_id))
+
+    def list_user_subtopic_statuses(self, user_id: str = DEFAULT_USER_ID) -> list[dict]:
+        self.ensure_user_subtopic_status(user_id)
         with self.Session() as session:
             rows = session.execute(text("""
                 SELECT s.subtopic_id, s.block_id, s.status, s.mastery_score, s.last_accuracy,
-                       s.attempt_count, k.subtopic_name, k.estimated_hours, k.sequence_index,
+                       s.is_initial_foundation, s.attempt_count,
+                       k.subtopic_name, k.estimated_hours, k.sequence_index,
                        k.difficulty, k.prerequisites, k.content_summary
-                FROM subtopic_status s
+                FROM user_subtopic_status s
                 JOIN knowledge_subtopics k ON s.subtopic_id = k.subtopic_id
-                WHERE s.session_id = :session_id
+                WHERE s.user_id = :user_id
                 ORDER BY k.block_id ASC, k.sequence_index ASC
-            """), {"session_id": session_id}).mappings().all()
+            """), {"user_id": user_id}).mappings().all()
         return [dict(row) for row in rows]
 
     def list_learnable_subtopics(
@@ -1617,29 +1973,43 @@ class SQLiteClient:
     # ========================================================================
 
     def get_latest_profile(self, session_id: str) -> dict | None:
-        """读取最新版本的用户画像（version 最大者）。"""
+        """Compose the legacy profile DTO from normalized user and target data."""
         with self.Session() as session:
             row = session.execute(text("""
-                SELECT profile_id, session_id, version, skill_tags, knowledge_gaps, goal,
-                       daily_hours, learning_style, learning_rhythm, confidence_index,
-                       confusion_markers, confidence, grade, hardware, created_at
-                FROM user_profiles
-                WHERE session_id = :session_id
-                ORDER BY version DESC
-                LIMIT 1
+                SELECT session_id, user_id, goal, target_knowledge_gaps,
+                       target_daily_hours, created_at, updated_at
+                FROM sessions WHERE session_id = :session_id
             """), {"session_id": session_id}).mappings().first()
         if not row:
             return None
-        result = dict(row)
-        for field in ("skill_tags", "knowledge_gaps", "confusion_markers"):
-            result[field] = json.loads(result[field]) if result[field] else []
-        return result
+        user_profile = self.get_user_profile(row["user_id"] or DEFAULT_USER_ID)
+        if not user_profile:
+            return None
+        return {
+            "profile_id": f"profile_{row['user_id']}",
+            "session_id": session_id,
+            "user_id": row["user_id"] or DEFAULT_USER_ID,
+            "version": user_profile.get("version", 1),
+            "grade": user_profile.get("grade", ""),
+            "skill_tags": user_profile.get("skill_tags", []),
+            "knowledge_gaps": json.loads(row["target_knowledge_gaps"] or "[]"),
+            "goal": row["goal"] or "",
+            "daily_hours": row["target_daily_hours"] or user_profile.get("default_daily_hours", 2.0),
+            "learning_style": user_profile.get("learning_style", "mixed"),
+            "hardware": user_profile.get("hardware", ""),
+            "learning_rhythm": user_profile.get("learning_rhythm", "medium"),
+            "confidence_index": user_profile.get("confidence_index", 0.5),
+            "confusion_markers": user_profile.get("confusion_markers", []),
+            "confidence": user_profile.get("confidence", 0.7),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
 
     def list_stage_progress(self, session_id: str) -> list[dict]:
         """读取会话所有阶段记录（供当前阶段摘要与阶段历史聚合）。"""
         with self.Session() as session:
             rows = session.execute(text("""
-                SELECT stage_id, stage_num, block_id, block_name, subtopic_id,
+                SELECT stage_id, stage_num, block_id, block_name, subtopic_id, estimated_hours,
                        status, accuracy, strategy_used, started_at, completed_at
                 FROM stage_progress
                 WHERE session_id = :session_id
@@ -1661,15 +2031,16 @@ class SQLiteClient:
 
     def get_subtopic_mastery_counts(self, session_id: str) -> tuple[int, int]:
         """统计已掌握子知识点数量与总数（mastered_count / total_count）。"""
-        self.ensure_subtopic_status(session_id)
+        user_id = self.get_session_user_id(session_id)
+        self.ensure_user_subtopic_status(user_id)
         with self.Session() as session:
             row = session.execute(text("""
                 SELECT
                     COALESCE(SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END), 0) AS mastered,
                     COUNT(*) AS total
-                FROM subtopic_status
-                WHERE session_id = :session_id
-            """), {"session_id": session_id}).mappings().first()
+                FROM user_subtopic_status
+                WHERE user_id = :user_id
+            """), {"user_id": user_id}).mappings().first()
         return int(row["mastered"]), int(row["total"])
 
     def get_block_progress(self, session_id: str) -> list[dict]:

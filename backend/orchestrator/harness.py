@@ -69,6 +69,27 @@ class Harness:
         diagnostic = await self.agent1.run(
             DiagnosticInput(session_id=session_id, user_input=diagnostic_input)
         )
+        user_id = self.state_manager.db_client.get_session_user_id(session_id)
+        reusable_profile = self.state_manager.db_client.get_user_profile(user_id)
+        if reusable_profile:
+            # New goals only need target-specific input. Stable learner facts
+            # are reused from the single user-level profile.
+            diagnostic.profile.user_id = user_id
+            diagnostic.profile.grade = reusable_profile.get("grade", diagnostic.profile.grade)
+            diagnostic.profile.skill_tags = reusable_profile.get("skill_tags", diagnostic.profile.skill_tags)
+            diagnostic.profile.learning_style = reusable_profile.get("learning_style", diagnostic.profile.learning_style)
+            diagnostic.profile.hardware = reusable_profile.get("hardware", diagnostic.profile.hardware)
+            diagnostic.profile.learning_rhythm = reusable_profile.get("learning_rhythm", diagnostic.profile.learning_rhythm)
+            diagnostic.profile.confidence_index = reusable_profile.get("confidence_index", diagnostic.profile.confidence_index)
+            diagnostic.profile.confusion_markers = reusable_profile.get("confusion_markers", diagnostic.profile.confusion_markers)
+            diagnostic.profile.confidence = max(
+                diagnostic.profile.confidence,
+                reusable_profile.get("confidence", 0.7),
+            )
+            if diagnostic.profile.daily_hours <= 0:
+                diagnostic.profile.daily_hours = reusable_profile.get("default_daily_hours", 2.0)
+        else:
+            diagnostic.profile.user_id = user_id
         # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
         self.state_manager.update_profile(session_id, diagnostic.profile)
         self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
@@ -351,6 +372,8 @@ class Harness:
                 last_accuracy=accuracy,
                 increment_attempt=True,
             )
+            self.state_manager.db_client.refresh_target_metrics(session_id)
+            self.state_manager.refresh_cached_target(session_id)
 
         synced_profile = await self._sync_profile_from_subtopic_status(decision.profile)
         # A stage can be an inserted prerequisite node for a later target
