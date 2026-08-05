@@ -31,7 +31,7 @@ Source 由系统侧统一生成，Agent3 负责引用和绑定，Agent4 负责�
 字段约束：
 
 - `source_id`：在单个 `trace` 内唯一（**非全局唯一**，数据库主键为复合键 `(trace_id, source_id)`）
-- `source_type`：`knowledge_doc | faq | best_practice | manual | external_note | code_example`
+- `source_type`：`knowledge_doc | best_practice | manual | external_note | code_example | video`
 - `locator`：主定位符，支持数据库主键、文档路径、chunk 引用
 - `content_ref`：更细粒度的内容锚点，可为空
 

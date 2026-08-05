@@ -287,14 +287,14 @@ select:focus-visible {
   transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
-.agent-flow-card.active {
+.agent-flow-card.running {
   border-color: #bfc8ff;
   background: #f5f7ff;
 }
 
-.agent-flow-card.done {
-  border-color: #d5efe2;
-  background: #f8fffb;
+.agent-flow-card:not(.running) .agent-icon {
+  opacity: 0.72;
+  filter: saturate(0.65);
 }
 
 .agent-icon,
@@ -358,6 +358,22 @@ select:focus-visible {
   margin-top: 3px;
 }
 
+.agent-copy .agent-state-label {
+  font-weight: 700;
+}
+
+.agent-state-label.running {
+  color: var(--violet);
+}
+
+.agent-state-label.completed {
+  color: var(--green);
+}
+
+.agent-state-label.failed {
+  color: #c8324c;
+}
+
 .agent-status {
   width: 24px;
   height: 24px;
@@ -366,18 +382,23 @@ select:focus-visible {
   background: #edf0f5;
 }
 
-.agent-status.active {
+.agent-status.running {
   color: var(--violet);
   background: #efedff;
 }
 
-.agent-status.active svg {
+.agent-status.running svg {
   animation: spin 0.8s linear infinite;
 }
 
-.agent-status.done {
+.agent-status.completed {
   color: #fff;
   background: var(--green);
+}
+
+.agent-status.failed {
+  color: #fff;
+  background: #d9485f;
 }
 
 .page-shell {

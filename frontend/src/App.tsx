@@ -55,10 +55,17 @@ import {
   OnboardingField,
   OnboardingFormData
 } from './utils/buildDiagnosticMessage';
+import {
+  createAgentStatusMap,
+  finishAgents,
+  restoreAgentStatuses,
+  startAgents,
+  type AgentId,
+  type AgentStatusMap
+} from './utils/agentFlowState';
 
 type View = 'chat' | 'learn' | 'dashboard' | 'settings' | 'result';
 type WorkflowState = 'onboarding' | 'diagnosing' | 'needs_more_info' | 'profile_ready' | 'starting_stage' | 'learning';
-type AgentId = 'agent1' | 'agent3' | 'agent4' | 'agent6';
 type Message = {
   id: string;
   role: 'user' | 'assistant';
@@ -190,7 +197,7 @@ type WorkspaceSnapshot = {
   timerSeconds: number;
   timerRunning: boolean;
   materialPanelOpen: boolean;
-  completedAgents: AgentId[];
+  agentStatuses: AgentStatusMap;
 };
 
 type AssessmentState = {
@@ -475,15 +482,13 @@ function formatTimer(totalSeconds: number) {
 function Sidebar({
   view,
   setView,
-  activeAgent,
-  completedAgents,
+  agentStatuses,
   collapsed,
   onToggleCollapsed
 }: {
   view: View;
   setView: (view: View) => void;
-  activeAgent: AgentId | null;
-  completedAgents: AgentId[];
+  agentStatuses: AgentStatusMap;
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }) {
@@ -536,9 +541,14 @@ function Sidebar({
         <div className="agent-flow">
           {sidebarAgents.map((agent) => {
             const Icon = agent.icon;
-            const active = activeAgent === agent.id;
-            const done = completedAgents.includes(agent.id);
-            const state = active ? 'active' : done ? 'done' : 'pending';
+            const state = agentStatuses[agent.id];
+            const statusLabel = state === 'running'
+              ? '正在运行'
+              : state === 'completed'
+                ? '已完成'
+                : state === 'failed'
+                  ? '执行失败'
+                  : '待调用';
 
             return (
               <div className={`agent-flow-card ${state}`} key={agent.id}>
@@ -549,9 +559,16 @@ function Sidebar({
                   <b>Agent{agent.number}</b>
                   <strong>{agent.title}</strong>
                   <small>{agent.desc}</small>
+                  <small className={`agent-state-label ${state}`}>{statusLabel}</small>
                 </div>
-                <span className={`agent-status ${state}`} aria-label={active ? '运行中' : done ? '已完成' : '待调用'}>
-                  {active ? <Loader2 size={17} /> : done ? <Check size={15} /> : <Circle size={12} />}
+                <span className={`agent-status ${state}`} aria-label={statusLabel} title={statusLabel}>
+                  {state === 'running'
+                    ? <Loader2 size={17} />
+                    : state === 'completed'
+                      ? <Check size={15} />
+                      : state === 'failed'
+                        ? <X size={15} />
+                        : <Circle size={12} />}
                 </span>
               </div>
             );
@@ -2027,8 +2044,7 @@ export default function App() {
   const [result, setResult] = useState<StageResult | null>(null);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
-  const [activeAgent, setActiveAgent] = useState<AgentId | null>(null);
-  const [completedAgents, setCompletedAgents] = useState<AgentId[]>([]);
+  const [agentStatuses, setAgentStatuses] = useState<AgentStatusMap>(createAgentStatusMap);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
     const activeSessionId = localStorage.getItem('sessionId');
     const ownedSessionIds = readOwnedSessionIds();
@@ -2050,8 +2066,12 @@ export default function App() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
 
-  const completeAgent = (agentId: AgentId) => {
-    setCompletedAgents((prev) => prev.includes(agentId) ? prev : [...prev, agentId]);
+  const beginAgentRun = (agentIds: AgentId[], reset = false) => {
+    setAgentStatuses((current) => startAgents(current, agentIds, reset));
+  };
+
+  const finishAgentRun = (agentIds: AgentId[], succeeded: boolean) => {
+    setAgentStatuses((current) => finishAgents(current, agentIds, succeeded));
   };
 
   const rememberProject = (
@@ -2285,6 +2305,11 @@ export default function App() {
         const activeStage = resolveSessionStage(session);
         const hasLearningPackage = Boolean(session?.learning_package);
         const nextWorkflow = isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready';
+        setAgentStatuses(restoreAgentStatuses({
+          hasProfile: Boolean(session?.profile),
+          hasLearningPackage,
+          phase: session.phase
+        }));
         if (session?.profile) {
           const nextProfile = toProfile(session.profile);
           if (!nextProfile) throw new Error('会话画像解析失败');
@@ -2292,7 +2317,6 @@ export default function App() {
           setOnboardingForm(formDataFromProfile(nextProfile));
           rememberProject(savedSessionId, nextProfile, session.next_stage || activeStage, session.phase);
           void loadDashboardStages(savedSessionId, activeStage);
-          completeAgent('agent1');
           setWorkflow(nextWorkflow);
         } else {
           localStorage.removeItem('sessionId');
@@ -2305,8 +2329,6 @@ export default function App() {
         if (activeStage) setSelectedConversationId(`${savedSessionId}:${activeStage.stage_num ?? 1}`);
         if (hasLearningPackage) {
           setLearningPackage(toLearningPackage(session.learning_package));
-          completeAgent('agent3');
-          completeAgent('agent4');
           setView('chat');
           const conversationStage = activeStage || session.next_stage;
           if (conversationStage) {
@@ -2365,7 +2387,7 @@ export default function App() {
     setHighlightedFields([]);
     setLoading(true);
     setWorkflow('diagnosing');
-    setActiveAgent('agent1');
+    beginAgentRun(['agent1'], true);
 
     try {
       const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
@@ -2385,6 +2407,7 @@ export default function App() {
           }
         }
         setWorkflow('needs_more_info');
+        finishAgentRun(['agent1'], true);
         return;
       }
 
@@ -2395,13 +2418,13 @@ export default function App() {
         rememberProject(activeSessionId, nextProfile, null);
       }
       void refreshRemoteProjects();
-      completeAgent('agent1');
+      finishAgentRun(['agent1'], true);
       setWorkflow('profile_ready');
     } catch (caught) {
+      finishAgentRun(['agent1'], false);
       setError(getErrorMessage(caught));
       setWorkflow('onboarding');
     } finally {
-      setActiveAgent(null);
       setLoading(false);
     }
   };
@@ -2415,7 +2438,8 @@ export default function App() {
     setMessages((prev) => [...prev, { id: shortId(), role: 'user', content: text }]);
     setLoading(true);
     const initialDiagnosis = !sessionId || !profile?.goal;
-    setActiveAgent(initialDiagnosis ? 'agent1' : 'agent3');
+    const invokedAgents: AgentId[] = initialDiagnosis ? ['agent1'] : ['agent3', 'agent4'];
+    beginAgentRun(invokedAgents, initialDiagnosis);
 
     try {
       if (initialDiagnosis) {
@@ -2435,7 +2459,6 @@ export default function App() {
             const nextProfile = { ...(toProfile(response.profile_draft) || fallbackProfile), confidence: response.confidence } as Profile;
             setProfile(nextProfile);
           }
-          completeAgent('agent1');
           setMessages((prev) => [...prev, {
             id: shortId(),
             role: 'assistant',
@@ -2446,16 +2469,18 @@ export default function App() {
       } else {
         if (!sessionId) throw new Error('尚未创建后端会话');
         const response = await apiClient.askQuestion(sessionId, text);
-        completeAgent('agent3');
-        completeAgent('agent4');
         setMessages((prev) => [...prev, {
           id: shortId(),
           role: 'assistant',
           content: response.answer || '已收到问题，但后端没有返回回答内容。',
           note: response.review_summary?.technical_passed && response.review_summary?.quality_passed ? '审核通过' : '待复核'
         }]);
+        finishAgentRun(['agent3'], Boolean(response.answer));
+        finishAgentRun(['agent4'], Boolean(response.review_summary));
       }
+      if (initialDiagnosis) finishAgentRun(['agent1'], true);
     } catch (caught) {
+      finishAgentRun(invokedAgents, false);
       setError(getErrorMessage(caught));
       if (!initialDiagnosis) {
         setMessages((prev) => [...prev, {
@@ -2471,7 +2496,6 @@ export default function App() {
       setStage(null);
       setWorkflow('onboarding');
     } finally {
-      setActiveAgent(null);
       setLoading(false);
     }
   };
@@ -2480,7 +2504,7 @@ export default function App() {
     setError(null);
     setLoading(true);
     setWorkflow('starting_stage');
-    setActiveAgent('agent3');
+    beginAgentRun(['agent3', 'agent4']);
     try {
       if (!sessionId) throw new Error('尚未创建后端会话');
       let generatedStage = plannedStage || stage;
@@ -2503,8 +2527,8 @@ export default function App() {
       setSelectedConversationId(generatedConversationId);
       if (profile) rememberProject(sessionId, profile, generatedStage);
       rememberStageConversation(sessionId, generatedStage, profile);
-      completeAgent('agent3');
-      completeAgent('agent4');
+      finishAgentRun(['agent3'], Boolean(packageResponse.package));
+      finishAgentRun(['agent4'], Boolean(packageResponse.package?.review_summary));
       setMessages((prev) => [...prev, {
         id: shortId(),
         role: 'assistant',
@@ -2520,10 +2544,10 @@ export default function App() {
       setAssessmentState({ attemptId: null, questions: [] });
       void refreshRemoteProjects();
     } catch (caught) {
+      finishAgentRun(['agent3', 'agent4'], false);
       setError(getErrorMessage(caught));
       setWorkflow('profile_ready');
     } finally {
-      setActiveAgent(null);
       setLoading(false);
     }
   };
@@ -2531,7 +2555,7 @@ export default function App() {
   const completeStage = async (answers: Record<string, string>) => {
     setLoading(true);
     setError(null);
-    setActiveAgent('agent6');
+    beginAgentRun(['agent6']);
     try {
       if (sessionId) {
         const attemptId = assessmentState.attemptId || (await apiClient.createAssessmentAttempt(sessionId)).attempt_id;
@@ -2554,14 +2578,14 @@ export default function App() {
         void refreshRemoteProjects();
         setTestOpen(false);
         setView('result');
+        finishAgentRun(['agent6'], true);
       } else {
         throw new Error('尚未创建后端会话');
       }
     } catch (caught) {
+      finishAgentRun(['agent6'], false);
       setError(getErrorMessage(caught));
     } finally {
-      completeAgent('agent6');
-      setActiveAgent(null);
       setLoading(false);
     }
   };
@@ -2570,7 +2594,7 @@ export default function App() {
     if (!sessionId || loading) return;
     setLoading(true);
     setError(null);
-    setActiveAgent('agent1');
+    beginAgentRun(['agent1']);
     try {
       const response = await apiClient.planNextStage(sessionId);
       const canStartNextStage =
@@ -2612,11 +2636,11 @@ export default function App() {
       rememberProject(sessionId, nextProfile, nextStage, response.phase);
       rememberStageConversation(sessionId, nextStage, nextProfile);
       void refreshRemoteProjects();
-      completeAgent('agent1');
+      finishAgentRun(['agent1'], true);
     } catch (caught) {
+      finishAgentRun(['agent1'], false);
       setError(getErrorMessage(caught));
     } finally {
-      setActiveAgent(null);
       setLoading(false);
     }
   };
@@ -2648,8 +2672,7 @@ export default function App() {
     setMaterialPanelOpen(false);
     setLearningPathOpen(false);
     setProfileModalOpen(false);
-    setActiveAgent(null);
-    setCompletedAgents([]);
+    setAgentStatuses(createAgentStatusMap());
     setWorkflow('onboarding');
     setView('chat');
     void refreshRemoteProjects();
@@ -2716,7 +2739,7 @@ export default function App() {
         timerSeconds,
         timerRunning,
         materialPanelOpen,
-        completedAgents
+        agentStatuses
       });
     }
     setError(null);
@@ -2737,8 +2760,7 @@ export default function App() {
     setMaterialPanelOpen(false);
     setLearningPathOpen(false);
     setProfileModalOpen(false);
-    setActiveAgent(null);
-    setCompletedAgents([]);
+    setAgentStatuses(createAgentStatusMap());
     setWorkflow('onboarding');
     setView('chat');
   };
@@ -2759,12 +2781,11 @@ export default function App() {
     setTimerSeconds(previous.timerSeconds);
     setTimerRunning(previous.timerRunning);
     setMaterialPanelOpen(previous.materialPanelOpen);
-    setCompletedAgents(previous.completedAgents);
+    setAgentStatuses(previous.agentStatuses);
     setOnboardingForm(formDataFromProfile(previous.profile));
     setFollowupQuestions([]);
     setHighlightedFields([]);
     setError(null);
-    setActiveAgent(null);
     setWorkflow('learning');
     setView('chat');
     setNewGoalReturnState(null);
@@ -2785,6 +2806,7 @@ export default function App() {
       setProfile(null);
       setStage(null);
       setLearningPackage(null);
+      setAgentStatuses(createAgentStatusMap());
       setWorkflow('onboarding');
       setView('chat');
       return;
@@ -2810,7 +2832,11 @@ export default function App() {
       const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${currentStageNum}`);
       setMessages(restoredConversation?.messages || initialMessages);
       setSelectedConversationId(`${nextSessionId}:${requestedStageNum ?? currentStageNum}`);
-      setCompletedAgents(hasLearningPackage ? ['agent1', 'agent3', 'agent4'] : ['agent1']);
+      setAgentStatuses(restoreAgentStatuses({
+        hasProfile: true,
+        hasLearningPackage,
+        phase: session.phase
+      }));
       setWorkflow(isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready');
       setView('chat');
       rememberProject(nextSessionId, nextProfile, session.next_stage || activeStage, session.phase);
@@ -2858,8 +2884,7 @@ export default function App() {
       <Sidebar
         view={view}
         setView={setView}
-        activeAgent={activeAgent}
-        completedAgents={completedAgents}
+        agentStatuses={agentStatuses}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
       />

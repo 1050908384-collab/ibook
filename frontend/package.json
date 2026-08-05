@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test:agent-flow": "tsc --target ES2020 --module ES2020 --moduleResolution Node --outDir node_modules/.cache/agent-flow-tests src/utils/agentFlowState.ts && node --test tests/agentFlowState.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
