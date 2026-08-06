@@ -69,9 +69,9 @@ SFT 的核心数据格式是**指令-输入-输出（Instruction-Input-Output）
 
 ```json
 {
-  "instruction": "请分析华为2023年营收增长率",
-  "input": "",
-  "output": "根据华为2023年年报，研发支出1647亿元，总收入6423亿元，研发投入占比 = (1647 ÷ 6423) × 100% ≈ 25.65%。"
+  "instruction": "请计算华为2023年研发投入占比",
+  "input": "华为2023年年报：研发支出1647亿元，总收入6423亿元。",
+  "output": "研发投入占比 = 研发支出 ÷ 总收入 × 100% = (1647 ÷ 6423) × 100% ≈ 25.65%。"
 }
 ```
 
@@ -79,6 +79,7 @@ SFT 的核心数据格式是**指令-输入-输出（Instruction-Input-Output）
 - `instruction`：告诉模型"要做什么"（任务描述）
 - `input`：具体的输入内容（可为空，如纯问答任务）
 - `output`：期望模型生成的标准答案
+- **⚠️ 指令与答案必须严格对应**：上面的问题问"研发投入占比"，答案就计算"研发投入占比"。如果指令问的是"营收增长率"，答案却去算"研发投入占比"，就属于**样本错配**——问题与答案不是一回事。这种数据会教坏模型：让它学会"答非所问"。构造时务必逐条核对指令、输入与输出在语义与数值口径上一致。
 
 ### 2.2 数据构建流程
 
@@ -101,9 +102,11 @@ JSONL 格式的 SFT 数据集
 | 技巧 | 说明 | 示例 |
 |------|------|------|
 | **同义改写** | 自动工具+人工扩写，保证问法多样性 | "华为营收多少？"→"华为2023年收入？" |
-| **负样本注入** | 插入 5%~10% 错误答案，训练模型甄别 | 故意给出错误数字，让模型纠正 |
+| **纠错式样本（正确示范）** | 把"错误问法/含错前提"作为输入，但 `output` 仍是**正确**的纠正与解答 | 输入含错误数字，output 指出错误并给出正确答案 |
 | **推理链引导（CoT）** | 要求模型先展示推理过程 | "请先列出计算公式，再计算..." |
 | **上下文扩展** | 多段信息的问题提供完整上下文 | 对比多家公司时提供完整表格 |
+
+> **⚠️ 不要把"错误答案"直接当作 `output` 混入训练**：SFT 是**模仿学习**——模型会去拟合、复现 `output` 里的内容。如果把错的答案放进 `output`，等于在**教模型输出错误**，而不是"让它学会甄别错误"。若想提升模型的纠错/鉴别能力，正确做法是：把"错误"放在**输入侧**（如带错误前提的问题、需要被反驳的说法），而 `output` 始终是**正确的纠正与解答**；模型对错误答案本身的偏好抑制应交给后续的偏好对齐（RLHF/DPO，用"选/拒"成对数据），而非 SFT 的监督目标。
 
 ### 2.4 数据量与质量的关系
 
@@ -160,40 +163,48 @@ from datasets import load_dataset
 # 格式: {"instruction": "...", "input": "...", "output": "..."}
 dataset = load_dataset("json", data_files="sft_data.jsonl", split="train")
 
-def format_prompt(example):
-    """将数据格式化为模型训练所需的文本格式"""
+IGNORE_INDEX = -100   # cross_entropy 默认忽略 -100，用来屏蔽不该算 loss 的位置
+
+def format_and_tokenize(example):
+    """用【目标模型自带的 chat template】拼接对话，并只对 assistant 回复计算 loss"""
+    user_content = example["instruction"]
     if example["input"]:
-        prompt = f"### 指令：\n{example['instruction']}\n\n### 输入：\n{example['input']}\n\n### 回答：\n"
-    else:
-        prompt = f"### 指令：\n{example['instruction']}\n\n### 回答：\n"
-    
-    # 完整文本 = prompt + output + EOS
-    full_text = prompt + example["output"] + tokenizer.eos_token
-    return {"text": full_text}
+        user_content += "\n\n" + example["input"]
 
-# 应用格式化
-dataset = dataset.map(format_prompt)
+    messages = [
+        {"role": "user", "content": user_content},
+        {"role": "assistant", "content": example["output"]},
+    ]
 
-# 分词
-def tokenize_function(examples):
-    return tokenizer(
-        examples["text"],
-        truncation=True,
-        max_length=2048,
-        padding="max_length"
+    # 关键：用 tokenizer.apply_chat_template，套用【该模型训练时真正使用的对话格式】，
+    # 而不是自己手写 "### 指令：/### 回答："。不同模型（Qwen/Llama/ChatGLM...）的
+    # 特殊 token、角色标记、系统位都不同，手写格式会与模型预期不一致，损害效果。
+    full_ids = tokenizer.apply_chat_template(
+        messages, tokenize=True, add_generation_prompt=False
     )
 
-tokenized_dataset = dataset.map(tokenize_function, batched=True)
+    # 再单独算出 "prompt 部分"（到 assistant 开始生成之前）的长度，用于屏蔽 prompt 的 loss
+    prompt_ids = tokenizer.apply_chat_template(
+        messages[:-1], tokenize=True, add_generation_prompt=True
+    )
+    prompt_len = len(prompt_ids)
+
+    # labels 与 input_ids 等长；prompt 段落用 IGNORE_INDEX 屏蔽，只保留 assistant 回复参与 loss
+    labels = [IGNORE_INDEX] * prompt_len + full_ids[prompt_len:]
+    return {"input_ids": full_ids, "labels": labels}
+
+tokenized_dataset = dataset.map(
+    format_and_tokenize, remove_columns=dataset.column_names
+)
 ```
 
 **为什么这样写**：
-- 使用 **Chat Template 风格** 的格式（`### 指令：` `### 回答：`），让模型明确区分"指令"和"回答"
-- `truncation=True` + `max_length=2048`：截断超长样本，防止显存溢出
-- `padding="max_length"`：填充到固定长度，便于批处理
+- **必须使用目标模型的 chat template**（`tokenizer.apply_chat_template`）：SFT 要让模型在**它未来推理时真正会遇到的对话格式**下学习。手写 `### 指令：/### 回答：` 与模型实际的角色标记、特殊 token 不一致，会造成训练/推理格式错配，效果打折。
+- 不在这里做定长 `padding`：填充留给 `data_collator` 动态处理，避免大量无意义的 pad 位。
 
 ### 3.4 配置 LoRA 进行高效微调
 
-全参数微调 7B 模型需要约 28GB 显存（FP16），而 LoRA 仅需约 8GB：
+相比全参数微调，LoRA 只训练少量低秩适配器、冻结原权重，因此显存占用显著降低（具体数值取决于模型规模、序列长度、batch、量化与实现，下面的数字仅为数量级参考）：
 
 ```python
 from peft import LoraConfig, get_peft_model, TaskType
@@ -231,13 +242,14 @@ model.print_trainable_parameters()
 | `lora_dropout` | 正则化 | 0.05~0.1 |
 
 **为什么这样写**：LoRA 只训练少量低秩适配器参数（约 0.3%），冻结原模型权重。这样：
-- 显存占用大幅降低（7B 模型从 28GB → 8GB）
+- 显存占用大幅降低（相比全参训练可省下梯度+优化器状态的开销，量级上是数倍差距，具体数值随配置而定）
 - 训练速度更快
 - 防止灾难性遗忘（原知识被冻结保护）
 
 ### 3.5 训练配置与启动
 
 ```python
+import torch
 from transformers import TrainingArguments, Trainer
 
 training_args = TrainingArguments(
@@ -251,20 +263,40 @@ training_args = TrainingArguments(
     logging_steps=10,
     save_steps=500,
     save_total_limit=3,             # 只保留最近 3 个检查点
-    fp16=True,                      # 混合精度训练
+    bf16=True,                      # 优先 bfloat16 混合精度（无需 GradScaler）
     gradient_checkpointing=True,    # 梯度检查点，省 30%~40% 显存
     report_to="none",
 )
+
+IGNORE_INDEX = -100
+
+def sft_data_collator(features):
+    """动态 padding，并同时屏蔽 padding 位置的 loss"""
+    pad_id = tokenizer.pad_token_id
+    max_len = max(len(f["input_ids"]) for f in features)
+
+    input_ids, attention_mask, labels = [], [], []
+    for f in features:
+        ids = f["input_ids"]
+        lab = f["labels"]                       # 已在预处理中屏蔽了 prompt 段
+        pad_len = max_len - len(ids)
+
+        input_ids.append(ids + [pad_id] * pad_len)
+        attention_mask.append([1] * len(ids) + [0] * pad_len)
+        # 关键：padding 位置的 label 设为 IGNORE_INDEX(-100)，不参与 loss
+        labels.append(lab + [IGNORE_INDEX] * pad_len)
+
+    return {
+        "input_ids": torch.tensor(input_ids, dtype=torch.long),
+        "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
+        "labels": torch.tensor(labels, dtype=torch.long),
+    }
 
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=tokenized_dataset,
-    data_collator=lambda x: {        # 动态 padding，提高效率
-        "input_ids": torch.stack([torch.tensor(d["input_ids"]) for d in x]),
-        "attention_mask": torch.stack([torch.tensor(d["attention_mask"]) for d in x]),
-        "labels": torch.stack([torch.tensor(d["input_ids"]) for d in x]),  # 自回归：labels = input_ids
-    },
+    data_collator=sft_data_collator,
 )
 
 # 开始训练
@@ -275,6 +307,7 @@ trainer.train()
 - `gradient_accumulation_steps=4`：显存不够大 batch 时，累积 4 步再更新，等效 batch size = 16
 - `gradient_checkpointing=True`：用计算换显存，长文本训练必备
 - `warmup_ratio=0.03`：前 3% 步数线性升温，防止初期学习率过大破坏预训练权重
+- **务必屏蔽 prompt 和 padding 的 loss**：`labels` 里 prompt 段（在 §3.3 预处理时）和 padding 段（在 collator 里）都置为 `-100`。否则模型会去"背诵指令本身"和"拟合无意义的 pad token"，这等于在**优化错误的目标**——SFT 只应对 assistant 的真实回复计算 loss。
 
 ### 3.6 保存与合并
 
@@ -385,8 +418,15 @@ def evaluate_exact_match(test_set, model, tokenizer):
     
     with torch.no_grad():
         for sample in test_set:
-            # 构建 prompt
-            prompt = f"### 指令：\n{sample['instruction']}\n\n### 回答：\n"
+            # 构建 prompt：必须与【训练时相同的 chat template】保持一致，
+            # 否则会造成训练/推理格式错配（切勿手写 "### 指令/### 回答"，见 §3.3）
+            user_content = sample["instruction"]
+            if sample.get("input"):
+                user_content += "\n\n" + sample["input"]
+            messages = [{"role": "user", "content": user_content}]
+            prompt = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
             inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
             
             # 生成
@@ -414,10 +454,12 @@ def evaluate_exact_match(test_set, model, tokenizer):
 
 ## 第六章：全参数微调 vs 参数高效微调对比
 
+> 下表数值为**数量级参考**，实际显存/速度取决于序列长度、batch、量化方案与实现，请以实测为准。注意：**全参数微调的显存不止"存一份参数"**，还要叠加梯度与优化器状态（详见预训练章的显存分析）。
+
 | 维度 | 全参数微调 | LoRA | QLoRA |
 |------|-----------|------|-------|
 | **可训练参数** | 100% | ~0.3% | ~0.3% |
-| **7B 模型显存** | ~28GB (FP16) | ~8GB | ~6GB |
+| **7B 模型显存（数量级）** | 上百 GB（参数+梯度+优化器状态+激活） | 显著更低 | 在 LoRA 基础上再靠 4bit 量化进一步降低 |
 | **训练速度** | 基准 | 快 | 中等 |
 | **存储占用** | 完整模型（~14GB） | LoRA 权重（~50MB） | LoRA 权重（~50MB） |
 | **推理速度** | 快 | 稍慢（需计算 LoRA） | 稍慢 |
@@ -433,6 +475,10 @@ def evaluate_exact_match(test_set, model, tokenizer):
 | 坑点 | 正确做法 |
 |------|----------|
 | 数据质量差（错误标注、格式混乱） | 投入 50% 精力在数据清洗和验证上 |
+| 指令与答案错配（问 A 答 B） | 逐条核对指令/输入/输出的语义与数值口径一致 |
+| 把错误答案当 `output` 混入训练 | SFT 只用正确答案；纠错能力靠"错在输入、对在输出"或后续偏好对齐 |
+| 手写 `### 指令/### 回答` 格式 | 用目标模型的 `tokenizer.apply_chat_template`，与推理格式一致 |
+| 对 prompt 和 padding 也算 loss | 把 prompt 段与 padding 段的 `labels` 置为 `-100`，只训练回复部分 |
 | 学习率过大导致灾难性遗忘 | 全参数用 1e-5，LoRA 用 1e-4，务必 warmup |
 | 只用领域数据微调 | 混合 10%~20% 通用数据，防止遗忘 |
 | 训练轮数过多导致过拟合 | 通常 1~3 个 epoch 足够，监控验证集 loss |
@@ -450,7 +496,7 @@ def evaluate_exact_match(test_set, model, tokenizer):
 | **SFT 定位** | PT 之后、RLHF 之前，让模型学会遵循指令 |
 | **数据格式** | 指令-输入-输出三元组，JSONL 格式 |
 | **数据量** | 质量 > 数量，1万~5万条高质量样本即可 |
-| **数据增强** | 同义改写、负样本注入、CoT 引导、上下文扩展 |
+| **数据增强** | 同义改写、纠错式样本（错在输入、对在输出）、CoT 引导、上下文扩展 |
 | **LoRA 配置** | r=8, alpha=32, target_modules=Q/K/V/O_proj |
 | **学习率** | 全参数 1e-5，LoRA 1e-4，必加 warmup |
 | **显存优化** | gradient_accumulation + gradient_checkpointing |
@@ -465,4 +511,4 @@ def evaluate_exact_match(test_set, model, tokenizer):
 4. **每轮保存检查点**，并保留验证集最佳模型
 5. **部署前做人工抽检**，自动化指标无法覆盖所有问题
 
-**下一步预告**：掌握了 SFT 后，你将进入 **基于人类反馈的强化学习（RLHF）** 的学习——理解如何用奖励模型（Reward Model）和 PPO 算法，让模型不仅"会做事"，还要"做对事"，对齐人类的安全、有用、诚实的价值观。这是大语言模型从"助手"进化为"可信助手"的关键一步。继续加油！
+**下一步预告**：掌握了 SFT 后，你将进入 **基于人类反馈的强化学习（RLHF）** 的学习——理解如何用奖励模型（Reward Model）配合 PPO、DPO、GRPO 等对齐算法，让模型不仅"会做事"，还要"做对事"，对齐人类的安全、有用、诚实的价值观。这是大语言模型从"助手"进化为"可信助手"的关键一步。继续加油！
