@@ -51,7 +51,7 @@ def _extract_claims_from_tutorial(tutorial: str, sources: List[Source]) -> List[
 
             source_ref = None
             for src in sources:
-                if src.source_type in ("knowledge_doc", "faq") and src.locator:
+                if src.source_type == "knowledge_doc" and src.locator:
                     source_ref = src.source_id
                     break
 

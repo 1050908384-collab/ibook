@@ -30,7 +30,7 @@ project-root/
 ├── data/             # 数据存储
 │   ├── seeds/        # 结构化种子数据
 │   ├── sqlite_data/  # 主库 project.db
-│   ├── chroma_db/    # FAQ 与 Agent1 知识语义索引
+│   ├── chroma_db/    # Agent1 知识语义索引
 │   ├── graph_data/   # 知识图谱结果层
 │   └── test_data/    # 测试样例数据
 ├── scripts/          # 工具脚本
@@ -66,7 +66,6 @@ python scripts/init_knowledge_base.py
 python scripts/init_agent1_semantic_index.py
 python scripts/build_knowledge_graph.py
 python scripts/seed_test_data.py
-python scripts/init_faq_vectors.py
 ```
 
 ### 知识目录与视频资源同步
@@ -130,19 +129,18 @@ python scripts/init_knowledge_base.py
 python scripts/init_agent1_semantic_index.py
 python scripts/build_knowledge_graph.py
 python scripts/seed_test_data.py
-python scripts/init_faq_vectors.py
 python scripts/check_review_schema.py
 ```
 
 ## 数据库约定
 
 - 当前唯一主 SQLite 库为 `data/sqlite_data/project.db`
-- `project.db` 是运行时唯一真相源，包含知识库表、FAQ 表、会话表和 `session_states`
+- `project.db` 是运行时唯一真相源，包含知识库表、会话表和 `session_states`
 - 历史库 `data/knowledge.db` 不再参与运行链路，仅保留备份归档用途
-- 所有后端代码、初始化脚本、FAQ 向量化脚本统一读取 `DATABASE_URL`
+- 所有后端代码和初始化脚本统一读取 `DATABASE_URL`
 - 所有 Chroma 数据统一读取 `CHROMA_PATH`
 - Agent1 使用 `agent1_knowledge_docs` collection 对 `knowledge_docs` 的 68 条文档做语义召回；初始化或更新种子文档后执行 `python scripts/init_agent1_semantic_index.py`
-- Agent1 索引独立使用 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（约 90MB、CPU 运行）与 cosine 距离，不依赖 Ollama，也不影响 FAQ 的默认向量空间。
+- Agent1 索引独立使用 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（约 90MB、CPU 运行）与 cosine 距离，不依赖 Ollama。
 - **源码开发/部署者**：执行一次 `python scripts/init_agent1_semantic_index.py` 与 `python scripts/evaluate_agent1_retrieval.py`，模型缓存和索引会生成在 `data/fastembed_models/`、`data/chroma_db/`。
 - **普通用户**：发行包应预置上述两个目录；不需要下载模型或执行初始化。两个目录被 Git 忽略，不能依赖源码仓库自动提供。
 - `KnowledgeGap` 中的 `block_id`、`block_name`、`target_subtopic_ids`、`mapping_confidence` 是 Agent1 的映射与选路元数据；Agent6 不重新推断这些字段，只在更新学习状态时原样保留。
@@ -156,12 +154,9 @@ python scripts/check_review_schema.py
 - **超轮次策略**：达到最大轮次仍有未决 must_fix 时，`final_status=needs_human_review`、`package_status=provisional`，学习包降级可用但不进入正式知识沉淀
 - **完整协议**：见 [`docs/Agent34审核辩论协议.md`](docs/Agent34审核辩论协议.md)；表结构说明见 [`数据库框架.md`](数据库框架.md) 第九节
 
-## FAQ 问答链路
-- Agent3 仅在用户提问时调用 FAQ 检索，不在教程生成阶段调用
-- FAQ 检索使用“完整问题直查向量库”方案，不先调用 LLM 提取关键词
-- FAQ 检索返回候选后，只有最高相似度达到阈值时才直接返回 FAQ 标准答案
-- FAQ 未命中或最高相似度低于阈值时，直接回退到知识库检索与 LLM 普通答疑
-- FAQ 向量数据来源于 `faq_items`，通过 `python scripts/init_faq_vectors.py` 写入 Chroma 的 `faq_collection`
+## Agent3 答疑链路
+- Agent3 使用当前阶段信息和知识文档检索结果作为上下文。
+- 答案由本地 LLM 直接生成，并统一交由 Agent4 审核与必要改稿。
 
 ## PowerShell 调试流程
 

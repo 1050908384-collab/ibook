@@ -116,11 +116,31 @@ class UserScopeDataTest(unittest.TestCase):
                 text("SELECT state_json FROM session_states WHERE session_id = 'goal-a'")
             ).scalar_one()
         self.assertIn('"profile": null', payload)
+        self.assertNotIn('"practice_profile"', payload)
         reloaded_client = SQLiteClient(self.database_url)
         try:
             restored = StateManager(reloaded_client).get_session("goal-a")
             self.assertEqual("开发工程师", restored["profile"]["grade"])
             self.assertEqual("学习 Python", restored["profile"]["goal"])
+        finally:
+            reloaded_client.close()
+
+    def test_practice_profile_is_rebuilt_from_user_hardware(self):
+        manager = StateManager(self.client)
+        manager.create_session("goal-a")
+        self.client.upsert_user_profile(DEFAULT_USER_ID, {"hardware": "RTX 4090"})
+        manager.refresh_practice_profile("goal-a")
+
+        with self.client.Session() as session:
+            payload = session.execute(
+                text("SELECT state_json FROM session_states WHERE session_id = 'goal-a'")
+            ).scalar_one()
+        self.assertNotIn('"practice_profile"', payload)
+
+        reloaded_client = SQLiteClient(self.database_url)
+        try:
+            restored = StateManager(reloaded_client).get_session("goal-a")
+            self.assertEqual("RTX 4090", restored["practice_profile"]["hardware"])
         finally:
             reloaded_client.close()
 

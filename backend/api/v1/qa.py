@@ -66,11 +66,17 @@ async def get_qa_history(session_id: str):
     stage_id = (session.get("stage_info") or {}).get("stage_id")
     items = []
     for index, record in enumerate(session.get("qa_history", []), start=1):
+        question = record.get("question", "")
+        answer = record.get("answer", "")
+        if harness._is_greeting(question):
+            answer = harness._greeting_answer((session.get("stage_info") or {}).get("block_name", ""))
+        else:
+            answer = harness._extract_user_facing_answer(answer)
         items.append({
             "qa_id": f"qa_{index}",
             "session_id": session_id,
-            "question": record.get("question", ""),
-            "answer": record.get("answer", ""),
+            "question": question,
+            "answer": answer,
             "stage_id": stage_id,
             "review_summary": {
                 "technical_passed": record.get("tech_pass", True),

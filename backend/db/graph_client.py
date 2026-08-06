@@ -50,11 +50,11 @@ class GraphClient:
             return True
         return relation_type in edge_attributes.get("relation_types", [])
 
-    def get_prerequisites(self, node_id: str) -> list:
+    def get_prerequisites(self, node_id: str, relation_type: str = "HARD_PREREQUISITE_OF") -> list:
         return [
             predecessor
             for predecessor in self.graph.predecessors(node_id)
-            if self._has_relation(self.graph.edges[predecessor, node_id], "PREREQUISITE_OF")
+            if self._has_relation(self.graph.edges[predecessor, node_id], relation_type)
         ]
 
     def get_dependents(self, node_id: str) -> list:

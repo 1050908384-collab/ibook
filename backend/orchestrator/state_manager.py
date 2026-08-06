@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import uuid
 
 from db.sqlite_client import SQLiteClient
-from models.profile import UserProfile
+from models.profile import PracticeProfile, UserProfile
 from models.stage import LearningPackage, StageInfo
 from models.user_data import SessionData
 
@@ -47,6 +47,39 @@ class StateManager:
     def get_profile(self, session_id: str) -> Optional[Dict[str, Any]]:
         state = self._get(session_id)
         return state.profile.model_dump(mode="json") if state and state.profile else None
+
+    def update_practice_profile(self, session_id: str, profile: PracticeProfile | dict) -> None:
+        state = self.require_session(session_id)
+        practice_profile = PracticeProfile.model_validate(profile)
+        # Hardware belongs to the user-level profile. PracticeProfile is only
+        # the Agent3 execution view and must not become another source of truth.
+        self.db_client.upsert_user_profile(
+            self.db_client.get_session_user_id(session_id),
+            {"hardware": practice_profile.hardware},
+        )
+        state.practice_profile = practice_profile
+        self._save(state)
+
+    def get_practice_profile(self, session_id: str) -> Dict[str, Any]:
+        state = self.require_session(session_id)
+        user_profile = self.db_client.get_user_profile(
+            self.db_client.get_session_user_id(session_id)
+        ) or {}
+        state.practice_profile = PracticeProfile(
+            hardware=user_profile.get("hardware", "")
+        )
+        return state.practice_profile.model_dump(mode="json")
+
+    def refresh_practice_profile(self, session_id: str) -> None:
+        """Refresh the runtime Agent3 DTO from the user-level hardware field."""
+        state = self.require_session(session_id)
+        user_profile = self.db_client.get_user_profile(
+            self.db_client.get_session_user_id(session_id)
+        ) or {}
+        state.practice_profile = PracticeProfile(
+            hardware=user_profile.get("hardware", "")
+        )
+        self._save(state)
 
     def update_stage(self, session_id: str, stage: StageInfo | dict) -> None:
         state = self.require_session(session_id)
@@ -175,6 +208,10 @@ class StateManager:
             profile = self.db_client.get_latest_profile(session_id)
             if profile:
                 state.profile = UserProfile.model_validate(profile)
+            user_profile = self.db_client.get_user_profile(user_id) or {}
+            state.practice_profile = PracticeProfile(
+                hardware=user_profile.get("hardware", "")
+            )
 
     def refresh_cached_target(self, session_id: str) -> None:
         state = self._cache.get(session_id)
@@ -210,6 +247,10 @@ class StateManager:
         composed_profile = self.db_client.get_latest_profile(session_id)
         if composed_profile:
             state.profile = UserProfile.model_validate(composed_profile)
+        user_profile = self.db_client.get_user_profile(state.user_id) or {}
+        state.practice_profile = PracticeProfile(
+            hardware=user_profile.get("hardware", "")
+        )
         self._cache[session_id] = state
         return state
 
@@ -220,4 +261,7 @@ class StateManager:
         # The combined profile is a compatibility DTO. Stable learner fields
         # live in learner_profiles and must not be duplicated in session JSON.
         payload["profile"] = None
+        # PracticeProfile is rebuilt from learner_profiles on restore. Keeping
+        # it out of session JSON avoids duplicating user hardware per target.
+        payload.pop("practice_profile", None)
         self.db_client.save_session_state(state.session_id, payload)

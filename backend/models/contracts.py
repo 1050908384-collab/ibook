@@ -2,7 +2,7 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, computed_field
 
-from models.profile import UserProfile
+from models.profile import PracticeProfile, UserProfile
 from models.review import ReviewError, ReviewResult
 from models.stage import LearningPackage, StageInfo
 
@@ -31,6 +31,8 @@ class StagePlanningOutput(BaseModel):
 class ContentGenerationInput(BaseModel):
     session_id: str
     stage: StageInfo
+    learning_profile: UserProfile | None = None
+    practice_profile: PracticeProfile = Field(default_factory=PracticeProfile)
 
 
 class ContentGenerationOutput(BaseModel):

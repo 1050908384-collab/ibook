@@ -260,10 +260,63 @@ class GraphQueryTool:
                         seed_index,
                     ),
                 }
-                for prerequisite_id in graph_client.get_prerequisites(block_id)
+                for prerequisite_id in graph_client.get_prerequisites(
+                    block_id, relation_type="PREREQUISITE_OF"
+                )
             ]
         except Exception:
             return []
 
     async def query_dependencies(self, skill_name: str) -> List[str]:
         return await self.query_prerequisites(skill_name)
+
+    async def minimal_hard_prerequisite_subgraph(
+        self, target_subtopic_ids: list[str], goal: str = ""
+    ) -> dict[str, int]:
+        """Return the target nodes and their hard-only ancestors as topo levels.
+
+        Recommended/contextual edges deliberately never enter this graph. Goal
+        conditions are included only when the caller's normalized goal matches.
+        """
+        graph_client = GraphClient()
+        graph = nx.DiGraph()
+        for node_id, node_data in graph_client.graph.nodes(data=True):
+            if node_data.get("node_type") == "subtopic":
+                graph.add_node(node_id)
+        normalized_goal = goal.casefold()
+        for source_id, target_id, edge_data in graph_client.graph.edges(data=True):
+            relation_types = edge_data.get("relation_types", [])
+            if edge_data.get("relation_type") == "HARD_PREREQUISITE_OF" or "HARD_PREREQUISITE_OF" in relation_types:
+                graph.add_edge(source_id, target_id)
+            elif (
+                edge_data.get("relation_type") == "GOAL_CONDITION_OF"
+                and _goal_condition_matches(str(edge_data.get("goal", "")), normalized_goal)
+            ):
+                graph.add_edge(source_id, target_id)
+
+        included: set[str] = set()
+        for target_id in target_subtopic_ids:
+            if target_id in graph:
+                included.add(target_id)
+                included.update(nx.ancestors(graph, target_id))
+        if not included:
+            return {}
+        subgraph = graph.subgraph(included)
+        levels: dict[str, int] = {}
+        for node_id in nx.topological_sort(subgraph):
+            levels[node_id] = max(
+                (levels[parent] for parent in subgraph.predecessors(node_id)),
+                default=-1,
+            ) + 1
+        return levels
+
+
+def _goal_condition_matches(condition: str, normalized_goal: str) -> bool:
+    aliases = {
+        "chat_sft": ("chat_sft", "chat sft", "对话sft", "对话微调"),
+        "deploy_fine_tuned_model": (
+            "deploy_fine_tuned_model", "deploy fine tuned model",
+            "部署微调后模型", "部署微调模型",
+        ),
+    }
+    return any(alias in normalized_goal for alias in aliases.get(condition, (condition,)))

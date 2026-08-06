@@ -22,7 +22,7 @@ from tools.agent6_tools.profile_update_tool import ProfileUpdateTool
 
 
 class Agent1MappingQualityTest(unittest.IsolatedAsyncioTestCase):
-    async def test_multitarget_mapping_preserves_direct_prerequisite_frontier(self):
+    async def test_multitarget_mapping_keeps_only_goal_nodes_in_profile(self):
         agent = DeterministicDiagnosticAgent()
         result = await agent.run(DiagnosticInput(
             session_id="agent1-mapping-test",
@@ -34,8 +34,10 @@ class Agent1MappingQualityTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("KB-15", gap_ids)
         self.assertNotIn("KB-09", gap_ids)
         self.assertNotIn("KB-04", gap_ids)
-        self.assertLess(gap_ids.index("KB-11"), gap_ids.index("KB-12"))
-        self.assertLess(gap_ids.index("KB-08"), gap_ids.index("KB-15"))
+        # Prerequisites are now expanded at subtopic level during stage
+        # planning, rather than inserted as coarse block-level gaps.
+        self.assertNotIn("KB-11", gap_ids)
+        self.assertNotIn("KB-08", gap_ids)
 
     def test_prompt_candidates_include_decision_context(self):
         catalog = KnowledgeCatalogTool()
@@ -87,15 +89,18 @@ class Agent1MappingQualityTest(unittest.IsolatedAsyncioTestCase):
         self.assertLess(result.profile.confidence, 0.7)
         self.assertFalse(result.profile.knowledge_gaps[0].block_id)
 
-    async def test_direct_frontier_defines_first_stage_subtopic(self):
+    async def test_lora_profile_keeps_target_and_defers_hard_closure_to_planning(self):
         agent = DeterministicDiagnosticAgent()
         result = await agent.run(DiagnosticInput(
             session_id="zero-foundation-lora-test",
             user_input="I want to learn LoRA.",
         ))
-        self.assertEqual("KB-04", result.profile.knowledge_gaps[0].block_id)
-        block = agent.knowledge_catalog_tool.get_block("KB-04")
-        self.assertEqual("KBS-04-01", block["subtopics"][0]["subtopic_id"])
+        self.assertEqual("KB-12", result.profile.knowledge_gaps[0].block_id)
+        closure = await agent.graph_query_tool.minimal_hard_prerequisite_subgraph(
+            ["KBS-12-03"], result.profile.goal
+        )
+        self.assertIn("KBS-12-03", closure)
+        self.assertNotIn("KBS-12-04", closure)
 
     def test_semantic_evidence_retains_subtopic_direct_prerequisites(self):
         catalog = KnowledgeCatalogTool()

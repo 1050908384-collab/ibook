@@ -14,12 +14,12 @@ Agent3 独立测试 —— 内容生成 Agent（学习包 + 答疑）
   2. 输入（ContentGenerationInput: session_id + StageInfo）
   3. 运行中主要参数（向量检索结果、题目提取结果 — 直接调用工具预览中间数据）
   4. Agent3 run() 输出（LearningPackage: tutorial / questions / sources / claims）
-  5. 答疑中间参数（FAQ 检索、向量检索）
+  5. 答疑中间参数（知识文档向量检索）
   6. 答疑输出（answer）
 
 说明：
   - hybrid 模式：先走确定性生成，再用本地 LLM 增强 tutorial / answer（与 Harness 实际行为一致）。
-  - deterministic 模式：纯工具链路（向量检索 + FAQ），不调 LLM。
+  - deterministic 模式：纯工具链路（知识文档向量检索），不调 LLM。
 """
 import asyncio
 import json
@@ -137,23 +137,7 @@ async def show_runtime_params_answer(agent, question: str, stage: StageInfo) -> 
     section("答疑中间参数（Agent3.generate_answer 内部工具调用预览）")
     params = {}
 
-    # 1. FAQ 检索
-    print(f"\n  [工具] faq_search_tool.search(question='{question[:40]}', block_id='{stage.block_id}')")
-    try:
-        faq_results = await agent.faq_search_tool.search(
-            question, block_id=stage.block_id, top_k=1
-        )
-        params["faq_results"] = faq_results
-        print(f"    → FAQ 命中 {len(faq_results)} 条")
-        for i, faq in enumerate(faq_results):
-            print(f"      [{i}] question={faq.get('question', '?')[:60]}")
-            print(f"          answer={faq.get('answer', '?')[:80]}")
-            print(f"          similarity={faq.get('similarity', '?')}")
-    except Exception as e:
-        params["faq_results"] = f"[ERROR] {e}"
-        print(f"    → [ERROR] {e}")
-
-    # 2. 向量检索（按问题检索）
+    # 知识文档向量检索（按问题检索）
     print(f"\n  [工具] vector_search_tool.search_by_query(question, top_k=3)")
     try:
         query_docs = await agent.vector_search_tool.search_by_query(question, top_k=3)

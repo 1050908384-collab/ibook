@@ -176,7 +176,11 @@ class KnowledgeCatalogTool:
             candidate.setdefault("semantic_hits", []).append(hit)
             candidate["score"] = float(candidate.get("score") or 0.0) + float(hit.get("similarity") or 0.0) * 24.0
             subtopic_id = str(hit.get("subtopic_id", ""))
-            if subtopic_id and all(item.get("subtopic_id") != subtopic_id for item in candidate["matched_subtopics"]):
+            active_subtopic_ids = {item["subtopic_id"] for item in block.get("subtopics", [])}
+            if (
+                subtopic_id in active_subtopic_ids
+                and all(item.get("subtopic_id") != subtopic_id for item in candidate["matched_subtopics"])
+            ):
                 candidate["matched_subtopics"].append({
                     "subtopic_id": subtopic_id,
                     "subtopic_name": hit.get("title", ""),
@@ -263,6 +267,17 @@ class KnowledgeCatalogTool:
                     resolved.append(str(subtopic["subtopic_id"]))
                     break
         return self._dedupe(resolved)
+
+    def default_target_subtopic_ids(self, block_id: str, query: str) -> list[str]:
+        """Choose a canonical target when recall finds a block but no valid node."""
+        normalized_query = _normalize(query)
+        if block_id == "KB-12":
+            if "qlora" in normalized_query or "4bit" in normalized_query or "nf4" in normalized_query:
+                return ["KBS-12-04"]
+            if any(term in normalized_query for term in ("merge", "导出", "合并")):
+                return ["KBS-12-05"]
+            return ["KBS-12-03"]
+        return []
 
     def canonical_skill_label(self, block: dict[str, Any], query: str) -> str:
         normalized_query = _normalize(query)

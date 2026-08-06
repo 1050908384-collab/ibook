@@ -17,9 +17,7 @@
     "description": "- （环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）-0h\n- 语法-2h\n- 数据结构-2h\n- 函数与类与对象-2.5h\n- 文件与异常处理-1.5h\n- 装饰器与生成器-2h",
     "estimated_hours": 10.0,
     "difficulty": "初级",
-    "prerequisites": [
-      "KB-01"
-    ],
+    "prerequisites": [],
     "corresponding_gaps": [
       "Python基础",
       "编程能力"

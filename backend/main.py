@@ -45,12 +45,21 @@ async def add_utf8_json_charset(request, call_next):
                 request.url.path,
                 request.headers.get("origin", "-"),
             )
+            print(
+                f"[API][500] {request.method} {request.url.path} origin={request.headers.get('origin', '-')}",
+                flush=True,
+            )
         raise
 
     content_type = response.headers.get("content-type", "")
     if content_type.startswith("application/json") and "charset=" not in content_type:
         response.headers["content-type"] = "application/json; charset=utf-8"
     if request.url.path.startswith("/api/"):
+        message = (
+            f"[API][{response.status_code}] {request.method} {request.url.path} "
+            f"duration_ms={(time.perf_counter() - started_at) * 1000:.1f} "
+            f"origin={request.headers.get('origin', '-')}"
+        )
         logger.info(
             "api_request method=%s path=%s status=%s duration_ms=%.1f origin=%s",
             request.method,
@@ -59,6 +68,7 @@ async def add_utf8_json_charset(request, call_next):
             (time.perf_counter() - started_at) * 1000,
             request.headers.get("origin", "-"),
         )
+        print(message, flush=True)
     return response
 
 
@@ -99,6 +109,11 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+    print(
+        f"[STARTUP] backend listening on http://{settings.APP_HOST}:{settings.APP_PORT} "
+        f"log_level={settings.LOG_LEVEL.upper()} database={settings.DATABASE_URL}",
+        flush=True,
+    )
     uvicorn.run(
         "main:app",
         host=settings.APP_HOST,

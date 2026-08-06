@@ -261,19 +261,6 @@ class SQLiteClient:
                 )
             """))
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS faq_items (
-                    faq_id VARCHAR(50) PRIMARY KEY,
-                    block_id VARCHAR(50) NOT NULL,
-                    question TEXT NOT NULL,
-                    answer TEXT NOT NULL,
-                    difficulty VARCHAR(20) CHECK (difficulty IN ('初级', '中级', '高级')),
-                    tags TEXT,
-                    views INT DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
-                )
-            """))
-            conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS session_states (
                     session_id VARCHAR(50) PRIMARY KEY,
                     state_json TEXT NOT NULL,
@@ -632,7 +619,7 @@ class SQLiteClient:
             CREATE TABLE IF NOT EXISTS learning_package_sources (
                 trace_id VARCHAR(50) NOT NULL,
                 source_id VARCHAR(50) NOT NULL,
-                source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
+                source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
                 title VARCHAR(200),
                 locator TEXT,
                 content_ref TEXT,
@@ -796,7 +783,7 @@ class SQLiteClient:
                     CREATE TABLE learning_package_sources (
                         trace_id VARCHAR(50) NOT NULL,
                         source_id VARCHAR(50) NOT NULL,
-                        source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'faq', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
+                        source_type VARCHAR(30) CHECK (source_type IN ('knowledge_doc', 'best_practice', 'manual', 'external_note', 'code_example', 'video')) NOT NULL,
                         title VARCHAR(200),
                         locator TEXT,
                         content_ref TEXT,
@@ -1569,6 +1556,11 @@ class SQLiteClient:
                 item["subtopic_id"],
             )
 
+        # Stage planning must stay inside the learner's selected knowledge
+        # block.  Sorting alone allowed an unrelated block to be selected when
+        # the preferred block had no currently-unlocked subtopic.
+        if preferred_block_id:
+            candidates = [item for item in candidates if item["block_id"] == preferred_block_id]
         return sorted(candidates, key=sort_key)
 
     def get_next_subtopic(
@@ -2064,69 +2056,6 @@ class SQLiteClient:
                 "progress": round(mastered / total, 3) if total else 0.0,
             })
         return result
-
-    def search_faq(self, block_id: str = None, query: str = None, limit: int = 5) -> list[dict]:
-        with self.Session() as session:
-            params = {}
-            if block_id and query:
-                sql = """
-                    SELECT faq_id, block_id, question, answer, difficulty, tags, views
-                    FROM faq_items
-                    WHERE block_id = :block_id AND (question LIKE :query OR answer LIKE :query)
-                    ORDER BY views DESC, difficulty ASC
-                    LIMIT :limit
-                """
-                params = {"block_id": block_id, "query": f"%{query}%", "limit": limit}
-            elif block_id:
-                sql = """
-                    SELECT faq_id, block_id, question, answer, difficulty, tags, views
-                    FROM faq_items
-                    WHERE block_id = :block_id
-                    ORDER BY views DESC, difficulty ASC
-                    LIMIT :limit
-                """
-                params = {"block_id": block_id, "limit": limit}
-            elif query:
-                sql = """
-                    SELECT faq_id, block_id, question, answer, difficulty, tags, views
-                    FROM faq_items
-                    WHERE question LIKE :query OR answer LIKE :query
-                    ORDER BY views DESC, difficulty ASC
-                    LIMIT :limit
-                """
-                params = {"query": f"%{query}%", "limit": limit}
-            else:
-                return []
-
-            rows = session.execute(text(sql), params).mappings().all()
-            results = []
-            for row in rows:
-                result = dict(row)
-                result["tags"] = json.loads(result["tags"]) if result["tags"] else []
-                results.append(result)
-            return results
-
-    def increment_faq_views(self, faq_id: str) -> None:
-        with self.Session() as session:
-            session.execute(text("""
-                UPDATE faq_items
-                SET views = views + 1
-                WHERE faq_id = :faq_id
-            """), {"faq_id": faq_id})
-            session.commit()
-
-    def get_faq_by_id(self, faq_id: str) -> dict | None:
-        with self.Session() as session:
-            row = session.execute(text("""
-                SELECT faq_id, block_id, question, answer, difficulty, tags, views
-                FROM faq_items
-                WHERE faq_id = :faq_id
-            """), {"faq_id": faq_id}).mappings().first()
-            if not row:
-                return None
-            result = dict(row)
-            result["tags"] = json.loads(result["tags"]) if result["tags"] else []
-            return result
 
     # ========================================================================
     # Agent3-4 审核辩论协议 — 落库接口（P2，按 trace_id 组织）

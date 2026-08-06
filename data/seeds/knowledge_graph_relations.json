@@ -1,0 +1,46 @@
+{
+  "hard_prerequisites": {
+    "KBS-07-04": ["KBS-07-02"],
+    "KBS-09-01": ["KBS-08-02"],
+    "KBS-09-02": ["KBS-08-02"],
+    "KBS-10-01": ["KBS-08-02", "KBS-04-06"],
+    "KBS-10-02": ["KBS-10-01"],
+    "KBS-12-00": ["KBS-11-00", "KBS-04-00"],
+    "KBS-12-01": ["KBS-04-03", "KBS-11-03"],
+    "KBS-12-02": ["KBS-12-01"],
+    "KBS-12-03": ["KBS-12-00", "KBS-12-02"],
+    "KBS-12-04": ["KBS-12-00", "KBS-12-01"],
+    "KBS-12-05": ["KBS-12-03", "KBS-04-07"],
+    "KBS-13-00": ["KBS-04-00"],
+    "KBS-13-01": ["KBS-04-06"],
+    "KBS-13-02": ["KBS-13-00", "KBS-04-06"],
+    "KBS-13-03": ["KBS-04-06"],
+    "KBS-13-04": ["KBS-04-05", "KBS-04-06"],
+    "KBS-14-00": ["KBS-01-03", "KBS-04-00"],
+    "KBS-14-01": ["KBS-14-00", "KBS-13-01", "KBS-13-02"],
+    "KBS-14-02": ["KBS-14-01"],
+    "KBS-14-03": ["KBS-14-01", "KBS-14-02", "KBS-11-03"],
+    "KBS-15-00": ["KBS-01-03", "KBS-04-00"],
+    "KBS-15-01": ["KBS-08-02"],
+    "KBS-15-02": ["KBS-15-01"],
+    "KBS-15-03": ["KBS-08-06", "KBS-15-00"],
+    "KBS-15-04": ["KBS-15-00", "KBS-15-02", "KBS-15-03"]
+  },
+  "recommended_prerequisites": [
+    ["KBS-01-00", "KBS-02-00"],
+    ["KBS-07-04", "KBS-09-02"],
+    ["KBS-10-02", "KBS-12-03"]
+  ],
+  "contextual_relations": [],
+  "goal_conditions": [
+    {"source_id": "KBS-07-04", "target_id": "KBS-10-02", "goal": "chat_sft"},
+    {"source_id": "KBS-12-05", "target_id": "KBS-15-04", "goal": "deploy_fine_tuned_model"}
+  ],
+  "goal_recommendations": [
+    {"block_id": "KB-13", "goals": ["high_efficiency_finetuning", "stable_training", "production_training"]}
+  ],
+  "practice_metadata": {
+    "KBS-12-00": {"packages": ["peft"]},
+    "KBS-12-04": {"packages": ["bitsandbytes"], "supported_environments": ["local_nvidia_gpu", "cloud_gpu"]}
+  }
+}
