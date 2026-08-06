@@ -26,7 +26,7 @@ OBJECTIVE_TYPES = {"fill_blank", "single_choice", "true_false", "multi_choice", 
 SUBJECTIVE_TYPES = {"short_answer", "practical", "essay", "case_analysis"}
 
 
-def question_extract(input_data: dict, config: dict = None) -> dict:
+def question_extract(input_data: dict, config: dict = None, database_url: str = None) -> dict:
     config = config or {}
     use_mock = config.get("use_mock", True)
 
@@ -46,7 +46,7 @@ def question_extract(input_data: dict, config: dict = None) -> dict:
         if use_mock:
             return _mock_extract(input_data, count)
 
-        questions, db_available = _extract_questions(block_id, block_name, count)
+        questions, db_available = _extract_questions(block_id, block_name, count, database_url)
         return {
             "status": "success",
             "data": {"questions": questions, "db_available": db_available},
@@ -63,8 +63,8 @@ def question_extract(input_data: dict, config: dict = None) -> dict:
         }
 
 
-def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List[Dict[str, Any]], bool]:
-    db_path = _get_db_path()
+def _extract_questions(block_id: str, block_name: str, count: int, database_url: str = None) -> tuple[List[Dict[str, Any]], bool]:
+    db_path = _get_db_path(database_url)
     if not db_path.exists():
         logger.warning("Database not found for question extraction: %s", db_path)
         return [], False
@@ -136,8 +136,8 @@ def _extract_questions(block_id: str, block_name: str, count: int) -> tuple[List
         return [], False
 
 
-def _get_db_path() -> Path:
-    url = settings.DATABASE_URL
+def _get_db_path(database_url: str = None) -> Path:
+    url = database_url or settings.DATABASE_URL
     raw = url.replace("sqlite:///", "", 1)
     path = Path(raw)
     if not path.is_absolute():
@@ -180,8 +180,9 @@ def _load_mock() -> dict:
 
 
 class QuestionExtractTool:
-    def __init__(self):
+    def __init__(self, database_url: str = None):
         self._default_config = {"use_mock": False}
+        self._database_url = database_url
 
     async def extract_questions(self, tutorial: str, stage_info: Dict[str, Any]) -> List[Dict[str, Any]]:
         result = question_extract(
@@ -191,6 +192,7 @@ class QuestionExtractTool:
                 "count": stage_info.get("question_count", 2),
             },
             config=self._default_config,
+            database_url=self._database_url,
         )
         if result.get("status") != "success":
             return []

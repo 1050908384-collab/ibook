@@ -429,7 +429,16 @@ class LLMGenerateTool:
     async def adjust_tutorial_difficulty(self, tutorial: str, errors: List[Dict[str, Any]]) -> str:
         return tutorial
 
-    async def generate_answer(self, question: str, related_docs: List[Dict[str, Any]] = None) -> str:
+    async def generate_answer(self, question: str, related_docs: List[Dict[str, Any]] = None,
+                              tutorial: str = "", qa_history: List[Dict[str, Any]] = None,
+                              profile_summary: str = "") -> str:
+        """生成技术类回答：向量检索 + LLM 生成，整合 memory 上下文。
+
+        新增 memory 参数（可选）：
+        - tutorial: 当前学习包教程内容，作为技术参考材料
+        - qa_history: 历史问答记录，用于理解用户上下文
+        - profile_summary: 用户画像摘要，个性化回答
+        """
         result = llm_generate({
             "mode": "answer",
             "question": question,
@@ -437,7 +446,201 @@ class LLMGenerateTool:
         }, config=self._default_config)
         if result.get("status") != "success":
             return _fallback_content("answer", {"question": question})
-        return result["data"].get("content", "")
+        base_answer = result["data"].get("content", "")
+
+        # 如果有 memory 上下文，用 LLM 整合生成更贴合用户的回答
+        if tutorial or qa_history or profile_summary:
+            integrated = await self._integrate_memory_to_answer(
+                question, base_answer, tutorial, qa_history or [], profile_summary
+            )
+            return integrated
+        return base_answer
+
+    async def _integrate_memory_to_answer(
+        self,
+        question: str,
+        base_answer: str,
+        tutorial: str,
+        qa_history: List[Dict[str, Any]],
+        profile_summary: str,
+    ) -> str:
+        """将 memory 上下文整合到技术回答中，使回答更贴合用户当前学习进度。"""
+        history_text = ""
+        if qa_history:
+            recent = qa_history[-5:]  # 只取最近5轮，避免 prompt 过长
+            history_text = "\n".join([
+                f"用户问：{item.get('question', '')}\n答：{item.get('answer', '')[:200]}"
+                for item in recent
+                if isinstance(item, dict)
+            ])
+
+        tutorial_text = (tutorial or "")[:2000]  # 截断，避免 prompt 过长
+        profile_text = profile_summary or ""
+
+        system_prompt = """你是一个专业的技术辅导老师。请基于以下信息整合生成最终回答：
+
+1. 保持技术准确性，不编造来源
+2. 结合用户的学习进度和历史问题，让回答更贴合用户当前水平
+3. 如果学习包教程中有相关内容，优先引用并补充说明
+4. 回答结构保持：结论先行→原理支撑→示例佐证"""
+
+        prompt = f"""用户问题：{question}
+
+基础回答（基于向量检索生成）：
+{base_answer}
+
+用户画像摘要：
+{profile_text}
+
+当前学习包教程片段：
+{tutorial_text}
+
+历史问答记录：
+{history_text}
+
+请整合以上信息，生成一个更贴合用户当前学习进度和水平的回答。保持技术准确性，结合用户的历史问题和学习内容。"""
+
+        try:
+            response = await self.llm_client.complete(prompt, system_prompt)
+            if response and not response.startswith("Error:"):
+                return response
+            return base_answer
+        except Exception as e:
+            logger.warning("整合 memory 到回答失败，返回基础回答: %s", e)
+            return base_answer
+
+    async def classify_question(self, question: str) -> str:
+        """用 LLM 判断问题是技术类还是日常类。
+
+        返回值："technical"（技术类）或 "daily"（日常类）。
+
+        分类标准：
+        - technical: 涉及代码、算法、概念解释、技术原理、API 使用、报错排查等
+        - daily: 学习计划咨询、情绪疏导、学习鼓励、非技术闲聊等
+        """
+        system_prompt = """你是一个问题分类器。请判断用户的问题属于"技术类"还是"日常类"。
+
+分类标准：
+- technical（技术类）：涉及代码、算法、概念解释、技术原理、API使用、报错排查、编程实现、框架工具等技术性问题
+- daily（日常类）：学习计划咨询（如"我该怎么学"）、学习状态/情绪（如"今天状态不好"）、学习意义咨询（如"学这个有什么用"）、非技术闲聊等
+
+请只输出一个JSON：{"type": "technical"} 或 {"type": "daily"}"""
+
+        prompt = f"""请判断以下问题属于技术类还是日常类：
+
+用户问题：{question}
+
+请输出JSON格式结果。"""
+
+        try:
+            response = await self.llm_client.complete(
+                prompt, system_prompt, temperature=0.1, json_mode=True
+            )
+            if response and not response.startswith("Error:"):
+                # 尝试解析 JSON
+                import json as _json
+                try:
+                    result = _json.loads(response)
+                    q_type = result.get("type", "technical").lower()
+                    if q_type in ("technical", "daily"):
+                        return q_type
+                except _json.JSONDecodeError:
+                    # JSON 解析失败，用关键词兜底
+                    pass
+            # LLM 失败时用关键词兜底分类
+            return self._classify_by_keywords(question)
+        except Exception as e:
+            logger.warning("LLM 分类问题失败，使用关键词兜底: %s", e)
+            return self._classify_by_keywords(question)
+
+    @staticmethod
+    def _classify_by_keywords(question: str) -> str:
+        """LLM 不可用时的关键词兜底分类。"""
+        # 日常类关键词
+        daily_keywords = [
+            "怎么学", "如何学", "学习计划", "学习路线", "状态不好", "学不进去",
+            "有什么用", "为什么学", "坚持", "放弃", "焦虑", "累", "难",
+            "鼓励", "你好", "谢谢", "再见", "今天", "心情",
+        ]
+        # 技术类关键词
+        tech_keywords = [
+            "代码", "报错", "error", "bug", "算法", "原理", "公式", "实现",
+            "函数", "类", "接口", "api", "框架", "配置", "安装", "部署",
+            "python", "pytorch", "transformer", "怎么写", "如何实现",
+        ]
+        q_lower = question.lower()
+        for kw in tech_keywords:
+            if kw in q_lower:
+                return "technical"
+        for kw in daily_keywords:
+            if kw in question:
+                return "daily"
+        # 默认按技术类处理（保守策略，确保技术问题不被误判为日常）
+        return "technical"
+
+    async def generate_daily_answer(
+        self,
+        question: str,
+        tutorial: str,
+        qa_history: List[Dict[str, Any]],
+        profile_summary: str,
+    ) -> str:
+        """生成日常类回答：只用历史对话 memory + 用户画像。
+
+        日常类回答不涉及技术准确性，无需 Agent4 审核。
+        注：tutorial 参数保留用于向后兼容，但不再使用。
+        """
+        history_text = ""
+        if qa_history:
+            recent = qa_history[-5:]
+            history_text = "\n".join([
+                f"用户问：{item.get('question', '')}\n答：{item.get('answer', '')[:200]}"
+                for item in recent
+                if isinstance(item, dict)
+            ])
+
+        profile_text = profile_summary or "暂无用户画像信息"
+
+        system_prompt = """你是一个温暖、专业的学习导师。用户提出的是日常类问题（非技术问题）。
+
+请基于以下信息生成有温度、有针对性的回答：
+1. 结合用户画像（学习目标、水平、偏好），给出个性化建议
+2. 参考历史对话，理解用户当前的学习状态和情绪
+3. 不要引用技术学习材料，保持轻松自然的对话风格
+4. 语气要亲切自然，像朋友间的对话，避免说教
+5. 回答要简洁，不要过长（一般不超过300字）"""
+
+        prompt = f"""用户问题：{question}
+
+用户画像摘要：
+{profile_text}
+
+历史问答记录：
+{history_text}
+
+请生成一个温暖、有针对性的回答。"""
+
+        try:
+            response = await self.llm_client.complete(prompt, system_prompt, temperature=0.8)
+            if response and not response.startswith("Error:"):
+                return response
+            return self._daily_fallback(question, profile_summary)
+        except Exception as e:
+            logger.warning("生成日常类回答失败，使用兜底: %s", e)
+            return self._daily_fallback(question, profile_summary)
+
+    @staticmethod
+    def _daily_fallback(question: str, profile_summary: str) -> str:
+        """LLM 不可用时日常类回答的兜底内容。"""
+        goal = ""
+        if profile_summary:
+            for line in profile_summary.split("\n"):
+                if "目标" in line or "goal" in line.lower():
+                    goal = line.split("：")[-1].split(":")[-1].strip()
+                    break
+        if goal:
+            return f"我理解你的感受。你目前的学习目标是「{goal}」，学习过程中遇到困惑很正常。可以告诉我具体是哪方面让你困扰吗？"
+        return "我理解你的感受。学习过程中遇到困惑很正常，可以告诉我具体是哪方面让你困扰吗？我们一起想办法。"
 
     async def fix_answer(self, answer: str, errors: List[Dict[str, Any]], question: str = "") -> str:
         return await self._modify_answer(answer, errors, [], question)

@@ -82,10 +82,20 @@ class AnswerGenerationInput(BaseModel):
     question: str
     stage: StageInfo
     profile: UserProfile
+    # === memory 上下文（供 Agent3 生成更贴合用户的回答）===
+    # 当前阶段 block_id，用于技术类回答时检索本阶段相关的知识文档
+    block_id: Optional[str] = None
+    # 当前会话的历史问答记录，用于理解用户上下文（技术类+日常类都使用）
+    qa_history: List[dict] = Field(default_factory=list)
+    # 用户画像摘要文本，供日常类回答整合用户个性化信息
+    profile_summary: Optional[str] = None
 
 
 class AnswerGenerationOutput(BaseModel):
     answer: str
+    # 问题类型标记：technical（技术类）| daily（日常类）
+    # harness 据此决定是否调用 Agent4 审核
+    question_type: Literal["technical", "daily"] = "technical"
 
 
 class AnswerRevisionInput(BaseModel):

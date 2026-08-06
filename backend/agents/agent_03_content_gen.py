@@ -88,7 +88,7 @@ def _generate_sources(block_id: str, related_docs: List[Dict[str, Any]]) -> List
 
 
 class ContentGeneratorAgent(BaseAgent):
-    def __init__(self):
+    def __init__(self, database_url: str = None):
         super().__init__("content_generator_agent", [
             "knowledge_graph", "content_strategy", "language_models"
         ])
@@ -96,7 +96,7 @@ class ContentGeneratorAgent(BaseAgent):
         self.video_search_tool = VideoSearchTool()
         self.llm_generate_tool = LLMGenerateTool()
         self.code_generation_tool = CodeGenerationTool()
-        self.question_extract_tool = QuestionExtractTool()
+        self.question_extract_tool = QuestionExtractTool(database_url=database_url)
         self.template_render_tool = TemplateRenderTool()
         self.format_converter_tool = FormatConverterTool()
         self.code_executor_tool = CodeExecutorTool()
@@ -272,13 +272,62 @@ class ContentGeneratorAgent(BaseAgent):
 
         return package
 
-    async def answer_question(self, session_id: str, question: str) -> str:
+    async def answer_question(self, session_id: str, question: str,
+                              block_id: str = "", qa_history: list = None,
+                              profile_summary: str = "") -> dict:
+        """回答用户问题：先分类（technical/daily），再走对应流程。
+
+        返回 dict：{"answer": str, "question_type": "technical" | "daily"}
+        - 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory + LLM 综合
+        - 日常类：历史对话 memory + 画像 + LLM 直接回答
+        """
+        # 问题分类
+        question_type = await self.llm_generate_tool.classify_question(question)
+
+        if question_type == "daily":
+            # 日常类：只用历史对话 memory + 画像，跳过 Agent4
+            answer = await self.llm_generate_tool.generate_daily_answer(
+                question, "", qa_history or [], profile_summary
+            )
+            return {"answer": answer, "question_type": "daily"}
+
+        # 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory
         code_snippets = self._extract_code_from_question(question)
         if code_snippets:
-            return await self._handle_code_correction(session_id, question, code_snippets)
-        related_docs = await self.vector_search_tool.search_by_query(question, top_k=3)
-        answer = await self.llm_generate_tool.generate_answer(question, related_docs)
-        return answer
+            answer = await self._handle_code_correction(session_id, question, code_snippets)
+            if qa_history or profile_summary:
+                memory_ctx = self._build_memory_text(qa_history, profile_summary)
+                if memory_ctx:
+                    answer = f"{answer}\n\n{memory_ctx}"
+            return {"answer": answer, "question_type": "technical"}
+
+        # 本阶段相关知识文档检索（用 block_id 过滤）
+        if block_id:
+            related_docs = await self.vector_search_tool.search_by_block(block_id)
+        else:
+            related_docs = await self.vector_search_tool.search_by_query(question, top_k=3)
+
+        answer = await self.llm_generate_tool.generate_answer(
+            question, related_docs,
+            tutorial="", qa_history=qa_history, profile_summary=profile_summary
+        )
+        return {"answer": answer, "question_type": "technical"}
+
+    @staticmethod
+    def _build_memory_text(qa_history: list, profile_summary: str) -> str:
+        """构建历史 memory 上下文文本。"""
+        parts = []
+        if qa_history:
+            recent = qa_history[-3:]
+            history_text = "\n".join([
+                f"- 问：{item.get('question', '')[:80]}\n  答：{item.get('answer', '')[:100]}"
+                for item in recent if isinstance(item, dict)
+            ])
+            if history_text:
+                parts.append(f"💬 最近对话记录：\n{history_text}")
+        if profile_summary:
+            parts.append(f"👤 学习画像：{profile_summary}")
+        return "\n\n".join(parts)
 
     def _extract_code_from_question(self, question: str) -> List[str]:
         patterns = [
