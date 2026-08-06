@@ -45,6 +45,8 @@ export type ApiStage = Record<string, unknown> & {
   stage_id?: string;
   stage_num?: number;
   block_name?: string;
+  subtopic_id?: string;
+  estimated_hours?: number;
   status?: string;
 };
 
@@ -116,6 +118,8 @@ export type SessionListItem = {
   skill_tags?: string[];
   knowledge_gaps?: Array<Record<string, unknown>>;
   daily_hours?: number;
+  target_total_hours?: number;
+  target_daily_hours?: number;
   learning_style?: string;
   version?: number;
   current_stage_num?: number;
@@ -152,10 +156,65 @@ export type QaHistoryResponse = {
   }>;
 };
 
+export type KnowledgeNetworkSubtopicStatus = {
+  subtopic_id: string;
+  block_id: string;
+  subtopic_name?: string;
+  sequence_index?: number;
+  prerequisites?: string[];
+  status: number;
+  mastery_score: number;
+  is_initial_foundation: boolean;
+  attempt_count: number;
+};
+
+export type KnowledgeNetworkResponse = {
+  user_id: string;
+  total_subtopics: number;
+  mastered_subtopics: number;
+  blocks: Array<{
+    block_id: string;
+    mastered_count: number;
+    subtopics: KnowledgeNetworkSubtopicStatus[];
+  }>;
+};
+
+export type TargetSettingsResponse = {
+  session_id: string;
+  goal?: string;
+  target_total_hours: number;
+  target_daily_hours: number;
+  target_progress?: number;
+  adjusted_stages?: Array<{
+    stage_id: string;
+    estimated_hours: number;
+  }>;
+};
+
 export const apiClient = {
   getUserProfile: async () => {
     const response = await axios.get<ApiProfile & { user_id: string; default_daily_hours?: number }>(
       `${BASE_URL}/users/local-user/profile`
+    );
+    return response.data;
+  },
+
+  updateUserProfile: async (data: {
+    grade?: string;
+    skill_tags?: string[];
+    learning_style?: string;
+    hardware?: string;
+  }) => {
+    const response = await axios.patch<ApiProfile & { user_id: string; default_daily_hours?: number }>(
+      `${BASE_URL}/users/local-user/profile`,
+      data
+    );
+    return response.data;
+  },
+
+  getKnowledgeNetwork: async () => {
+    const response = await axios.get<KnowledgeNetworkResponse>(
+      `${BASE_URL}/users/local-user/knowledge-network`
     );
     return response.data;
   },
@@ -211,6 +270,25 @@ export const apiClient = {
     data: { goal?: string; daily_hours?: number; learning_style?: string; hardware?: string }
   ) => {
     const response = await axios.patch(`${BASE_URL}/sessions/${sessionId}/profile`, data);
+    return response.data;
+  },
+
+  updateTargetSettings: async (
+    sessionId: string,
+    data: { target_total_hours?: number; target_daily_hours?: number }
+  ) => {
+    const response = await axios.patch<TargetSettingsResponse>(
+      `${BASE_URL}/sessions/${sessionId}/target-settings`,
+      data
+    );
+    return response.data;
+  },
+
+  updateStageDuration: async (sessionId: string, stageId: string, estimatedHours: number) => {
+    const response = await axios.patch<ApiStage>(
+      `${BASE_URL}/sessions/${sessionId}/stages/${stageId}/duration`,
+      { estimated_hours: estimatedHours }
+    );
     return response.data;
   },
 

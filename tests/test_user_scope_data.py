@@ -107,6 +107,39 @@ class UserScopeDataTest(unittest.TestCase):
         self.assertEqual(2.5, target["target_daily_hours"])
         self.assertEqual(1.75, stage["estimated_hours"])
 
+    def test_target_total_hours_only_redistributes_unfinished_stages(self):
+        self.client.create_session("goal-a")
+        self.client.save_profile("goal-a", self._profile("goal-a", "学习 Python"))
+        self.client.save_stage("goal-a", {
+            "stage_id": "stage-completed",
+            "stage_num": 1,
+            "block_name": "语法基础",
+            "estimated_hours": 1.5,
+            "status": "completed",
+        })
+        self.client.save_stage("goal-a", {
+            "stage_id": "stage-learning",
+            "stage_num": 2,
+            "block_name": "函数与模块",
+            "estimated_hours": 1.0,
+            "status": "learning",
+        })
+        self.client.save_stage("goal-a", {
+            "stage_id": "stage-pending",
+            "stage_num": 3,
+            "block_name": "综合练习",
+            "estimated_hours": 2.0,
+            "status": "pending",
+        })
+
+        target = self.client.update_target_settings("goal-a", {"target_total_hours": 7.5})
+        stages = {stage["stage_id"]: stage for stage in self.client.list_stage_progress("goal-a")}
+
+        self.assertEqual(7.5, target["target_total_hours"])
+        self.assertEqual(1.5, stages["stage-completed"]["estimated_hours"])
+        self.assertEqual(2.0, stages["stage-learning"]["estimated_hours"])
+        self.assertEqual(4.0, stages["stage-pending"]["estimated_hours"])
+
     def test_session_state_does_not_persist_combined_profile(self):
         manager = StateManager(self.client)
         manager.create_session("goal-a")
