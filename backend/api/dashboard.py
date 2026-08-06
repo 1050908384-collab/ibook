@@ -76,9 +76,12 @@ def _build_dashboard(session_id: str, db=None) -> Dict[str, Any]:
     # 阶段历史：所有阶段的精简记录
     stage_history: List[Dict[str, Any]] = [
         {
+            "stage_id": s["stage_id"],
             "stage_num": s["stage_num"],
             "block_id": s["block_id"],
             "block_name": s["block_name"],
+            "subtopic_id": s["subtopic_id"],
+            "estimated_hours": s["estimated_hours"],
             "status": s["status"],
             "accuracy": s["accuracy"],
             "strategy_used": s["strategy_used"],

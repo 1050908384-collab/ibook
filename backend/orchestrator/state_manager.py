@@ -225,6 +225,10 @@ class StateManager:
         profile = self.db_client.get_latest_profile(session_id)
         if profile:
             state.profile = UserProfile.model_validate(profile)
+        if state.stage_info and state.stage_info.stage_id:
+            duration = self.db_client.get_stage_duration(session_id, state.stage_info.stage_id)
+            if duration:
+                state.stage_info.estimated_hours = duration["estimated_hours"]
 
     def refresh_cached_stage_duration(self, session_id: str, stage_id: str, estimated_hours: float) -> None:
         state = self._cache.get(session_id)

@@ -1138,19 +1138,79 @@ class SQLiteClient:
     def update_target_settings(self, session_id: str, updates: dict) -> dict:
         allowed = {"goal", "target_total_hours", "target_daily_hours", "target_progress"}
         fields = {key: value for key, value in updates.items() if key in allowed and value is not None}
-        if fields:
-            assignments = ", ".join(f"{key} = :{key}" for key in fields)
-            with self.Session() as session:
+        adjusted_stages: list[dict] = []
+        with self.Session() as session:
+            exists = session.execute(
+                text("SELECT 1 FROM sessions WHERE session_id = :session_id"),
+                {"session_id": session_id},
+            ).first()
+            if not exists:
+                raise ValueError(f"Session not found: {session_id}")
+
+            if "target_total_hours" in fields:
+                stages = session.execute(text("""
+                    SELECT stage_id, estimated_hours, status
+                    FROM stage_progress
+                    WHERE session_id = :session_id
+                    ORDER BY stage_num ASC
+                """), {"session_id": session_id}).mappings().all()
+                completed_hours = round(sum(
+                    float(stage["estimated_hours"] or 0)
+                    for stage in stages
+                    if stage["status"] == "completed"
+                ), 2)
+                requested_total = round(float(fields["target_total_hours"]), 2)
+                if requested_total < completed_hours:
+                    raise ValueError(
+                        f"Target hours cannot be less than completed stage hours ({completed_hours})"
+                    )
+
+                unfinished = [stage for stage in stages if stage["status"] != "completed"]
+                remaining_hours = round(requested_total - completed_hours, 2)
+                if stages and not unfinished and remaining_hours != 0:
+                    raise ValueError("Target hours cannot change because every stage is completed")
+                if unfinished:
+                    current_total = sum(float(stage["estimated_hours"] or 0) for stage in unfinished)
+                    allocated = 0.0
+                    for index, stage in enumerate(unfinished):
+                        if index == len(unfinished) - 1:
+                            stage_hours = round(remaining_hours - allocated, 2)
+                        elif current_total > 0:
+                            stage_hours = round(
+                                remaining_hours * float(stage["estimated_hours"] or 0) / current_total,
+                                2,
+                            )
+                        else:
+                            stage_hours = round(remaining_hours / len(unfinished), 2)
+                        if stage_hours <= 0:
+                            raise ValueError("Each unfinished stage must retain a positive duration")
+                        session.execute(text("""
+                            UPDATE stage_progress SET estimated_hours = :estimated_hours
+                            WHERE session_id = :session_id AND stage_id = :stage_id
+                        """), {
+                            "session_id": session_id,
+                            "stage_id": stage["stage_id"],
+                            "estimated_hours": stage_hours,
+                        })
+                        adjusted_stages.append({
+                            "stage_id": stage["stage_id"],
+                            "estimated_hours": stage_hours,
+                        })
+                        allocated = round(allocated + stage_hours, 2)
+
+            if fields:
+                assignments = ", ".join(f"{key} = :{key}" for key in fields)
                 result = session.execute(
                     text(f"UPDATE sessions SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE session_id = :session_id"),
                     {"session_id": session_id, **fields},
                 )
                 if result.rowcount == 0:
                     raise ValueError(f"Session not found: {session_id}")
-                session.commit()
+            session.commit()
         target = self.get_target_settings(session_id)
         if not target:
             raise ValueError(f"Session not found: {session_id}")
+        target["adjusted_stages"] = adjusted_stages
         return target
 
     def get_stage_duration(self, session_id: str, stage_id: str) -> dict | None:
@@ -1239,6 +1299,7 @@ class SQLiteClient:
         with self.Session() as session:
             rows = session.execute(text("""
                 SELECT s.session_id, s.status, s.current_stage, s.updated_at,
+                       s.target_total_hours, s.target_daily_hours,
                        ss.state_json
                 FROM sessions s
                 LEFT JOIN session_states ss ON s.session_id = ss.session_id
@@ -1305,6 +1366,8 @@ class SQLiteClient:
                             if isinstance(gap, dict)
                         ] if knowledge_gaps else [],
                         "daily_hours": profile.get("daily_hours"),
+                        "target_total_hours": row["target_total_hours"] or 0.0,
+                        "target_daily_hours": row["target_daily_hours"] or profile.get("daily_hours") or 2.0,
                         "learning_style": profile.get("learning_style", ""),
                         "version": profile.get("version", 1),
                         "current_stage_num": current_stage_num,

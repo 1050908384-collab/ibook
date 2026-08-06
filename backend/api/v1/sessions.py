@@ -152,6 +152,8 @@ async def list_sessions():
                 "skill_tags": ps.get("skill_tags", []),
                 "knowledge_gaps": ps.get("knowledge_gaps", []),
                 "daily_hours": ps.get("daily_hours"),
+                "target_total_hours": ps.get("target_total_hours", 0),
+                "target_daily_hours": ps.get("target_daily_hours", ps.get("daily_hours")),
                 "learning_style": ps.get("learning_style", ""),
                 "version": ps.get("version", 1),
                 "status": s.get("status") or "active",

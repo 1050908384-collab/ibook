@@ -23,9 +23,11 @@ import {
   ListTree,
   Loader2,
   MessageCircle,
+  Minus,
   PanelLeftClose,
   PanelLeftOpen,
   Pause,
+  Pencil,
   Play,
   Plus,
   RefreshCw,
@@ -46,6 +48,7 @@ import {
   type SessionListItem
 } from './api/client';
 import { findKnowledgeGraphBlock } from './data/knowledgeGraph';
+import KnowledgeNetwork from './components/KnowledgeNetwork';
 import OnboardingPage from './pages/OnboardingPage';
 import ProfileConfirmPage from './pages/ProfileConfirmPage';
 import {
@@ -176,6 +179,8 @@ type LearningProject = {
   updatedAt: number;
   profile?: Profile;
   stages?: StageInfo[];
+  targetTotalHours?: number;
+  targetDailyHours?: number;
 };
 type StoredStageConversation = {
   id: string;
@@ -632,6 +637,37 @@ function Topbar({
   );
 }
 
+function DurationField({
+  label,
+  value,
+  onChange,
+  min,
+  max
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  min: number;
+  max: number;
+}) {
+  const step = (delta: number) => {
+    const current = Number(value);
+    const next = Math.min(max, Math.max(min, (Number.isFinite(current) ? current : min) + delta));
+    onChange(String(Math.round(next * 2) / 2));
+  };
+  return (
+    <label className="duration-field">
+      <span>{label}</span>
+      <div>
+        <button type="button" onClick={() => step(-0.5)} aria-label={`${label}减少0.5小时`}><Minus size={13} /></button>
+        <input type="number" min={min} max={max} step="0.5" value={value} onChange={(event) => onChange(event.target.value)} aria-label={label} />
+        <em>小时</em>
+        <button type="button" onClick={() => step(0.5)} aria-label={`${label}增加0.5小时`}><Plus size={13} /></button>
+      </div>
+    </label>
+  );
+}
+
 function ProfilePanel({
   stage,
   projects,
@@ -644,7 +680,8 @@ function ProfilePanel({
   onToggleCollapsed,
   timerSeconds,
   timerRunning,
-  onToggleTimer
+  onToggleTimer,
+  onUpdateStageDuration
 }: {
   stage: StageInfo;
   projects: LearningProject[];
@@ -658,8 +695,11 @@ function ProfilePanel({
   timerSeconds: number;
   timerRunning: boolean;
   onToggleTimer: () => void;
+  onUpdateStageDuration: (stageId: string, hours: number) => Promise<void>;
 }) {
   const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({});
+  const [editingDuration, setEditingDuration] = useState(false);
+  const [durationDraft, setDurationDraft] = useState(String(stage.estimated_hours ?? 1));
   const stageDuration = Math.round((stage.estimated_hours ?? 1) * 3600);
   const timerLabel = timerRunning
     ? '暂停提醒'
@@ -674,6 +714,12 @@ function ProfilePanel({
       [sessionId]: !(prev[sessionId] ?? sessionId === currentSessionId)
     }));
   };
+  const stageCompleted = stage.status === 'completed';
+
+  useEffect(() => {
+    setDurationDraft(String(stage.estimated_hours ?? 1));
+    setEditingDuration(false);
+  }, [stage.stage_id, stage.estimated_hours]);
 
   return (
     <aside className={`context-panel ${collapsed ? 'collapsed' : ''}`}>
@@ -703,12 +749,45 @@ function ProfilePanel({
           <span>
             <Clock size={15} />
             {stage.estimated_hours ?? 1} 小时
+            {stage.stage_id && !stageCompleted && (
+              <button
+                className="stage-duration-edit-trigger"
+                type="button"
+                onClick={() => setEditingDuration((value) => !value)}
+                title="编辑阶段时长"
+                aria-label="编辑阶段时长"
+              >
+                <Pencil size={12} />
+              </button>
+            )}
           </span>
           <span>
             <Target size={15} />
             {statusText[stage.status || 'pending'] || stage.status}
           </span>
         </div>
+        {editingDuration && stage.stage_id && (
+          <div className="duration-editor dark">
+            <DurationField label="阶段时长" value={durationDraft} onChange={setDurationDraft} min={0.5} max={1000} />
+            <div className="duration-editor-actions">
+              <button type="button" onClick={() => setEditingDuration(false)} disabled={loading}>取消</button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const hours = Number(durationDraft);
+                  if (!Number.isFinite(hours) || hours < 0.5) return;
+                  try {
+                    await onUpdateStageDuration(stage.stage_id!, hours);
+                    setEditingDuration(false);
+                  } catch {
+                    // The parent displays the API error and keeps the editor open.
+                  }
+                }}
+                disabled={loading || !Number.isFinite(Number(durationDraft)) || Number(durationDraft) < 0.5}
+              >保存</button>
+            </div>
+          </div>
+        )}
         <button className={`stage-timer-button ${timerRunning ? 'running' : ''}`} onClick={onToggleTimer}>
           {timerRunning ? <Pause size={17} /> : <Play size={17} />}
           <span>{timerLabel}</span>
@@ -855,7 +934,9 @@ function sessionSummaryToProject(item: SessionListItem): LearningProject | null 
     stageNum: item.current_stage_num || 1,
     phase: item.phase,
     updatedAt: item.updated_at ? Date.parse(item.updated_at) || Date.now() : Date.now(),
-    profile: profile || undefined
+    profile: profile || undefined,
+    targetTotalHours: item.target_total_hours,
+    targetDailyHours: item.target_daily_hours ?? item.daily_hours
   };
 }
 
@@ -1079,6 +1160,7 @@ function ChatView({
   currentSessionId,
   selectedConversationId,
   onSelectProjectStage,
+  onUpdateStageDuration,
   readOnly,
   readOnlyNotice,
   loading,
@@ -1104,6 +1186,7 @@ function ChatView({
   currentSessionId: string | null;
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
+  onUpdateStageDuration: (stageId: string, hours: number) => Promise<void>;
   readOnly: boolean;
   readOnlyNotice: string;
   loading: boolean;
@@ -1177,6 +1260,7 @@ function ChatView({
           timerSeconds={timerSeconds}
           timerRunning={timerRunning}
           onToggleTimer={onToggleTimer}
+          onUpdateStageDuration={onUpdateStageDuration}
         />
 
         <CurrentMaterialPanel
@@ -1556,6 +1640,8 @@ function ProjectSwitcherModal({
 function ProfileDetailModal({ project, onClose }: { project: LearningProject; onClose: () => void }) {
   const item = project.profile;
   const gaps = item?.knowledge_gaps || [];
+  const currentStage = project.stages?.find((stage) => stage.stage_num === project.stageNum)
+    || project.stages?.[project.stages.length - 1];
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="profile-detail-modal" role="dialog" aria-modal="true" aria-labelledby="profile-detail-title">
@@ -1582,7 +1668,7 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
               <span>能力水平</span>
               <strong>{gaps.length ? `${gaps.filter((gap) => (gap.progress ?? 0) >= 1 || gap.status === '已掌握').length}/${gaps.length} 个知识点已掌握` : '等待学习记录'}</strong>
             </div>
-            <Radar profile={item} />
+            <KnowledgeNetwork profile={item} stage={currentStage} compact />
           </div>
         )}
       </section>
@@ -1679,6 +1765,7 @@ function LearningDashboardView({
   result,
   setView,
   onSelectProject,
+  onUpdateTargetDuration,
   loading,
   error
 }: {
@@ -1689,10 +1776,13 @@ function LearningDashboardView({
   result: StageResult | null;
   setView: (view: View) => void;
   onSelectProject: (sessionId: string) => void;
+  onUpdateTargetDuration: (sessionId: string, totalHours: number, dailyHours: number) => Promise<void>;
   loading: boolean;
   error: string | null;
 }) {
   const [selectedProject, setSelectedProject] = useState<LearningProject | null>(null);
+  const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
+  const [targetDurationDraft, setTargetDurationDraft] = useState({ total: '', daily: '' });
   const sortedProjects = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
 
   return (
@@ -1710,6 +1800,10 @@ function LearningDashboardView({
           <div className="profile-goal-list">
             {sortedProjects.map((project) => {
               const current = project.sessionId === currentSessionId;
+              const stageTotal = (project.stages || []).reduce((sum, item) => sum + (item.estimated_hours || 0), 0);
+              const targetTotal = project.targetTotalHours || stageTotal;
+              const targetDaily = project.targetDailyHours || project.profile?.daily_hours || 2;
+              const editingDuration = editingTargetId === project.sessionId;
               return (
                 <article className={current ? 'current' : ''} key={project.sessionId}>
                   <span className="profile-goal-icon"><Target size={19} /></span>
@@ -1720,8 +1814,60 @@ function LearningDashboardView({
                     </div>
                     <p>已生成 {project.stages?.length || 0} 个阶段 · 当前第 {project.stageNum} 阶段</p>
                     <small>{project.stageName || '等待阶段规划'}</small>
+                    <div className="goal-duration-summary">
+                      <span><Clock size={12} />总计 {targetTotal || 0} 小时</span>
+                      <span>每日 {targetDaily} 小时</span>
+                    </div>
+                    {editingDuration && (
+                      <div className="duration-editor target">
+                        <DurationField
+                          label="目标总时长"
+                          value={targetDurationDraft.total}
+                          onChange={(total) => setTargetDurationDraft((draft) => ({ ...draft, total }))}
+                          min={0.5}
+                          max={1000}
+                        />
+                        <DurationField
+                          label="每日时长"
+                          value={targetDurationDraft.daily}
+                          onChange={(daily) => setTargetDurationDraft((draft) => ({ ...draft, daily }))}
+                          min={0.5}
+                          max={24}
+                        />
+                        <div className="duration-editor-actions">
+                          <button type="button" onClick={() => setEditingTargetId(null)} disabled={loading}>取消</button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const total = Number(targetDurationDraft.total);
+                              const daily = Number(targetDurationDraft.daily);
+                              if (!Number.isFinite(total) || !Number.isFinite(daily) || total < 0.5 || daily < 0.5) return;
+                              try {
+                                await onUpdateTargetDuration(project.sessionId, total, daily);
+                                setEditingTargetId(null);
+                              } catch {
+                                // The parent displays the API error and keeps the editor open.
+                              }
+                            }}
+                            disabled={loading}
+                          >保存</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="profile-goal-actions">
+                    <button
+                      className="secondary icon-only"
+                      type="button"
+                      onClick={() => {
+                        setEditingTargetId(editingDuration ? null : project.sessionId);
+                        setTargetDurationDraft({ total: String(targetTotal || 0.5), daily: String(targetDaily) });
+                      }}
+                      title="编辑目标时长"
+                      aria-label="编辑目标时长"
+                    >
+                      <Pencil size={16} />
+                    </button>
                     <button className="secondary" onClick={() => setSelectedProject(project)}>
                       <Eye size={16} />
                       查看画像
@@ -1768,38 +1914,6 @@ function LearningDashboardView({
       </main>
       {selectedProject && <ProfileDetailModal project={selectedProject} onClose={() => setSelectedProject(null)} />}
     </div>
-  );
-}
-
-function Radar({ profile }: { profile: Profile }) {
-  const gaps = profile.knowledge_gaps?.slice(0, 5) || fallbackProfile.knowledge_gaps!;
-  const points = gaps.map((gap, index) => {
-    const angle = (Math.PI * 2 * index) / gaps.length - Math.PI / 2;
-    const radius = 64 * (gap.progress ?? 0.2);
-    return `${120 + Math.cos(angle) * radius},${92 + Math.sin(angle) * radius}`;
-  }).join(' ');
-
-  return (
-    <svg className="radar" viewBox="0 0 240 190" role="img" aria-label="能力掌握雷达图">
-      <g>
-        {[1, 0.75, 0.5, 0.25].map((scale) => (
-          <polygon
-            key={scale}
-            points={`120,${92 - 64 * scale} ${120 + 61 * scale},${92 - 20 * scale} ${120 + 38 * scale},${92 + 52 * scale} ${120 - 38 * scale},${92 + 52 * scale} ${120 - 61 * scale},${92 - 20 * scale}`}
-            className="radar-grid"
-          />
-        ))}
-        <polygon points={points} className="radar-value" />
-        {gaps.map((gap, index) => {
-          const angle = (Math.PI * 2 * index) / gaps.length - Math.PI / 2;
-          return (
-            <text key={gap.skill} x={120 + Math.cos(angle) * 88} y={96 + Math.sin(angle) * 78} textAnchor="middle">
-              {gap.skill.slice(0, 8)}
-            </text>
-          );
-        })}
-      </g>
-    </svg>
   );
 }
 
@@ -1860,11 +1974,11 @@ function DashboardView({
           <section className="white-card">
             <div className="card-title">
               <div>
-                <h3>能力掌握分布</h3>
-                <p>阶段结束后自动刷新</p>
+                <h3>知识网络</h3>
+                <p>模块、知识点及前置关系</p>
               </div>
             </div>
-            <Radar profile={profile} />
+            <KnowledgeNetwork profile={profile} stage={stage} />
           </section>
           <section className="white-card">
             <div className="card-title">
@@ -1975,10 +2089,10 @@ function ResultView({
           </section>
           <section className="white-card">
             <div className="section-title">
-              <div><span>画像变化</span><h3>能力掌握度更新</h3></div>
+              <div><span>画像变化</span><h3>知识网络更新</h3></div>
               <b>v{profile.version ?? 1}</b>
             </div>
-            <Radar profile={profile} />
+            <KnowledgeNetwork profile={profile} stage={stage} compact />
             <div className="updated-profile-facts">
               <div><span>信心指数</span><strong>{pct(profile.confidence_index ?? 0)}%</strong></div>
               <div><span>困惑标记</span><strong>{profile.confusion_markers?.join('、') || '暂无'}</strong></div>
@@ -2019,34 +2133,36 @@ function SettingsView({
   loading: boolean;
   error: string | null;
   onClear: () => void;
-  onSave: (data: { daily_hours?: number; learning_style?: string; hardware?: string }) => void;
+  onSave: (data: { grade: string; skill_tags: string[]; learning_style: string; hardware: string }) => void;
 }) {
-  const [dailyHours, setDailyHours] = useState(String(profile.daily_hours ?? 2));
+  const [grade, setGrade] = useState(profile.grade || '');
+  const [skillTags, setSkillTags] = useState((profile.skill_tags || []).join('、'));
   const [learningStyle, setLearningStyle] = useState(profile.learning_style || 'mixed');
   const [hardware, setHardware] = useState(profile.hardware || '');
 
   useEffect(() => {
-    setDailyHours(String(profile.daily_hours ?? 2));
+    setGrade(profile.grade || '');
+    setSkillTags((profile.skill_tags || []).join('、'));
     setLearningStyle(profile.learning_style || 'mixed');
     setHardware(profile.hardware || '');
-  }, [profile.daily_hours, profile.learning_style, profile.hardware]);
+  }, [profile.grade, profile.skill_tags, profile.learning_style, profile.hardware]);
 
   return (
     <div className="page-shell">
-      <Topbar title="设置" subtitle="调整本地会话体验和学习偏好展示" loading={loading} error={error} />
+      <Topbar title="设置" subtitle="修改所有学习目标共用的用户基础" loading={loading} error={error} />
       <main className="settings-page">
         <div className="settings-intro">
-          <h2>学习偏好</h2>
-          <p>这些设置会写回当前学习目标画像，用于后续阶段规划。</p>
+          <h2>用户基础与学习偏好</h2>
+          <p>这些信息只在首次使用时填写，修改后会同步到全部学习目标。</p>
         </div>
         <section className="settings-card">
           <div className="setting-row">
-            <div><strong>每日学习时长</strong><p>用于规划阶段内容量</p></div>
-            <select value={dailyHours} onChange={(event) => setDailyHours(event.target.value)}>
-              <option value="1">1 小时</option>
-              <option value="2">2 小时</option>
-              <option value="3">3 小时</option>
-            </select>
+            <div><strong>身份/学习背景</strong><p>所有目标共用，只能在这里修改</p></div>
+            <input value={grade} onChange={(event) => setGrade(event.target.value)} placeholder="例如：研二、后端开发者" />
+          </div>
+          <div className="setting-row">
+            <div><strong>已有知识基础</strong><p>使用逗号或顿号分隔多个知识标签</p></div>
+            <input value={skillTags} onChange={(event) => setSkillTags(event.target.value)} placeholder="例如：Python、PyTorch" />
           </div>
           <div className="setting-row">
             <div><strong>学习风格</strong><p>影响教程理论、代码与练习比例</p></div>
@@ -2061,11 +2177,16 @@ function SettingsView({
             <input value={hardware} onChange={(event) => setHardware(event.target.value)} placeholder="例如 RTX 4060 / MacBook / 无独显" />
           </div>
           <div className="setting-row">
-            <div><strong>保存画像偏好</strong><p>仅更新目标画像设置，不会重跑首次诊断</p></div>
+            <div><strong>保存用户基础</strong><p>调用用户级接口，不会修改任一目标的时长</p></div>
             <button
               className="primary"
-              onClick={() => onSave({ daily_hours: Number(dailyHours), learning_style: learningStyle, hardware })}
-              disabled={loading}
+              onClick={() => onSave({
+                grade: grade.trim(),
+                skill_tags: skillTags.split(/[、,，;；]/).map((item) => item.trim()).filter(Boolean),
+                learning_style: learningStyle,
+                hardware: hardware.trim()
+              })}
+              disabled={loading || !grade.trim() || !skillTags.trim()}
             >
               保存设置
             </button>
@@ -2158,7 +2279,10 @@ export default function App() {
         phase: phase || existing?.phase,
         updatedAt: Date.now(),
         profile: nextProfile,
-        stages: knownStages.sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1))
+        stages: knownStages.sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1)),
+        targetTotalHours: existing?.targetTotalHours
+          ?? knownStages.reduce((sum, item) => sum + (item.estimated_hours || 0), 0),
+        targetDailyHours: existing?.targetDailyHours ?? nextProfile.daily_hours
       };
       return [project, ...prev.filter((item) => item.sessionId !== nextSessionId)].slice(0, 20);
     });
@@ -2177,6 +2301,19 @@ export default function App() {
         updatedAt: Date.now()
       }, ...prev].slice(0, 100);
     });
+  };
+
+  const rememberTargetSettings = (nextSessionId: string, settings?: Record<string, unknown>) => {
+    if (!settings) return;
+    setLearningProjects((projects) => projects.map((project) => project.sessionId === nextSessionId ? {
+      ...project,
+      targetTotalHours: typeof settings.target_total_hours === 'number'
+        ? settings.target_total_hours
+        : project.targetTotalHours,
+      targetDailyHours: typeof settings.target_daily_hours === 'number'
+        ? settings.target_daily_hours
+        : project.targetDailyHours
+    } : project));
   };
 
   const mergeDashboardStages = (nextSessionId: string, history: StageInfo[], currentStage?: StageInfo | null) => {
@@ -2374,6 +2511,7 @@ export default function App() {
           setProfile(nextProfile);
           setOnboardingForm(formDataFromProfile(nextProfile));
           rememberProject(savedSessionId, nextProfile, session.next_stage || activeStage, session.phase);
+          rememberTargetSettings(savedSessionId, session.target_settings);
           void loadDashboardStages(savedSessionId, activeStage);
           setWorkflow(nextWorkflow);
         } else {
@@ -2739,22 +2877,82 @@ export default function App() {
     void refreshRemoteProjects();
   };
 
-  const saveProfileSettings = async (data: { daily_hours?: number; learning_style?: string; hardware?: string }) => {
-    if (!sessionId || sessionId.startsWith('local-goal-')) {
-      setProfile((current) => current ? { ...current, ...data } : current);
-      return;
-    }
+  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; learning_style: string; hardware: string }) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await apiClient.updateProfile(sessionId, data);
-      const nextProfile = toProfile(updated) || { ...(profile || fallbackProfile), ...data };
+      const updated = await apiClient.updateUserProfile(data);
+      const nextProfile = { ...(profile || fallbackProfile), ...data, ...(toProfile(updated) || {}), daily_hours: profile?.daily_hours };
       setProfile(nextProfile);
       setOnboardingForm(formDataFromProfile(nextProfile));
-      rememberProject(sessionId, nextProfile, stage);
+      setLearningProjects((projects) => projects.map((project) => ({
+        ...project,
+        profile: project.profile ? { ...project.profile, ...data } : project.profile
+      })));
+      if (sessionId) rememberProject(sessionId, nextProfile, stage);
       void refreshRemoteProjects();
     } catch (caught) {
       setError(getErrorMessage(caught));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTargetDuration = async (targetSessionId: string, totalHours: number, dailyHours: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await apiClient.updateTargetSettings(targetSessionId, {
+        target_total_hours: totalHours,
+        target_daily_hours: dailyHours
+      });
+      const adjusted = new Map((updated.adjusted_stages || []).map((item) => [item.stage_id, item.estimated_hours]));
+      setLearningProjects((projects) => projects.map((project) => {
+        if (project.sessionId !== targetSessionId) return project;
+        return {
+          ...project,
+          targetTotalHours: updated.target_total_hours,
+          targetDailyHours: updated.target_daily_hours,
+          profile: project.profile ? { ...project.profile, daily_hours: updated.target_daily_hours } : project.profile,
+          stages: (project.stages || []).map((item) => (
+            item.stage_id && adjusted.has(item.stage_id)
+              ? { ...item, estimated_hours: adjusted.get(item.stage_id) }
+              : item
+          ))
+        };
+      }));
+      if (targetSessionId === sessionId) {
+        setProfile((current) => current ? { ...current, daily_hours: updated.target_daily_hours } : current);
+        setStage((current) => current?.stage_id && adjusted.has(current.stage_id)
+          ? { ...current, estimated_hours: adjusted.get(current.stage_id) }
+          : current);
+      }
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+      throw caught;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStageDuration = async (stageId: string, hours: number) => {
+    if (!sessionId) throw new Error('当前没有真实学习会话');
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await apiClient.updateStageDuration(sessionId, stageId, hours);
+      const estimatedHours = Number(updated.estimated_hours ?? hours);
+      setStage((current) => current?.stage_id === stageId ? { ...current, estimated_hours: estimatedHours } : current);
+      setPlannedStage((current) => current?.stage_id === stageId ? { ...current, estimated_hours: estimatedHours } : current);
+      setLearningProjects((projects) => projects.map((project) => project.sessionId === sessionId ? {
+        ...project,
+        stages: (project.stages || []).map((item) => item.stage_id === stageId
+          ? { ...item, estimated_hours: estimatedHours }
+          : item)
+      } : project));
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+      throw caught;
     } finally {
       setLoading(false);
     }
@@ -2907,6 +3105,7 @@ export default function App() {
       setWorkflow(isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready');
       setView(destination);
       rememberProject(nextSessionId, nextProfile, session.next_stage || activeStage, session.phase);
+      rememberTargetSettings(nextSessionId, session.target_settings);
       void loadDashboardStages(nextSessionId, activeStage);
       if (activeStage) void restoreQaConversation(nextSessionId, activeStage, nextProfile, true);
       setMaterialPanelOpen(false);
@@ -2924,7 +3123,6 @@ export default function App() {
 
   const editProfile = () => {
     if (profile) setOnboardingForm(formDataFromProfile(profile));
-    setReuseUserProfile(false);
     setError(null);
     setFollowupQuestions([]);
     setHighlightedFields([]);
@@ -3003,6 +3201,7 @@ export default function App() {
           currentSessionId={sessionId}
           selectedConversationId={selectedConversationId || currentConversationId}
           onSelectProjectStage={selectProjectStage}
+          onUpdateStageDuration={updateStageDuration}
           readOnly={historicalConversationSelected}
           readOnlyNotice={readOnlyConversationNotice}
           loading={loading}
@@ -3018,6 +3217,7 @@ export default function App() {
           result={result}
           setView={setView}
           onSelectProject={(nextSessionId) => void switchLearningProject(nextSessionId, undefined, 'learn')}
+          onUpdateTargetDuration={updateTargetDuration}
           loading={loading}
           error={error}
         />
