@@ -69,9 +69,17 @@ def _build_dashboard(session_id: str, db=None) -> Dict[str, Any]:
     # 总体进度：已掌握子知识点占比
     overall_progress = round(mastered_count / total_count, 3) if total_count else 0.0
 
-    # 当前正确率：只从已提交的完整 attempt 计算（约束 7）
-    submitted = db.get_submitted_attempt_accuracy(session_id)
-    current_accuracy = submitted["accuracy"] if submitted else None
+    # 仪表盘正确率按阶段聚合，每个已有测试结果的阶段计一次。
+    stage_accuracies = [
+        float(stage["accuracy"])
+        for stage in stages
+        if stage.get("accuracy") is not None
+    ]
+    average_accuracy = (
+        round(sum(stage_accuracies) / len(stage_accuracies), 4)
+        if stage_accuracies
+        else None
+    )
 
     # 阶段历史：所有阶段的精简记录
     stage_history: List[Dict[str, Any]] = [
@@ -109,7 +117,9 @@ def _build_dashboard(session_id: str, db=None) -> Dict[str, Any]:
         "profile_summary": profile_summary,
         "current_stage_summary": current_stage_summary,
         "overall_progress": overall_progress,
-        "current_accuracy": current_accuracy,
+        # 保留旧字段，避免已有调用方失效。
+        "current_accuracy": average_accuracy,
+        "average_accuracy": average_accuracy,
         "confidence_index": confidence_index,
         "learning_rhythm": learning_rhythm,
         "mastered_count": mastered_count,

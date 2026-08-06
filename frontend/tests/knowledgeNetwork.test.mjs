@@ -19,9 +19,35 @@ test('每个知识点前置关系都指向现有知识点', () => {
   }
 });
 
-test('知识网络布局稳定且没有坐标重叠', () => {
+test('知识航线布局稳定且 73 个站点没有坐标重叠', () => {
   const first = buildKnowledgeNetworkLayout(knowledgeGraphBlocks);
   const second = buildKnowledgeNetworkLayout(knowledgeGraphBlocks);
   assert.deepEqual(first, second);
-  assert.equal(new Set(first.map(({ x, y }) => `${x}:${y}`)).size, 15);
+  assert.equal(first.blocks.length, 15);
+  assert.equal(first.nodes.length, 73);
+  assert.equal(new Set(first.nodes.map(({ x, y }) => `${x}:${y}`)).size, 73);
+});
+
+test('每条知识点前置关系都生成航线', () => {
+  const layout = buildKnowledgeNetworkLayout(knowledgeGraphBlocks);
+  const edgeKeys = new Set(layout.edges.map((edge) => `${edge.source_id}:${edge.target_id}`));
+  for (const block of knowledgeGraphBlocks) {
+    for (const subtopic of block.subtopics) {
+      for (const prerequisite of subtopic.prerequisites) {
+        assert.ok(edgeKeys.has(`${prerequisite}:${subtopic.subtopic_id}`));
+      }
+    }
+  }
+});
+
+test('跨模块航线按学习先后从左向右布局', () => {
+  const layout = buildKnowledgeNetworkLayout(knowledgeGraphBlocks);
+  const nodeById = new Map(layout.nodes.map((node) => [node.subtopic_id, node]));
+  const blockById = new Map(layout.blocks.map((block) => [block.block_id, block]));
+  for (const edge of layout.edges) {
+    const source = nodeById.get(edge.source_id);
+    const target = nodeById.get(edge.target_id);
+    if (source.block_id === target.block_id) continue;
+    assert.ok(blockById.get(source.block_id).x < blockById.get(target.block_id).x);
+  }
 });

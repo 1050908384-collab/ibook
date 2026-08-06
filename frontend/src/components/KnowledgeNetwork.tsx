@@ -1,34 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CircleAlert, LocateFixed, Target } from 'lucide-react';
-import {
-  apiClient,
-  type KnowledgeNetworkSubtopicStatus
-} from '../api/client';
-import {
-  knowledgeGraphBlocks,
-  type KnowledgeGraphSubtopic
-} from '../data/knowledgeGraph';
-import {
-  buildKnowledgeNetworkLayout,
-  KNOWLEDGE_NETWORK_CANVAS
-} from '../utils/knowledgeNetworkLayout';
+import { Check, CircleAlert, Loader2, LocateFixed, Map as MapIcon, Target } from 'lucide-react';
+import { apiClient, type KnowledgeNetworkSubtopicStatus } from '../api/client';
+import { knowledgeGraphBlocks, type KnowledgeGraphSubtopic } from '../data/knowledgeGraph';
+import { buildKnowledgeNetworkLayout, type KnowledgeRouteEdge } from '../utils/knowledgeNetworkLayout';
 
-type KnowledgeGapLike = {
-  target_subtopic_ids?: string[];
-};
+type KnowledgeGapLike = { target_subtopic_ids?: string[] };
+type NetworkMode = 'overview' | 'focus';
 
 type KnowledgeNetworkProps = {
   profile?: { knowledge_gaps?: KnowledgeGapLike[] } | null;
   stage?: { subtopic_id?: string; subtopic_name?: string } | null;
   compact?: boolean;
+  defaultMode?: NetworkMode;
 };
 
 type DisplayStatus = 'mastered' | 'learning' | 'pending';
-
-const positionForBlock = (index: number) => ({
-  x: (index % 5) * KNOWLEDGE_NETWORK_CANVAS.cellWidth,
-  y: Math.floor(index / 5) * KNOWLEDGE_NETWORK_CANVAS.cellHeight
-});
 
 function statusLabel(status: DisplayStatus) {
   if (status === 'mastered') return '已掌握';
@@ -36,38 +22,75 @@ function statusLabel(status: DisplayStatus) {
   return '未学习';
 }
 
-export default function KnowledgeNetwork({ profile, stage, compact = false }: KnowledgeNetworkProps) {
+function shortLabel(label: string) {
+  return label.length > 10 ? `${label.slice(0, 9)}…` : label;
+}
+
+function edgePath(edge: KnowledgeRouteEdge, positions: Map<string, { x: number; y: number; block_id: string }>) {
+  const source = positions.get(edge.source_id);
+  const target = positions.get(edge.target_id);
+  if (!source || !target) return '';
+  if (source.block_id === target.block_id) {
+    const bend = Math.max(18, Math.abs(target.x - source.x) * 0.35);
+    return `M ${source.x} ${source.y} C ${source.x + bend} ${source.y}, ${target.x - bend} ${target.y}, ${target.x} ${target.y}`;
+  }
+  const span = Math.max(55, (target.x - source.x) * 0.46);
+  return `M ${source.x} ${source.y} C ${source.x + span} ${source.y}, ${target.x - span} ${target.y}, ${target.x} ${target.y}`;
+}
+
+function collectAncestors(ids: Iterable<string>, reverseEdges: Map<string, string[]>) {
+  const found = new Set<string>();
+  const queue = [...ids];
+  while (queue.length) {
+    const id = queue.shift()!;
+    if (found.has(id)) continue;
+    found.add(id);
+    queue.push(...(reverseEdges.get(id) || []));
+  }
+  return found;
+}
+
+export default function KnowledgeNetwork({
+  profile,
+  stage,
+  compact = false,
+  defaultMode = 'overview'
+}: KnowledgeNetworkProps) {
   const [statuses, setStatuses] = useState<KnowledgeNetworkSubtopicStatus[]>([]);
+  const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mode, setMode] = useState<NetworkMode>(defaultMode);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
     setLoadFailed(false);
     apiClient.getKnowledgeNetwork()
       .then((response) => {
         if (!active) return;
         setStatuses(response.blocks.flatMap((block) => block.subtopics || []));
+        setLoading(false);
       })
       .catch(() => {
         if (!active) return;
         setStatuses([]);
         setLoadFailed(true);
+        setLoading(false);
       });
     return () => { active = false; };
-  }, []);
+  }, [reloadKey]);
 
-  const statusById = useMemo(
-    () => new Map(statuses.map((item) => [item.subtopic_id, item])),
-    [statuses]
-  );
+  const layout = useMemo(() => buildKnowledgeNetworkLayout(knowledgeGraphBlocks), []);
+  const positionById = useMemo(() => new Map(layout.nodes.map((node) => [node.subtopic_id, node])), [layout]);
+  const blockAreaById = useMemo(() => new Map(layout.blocks.map((block) => [block.block_id, block])), [layout]);
+  const statusById = useMemo(() => new Map(statuses.map((item) => [item.subtopic_id, item])), [statuses]);
   const targetIds = useMemo(
     () => new Set((profile?.knowledge_gaps || []).flatMap((gap) => gap.target_subtopic_ids || [])),
     [profile]
   );
-  const layout = useMemo(() => buildKnowledgeNetworkLayout(knowledgeGraphBlocks), []);
-  const layoutById = useMemo(() => new Map(layout.map((item) => [item.block_id, item])), [layout]);
   const allSubtopics = useMemo(
     () => knowledgeGraphBlocks.flatMap((block) => block.subtopics.map((subtopic) => ({ block, subtopic }))),
     []
@@ -75,24 +98,40 @@ export default function KnowledgeNetwork({ profile, stage, compact = false }: Kn
   const currentId = stage?.subtopic_id
     || allSubtopics.find((item) => item.subtopic.subtopic_name === stage?.subtopic_name)?.subtopic.subtopic_id
     || [...targetIds][0];
-  const currentEntry = currentId
-    ? allSubtopics.find((item) => item.subtopic.subtopic_id === currentId)
-    : undefined;
-  const selected = selectedId
-    ? allSubtopics.find((item) => item.subtopic.subtopic_id === selectedId)
-    : undefined;
+  const currentEntry = currentId ? allSubtopics.find((item) => item.subtopic.subtopic_id === currentId) : undefined;
+  const selected = selectedId ? allSubtopics.find((item) => item.subtopic.subtopic_id === selectedId) : undefined;
   const selectedStatus = selected ? statusById.get(selected.subtopic.subtopic_id) : undefined;
+
+  const reverseEdges = useMemo(() => {
+    const map = new Map<string, string[]>();
+    layout.edges.forEach((edge) => map.set(edge.target_id, [...(map.get(edge.target_id) || []), edge.source_id]));
+    return map;
+  }, [layout]);
+  const forwardEdges = useMemo(() => {
+    const map = new Map<string, string[]>();
+    layout.edges.forEach((edge) => map.set(edge.source_id, [...(map.get(edge.source_id) || []), edge.target_id]));
+    return map;
+  }, [layout]);
+  const focusIds = useMemo(() => {
+    const relevant = collectAncestors(currentId ? [currentId] : [], reverseEdges);
+    collectAncestors(targetIds, reverseEdges).forEach((id) => relevant.add(id));
+    targetIds.forEach((id) => relevant.add(id));
+    if (currentId) (forwardEdges.get(currentId) || []).forEach((id) => relevant.add(id));
+    return relevant;
+  }, [currentId, forwardEdges, reverseEdges, targetIds]);
 
   const getDisplayStatus = (subtopic: KnowledgeGraphSubtopic): DisplayStatus => {
     if (subtopic.subtopic_id === currentId) return 'learning';
-    if (statusById.get(subtopic.subtopic_id)?.status === 1) return 'mastered';
+    const status = statusById.get(subtopic.subtopic_id)?.status;
+    if (status === 1) return 'mastered';
+    if (status === 0) return 'learning';
     return 'pending';
   };
 
-  const focusCurrentSubtopic = (behavior: ScrollBehavior = 'smooth') => {
+  const centerCurrentSubtopic = (behavior: ScrollBehavior = 'smooth') => {
     const viewport = viewportRef.current;
     const node = currentId
-      ? viewport?.querySelector<HTMLElement>(`[data-subtopic-id="${currentId}"]`)
+      ? viewport?.querySelector<SVGGraphicsElement>(`[data-subtopic-id="${currentId}"]`)
       : null;
     if (!viewport || !node) return;
     const viewportRect = viewport.getBoundingClientRect();
@@ -106,13 +145,18 @@ export default function KnowledgeNetwork({ profile, stage, compact = false }: Kn
   };
 
   useEffect(() => {
-    if (!currentId) return;
-    const frame = window.requestAnimationFrame(() => focusCurrentSubtopic('auto'));
+    if (mode !== 'focus' || !currentId) return;
+    const frame = window.requestAnimationFrame(() => centerCurrentSubtopic('auto'));
     return () => window.cancelAnimationFrame(frame);
-  }, [currentId]);
+  }, [currentId, mode]);
+
+  const selectMode = (nextMode: NetworkMode) => {
+    setMode(nextMode);
+    if (nextMode === 'focus') window.requestAnimationFrame(() => centerCurrentSubtopic());
+  };
 
   return (
-    <section className={`knowledge-network${compact ? ' compact' : ''}`} aria-label="知识网络">
+    <section className={`knowledge-network ${mode}${compact ? ' compact' : ''}`} aria-label="知识网络">
       <div className="knowledge-network-toolbar">
         <div className="knowledge-network-legend" aria-label="图例">
           <span className="mastered"><i />已掌握</span>
@@ -121,7 +165,14 @@ export default function KnowledgeNetwork({ profile, stage, compact = false }: Kn
           <span className="foundation"><i />首次填写基础</span>
           <span className="target"><i />当前目标</span>
         </div>
-        <strong>15 个模块 · 73 个知识点</strong>
+        <div className="knowledge-network-actions" aria-label="图谱显示模式">
+          <button type="button" className={mode === 'overview' ? 'active' : ''} onClick={() => selectMode('overview')}>
+            <MapIcon size={14} />查看完整图谱
+          </button>
+          <button type="button" className={mode === 'focus' ? 'active' : ''} onClick={() => selectMode('focus')} disabled={!currentId}>
+            <LocateFixed size={14} />聚焦当前位置
+          </button>
+        </div>
       </div>
 
       {currentEntry && (
@@ -129,93 +180,117 @@ export default function KnowledgeNetwork({ profile, stage, compact = false }: Kn
           <span><LocateFixed size={15} />当前学习</span>
           <strong>{currentEntry.block.block_name}</strong>
           <p>{currentEntry.subtopic.subtopic_name}</p>
-          <button type="button" onClick={() => focusCurrentSubtopic()} title="定位当前知识点">
-            <LocateFixed size={15} />
-            <span>定位</span>
+          <button type="button" onClick={() => selectMode('focus')} title="定位当前知识点">
+            <LocateFixed size={15} /><span>定位</span>
           </button>
         </div>
       )}
 
+      {loading && <p className="knowledge-network-status"><Loader2 className="spin" size={14} />正在读取知识点状态</p>}
+      {!loading && !loadFailed && statuses.length === 0 && (
+        <p className="knowledge-network-status empty">暂无知识点状态，当前仅展示知识结构。</p>
+      )}
       {loadFailed && (
-        <p className="knowledge-network-warning"><CircleAlert size={14} />知识状态暂时无法读取，当前仅展示知识结构。</p>
+        <div className="knowledge-network-warning">
+          <span><CircleAlert size={14} />知识状态读取失败，当前仅展示知识结构。</span>
+          <button type="button" onClick={() => setReloadKey((value) => value + 1)}>重新读取</button>
+        </div>
       )}
 
       <div className="knowledge-network-viewport" ref={viewportRef}>
-        <div className="knowledge-network-canvas" style={{ width: KNOWLEDGE_NETWORK_CANVAS.width, height: KNOWLEDGE_NETWORK_CANVAS.height }}>
-          <svg className="knowledge-block-links" viewBox={`0 0 ${KNOWLEDGE_NETWORK_CANVAS.width} ${KNOWLEDGE_NETWORK_CANVAS.height}`} aria-hidden="true">
-            <defs>
-              <marker id="knowledge-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-                <path d="M0,0 L7,3.5 L0,7 Z" />
-              </marker>
-            </defs>
-            {knowledgeGraphBlocks.flatMap((block) => {
-              const target = layoutById.get(block.block_id);
-              if (!target) return [];
-              return block.prerequisites.map((sourceId) => {
-                const source = layoutById.get(sourceId);
-                if (!source) return null;
-                const startX = source.x + 108;
-                const startY = source.y + 156;
-                const endX = target.x + 108;
-                const endY = target.y + 12;
-                const midY = (startY + endY) / 2;
-                return (
-                  <path
-                    key={`${sourceId}-${block.block_id}`}
-                    d={`M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`}
-                    markerEnd="url(#knowledge-arrow)"
-                  />
-                );
-              });
+        <svg
+          className="knowledge-route-map"
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
+          style={{ width: layout.width, height: layout.height }}
+          role="img"
+          aria-label="15 个模块、73 个知识点及其前置关系组成的知识航线图"
+        >
+          <g className="knowledge-regions">
+            {knowledgeGraphBlocks.map((block, index) => {
+              const area = blockAreaById.get(block.block_id)!;
+              const relevant = block.subtopics.some((subtopic) => focusIds.has(subtopic.subtopic_id));
+              const masteredCount = block.subtopics.filter((item) => statusById.get(item.subtopic_id)?.status === 1).length;
+              return (
+                <g className={`knowledge-region tone-${index % 4}${mode === 'focus' && !relevant ? ' is-muted' : ''}`} key={block.block_id}>
+                  <title>{block.block_name}</title>
+                  <rect x={area.x} y={area.y} width={area.width} height={area.height} rx="24" />
+                  <text className="knowledge-region-code" x={area.x + 20} y={area.y + 27}>{block.block_id}</text>
+                  <text className="knowledge-region-title" x={area.x + 20} y={area.y + 48}>{shortLabel(block.block_name)}</text>
+                  <text className="knowledge-region-count" x={area.x + area.width - 18} y={area.y + 28} textAnchor="end">
+                    {masteredCount}/{block.subtopics.length}
+                  </text>
+                </g>
+              );
             })}
-          </svg>
+          </g>
 
-          {knowledgeGraphBlocks.map((block, blockIndex) => {
-            const position = positionForBlock(blockIndex);
-            const masteredCount = block.subtopics.filter((item) => statusById.get(item.subtopic_id)?.status === 1).length;
-            return (
-              <section
-                className="knowledge-module"
-                key={block.block_id}
-                style={{ left: position.x + 8, top: position.y + 14 }}
-                aria-labelledby={`knowledge-module-${block.block_id}`}
-              >
-                <header>
-                  <span>{block.block_id}</span>
-                  <strong id={`knowledge-module-${block.block_id}`}>{block.block_name}</strong>
-                  <small>{masteredCount}/{block.subtopics.length}</small>
-                </header>
-                <div className="knowledge-subtopic-line">
-                  {block.subtopics.map((subtopic, index) => {
-                    const apiStatus = statusById.get(subtopic.subtopic_id);
-                    const displayStatus = getDisplayStatus(subtopic);
-                    const initial = Boolean(apiStatus?.is_initial_foundation);
-                    const target = targetIds.has(subtopic.subtopic_id);
-                    const classes = [displayStatus, initial ? 'initial-foundation' : '', target ? 'current-target' : ''].filter(Boolean).join(' ');
-                    const tooltip = `${subtopic.subtopic_name} · ${statusLabel(displayStatus)}${initial ? ' · 首次填写基础' : ''}${target ? ' · 当前目标' : ''}`;
-                    return (
-                      <span className="knowledge-node-slot" key={subtopic.subtopic_id}>
-                        {index > 0 && <i className="knowledge-subtopic-edge" />}
-                        <button
-                          type="button"
-                          className={`knowledge-subtopic-node ${classes}`}
-                          aria-label={tooltip}
-                          data-tooltip={tooltip}
-                          data-subtopic-id={subtopic.subtopic_id}
-                          aria-pressed={selectedId === subtopic.subtopic_id}
-                          onClick={() => setSelectedId(subtopic.subtopic_id)}
-                        >
-                          {displayStatus === 'mastered' && <Check size={10} strokeWidth={3} />}
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-                <p>{block.subtopics.length} 个知识点</p>
-              </section>
-            );
-          })}
-        </div>
+          <g className="knowledge-route-edges" aria-hidden="true">
+            {layout.edges.map((edge) => {
+              const relevant = focusIds.has(edge.source_id) && focusIds.has(edge.target_id);
+              return (
+                <path
+                  key={`${edge.source_id}-${edge.target_id}`}
+                  className={`${edge.kind}${mode === 'focus' && !relevant ? ' is-muted' : ''}`}
+                  d={edgePath(edge, positionById)}
+                />
+              );
+            })}
+          </g>
+
+          <g className="knowledge-route-nodes">
+            {allSubtopics.map(({ subtopic }) => {
+              const position = positionById.get(subtopic.subtopic_id)!;
+              const apiStatus = statusById.get(subtopic.subtopic_id);
+              const displayStatus = getDisplayStatus(subtopic);
+              const initial = Boolean(apiStatus?.is_initial_foundation);
+              const target = targetIds.has(subtopic.subtopic_id);
+              const current = subtopic.subtopic_id === currentId;
+              const relevant = focusIds.has(subtopic.subtopic_id);
+              const classes = [
+                'knowledge-route-node', displayStatus,
+                initial ? 'initial-foundation' : '', target ? 'current-target' : '',
+                current ? 'is-current' : '', mode === 'focus' && !relevant ? 'is-muted' : ''
+              ].filter(Boolean).join(' ');
+              const tooltip = `${subtopic.subtopic_name} · ${statusLabel(displayStatus)}${initial ? ' · 首次填写基础' : ''}${target ? ' · 当前目标' : ''}`;
+              return (
+                <g
+                  className={classes}
+                  key={subtopic.subtopic_id}
+                  data-subtopic-id={subtopic.subtopic_id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={tooltip}
+                  aria-pressed={selectedId === subtopic.subtopic_id}
+                  onClick={() => setSelectedId(subtopic.subtopic_id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') setSelectedId(subtopic.subtopic_id);
+                  }}
+                >
+                  <title>{tooltip}</title>
+                  {current && <circle className="knowledge-current-pulse" cx={position.x} cy={position.y} r="20" />}
+                  {initial && <circle className="knowledge-foundation-ring" cx={position.x} cy={position.y} r="12" />}
+                  {target && <circle className="knowledge-target-ring" cx={position.x} cy={position.y} r="9.5" />}
+                  <circle className="knowledge-station" cx={position.x} cy={position.y} r={current ? 8 : 6} />
+                  {displayStatus === 'mastered' && <Check x={position.x - 4} y={position.y - 4} size={8} strokeWidth={3} />}
+                  <text
+                    className="knowledge-station-label"
+                    x={position.x}
+                    y={position.y + (position.row === 1 ? 22 : -14)}
+                    textAnchor="middle"
+                  >
+                    {shortLabel(subtopic.subtopic_name)}
+                  </text>
+                  {current && (
+                    <g className="knowledge-you-are-here" transform={`translate(${position.x + 12} ${position.y - 30})`}>
+                      <rect width="58" height="20" rx="10" />
+                      <text x="29" y="14" textAnchor="middle">你在这里</text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        </svg>
       </div>
 
       {selected && (
