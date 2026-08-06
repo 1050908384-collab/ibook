@@ -832,9 +832,9 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
 
 
 class DeterministicContentAgent:
-    def __init__(self):
+    def __init__(self, database_url: str = None):
         self.vector_search_tool = VectorSearchTool()
-        self.question_extract_tool = QuestionExtractTool()
+        self.question_extract_tool = QuestionExtractTool(database_url=database_url)
         self.video_search_tool = VideoSearchTool()
         self.learning_resource_tool = LearningResourceTool()
 
@@ -984,23 +984,141 @@ class DeterministicContentAgent:
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
         _agent_log("Agent3", f"answer:start | question={request.question[:60]}")
+
+        # === 问题分类：technical（技术类）| daily（日常类）===
+        # Deterministic 模式无 LLM，用关键词兜底分类
+        question_type = self._classify_question_by_keywords(request.question)
+        _agent_log("Agent3", f"answer:classified | type={question_type}")
+
+        if question_type == "daily":
+            # 日常类：只用历史对话 memory + 画像，跳过 Agent4
+            answer = self._generate_daily_answer(request)
+            return AnswerGenerationOutput(answer=answer, question_type="daily")
+
+        # 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory 整合
+        # 用 block_id 过滤，只检索本阶段相关的知识文档（不是当前学习包）
         related_docs = []
         try:
-            related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
+            if request.block_id:
+                related_docs = await self.vector_search_tool.search_by_block(request.block_id)
+            else:
+                related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
         except Exception:
             related_docs = []
+
+        # 构建历史 memory 上下文
+        memory_context = self._build_memory_context(request)
+
         if related_docs:
             references = "\n".join(f"- {item.get('content', '')[:160]}" for item in related_docs)
             answer = (
                 f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
-                f"可以先参考这些知识片段：\n{references}"
+                f"可以先参考这些相关知识片段：\n{references}"
             )
         else:
             answer = (
                 f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
                 "建议先回到本阶段核心概念，再结合练习验证理解。"
             )
-        return AnswerGenerationOutput(answer=answer)
+
+        # 如果有历史 memory 上下文，追加到回答中
+        if memory_context:
+            answer = f"{answer}\n\n{memory_context}"
+
+        return AnswerGenerationOutput(answer=answer, question_type="technical")
+
+    @staticmethod
+    def _classify_question_by_keywords(question: str) -> str:
+        """Deterministic 模式下用关键词分类问题（无 LLM）。
+
+        返回 "technical" 或 "daily"。
+        - technical: 涉及代码、算法、概念解释、技术原理、API使用、报错排查等
+        - daily: 学习计划咨询、情绪疏导、学习鼓励、非技术闲聊等
+        """
+        # 日常类关键词
+        daily_keywords = [
+            "怎么学", "如何学", "学习计划", "学习路线", "状态不好", "学不进去",
+            "有什么用", "为什么学", "坚持", "放弃", "焦虑", "累", "难吗",
+            "鼓励", "谢谢", "再见", "心情", "压力大", "看不懂",
+        ]
+        # 技术类关键词
+        tech_keywords = [
+            "代码", "报错", "error", "bug", "算法", "原理", "公式", "实现",
+            "函数", "类", "接口", "api", "框架", "配置", "安装", "部署",
+            "python", "pytorch", "transformer", "怎么写", "如何实现",
+            "区别", "什么是", "解释", "运行",
+        ]
+        q_lower = question.lower()
+        # 技术类关键词优先（保守策略，避免技术问题被误判为日常）
+        for kw in tech_keywords:
+            if kw in q_lower:
+                return "technical"
+        for kw in daily_keywords:
+            if kw in question:
+                return "daily"
+        # 默认按技术类处理
+        return "technical"
+
+    def _build_memory_context(self, request: AnswerGenerationInput) -> str:
+        """构建历史 memory 上下文文本，追加到技术类回答中。
+
+        只使用历史问答和画像摘要，不使用当前学习包内容。
+        """
+        parts = []
+        # 历史问答
+        if request.qa_history:
+            recent = request.qa_history[-3:]  # 只取最近3轮
+            history_text = "\n".join([
+                f"- 问：{item.get('question', '')[:80]}\n  答：{item.get('answer', '')[:100]}"
+                for item in recent
+                if isinstance(item, dict)
+            ])
+            if history_text:
+                parts.append(f"💬 最近对话记录：\n{history_text}")
+
+        # 用户画像摘要
+        if request.profile_summary:
+            parts.append(f"👤 学习画像：{request.profile_summary}")
+
+        return "\n\n".join(parts)
+
+    def _generate_daily_answer(self, request: AnswerGenerationInput) -> str:
+        """生成日常类回答（Deterministic 模式，无 LLM）。
+
+        使用历史对话 memory + 用户画像 + profile_summary，不使用当前学习包内容。
+        """
+        profile = request.profile
+        stage = request.stage
+
+        # 个性化开头
+        goal = getattr(profile, "goal", "") or "你的学习目标"
+        block_name = getattr(stage, "block_name", "") or "当前阶段"
+
+        # 主体回答
+        answer = f"我理解你的感受。你目前的学习目标是「{goal}」，正在学习「{block_name}」。"
+
+        # 引用历史对话
+        if request.qa_history:
+            last_qa = request.qa_history[-1] if request.qa_history else None
+            if isinstance(last_qa, dict) and last_qa.get("question"):
+                answer += f"\n\n结合你之前问的「{last_qa.get('question', '')[:50]}」，建议先梳理好基础概念，再逐步深入。"
+
+        # 引用画像信息（profile 对象字段）
+        daily_hours = getattr(profile, "daily_hours", None)
+        if daily_hours:
+            answer += f"\n\n你每天有 {daily_hours} 小时学习时间，合理规划好节奏就好。"
+
+        learning_style = getattr(profile, "learning_style", "")
+        if learning_style:
+            style_hint = "多动手实践" if learning_style == "practice" else "注重原理理解" if learning_style == "theory" else "理论结合实践"
+            answer += f"你的学习风格偏向{style_hint}，可以按这个方向调整。"
+
+        # 引用画像摘要文本（补充 profile 对象未覆盖的信息）
+        if request.profile_summary:
+            answer += f"\n\n关于你：{request.profile_summary}"
+
+        answer += "\n\n如果遇到具体的技术问题，随时可以问我，我们一起解决。"
+        return answer
 
     async def revise_learning_package(self, request: ContentRevisionInput) -> ContentGenerationOutput:
         package = request.learning_package.model_copy(deep=True)
@@ -1135,8 +1253,8 @@ class DeterministicContentAgent:
 
 
 class HybridContentAgent(DeterministicContentAgent):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, database_url: str = None):
+        super().__init__(database_url=database_url)
         self.llm_client = LLMClient()
         self.content_skill_context = get_skill_context(["content_generation", "code_style"])
         self.answer_skill_context = get_skill_context(["question_answering"])
@@ -1173,21 +1291,42 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
         _agent_log("Agent3", f"answer:hybrid_start | question={request.question[:60]}")
+
+        # === 问题分类：用 LLM 判断 technical / daily ===
+        question_type = await self._classify_question_by_llm(request.question)
+        _agent_log("Agent3", f"answer:classified | type={question_type}")
+
+        if question_type == "daily":
+            # 日常类：整合 memory + 对话历史 + 学习包内容，跳过 Agent4
+            answer = await self._generate_daily_answer_llm(request)
+            return AnswerGenerationOutput(answer=answer, question_type="daily")
+
+        # 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory 整合
+        # 用 block_id 过滤，只检索本阶段相关的知识文档
         related_docs = []
         try:
-            related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
+            if request.block_id:
+                related_docs = await self.vector_search_tool.search_by_block(request.block_id)
+            else:
+                related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
         except Exception:
             related_docs = []
         context = ""
         if related_docs:
-            context = "\n\n相关知识片段：\n" + "\n".join(
+            context = "\n\n本阶段相关知识片段：\n" + "\n".join(
                 f"- {item.get('content', '')[:200]}" for item in related_docs
             )
+
+        # 构建 memory 上下文
+        memory_context = self._build_memory_context_prompt(request)
+
         prompt = f"""当前学习阶段：{request.stage.block_name}
 用户学习目标：{request.profile.goal}
 用户问题：{request.question}
 
 请直接回答问题。先给出简明结论，再解释原理；需要时提供示例。不要编造来源。{context}"""
+        if memory_context:
+            prompt += f"\n\n{memory_context}"
         prompt += f"\n\n答疑规范：\n{self.answer_skill_context}"
         answer = await self.llm_client.complete(
             prompt,
@@ -1196,9 +1335,100 @@ class HybridContentAgent(DeterministicContentAgent):
         )
         if self._is_valid_response(answer):
             _agent_log("Agent3", f"answer:llm_done | answer_len={len(answer)}")
-            return AnswerGenerationOutput(answer=answer)
+            return AnswerGenerationOutput(answer=answer, question_type="technical")
         _agent_log("Agent3", "answer:llm_invalid -> deterministic_fallback")
         return await super().generate_answer(request)
+
+    async def _classify_question_by_llm(self, question: str) -> str:
+        """Hybrid 模式下用 LLM 分类问题，失败时回退到关键词分类。"""
+        import json as _json
+        system_prompt = """你是一个问题分类器。请判断用户的问题属于"技术类"还是"日常类"。
+
+分类标准：
+- technical（技术类）：涉及代码、算法、概念解释、技术原理、API使用、报错排查、编程实现、框架工具等技术性问题
+- daily（日常类）：学习计划咨询（如"我该怎么学"）、学习状态/情绪（如"今天状态不好"）、学习意义咨询（如"学这个有什么用"）、非技术闲聊等
+
+请只输出一个JSON：{"type": "technical"} 或 {"type": "daily"}"""
+        prompt = f"请判断以下问题属于技术类还是日常类：\n用户问题：{question}\n请输出JSON格式结果。"
+        try:
+            response = await self.llm_client.complete(
+                prompt, system_prompt, temperature=0.1, json_mode=True
+            )
+            if response and not response.startswith("Error:"):
+                result = _json.loads(response)
+                q_type = result.get("type", "technical").lower()
+                if q_type in ("technical", "daily"):
+                    return q_type
+        except Exception:
+            pass
+        # LLM 失败回退到父类的关键词分类
+        return self._classify_question_by_keywords(question)
+
+    def _build_memory_context_prompt(self, request: AnswerGenerationInput) -> str:
+        """构建历史 memory 上下文 prompt 片段，供 LLM 技术类回答参考。
+
+        只使用历史问答和画像摘要，不使用当前学习包内容。
+        """
+        parts = []
+        if request.qa_history:
+            recent = request.qa_history[-5:]
+            history_text = "\n".join([
+                f"- 问：{item.get('question', '')[:80]}\n  答：{item.get('answer', '')[:150]}"
+                for item in recent
+                if isinstance(item, dict)
+            ])
+            if history_text:
+                parts.append(f"最近对话记录：\n{history_text}")
+        if request.profile_summary:
+            parts.append(f"学习画像：{request.profile_summary}")
+        if parts:
+            return "请结合以下用户历史上下文生成更贴合的回答：\n" + "\n\n".join(parts)
+        return ""
+
+    async def _generate_daily_answer_llm(self, request: AnswerGenerationInput) -> str:
+        """Hybrid 模式下用 LLM 生成日常类回答，只用历史对话 memory + 画像。"""
+        history_text = ""
+        if request.qa_history:
+            recent = request.qa_history[-5:]
+            history_text = "\n".join([
+                f"用户问：{item.get('question', '')}\n答：{item.get('answer', '')[:200]}"
+                for item in recent
+                if isinstance(item, dict)
+            ])
+
+        goal = getattr(request.profile, "goal", "") or "学习"
+        block_name = getattr(request.stage, "block_name", "") or "当前阶段"
+
+        system_prompt = """你是一个温暖、专业的学习导师。用户提出的是日常类问题（非技术问题）。
+
+请基于以下信息生成有温度、有针对性的回答：
+1. 结合用户画像（学习目标、水平、偏好），给出个性化建议
+2. 参考历史对话，理解用户当前的学习状态和情绪
+3. 不要引用技术学习材料，保持轻松自然的对话风格
+4. 语气要亲切自然，像朋友间的对话，避免说教
+5. 回答要简洁，不要过长（一般不超过300字）"""
+
+        prompt = f"""用户问题：{request.question}
+
+用户当前学习目标：{goal}
+当前学习阶段：{block_name}
+
+用户画像摘要：
+{request.profile_summary or '暂无'}
+
+历史问答记录：
+{history_text or '暂无'}
+
+请生成一个温暖、有针对性的回答。"""
+
+        try:
+            response = await self.llm_client.complete(prompt, system_prompt, temperature=0.8)
+            if response and not response.startswith("Error:"):
+                return response
+        except Exception:
+            pass
+        # LLM 失败回退到父类的确定性日常回答
+        return self._generate_daily_answer(request)
 
     async def revise_learning_package(self, request: ContentRevisionInput) -> ContentGenerationOutput:
         feedback = self._format_feedback(request.technical_errors, request.quality_errors)

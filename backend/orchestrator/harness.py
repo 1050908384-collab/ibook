@@ -47,7 +47,11 @@ class Harness:
             else DeterministicDiagnosticAgent(db_client=self.state_manager.db_client)
         )
     
-        self.agent3 = HybridContentAgent() if self.execution_mode == "hybrid" else DeterministicContentAgent()
+        self.agent3 = (
+            HybridContentAgent(database_url=self.state_manager.db_client.database_url)
+            if self.execution_mode == "hybrid"
+            else DeterministicContentAgent(database_url=self.state_manager.db_client.database_url)
+        )
         self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
         # Agent5已合并至Agent4，质量审核功能已集成
         self.agent6 = DeterministicStageDecisionAgent()
@@ -254,27 +258,78 @@ class Harness:
         profile = UserProfile.model_validate(self._require_profile(session_id))
         self._log(session_id, "handle_question:start", f"question={question[:60]}")
         is_greeting = self._is_greeting(question)
+
+        # === 构建 memory 上下文（供 Agent3 生成更贴合用户的回答）===
+        # 当前阶段 block_id，用于技术类回答时检索本阶段相关的知识文档
+        block_id = stage.block_id if stage else None
+        # 历史问答记录（过滤非 dict 项，防止 Pydantic 验证失败）
+        raw_qa = self.state_manager.get_qa_history(session_id) or []
+        qa_history = [item for item in raw_qa if isinstance(item, dict)]
+        # 用户画像摘要文本
+        profile_summary = self._build_profile_summary(profile)
+
         if is_greeting:
             raw_answer = self._greeting_answer(stage.block_name)
+            question_type = "daily"  # 问候属于日常类，不走 Agent4
         else:
             generated = await self.agent3.generate_answer(AnswerGenerationInput(
                 session_id=session_id,
                 question=question,
                 stage=stage,
                 profile=profile,
+                block_id=block_id,
+                qa_history=qa_history,
+                profile_summary=profile_summary,
             ))
             raw_answer = generated.answer
-        answer, review_history = await self._review_answer(
-            session_id,
-            question,
-            self._extract_user_facing_answer(raw_answer),
-            stage,
-            profile,
-        )
-        # A greeting is a conversational turn, not a technical answer. Agent4
-        # may classify it as off-topic and ask Agent3 to rewrite it; preserve
-        # the deterministic greeting instead of exposing that rewrite.
-        answer = self._extract_user_facing_answer(raw_answer if is_greeting else answer)
+            question_type = getattr(generated, "question_type", "technical")
+
+        # === 根据问题类型决定是否调用 Agent4 审核 ===
+        if question_type == "daily":
+            # 日常类：跳过 Agent4 审核，直接使用 Agent3 的回答
+            self._log(session_id, "handle_question:daily_skip_review", f"question_type={question_type}")
+            answer = self._extract_user_facing_answer(raw_answer)
+            # 构造一个"通过"的审核结果，保持返回体结构一致
+            from models.review import ReviewRound, TechnicalReviewResult, QualityReviewResult
+            passed_round = ReviewRound(
+                iteration=1,
+                technical=TechnicalReviewResult(passed=True, errors=[]),
+                quality=QualityReviewResult(passed=True, errors=[]),
+            )
+            review_history = [passed_round]
+            review_summary = {
+                "status": "skipped",
+                "technical_passed": True,
+                "quality_passed": True,
+                "iterations": 0,
+                "needs_human_review": False,
+                "reason": "daily_question_skipped_agent4",
+            }
+        else:
+            # 技术类：走原 Agent4 审核流程
+            answer, review_history = await self._review_answer(
+                session_id,
+                question,
+                self._extract_user_facing_answer(raw_answer),
+                stage,
+                profile,
+            )
+            # A greeting is a conversational turn, not a technical answer. Agent4
+            # may classify it as off-topic and ask Agent3 to rewrite it; preserve
+            # the deterministic greeting instead of exposing that rewrite.
+            answer = self._extract_user_facing_answer(raw_answer if is_greeting else answer)
+            latest_review = review_history[-1]
+            review_summary = self._build_answer_review_summary(
+                latest_review.technical,
+                iterations=len(review_history),
+            )
+            self._log(
+                session_id,
+                "handle_question:done",
+                f"tech_pass={latest_review.technical.passed}, quality_pass={latest_review.quality.passed}, "
+                f"review_status={review_summary['status']}, needs_human_review={review_summary['needs_human_review']}",
+            )
+
         latest_review = review_history[-1]
         self.state_manager.add_qa_record(
             session_id,
@@ -283,22 +338,13 @@ class Harness:
             latest_review.technical.passed,
             latest_review.quality.passed,
         )
-        self.state_manager.add_interaction(session_id, "question_asked", {"question": question})
-        # 答疑审核摘要（Agent46_API接口任务说明.md 第 1 节）：由合并后的 Agent4 产出
-        # technical_passed / quality_passed / iterations / status / needs_human_review，
-        # 供前端 qa 返回体的 review_summary 使用（审核逻辑仍归属 Agent4，harness 仅透传）。
-        review_summary = self._build_answer_review_summary(
-            latest_review.technical,
-            iterations=len(review_history),
-        )
-        self._log(
-            session_id,
-            "handle_question:done",
-            f"tech_pass={latest_review.technical.passed}, quality_pass={latest_review.quality.passed}, "
-            f"review_status={review_summary['status']}, needs_human_review={review_summary['needs_human_review']}",
-        )
+        self.state_manager.add_interaction(session_id, "question_asked", {
+            "question": question,
+            "question_type": question_type,
+        })
         return {
             "answer": answer,
+            "question_type": question_type,
             "tech_pass": latest_review.technical.passed,
             "quality_pass": latest_review.quality.passed,
             "iterations": len(review_history),
@@ -306,6 +352,28 @@ class Harness:
             # 第 1 节答疑审核摘要（前端 review_summary 字段来源）
             "review_summary": review_summary,
         }
+
+    @staticmethod
+    def _build_profile_summary(profile: UserProfile) -> str:
+        """将用户画像转为摘要文本，供 Agent3 日常类回答使用。"""
+        parts = []
+        if getattr(profile, "goal", None):
+            parts.append(f"学习目标：{profile.goal}")
+        if getattr(profile, "grade", None):
+            parts.append(f"水平：{profile.grade}")
+        if getattr(profile, "daily_hours", None):
+            parts.append(f"每日学习时长：{profile.daily_hours}小时")
+        if getattr(profile, "learning_style", None):
+            parts.append(f"学习风格：{profile.learning_style}")
+        if getattr(profile, "hardware", None):
+            parts.append(f"硬件条件：{profile.hardware}")
+        # 知识盲区
+        gaps = getattr(profile, "knowledge_gaps", [])
+        if gaps:
+            gap_skills = [g.skill for g in gaps if getattr(g, "skill", None)]
+            if gap_skills:
+                parts.append(f"知识盲区：{', '.join(gap_skills[:3])}")
+        return "；".join(parts) if parts else ""
 
     def _build_answer_review_summary(
         self,

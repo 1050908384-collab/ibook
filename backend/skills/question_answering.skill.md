@@ -2,23 +2,35 @@
 
 ## 1. 能力描述
 - 功能：为Agent3（HybridContentAgent）提供**答疑生成与改稿的方法论**——定义"一次合格的学习答疑长什么样"：结论先行、原理支撑、不编造来源、聚焦当前阶段。Agent3调用本SKILL针对用户提问生成简明答疑，并依据Agent4统一技术与教学质量审核意见迭代修订。在 `HybridContentAgent.generate_answer` 中作为 prompt 规范；在 `revise_answer` 中作为改稿依据
-- 适用场景（3个）：
-  1. **实时答疑**：用户在学习过程中提问，由 `generate_answer` 触发，结合 `stage` 与 `profile` 生成回答
-2. **审核后改稿**：Agent4统一审核答疑未通过时由 `revise_answer` 触发，接收兼容性的 `technical_errors` 与 `quality_errors` 字段逐条修订
+- 适用场景（4个）：
+  1. **实时答疑（技术类）**：用户在学习过程中提问技术问题，由 `generate_answer` 触发，结合 `stage` 与 `profile` 与 memory 上下文生成回答，交 Agent4 审核
+  2. **审核后改稿**：Agent4统一审核答疑未通过时由 `revise_answer` 触发，接收兼容性的 `technical_errors` 与 `quality_errors` 字段逐条修订
   3. **跨阶段问题处理**：用户提问与当前阶段无关时，简短作答并提示聚焦本阶段
+  4. **日常类问题处理（新增）**：用户提问属于学习咨询、情绪疏导、非技术闲聊等日常类问题时，由 `_generate_daily_answer` 触发，整合 memory + 对话历史 + 学习包内容生成有温度的回答，**跳过 Agent4 审核**
 - 前置依赖：
   - 用户提问文本（`question`）
   - 当前阶段 StageInfo（`block_name`，判断问题相关性）
   - 用户画像 UserProfile（`goal`、`learning_style`，调整答疑深度）
-- 审核反馈（修订时：`technical_errors` 与 `quality_errors` 均来自 Agent4 的统一审核结果）
+  - 知识文档检索（技术类：用 `block_id` 过滤检索本阶段相关的知识文档，不是当前学习包）
+  - memory 上下文：历史问答 `qa_history`（技术类+日常类都使用）、画像摘要 `profile_summary`（日常类使用）
 
 ## 2. 核心方法论
+
+### 2.1 技术类问题流程
 - **步骤1：定位问题与当前阶段关系**——读取 `stage.block_name` 与 `profile.goal`，判断提问是否属于当前阶段；属于则深入答，无关则简短答并提示聚焦
-- **步骤2：调用LLM生成简明答疑**——可使用知识文档检索结果作为上下文；先给结论，再解释原理，需要时配示例；遵循"结论→原理→示例"三段结构
-- **步骤3：交付审核**——answer 交 Orchestrator 送 Agent4 做统一技术准确性、幻觉检测与教学清晰度审核
-- **步骤4：格式化审核反馈**——将 `technical_errors` 与 `quality_errors` 合并为反馈清单，按 severity 降序排列
-- **步骤5：逐条修订**——调用LLM按反馈清单逐条修订回答，保留正确内容，仅修改 errors 指向部分，返回完整新 answer
-- **步骤6：迭代终止判定**——审核通过或迭代轮次达 `MAX_REVIEW_ITERATIONS`（默认3）时终止
+- **步骤2：本阶段相关知识文档检索**——用 `block_id` 过滤，检索本阶段相关的知识文档（不是当前学习包内容），获取参考材料
+- **步骤3：历史 memory 整合**——将最近5轮历史问答作为上下文，让回答更贴合用户之前的提问
+- **步骤4：调用LLM生成简明答疑**——基于检索到的知识文档 + 历史 memory，LLM 生成回答；先给结论，再解释原理，需要时配示例；遵循"结论→原理→示例"三段结构
+- **步骤5：交付审核**——answer 交 Orchestrator 送 Agent4 做统一技术准确性、幻觉检测与教学清晰度审核
+- **步骤6：格式化审核反馈**——将 `technical_errors` 与 `quality_errors` 合并为反馈清单，按 severity 降序排列
+- **步骤7：逐条修订**——调用LLM按反馈清单逐条修订回答，保留正确内容，仅修改 errors 指向部分，返回完整新 answer
+- **步骤8：迭代终止判定**——审核通过或迭代轮次达 `MAX_REVIEW_ITERATIONS`（默认3）时终止
+
+### 2.2 日常类问题流程
+- **步骤D1：问题分类**——用 LLM 判断问题属于 technical 还是 daily，LLM 不可用时用关键词兜底
+- **步骤D2：历史 memory 整合**——收集最近5轮历史问答 + 用户画像摘要（学习目标、水平、偏好）
+- **步骤D3：LLM 直接回答**——以学习导师身份生成有温度、有针对性的回答，不引用技术学习材料，不超过300字，语气亲切自然
+- **步骤D4：直接返回**——日常类回答不涉及技术准确性，跳过 Agent4 审核，直接返回前端
 
 ## 3. 知识/规则定义
 
@@ -57,8 +69,11 @@
 `AnswerGenerationInput` 对象：
 - `session_id`
 - `question`：用户提问文本
-- `stage`：StageInfo（`block_name`）
+- `stage`：StageInfo（`block_name`、`block_id`）
 - `profile`：UserProfile（`goal`、`learning_style`）
+- `block_id`（新增，可选）：当前阶段的板块ID，用于技术类回答时检索本阶段相关的知识文档
+- `qa_history`（可选）：当前会话历史问答记录，技术类+日常类都使用
+- `profile_summary`（可选）：用户画像摘要文本，日常类回答使用
 
 ### 输入（修订）
 `AnswerRevisionInput` 对象：
@@ -69,15 +84,17 @@
 - `quality_errors`：List[QualityIssue]
 
 ### 输出
-`AnswerGenerationOutput` 对象，含 `answer: str`：
+`AnswerGenerationOutput` 对象，含 `answer: str` 与 `question_type: str`：
 ```json
 {
-  "answer": "LoRA训练的是两个低秩矩阵 A 和 B，而非原始权重 W。\n\n原理：LoRA 冻结原权重 W，仅训练低秩增量 ΔW=(α/r)BA，其中 A 是 r×d_in、B 是 d_out×r，r 远小于 d_in/d_out，因此可训练参数量仅为 r×(d_in+d_out)，远小于原参数 d_in×d_out。\n\n示例：d_in=d_out=4096、r=8 时，原参数约1678万，LoRA参数约6.5万，降幅超99%。"
+  "answer": "LoRA训练的是两个低秩矩阵 A 和 B，而非原始权重 W。\n\n原理：LoRA 冻结原权重 W，仅训练低秩增量 ΔW=(α/r)BA，其中 A 是 r×d_in、B 是 d_out×r，r 远小于 d_in/d_out，因此可训练参数量仅为 r×(d_in+d_out)，远小于原参数 d_in×d_out。\n\n示例：d_in=d_out=4096、r=8 时，原参数约1678万，LoRA参数约6.5万，降幅超99%。",
+  "question_type": "technical"
 }
 ```
 
 **字段说明**：
-- `answer`：答疑正文字符串，遵循"结论→原理→示例"结构
+- `answer`：答疑正文字符串，遵循"结论→原理→示例"结构（技术类）或自然对话风格（日常类）
+- `question_type`：问题类型标记，`"technical"`（技术类，走 Agent4 审核）或 `"daily"`（日常类，跳过 Agent4）。harness 据此决定是否调用 Agent4 审核
 
 ## 5. 异常处理
 | 异常场景 | 处置方式 |
