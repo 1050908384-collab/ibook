@@ -246,73 +246,73 @@ $$\mathcal{L}^{CLIP}(\theta) = \hat{\mathbb{E}}_t \left[ \min\left( r_t(\theta)\
 
 ### 3.4 PPO 训练代码
 
+> ⚠️ **下面是"教学用伪代码"，用于说明 PPO 的数据流，并非可直接运行的 TRL 代码。**
+> 真实的 `trl` API 在不同版本间差异较大（`PPOTrainer` 的初始化参数、`generate/step` 的签名、奖励模型的调用方式都不同）。**尤其注意：奖励模型不能直接吃原始字符串，必须先分词成张量再前向；`reward_model(...)` 返回的是 logits，需要取出标量分数。** 生产中请以你所用 TRL 版本的官方文档/示例为准。
+
 ```python
+# ===== 教学伪代码：仅示意流程，不保证按现有 TRL 版本可运行 =====
 from trl import PPOTrainer, PPOConfig
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModelForCausalLM, AutoTokenizer,
+    AutoModelForSequenceClassification,
+)
 import torch
 
 # 加载 SFT 模型作为 Actor
 actor_model = AutoModelForCausalLM.from_pretrained(
-    "./sft_model",  # 你的 SFT 模型路径
-    torch_dtype="auto",
-    device_map="auto"
+    "./sft_model", torch_dtype="auto", device_map="auto"
 )
 tokenizer = AutoTokenizer.from_pretrained("./sft_model")
 
-# 加载奖励模型（冻结）
+# 加载奖励模型（冻结）。注意：num_labels=1 时输出一个标量分数（logit）
 reward_model = AutoModelForSequenceClassification.from_pretrained(
-    "./reward_model",
-    num_labels=1,
-    torch_dtype="auto",
-    device_map="auto"
+    "./reward_model", num_labels=1, torch_dtype="auto", device_map="auto"
 )
+reward_model.eval()
 
-# PPO 配置
+@torch.no_grad()
+def score_with_reward_model(texts):
+    """奖励模型必须【先分词成张量】再前向，返回值取 logits 作为标量奖励。"""
+    enc = tokenizer(
+        texts, return_tensors="pt", padding=True, truncation=True
+    ).to(reward_model.device)
+    out = reward_model(**enc)            # 前向：得到 SequenceClassifierOutput
+    scores = out.logits.squeeze(-1)     # [batch, 1] -> [batch]，每条一个分数
+    return [s.detach().float().cpu() for s in scores]
+
 ppo_config = PPOConfig(
-    model_name="sft_model",
-    learning_rate=1e-5,
-    batch_size=4,
-    mini_batch_size=1,
-    gradient_accumulation_steps=4,
-    ppo_epochs=4,  # 每个 batch 内部优化轮数
-    cliprange=0.2,  # epsilon 裁剪阈值
-    kl_coef=0.05,   # KL 散度惩罚系数 β
+    learning_rate=1e-5, batch_size=4, mini_batch_size=1,
+    gradient_accumulation_steps=4, cliprange=0.2, kl_coef=0.05,
 )
 
-# 初始化 PPO 训练器
 ppo_trainer = PPOTrainer(
-    config=ppo_config,
-    model=actor_model,
-    tokenizer=tokenizer,
-    dataset=train_dataset,  # 指令数据集（只有 prompt）
+    config=ppo_config, model=actor_model,
+    tokenizer=tokenizer, dataset=train_dataset,  # 仅含 prompt
 )
 
-# 训练循环
 for epoch in range(3):
     for batch in ppo_trainer.dataloader:
-        # 1. Actor 生成回答
-        queries = batch["query"]
-        response_tensors = ppo_trainer.generate(queries)
-        
-        # 2. 计算奖励
-        texts = [q + r for q, r in zip(queries, response_tensors)]
-        rewards = reward_model(texts)  # 奖励模型打分
-        
-        # 3. 计算 KL 散度（与 Reference Model 对比）
-        # trl 内部自动处理
-        
-        # 4. PPO 更新
-        stats = ppo_trainer.step(queries, response_tensors, rewards)
-        
-        # 5. 打印训练统计
-        print(f"reward: {stats['ppo/returns/mean']:.4f}, "
-              f"kl: {stats['ppo/policy/kl']:.4f}")
+        query_tensors = batch["input_ids"]                 # 已分词的 prompt 张量
+        # 1. Actor 生成回答（返回的是 token 张量，不是字符串）
+        response_tensors = ppo_trainer.generate(query_tensors)
+
+        # 2. 解码成文本 → 交给奖励模型【重新分词】后打分
+        texts = [
+            tokenizer.decode(torch.cat([q, r]), skip_special_tokens=True)
+            for q, r in zip(query_tensors, response_tensors)
+        ]
+        rewards = score_with_reward_model(texts)           # List[标量张量]
+
+        # 3. 与 Reference Model 的 KL 惩罚由 trl 内部处理
+        # 4. PPO 更新（step 需要 query/response 的【张量】与奖励列表）
+        stats = ppo_trainer.step(query_tensors, response_tensors, rewards)
+        ppo_trainer.log_stats(stats, batch, rewards)
 ```
 
 **为什么这样写**：
-- `trl` 库的 `PPOTrainer` 封装了完整的 PPO 流程，包括四模型管理、GAE 优势计算、裁剪更新
-- `kl_coef=0.05`：KL 散度惩罚系数，防止模型为了刷高分而偏离原始语言能力
-- `cliprange=0.2`：PPO 的核心超参数，控制策略更新的最大幅度
+- **奖励模型的输入必须是分词后的张量**，而不是把 `["文本", ...]` 直接传进模型；输出是 `logits`，要 `squeeze` 成每条一个标量分数。原先 `reward_model(texts)` 直接喂字符串、把返回值当奖励，是无法运行的。
+- `PPOTrainer.generate/step` 接收的是 **token 张量**（query/response），不是纯字符串；奖励需与之对齐。
+- **API 会随版本变化**：本段仅示意"生成→打分→更新"的数据流，落地请对照所用 `trl` 版本的官方示例。
 
 ### 3.5 PPO 的优缺点
 
@@ -452,7 +452,10 @@ $$A_i = \frac{r_i - \text{mean}(r)}{\text{std}(r)}$$
 
 ### 5.3 GRPO 训练代码
 
+> ⚠️ **教学伪代码**：TRL 的 `GRPOTrainer`/`GRPOConfig` 参数随版本变化，请以你所用版本官方文档为准。
+
 ```python
+# ===== 教学伪代码：示意 GRPO 用法，不保证按现有 TRL 版本可运行 =====
 from trl import GRPOTrainer, GRPOConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
@@ -493,7 +496,7 @@ training_args = GRPOConfig(
     num_generations=8,  # 每组采样 8 个回答（G=8）
     beta=0.04,  # KL 散度系数
     logging_steps=10,
-    fp16=True,
+    bf16=True,  # 优先 bfloat16（无需 GradScaler）
 )
 
 # 初始化 GRPO 训练器
@@ -514,13 +517,13 @@ grpo_trainer.save_model("./grpo_model")
 **为什么这样写**：
 - `num_generations=8`：每组采样 8 个回答，这是 GRPO 的核心超参数
 - `reward_funcs`：GRPO 支持自定义奖励函数，特别适合数学/代码等可验证任务
-- 不需要 Critic 模型，显存占用比 PPO 少 40%
+- 不需要 Critic 模型，因此相比 PPO 可省下价值网络的显存与算力（具体节省比例取决于模型与实现）
 
 ### 5.4 GRPO 的优缺点
 
 | 优点 | 缺点 |
 |------|------|
-| 去掉 Critic，显存占用比 PPO 少 40% | 每个输入要生成 5~10 个回答，计算量多 5~10 倍 |
+| 去掉 Critic，显存/算力低于 PPO | 每个输入要生成多个（如 5~10 个）回答，采样开销更大 |
 | 无需训练价值模型 | 全对/全错样本组导致梯度消失 |
 | 长推理效果显著（数学/代码） | 对奖励噪声敏感 |
 
@@ -535,31 +538,34 @@ grpo_trainer.save_model("./grpo_model")
 | 维度 | PPO | DPO | GRPO |
 |------|-----|-----|------|
 | **核心思想** | 在信任区域内小步更新 | 直接用偏好数据优化 | 组内相对比较估计优势 |
-| **所需模型** | 4 个（Actor/Critic/RM/Reference） | 2 个（策略+参考） | 3 个（策略+RM+参考，无 Critic） |
+| **所需模型** | 4 个（Actor/Critic/RM/Reference） | 2 个（策略+参考） | 无固定"三模型"：一定有策略模型；奖励可用**独立 RM 或规则/可验证函数**（后者无需 RM）；参考模型是否需要、KL 是否启用**取决于具体算法与实现/配置** |
 | **计算成本** | **最高** | **最低** | **中等** |
-| **数据需求** | 需要奖励模型的绝对分数 | 需要成对偏好数据 | 需要奖励函数的分数 |
+| **数据需求** | 需要奖励模型的绝对分数 | 需要成对偏好数据 | 需要一个打分来源：**RM 分数或规则/可验证奖励** |
 | **训练稳定性** | 高（但调参复杂） | 高 | 中（全对/全错问题） |
 | **长推理能力** | 弱（Critic 价值估计不准） | 弱 | **强** |
 | **适用场景** | 通用对话、文本生成 | 快速对齐、资源有限 | 数学推理、代码生成 |
 
-### 6.2 选型决策树
+### 6.2 选型参考（非硬性规则）
+
+> ⚠️ 下面是一张**经验性参考图**，用来帮你快速缩小候选范围，**不是"必须这样选"的通用铁律**。真实选型还取决于数据质量、算力预算、奖励可得性、稳定性要求与团队工程经验；同一场景往往有多个可行算法，需通过小规模实验比较后再定。图中的规模阈值（如 7B/70B）也只是粗略档位，不应理解为精确分界。
 
 ```
-第一步：看模型规模与架构
-├── MoE 模型（千亿+）→ GSPO（解决训练崩溃）
-├── 稠密模型（70B+）→ GRPO（长推理）或 PPO（通用）
-└── 稠密模型（7B-70B）→ 进入第二步
+（以下为经验倾向，可交叉、可例外，需结合实测）
+看模型规模与架构（阈值仅为粗略参考）
+├── MoE 模型（很大规模）→ 可考虑 GSPO 等针对 MoE 更稳的做法
+├── 稠密大模型 → GRPO（偏长推理）或 PPO（偏通用）常见，但非唯一
+└── 中小规模稠密模型 → 往下看数据资源
 
-第二步：看数据资源
-├── 只有单标签数据 → KTO
-├── 有成对偏好数据，无监督数据 → DPO
-├── 既有偏好数据又有监督数据 → ORPO
-└── 有/能训练奖励模型 → PPO
+看数据资源
+├── 主要是单标签/好坏信号 → 可考虑 KTO
+├── 有成对偏好数据 → 常用 DPO（实现简单、成本低）
+├── 既有偏好又有监督数据 → 可考虑 ORPO
+└── 有 RM 或可训练 RM / 有可验证的规则奖励 → PPO 或 GRPO 均可
 
-第三步：看任务类型
-├── 长链推理（数学/代码）→ GRPO（稠密）/ GSPO（MoE）
-├── 短文本对话/通用生成 → PPO / DPO / ORPO
-└── 内容审核/低成本微调 → KTO
+看任务类型
+├── 长链推理（数学/代码，答案可验证）→ GRPO 常有优势
+├── 短文本对话/通用生成 → PPO / DPO / ORPO 都可尝试
+└── 低成本快速对齐 → DPO / KTO 常见
 ```
 
 ### 6.3 实践建议

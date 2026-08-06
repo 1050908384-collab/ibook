@@ -47,7 +47,11 @@ A: The cafeteria had 23 apples originally. They used 20 to make lunch.
    The answer is 9.   ← ✅ 正确！
 ```
 
-**为什么这样写**：标准提示让模型直接输出答案，中间推理过程被压缩在隐层表示中，模型容易在长链推理中"走偏"。CoT 通过要求模型"逐步思考"，将推理过程**显式化**，让模型先输出中间步骤，再给出最终答案，准确率可提升 30-50%。
+**为什么这样写**：标准提示让模型直接输出答案，中间推理过程被压缩在隐层表示中，模型容易在长链推理中"走偏"。CoT 通过要求模型"逐步思考"，把一段可读的推理文本显式写出来，让模型先输出中间步骤、再给出最终答案，**在很多推理类任务上通常能提升准确率**。
+
+> ⚠️ **两点需要澄清，避免过度解读**：
+> 1. **"提升 30~50%"不是普适规律**：CoT 带来的增益**高度依赖模型规模、任务类型、提示写法与评测方式**，从"几乎无提升"到"显著提升"都可能出现，甚至在某些任务（纯知识检索、创意写作）上无益或有害（见第五章 5.3）。请勿把某个具体百分比当作固定收益写进结论；需要数字时应引用一手论文（如 Wei et al., *Chain-of-Thought Prompting*, 2022，arXiv:2201.11903）在**特定模型+特定数据集**上的结果。
+> 2. **"写出来的推理链" ≠ "模型内部真实的推理过程"**：CoT 输出的是一段**看起来像推理的文本**，它是否忠实反映了模型内部的真实计算，学界仍有争议——已有研究发现模型给出的解释可能**不忠实（unfaithful）**，即答案正确但中间步骤是事后编造的，或步骤有误却"蒙对"答案。因此不要把 CoT 文本当作"模型思路的透明记录"，它更像是一种**能改善输出、但需独立校验**的提示技巧。
 
 ### 1.2 根本问题：单次前向传播的压缩
 
@@ -240,9 +244,9 @@ async def self_consistency_cot(question, num_samples=5):
 
 ---
 
-## 第四章：CoT 推理引擎的完整实现
+## 第四章：CoT 推理引擎的代码骨架
 
-以下是一个可直接运行的 CoT 推理引擎：
+> ⚠️ **这是"框架/骨架代码"，不是开箱即用的推理引擎**：下面这段代码把 CoT 的**调度逻辑**（三种变体、解析步骤、投票）写完整了，但最关键的 `_call_llm()` **只是一个返回假字符串的占位实现**（见方法内注释）。也就是说，直接运行它只会拿到 `"[占位输出] ..."` 这样的模拟文本，**并不会产生真正的推理结果**。要真正跑起来，你必须把 `_call_llm()` 替换成对**真实模型**的调用（如 OpenAI/兼容 API，或本地 `transformers`/vLLM 推理），并确保输出格式能被 `_parse_reasoning_steps` / `_extract_final_answer` 正确解析。
 
 ```python
 import asyncio
@@ -374,10 +378,35 @@ class CoTEngine:
         return response.strip().split('\n')[-1]
 
     async def _call_llm(self, prompt: str, temperature: float) -> str:
-        """模拟 LLM 调用（实际使用时替换为真实 API）"""
-        # 这里应该调用 OpenAI API 或本地模型
-        # 示例: return await openai.ChatCompletion.acreate(...)
-        return f"模拟响应: {prompt[:50]}..."
+        """⚠️ 占位实现——必须替换为真实模型调用后本引擎才能真正工作。
+
+        当前直接返回一段假字符串，仅用于让上面的调度/解析逻辑能跑通流程，
+        它【不会】产生任何真实推理，因此本类目前不是"可用的推理引擎"。
+
+        真实实现示例（择一，取消注释并按需改造）：
+
+        # ① OpenAI / 兼容 API（异步）：
+        # from openai import AsyncOpenAI
+        # client = AsyncOpenAI()
+        # resp = await client.chat.completions.create(
+        #     model="gpt-4o-mini",
+        #     messages=[{"role": "user", "content": prompt}],
+        #     temperature=temperature,
+        # )
+        # return resp.choices[0].message.content
+
+        # ② 本地 transformers（需在线程池中跑同步 generate，避免阻塞事件循环）：
+        # import asyncio, torch
+        # def _sync_gen():
+        #     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        #     out = model.generate(**inputs, max_new_tokens=512,
+        #                          do_sample=temperature > 0, temperature=temperature)
+        #     return tokenizer.decode(out[0][inputs.input_ids.shape[1]:],
+        #                             skip_special_tokens=True)
+        # return await asyncio.to_thread(_sync_gen)
+        """
+        # 占位：返回假字符串，切勿在生产中依赖此返回值
+        return f"[占位输出] 步骤1: (未接入真实模型) 最终答案: N/A  | prompt 摘要: {prompt[:30]}..."
 ```
 
 ---

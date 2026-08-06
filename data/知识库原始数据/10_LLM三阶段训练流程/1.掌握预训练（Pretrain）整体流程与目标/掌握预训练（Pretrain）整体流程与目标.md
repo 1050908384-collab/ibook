@@ -118,16 +118,17 @@ tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
 text = "LLMs are cool."
 tokens = tokenizer.tokenize(text)
-print(tokens)   # ['LL', 'Ms', 'are', 'cool', '.']
+print(tokens)   # 会被切成若干子词，如 'LL'、'Ms' 等（GPT-2 用 'Ġ' 标记词前空格）
 
 token_ids = tokenizer.encode(text)
-print(token_ids)  # [42, 1212, 389, 15496, 13]
+print(token_ids)  # 每个子词对应一个整数 ID
+# 注意：具体切分结果与 ID 取决于分词器版本，请以实际运行输出为准，切勿硬记
 ```
 
 **为什么这样写**：
 - **BPE（Byte-Pair Encoding）**：从字符开始，逐步合并高频组合，平衡词汇表大小和表达能力
 - 词汇表通常在 3 万~5 万之间（GPT-2 是 50257）
-- 子词分词能处理未登录词（OOV），如 "ChatGPT" 可能被拆为 "Chat" + "G" + "PT"
+- 子词分词能处理未登录词（OOV），如生僻或新造的词会被拆成多个已知子词（如 "Chat"+"G"+"PT" 这类拆分只是示意，实际以分词器为准）
 
 ### 2.4 数据格式：移位构造训练样本
 
@@ -187,7 +188,7 @@ config = {
 ```
 
 **设计原则**：
-- **层数 × 维度 ≈ 总参数量**：GPT-3 175B = 96 层 × 12288 维
+- **参数量随层数与维度增长**：总参数量主要由"层数 × 维度² "量级决定（GPT-3 175B 即由 96 层、d_model=12288 等配置堆叠而成），并非层数与维度的简单相乘
 - **头数要能整除维度**：`d_model % n_heads == 0`
 - **去除偏置项**：去除 dense 层和 layer norm 的偏置项，提升训练稳定性（Llama 系列标准做法）
 
@@ -209,16 +210,16 @@ Transformer 本身没有位置概念，需要额外注入位置信息：
 
 ### 4.1 硬件配置
 
-预训练大模型需要**海量计算资源**：
+预训练大模型需要**海量计算资源**。要特别注意：**"全参数训练"所需显存远不止参数本身**，还要同时容纳梯度、优化器状态（AdamW 的一阶/二阶矩）以及前向激活值。以混合精度 + AdamW 全参训练为例，仅"参数 + 梯度 + 优化器状态"就约需 **16~20 字节/参数**（≈16GB/1B 参数起步），再加上与 batch、序列长度相关的激活值，实际峰值往往更高：
 
-| 模型规模 | 显存需求 | 推荐配置 |
-|----------|----------|----------|
-| 7B | ~28GB (FP16) | 单张 A100 40GB |
-| 13B | ~52GB (FP16) | 2× A100 40GB |
-| 70B | ~280GB (FP16) | 8× A100 80GB |
-| 175B (GPT-3) | ~700GB (FP16) | 数百张 A100 |
+| 模型规模 | 仅参数(FP16 推理下限) | 全参训练显存(参数+梯度+AdamW 状态，约 16~20B/参数) | 推荐配置 |
+|----------|----------|----------|----------|
+| 7B | ~14GB | **~112~140GB+（再加激活）** | 多卡（如 4~8× A100 40/80GB）+ ZeRO/并行 |
+| 13B | ~26GB | **~210~260GB+（再加激活）** | 多卡 8× A100 80GB + ZeRO-3 |
+| 70B | ~140GB | **~1.1~1.4TB+（再加激活）** | 数十张 A100/H100 + 张量/流水线并行 |
+| 175B (GPT-3) | ~350GB | **~2.8~3.5TB+（再加激活）** | 数百张 A100 + 3D 并行 |
 
-**为什么这样写**：FP16（半精度）下，每 1B 参数约需 4GB 显存（参数本身 2GB + 优化器状态 2GB）。175B 模型需要数百 GB 显存，必须使用分布式训练。
+**为什么这样写**：常见的"每 1B 参数 ×2GB"只是**FP16 存一份参数**的量，用于粗估**推理**显存。**全参数训练**要额外存：梯度（约 2 字节/参数）、AdamW 的一阶矩和二阶矩（fp32 各 4 字节）、以及为数值稳定保留的 fp32 主权重（4 字节），合计约 16 字节/参数起，加上激活后更多。因此单张卡几乎无法全参训练 7B 及以上模型，必须靠 ZeRO 分片、张量/流水线并行、梯度检查点、优化器 offload、或改用参数高效微调（LoRA/QLoRA）来降低显存。上表数字是数量级估算，实际取决于并行策略、序列长度、batch 与实现，请以实测为准。
 
 ### 4.2 分布式训练框架
 
@@ -316,15 +317,20 @@ targets = torch.randint(0, vocab_size, (batch_size, seq_len)) # 目标 [4, 512]
 
 # 模型前向传播（简化示意）
 embedding = nn.Embedding(vocab_size, d_model)
-transformer = nn.TransformerDecoderLayer(d_model, nhead=16, batch_first=True)
+# 注意：Decoder-Only 因果语言模型只有【带因果掩码的自注意力】，没有 encoder-decoder 的交叉注意力。
+# nn.TransformerDecoderLayer 会引入对 memory 的 cross-attention（且默认不对 memory 做因果遮挡），
+# 用它并传入 (embeds, embeds) 会让每个位置“看到完整的 memory 序列”，这不是 GPT 式因果 LM。
+# 正确做法：用 nn.TransformerEncoderLayer + 因果掩码来模拟 Decoder-Only 的自回归自注意力。
+block = nn.TransformerEncoderLayer(d_model, nhead=16, batch_first=True)
 output_proj = nn.Linear(d_model, vocab_size, bias=False)
 
 # 1. Embedding
 embeds = embedding(X)  # [4, 512, 4096]
 
-# 2. Transformer（带因果掩码）
+# 2. 自注意力（仅因果自注意力，无 cross-attention）
+# 上三角为 True 的位置会被屏蔽，确保位置 i 只能看到 <= i 的 token
 causal_mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).bool()
-hidden = transformer(embeds, embeds, tgt_mask=causal_mask)  # [4, 512, 4096]
+hidden = block(embeds, src_mask=causal_mask)  # [4, 512, 4096]
 
 # 3. 输出投影到词汇表
 logits = output_proj(hidden)  # [4, 512, 50000]
@@ -398,18 +404,36 @@ def train_epoch(model, dataloader, optimizer, scheduler, device):
 ```python
 from torch.cuda.amp import autocast, GradScaler
 
-scaler = GradScaler()
+# ⚠️ 关键区别：GradScaler（损失缩放）是为 float16 准备的。
+#   - float16 的动态范围很窄，小梯度容易下溢为 0，所以需要 GradScaler 放大损失/梯度。
+#   - bfloat16 的指数位与 float32 相同（动态范围一样大），几乎不会梯度下溢，
+#     因此【用 bf16 训练时通常不需要 GradScaler】，直接 backward + step 即可。
 
-def train_step_mixed_precision(model, input_ids, target_ids, optimizer):
-    with autocast(dtype=torch.bfloat16):  # 使用 bfloat16（比 float16 更稳定）
+# 情况一：使用 bfloat16（推荐用于大模型）——不需要 GradScaler
+def train_step_bf16(model, input_ids, target_ids, optimizer):
+    with autocast(dtype=torch.bfloat16):
         logits = model(input_ids)
         loss = nn.functional.cross_entropy(
             logits.view(-1, logits.size(-1)),
             target_ids.view(-1),
             ignore_index=0
         )
-    
-    # 缩放损失，防止梯度下溢
+    loss.backward()                                   # 无需缩放
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    optimizer.step()
+    optimizer.zero_grad()
+
+# 情况二：确需使用 float16 时——才用 GradScaler 防止梯度下溢
+scaler = GradScaler()
+
+def train_step_fp16(model, input_ids, target_ids, optimizer):
+    with autocast(dtype=torch.float16):
+        logits = model(input_ids)
+        loss = nn.functional.cross_entropy(
+            logits.view(-1, logits.size(-1)),
+            target_ids.view(-1),
+            ignore_index=0
+        )
     scaler.scale(loss).backward()
     scaler.unscale_(optimizer)
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -419,8 +443,8 @@ def train_step_mixed_precision(model, input_ids, target_ids, optimizer):
 ```
 
 **为什么这样写**：
-- **bfloat16**：比 float16 有更大的动态范围，训练更稳定（推荐用于大模型）
-- **GradScaler**：自动缩放损失值，防止半精度下梯度太小变成 0
+- **bfloat16**：比 float16 有更大的动态范围（指数位与 fp32 相同），训练更稳定，是大模型的推荐精度；**使用 bf16 时一般无需 GradScaler**。
+- **GradScaler**：只有在用 **float16** 时才需要——它通过缩放损失把过小的梯度"抬"到可表示范围，避免下溢为 0。给 bf16 套 GradScaler 属于常见误用。
 
 ---
 
@@ -462,7 +486,8 @@ def evaluate_perplexity(model, dataloader, device):
 
 # 解读
 # PPL = 100：相当于每次预测下一个词时，面对 100 个等概率选择
-# PPL 越低越好，GPT-3 在 WikiText-103 上的 PPL 约为 10-20
+# PPL 越低越好；强大的语言模型在常见评测语料上的 PPL 通常能降到较低的两位数甚至更低
+# （具体数值高度依赖模型、语料、分词与评测口径，请以对应论文/官方报告为准）
 ```
 
 **为什么这样写**：PPL 是几何平均的逆，直接反映了模型预测的不确定性。PPL 从 100 降到 20，意味着模型的"词汇选择范围"从 100 个词缩小到 20 个词，预测精度大幅提升。
@@ -553,7 +578,7 @@ torch.save(checkpoint, f"checkpoint_epoch_{epoch}.pt")
 | **位置编码** | RoPE 最常用，支持长文本外推 |
 | **优化器** | AdamW，权重衰减 0.1 |
 | **学习率调度** | Warmup + 余弦衰减 |
-| **混合精度** | bfloat16 + GradScaler |
+| **混合精度** | 优先 bfloat16（无需 GradScaler）；用 float16 时才配 GradScaler |
 | **分布式训练** | DeepSpeed ZeRO-3 + CPU Offload |
 | **评估指标** | 困惑度 PPL，越低越好 |
 

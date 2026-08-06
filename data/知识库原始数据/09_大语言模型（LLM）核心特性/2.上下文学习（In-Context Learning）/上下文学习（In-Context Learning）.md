@@ -95,9 +95,11 @@ output = model.generate(prompt)
 
 **为什么这样写**：模型在预训练阶段已经见过海量文本中的各种"模式"。提示中的示例相当于告诉模型"当前任务遵循这种输入-输出映射模式"，模型通过注意力机制在上下文中捕捉这种映射关系，并将其应用到新的输入上。
 
-### 3.2 微观视角：感应头（Induction Heads）——ICL 的物理基础
+### 3.2 微观视角：感应头（Induction Heads）——一种被广泛研究的候选机制
 
-根据机械可解释性（Mechanistic Interpretability）研究，ICL 的能力依赖于 Transformer 内部一种特殊的神经电路——**感应头（Induction Heads）**。
+机械可解释性（Mechanistic Interpretability）研究发现，Transformer 内部存在一种特殊的注意力电路——**感应头（Induction Heads）**，它与 ICL 能力的出现在时间上高度相关，被认为是理解 ICL 的**重要候选机制之一**。
+
+> ⚠️ **不要理解为"ICL 的唯一物理基础"**：底稿把感应头称作"ICL 的物理基础"，这是一种过强的说法。目前更稳妥的表述是：感应头是**一种被反复观察到、且与 ICL 能力涌现相关联的机制**（相关工作见 Anthropic *In-context Learning and Induction Heads*, 2022；Olsson et al.）。但它**并不能完全、单一地解释所有 ICL 现象**——学界还提出了隐式元优化、隐式贝叶斯推断等多种解释（见 3.3），这些机制可能共同起作用。请把感应头当作"目前最有力的解释之一"，而非"已被证明的统一底层原理"。
 
 **感应头的工作机制**（两层注意力协同）：
 
@@ -143,12 +145,12 @@ ICL 的性能对示例的选择**极其敏感**。随机选的示例和精心选
 | **BM25 稀疏检索** | 基于词频重叠找相似样本 | 优于随机 |
 | **密集检索（KATE/GTR）** | 用预训练模型编码语义相似度 | 显著优于 BM25 |
 | **DPP 多样性正则化** | 在相关性基础上惩罚冗余 | 进一步提升 |
-| **CASE（多臂老虎机）** | 将选择抽象为最佳臂识别问题 | 减少 87% 的模型调用 |
-| **聚类启发式搜索** | 利用嵌入空间聚类效应稀疏采样 | 时间复杂度从阶乘级降至平方级 |
+| **CASE（多臂老虎机）** | 将选择抽象为最佳臂识别问题 | 可显著减少所需的模型调用次数（具体幅度依方法/任务而定） |
+| **聚类启发式搜索** | 利用嵌入空间聚类效应稀疏采样 | 相比穷举排列可大幅降低搜索复杂度（具体量级依实现而定） |
 
 ### 4.2 顺序敏感性：排列组合决定成败
 
-**惊人的发现**：使用**完全相同**的一组高质量示例，仅仅改变它们的排列顺序，就可能导致模型准确率出现 **±15%** 的剧烈震荡。
+**惊人的发现**：使用**完全相同**的一组高质量示例，仅仅改变它们的排列顺序，就可能导致模型准确率出现**明显波动**（在部分任务上波动可达十几个百分点，具体幅度取决于模型、任务与示例数量）。
 
 **原因——嵌入空间聚类效应**：
 
@@ -175,11 +177,13 @@ ICL 的性能对示例的选择**极其敏感**。随机选的示例和精心选
 
 随着 Gemini 1.5 Pro 等模型支持**百万级 token** 的上下文窗口，ICL 进入了**多示例（Many-Shot）**时代：
 
-| 任务类型 | Few-Shot (K<10) | Many-Shot (K>100) |
+> ⚠️ **下表数字为示意，缺一手出处，切勿直接引用**：底稿给出的这组分数**没有标明具体模型、评测数据集、评测指标与实验设置**，无法核对，很可能是二手转述的近似值。这里保留它们**仅为体现"示例增多时性能常有明显提升"的定性趋势**。若要引用确切数字，请查阅 Many-Shot ICL 的一手研究（如 Agarwal et al., *Many-Shot In-Context Learning*, 2024，arXiv:2404.11018）及其对应的数据集与指标定义。
+
+| 任务类型（示意） | Few-Shot (K<10)（相对分数） | Many-Shot (K>100)（相对分数） |
 |----------|----------------|-------------------|
-| 机器翻译（低资源） | 32.5 | 42.1 |
-| 抽象算法与数学推理 | 25.4 | 58.7 |
-| 高维数值函数拟合 | 18.2 | 63.5 |
+| 机器翻译（低资源） | 较低 | 明显更高 |
+| 抽象算法与数学推理 | 较低 | 明显更高 |
+| 高维数值函数拟合 | 较低 | 明显更高 |
 
 **为什么这样理解**：向模型注入数百乃至数千个领域示例，提供了**高频、高密度的局部信号**，能够：
 - **强制覆盖预训练偏见**：用大量示例重塑模型的注意力分配
@@ -193,14 +197,23 @@ ICL 的性能对示例的选择**极其敏感**。随机选的示例和精心选
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
-# 加载模型（以 Qwen2.5-1.5B 为例，小模型也能演示 ICL）
+# 加载模型（以 Qwen2.5-1.5B-Instruct 为例，小模型也能演示 ICL）
 model_name = "Qwen/Qwen2.5-1.5B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# 关键：dtype 与 device 要匹配。float16 只适合在 GPU 上跑；
+# 纯 CPU 环境下用 float16 通常会报错或极慢，应改用 float32（或 bfloat16）。
+if torch.cuda.is_available():
+    device = "cuda"
+    dtype = torch.float16          # GPU：半精度更省显存
+else:
+    device = "cpu"
+    dtype = torch.float32          # CPU：必须用 float32，不能用 float16
+
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype=torch.float16,
-    device_map="auto"
-)
+    torch_dtype=dtype,
+).to(device)
 
 # 构建 ICL 提示
 prompt = """请根据示例判断文本情感倾向：
@@ -218,23 +231,26 @@ prompt = """请根据示例判断文本情感倾向：
 情感:"""
 
 # 编码并生成
-inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+inputs = tokenizer(prompt, return_tensors="pt").to(device)
 outputs = model.generate(
     **inputs,
     max_new_tokens=10,
-    do_sample=False,   # 贪婪解码，确定性输出
+    do_sample=False,   # 贪婪解码，尽量确定性输出
     pad_token_id=tokenizer.eos_token_id
 )
 
 response = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
 print(f"模型输出: {response.strip()}")
-# 预期输出: 负面
+# 期望（不保证）：多数情况下会输出"负面"。
+# 但实际输出取决于模型版本、精度、随机性与提示措辞，可能是"负面/消极"等近义词，
+# 也可能偶尔出错——ICL 的输出并不保证 100% 正确，需自行做后处理/校验。
 ```
 
 **为什么这样写**：
 - 提示中包含了**任务说明** + **3 个示例**（正面/负面/中性） + **待预测样本**
 - 模型通过前向传播"读取"示例中的映射模式，直接应用到新输入上
-- `do_sample=False` 使用贪婪解码，使输出更确定
+- **dtype 必须与 device 匹配**：`float16` 主要面向 GPU；在 CPU 上加载 `float16` 权重做推理通常会报错或极慢，因此上面按是否有 CUDA 自动切换到 `float32`
+- `do_sample=False` 使用贪婪解码，让输出尽量确定，但**不等于保证正确**：ICL 结果会随模型、精度、提示措辞波动，生产中应对输出做归一化/校验，而不要假定它一定等于某个标签
 
 ---
 
