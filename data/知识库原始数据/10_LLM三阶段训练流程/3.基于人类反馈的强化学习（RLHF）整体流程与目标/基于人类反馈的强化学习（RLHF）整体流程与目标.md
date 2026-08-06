@@ -16,11 +16,27 @@
 **适合人群**：已完成预训练（Pretrain）与有监督微调（SFT）阶段学习，希望理解如何将"会办事"的指令模型进一步打磨为"做对事"的对齐模型的进阶学习者。每一步都拆解到"是什么、为什么、怎么做"，你只需要跟着理解。完成本章后，你将能够清晰描述 RLHF 的完整三阶段流程，掌握奖励模型训练、PPO/DPO/GRPO 三种强化学习优化算法的原理与代码实现，并能在实际项目中做出合理的算法选型。
 
 **预计学习时长**：约 2 小时  
-**环境准备**：Python 3.10+，安装 `transformers`、`trl`、`peft`、`datasets`、`accelerate`
+**环境准备**：Python 3.10+，基础依赖 `transformers`、`trl`、`peft`、`datasets`、`accelerate`；若要用 QLoRA 减显存，再加 `bitsandbytes`；跑 PPO/GRPO 在线强化学习时建议有 ≥2 张 GPU 以分离策略/奖励/参考模型。
 
 ```bash
+# 最低可跑通依赖（DPO/GRPO/PPO 的 TRL 官方 Trainer）
 pip install transformers trl peft datasets accelerate
+
+# 跑 QLoRA + 大模型 RLHF 再加：
+pip install bitsandbytes
+
+# 跑 PPO 推荐装 DeepSpeed ZeRO-3（单机多卡或多机多卡时极大缓解 Actor/Critic/Ref/Reward 模型同显存占用）
+# pip install deepspeed
 ```
+
+> **硬件门槛与适配人群提示（RLHF / 偏好对齐三路线差异大，按路线选）**：
+> - **只学概念/不跑训练**：第 1 章（定位）、第 2 章（奖励模型原理）、第 3~5 章的算法原理对比部分、第 7 章选型**完全不需要 GPU**，直接读就能搞清楚"奖励模型怎么标 → PPO 三阶段 vs DPO 离线 vs GRPO 组归一化"的区别。这是 90% 入门学习者的首选。
+> - **奖励模型（RM）训练**：显存要求≈同规模 SFT 的 1.1~1.3 倍（RM 输出改成一个标量，整体结构与 LM 相近）。7B LoRA 建议单卡 ≥16GB，BF16 ≥24GB；推荐使用 pair-wise loss 的 RewardTrainer。
+> - **DPO（离线偏好对齐，推荐新手首选实操路线）**：显存开销≈同规模 SFT 的 1.5~2 倍（因为每步需要算 policy + ref_model 两条前向的 log_prob）。7B QLoRA 建议单卡 ≥24GB；7B BF16 LoRA 建议 ≥40G（或 2 卡 24GB 起用 accelerate launch --num_processes=2 + DeepSpeed ZeRO-2/3）。**DPO 不训练 RM、不做在线采样，稳定性最好、资源消耗最低**，所以"低配也要跑 RLHF 类任务"优先选 DPO。
+> - **PPO（在线强化学习，经典 RLHF 路线）**：显存开销最大——需要同时驻留 4 份模型（Actor/Ref/Critic/Reward）。强烈推荐 ≥4×A100 40G/80G 起步 + DeepSpeed ZeRO-3；用 LoRA 也建议单卡 ≥40GB。7B 级别用消费级单卡几乎无法跑通 PPO（显存装不下）。如果你只有消费级卡，不要选 PPO 做实操。
+> - **GRPO（组相对强化学习，PPO 简化版）**：不需要 Critic，显存≈PPO 的 70%。但仍需在线采样，显存≈同规模 DPO 的 1.2~1.5 倍。7B BF16 LoRA 建议 2 卡 ≥24GB 起步，配合 DeepSpeed ZeRO-2。
+> - **消费级 GPU / 低配个人用户实操建议**：首选路线是 **(1) 先读概念 → (2) 把模型压到 ≤1.5B 做 QLoRA DPO 跑几十个 step 看 loss 下降**——目标是理解流水线，不是得到一个真正对齐的助手。真要对齐 7B+ 规模的模型，建议租 ≥2 张 24GB 卡或使用开源预对齐模型（如 Qwen2.5-7B-Instruct、Llama-3-8B-Instruct）跳过 RLHF，直接做二次 SFT。
+> - **启动方式提醒**：训练代码里不要写 device_map="auto"，不要 torch_dtype="auto"；用 accelerate launch 或 deepspeed 启动，精度显式写 bf16=True / fp16=True；TRL 不同版本 Trainer 参数差异大（如 DPOTrainer 新版用 processing_class），请以你所安装版本的官方示例为准。
 
 ---
 
@@ -98,21 +114,25 @@ SFT 用大量高质量的"指令-回答"对来教模型模仿人类的说话方�
 - 人类更擅长做**相对比较**（A 比 B 好）而不是**绝对评分**（给 A 打 90 分）
 - 成对比较的数据一致性更高，不同标注者的分歧更小
 
-### 2.3 奖励模型的架构
+### 2.3 奖励模型的架构与训练启动
+
+> ⚠️ **同 SFT：训练脚本不要依赖 `device_map="auto"` / `torch_dtype="auto"`**。多卡训练使用 `accelerate launch` 或 `deepspeed`；精度在代码中显式指定为 `torch.bfloat16`/`torch.float16`，并与 `RewardConfig` 的 `bf16`/`fp16` 保持一致。
 
 奖励模型通常与 SFT 模型**同规模**，但修改了最后的输出层：
 
 ```python
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import torch
 
 model_name = "Qwen/Qwen2.5-7B-Instruct"
 
 # 加载为序列分类模型，num_labels=1 表示输出标量分数
+# - torch_dtype 显式指定（而非 "auto"），与 RewardConfig.bf16 保持一致
+# - 不写 device_map，让 accelerate/DeepSpeed/Trainer 管理设备
 reward_model = AutoModelForSequenceClassification.from_pretrained(
     model_name,
-    num_labels=1,  # 输出一个标量：奖励分数
-    torch_dtype="auto",
-    device_map="auto"
+    num_labels=1,           # 输出一个标量：奖励分数
+    torch_dtype=torch.bfloat16,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -120,9 +140,13 @@ print(f"奖励模型参数量: {sum(p.numel() for p in reward_model.parameters()
 ```
 
 **为什么这样写**：
-- `num_labels=1`：将词表映射层替换为单值回归层，输出标量奖励分数
-- 使用与 SFT 模型相同的基座，确保语义理解能力一致
-- 奖励模型的可训练范围**没有统一定论**：既可以全参微调，也可以用 PEFT（如 LoRA）或"冻结大部分层、只训回归头"等做法。"只训回归头"能省显存、降低过拟合风险，但并非通用最佳实践——具体应以数据量与实验效果为准
+- `num_labels=1`：将词表映射层替换为单值回归层，输出标量奖励分数。
+- 使用与 SFT 模型相同的基座，确保语义理解能力一致。
+- **关于可训练范围的常见做法（没有"标准唯一解"）**：
+  - **全参微调**：工业界常见（特别是奖励模型本身不太大、或偏好数据充足时），整体打分能力更稳定；
+  - **PEFT（如 LoRA）微调**：资源受限时的常用替代方案，效果与全参接近但更省显存；
+  - **冻结大部分层、只训练回归头**：属于更轻量的一种选项，能进一步降显存、降低"奖励模型过拟合"风险，但表达力和打分稳定性往往**弱于**前两种。
+  实际选型需结合显存预算、数据量与验证集打分一致性实验，不存在"唯一推荐做法"。
 
 ### 2.4 奖励模型的训练
 
@@ -253,6 +277,8 @@ $$\mathcal{L}^{CLIP}(\theta) = \hat{\mathbb{E}}_t \left[ \min\left( r_t(\theta)\
 
 ```python
 # ===== 教学伪代码：仅示意流程，不保证按现有 TRL 版本可运行 =====
+# ⚠️ 训练场景：不写 device_map="auto"，由 accelerate launch / deepspeed 启动；
+#    精度显式指定为 torch.bfloat16 / torch.float16，不要依赖 "auto"。
 from trl import PPOTrainer, PPOConfig
 from transformers import (
     AutoModelForCausalLM, AutoTokenizer,
@@ -262,13 +288,13 @@ import torch
 
 # 加载 SFT 模型作为 Actor
 actor_model = AutoModelForCausalLM.from_pretrained(
-    "./sft_model", torch_dtype="auto", device_map="auto"
+    "./sft_model", torch_dtype=torch.bfloat16,   # 显式精度
 )
 tokenizer = AutoTokenizer.from_pretrained("./sft_model")
 
 # 加载奖励模型（冻结）。注意：num_labels=1 时输出一个标量分数（logit）
 reward_model = AutoModelForSequenceClassification.from_pretrained(
-    "./reward_model", num_labels=1, torch_dtype="auto", device_map="auto"
+    "./reward_model", num_labels=1, torch_dtype=torch.bfloat16,   # 显式精度
 )
 reward_model.eval()
 
@@ -324,7 +350,7 @@ for epoch in range(3):
 | 适用于各种复杂奖励函数 | 超参数调优困难（$\epsilon$、$\beta$、学习率等） |
 | 通用性强，对话/摘要/代码都能用 | 长文本推理中 Critic 价值估计不准 |
 
-**适用场景**：中等规模模型（7B-70B）的通用文本生成优化，如对话系统、文本摘要。
+**适用场景（经验性倾向，非硬性规模分界）**：常在中等规模稠密模型的通用文本生成优化中被采用（如对话系统、文本摘要），但小模型或更大模型上同样可以使用；是否合适需按模型规模、序列长度、并行策略、实现开销与实验实测共同决定。
 
 ---
 
@@ -356,6 +382,14 @@ $$\mathcal{L}_{DPO}(\pi_\theta; \pi_{ref}) = -\mathbb{E}_{(x, y_w, y_l) \sim D} 
 ### 4.3 DPO 训练代码
 
 ```python
+# ===== 教学伪代码：仅示意流程，不保证按当前 TRL 版本可直接运行 =====
+# ⚠️ 训练场景：不写 device_map="auto"，由 accelerate launch / deepspeed 启动；
+#    精度显式指定为 torch.bfloat16 / torch.float16，不要依赖 "auto"。
+# ⚠️ 版本敏感：不同 TRL 版本 DPOTrainer 签名差异较大；
+#    新版部分用法使用 processing_class 代替 tokenizer，
+#    具体参数名、是否需要手动创建 ref_model 请以你所安装 TRL 版本的
+#    官方 DPOTrainer 文档/示例为准。
+import torch
 from trl import DPOTrainer, DPOConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
@@ -363,16 +397,16 @@ from datasets import load_dataset
 # 加载 SFT 模型作为初始策略
 model = AutoModelForCausalLM.from_pretrained(
     "./sft_model",
-    torch_dtype="auto",
-    device_map="auto"
+    torch_dtype=torch.bfloat16,   # 显式精度，与 DPOConfig.bf16 对应
 )
 tokenizer = AutoTokenizer.from_pretrained("./sft_model")
 
 # 加载参考模型（SFT 模型的冻结副本）
+# 注意：部分 TRL 版本支持通过 ref_model=None + DPOConfig.ref_model_name
+# 让 Trainer 内部加载，具体请对照你所用版本官方示例。
 ref_model = AutoModelForCausalLM.from_pretrained(
     "./sft_model",
-    torch_dtype="auto",
-    device_map="auto"
+    torch_dtype=torch.bfloat16,   # 显式精度
 )
 
 # 加载偏好数据集
@@ -389,13 +423,15 @@ training_args = DPOConfig(
     beta=0.1,  # KL 散度惩罚系数，对应公式中的 β
     logging_steps=10,
     save_steps=500,
-    fp16=True,
+    bf16=True,   # 与 torch_dtype 对齐；若用 fp16 请改为 fp16=True
 )
 
 # 初始化 DPO 训练器
+# 版本敏感：新版 TRL 中这里可能使用 processing_class=tokenizer
+# 或在 DPOConfig 里配置；请对照官方示例。
 dpo_trainer = DPOTrainer(
     model=model,
-    ref_model=ref_model,  # 参考模型
+    ref_model=ref_model,
     args=training_args,
     tokenizer=tokenizer,
     train_dataset=dataset,
@@ -409,9 +445,11 @@ dpo_trainer.save_model("./dpo_model")
 ```
 
 **为什么这样写**：
-- `DPOTrainer` 自动处理偏好对的损失计算
-- `beta=0.1`：控制 KL 散度惩罚，防止模型偏离参考模型太远
-- 学习率 `5e-7` 比 SFT 小一个量级，因为 DPO 直接优化策略，更新幅度需要更谨慎
+- 显式 `torch_dtype=torch.bfloat16` + 不写 `device_map`：与 SFT/PPO 章节的训练规范一致，避免与 accelerate/DeepSpeed 的并行设备管理冲突；
+- `DPOTrainer` 自动处理偏好对的损失计算；
+- `beta=0.1`：控制 KL 散度惩罚，防止模型偏离参考模型太远；
+- 学习率 `5e-7` 比 SFT 小一个量级，因为 DPO 直接优化策略，更新幅度需要更谨慎；
+- **版本敏感性**：`DPOTrainer` 的参数（是否需手动传 `ref_model`、`tokenizer` vs `processing_class`、是否要手动设置 padding 等）在不同 TRL 小版本间变化较大，落地请以当前安装版本的官方示例为准。
 
 ### 4.4 DPO 的优缺点
 
@@ -458,6 +496,11 @@ $$A_i = \frac{r_i - \text{mean}(r)}{\text{std}(r)}$$
 
 ```python
 # ===== 教学伪代码：示意 GRPO 用法，不保证按现有 TRL 版本可运行 =====
+# ⚠️ 训练场景：不写 device_map="auto"，由 accelerate launch / deepspeed 启动；
+#    精度显式指定为 torch.bfloat16 / torch.float16，不要依赖 "auto"。
+# ⚠️ 版本敏感：GRPOTrainer 在不同 TRL 版本中参数（reward_funcs 签名、是否
+#    需要 tokenizer/processing_class、num_generations 参数名等）会有变化，
+#    请以你所安装版本的官方 GRPOTrainer 示例为准。
 from trl import GRPOTrainer, GRPOConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
@@ -465,8 +508,7 @@ import torch
 # 加载 SFT 模型
 model = AutoModelForCausalLM.from_pretrained(
     "./sft_model",
-    torch_dtype="auto",
-    device_map="auto"
+    torch_dtype=torch.bfloat16,   # 显式精度，与 GRPOConfig.bf16 对应
 )
 tokenizer = AutoTokenizer.from_pretrained("./sft_model")
 
@@ -534,7 +576,7 @@ grpo_trainer.save_model("./grpo_model")
 | 无需训练价值模型 | 全对/全错样本组导致梯度消失 |
 | 长推理效果显著（数学/代码） | 对奖励噪声敏感 |
 
-**适用场景**：长链推理任务（数学解题、代码调试）、大规模模型（70B+）的微调。
+**适用场景（经验性倾向，非硬性规模分界）**：长链推理任务（数学解题、代码调试）上常能看到不错的效果；在部分大规模模型调优报告中也有使用，但并非只有"70B+"才能用——中小规模长推理任务同样可以尝试。最终是否合适需按模型规模、序列长度、并行策略、采样开销与实验实测共同决定。
 
 ---
 
@@ -546,7 +588,7 @@ grpo_trainer.save_model("./grpo_model")
 |------|-----|-----|------|
 | **核心思想** | 在信任区域内小步更新 | 直接用偏好数据优化 | 组内相对比较估计优势 |
 | **所需模型** | 4 个（Actor/Critic/RM/Reference） | 2 个（策略+参考） | 无固定"三模型"：一定有策略模型；奖励可用**独立 RM 或规则/可验证函数**（后者无需 RM）；参考模型是否需要、KL 是否启用**取决于具体算法与实现/配置** |
-| **计算成本** | **最高** | **最低** | **中等** |
+| **计算成本（经验性相对排序，需实测验证）** | 多数设置下**相对偏高**（四模型 + 在线循环 + Critic/RM 前向），但 DeepSpeed ZeRO/FSDP/PPO 专用实现、梯度累计策略可显著缩小差距 | 多数设置下**相对偏低**（类 SFT 离线训练、省去 RM/Critic），但真实比例（如"低 30% 还是 70%"）**没有稳定一般性**，取决于 batch 大小、序列长度、是否重计算、并行实现与硬件 | **多数在 PPO 与 DPO 之间**：去掉 Critic 省显存/算力，但组内多回答采样会增加总 token 量；成本与每组回答数、序列长度强相关，需按自身设置实测 |
 | **数据需求** | 需要奖励模型的绝对分数 | 需要成对偏好数据 | 需要一个打分来源：**RM 分数或规则/可验证奖励** |
 | **训练稳定性** | 高（但调参复杂） | 高 | 中（全对/全错问题） |
 | **长推理能力** | 弱（Critic 价值估计不准） | 弱 | **强** |

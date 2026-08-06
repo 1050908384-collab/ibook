@@ -107,8 +107,8 @@ df['age'] = df['age'].fillna(df['age'].median())   # 数值型推荐中位数（
 df['category'] = df['category'].fillna(df['category'].mode()[0])  # 分类型用众数
 
 # 时间序列常用：向前/向后填充
-df['value'] = df['value'].fillna(method='ffill')   # 用上一个有效值填充
-df['value'] = df['value'].fillna(method='bfill')   # 用下一个有效值填充
+df['value'] = df['value'].ffill()   # 用上一个有效值填充
+df['value'] = df['value'].bfill()   # 用下一个有效值填充
 
 # 线性插值（数据有规律变化时）
 df['value'] = df['value'].interpolate(method='linear')
@@ -194,9 +194,10 @@ print(f"异常值数量: {outliers.sum()}")
 **方法二：Z-Score 法（适合近似正态分布的数据）**
 
 ```python
-from scipy import stats
-
-z_scores = np.abs(stats.zscore(df['amount']))
+# 先确保 amount 为数值型；缺失值会保留为 NaN，不会被标记为异常值
+mean = df['amount'].mean()
+std = df['amount'].std(ddof=0)
+z_scores = np.abs((df['amount'] - mean) / std)
 outliers = z_scores > 3
 ```
 

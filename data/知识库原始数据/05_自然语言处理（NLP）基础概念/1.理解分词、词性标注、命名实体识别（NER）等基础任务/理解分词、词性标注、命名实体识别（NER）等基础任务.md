@@ -69,7 +69,7 @@ print(english_tokens)
 # ['Natural', 'Language', 'Processing', 'is', 'fascinating!']
 ```
 
-但对于**中文**，词与词之间没有明显的分隔符，"字"不等于"词"。如果不分词，直接把句子当成字符序列，计算机会把"自然语言处理"理解为 6 个独立的字，丢失了"自然语言处理"作为一个完整概念的语义。
+但对于**中文**，词与词之间没有明显的分隔符，"字"不等于"词"。在基于"词"的传统 NLP 流程中，不分词直接把句子当成字符序列，计算机会把"自然语言处理"理解为 6 个独立的字，丢失了"自然语言处理"作为一个完整概念的语义。
 
 ```python
 chinese_text = "自然语言处理是人工智能的重要分支"
@@ -78,7 +78,7 @@ print(list(chinese_text))
 # ['自', '然', '语', '言', '处', '理', '是', '人', '工', '智', '能', '的', '重', '要', '分', '支']
 ```
 
-**为什么这样写**：分词是中文 NLP 的**首要步骤**。词是语义理解的最小单位，分词质量直接影响后续所有任务（文本分类、情感分析、机器翻译等）的效果。
+**为什么这样写**：对于使用 jieba、CRF、HMM 等传统中文 NLP 工具链的任务，**分词是词法分析的第一步**。词是传统"词法→句法→语义"管线中的基础单位，分词质量直接影响后续文本分类、情感分析等任务的效果。注意：**现代大语言模型（BERT、GPT、Llama 等）通常使用子词（Subword）或字符级 Tokenizer，不再走"中文分词→词向量"这条管线**，两者不要混淆。
 
 ### 2.2 jieba 分词的三种模式
 
@@ -326,7 +326,8 @@ for word, flag in result:
 | `u` | 助词 | 的、了、着、过 |
 | `t` | 时间词 | 今天、明天、2024年 |
 | `f` | 方位词 | 上、下、左、右 |
-| `x` | 标点符号 | ，。？！ |
+| `w` | 标点符号 | ，。？！ |
+| `x` | 非语素字 / 字符串 | 萄（葡萄中单独出现）、网址串 |
 
 ### 3.4 自定义词性
 
@@ -441,7 +442,7 @@ for entity_type, entity_list in entities.items():
         print(f"{entity_type}: {', '.join(entity_list)}")
 ```
 
-**输出**：
+**可能输出**（jieba 版本、加载词典不同，结果会略有差异）：
 ```
 TIME: 2024年, 1月
 PERSON: 马斯克
@@ -468,7 +469,8 @@ BiLSTM 层（双向长短期记忆网络）
     ↓
 CRF 层（条件随机场）
     学习标签之间的转移规律
-    例如: B-PER 后面只能是 I-PER 或 O，不能是 B-ORG
+    例如: I-PER 前面必须是 B-PER 或 I-PER（不能直接从 O 跳到 I-PER）；
+          B-PER 后面不能跟类型不匹配的 I-ORG / I-LOC，但可以接另一个实体的 B-XXX（相邻实体）或 O
     ↓
 输出标签序列: [B-PER, I-PER, I-PER, O, B-ORG, I-ORG, I-ORG, O, O]
     ↓
@@ -492,8 +494,11 @@ CRF 层（条件随机场）
 
 **为什么这样写**：对于 NER 等任务，**精确率和召回率往往比准确率更重要**。例如，一个保守的模型只预测它非常确定的实体，精确率会很高但召回率很低；一个激进的模型预测很多实体，召回率高但精确率低。F1 分数平衡了两者。
 
+> **注意层级区分**：NER 的标准评估是**实体级（Entity-Level）F1**：只有当预测出的实体 span（起止位置+类型）与真实实体**完全匹配**才算 TP。下面的代码是一个**简化版 Token-Level** F1 实现（逐 token 比较），用于教学理解四个指标的定义，不等于 NER 的标准实体级评估。实际工程中应使用 `seqeval` 等库提供的实体级评估。
+
 ```python
-def calculate_metrics(true_labels, pred_labels):
+def calculate_metrics_token_level(true_labels, pred_labels):
+    """Token-Level 简化 F1：逐 token 比较非 O 标签的对错（仅用于教学，非 NER 标准评估）"""
     tp = sum(1 for t, p in zip(true_labels, pred_labels) if t == p and t != 'O')
     fp = sum(1 for t, p in zip(true_labels, pred_labels) if t != p and p != 'O')
     fn = sum(1 for t, p in zip(true_labels, pred_labels) if t != p and t != 'O')
@@ -504,14 +509,15 @@ def calculate_metrics(true_labels, pred_labels):
 
     return {'precision': precision, 'recall': recall, 'f1': f1}
 
+
 # 示例
 true = ['B-PER', 'I-PER', 'O', 'B-ORG', 'I-ORG', 'O']
 pred = ['B-PER', 'I-PER', 'O', 'B-ORG', 'O', 'O']
 
-metrics = calculate_metrics(true, pred)
-print(f"Precision: {metrics['precision']:.2f}")
-print(f"Recall: {metrics['recall']:.2f}")
-print(f"F1: {metrics['f1']:.2f}")
+metrics = calculate_metrics_token_level(true, pred)
+print(f"Precision (token级): {metrics['precision']:.2f}")
+print(f"Recall    (token级): {metrics['recall']:.2f}")
+print(f"F1        (token级): {metrics['f1']:.2f}")
 ```
 
 ---
@@ -611,28 +617,28 @@ print(f"实体数量: {len(results['entities'])}")
 
 | 坑点 | 正确做法 |
 |------|----------|
-| 中文文本直接用 `split()` 分词 | 中文没有空格分隔，必须使用 jieba 等分词工具 |
+| 中文文本直接用 `split()` 分词 | 中文没有空格分隔，传统词法分析必须使用 jieba 等分词工具；现代 LLM 使用子词 Tokenizer，不走这条管线 |
 | 忽略 jieba 的三种分词模式差异 | 文本分析用精确模式，搜索引擎用搜索引擎模式 |
 | 遇到专业术语分词错误 | 加载自定义词典 `jieba.load_userdict()` |
-| 把"字"当"词"处理 | 中文语义的基本单位是"词"而非"字" |
+| 把"字"当"词"处理 | 传统中文 NLP 管线中语义的基本单位是"词"而非"字" |
 | NER 只用规则匹配 | 规则+统计+深度学习结合，工业级用 BiLSTM-CRF 或 BERT |
 | BIO 标注中 `I-X` 跟在 `O` 后面 | `I-X` 前面必须是 `B-X` 或 `I-X`，标注时要检查合法性 |
-| 评估 NER 只看准确率 | 关注精确率、召回率、F1，尤其看实体级别的 F1 |
+| 评估 NER 只看准确率 | 关注精确率、召回率，重点看**实体级 F1**（用 seqeval 等库，不要只算 token 级） |
 
 | 知识点 | 核心要点 |
 |--------|----------|
-| **分词** | 中文 NLP 第一步，jieba 提供精确/全/搜索引擎三种模式 |
+| **分词** | 传统中文 NLP 的第一步，jieba 提供精确/全/搜索引擎三种模式 |
 | **自定义词典** | 解决专业术语、新词的分词问题 |
 | **词性标注** | 为每个词标注语法类别（n/v/a/d 等） |
 | **NER** | 识别人名、地名、机构名等实体 |
-| **BIO 标注** | B-开头、I-内部、O-非实体 |
+| **BIO 标注** | B-开头、I-内部、O-非实体；B-X 后可接 I-X / O / 另一实体 B-Y |
 | **BIOES 标注** | B-开头、I-内部、E-结束、S-单字、O-非实体 |
-| **评估指标** | Precision、Recall、F1，NER 看实体级 F1 |
+| **评估指标** | Precision、Recall、F1；NER 用**实体级 F1** 做标准 |
 
 **养成的好习惯**：
-1. 任何中文 NLP 任务，第一步先检查分词质量
+1. 任何**传统中文 NLP 管线**任务，第一步先检查分词质量；现代子词 Tokenizer 另当别论
 2. 遇到专业领域文本，先准备自定义词典
 3. NER 标注数据时，严格遵循 BIO/BIOES 规范
-4. 评估模型时，不要只看准确率，F1 更可靠
+4. 评估 NER 模型时，不要只看 token 级指标，使用 **实体级 F1**（seqeval 等）更可靠
 
 **下一步预告**：掌握了 NLP 基础任务后，你将进入 文本的数值化表示方法 的学习——理解 Bag-of-Words、TF-IDF、Word2Vec 如何将人类语言转换为计算机能理解的数字向量，这是从"文本处理"迈向"深度学习模型"的关键桥梁。在此之后，才是注意力机制与 Transformer 架构。

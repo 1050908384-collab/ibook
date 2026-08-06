@@ -209,8 +209,20 @@ print(f"训练批次: {len(train_loader)}, 验证批次: {len(val_loader)}")
 ```python
 from torch.utils.data import WeightedRandomSampler
 
-# 假设 100 个样本中，类别 0 有 90 个，类别 1 有 10 个（严重不平衡）
-labels = [0]*90 + [1]*10
+# 构造与 labels 一一对应的严重不平衡数据集：类别 0 有 90 个，类别 1 有 10 个
+class ImbalancedDataset(Dataset):
+    def __init__(self):
+        self.labels = [0] * 90 + [1] * 10
+        self.features = torch.arange(len(self.labels), dtype=torch.float32).unsqueeze(1)
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, index):
+        return self.features[index], torch.tensor(self.labels[index], dtype=torch.long)
+
+dataset = ImbalancedDataset()
+labels = dataset.labels
 # 为每个样本计算权重：少数类权重高
 weights = [1.0/90 if label == 0 else 1.0/10 for label in labels]
 
@@ -422,11 +434,20 @@ test_transform = transforms.Compose([
 ])
 
 # ========== 3. 创建数据集并划分训练/验证集 ==========
-full_dataset = DummyImageDataset(num_samples=1000, transform=train_transform)
+# random_split 返回的 Subset 会共享同一个 Dataset，无法为训练/验证集分别设置变换。
+# 先固定索引，再创建两个使用相同原始数据、不同变换的 Dataset。
+base_dataset = DummyImageDataset(num_samples=1000)
+train_size = int(0.8 * len(base_dataset))
+val_size = len(base_dataset) - train_size
+train_subset, val_subset = random_split(base_dataset, [train_size, val_size])
 
-train_size = int(0.8 * len(full_dataset))
-val_size = len(full_dataset) - train_size
-train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+train_dataset = DummyImageDataset(num_samples=0, transform=train_transform)
+train_dataset.images = base_dataset.images[train_subset.indices]
+train_dataset.labels = base_dataset.labels[train_subset.indices]
+
+val_dataset = DummyImageDataset(num_samples=0, transform=test_transform)
+val_dataset.images = base_dataset.images[val_subset.indices]
+val_dataset.labels = base_dataset.labels[val_subset.indices]
 
 # ========== 4. 创建 DataLoader ==========
 train_loader = DataLoader(
@@ -459,7 +480,7 @@ for epoch in range(2):
 |---|---|---|
 | `RuntimeError: stack expects each tensor to be equal size` | 数据形状不一致，默认 collate_fn 无法堆叠 | 自定义 `collate_fn`，对变长数据做 padding |
 | 数据加载很慢，GPU 利用率低 | `num_workers=0`，数据加载成为瓶颈 | 逐步增加 `num_workers`（建议从 2 或 4 开始）|
-| `pin_memory=True` 后报错 | 在 CPU 上训练时不需要 pin_memory | GPU 训练时开启，CPU 训练时关闭 |
+| 开启 `pin_memory=True` 后没有加速 | CPU 训练或数据传输并非瓶颈 | 它通常不会报错；仅在 CUDA 训练且数据加载成为瓶颈时再评估是否开启 |
 | `ImageFolder` 报错 `Found 0 files` | 文件夹结构不符合要求 | 确保是 `root/class_name/image.jpg` 的层级结构 |
 | 多进程加载报错 `RuntimeError: DataLoader worker exited unexpectedly` | `num_workers > 0` 时主进程数据不可序列化 | 将 Dataset 的数据改为可序列化类型，或在 `__main__` 中运行 |
 | 每个 epoch 数据顺序相同 | `shuffle=False` | 训练集的 DataLoader 必须设置 `shuffle=True` |

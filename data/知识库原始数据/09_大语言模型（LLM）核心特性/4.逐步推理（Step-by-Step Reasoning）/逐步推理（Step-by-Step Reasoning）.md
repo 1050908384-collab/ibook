@@ -12,7 +12,21 @@
 
 **适合人群**：已掌握指令遵循概念，希望理解如何让大模型从"直接猜答案"进化为"逐步推理"的学习者。每一步都拆解到"写什么、为什么这样写"，你只需要跟着理解。完成本章后，你将能够使用 Zero-shot CoT、Few-shot CoT、Self-Consistency 等技术显著提升模型在数学、逻辑、因果分析等复杂任务上的表现，为后续"幻觉问题"等 LLM 核心特性打下坚实基础。
 
-**预计学习时长**：约 0.5 小时
+**预计学习时长**：约 0.5 小时  
+**环境准备（仅用于本章推理/API示例）**：Python 3.10+，本地推理需 `transformers`、`torch`；若走 GPT 类 API，只需 `openai` SDK。
+
+```bash
+# 方案 A：本地跑开源模型做推理（需 GPU，最低建议 8GB 显存起步跑 7B 量化模型；否则会非常慢或 OOM）
+pip install transformers torch accelerate
+
+# 方案 B：仅走 API 调用示例（无需本地 GPU，只要能联网访问 API 即可）
+pip install openai
+```
+
+> **硬件与适配人群提示**：
+> - **纯概念学习者**：本章前半部分（1~3章、5章）全是原理与示例写法，**完全不需要任何环境、不需要跑代码**，直接阅读即可掌握 CoT 的核心用法。
+> - **本地无 GPU 的学习者**：第四章代码实战建议跳过本地 `from_pretrained` 推理，改用 `openai`/兼容 API 的在线服务（或仅阅读代码理解流程）；强行用 CPU 跑 7B 模型推理速度会非常慢（单条可能几十秒到几分钟）。
+> - **有 NVIDIA GPU（≥8GB 显存）**：可把示例中的模型换成 7B/14B 级的量化模型（4-bit/8-bit GPTQ、AWQ、bitsandbytes NF4），或直接使用更小的模型（如 1.5B/0.5B）；24GB 及以上显存可直接 FP16/BF16 跑 7B。
 
 ---
 
@@ -53,22 +67,29 @@ A: The cafeteria had 23 apples originally. They used 20 to make lunch.
 > 1. **"提升 30~50%"不是普适规律**：CoT 带来的增益**高度依赖模型规模、任务类型、提示写法与评测方式**，从"几乎无提升"到"显著提升"都可能出现，甚至在某些任务（纯知识检索、创意写作）上无益或有害（见第五章 5.3）。请勿把某个具体百分比当作固定收益写进结论；需要数字时应引用一手论文（如 Wei et al., *Chain-of-Thought Prompting*, 2022，arXiv:2201.11903）在**特定模型+特定数据集**上的结果。
 > 2. **"写出来的推理链" ≠ "模型内部真实的推理过程"**：CoT 输出的是一段**看起来像推理的文本**，它是否忠实反映了模型内部的真实计算，学界仍有争议——已有研究发现模型给出的解释可能**不忠实（unfaithful）**，即答案正确但中间步骤是事后编造的，或步骤有误却"蒙对"答案。因此不要把 CoT 文本当作"模型思路的透明记录"，它更像是一种**能改善输出、但需独立校验**的提示技巧。
 
-### 1.2 根本问题：单次前向传播的压缩
+### 1.2 根本问题：生成 token 数的差异带来的"工作空间"差异
 
-大模型在直接回答时，需要在**单次前向传播**中同时完成"推理"与"输出"：
+> ⚠️ 澄清：**自回归语言模型无论是否用 CoT，都是逐 token 生成、每个 token 做一次前向传播**。直接回答并不是"一次前向就把完整答案算出来"。
+>
+> 两者的真正区别是：
+> - **直接回答**：让模型只输出"最终答案"那一小段 token，中间推理过程必须被压缩在**少数几步前向的隐层状态**中；
+> - **CoT**：先让模型生成若干行"推理步骤"（额外的 token），这些 token 会进入后续位置的可见上下文，相当于给了模型**更大的、可读的显式工作空间**，后续答案 token 可以基于已写好的步骤来生成。
 
 ```
-输入问题 → [隐层压缩推理] → 直接输出答案
-              ↑
-        中间步骤被"压缩"在这里，不可见、不可控
+直接回答：
+输入问题 → 输出答案 token1 → 输出答案 token2 → ...（整个过程中，中间推理被压缩在答案前的很少几步隐层中，不可见、不可控）
+
+CoT：
+输入问题 → 输出步骤1 token → 输出步骤2 token → ... → 输出答案 token
+            ↑ 步骤1 已写入上下文，后续 token 都可见    ↑ 答案基于已显式写出的步骤生成
 ```
 
-当问题需要多步推理时（如数学证明、逻辑推导、因果分析），这种压缩会导致：
+当问题需要多步推理时（如数学证明、逻辑推导、因果分析），如果不给模型留出写中间步骤的空间，就会导致：
 - 中间步骤出错无法被发现
 - 长链推理中信息逐渐"迷失"
 - 错误在后续步骤中**累积传播**
 
-**为什么这样写**：CoT 的本质是**将隐式推理变为显式推理**。让模型把思考过程"说出来"，既方便人类检查，也让模型自身能基于已生成的中间步骤继续推导。
+**为什么这样写**：CoT 的本质是**通过生成更多中间 token，把隐式推理变为显式、可被上下文复用的推理**。让模型把思考过程"说出来"，既方便人类检查，也让模型自身能基于已生成的中间步骤继续推导。
 
 ---
 
@@ -302,11 +323,17 @@ class CoTEngine:
         steps = self._parse_reasoning_steps(response)
         answer = self._extract_final_answer(response)
         
+        # ⚠️ 这里的 confidence 不是经过校准的真实概率置信度，
+        #    只是单条生成时的一个占位启发式信号，不要用于拒答或可靠性承诺。
+        #    如果需要可靠置信度/拒答策略，请用 self_consistency 的投票一致性，
+        #    或额外做温度缩放等校准、或引入外部验证器。
+        agreement_placeholder = None
+
         return CoTResult(
             question=question,
             reasoning_chain=steps,
             answer=answer,
-            confidence=0.6,
+            confidence=agreement_placeholder,   # 注意：None 表示"单次生成无法估计一致性"，不是0
             method='zero_shot',
         )
 
@@ -318,11 +345,15 @@ class CoTEngine:
         steps = self._parse_reasoning_steps(response)
         answer = self._extract_final_answer(response)
         
+        # ⚠️ 同 zero_shot：单条生成没有可靠的置信度估计，
+        #    不要给固定阈值（如 0.75），更不要据此做生产级拒答。
+        agreement_placeholder = None
+
         return CoTResult(
             question=question,
             reasoning_chain=steps,
             answer=answer,
-            confidence=0.75,
+            confidence=agreement_placeholder,   # None 表示"单次生成无法估计一致性"，不是0
             method='few_shot',
         )
 
@@ -347,15 +378,23 @@ class CoTEngine:
         
         answer_counts = Counter(answers)
         best_answer, count = answer_counts.most_common(1)[0]
-        confidence = count / num_samples
-        
+
+        # ⚠️ vote_ratio = count / num_samples 是【投票一致性（agreement）】，
+        #    不是校准后的概率置信度：
+        #  - 一致性低 → 大概率不可靠（较强信号），可以触发复核/换策略
+        #  - 一致性高 → 只能说明"多条答案互相一致"，≠ 答案一定正确
+        #    （模型可能稳定地一致投票给同一个错误答案）
+        #    因此不能直接把 0.8 / 0.9 这类高一致性作为拒答阈值的另一面，
+        #    生产使用时仍需结合外部验证或人工抽检。
+        vote_ratio = count / num_samples
+
         best_chain_idx = answers.index(best_answer)
         
         return CoTResult(
             question=question,
             reasoning_chain=chains[best_chain_idx],
             answer=best_answer,
-            confidence=confidence,
+            confidence=vote_ratio,        # 仅代表【投票一致性/agreement】
             method='self_consistency',
         )
 

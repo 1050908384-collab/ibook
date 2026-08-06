@@ -16,11 +16,25 @@
 **适合人群**：已掌握预训练（Pretrain）流程，希望理解如何将"会接话"的基座模型转化为"会办事"的指令模型的学习者。每一步都拆解到"写什么、为什么这样写"，你只需要跟着敲。完成本章后，你将掌握 SFT 的完整流程、数据构建方法、训练配置与评估指标，为后续"RLHF 对齐人类偏好"打下坚实基础。
 
 **预计学习时长**：约 1.5 小时  
-**环境准备**：Python 3.10+，安装 `transformers`、`peft`、`datasets`、`accelerate`
+**环境准备**：Python 3.10+，基础依赖 `transformers`、`peft`、`datasets`、`accelerate`；若要用 QLoRA 还需 `bitsandbytes`、`auto-gptq`/`autoawq`（视量化方案选其一）。
 
 ```bash
+# 最低可跑通依赖（LoRA + BF16 或 FP16）
 pip install transformers peft datasets accelerate
+
+# 要使用 QLoRA（4-bit/8-bit 量化，大幅降低显存门槛）再加以下任一：
+pip install bitsandbytes                            # 8-bit / NF4-QLoRA（最通用）
+# pip install auto-gptq --extra-index-url https://huggingface.github.io/autogptq-index/whl/cu118/  # GPTQ 量化方案
+# pip install autoawq                                                         # AWQ 量化方案
 ```
+
+> **硬件门槛与适配人群提示（SFT 的显存/并行策略参照表）**：
+> - **只学概念/不跑训练**：本章第 1~2 章、第 6 章（常见陷阱）**完全不需要 GPU**，直接阅读就能搞清楚 SFT 数据构造、prompt-only loss 屏蔽、评估思路这些核心知识；第 3~5 章代码也可以当教学伪代码看。这是绝大多数入门学习者的首选路径。
+> - **想跑训练但只有消费级 GPU（1 张 8GB~12GB 显存，如 RTX 3060/3080/4060/4070）**：只适合跑 **≤2B~3B 小模型的 QLoRA/4-bit LoRA**，MAX_LENGTH 限制在 512~1024，batch_size 要很小（1~2），可以加 gradient_accumulation_steps 来凑等效 batch。7B 级别基本无法在此档显存下跑通。
+> - **有单卡 16GB~24GB（如 RTX 3090/4090、A10/A5000）**：可以用 **QLoRA/4-bit** 跑 **7B~14B 模型**，MAX_LENGTH 可开到 2048~4096；BF16 LoRA 可稳跑 7B，batch_size 视 MAX_LENGTH 在 1~8 区间调整。这是个人用户做 SFT 实操的**甜点档**。
+> - **有单机 4~8 卡（A100 40G/80G、H100 等）**：可以用 **BF16 LoRA** 稳跑 **7B~70B 级别**；7B~13B 还能做 Full Fine-Tuning（全参微调）。推荐用 accelerate launch 的多卡模式或 DeepSpeed ZeRO-2/ZeRO-3 启动。
+> - **没 GPU / 没达到上述档位**：有两条替代路线——（1）用 AutoDL、恒源云、RunPod、Lambda 等按量 GPU 云平台临时租卡；（2）把模型改成 0.5B/1.5B 级别玩具模型，只做"能跑通 loss 下降"的教学验证，不追求模型最终质量。
+> - **启动方式提醒**：训练代码里不要写 device_map="auto"，要用 `accelerate launch` / `deepspeed` 命令启动脚本，让并行框架自己分配设备；精度显式指定 bf16=True 或 fp16=True（不要 torch_dtype="auto"）。
 
 ---
 
@@ -132,27 +146,68 @@ JSONL 格式的 SFT 数据集
     验证评估 → 测试模型 → 保存和部署
 ```
 
-### 3.2 加载预训练模型
+### 3.2 加载预训练模型与训练启动方式
+
+> ⚠️ **不要在训练脚本中用 `device_map="auto"` 做多卡训练**：`device_map` 主要用于**推理/加载阶段**的单层分片，它与 `Trainer`、DDP、DeepSpeed 的数据并行训练逻辑常互相冲突（例如参数被预分片后，并行框架无法再正确分配梯度、优化器状态）。**多卡训练应使用 `accelerate launch` 或 `deepspeed` 启动脚本**，让并行框架自行管理设备。
 
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 
-model_name = "Qwen/Qwen2.5-7B-Instruct"  # 或 Llama-2-7b, Baichuan2-7B 等
+# =====================================================================
+# 两种常见 SFT 起点，请按你的流程对应选择：
+#
+# 【选项 A：标准三阶段流程中的 SFT】← 本章默认讲解的场景
+#   起点是【基础模型（Base）】，即"预训练阶段输出、还没经过任何指令/对话对齐"的版本。
+#   本章 3.3 的 chat template + chat SFT 数据，就是把"只会续写文本的 Base"教成"会按指令回答"。
+BASE_MODEL = "Qwen/Qwen2.5-7B"           # Base：没有 Instruct 后缀
+#
+# 【选项 B：二次 SFT / 领域适配（Domain Adaptation）】
+#   起点是【已经做好通用指令对齐的 Instruct/Chat 模型】，
+#   想进一步在某个垂直领域（医疗/法律/代码企业内部风格）上强化能力。
+#   这种做法合法、很常见，但属于"在已有对齐模型上继续微调"，
+#   不是三阶段流程里严格意义上的"从 Base 做第一轮 SFT"。
+# INSTRUCT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+#
+# ⚠️ 两种场景的 chat SFT 数据策略不同：
+#    - 选项 A 需要包含完整的"指令遵循 + 角色扮演"等通用对齐能力样本；
+#    - 选项 B 建议以领域专业样本为主，同时混入少量（约 10%~20%）通用 SFT 数据防灾难性遗忘。
+# =====================================================================
+model_name = BASE_MODEL   # 或改为 INSTRUCT_MODEL
 
-# 加载模型和分词器
+# 加载模型和分词器：训练时【显式指定精度】，不要依赖 "auto"
+# - torch_dtype="auto" 会按 checkpoint 的 config.torch_dtype 加载，
+#   不是按 A100/H100 显卡型号自动选；实际训练精度需要与
+#   TrainingArguments 中的 bf16=True / fp16=True 对应。
+# - 不写 device_map：让 accelerate / DeepSpeed / Trainer 管理设备
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype="auto",      # 自动选择 float16/bfloat16
-    device_map="auto"        # 自动分配到可用 GPU
+    torch_dtype=torch.bfloat16,   # 显式指定，与 TrainingArguments.bf16 保持一致
 )
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 print(f"模型参数量: {sum(p.numel() for p in model.parameters()) / 1e9:.2f}B")
 ```
 
+**正确的多卡启动方式（命令行，不要在 Python 脚本里手工 device_map）**：
+
+```bash
+# 方式一：用 accelerate（推荐，统一封装单卡/多卡/DeepSpeed）
+accelerate config          # 首次：交互式配置并行策略、精度、DeepSpeed 等
+accelerate launch train_sft.py
+
+# 方式二：直接用 DeepSpeed（配合 ds_config.json）
+deepspeed --num_gpus=8 train_sft.py \
+  --deepspeed ds_config.json
+
+# 方式三：单机多卡 DDP（不写 device_map）
+torchrun --nproc_per_node=8 train_sft.py
+```
+
 **为什么这样写**：
-- `torch_dtype="auto"`：让加载器**按模型 checkpoint 配置里记录的 dtype**（如 `config.torch_dtype`）来加载权重，而不是"按显卡型号"自动选择；A100、H100 都支持 bfloat16，具体用什么精度取决于该模型发布时保存的配置。如需强制指定，可直接传 `torch.bfloat16`/`torch.float16`。
-- `device_map="auto"`：自动将模型层分配到多张 GPU，单卡放不下时自动拆分
+- `torch_dtype=torch.bfloat16`：**显式指定**权重加载/运算精度，与 `TrainingArguments.bf16=True` 保持一致，避免 checkpoint 配置和运行环境不一致导致的 dtype 错配。若确需使用 float16，就传 `torch.float16` 并同时打开 `TrainingArguments.fp16=True`。
+- **不设置 device_map**：在训练场景下，并行策略（DDP/DeepSpeed ZeRO/FSDP）会接管参数、梯度、优化器状态的切分与放置；提前写 `device_map="auto"` 等于绕过并行框架做了一层分片，后续容易出现参数不在预期设备、优化器找不到参数、DDP 进程间权重不同步等问题。
+- 推理/演示场景（单脚本本地加载看输出）可以临时用 `device_map="auto"`，但**训练脚本不要这么做**。
 
 ### 3.3 数据加载与格式化
 
@@ -163,7 +218,8 @@ from datasets import load_dataset
 # 格式: {"instruction": "...", "input": "...", "output": "..."}
 dataset = load_dataset("json", data_files="sft_data.jsonl", split="train")
 
-IGNORE_INDEX = -100   # cross_entropy 默认忽略 -100，用来屏蔽不该算 loss 的位置
+IGNORE_INDEX = -100       # cross_entropy 默认忽略 -100，用来屏蔽不该算 loss 的位置
+MAX_LENGTH = 4096         # 与 TrainingArguments 的 max_length / 模型上下文窗口对齐，避免爆显存
 
 def format_and_tokenize(example):
     """用【目标模型自带的 chat template】拼接对话，并只对 assistant 回复计算 loss"""
@@ -176,30 +232,49 @@ def format_and_tokenize(example):
         {"role": "assistant", "content": example["output"]},
     ]
 
-    # 关键：用 tokenizer.apply_chat_template，套用【该模型训练时真正使用的对话格式】，
-    # 而不是自己手写 "### 指令：/### 回答："。不同模型（Qwen/Llama/ChatGLM...）的
-    # 特殊 token、角色标记、系统位都不同，手写格式会与模型预期不一致，损害效果。
+    # 关键 1：用 tokenizer.apply_chat_template，套用【该模型训练时真正使用的对话格式】，
+    #         而不是自己手写 "### 指令：/### 回答："。不同模型（Qwen/Llama/ChatGLM...）的
+    #         特殊 token、角色标记、系统位都不同，手写格式会与模型预期不一致，损害效果。
+    # 关键 2：设置 MAX_LENGTH + truncation=True，超长样本在 tokenizer 阶段就截断，
+    #         避免后续 collator 拼接 batch 时因序列过长导致显存暴涨或报错。
     full_ids = tokenizer.apply_chat_template(
-        messages, tokenize=True, add_generation_prompt=False
+        messages,
+        tokenize=True,
+        add_generation_prompt=False,
+        truncation=True,
+        max_length=MAX_LENGTH,
     )
 
-    # 再单独算出 "prompt 部分"（到 assistant 开始生成之前）的长度，用于屏蔽 prompt 的 loss
+    # 再单独算出 "prompt 部分"（到 assistant 开始生成之前）的长度，用于屏蔽 prompt 的 loss。
+    # prompt 同样要截断到 MAX_LENGTH（或更小，保证 prompt_len <= len(full_ids)）。
     prompt_ids = tokenizer.apply_chat_template(
-        messages[:-1], tokenize=True, add_generation_prompt=True
+        messages[:-1],
+        tokenize=True,
+        add_generation_prompt=True,
+        truncation=True,
+        max_length=MAX_LENGTH,
     )
-    prompt_len = len(prompt_ids)
+    prompt_len = min(len(prompt_ids), len(full_ids))
 
     # labels 与 input_ids 等长；prompt 段落用 IGNORE_INDEX 屏蔽，只保留 assistant 回复参与 loss
+    # 若被截断导致截断点落在 assistant 段内，截断之后的 token 自然会被忽略。
     labels = [IGNORE_INDEX] * prompt_len + full_ids[prompt_len:]
     return {"input_ids": full_ids, "labels": labels}
 
+# batched=False 保持一条一条处理；如果你想进一步提速，可以改成 batched=True
+# 并在函数内按批处理 apply_chat_template。
 tokenized_dataset = dataset.map(
-    format_and_tokenize, remove_columns=dataset.column_names
+    format_and_tokenize, remove_columns=dataset.column_names, batched=False
 )
 ```
 
 **为什么这样写**：
 - **必须使用目标模型的 chat template**（`tokenizer.apply_chat_template`）：SFT 要让模型在**它未来推理时真正会遇到的对话格式**下学习。手写 `### 指令：/### 回答：` 与模型实际的角色标记、特殊 token 不一致，会造成训练/推理格式错配，效果打折。
+- **显式设置 MAX_LENGTH + truncation=True**：长样本（instruction+input+output 总和超过 MAX_LENGTH）必须在 tokenizer 阶段截断，否则：
+  - 同一个 batch 里若混入超长样本，会导致激活显存暴涨直接 OOM；
+  - 不同长度样本拼接时若出现形状不匹配，可能直接报错；
+  - 也可以同时过滤掉 `len(input_ids) < min_tokens` 的过短样本或空样本。
+  MAX_LENGTH 具体取值要与模型支持的上下文窗口、显存预算、任务平均长度一起定；常见选择有 1024/2048/4096/8192 等。
 - 不在这里做定长 `padding`：填充留给 `data_collator` 动态处理，避免大量无意义的 pad 位。
 
 ### 3.4 配置 LoRA 进行高效微调
@@ -307,7 +382,12 @@ trainer.train()
 - `gradient_accumulation_steps=4`：显存不够大 batch 时，累积 4 步再更新，等效 batch size = 16
 - `gradient_checkpointing=True`：用计算换显存，长文本训练必备
 - `warmup_ratio=0.03`：前 3% 步数线性升温，防止初期学习率过大破坏预训练权重
-- **务必屏蔽 prompt 和 padding 的 loss**：`labels` 里 prompt 段（在 §3.3 预处理时）和 padding 段（在 collator 里）都置为 `-100`。否则模型会去"背诵指令本身"和"拟合无意义的 pad token"，这等于在**优化错误的目标**——SFT 只应对 assistant 的真实回复计算 loss。
+- **padding 的 loss 必须屏蔽**：padding 不是真实内容，padding 段的 `labels` 一定要置为 `-100`，否则模型会拟合无意义的 pad token。
+- **prompt 的 loss：通常建议屏蔽（chat SFT 主流做法），但不是"必须"的硬性规则**。当前 chat SFT 最常见的配置是：仅让 assistant 回复段参与损失计算，prompt（用户指令/上下文）段置为 `-100`。这是因为 chat 场景中我们关心的是"模型怎么回答"，而不是"模型背诵用户说过的话"。但以下场景也有**合法的全序列训练（prompt 也参与 loss）**用法，并非"优化错误目标"：
+  - **纯文本续写/领域继续预训练风格的 SFT**：没有严格的 user/assistant 角色，希望模型对整段文档都建模；
+  - **SFT 前期混合少量通用语料**（防遗忘）：沿用 CLM 全序列 loss 可以更自然地复习通用能力；
+  - **一些研究设置**发现少量 prompt loss 对复杂指令跟随有正向作用。
+  选型建议：如果做标准的对话/指令模型，保持本示例"只训练 assistant"即可；如果做上述特殊场景，再根据实验决定是否放开 prompt loss。
 
 ### 3.6 保存与合并
 
