@@ -1643,7 +1643,9 @@ function ProjectSwitcherModal({
 
 function ProfileDetailModal({ project, onClose }: { project: LearningProject; onClose: () => void }) {
   const item = project.profile;
-  const gaps = item?.knowledge_gaps || [];
+  const foundations = (item?.skill_tags || []).filter(Boolean);
+  const gapNames = (item?.knowledge_gaps || []).map((gap) => gap.skill).filter(Boolean);
+  const targetDailyHours = project.targetDailyHours || item?.daily_hours || 2;
   const currentStage = project.stages?.find((stage) => stage.stage_num === project.stageNum)
     || project.stages?.[project.stages.length - 1];
   return (
@@ -1657,22 +1659,56 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
           <button onClick={onClose} aria-label="关闭学习画像" title="关闭"><X size={18} /></button>
         </header>
         <div className="profile-detail-body">
-          <div><span>身份/背景</span><strong>{item?.grade || '未提供'}</strong></div>
-          <div><span>已有基础</span><strong>{item?.skill_tags?.join('、') || '暂无'}</strong></div>
-          <div><span>知识盲区</span><strong>{item?.knowledge_gaps?.map((gap) => gap.skill).join('、') || '暂无'}</strong></div>
-          <div><span>每日学习</span><strong>{item?.daily_hours ?? 2} 小时</strong></div>
-          <div><span>学习方式</span><strong>{styleText[item?.learning_style || 'mixed'] || item?.learning_style}</strong></div>
-          <div><span>设备条件</span><strong>{item?.hardware || '未提供'}</strong></div>
-          <div><span>画像置信度</span><strong>{pct(item?.confidence ?? 0)}%</strong></div>
-          <div><span>画像版本</span><strong>v{item?.version ?? 1}</strong></div>
+          <section className="profile-overview-item profile-overview-tags foundations">
+            <span className="profile-overview-icon"><BookOpen size={18} /></span>
+            <div>
+              <span className="profile-overview-label">已有基础</span>
+              <div className="profile-overview-tag-list">
+                {foundations.length
+                  ? foundations.map((foundation) => <strong key={foundation}>{foundation}</strong>)
+                  : <em>暂未记录</em>}
+              </div>
+            </div>
+          </section>
+          <section className="profile-overview-item profile-overview-tags gaps">
+            <span className="profile-overview-icon"><Target size={18} /></span>
+            <div>
+              <span className="profile-overview-label">知识盲区</span>
+              <div className="profile-overview-tag-list">
+                {gapNames.length
+                  ? gapNames.map((gap) => <strong key={gap}>{gap}</strong>)
+                  : <em>暂未发现</em>}
+              </div>
+            </div>
+          </section>
+          <section className="profile-overview-item profile-overview-metric duration">
+            <span className="profile-overview-icon"><Clock size={18} /></span>
+            <div>
+              <span className="profile-overview-label">学习时长</span>
+              <strong>{targetDailyHours} 小时/日</strong>
+            </div>
+          </section>
+          <section className="profile-overview-item profile-overview-metric accuracy">
+            <span className="profile-overview-icon"><Gauge size={18} /></span>
+            <div>
+              <span className="profile-overview-label">正确率</span>
+              <strong>
+                {project.averageAccuracy == null ? '--' : pct(project.averageAccuracy)}
+                {project.averageAccuracy != null && <small>%</small>}
+              </strong>
+              <p>{project.averageAccuracy == null ? '完成测试后生成' : '全部阶段平均'}</p>
+            </div>
+          </section>
         </div>
         {item && (
           <div className="profile-capability-panel">
-            <div>
-              <span>能力水平</span>
-              <strong>{gaps.length ? `${gaps.filter((gap) => (gap.progress ?? 0) >= 1 || gap.status === '已掌握').length}/${gaps.length} 个知识点已掌握` : '等待学习记录'}</strong>
-            </div>
-            <KnowledgeNetwork profile={item} stage={currentStage} compact defaultMode="focus" />
+            <KnowledgeNetwork
+              profile={item}
+              stage={currentStage}
+              compact
+              defaultMode="focus"
+              showNodeDetails={false}
+            />
           </div>
         )}
       </section>

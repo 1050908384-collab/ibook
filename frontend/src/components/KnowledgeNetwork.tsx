@@ -12,6 +12,7 @@ type KnowledgeNetworkProps = {
   stage?: { subtopic_id?: string; subtopic_name?: string } | null;
   compact?: boolean;
   defaultMode?: NetworkMode;
+  showNodeDetails?: boolean;
 };
 
 type DisplayStatus = 'mastered' | 'learning' | 'pending';
@@ -54,7 +55,8 @@ export default function KnowledgeNetwork({
   profile,
   stage,
   compact = false,
-  defaultMode = 'overview'
+  defaultMode = 'overview',
+  showNodeDetails = true
 }: KnowledgeNetworkProps) {
   const [statuses, setStatuses] = useState<KnowledgeNetworkSubtopicStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -267,24 +269,28 @@ export default function KnowledgeNetwork({
                   }}
                 >
                   <title>{tooltip}</title>
-                  {current && <circle className="knowledge-current-pulse" cx={position.x} cy={position.y} r="20" />}
+                  {current && <circle className="knowledge-current-pulse" cx={position.x} cy={position.y} r="25" />}
+                  {current && <circle className="knowledge-current-ring" cx={position.x} cy={position.y} r="16" />}
                   {initial && <circle className="knowledge-foundation-ring" cx={position.x} cy={position.y} r="12" />}
                   {target && <circle className="knowledge-target-ring" cx={position.x} cy={position.y} r="9.5" />}
-                  <circle className="knowledge-station" cx={position.x} cy={position.y} r={current ? 8 : 6} />
+                  <circle className="knowledge-station" cx={position.x} cy={position.y} r={current ? 9 : 6} />
                   {displayStatus === 'mastered' && <Check x={position.x - 4} y={position.y - 4} size={8} strokeWidth={3} />}
                   <text
                     className="knowledge-station-label"
                     x={position.x}
-                    y={position.y + (position.row === 1 ? 22 : -14)}
+                    y={position.y - (current ? 20 : 14)}
                     textAnchor="middle"
                   >
                     {shortLabel(subtopic.subtopic_name)}
                   </text>
                   {current && (
-                    <g className="knowledge-you-are-here" transform={`translate(${position.x + 12} ${position.y - 30})`}>
-                      <rect width="58" height="20" rx="10" />
-                      <text x="29" y="14" textAnchor="middle">你在这里</text>
-                    </g>
+                    <>
+                      <line className="knowledge-current-leader" x1={position.x} y1={position.y + 11} x2={position.x} y2={position.y + 20} />
+                      <g className="knowledge-you-are-here" transform={`translate(${position.x - 32} ${position.y + 20})`}>
+                        <rect width="64" height="22" rx="11" />
+                        <text x="32" y="15" textAnchor="middle">你在这里</text>
+                      </g>
+                    </>
                   )}
                 </g>
               );
@@ -293,7 +299,7 @@ export default function KnowledgeNetwork({
         </svg>
       </div>
 
-      {selected && (
+      {showNodeDetails && selected && (
         <div className="knowledge-node-detail" role="status">
           <span className={`knowledge-detail-state ${getDisplayStatus(selected.subtopic)}`}>
             {statusLabel(getDisplayStatus(selected.subtopic))}

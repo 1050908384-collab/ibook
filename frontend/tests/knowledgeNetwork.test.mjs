@@ -8,6 +8,37 @@ test('知识网络包含 15 个模块和 73 个知识点', () => {
   assert.equal(knowledgeGraphBlocks.flatMap((block) => block.subtopics).length, 73);
 });
 
+test('知识图谱关系数量与一致性审查报告保持一致', () => {
+  const blockBySubtopicId = new Map(
+    knowledgeGraphBlocks.flatMap((block) =>
+      block.subtopics.map((subtopic) => [subtopic.subtopic_id, block.block_id])
+    )
+  );
+  const blockPrerequisiteCount = knowledgeGraphBlocks.reduce(
+    (count, block) => count + block.prerequisites.length,
+    0
+  );
+  const subtopicPrerequisites = knowledgeGraphBlocks.flatMap((block) =>
+    block.subtopics.flatMap((subtopic) =>
+      subtopic.prerequisites.map((prerequisite) => ({
+        prerequisite,
+        targetBlockId: block.block_id
+      }))
+    )
+  );
+  const crossBlockPrerequisiteCount = subtopicPrerequisites.filter(
+    ({ prerequisite, targetBlockId }) => blockBySubtopicId.get(prerequisite) !== targetBlockId
+  ).length;
+
+  assert.equal(blockPrerequisiteCount, 21);
+  assert.equal(subtopicPrerequisites.length, 87);
+  assert.equal(crossBlockPrerequisiteCount, 30);
+  assert.deepEqual(
+    knowledgeGraphBlocks.find((block) => block.block_id === 'KB-02')?.prerequisites,
+    []
+  );
+});
+
 test('每个知识点前置关系都指向现有知识点', () => {
   const ids = new Set(knowledgeGraphBlocks.flatMap((block) => block.subtopics.map((item) => item.subtopic_id)));
   for (const block of knowledgeGraphBlocks) {
