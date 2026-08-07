@@ -1009,15 +1009,7 @@ class DeterministicContentAgent:
         # 构建历史 memory 上下文
         memory_context = self._build_memory_context(request)
 
-        # 优先使用本阶段教程内容回答（信息最完整）
-        if request.tutorial:
-            # 截取前 500 字作为参考摘要
-            tutorial_excerpt = request.tutorial[:500].strip()
-            answer = (
-                f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
-                f"请参考本阶段教程内容：\n\n{tutorial_excerpt}"
-            )
-        elif related_docs:
+        if related_docs:
             references = "\n".join(f"- {item.get('content', '')[:160]}" for item in related_docs)
             answer = (
                 f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
@@ -1334,16 +1326,9 @@ class HybridContentAgent(DeterministicContentAgent):
         if hardware:
             hardware_note = f"\n用户设备/平台：{hardware}（请据此生成对应平台的命令和操作步骤）"
 
-        # 构建本阶段教程上下文（让 LLM 基于教程内容回答，而非凭空生成）
-        tutorial_context = ""
-        if request.tutorial:
-            # 截取前 2000 字，避免 prompt 过长
-            tutorial_excerpt = request.tutorial[:2000]
-            tutorial_context = f"\n\n本阶段教程内容（请优先基于此内容回答）：\n{tutorial_excerpt}"
-
         prompt = f"""当前学习阶段：{request.stage.block_name}
 用户学习目标：{request.profile.goal}
-用户问题：{request.question}{hardware_note}{tutorial_context}
+用户问题：{request.question}{hardware_note}
 
 请直接回答问题。先给出简明结论，再解释原理；需要时提供示例。不要编造来源。{context}"""
         if memory_context:

@@ -84,8 +84,6 @@ class AnswerGenerationInput(BaseModel):
     profile: UserProfile
     practice_profile: PracticeProfile = Field(default_factory=PracticeProfile)
     block_id: Optional[str] = None
-    # 当前阶段学习包教程（供 Agent3 基于本阶段内容回答问题）
-    tutorial: Optional[str] = None
     qa_history: List[dict] = Field(default_factory=list)
     profile_summary: Optional[str] = None
 

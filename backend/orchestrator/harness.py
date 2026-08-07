@@ -265,12 +265,6 @@ class Harness:
         # === 构建 memory 上下文（供 Agent3 生成更贴合用户的回答）===
         # 当前阶段 block_id，用于技术类回答时检索本阶段相关的知识文档
         block_id = stage.block_id if stage else None
-        # 当前阶段学习包教程（供 Agent3 基于本阶段内容回答问题）
-        tutorial = None
-        session_state = self.state_manager.get_session(session_id)
-        if session_state:
-            pkg = session_state.get("learning_package") or {}
-            tutorial = pkg.get("tutorial") or None
         # 历史问答记录（过滤非 dict 项，防止 Pydantic 验证失败）
         raw_qa = self.state_manager.get_qa_history(session_id) or []
         qa_history = [item for item in raw_qa if isinstance(item, dict)]
@@ -288,7 +282,6 @@ class Harness:
                 profile=profile,
                 practice_profile=practice_profile,
                 block_id=block_id,
-                tutorial=tutorial,
                 qa_history=qa_history,
                 profile_summary=profile_summary,
             ))
