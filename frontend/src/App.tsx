@@ -2255,14 +2255,7 @@ export default function App() {
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
   const [agentStatuses, setAgentStatuses] = useState<AgentStatusMap>(createAgentStatusMap);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
-    const activeSessionId = localStorage.getItem('sessionId');
-    const ownedSessionIds = readOwnedSessionIds();
-    const projects = readLearningProjects().filter((item) =>
-      isLocalSessionId(item.sessionId)
-      || ownedSessionIds.has(item.sessionId)
-      || item.sessionId === activeSessionId
-    );
-    return projects.filter((item) => item.sessionId !== DEMO_SESSION_ID);
+    return readLearningProjects().filter((item) => item.sessionId !== DEMO_SESSION_ID);
   });
   const [stageConversations, setStageConversations] = useState<StoredStageConversation[]>(() => {
     const conversations = readStageConversations();
@@ -2388,19 +2381,13 @@ export default function App() {
     setProjectsError(null);
     try {
       const response = await apiClient.listSessions();
-      const ownedSessionIds = readOwnedSessionIds();
-      const activeSessionId = localStorage.getItem('sessionId');
-      if (activeSessionId && !isLocalSessionId(activeSessionId)) ownedSessionIds.add(activeSessionId);
       const remoteProjects = (response.sessions || [])
         .map(sessionSummaryToProject)
-        .filter((item): item is LearningProject => Boolean(item && ownedSessionIds.has(item.sessionId)));
+        .filter((item): item is LearningProject => Boolean(item));
       setLearningProjects((prev) => {
         const localOnly = prev.filter((item) => isLocalSessionId(item.sessionId));
-        const remoteBySession = new Map(remoteProjects.map((item) => [item.sessionId, item]));
-        const mergedOwned = [...ownedSessionIds].map((ownedSessionId) => {
-          const remote = remoteBySession.get(ownedSessionId);
-          const cached = prev.find((item) => item.sessionId === ownedSessionId);
-          if (!remote) return cached;
+        const mergedRemote = remoteProjects.map((remote) => {
+          const cached = prev.find((item) => item.sessionId === remote.sessionId);
           if (!cached) return remote;
           return {
             ...cached,
@@ -2411,8 +2398,8 @@ export default function App() {
             stageName: remote.stageName !== '等待阶段规划' ? remote.stageName : cached.stageName,
             stageNum: remote.stageName !== '等待阶段规划' ? remote.stageNum : cached.stageNum,
           };
-        }).filter((item): item is LearningProject => Boolean(item));
-        return [...mergedOwned, ...localOnly]
+        });
+        return [...mergedRemote, ...localOnly]
           .sort((a, b) => b.updatedAt - a.updatedAt)
           .slice(0, 20);
       });
