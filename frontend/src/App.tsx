@@ -2163,16 +2163,6 @@ function SettingsView({
         {(!profile.grade || !profile.skill_tags?.length) && (
           <div className="settings-inline-state empty">用户基础尚不完整，请补充身份背景和已有知识基础。</div>
         )}
-        <section className="settings-knowledge-panel" aria-labelledby="settings-knowledge-title">
-          <header>
-            <div>
-              <span>已有知识基础</span>
-              <h3 id="settings-knowledge-title">知识图谱</h3>
-            </div>
-            <p>青色外圈表示首次填写时已有的知识基础</p>
-          </header>
-          <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
-        </section>
         <section className="settings-card">
           <div className="setting-row">
             <div><strong>身份/学习背景</strong><p>所有目标共用，只能在这里修改</p></div>
@@ -2181,6 +2171,16 @@ function SettingsView({
           <div className="setting-row">
             <div><strong>设备条件</strong><p>影响视频、代码与部署建议</p></div>
             <input value={hardware} onChange={(event) => setHardware(event.target.value)} placeholder="例如 RTX 4060 / MacBook / 无独显" />
+          </div>
+          <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
+            <header>
+              <div>
+                <strong>已有知识基础</strong>
+                <h3 id="settings-knowledge-title">知识图谱</h3>
+              </div>
+              <p>青色外圈表示首次填写时已有的知识基础</p>
+            </header>
+            <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
           </div>
           <div className="setting-row">
             <div><strong>保存用户基础</strong><p>调用用户级接口，不会修改任一目标的时长</p></div>

@@ -4579,15 +4579,12 @@ body.resizing-workspace-panels * {
   color: #a83f4c;
 }
 
-.settings-knowledge-panel {
-  margin-bottom: 16px;
-  padding: 18px 20px 20px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+.settings-knowledge-row {
+  display: block;
+  padding: 18px 0 20px;
 }
 
-.settings-knowledge-panel > header {
+.settings-knowledge-row > header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -4596,29 +4593,23 @@ body.resizing-workspace-panels * {
   border-bottom: 1px solid #eceef3;
 }
 
-.settings-knowledge-panel > header span {
-  color: #71798a;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.settings-knowledge-panel > header h3 {
+.settings-knowledge-row > header h3 {
   margin: 4px 0 0;
   color: #252c39;
   font-size: 18px;
 }
 
-.settings-knowledge-panel > header p {
+.settings-knowledge-row > header p {
   margin: 0;
   color: #687181;
   font-size: 12px;
 }
 
-.settings-knowledge-panel .knowledge-network {
+.settings-knowledge-row .knowledge-network {
   margin-top: 12px;
 }
 
-.settings-knowledge-panel .knowledge-network-viewport {
+.settings-knowledge-row .knowledge-network-viewport {
   height: min(500px, 56dvh);
 }
 
@@ -5478,7 +5469,7 @@ body.resizing-workspace-panels * {
     width: 100%;
   }
 
-  .settings-knowledge-panel > header {
+  .settings-knowledge-row > header {
     align-items: flex-start;
     flex-direction: column;
     gap: 8px;
