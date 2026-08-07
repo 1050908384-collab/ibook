@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CircleAlert, Loader2, LocateFixed, Map as MapIcon, Target } from 'lucide-react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import { Check, CircleAlert, Loader2, LocateFixed, Target } from 'lucide-react';
 import { apiClient, isUiPreviewMode, type KnowledgeNetworkSubtopicStatus } from '../api/client';
 import { knowledgeGraphBlocks, type KnowledgeGraphSubtopic } from '../data/knowledgeGraph';
 import { buildKnowledgeNetworkLayout, type KnowledgeRouteEdge } from '../utils/knowledgeNetworkLayout';
@@ -13,6 +14,7 @@ type KnowledgeNetworkProps = {
   compact?: boolean;
   defaultMode?: NetworkMode;
   showNodeDetails?: boolean;
+  showLocateControl?: boolean;
 };
 
 type DisplayStatus = 'mastered' | 'learning' | 'pending';
@@ -56,7 +58,8 @@ export default function KnowledgeNetwork({
   stage,
   compact = false,
   defaultMode = 'overview',
-  showNodeDetails = true
+  showNodeDetails = true,
+  showLocateControl = true
 }: KnowledgeNetworkProps) {
   const [statuses, setStatuses] = useState<KnowledgeNetworkSubtopicStatus[]>([]);
   const [loading, setLoading] = useState(!isUiPreviewMode);
@@ -64,7 +67,17 @@ export default function KnowledgeNetwork({
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<NetworkMode>(defaultMode);
+  const [dragging, setDragging] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef({
+    active: false,
+    moved: false,
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0
+  });
 
   useEffect(() => {
     if (isUiPreviewMode) {
@@ -162,6 +175,42 @@ export default function KnowledgeNetwork({
     if (nextMode === 'focus') window.requestAnimationFrame(() => centerCurrentSubtopic());
   };
 
+  const startDragging = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    const viewport = event.currentTarget;
+    dragStateRef.current = {
+      active: true,
+      moved: false,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: viewport.scrollLeft,
+      scrollTop: viewport.scrollTop
+    };
+    viewport.setPointerCapture(event.pointerId);
+    setDragging(true);
+  };
+
+  const moveWhileDragging = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragStateRef.current;
+    if (!drag.active || drag.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(deltaX, deltaY) > 4) drag.moved = true;
+    event.currentTarget.scrollLeft = drag.scrollLeft - deltaX;
+    event.currentTarget.scrollTop = drag.scrollTop - deltaY;
+  };
+
+  const stopDragging = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragStateRef.current;
+    if (!drag.active || drag.pointerId !== event.pointerId) return;
+    drag.active = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDragging(false);
+  };
+
   return (
     <section className={`knowledge-network ${mode}${compact ? ' compact' : ''}`} aria-label="知识网络">
       <div className="knowledge-network-toolbar">
@@ -172,14 +221,11 @@ export default function KnowledgeNetwork({
           <span className="foundation"><i />首次填写基础</span>
           <span className="target"><i />当前目标</span>
         </div>
-        <div className="knowledge-network-actions" aria-label="图谱显示模式">
-          <button type="button" className={mode === 'overview' ? 'active' : ''} onClick={() => selectMode('overview')}>
-            <MapIcon size={14} />查看完整图谱
+        {showLocateControl && <div className="knowledge-network-actions" aria-label="图谱定位">
+          <button type="button" className="knowledge-locate-button" onClick={() => selectMode('focus')} disabled={!currentId}>
+            <LocateFixed size={15} />定位
           </button>
-          <button type="button" className={mode === 'focus' ? 'active' : ''} onClick={() => selectMode('focus')} disabled={!currentId}>
-            <LocateFixed size={14} />聚焦当前位置
-          </button>
-        </div>
+        </div>}
       </div>
 
       {currentEntry && (
@@ -187,9 +233,6 @@ export default function KnowledgeNetwork({
           <span><LocateFixed size={15} />当前学习</span>
           <strong>{currentEntry.block.block_name}</strong>
           <p>{currentEntry.subtopic.subtopic_name}</p>
-          <button type="button" onClick={() => selectMode('focus')} title="定位当前知识点">
-            <LocateFixed size={15} /><span>定位</span>
-          </button>
         </div>
       )}
 
@@ -204,7 +247,14 @@ export default function KnowledgeNetwork({
         </div>
       )}
 
-      <div className="knowledge-network-viewport" ref={viewportRef}>
+      <div
+        className={`knowledge-network-viewport${dragging ? ' is-dragging' : ''}`}
+        ref={viewportRef}
+        onPointerDown={startDragging}
+        onPointerMove={moveWhileDragging}
+        onPointerUp={stopDragging}
+        onPointerCancel={stopDragging}
+      >
         <svg
           className="knowledge-route-map"
           viewBox={`0 0 ${layout.width} ${layout.height}`}
@@ -268,7 +318,10 @@ export default function KnowledgeNetwork({
                   tabIndex={0}
                   aria-label={tooltip}
                   aria-pressed={selectedId === subtopic.subtopic_id}
-                  onClick={() => setSelectedId(subtopic.subtopic_id)}
+                  onClick={() => {
+                    if (dragStateRef.current.moved) return;
+                    setSelectedId(subtopic.subtopic_id);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') setSelectedId(subtopic.subtopic_id);
                   }}

@@ -1742,22 +1742,6 @@ function LearningPathModal({
   const subtopics: KnowledgeSubtopic[] = (apiSubtopics.length ? apiSubtopics : selectedCatalogSubtopics)
     .map((topic) => ({ ...topic }))
     .sort((a, b) => (a.sequence_index ?? 0) - (b.sequence_index ?? 0));
-  const currentTopicIndex = subtopics.findIndex((candidate) => (
-      Boolean(stage.subtopic_id && candidate.subtopic_id === stage.subtopic_id)
-      || Boolean(stage.subtopic_name && candidate.subtopic_name === stage.subtopic_name)
-  ));
-  const stageCompleted = ['completed', 'complete', '已完成'].includes(stage.status || '');
-  const gapCompleted = currentGap?.status === '已掌握' || (currentGap?.progress ?? 0) >= 1;
-  const inferredCompletedCount = Math.min(
-    Math.max(subtopics.length - 1, 0),
-    Math.floor((currentGap?.progress || 0) * subtopics.length)
-  );
-  const getSubtopicStatus = (topic: KnowledgeSubtopic, index: number): 'done' | 'current' | 'pending' => {
-    if (stageCompleted || gapCompleted || topic.status === '已掌握' || (topic.progress ?? 0) >= 1) return 'done';
-    if (currentTopicIndex >= 0) return index < currentTopicIndex ? 'done' : index === currentTopicIndex ? 'current' : 'pending';
-    return index < inferredCompletedCount ? 'done' : index === inferredCompletedCount ? 'current' : 'pending';
-  };
-  const completedCount = subtopics.filter((topic, index) => getSubtopicStatus(topic, index) === 'done').length;
   const prerequisites = Array.from(new Set(stage.prerequisites || []));
 
   return (
@@ -1771,27 +1755,20 @@ function LearningPathModal({
           <section className="stage-knowledge-panel">
             <div className="stage-knowledge-heading">
               <div><span>阶段 {stage.stage_num ?? 1}</span><h3>{stage.block_name || currentGraphBlock?.block_name || '当前学习阶段'}</h3></div>
-              <strong>{completedCount}/{subtopics.length} 已完成</strong>
+              <strong>{subtopics.length} 个知识点</strong>
             </div>
             {prerequisites.length > 0 && <div className="stage-knowledge-prerequisites"><span>前置要求</span>{prerequisites.map((name) => <b key={name}>{name}</b>)}</div>}
             {subtopics.length > 0 ? (
               <div className="stage-knowledge-list">
-                {subtopics.map((topic, index) => {
-                  const topicStatus = getSubtopicStatus(topic, index);
-                  return (
-                    <div className={`path-subtopic ${topicStatus}`} key={topic.subtopic_id || `${topic.subtopic_name}-${index}`}>
-                      <i>{topicStatus === 'done' ? <Check size={12} /> : topicStatus === 'current' ? <Play size={10} /> : index + 1}</i>
-                      <span>{topic.subtopic_name}</span>
-                      <small>{topicStatus === 'done' ? '已完成' : topicStatus === 'current' ? '当前' : '待学习'}</small>
-                    </div>
-                  );
-                })}
+                {subtopics.map((topic, index) => (
+                  <div className="path-subtopic" key={topic.subtopic_id || `${topic.subtopic_name}-${index}`}>
+                    <i>{index + 1}</i>
+                    <span>{topic.subtopic_name}</span>
+                  </div>
+                ))}
               </div>
             ) : <p className="stage-knowledge-empty">等待后端返回当前阶段知识点</p>}
           </section>
-          <footer className="path-legend">
-            <span className="done">已完成</span><span className="current">当前知识点</span><span className="pending">待学习</span>
-          </footer>
         </div>
       </section>
     </div>
@@ -2161,48 +2138,45 @@ function SettingsView({
   loading: boolean;
   error: string | null;
   onClear: () => void;
-  onSave: (data: { grade: string; skill_tags: string[]; learning_style: string; hardware: string }) => void;
+  onSave: (data: { grade: string; skill_tags: string[]; hardware: string }) => void;
 }) {
   const [grade, setGrade] = useState(profile.grade || '');
-  const [skillTags, setSkillTags] = useState((profile.skill_tags || []).join('、'));
-  const [learningStyle, setLearningStyle] = useState(profile.learning_style || 'mixed');
   const [hardware, setHardware] = useState(profile.hardware || '');
 
   useEffect(() => {
     setGrade(profile.grade || '');
-    setSkillTags((profile.skill_tags || []).join('、'));
-    setLearningStyle(profile.learning_style || 'mixed');
     setHardware(profile.hardware || '');
-  }, [profile.grade, profile.skill_tags, profile.learning_style, profile.hardware]);
+  }, [profile.grade, profile.hardware]);
+
+  const hasProfileEdits = grade.trim() !== (profile.grade || '').trim()
+    || hardware.trim() !== (profile.hardware || '').trim();
 
   return (
     <div className="page-shell">
       <Topbar title="设置" subtitle="修改所有学习目标共用的用户基础" loading={loading} error={error} />
       <main className="settings-page">
         <div className="settings-intro">
-          <h2>用户基础与学习偏好</h2>
-          <p>这些信息只在首次使用时填写，修改后会同步到全部学习目标。</p>
+          <h2>用户基础与设备条件</h2>
+          <p>这些信息由全部学习目标共用；学习方式在每次创建目标时单独设置。</p>
         </div>
         {error && <div className="settings-inline-state error">{error}</div>}
         {(!profile.grade || !profile.skill_tags?.length) && (
           <div className="settings-inline-state empty">用户基础尚不完整，请补充身份背景和已有知识基础。</div>
         )}
+        <section className="settings-knowledge-panel" aria-labelledby="settings-knowledge-title">
+          <header>
+            <div>
+              <span>已有知识基础</span>
+              <h3 id="settings-knowledge-title">知识图谱</h3>
+            </div>
+            <p>青色外圈表示首次填写时已有的知识基础</p>
+          </header>
+          <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
+        </section>
         <section className="settings-card">
           <div className="setting-row">
             <div><strong>身份/学习背景</strong><p>所有目标共用，只能在这里修改</p></div>
             <input value={grade} onChange={(event) => setGrade(event.target.value)} placeholder="例如：研二、后端开发者" />
-          </div>
-          <div className="setting-row">
-            <div><strong>已有知识基础</strong><p>使用逗号或顿号分隔多个知识标签</p></div>
-            <input value={skillTags} onChange={(event) => setSkillTags(event.target.value)} placeholder="例如：Python、PyTorch" />
-          </div>
-          <div className="setting-row">
-            <div><strong>学习风格</strong><p>影响教程理论、代码与练习比例</p></div>
-            <div className="segmented">
-              <button className={learningStyle === 'theory' ? 'active' : ''} onClick={() => setLearningStyle('theory')}>理论型</button>
-              <button className={learningStyle === 'practice' ? 'active' : ''} onClick={() => setLearningStyle('practice')}>实操型</button>
-              <button className={learningStyle === 'mixed' ? 'active' : ''} onClick={() => setLearningStyle('mixed')}>混合型</button>
-            </div>
           </div>
           <div className="setting-row">
             <div><strong>设备条件</strong><p>影响视频、代码与部署建议</p></div>
@@ -2211,14 +2185,13 @@ function SettingsView({
           <div className="setting-row">
             <div><strong>保存用户基础</strong><p>调用用户级接口，不会修改任一目标的时长</p></div>
             <button
-              className="primary"
+              className="primary settings-save-button"
               onClick={() => onSave({
                 grade: grade.trim(),
-                skill_tags: skillTags.split(/[、,，;；]/).map((item) => item.trim()).filter(Boolean),
-                learning_style: learningStyle,
+                skill_tags: profile.skill_tags || [],
                 hardware: hardware.trim()
               })}
-              disabled={loading || !grade.trim() || !skillTags.trim()}
+              disabled={loading || !grade.trim() || !hasProfileEdits}
             >
               {loading ? <><Loader2 className="spin" size={14} />保存中</> : '保存设置'}
             </button>
@@ -2678,7 +2651,7 @@ export default function App() {
           ? response.missing_fields as OnboardingField[]
           : inferHighlightedFields(questions);
         const visibleFields = reuseUserProfile
-          ? requestedFields.filter((field) => field === 'goal' || field === 'daily_hours')
+          ? requestedFields.filter((field) => field === 'goal' || field === 'daily_hours' || field === 'learning_style')
           : requestedFields;
         setFollowupQuestions(questions);
         setHighlightedFields(visibleFields);
@@ -2952,7 +2925,8 @@ export default function App() {
     setOnboardingForm(reusableProfile ? {
       ...formDataFromProfile(reusableProfile),
       goal: '',
-      daily_hours: String(reusableProfile.daily_hours ?? 2)
+      daily_hours: String(reusableProfile.daily_hours ?? 2),
+      learning_style: 'mixed'
     } : emptyOnboardingForm);
     setFollowupQuestions([]);
     setHighlightedFields([]);
@@ -2967,7 +2941,7 @@ export default function App() {
     void refreshRemoteProjects();
   };
 
-  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; learning_style: string; hardware: string }) => {
+  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string }) => {
     setLoading(true);
     setError(null);
     try {
@@ -3106,7 +3080,8 @@ export default function App() {
     setOnboardingForm(reusableProfile ? {
       ...formDataFromProfile(reusableProfile),
       goal: '',
-      daily_hours: String(reusableProfile.daily_hours ?? 2)
+      daily_hours: String(reusableProfile.daily_hours ?? 2),
+      learning_style: 'mixed'
     } : emptyOnboardingForm);
     setFollowupQuestions([]);
     setHighlightedFields([]);
