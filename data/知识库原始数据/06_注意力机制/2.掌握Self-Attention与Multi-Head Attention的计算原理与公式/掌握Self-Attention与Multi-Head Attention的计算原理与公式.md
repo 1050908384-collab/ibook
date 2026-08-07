@@ -82,8 +82,8 @@ V = W_V(X)   # [6, 768]
 ```
 
 **为什么这样写**：
-- `bias=False` 是 Transformer 的经典设计。偏置项对注意力计算效果提升有限，还会增加参数量，因此省略。
 - 三个独立的 $W^Q, W^K, W^V$ 让模型从同一个输入中提取三种不同"视角"的信息。
+- 关于 `bias=False`：很多**现代 LLM 实现**（如 Llama 系列的注意力投影层）会关闭偏置，以减少参数量和计算开销；但**并非所有 Transformer 都这样**，原始 Transformer 论文的注意力投影是可以带偏置的。实际是否带偏置，取决于具体的模型架构设计，不属于必须遵守的规则。
 
 **第二步：计算注意力分数**
 
@@ -128,9 +128,9 @@ output = torch.matmul(attn_weights, V)   # [6, 768]
 
 单头 Self-Attention 只有一个 $W^Q, W^K, W^V$，只能捕捉**一种类型**的语义关系。
 
-**多头注意力（Multi-Head Attention）** 的核心思想：**将模型维度拆分成多个"头"，每个头独立计算注意力，捕捉不同维度、不同尺度的特征关联**。
+**多头注意力（Multi-Head Attention）** 的核心思想：**将模型维度拆分成多个"头"，每个头独立计算注意力，让模型有机会同时捕捉多种不同类型的特征关联**。
 
-类比：就像让 8 个专家同时读一篇文章，一个关注语法，一个关注情感，一个关注实体关系……最后把他们的结论汇总。
+> **说明**：上面"8 个专家分别关注语法、情感、实体关系"是**教学类比**，用于帮助建立直觉。实际上，训练后的注意力头到底学到了什么分工，**不可控也不可精确解释**，且强烈依赖数据、初始化和训练方式。不要把"头对应特定语义功能"当成事实。
 
 ### 2.2 核心公式
 
@@ -186,25 +186,27 @@ from einops import rearrange
 class MultiHeadAttention(nn.Module):
     def __init__(self, dim, heads=8, dim_head=64, dropout=0.):
         """
-        dim: 模型维度 d_model（如 512, 768）
-        heads: 注意力头数 h
+        dim:      模型维度 d_model（输入和输出的最后一维）
+        heads:    注意力头数 h
         dim_head: 每个头的维度 d_k
-        dropout: 正则化
+        dropout:  正则化
         """
         super().__init__()
         
-        # 确保模型维度可被头数整除
-        assert dim % heads == 0, "dim 必须能被 heads 整除"
+        # 在这个实现中，输出维度要回到 dim，所以要求：
+        # 所有头拼接后的 inner_dim 必须与 dim 对齐。
+        # 本代码用 dim_head 独立指定，因此显式要求 dim == heads × dim_head。
+        assert dim == heads * dim_head, f"dim({dim}) 必须等于 heads({heads}) * dim_head({dim_head})"
         
         self.heads = heads
         self.dim_head = dim_head
-        self.inner_dim = dim_head * heads   # 所有头的总维度 = d_model
+        self.inner_dim = dim_head * heads   # 所有头拼接后的维度 = dim
         
         # 尺度缩放因子: 1 / sqrt(d_k)
         self.scale = dim_head ** -0.5
         
-        # QKV 联合投影：1个线性层替代3个，效率更高
-        # 输出维度 = inner_dim * 3（Q/K/V 拼接）
+        # QKV 联合投影：常见高效实现，1 个线性层替代 3 个独立线性层
+        # 输出维度 = inner_dim * 3（Q/K/V 拼接后），随后通过 chunk(3) 拆分
         self.to_qkv = nn.Linear(dim, self.inner_dim * 3, bias=False)
         
         # Softmax 层
@@ -282,16 +284,16 @@ if __name__ == "__main__":
 #### 初始化 `__init__`
 
 ```python
-assert dim % heads == 0
+assert dim == heads * dim_head, f"dim({dim}) 必须等于 heads({heads}) * dim_head({dim_head})"
 ```
 
-**为什么这样写**：`dim` 必须能被 `heads` 整除，确保拆分后每个头的维度一致。例如 768/8=96，不能出现小数维度。
+**为什么这样写**：本实现独立指定了 `dim_head`（每头维度），拼接后 `inner_dim = heads * dim_head`，必须与输入/输出维度 `dim` 严格相等，才能保证残差连接和后续层的形状一致。例如 `dim=512, heads=8` 时必须取 `dim_head=64`，不能出现不匹配的小数维度。（另一种经典写法是让 `dim_head = dim // heads`，此时断言为 `dim % heads == 0`。）
 
 ```python
 self.to_qkv = nn.Linear(dim, self.inner_dim * 3, bias=False)
 ```
 
-**为什么这样写**：这是**工业界的高效实现**。用 1 个线性层替代 3 个独立线性层，将输入直接映射为 `Q/K/V` 拼接后的维度（`inner_dim * 3`），后续通过 `chunk(3)` 拆分。减少层数量，提升计算效率，是 Transformer 的标准设计。
+**为什么这样写**：这是**工业界常见的高效实现**。用 1 个线性层替代 3 个独立线性层，将输入直接映射为 Q/K/V 拼接后的维度（`inner_dim * 3`），后续通过 `chunk(3)` 拆分。融合后的矩阵乘法在主流硬件（GPU/TPU）上通常比 3 次独立乘法更快，属于常见的工程优化，不是硬性规定。
 
 ```python
 self.scale = dim_head ** -0.5
@@ -497,8 +499,10 @@ def verify_dimensions():
     q = rearrange(q, 'b n (h d) -> b h n d', h=heads)
     print(f"4. Q 分头后:            {q.shape}")
     
-    dots = torch.matmul(q, q.transpose(-1, -2))  # 用 q 代替 k 做自注意力
-    print(f"5. QK^T 分数:           {dots.shape}")
+    # K 也需要分头（与 Q 对称），再做 Q·Kᵀ
+    k = rearrange(k, 'b n (h d) -> b h n d', h=heads)
+    dots = torch.matmul(q, k.transpose(-1, -2))
+    print(f"5. Q·Kᵀ 分数:           {dots.shape}")
     
     scaled = dots * mha.scale
     print(f"6. 缩放后:              {scaled.shape}")
@@ -537,15 +541,15 @@ verify_dimensions()
 
 | 坑点 | 正确做法 |
 |------|----------|
-| 忘记 Scale（不除以 $\sqrt{d_k}$） | 必须 Scale，否则 Softmax 梯度消失 |
-| `dim` 不能被 `heads` 整除 | 设计模型时确保 `dim % heads == 0` |
+| 忘记 Scale（不除以 √d_k） | **强烈推荐加 Scale**，否则 Softmax 输入过大易导致训练初期梯度不稳定或消失；这是 Transformer 论文标准设置 |
+| dim 与 heads × dim_head 不匹配 | 像本实现这样独立指定 `dim_head` 时，确保 `dim == heads * dim_head`；经典实现也常取 `dim_head = dim // heads` |
 | Softmax 维度搞错 | `dim=-1` 对每行做，确保每行和为 1 |
-| 用 3 个独立 `nn.Linear` 定义 QKV | 用 1 个 `to_qkv` 更高效（工业标准） |
-| 不用 `bias=False` | Transformer 中注意力投影通常不加偏置 |
-| 忘记最后 `W^O` 投影 | 拼接后必须通过 `to_out` 映射回原维度 |
-| 混淆 Self-Attention 和 Cross-Attention | Self: Q/K/V 同源；Cross: Q 来自解码器，K/V 来自编码器 |
-| Decoder 不用 Causal Mask | 必须用下三角 Mask，防止看到未来信息 |
-| 手动 `view` 导致维度混乱 | 用 `einops.rearrange`，可读性更好 |
+| 先写 3 个独立 `nn.Linear` 定义 QKV（性能稍差） | 工业界常见做法是用 1 个 `to_qkv` 融合投影（更高效），但两者在数学上等价，不是必须 |
+| 注意力投影一定要开 / 一定要关 bias | bias 是否关闭属于**模型架构选择**：Llama 等部分现代 LLM 选择 `bias=False`，而 GPT-2 等模型的注意力投影带 bias；不属于硬性规定 |
+| 忘记最后 `W^O` 投影 | 多头拼接后需要 `to_out`（即 W^O）映射回输入维度，否则残差连接维度不匹配 |
+| 混淆 Self-Attention 和 Cross-Attention | Self: Q/K/V 同源；Cross: Q 来自解码器侧，K/V 来自编码器侧 |
+| Decoder 自注意力不用 Causal Mask | **自回归生成场景下的 Decoder 自注意力需要因果 Mask**（下三角），防止模型看到未来 token；其他场景不一定需要 |
+| 手动 `view + transpose` 导致维度混乱 | 用 `einops.rearrange`，维度变换更直观，不易出错 |
 
 ---
 
@@ -564,10 +568,10 @@ verify_dimensions()
 | **Cross-Attention** | Q 来自解码器，K/V 来自编码器 |
 
 **养成的好习惯**：
-1. 写注意力模块时，先画清楚每一步的维度变化表
-2. 务必加 Scale，这是训练稳定的关键
-3. 用 `einops.rearrange` 替代手动 `view+transpose`，避免维度混乱
-4. 输入输出维度必须一致，确保可以堆叠多层
-5. Decoder 场景一定加 Causal Mask
+1. 写注意力模块时，先在注释里列清楚每一步的**维度变化表**，确认前后对齐再写
+2. **默认加上 Scale**（这是 Transformer 论文中的标准设置）；除非有明确理由，不要移除
+3. 维度重排优先用 `einops.rearrange`，替代手动 `view + transpose`，避免维度混乱
+4. 设计网络时让输入输出维度一致，确保可以轻松堆叠多层 Transformer Block
+5. **自回归生成场景下的 Decoder 自注意力，加上 Causal Mask**
 
 **下一步预告**：掌握了 Self-Attention 与 Multi-Head Attention 后，你将进入 **子词切分与分词器（Tokenizer）** 的学习——理解 BPE、WordPiece、SentencePiece 算法原理，掌握 HuggingFace Tokenizer 的加载与使用，熟悉 padding、truncation、max_length 等关键参数。这是连接"文本处理"与"Transformer 模型"的关键桥梁。继续加油！

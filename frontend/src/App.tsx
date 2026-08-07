@@ -181,6 +181,7 @@ type LearningProject = {
   stages?: StageInfo[];
   targetTotalHours?: number;
   targetDailyHours?: number;
+  averageAccuracy?: number | null;
 };
 type StoredStageConversation = {
   id: string;
@@ -650,6 +651,8 @@ function DurationField({
   min: number;
   max: number;
 }) {
+  const numericValue = Number(value);
+  const invalid = value !== '' && (!Number.isFinite(numericValue) || numericValue < min || numericValue > max);
   const step = (delta: number) => {
     const current = Number(value);
     const next = Math.min(max, Math.max(min, (Number.isFinite(current) ? current : min) + delta));
@@ -664,6 +667,7 @@ function DurationField({
         <em>小时</em>
         <button type="button" onClick={() => step(0.5)} aria-label={`${label}增加0.5小时`}><Plus size={13} /></button>
       </div>
+      {invalid && <small className="field-error">请输入 {min} 到 {max} 小时之间的数值。</small>}
     </label>
   );
 }
@@ -783,7 +787,7 @@ function ProfilePanel({
                     // The parent displays the API error and keeps the editor open.
                   }
                 }}
-                disabled={loading || !Number.isFinite(Number(durationDraft)) || Number(durationDraft) < 0.5}
+                disabled={loading || !Number.isFinite(Number(durationDraft)) || Number(durationDraft) < 0.5 || Number(durationDraft) > 1000}
               >保存</button>
             </div>
           </div>
@@ -1639,7 +1643,9 @@ function ProjectSwitcherModal({
 
 function ProfileDetailModal({ project, onClose }: { project: LearningProject; onClose: () => void }) {
   const item = project.profile;
-  const gaps = item?.knowledge_gaps || [];
+  const foundations = (item?.skill_tags || []).filter(Boolean);
+  const gapNames = (item?.knowledge_gaps || []).map((gap) => gap.skill).filter(Boolean);
+  const targetDailyHours = project.targetDailyHours || item?.daily_hours || 2;
   const currentStage = project.stages?.find((stage) => stage.stage_num === project.stageNum)
     || project.stages?.[project.stages.length - 1];
   return (
@@ -1653,22 +1659,56 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
           <button onClick={onClose} aria-label="关闭学习画像" title="关闭"><X size={18} /></button>
         </header>
         <div className="profile-detail-body">
-          <div><span>身份/背景</span><strong>{item?.grade || '未提供'}</strong></div>
-          <div><span>已有基础</span><strong>{item?.skill_tags?.join('、') || '暂无'}</strong></div>
-          <div><span>知识盲区</span><strong>{item?.knowledge_gaps?.map((gap) => gap.skill).join('、') || '暂无'}</strong></div>
-          <div><span>每日学习</span><strong>{item?.daily_hours ?? 2} 小时</strong></div>
-          <div><span>学习方式</span><strong>{styleText[item?.learning_style || 'mixed'] || item?.learning_style}</strong></div>
-          <div><span>设备条件</span><strong>{item?.hardware || '未提供'}</strong></div>
-          <div><span>画像置信度</span><strong>{pct(item?.confidence ?? 0)}%</strong></div>
-          <div><span>画像版本</span><strong>v{item?.version ?? 1}</strong></div>
+          <section className="profile-overview-item profile-overview-tags foundations">
+            <span className="profile-overview-icon"><BookOpen size={18} /></span>
+            <div>
+              <span className="profile-overview-label">已有基础</span>
+              <div className="profile-overview-tag-list">
+                {foundations.length
+                  ? foundations.map((foundation) => <strong key={foundation}>{foundation}</strong>)
+                  : <em>暂未记录</em>}
+              </div>
+            </div>
+          </section>
+          <section className="profile-overview-item profile-overview-tags gaps">
+            <span className="profile-overview-icon"><Target size={18} /></span>
+            <div>
+              <span className="profile-overview-label">知识盲区</span>
+              <div className="profile-overview-tag-list">
+                {gapNames.length
+                  ? gapNames.map((gap) => <strong key={gap}>{gap}</strong>)
+                  : <em>暂未发现</em>}
+              </div>
+            </div>
+          </section>
+          <section className="profile-overview-item profile-overview-metric duration">
+            <span className="profile-overview-icon"><Clock size={18} /></span>
+            <div>
+              <span className="profile-overview-label">学习时长</span>
+              <strong>{targetDailyHours} 小时/日</strong>
+            </div>
+          </section>
+          <section className="profile-overview-item profile-overview-metric accuracy">
+            <span className="profile-overview-icon"><Gauge size={18} /></span>
+            <div>
+              <span className="profile-overview-label">正确率</span>
+              <strong>
+                {project.averageAccuracy == null ? '--' : pct(project.averageAccuracy)}
+                {project.averageAccuracy != null && <small>%</small>}
+              </strong>
+              <p>{project.averageAccuracy == null ? '完成测试后生成' : '全部阶段平均'}</p>
+            </div>
+          </section>
         </div>
         {item && (
           <div className="profile-capability-panel">
-            <div>
-              <span>能力水平</span>
-              <strong>{gaps.length ? `${gaps.filter((gap) => (gap.progress ?? 0) >= 1 || gap.status === '已掌握').length}/${gaps.length} 个知识点已掌握` : '等待学习记录'}</strong>
-            </div>
-            <KnowledgeNetwork profile={item} stage={currentStage} compact />
+            <KnowledgeNetwork
+              profile={item}
+              stage={currentStage}
+              compact
+              defaultMode="focus"
+              showNodeDetails={false}
+            />
           </div>
         )}
       </section>
@@ -1762,10 +1802,12 @@ function LearningDashboardView({
   currentSessionId,
   profile,
   stage,
-  result,
   setView,
   onSelectProject,
   onUpdateTargetDuration,
+  projectsLoading,
+  projectsError,
+  onRetryProjects,
   loading,
   error
 }: {
@@ -1773,10 +1815,12 @@ function LearningDashboardView({
   currentSessionId: string | null;
   profile: Profile | null;
   stage: StageInfo;
-  result: StageResult | null;
   setView: (view: View) => void;
   onSelectProject: (sessionId: string) => void;
   onUpdateTargetDuration: (sessionId: string, totalHours: number, dailyHours: number) => Promise<void>;
+  projectsLoading: boolean;
+  projectsError: string | null;
+  onRetryProjects: () => void;
   loading: boolean;
   error: string | null;
 }) {
@@ -1784,6 +1828,7 @@ function LearningDashboardView({
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
   const [targetDurationDraft, setTargetDurationDraft] = useState({ total: '', daily: '' });
   const sortedProjects = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
+  const currentProject = projects.find((project) => project.sessionId === currentSessionId);
 
   return (
     <div className="page-shell">
@@ -1797,13 +1842,26 @@ function LearningDashboardView({
             </div>
             <strong>{sortedProjects.length} 个目标</strong>
           </header>
+          {projectsError && (
+            <div className="profile-list-state error">
+              <span>{projectsError}</span>
+              <button type="button" onClick={onRetryProjects}>重新读取</button>
+            </div>
+          )}
           <div className="profile-goal-list">
+            {projectsLoading && sortedProjects.length === 0 && (
+              <div className="profile-list-state loading"><Loader2 className="spin" size={18} />正在读取学习目标</div>
+            )}
             {sortedProjects.map((project) => {
               const current = project.sessionId === currentSessionId;
               const stageTotal = (project.stages || []).reduce((sum, item) => sum + (item.estimated_hours || 0), 0);
               const targetTotal = project.targetTotalHours || stageTotal;
               const targetDaily = project.targetDailyHours || project.profile?.daily_hours || 2;
               const editingDuration = editingTargetId === project.sessionId;
+              const draftTotal = Number(targetDurationDraft.total);
+              const draftDaily = Number(targetDurationDraft.daily);
+              const invalidTargetDuration = !Number.isFinite(draftTotal) || draftTotal < 0.5 || draftTotal > 1000
+                || !Number.isFinite(draftDaily) || draftDaily < 0.5 || draftDaily > 24;
               return (
                 <article className={current ? 'current' : ''} key={project.sessionId}>
                   <span className="profile-goal-icon"><Target size={19} /></span>
@@ -1849,7 +1907,7 @@ function LearningDashboardView({
                                 // The parent displays the API error and keeps the editor open.
                               }
                             }}
-                            disabled={loading}
+                            disabled={loading || invalidTargetDuration}
                           >保存</button>
                         </div>
                       </div>
@@ -1884,7 +1942,7 @@ function LearningDashboardView({
                 </article>
               );
             })}
-            {sortedProjects.length === 0 && (
+            {!projectsLoading && !projectsError && sortedProjects.length === 0 && (
               <div className="profiles-empty">
                 <UserRound size={28} />
                 <strong>暂无学习画像</strong>
@@ -1898,7 +1956,7 @@ function LearningDashboardView({
           <DashboardView
             profile={profile}
             stage={stage}
-            result={result}
+            averageAccuracy={currentProject?.averageAccuracy ?? null}
             setView={setView}
             loading={loading}
             error={error}
@@ -1920,7 +1978,7 @@ function LearningDashboardView({
 function DashboardView({
   profile,
   stage,
-  result,
+  averageAccuracy,
   setView,
   loading,
   error,
@@ -1928,7 +1986,7 @@ function DashboardView({
 }: {
   profile: Profile;
   stage: StageInfo;
-  result: StageResult | null;
+  averageAccuracy: number | null;
   setView: (view: View) => void;
   loading: boolean;
   error: string | null;
@@ -1936,7 +1994,6 @@ function DashboardView({
 }) {
   const gaps = profile.knowledge_gaps || [];
   const mastered = gaps.filter((gap) => gap.status === '已掌握').length;
-  const accuracy = result?.accuracy ?? stage.accuracy ?? 0.87;
 
   const content = (
     <>
@@ -1954,15 +2011,11 @@ function DashboardView({
         <div className="metric-grid">
           <div className="metric">
             <span className="metric-icon blue"><Gauge size={22} /></span>
-            <div><small>当前正确率</small><strong>{pct(accuracy)}<em>%</em></strong><p>阶段测试驱动更新</p></div>
-          </div>
-          <div className="metric">
-            <span className="metric-icon violet"><Brain size={22} /></span>
-            <div><small>信心指数</small><strong>{pct(profile.confidence_index ?? 0.76)}<em>/100</em></strong><p>结合问答与答题记录</p></div>
-          </div>
-          <div className="metric">
-            <span className="metric-icon green"><Clock size={22} /></span>
-            <div><small>每日计划</small><strong>{profile.daily_hours ?? 2}<em>小时</em></strong><p>{profile.learning_rhythm || 'medium'} 节奏</p></div>
+            <div>
+              <small>平均正确率</small>
+              <strong>{averageAccuracy == null ? '--' : pct(averageAccuracy)}{averageAccuracy != null && <em>%</em>}</strong>
+              <p>{averageAccuracy == null ? '完成阶段测试后生成' : '所有阶段测试结果平均值'}</p>
+            </div>
           </div>
           <div className="metric">
             <span className="metric-icon orange"><Award size={22} /></span>
@@ -1978,33 +2031,7 @@ function DashboardView({
                 <p>模块、知识点及前置关系</p>
               </div>
             </div>
-            <KnowledgeNetwork profile={profile} stage={stage} />
-          </section>
-          <section className="white-card">
-            <div className="card-title">
-              <div>
-                <h3>阶段学习进度</h3>
-                <p>当前阶段和下一阶段策略</p>
-              </div>
-              <span>实时调整</span>
-            </div>
-            <div className="learning-path">
-              <div className="path-item done">
-                <i><Check size={14} /></i>
-                <div><span>阶段 0</span><strong>基础能力诊断</strong><small>画像可信度 {pct(profile.confidence ?? 0.7)}%</small></div>
-                <b>完成</b>
-              </div>
-              <div className="path-item active">
-                <i>{stage.stage_num ?? 1}</i>
-                <div><span>当前阶段</span><strong>{stage.block_name || fallbackStage.block_name}</strong><small>预计 {stage.estimated_hours ?? 1} 小时</small></div>
-                <b>{statusText[stage.status || 'learning']}</b>
-              </div>
-              <div className="path-item next">
-                <i><ChevronRight size={13} /></i>
-                <div><span>下一策略</span><strong>{result?.next_strategy || '等待测试结果'}</strong><small>{result?.stage_summary || '由 Agent6 根据正确率和交互记录决策'}</small></div>
-                <b>待规划</b>
-              </div>
-            </div>
+            <KnowledgeNetwork profile={profile} stage={stage} defaultMode="overview" />
           </section>
         </div>
     </>
@@ -2155,6 +2182,10 @@ function SettingsView({
           <h2>用户基础与学习偏好</h2>
           <p>这些信息只在首次使用时填写，修改后会同步到全部学习目标。</p>
         </div>
+        {error && <div className="settings-inline-state error">{error}</div>}
+        {(!profile.grade || !profile.skill_tags?.length) && (
+          <div className="settings-inline-state empty">用户基础尚不完整，请补充身份背景和已有知识基础。</div>
+        )}
         <section className="settings-card">
           <div className="setting-row">
             <div><strong>身份/学习背景</strong><p>所有目标共用，只能在这里修改</p></div>
@@ -2188,7 +2219,7 @@ function SettingsView({
               })}
               disabled={loading || !grade.trim() || !skillTags.trim()}
             >
-              保存设置
+              {loading ? <><Loader2 className="spin" size={14} />保存中</> : '保存设置'}
             </button>
           </div>
           <div className="setting-row">
@@ -2244,6 +2275,10 @@ export default function App() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
   const [reuseUserProfile, setReuseUserProfile] = useState(false);
+  const [checkingUserProfile, setCheckingUserProfile] = useState(() => !localStorage.getItem('sessionId'));
+  const [profileCheckError, setProfileCheckError] = useState<string | null>(null);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
 
   const beginAgentRun = (agentIds: AgentId[], reset = false) => {
     setAgentStatuses((current) => startAgents(current, agentIds, reset));
@@ -2282,7 +2317,8 @@ export default function App() {
         stages: knownStages.sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1)),
         targetTotalHours: existing?.targetTotalHours
           ?? knownStages.reduce((sum, item) => sum + (item.estimated_hours || 0), 0),
-        targetDailyHours: existing?.targetDailyHours ?? nextProfile.daily_hours
+        targetDailyHours: existing?.targetDailyHours ?? nextProfile.daily_hours,
+        averageAccuracy: existing?.averageAccuracy
       };
       return [project, ...prev.filter((item) => item.sessionId !== nextSessionId)].slice(0, 20);
     });
@@ -2316,7 +2352,12 @@ export default function App() {
     } : project));
   };
 
-  const mergeDashboardStages = (nextSessionId: string, history: StageInfo[], currentStage?: StageInfo | null) => {
+  const mergeDashboardStages = (
+    nextSessionId: string,
+    history: StageInfo[],
+    currentStage?: StageInfo | null,
+    averageAccuracy?: number | null
+  ) => {
     setLearningProjects((prev) => prev.map((project) => {
       if (project.sessionId !== nextSessionId) return project;
       const byStageNum = new Map<number, StageInfo>();
@@ -2326,7 +2367,8 @@ export default function App() {
       });
       return {
         ...project,
-        stages: [...byStageNum.values()].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1))
+        stages: [...byStageNum.values()].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1)),
+        averageAccuracy: averageAccuracy === undefined ? project.averageAccuracy : averageAccuracy
       };
     }));
   };
@@ -2335,13 +2377,15 @@ export default function App() {
     try {
       const dashboard = await apiClient.getDashboard(nextSessionId);
       const history = Array.isArray(dashboard?.stage_history) ? dashboard.stage_history as StageInfo[] : [];
-      mergeDashboardStages(nextSessionId, history, currentStage);
+      mergeDashboardStages(nextSessionId, history, currentStage, dashboard.average_accuracy);
     } catch {
       // Session restoration remains usable when the optional dashboard endpoint is unavailable.
     }
   };
 
   const refreshRemoteProjects = async () => {
+    setProjectsLoading(true);
+    setProjectsError(null);
     try {
       const response = await apiClient.listSessions();
       const ownedSessionIds = readOwnedSessionIds();
@@ -2372,8 +2416,36 @@ export default function App() {
           .sort((a, b) => b.updatedAt - a.updatedAt)
           .slice(0, 20);
       });
-    } catch {
+    } catch (caught) {
+      setProjectsError(`学习目标读取失败：${getErrorMessage(caught)}`);
       // Keep local cache if the session list endpoint is unavailable.
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  const checkUserFoundation = async () => {
+    setCheckingUserProfile(true);
+    setProfileCheckError(null);
+    try {
+      const userProfile = await apiClient.getUserProfile();
+      setReuseUserProfile(true);
+      setOnboardingForm((current) => ({
+        ...formDataFromProfile(userProfile),
+        goal: current.goal,
+        daily_hours: current.daily_hours || String(userProfile.default_daily_hours ?? 2)
+      }));
+    } catch (caught) {
+      const status = typeof caught === 'object' && caught && 'response' in caught
+        ? (caught as { response?: { status?: number } }).response?.status
+        : undefined;
+      if (status === 404) {
+        setReuseUserProfile(false);
+      } else {
+        setProfileCheckError(getErrorMessage(caught));
+      }
+    } finally {
+      setCheckingUserProfile(false);
     }
   };
 
@@ -2433,6 +2505,14 @@ export default function App() {
 
   useEffect(() => {
     void refreshRemoteProjects();
+  }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem('sessionId')) {
+      setCheckingUserProfile(false);
+      return;
+    }
+    void checkUserFoundation();
   }, []);
 
   useEffect(() => {
@@ -2565,17 +2645,6 @@ export default function App() {
     return Array.from(fields);
   };
 
-  const buildDemoProfile = (formData: OnboardingFormData): Profile => ({
-    ...fallbackProfile,
-    grade: formData.grade,
-    skill_tags: formData.skill_tags,
-    goal: formData.goal,
-    daily_hours: Number(formData.daily_hours) || 2,
-    learning_style: formData.learning_style,
-    hardware: formData.hardware,
-    confidence: 0.86
-  });
-
   const submitOnboarding = async () => {
     if (loading || workflow === 'diagnosing') return;
     setError(null);
@@ -2596,8 +2665,14 @@ export default function App() {
 
       if (response.status === 'needs_more_info') {
         const questions = response.followup_questions || [];
+        const requestedFields = response.missing_fields?.length
+          ? response.missing_fields as OnboardingField[]
+          : inferHighlightedFields(questions);
+        const visibleFields = reuseUserProfile
+          ? requestedFields.filter((field) => field === 'goal' || field === 'daily_hours')
+          : requestedFields;
         setFollowupQuestions(questions);
-        setHighlightedFields(response.missing_fields?.length ? response.missing_fields as OnboardingField[] : inferHighlightedFields(questions));
+        setHighlightedFields(visibleFields);
         if (response.profile_draft) {
           const draftProfile = toProfile(response.profile_draft);
           if (draftProfile) {
@@ -2845,6 +2920,7 @@ export default function App() {
   };
 
   const clearLocalSession = async () => {
+    const reusableProfile = profile || learningProjects.find((project) => project.profile)?.profile;
     if (sessionId && !sessionId.startsWith('local-goal-') && sessionId !== DEMO_SESSION_ID) {
       try {
         await apiClient.abandonSession(sessionId);
@@ -2863,7 +2939,12 @@ export default function App() {
     setMessages(initialMessages);
     setSelectedConversationId('');
     setInput('');
-    setOnboardingForm(emptyOnboardingForm);
+    setReuseUserProfile(Boolean(reusableProfile));
+    setOnboardingForm(reusableProfile ? {
+      ...formDataFromProfile(reusableProfile),
+      goal: '',
+      daily_hours: String(reusableProfile.daily_hours ?? 2)
+    } : emptyOnboardingForm);
     setFollowupQuestions([]);
     setHighlightedFields([]);
     setTimerSeconds(0);
@@ -3166,6 +3247,9 @@ export default function App() {
           error={error}
           highlightedFields={highlightedFields}
           reuseUserProfile={reuseUserProfile}
+          checkingUserProfile={checkingUserProfile}
+          profileCheckError={profileCheckError}
+          onRetryProfileCheck={() => void checkUserFoundation()}
         />
       )}
       {view !== 'learn' && profile && (workflow === 'profile_ready' || workflow === 'starting_stage') && (
@@ -3214,10 +3298,12 @@ export default function App() {
           currentSessionId={sessionId}
           profile={profile}
           stage={workspaceStage}
-          result={result}
           setView={setView}
           onSelectProject={(nextSessionId) => void switchLearningProject(nextSessionId, undefined, 'learn')}
           onUpdateTargetDuration={updateTargetDuration}
+          projectsLoading={projectsLoading}
+          projectsError={projectsError}
+          onRetryProjects={() => void refreshRemoteProjects()}
           loading={loading}
           error={error}
         />

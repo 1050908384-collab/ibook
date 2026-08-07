@@ -44,7 +44,7 @@ export const knowledgeGraphBlocks: KnowledgeGraphBlock[] = [
     ['KBS-01-03', 'conda/pip 虚拟环境管理'],
     ['KBS-01-04', 'nvidia-smi 显存监控']
   ]),
-  block('KB-02', 'Python编程基础', ['KB-01'], ['Python基础', '编程能力'], [
+  block('KB-02', 'Python编程基础', [], ['Python基础', '编程能力'], [
     ['KBS-02-00', '环境准备：安装 Python 3.10+、配置 conda 与开发工具'],
     ['KBS-02-01', '语法'],
     ['KBS-02-02', '数据结构'],
@@ -82,7 +82,7 @@ export const knowledgeGraphBlocks: KnowledgeGraphBlock[] = [
     ['KBS-07-01', '理解 BPE、WordPiece、SentencePiece 算法原理'],
     ['KBS-07-02', '掌握 HuggingFace Tokenizer 的加载与使用'],
     ['KBS-07-03', '熟悉 padding、truncation、max_length 等关键参数'],
-    ['KBS-07-04', '了解 ChatTemplate 对话模板格式']
+    ['KBS-07-04', '了解 ChatTemplate 对话模板格式', ['KBS-07-02']]
   ]),
   block('KB-08', 'Transformer架构（Decoder-Only）', ['KB-04', 'KB-06'], ['Transformer', 'GPT'], [
     ['KBS-08-00', '环境准备：加载小型模型进行前向传播实验', ['KBS-07-00']],
@@ -95,15 +95,15 @@ export const knowledgeGraphBlocks: KnowledgeGraphBlock[] = [
     ['KBS-08-07', '前向传播实验（加载 GPT-2 验证理解）']
   ]),
   block('KB-09', '大语言模型（LLM）核心特性', ['KB-08'], ['LLM', '大模型'], [
-    ['KBS-09-01', '理解涌现能力'],
-    ['KBS-09-02', '上下文学习（In-Context Learning）'],
+    ['KBS-09-01', '理解涌现能力', ['KBS-08-02']],
+    ['KBS-09-02', '上下文学习（In-Context Learning）', ['KBS-08-02']],
     ['KBS-09-03', '指令遵循（Instruction Following）'],
     ['KBS-09-04', '逐步推理（Step-by-Step Reasoning）'],
     ['KBS-09-05', '幻觉问题']
   ]),
   block('KB-10', 'LLM三阶段训练流程', ['KB-08', 'KB-09'], ['LLM训练', 'SFT', 'RLHF'], [
-    ['KBS-10-01', '掌握预训练（Pretrain）整体流程与目标'],
-    ['KBS-10-02', '有监督微调（SFT）整体流程与目标'],
+    ['KBS-10-01', '掌握预训练（Pretrain）整体流程与目标', ['KBS-08-02', 'KBS-04-06']],
+    ['KBS-10-02', '有监督微调（SFT）整体流程与目标', ['KBS-10-01']],
     ['KBS-10-03', '基于人类反馈的强化学习（RLHF）整体流程与目标']
   ]),
   block('KB-11', 'HuggingFace生态工具链', ['KB-04', 'KB-07'], ['HuggingFace', 'transformers'], [
@@ -114,31 +114,31 @@ export const knowledgeGraphBlocks: KnowledgeGraphBlock[] = [
   ]),
   block('KB-12', '参数高效微调（LoRA与QLoRA）', ['KB-04', 'KB-11'], ['LoRA', 'QLoRA', 'PEFT', '参数高效微调'], [
     ['KBS-12-00', '环境准备：安装 peft、bitsandbytes 库', ['KBS-04-00', 'KBS-11-00']],
-    ['KBS-12-01', '理解 LoRA 的低秩分解原理'],
-    ['KBS-12-02', 'Rank/Alpha 参数作用'],
-    ['KBS-12-03', '掌握 PEFT 库的 LoraConfig 配置'],
-    ['KBS-12-04', '理解 QLoRA 的 4-bit 量化与分页优化器原理'],
-    ['KBS-12-05', '掌握 LoRA 权重合并与导出（merge_and_unload）']
+    ['KBS-12-01', '理解 LoRA 的低秩分解原理', ['KBS-04-03', 'KBS-11-03']],
+    ['KBS-12-02', 'Rank/Alpha 参数作用', ['KBS-12-01']],
+    ['KBS-12-03', '掌握 PEFT 库的 LoraConfig 配置', ['KBS-12-00', 'KBS-12-02']],
+    ['KBS-12-04', '理解 QLoRA 的 4-bit 量化与分页优化器原理', ['KBS-12-00', 'KBS-12-01']],
+    ['KBS-12-05', '掌握 LoRA 权重合并与导出（merge_and_unload）', ['KBS-12-03', 'KBS-04-07']]
   ]),
   block('KB-13', 'PyTorch进阶训练技巧', ['KB-04'], ['PyTorch进阶', '训练优化'], [
     ['KBS-13-00', '环境准备：复用 PyTorch 环境并确认支持 AMP', ['KBS-04-00']],
-    ['KBS-13-01', '掌握梯度累积（Gradient Accumulation）'],
-    ['KBS-13-02', '混合精度训练（AMP）'],
-    ['KBS-13-03', '梯度检查点（Gradient Checkpointing）'],
-    ['KBS-13-04', '学习率调度（Warmup + 余弦退火）']
+    ['KBS-13-01', '掌握梯度累积（Gradient Accumulation）', ['KBS-04-06']],
+    ['KBS-13-02', '混合精度训练（AMP）', ['KBS-13-00', 'KBS-04-06']],
+    ['KBS-13-03', '梯度检查点（Gradient Checkpointing）', ['KBS-04-06']],
+    ['KBS-13-04', '学习率调度（Warmup + 余弦退火）', ['KBS-04-05', 'KBS-04-06']]
   ]),
   block('KB-14', '分布式训练（DeepSpeed）', ['KB-04', 'KB-13'], ['分布式训练', 'DeepSpeed'], [
-    ['KBS-14-00', '环境准备：安装 DeepSpeed 并配置多 GPU 环境', ['KBS-13-00']],
-    ['KBS-14-01', '掌握 DeepSpeed 的 ZeRO-1/2/3 优化策略配置'],
-    ['KBS-14-02', '理解数据并行与模型并行的区别'],
-    ['KBS-14-03', '能够编写 ds_config.json 并启动 DeepSpeed 训练']
+    ['KBS-14-00', '环境准备：安装 DeepSpeed 并配置多 GPU 环境', ['KBS-01-03', 'KBS-04-00']],
+    ['KBS-14-01', '掌握 DeepSpeed 的 ZeRO-1/2/3 优化策略配置', ['KBS-14-00', 'KBS-13-01', 'KBS-13-02']],
+    ['KBS-14-02', '理解数据并行与模型并行的区别', ['KBS-14-01']],
+    ['KBS-14-03', '能够编写 ds_config.json 并启动 DeepSpeed 训练', ['KBS-14-01', 'KBS-14-02', 'KBS-11-03']]
   ]),
   block('KB-15', '模型推理部署（vLLM）', ['KB-08', 'KB-11'], ['vLLM', '推理部署'], [
-    ['KBS-15-00', '环境准备：安装 vLLM 并确认 CUDA 与 PyTorch 兼容', ['KBS-04-00', 'KBS-11-00']],
-    ['KBS-15-01', '掌握模型生成策略（贪心搜索、束搜索）'],
-    ['KBS-15-02', 'Top-p/Top-k 采样、Temperature 温度系数'],
-    ['KBS-15-03', '理解 vLLM 的 PagedAttention 与 Continuous Batching 机制'],
-    ['KBS-15-04', '使用 vLLM 加载模型并配置关键参数进行推理部署']
+    ['KBS-15-00', '环境准备：安装 vLLM 并确认 CUDA 与 PyTorch 兼容', ['KBS-01-03', 'KBS-04-00']],
+    ['KBS-15-01', '掌握模型生成策略（贪心搜索、束搜索）', ['KBS-08-02']],
+    ['KBS-15-02', 'Top-p/Top-k 采样、Temperature 温度系数', ['KBS-15-01']],
+    ['KBS-15-03', '理解 vLLM 的 PagedAttention 与 Continuous Batching 机制', ['KBS-08-06', 'KBS-15-00']],
+    ['KBS-15-04', '使用 vLLM 加载模型并配置关键参数进行推理部署', ['KBS-15-00', 'KBS-15-02', 'KBS-15-03']]
   ])
 ];
 

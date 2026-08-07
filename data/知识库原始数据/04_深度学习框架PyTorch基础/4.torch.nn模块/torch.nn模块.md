@@ -309,7 +309,7 @@ loss = criterion(input, target)
 print(loss)
 ```
 
-> **重要**：`CrossEntropyLoss` 的输入是**未经 softmax 的原始分数（logits）**，目标值是**类别索引**（不是 one-hot）。如果已经做了 softmax，应该用 `NLLLoss`。（④）
+> **重要**：`CrossEntropyLoss` 的输入是**未经 softmax 的原始分数（logits）**，目标值是**类别索引**（不是 one-hot）。不要先做 softmax；若使用 `NLLLoss`，输入必须是 `log_softmax` 得到的对数概率。（④）
 
 ### 6.4 三种损失函数速查（④）
 
@@ -419,7 +419,7 @@ class SimpleCNN(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.kavier_normal_(m.weight)
+                nn.init.xavier_normal_(m.weight)
                 nn.init.constant_(m.bias, 0)
 
 # 实例化并测试

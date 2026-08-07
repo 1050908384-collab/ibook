@@ -15,7 +15,19 @@
 
 **适合人群**：已掌握 Transformer 架构与注意力机制，希望理解大语言模型"出生"过程——预训练阶段的学习者。每一步都拆解到"写什么、为什么这样写"，你只需要跟着理解。完成本章后，你将掌握预训练的完整流程、数据构造方法、训练目标与评估指标，为后续"有监督微调（SFT）""RLHF"打下坚实基础。
 
-**预计学习时长**：约 1.5 小时
+**预计学习时长**：约 1.5 小时  
+**环境准备（仅用于本章教学示例/小规模验证代码）**：Python 3.10+，`transformers`、`torch`、`datasets`、`accelerate`、`tensorboard`。
+
+```bash
+# 教学示例环境；真实大规模预训练需要完整的 Megatron-LM / Megatron-DeepSpeed / Megatron-Core 等分布式框架，不在此处覆盖
+pip install transformers torch datasets accelerate tensorboard evaluate
+```
+
+> **⚠️ 硬件门槛与适配人群提示（本章最重要的提示）**：
+> - **真实"从零预训练一个现代 LLM（≥1B 参数、≥100B token 语料）"的硬件要求极高，普通学习者几乎不可能满足**：通常需要几十到上百张 A100/H100 级别的 GPU 组成集群，通过 3D 并行（数据/张量/流水线）+ ZeRO/FSDP + 优化器融合才能在数周内跑完；单机多卡或消费级 GPU 只能做**非常小的 Toy Demo**。
+> - **99% 的学习者（强烈推荐）**：把本章定位在"理解概念与流程"——重点搞清楚数据清洗/去重、分桶、next-token loss、PPL 评估、checkpoint 恢复这些环节的目的；**不要尝试自己从零做真实预训练**，直接下载开源基座（如 Qwen2.5-7B、Llama 3、Mistral 等）进入 SFT/RLHF 阶段即可，这是业界绝大多数团队的真实路径。
+> - **想动手验证代码流程的学习者**：可以把模型尺寸压到 ≤125M（例如 GPT2 small 级别）、数据量压到几十 MB、MAX_LENGTH 压到 256~512，用单卡消费级 GPU（≥8GB 显存）跑几个 step 验证 loss 在下降、PPL 在合理区间——**目的是验证流水线能跑通，而不是得到一个能用的模型**。
+> - **有 ≥8×A100/H100 集群资源的团队**：可以在此基础上参考 Megatron-LM、Megatron-DeepSpeed、DeepSpeed Ulysses 的官方示例，把并行、混合精度、梯度检查点、FlashAttention2 等真正生产级开关打开，再把模型规模和语料量拉上去。
 
 ---
 
@@ -126,9 +138,15 @@ print(token_ids)  # 每个子词对应一个整数 ID
 ```
 
 **为什么这样写**：
-- **BPE（Byte-Pair Encoding）**：从字符开始，逐步合并高频组合，平衡词汇表大小和表达能力
-- 词汇表通常在 3 万~5 万之间（GPT-2 是 50257）
-- 子词分词能处理未登录词（OOV），如生僻或新造的词会被拆成多个已知子词（如 "Chat"+"G"+"PT" 这类拆分只是示意，实际以分词器为准）
+- **BPE（Byte-Pair Encoding）**：从字符/字节开始，逐步合并高频组合，平衡词汇表大小和表达能力。除 BPE 外，业界还常用 **Unigram（SentencePiece 常见）**、**WordPiece（BERT 系列）**、以及 **Byte-level BPE（GPT-2/LLaMA 系列，直接以单字节为最底层原子）**。
+- **词表大小没有通用的"必须 3 万~5 万"**：实际取值高度依赖**目标语言、tokenizer 算法、模型规模和预训练语料**——
+  - 英语为主的 Byte-level BPE 常见词表 32K~128K 档（如 GPT-2 约 50K）；
+  - 中文/多语言模型词表通常更大（100K 甚至 150K 档也不罕见），因为要覆盖多语言字符、汉字与特殊标记。
+  选型原则是"在**分词后总 token 数更少**（压缩率更高）与**embedding/输出层参数量可控**之间做取舍，不是固定阈值。
+- **现代子词分词一般不会产生真正意义上的 OOV（整词未登录就直接崩掉的情况）**：
+  - BPE/Unigram/WordPiece 会把生僻词、新造词拆成多个更小的子词甚至单字符/单字节来表示，而不是直接标 `[UNK]`；
+  - 只有**词表最底层不是 byte/字符级**、且强行用 `[UNK]` 兜底的老派 word-level 分词器，才会出现"大量 OOV 损害效果"的问题。
+  （拆分例 "Chat"+"G"+"PT" 只是手写示意，实际拆分方式以所用分词器的真实合并规则为准。）
 
 ### 2.4 数据格式：移位构造训练样本
 
@@ -485,32 +503,49 @@ def evaluate_perplexity(model, dataloader, device):
     return ppl.item()
 
 # 解读
-# PPL = 100：相当于每次预测下一个词时，面对 100 个等概率选择
+# PPL = exp(交叉熵)，是把模型的平均对数损失指数化之后得到的量
+# 可以理解为"平均有效候选词数"或"分支因子"，但不能按字面读作：
+# "每一步真的在 N 个等概率词之间选"——候选词的概率通常是高度偏斜的，
+# 绝大多数词的概率接近 0，只是几何平均等价的有效数量恰好是 N。
 # PPL 越低越好；强大的语言模型在常见评测语料上的 PPL 通常能降到较低的两位数甚至更低
 # （具体数值高度依赖模型、语料、分词与评测口径，请以对应论文/官方报告为准）
 ```
 
-**为什么这样写**：PPL 是几何平均的逆，直接反映了模型预测的不确定性。PPL 从 100 降到 20，意味着模型的"词汇选择范围"从 100 个词缩小到 20 个词，预测精度大幅提升。
+**为什么这样写**：PPL = exp(H(p, q))，是模型预测分布 q 相对于真实下一词分布 p 的交叉熵 H 的指数化形式。它给出的是"等价的均匀候选词数量"：**只有当模型真的把概率均匀分配给 N 个词时，PPL 才等于 N**；而实际语言模型的概率分布通常高度集中（Top-K 词占了大部分概率质量），所以**不能按字面**把 PPL=100 解释为"每一步都在 100 个等概率词之间做选择"。PPL 的主要用途是**相对比较**：同一语料/分词/模型尺寸下，PPL 越低说明模型建模越准。
 
 ### 6.2 训练崩溃的挽救
 
 大模型训练可能因数据异常而崩溃。挽救策略：
 
 ```python
-# 检查点选择标准
-def is_good_checkpoint(checkpoint):
+# 检查点选择标准（教学示意）
+def is_good_checkpoint(checkpoint, grad_norm_threshold=10.0):
     """
-    判断一个检查点是否适合断点续训
+    判断一个检查点是否适合断点续训。
+    ⚠️ 注意：
+      1) BF16 训练通常不使用 GradScaler，loss_scale 字段可能不存在或恒为 1.0，
+         因此**不能**用 "loss_scale <= 0" 作为 BF16 场景的判据；
+      2) FP16 下 loss_scale 变小是 GradScaler 动态调整的正常行为（遇到溢出会
+         自动下调 scale），并不等价于"检查点损坏"，把它作为恢复判据不可靠；
+      3) 真正可靠的判据应优先看：验证集 loss/PPL 是否可接受、
+         优化器状态键是否完整、模型 state_dict 键是否与当前结构对齐。
     """
-    # 1. 损失标度 > 0（混合精度训练中）
-    if checkpoint['loss_scale'] <= 0:
+    # 1. 验证 loss/ ppl 在合理范围（示例：非空、非无穷、非 NaN）
+    loss = checkpoint.get('loss')
+    if loss is None or not torch.isfinite(torch.tensor(loss)):
         return False
-    
-    # 2. 梯度 L2 范数 < 阈值 且 波动小
-    grad_norm = checkpoint['grad_norm']
-    if grad_norm > 10.0:  # 阈值根据模型调整
+
+    # 2. 模型/优化器/调度器状态字典齐全（断点续训的最低要求）
+    for key in ('model_state_dict', 'optimizer_state_dict', 'scheduler_state_dict'):
+        if key not in checkpoint or checkpoint[key] is None:
+            return False
+
+    # 3. 梯度范数若被记录了，可以作为"是否发生梯度爆炸"的辅助参考
+    #    注意：若某步未记录 grad_norm，不能因此直接判定检查点坏。
+    grad_norm = checkpoint.get('grad_norm')
+    if grad_norm is not None and (grad_norm > grad_norm_threshold or not torch.isfinite(torch.tensor(grad_norm))):
         return False
-    
+
     return True
 
 # 训练崩溃后，找到最后一个好检查点，跳过崩溃数据段继续训练
@@ -528,15 +563,31 @@ model.save_pretrained("./pretrained_model")
 tokenizer.save_pretrained("./pretrained_model")
 
 # 保存检查点（包含优化器状态，支持断点续训）
+# ⚠️ BF16 训练通常不创建 GradScaler（变量 scaler 可能根本不存在），
+#    grad_norm 也并非每步都会提前算好；保存前需要先判断/计算，
+#    否则会直接 NameError。
 checkpoint = {
     'model_state_dict': model.state_dict(),
     'optimizer_state_dict': optimizer.state_dict(),
     'scheduler_state_dict': scheduler.state_dict(),
     'epoch': epoch,
     'loss': loss,
-    'loss_scale': scaler.get_scale() if scaler else 1.0,
-    'grad_norm': grad_norm,
 }
+
+# 只有当 FP16 + 真的用了 GradScaler 时才保存 loss_scale
+if 'scaler' in globals() and scaler is not None:
+    checkpoint['loss_scale'] = scaler.get_scale()
+
+# 如果 grad_norm 还没计算，这里做一次防御性取值（可选记录）
+if 'grad_norm' not in locals() and 'grad_norm' not in globals():
+    # 仅在需要时计算；若不需要该字段可直接跳过
+    with torch.no_grad():
+        grad_norm = torch.norm(
+            torch.stack([p.grad.norm(2) for p in model.parameters() if p.grad is not None]), 2
+        ).item() if any(p.grad is not None for p in model.parameters()) else None
+if grad_norm is not None:
+    checkpoint['grad_norm'] = grad_norm
+
 torch.save(checkpoint, f"checkpoint_epoch_{epoch}.pt")
 ```
 

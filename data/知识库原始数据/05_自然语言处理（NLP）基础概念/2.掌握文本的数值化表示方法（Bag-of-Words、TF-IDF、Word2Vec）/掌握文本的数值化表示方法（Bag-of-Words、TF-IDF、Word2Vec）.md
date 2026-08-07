@@ -30,7 +30,9 @@ pip install jieba gensim scikit-learn numpy
 
 ## 第一章：为什么需要文本数值化表示
 
-计算机只认识数字，不认识文字。要让机器"理解"文本，第一步就是把文字转换成数字向量。这个过程叫做**文本的数值化表示（Text Numerical Representation）**或**词嵌入（Word Embedding）**。
+计算机只认识数字，不认识文字。要让机器"理解"文本，第一步就是把文字转换成数字向量。这个过程叫做**文本的数值化表示（Text Numerical Representation）**。
+
+其中，**词嵌入（Word Embedding）**特指"低维稠密、携带语义信息"的分布式向量表示（如 Word2Vec、GloVe），Bag-of-Words、TF-IDF 等高维稀疏表示虽然也是数值化方法，但一般不称为词嵌入。
 
 假设你已经用 jieba 把"我喜欢自然语言处理"分成了 `['我', '喜欢', '自然语言处理']`。下一步，这些词怎么输入到机器学习模型中？
 
@@ -86,13 +88,13 @@ tokenized_texts = [
 all_tokens = [word for text in tokenized_texts for word in text]
 word_freq = Counter(all_tokens)
 
-# 分配索引（按频率排序，频率高的排在前面）
+# 分配索引（按频率排序，频率高的排在前面，便于查看与剪枝；索引编号本身不影响模型表达能力）
 vocab = {word: idx for idx, (word, _) in enumerate(word_freq.most_common())}
 print(vocab)
 # {'我': 0, '喜欢': 1, '猫': 2, '狗': 3, '和': 4, '都': 5, '可爱': 6}
 ```
 
-**为什么这样写**：`Counter.most_common()` 按频率排序，让高频词获得较小的索引，这在某些场景下有利于模型收敛。
+**为什么这样写**：`Counter.most_common()` 按频率从高到低输出，方便后续观察词频分布或裁剪低频词。索引编号仅决定向量的列顺序，本身不携带语义信息。
 
 ### 2.3 One-Hot 编码
 
@@ -145,22 +147,29 @@ print(text_to_bow(text_c, vocab))
 ```python
 from sklearn.feature_extraction.text import CountVectorizer
 
-# 原始文本（未分词，CountVectorizer 默认按空格/标点分词，中文需先分词）
+# 原始文本（已先用 jieba 分词，再用空格连接）
 texts = ["我 喜欢 猫", "我 喜欢 狗", "猫 和 狗 都 可爱"]
 
-vectorizer = CountVectorizer()
+# ⚠️ 关键：sklearn 默认 token_pattern=r"(?u)\b\w\w+\b" 要求 token 至少 2 个字符，
+# 中文单字（如"我""猫""狗"）会被过滤！处理中文必须改 token_pattern。
+vectorizer = CountVectorizer(token_pattern=r'(?u)\b\w+\b')
 X = vectorizer.fit_transform(texts)
 
 print(vectorizer.get_feature_names_out())
-# ['喜欢' '可爱' '和' '狗' '猫' '都' '我']
+# 按 Python 字符串字典序（unicode 码点序）输出：
+# ['可爱' '和' '喜欢' '我' '狗' '猫' '都']
 
 print(X.toarray())
-# [[1 0 0 0 1 0 1]   ← 第一句
-#  [1 0 0 1 0 0 1]   ← 第二句
-#  [0 1 1 1 1 1 0]]  ← 第三句
+# 每一行是一个文档的词频向量，列顺序对应上面的 feature_names（可爱、和、喜欢、我、狗、猫、都）：
+# [[0 0 1 1 0 1 0]   ← 第一句"我 喜欢 猫": 可爱×0, 和×0, 喜欢×1, 我×1, 狗×0, 猫×1, 都×0
+#  [0 0 1 1 1 0 0]   ← 第二句"我 喜欢 狗"
+#  [1 1 0 0 1 1 1]]  ← 第三句"猫 和 狗 都 可爱"
 ```
 
-**⚠️ 避坑提醒**：`CountVectorizer` 默认按空格分词，对中文不友好。**中文文本必须先分词并用空格连接**，否则会把整句当成一个词。
+**⚠️ 避坑提醒**：
+- `CountVectorizer` 默认按空格分词，对中文不友好。**中文文本必须先用 jieba 等分词，再用空格连接成字符串**。
+- `token_pattern` 不修改的话，默认会把所有**单字 token 全部过滤**，导致你的中文句子"看起来好像什么词都没有"。处理中文务必加 `token_pattern=r'(?u)\b\w+\b'` 或等价配置。
+- `get_feature_names_out()` 返回的词表按**字符串字典序**（unicode 码点排序）输出，不是词频顺序，不要自己脑补排列。
 
 ---
 
@@ -195,20 +204,23 @@ print(compute_tf('鱼', doc)) # 1/4 = 0.25
 
 衡量一个词在**整个语料库**中的稀有程度。越稀有的词，IDF 越高。
 
+工程实现中通常会加平滑项，避免分母为 0 并让 IDF 始终为正（sklearn 默认的 smooth_idf 风格）：
+
 ```
-IDF = log(语料库的文档总数 / (包含该词的文档数 + 1))
+IDF = log((语料库的文档总数 + 1) / (包含该词的文档数 + 1)) + 1
 ```
 
-**为什么加 1**：防止分母为 0（某个词在所有文档中都没出现）。`log` 用于压缩数值范围。
+**为什么加 1**：分子 `+1`、分母 `+1` 是平滑（Lidstone / add-one smoothing），防止分母为 0；末尾 `+1` 保证 IDF ≥ 1，不会出现负的 IDF。`log` 用于压缩数值范围。
 
 ```python
 import math
 
 def compute_idf(word, corpus):
-    # corpus 是文档列表的列表
+    # corpus 是文档列表的列表（已分词）
     doc_count = len(corpus)
     docs_containing_word = sum(1 for doc in corpus if word in doc)
-    return math.log(doc_count / (docs_containing_word + 1)) + 1
+    # sklearn 风格的平滑 IDF：log((n+1)/(df+1)) + 1
+    return math.log((doc_count + 1) / (docs_containing_word + 1)) + 1
 
 corpus = [
     ['我', '喜欢', '猫'],
@@ -246,17 +258,20 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 texts = ["我 喜欢 猫 猫", "我 喜欢 狗", "猫 和 狗 都 可爱"]
 
-vectorizer = TfidfVectorizer()
+# 同 CountVectorizer，中文必须改 token_pattern，否则单字被过滤
+vectorizer = TfidfVectorizer(token_pattern=r'(?u)\b\w+\b')
 X = vectorizer.fit_transform(texts)
 
 print(vectorizer.get_feature_names_out())
+# 字典序：['可爱' '和' '喜欢' '我' '狗' '猫' '都']
 print(X.toarray().round(4))
 ```
 
-**输出解读**：
-- 每行是一个文档的 TF-IDF 向量
-- "猫"在第一篇文档中 TF-IDF 值最高（出现了两次，且不是所有文档都有）
-- "喜欢"在每篇文档中值较低（因为三篇中有两篇包含它，IDF 被稀释）
+**输出解读**（列顺序：可爱、和、喜欢、我、狗、猫、都）：
+- 每行是一个文档的 TF-IDF 向量，每行 L2 范数（sklearn 默认 norm='l2'）归一化后和为 √(Σ²)=1
+- "猫"在第一篇文档中 TF 高（出现两次）、IDF 中等（3 篇里出现 2 篇），综合 TF-IDF 在第一行第 5 列（猫列）值最高
+- "喜欢"在每篇文档中 IDF 被稀释（因为多篇都有），所以值较低
+- "可爱"仅出现在第三篇，IDF 最高，对应第三行第 0 列（可爱列）值较高
 
 ### 3.6 TF-IDF 的局限性
 
@@ -287,10 +302,10 @@ Word2Vec 的核心理念来自**分布式假设（Distributional Hypothesis）**
 
 Word2Vec 由 Google 于 2013 年提出，包含两种训练模式：
 
-| 模式 | 全称 | 输入 | 预测 | 适用场景 |
-|------|------|------|------|----------|
-| **CBOW** | Continuous Bag of Words | 上下文词 | 中心词 | 数据集较小、高频词多 |
-| **Skip-gram** | - | 中心词 | 上下文词 | 数据集大、低频词多 |
+| 模式 | 全称 | 输入 | 预测 | 经验性倾向 |
+|------|------|------|------|------------|
+| **CBOW** | Continuous Bag of Words | 上下文词 | 中心词 | 数据集较小、高频词多时训练更稳更快（经验结论，不是严格规则） |
+| **Skip-gram** | - | 中心词 | 上下文词 | 数据集大、低频词多时往往表现更好（经验结论，不是严格规则） |
 
 **示例**（窗口大小为 2）：
 
@@ -398,11 +413,13 @@ print(f"与'人工智能'最相似的词: {similar}")
 
 ### 4.7 词向量的语义运算
 
-训练好的词向量有一个神奇的特性：**语义关系可以通过向量运算表达**。
+> **重要说明**："king - man + woman ≈ queen" 等**词向量类比（Word Analogy）是 Word2Vec 论文中的经典案例，但不保证普遍成立**。能否形成这样的线性关系，严重依赖语料规模、语料领域、训练算法、超参数、词频等因素。在小规模、领域语料上常常观察不到这类规律，不要把它当作词向量的固有属性。
+
+训练好的词向量**在大规模通用语料上**，有概率出现如下现象：**语义关系可以通过向量运算近似表达**。
 
 ```python
-# 类比推理： king - man + woman ≈ queen
-# 中文示例： 北京 - 中国 + 美国 ≈ 华盛顿
+# 经典类比示例： king - man + woman ≈ queen
+# 英文大规模语料中常能观察到；中文若语料足够大，可能出现：北京 - 中国 + 美国 ≈ 华盛顿
 try:
     result = model.wv.most_similar(
         positive=['北京', '美国'],
@@ -411,10 +428,10 @@ try:
     )
     print(result)
 except KeyError as e:
-    print(f"语料太小，无法找到对应词: {e}")
+    print(f"语料太小 / 缺少对应词，无法完成类比: {e}")
 ```
 
-**为什么这样写**：Word2Vec 学到的向量空间中，向量差值编码了"关系"。`北京 - 中国` 得到的是"首都关系"的向量，加上 `美国` 就指向 `华盛顿`。
+**为什么这样写**：Word2Vec 学到的向量空间中，**在理想条件下**向量差值可能编码了"关系"。`北京 - 中国`（语料足够时）可能近似"首都关系"的方向向量，加上 `美国` 就可能指向 `华盛顿` 附近。再次强调：这是**大规模语料下的统计现象**，不是保证成立的数学定律。
 
 ---
 
@@ -506,14 +523,16 @@ for i, sim in enumerate(similarities_w2v[0], 1):
 
 | 坑点 | 正确做法 |
 |------|----------|
-| 中文直接用 `CountVectorizer` | 先用 jieba 分词，空格连接后再用 |
-| Word2Vec 语料太小 | 至少几万条句子，或下载预训练词向量 |
+| 中文直接用 `CountVectorizer` / `TfidfVectorizer` 且不改 token_pattern | 先用 jieba 分词空格连接；**务必加 `token_pattern=r'(?u)\b\w+\b'`**，否则默认过滤所有单字 |
+| Word2Vec 语料太小 | 至少几万条句子，或直接下载大规模预训练词向量 |
 | 忽略 `min_count` 参数 | 设置合理的 `min_count`（如 5），过滤噪声 |
-| 混淆 CBOW 和 Skip-gram | 大数据集用 Skip-gram（`sg=1`），小数据集用 CBOW |
+| 把 CBOW/Skip-gram 的数据规模建议当硬性规则 | 两者差异是**经验倾向**，不是严格定律；有条件都跑一下比较 |
 | 用 One-Hot 输入深度学习模型 | 改用 Word2Vec 或预训练 Embedding，节省内存 |
 | 认为 Word2Vec 能处理词序 | Word2Vec 也忽略长距离词序，需用 RNN/Transformer |
 | 未登录词直接报错 | 用 `model.wv.get(word, np.zeros(dim))` 安全取值 |
-| 把 TF-IDF 向量直接当词向量 | TF-IDF 是文档向量，Word2Vec 是词向量，用途不同 |
+| 把 TF-IDF 向量直接当词向量 | TF-IDF 是文档级向量（高维稀疏），Word2Vec 是词级向量（低维稠密），用途不同 |
+| 把"king - man + woman ≈ queen"当词向量的固有属性 | 这是经典案例，**不保证普遍成立**，取决于语料和训练 |
+| 认为 BoW/TF-IDF 属于"词嵌入" | 词嵌入特指低维稠密分布式表示（Word2Vec/GloVe 等），BoW/TF-IDF 只是数值表示 |
 
 ---
 
@@ -523,18 +542,19 @@ for i, sim in enumerate(similarities_w2v[0], 1):
 |--------|----------|
 | **BoW** | 统计词频，高维稀疏，简单有效 |
 | **One-Hot** | 最基础的词表示，仅用于理解，实际很少直接用 |
-| **TF-IDF** | TF × IDF，降低常见词权重，突出关键词 |
+| **TF-IDF** | TF × IDF（平滑版），降低常见词权重，突出关键词 |
 | **Word2Vec** | 分布式表示，语义相似的词向量相近 |
-| **CBOW** | 上下文预测中心词，适合小数据 |
-| **Skip-gram** | 中心词预测上下文，适合大数据，推荐 |
+| **CBOW** | 上下文预测中心词，小数据往往更快（经验） |
+| **Skip-gram** | 中心词预测上下文，大数据下表现常更优（经验） |
 | **负采样** | 加速训练，将 Softmax 转为二分类 |
 | **gensim** | `Word2Vec()` 一行训练，`most_similar()` 查相似词 |
 
 **养成的好习惯**：
-1. 中文文本数值化前，**务必先分词**
-2. 小数据集用 TF-IDF，大数据集用 Word2Vec
+1. 中文文本数值化前，**务必先分词**，sklearn 中**务必改 token_pattern**
+2. 小数据集做分类等任务用 TF-IDF 即可；需要语义相似性、深度学习输入时用 Word2Vec
 3. Word2Vec 训练时设置合理的 `min_count` 过滤噪声
-4. 生产环境优先使用**预训练词向量**（如腾讯 AI Lab、搜狗词向量），而非自己训练
+4. 生产环境优先使用**大规模预训练词向量**（如腾讯 AI Lab、搜狗词向量），而非自己训练
 5. 未登录词用 `<UNK>` 或零向量处理，不要直接报错
+6. 词向量类比（king - man + woman）只当经典案例看，不要当成必然成立的定律
 
 **下一步预告**：掌握了文本数值化表示后，你将进入 **注意力机制** 的学习——理解 Query、Key、Value 的核心概念，掌握 Self-Attention 与 Multi-Head Attention 的计算原理与公式，这是理解 Transformer 和大语言模型的关键钥匙。继续加油！

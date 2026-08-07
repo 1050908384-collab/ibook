@@ -198,8 +198,8 @@ df.to_csv("output.csv", index=False, encoding="utf-8")
 ### 4.2 Pandas 读写 JSON
 
 ```python
-# 读取 JSON 为 DataFrame（JSON 必须是数组格式）
-df = pd.read_json("data.json", encoding="utf-8")
+# 读取 JSON 为 DataFrame（文件顶层必须是对象列表，例如后文生成的 people.json）
+df = pd.read_json("people.json", encoding="utf-8")
 
 # 保存 DataFrame 为 JSON
 df.to_json("output.json", orient="records", force_ascii=False, indent=4)

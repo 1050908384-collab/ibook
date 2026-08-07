@@ -191,6 +191,13 @@ export type TargetSettingsResponse = {
   }>;
 };
 
+export type DashboardResponse = {
+  current_accuracy: number | null;
+  average_accuracy: number | null;
+  stage_history: ApiStage[];
+  [key: string]: unknown;
+};
+
 export const apiClient = {
   getUserProfile: async () => {
     const response = await axios.get<ApiProfile & { user_id: string; default_daily_hours?: number }>(
@@ -262,14 +269,6 @@ export const apiClient = {
       confirm: true,
       notes
     });
-    return response.data;
-  },
-
-  updateProfile: async (
-    sessionId: string,
-    data: { goal?: string; daily_hours?: number; learning_style?: string; hardware?: string }
-  ) => {
-    const response = await axios.patch(`${BASE_URL}/sessions/${sessionId}/profile`, data);
     return response.data;
   },
 
@@ -359,7 +358,7 @@ export const apiClient = {
   },
 
   getDashboard: async (sessionId: string) => {
-    const response = await axios.get(`${BASE_URL}/sessions/${sessionId}/dashboard`);
+    const response = await axios.get<DashboardResponse>(`${BASE_URL}/sessions/${sessionId}/dashboard`);
     return response.data;
   },
 

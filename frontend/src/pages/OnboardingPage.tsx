@@ -1,4 +1,4 @@
-import { ArrowLeft, Brain, CheckCircle2, FileText, Sparkles } from 'lucide-react';
+import { ArrowLeft, Brain, CheckCircle2, FileText, Loader2, Sparkles } from 'lucide-react';
 import ProfileSetupForm from '../components/ProfileSetupForm';
 import { OnboardingField, OnboardingFormData } from '../utils/buildDiagnosticMessage';
 
@@ -13,6 +13,9 @@ type OnboardingPageProps = {
   error: string | null;
   highlightedFields: OnboardingField[];
   reuseUserProfile: boolean;
+  checkingUserProfile?: boolean;
+  profileCheckError?: string | null;
+  onRetryProfileCheck?: () => void;
 };
 
 export default function OnboardingPage({
@@ -25,8 +28,33 @@ export default function OnboardingPage({
   questions,
   error,
   highlightedFields,
-  reuseUserProfile
+  reuseUserProfile,
+  checkingUserProfile = false,
+  profileCheckError = null,
+  onRetryProfileCheck
 }: OnboardingPageProps) {
+  if (checkingUserProfile) {
+    return (
+      <div className="page-shell onboarding-shell">
+        <main className="onboarding-page onboarding-checking-profile">
+          <Loader2 className="spin" size={24} />
+          <strong>正在读取用户基础</strong>
+          <span>确认是否需要填写首次画像信息。</span>
+        </main>
+      </div>
+    );
+  }
+  if (profileCheckError) {
+    return (
+      <div className="page-shell onboarding-shell">
+        <main className="onboarding-page onboarding-checking-profile error">
+          <strong>用户基础读取失败</strong>
+          <span>{profileCheckError}</span>
+          <button className="primary" type="button" onClick={onRetryProfileCheck}>重新读取</button>
+        </main>
+      </div>
+    );
+  }
   return (
     <div className="page-shell onboarding-shell">
       <main className="onboarding-page">
