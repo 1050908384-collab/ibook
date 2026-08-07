@@ -5,7 +5,7 @@ import {
   buildDiagnosticMessage,
   getFormCompleteness,
   isOnboardingFormComplete
-} from '../node_modules/.cache/agent-flow-tests/buildDiagnosticMessage.js';
+} from '../node_modules/.cache/agent-flow-tests/utils/buildDiagnosticMessage.js';
 
 const targetOnlyForm = {
   grade: '',
@@ -16,17 +16,19 @@ const targetOnlyForm = {
   hardware: ''
 };
 
-test('subsequent goals only require target-specific fields', () => {
+test('subsequent goals require goal, duration and learning style', () => {
   assert.equal(getFormCompleteness(targetOnlyForm, true), 1);
   assert.equal(isOnboardingFormComplete(targetOnlyForm, true), true);
+  assert.equal(isOnboardingFormComplete({ ...targetOnlyForm, learning_style: '' }, true), false);
   assert.equal(isOnboardingFormComplete(targetOnlyForm, false), false);
 });
 
-test('target-only diagnosis does not send empty stable profile fields', () => {
+test('target-only diagnosis sends learning style but not stable profile fields', () => {
   const message = buildDiagnosticMessage(targetOnlyForm, true);
   assert.match(message, /学习目标/);
   assert.match(message, /每天可以学习/);
-  assert.doesNotMatch(message, /身份背景|已有基础|学习方式|设备条件/);
+  assert.match(message, /学习方式：混合型/);
+  assert.doesNotMatch(message, /身份背景|已有基础|设备条件/);
 });
 
 test('first goal diagnosis includes the full learner profile', () => {

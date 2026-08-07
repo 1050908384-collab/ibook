@@ -30,6 +30,7 @@ export function buildDiagnosticMessage(formData: OnboardingFormData, targetOnly 
   const lines = [
     `我的学习目标：${formData.goal.trim()}`,
     `我每天可以学习：${Number(formData.daily_hours)} 小时`,
+    `我的学习方式：${learningStyleText[formData.learning_style]}`,
   ];
 
   if (!targetOnly) {
@@ -37,7 +38,6 @@ export function buildDiagnosticMessage(formData: OnboardingFormData, targetOnly 
       `我的身份背景：${formData.grade.trim()}`,
       `我的已有基础：${formData.skill_tags.join('、')}`,
     );
-    lines.push(`我的学习方式：${learningStyleText[formData.learning_style]}`);
   }
 
   if (!targetOnly && formData.hardware.trim()) {
@@ -51,6 +51,7 @@ export function getFormCompleteness(formData: OnboardingFormData, targetOnly = f
   const checks = targetOnly ? [
     Boolean(formData.goal.trim()),
     isValidDailyHours(formData.daily_hours),
+    Boolean(formData.learning_style),
   ] : [
     Boolean(formData.grade.trim()),
     formData.skill_tags.length > 0,

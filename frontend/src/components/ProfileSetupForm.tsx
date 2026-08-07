@@ -26,7 +26,7 @@ const fieldLabels: Record<OnboardingField, string> = {
   skill_tags: '已有知识基础',
   goal: '学习目标',
   daily_hours: '每日学习时长',
-  learning_style: '学习方式',
+  learning_style: '学习风格',
   hardware: '设备条件'
 };
 
@@ -200,7 +200,7 @@ export default function ProfileSetupForm({
         </section>}
       </div>
 
-      {!targetOnly && <section className={`form-section ${isHighlighted('learning_style') ? 'needs-attention' : ''}`}>
+      <section className={`form-section ${isHighlighted('learning_style') ? 'needs-attention' : ''}`}>
         <label>{fieldLabels.learning_style} *</label>
         <p>选择你更舒服的学习推进方式。</p>
         <div className="style-segments">
@@ -216,7 +216,7 @@ export default function ProfileSetupForm({
             </button>
           ))}
         </div>
-      </section>}
+      </section>
 
       <button className="primary onboarding-submit" disabled={!canSubmit}>
         {loading ? <Loader2 className="spin" size={17} /> : null}

@@ -6,7 +6,7 @@ import {
   finishAgents,
   restoreAgentStatuses,
   startAgents
-} from '../node_modules/.cache/agent-flow-tests/agentFlowState.js';
+} from '../node_modules/.cache/agent-flow-tests/utils/agentFlowState.js';
 
 test('a new flow starts with every agent pending', () => {
   assert.deepEqual(createAgentStatusMap(), {

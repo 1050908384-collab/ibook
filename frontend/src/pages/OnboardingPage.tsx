@@ -80,7 +80,7 @@ export default function OnboardingPage({
             <span>创建学习目标</span>
             <h1>{reuseUserProfile ? '设定这次要完成的学习目标' : '先把你的学习背景交给 Agent'}</h1>
             <p>{reuseUserProfile
-              ? '已复用你的用户画像和知识点掌握状态，只需填写本次目标和学习时间。'
+              ? '已复用你的用户基础和知识点掌握状态，请填写本次目标、学习时间和学习方式。'
               : '系统会根据这些结构化信息生成用户画像，并规划当前学习阶段。'}</p>
           </div>
         </section>
