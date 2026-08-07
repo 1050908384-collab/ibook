@@ -402,13 +402,13 @@ outputs = model(**inputs)
 
 这里：
 
-```python
+```text
 **
 ```
 
 表示：
 
-把字典拆开传入。
+把字典拆开传入（Python 的字典解包语法）。
 
 等价：
 
@@ -504,6 +504,12 @@ model = AutoModelForCausalLM.from_pretrained(
 | AutoModelForCausalLM               | 文本生成          |
 | AutoModelForSeq2SeqLM              | 翻译/摘要         |
 
+> **何时用 `AutoModel`、何时用带任务头的 Auto 类？**
+> - `AutoModel`：只加载主干、输出隐藏状态（`last_hidden_state` 等），适合做**特征提取**或自定义下游结构。它**不包含任务头**，因此保存后再用 `AutoModel` 加载不会带回分类/生成头。
+> - 带任务头的 `AutoModelFor*`：在主干上附加对应任务头（分类头、语言模型头等）。做分类、生成、摘要等任务，以及**保存/重新加载后仍需要该任务头**时，必须使用与训练时一致的任务类，否则任务头语义会丢失。
+>
+> **关于本章示例范围**：正文主要以 BERT / GPT-2 演示"加载—编码—前向"的通用流程；对于 Llama、Qwen 等 **decoder-only 对话模型**，实际推理还涉及 `AutoModelForCausalLM`、chat template（`tokenizer.apply_chat_template`）、`pad_token` 设置、gated/授权模型的许可，以及 `trust_remote_code=True` 会执行仓库自带代码（需自行确认来源可信）等。这些属于后续章节内容，本章不展开，此处仅作提示，避免读者以为"会加载 BERT 就等同于会正确对话推理任意 LLM"。
+
 ---
 
 # 六、模型加载参数详解（参考文章⑦）
@@ -521,12 +527,14 @@ model = AutoModel.from_pretrained(
 
 作用：
 
-自动分配：
+在**加载模型时**自动把不同层映射到可用设备（如多张 GPU、CPU，必要时借助内存/磁盘 offload）：
 
 ```
 GPU
 CPU
 ```
+
+> 说明：`device_map="auto"` 解决的是"**推理/加载时**模型如何放置到设备"的问题，主要面向单卡放不下、需要跨设备切分的场景。它**不等同于训练时的标准设备/并行配置**——真正的训练（尤其分布式/多卡训练）通常由 `accelerate`、`Trainer`、DeepSpeed 等负责设备与并行策略，不要把 `device_map="auto"` 直接当作训练设备方案。
 
 ---
 
@@ -598,6 +606,21 @@ my_model
 ├── tokenizer.json
 ```
 
+> 说明：上面是**小模型**的典型示例。较大的模型权重常被**分片保存**，目录里会是多个分片文件加一个索引，例如：
+>
+> ```
+> my_model
+> ├── config.json
+> ├── model-00001-of-00003.safetensors
+> ├── model-00002-of-00003.safetensors
+> ├── model-00003-of-00003.safetensors
+> ├── model.safetensors.index.json   # 分片索引，from_pretrained 会据此拼装
+> ├── tokenizer.json
+> └── tokenizer_config.json
+> ```
+>
+> 两种情况都用同样的 `from_pretrained("./my_model")` 加载即可，无需手动合并分片。
+
 加载：
 
 ```python
@@ -618,7 +641,7 @@ model = AutoModel.from_pretrained(
 | 错误                   | 原因              | 解决                |
 | -------------------- | --------------- | ----------------- |
 | Model name not found | 模型名称错误          | 检查Hub名称           |
-| 401 Unauthorized     | 模型需要权限          | huggingface login |
+| 401 Unauthorized     | 模型需要权限          | 先 `hf auth login`（旧写法 `huggingface-cli login`），并确认已在模型页接受授权 |
 | CUDA out of memory   | 显存不足            | 降低batch或使用量化      |
 | Tokenizer mismatch   | 模型和Tokenizer不匹配 | 使用同checkpoint     |
 | 下载速度慢                | 网络问题            | 配置缓存或镜像           |

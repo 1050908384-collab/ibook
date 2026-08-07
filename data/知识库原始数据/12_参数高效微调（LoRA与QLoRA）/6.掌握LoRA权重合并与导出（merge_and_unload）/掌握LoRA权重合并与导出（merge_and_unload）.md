@@ -36,7 +36,7 @@ LoRA训练过程中：
 
 基础模型：
 
-```text id="8f3m2a"
+```text
 Base Model
 
 冻结
@@ -44,7 +44,7 @@ Base Model
 
 LoRA参数：
 
-```text id="p7k2cz"
+```text
 Adapter
 
 训练
@@ -52,7 +52,7 @@ Adapter
 
 最终结构：
 
-```text id="j9x4qp"
+```text
 基础模型
 
 +
@@ -66,7 +66,7 @@ LoRA Adapter
 
 训练：
 
-```text id="5r2v8n"
+```text
 Llama-7B
 
 +
@@ -78,7 +78,7 @@ LoRA Adapter
 
 通常只有：
 
-```text id="m8k1zs"
+```text
 adapter_model.safetensors
 
 adapter_config.json
@@ -100,13 +100,13 @@ adapter_config.json
 
 同一个基础模型：
 
-```text id="x7p4dq"
+```text
 Base Model
 ```
 
 可以搭配：
 
-```text id="v2m8ls"
+```text
 客服Adapter
 
 医疗Adapter
@@ -120,7 +120,7 @@ Base Model
 
 部署时需要：
 
-```text id="k6q2mw"
+```text
 基础模型
 
 +
@@ -138,7 +138,7 @@ Adapter
 
 未合并：
 
-```text id="b9x3ra"
+```text
 输入
 
 ↓
@@ -165,7 +165,7 @@ LoRA Adapter
 
 可能希望：
 
-```text id="t5w8cx"
+```text
 输入
 
 ↓
@@ -189,13 +189,13 @@ LoRA训练时：
 
 公式：
 
-```text id="e4s9kp"
+```text
 W' = W + ΔW
 ```
 
 其中：
 
-```text id="w3p7mv"
+```text
 ΔW = BA
 ```
 
@@ -203,19 +203,19 @@ W' = W + ΔW
 
 就是将：
 
-```text id="n5z8hj"
+```text
 BA
 ```
 
 加入：
 
-```text id="q2x6ds"
+```text
 W
 ```
 
 得到：
 
-```text id="a8m4yr"
+```text
 W'
 ```
 
@@ -225,7 +225,7 @@ W'
 
 原来的：
 
-```text id="d7p3zs"
+```text
 W
 
 +
@@ -235,7 +235,7 @@ Adapter
 
 变成：
 
-```text id="u9k2hf"
+```text
 W'
 ```
 
@@ -247,7 +247,7 @@ W'
 
 PEFT提供：
 
-```python id="w5n8qp"
+```python
 merge_and_unload()
 ```
 
@@ -259,7 +259,7 @@ merge_and_unload()
 
 执行：
 
-```text id="r4k8mx"
+```text
 Base Model
 
 +
@@ -277,7 +277,7 @@ LoRA Adapter
 
 合并前：
 
-```text id="c8v5jx"
+```text
 PeftModel
 
 ├── Base Model
@@ -289,7 +289,7 @@ PeftModel
 
 合并后：
 
-```text id="q6m3hz"
+```text
 普通Transformer模型
 
 包含LoRA更新后的权重
@@ -301,7 +301,7 @@ PeftModel
 
 整体流程：
 
-```text id="h4z8mq"
+```text
 训练LoRA
 
 ↓
@@ -333,19 +333,19 @@ merge_and_unload()
 
 基础模型：
 
-```python id="x5m9qb"
+```python
 base_model_path = "model_path"
 ```
 
 Adapter：
 
-```python id="z8k3vc"
+```python
 adapter_path = "adapter_path"
 ```
 
 加载：
 
-```python id="m4s7yn"
+```python
 from transformers import AutoModelForCausalLM
 from peft import PeftModel
 
@@ -365,7 +365,7 @@ model = PeftModel.from_pretrained(
 
 模型结构：
 
-```text id="v6p3kj"
+```text
 Base Model
 
 +
@@ -379,13 +379,13 @@ LoRA Adapter
 
 执行：
 
-```python id="z3h7mq"
+```python
 merged_model = model.merge_and_unload()
 ```
 
 完成：
 
-```text id="m8v2sd"
+```text
 W
 
 +
@@ -405,13 +405,13 @@ W'
 
 已经不是：
 
-```text id="1k9xpw"
+```text
 PeftModel
 ```
 
 而是：
 
-```text id="r7n3mv"
+```text
 普通Transformer模型
 ```
 
@@ -423,7 +423,7 @@ PeftModel
 
 保存：
 
-```python id="c5j8nx"
+```python
 merged_model.save_pretrained(
     "./merged_model"
 )
@@ -431,7 +431,7 @@ merged_model.save_pretrained(
 
 同时保存Tokenizer：
 
-```python id="h8q2mv"
+```python
 tokenizer.save_pretrained(
     "./merged_model"
 )
@@ -439,7 +439,7 @@ tokenizer.save_pretrained(
 
 目录：
 
-```text id="y4p7ks"
+```text
 merged_model/
 
 ├── config.json
@@ -451,6 +451,14 @@ merged_model/
 └── tokenizer_config.json
 ```
 
+> 说明：上面的目录结构是**示意**，实际文件会随模型/分词器类型变化（例如可能还有 `generation_config.json`、`special_tokens_map.json`、`model.safetensors.index.json` + 分片权重等；有些模型的 tokenizer 是 `vocab.json`/`merges.txt` 或 `tokenizer.model`）。
+
+> 导出后建议核查以下几项，避免"能加载但行为不对"：
+> - **Tokenizer 完整且一致**：确认保存的 tokenizer 与训练时一致，特别是训练中**新增/修改过的特殊 token**（如自定义的 `<|im_start|>`、pad/eos 等）都在 `special_tokens_map.json` / `tokenizer_config.json` 里；若训练时扩过词表，还要确认 embedding/lm_head 尺寸与词表匹配。
+> - **generation_config.json**：如果依赖特定的生成默认值（eos/pad token id、`max_new_tokens`、采样参数等），确认它一并导出，否则推理时可能回退到不合适的默认行为。
+> - **dtype**：确认合并/保存时的精度符合预期（FP16/BF16 还是 FP32），dtype 不一致会影响显存占用与数值表现。
+> - **config.json 完整性**：确认模型结构配置（层数、hidden size、任务头等）正确，且已**移除 PEFT/adapter 相关配置**（合并后应是普通 Transformers 模型，不应再残留 `adapter_config.json`）。
+
 ---
 
 # 八、合并后如何加载推理？（③④）
@@ -459,13 +467,13 @@ merged_model/
 
 不需要：
 
-```text id="f9k4zp"
+```text
 peft
 ```
 
 只需要：
 
-```python id="b2m7qx"
+```python
 from transformers import AutoModelForCausalLM
 
 
@@ -476,7 +484,7 @@ model = AutoModelForCausalLM.from_pretrained(
 
 流程：
 
-```text id="q5m8vx"
+```text
 用户输入
 
 ↓
@@ -504,15 +512,17 @@ model = AutoModelForCausalLM.from_pretrained(
 
 # 十、什么时候应该合并？（③④）
 
+> 总体原则：合并与否是一种**权衡**，不是"上线就一定要合并、分享就一定合并"。是否合并取决于：是否需要**多个 Adapter 动态切换**、部署所用的**推理框架**是否原生支持 LoRA、对**存储/分发体积**的要求，以及对**精度**（尤其 QLoRA 场景）的接受度。下面的"推荐/不建议"只是常见情形，实际以你的部署方式为准。
+
 ## 10.1 推荐合并场景
 
-### 场景1：上线部署
+### 场景1：上线部署（单一 Adapter、追求简单）
 
 例如：
 
 生产环境：
 
-```text id="m7x4ps"
+```text
 服务器
 
 ↓
@@ -524,23 +534,23 @@ model = AutoModelForCausalLM.from_pretrained(
 提供API
 ```
 
-推荐合并。
+当只需要**一个固定 Adapter**、且希望部署链路尽量简单（不额外依赖 PEFT、不做运行时 Adapter 加载）时，合并通常更方便。
+
+> 注意：如果推理框架本身支持直接加载 LoRA（例如 vLLM 的多 LoRA 服务，见 §十四），或你需要在同一基础模型上**热切换多个 Adapter**，那么不合并、以 Adapter 形式部署反而更灵活；此时是否合并要看框架能力与业务需求。
 
 ---
 
 ### 场景2：分享模型
 
-如果发布：
+如果希望对方**开箱即用、无需理解 Adapter 机制**，可以发布合并后的完整模型：
 
-完整模型：
-
-推荐：
-
-```text id="x8q2mk"
+```text
 merged_model
 ```
 
-用户无需额外下载Adapter。
+用户无需额外下载 Adapter。
+
+> 权衡：合并后的完整模型体积**明显更大**（等于一份完整基础模型），分发/存储成本更高；如果对方已经有同一基础模型，单独分享体积很小的 Adapter 往往更省带宽与存储。两种方式各有取舍，可按受众与分发成本选择。
 
 ---
 
@@ -552,13 +562,13 @@ merged_model
 
 一个基础模型：
 
-```text id="a9v5mz"
+```text
 Base Model
 ```
 
 多个：
 
-```text id="d2k8qx"
+```text
 Adapter A
 
 Adapter B
@@ -584,44 +594,81 @@ QLoRA：
 
 基础模型：
 
-```text id="z5m7qx"
+```text
 4-bit量化
 ```
 
 LoRA：
 
-```text id="v8n3kc"
+```text
 FP16/BF16
 ```
 
-直接合并可能出现：
+QLoRA 训练时基础模型是以 4-bit（NF4）**存储**的，而 LoRA 参数是较高精度（FP16/BF16）。因此把 LoRA 更新量直接加回 4-bit 权重，涉及**精度与权重类型的处理**，需要留意以下几点。
 
-* 精度问题；
-* 权重类型不匹配。
+## 11.1 直接合并可能遇到的情况
+
+直接在 4-bit 状态下合并，可能出现：
+
+* 精度损失（4-bit 权重反量化再合并，与全程高精度不完全等价）；
+* 权重类型不匹配、或所用版本不支持在量化状态下直接 `merge_and_unload`。
+
+> 说明：上面只是**可能出现的情况**，并非每次都必然报错。是否能顺利合并、以及合并质量如何，还取决于 PEFT / bitsandbytes / Transformers 的**版本**、具体量化配置、以及是否按下面的流程先反量化。请以你所用版本的文档与实际运行结果为准。
 
 ---
 
-通常流程：
+## 11.2 常见做法：先反量化到高精度再合并
 
-```text id="s6p2mq"
-4-bit模型
+一种常见且稳妥的做法是：**不在 4-bit 状态下直接合并**，而是先用高精度（FP16/BF16）重新加载一份基础模型，再挂载同一份 Adapter 后合并。
 
-↓
-
-转换到FP16/BF16
+```text
+以高精度（FP16/BF16）重新加载基础模型
 
 ↓
 
-加载LoRA
+加载同一份 LoRA Adapter
 
 ↓
 
-merge
+merge_and_unload()
 
 ↓
 
-保存
+保存完整模型
 ```
+
+这样合并发生在高精度权重上，避免了 4-bit 状态下的类型/精度问题。
+
+> 提示（版本/内存）：
+> - **API/版本**：不同 PEFT 版本对"量化模型能否直接合并"的支持不同，部分版本要求或推荐先反量化；请查阅所用版本的 `merge_and_unload` 文档。
+> - **内存**：以高精度重新加载完整基础模型会占用**较多内存/显存**（约等于一份 FP16/BF16 完整模型），显存不足时可考虑在 CPU 上加载并合并，或使用 offload。
+> - **一致性**：QLoRA 合并得到的高精度模型，与"训练时 4-bit + Adapter"的推理结果**不会逐位相同**，通常只是**近似**；对精度敏感的场景需要按 §11.3 做验证。
+
+---
+
+## 11.3 合并时开启校验并做一致性验证（建议）
+
+`merge_and_unload` 支持 `safe_merge=True`，在合并时会做数值检查（例如检测是否产生 NaN），可作为一道保险：
+
+```python
+merged_model = model.merge_and_unload(safe_merge=True)
+```
+
+合并完成后，建议**对比合并前后模型在同一批输入上的输出**，确认合并没有引入明显偏差：
+
+```text
+准备一小批固定输入（prompt）
+
+↓
+
+分别用「合并前的 PeftModel」和「合并后的模型」推理
+
+↓
+
+对比 logits / 生成文本是否基本一致
+```
+
+> 说明：QLoRA 场景下合并前后**通常只是近似一致**（见 §11.2），因此重点是确认没有出现明显退化或 NaN，而不是要求逐位相同；LoRA（非量化）场景一般更接近一致。是否可接受以你的任务指标与验证集为准。
 
 ---
 
@@ -651,41 +698,102 @@ CPU：
 
 ---
 
-GPU推荐：
+GPU推荐（下面为**带条件经验参考**，不是固定门槛）：
 
 7B模型：
 
-最低：
+经验参考：
 
-* 16GB显存
+* 约 16GB 显存起（宽松些约 24GB+）
 
-推荐：
-
-* 24GB显存+
+> 说明：合并本身是"权重相加"的一次性计算，**不一定必须在 GPU 上完成**——很多情况下直接在 **CPU + 内存**里加载 FP16/BF16 模型并合并即可，只是速度较慢。上面的 16GB / 24GB 只是**在 GPU 上一次性放下高精度模型**时的经验参考，真实需求还受以下因素影响：
+> - 是否用 `device_map`/offload 把权重分散到 CPU 或多卡；
+> - 合并时使用的 **dtype**（FP16/BF16 比 FP32 省一半）；
+> - 基础模型是否为**分片权重**（分片加载可降低瞬时峰值）；
+> - CPU 内存是否充足（显存不够时可退回 CPU 合并）。
+>
+> 因此显存不足时，优先考虑 CPU 合并或 offload，而不是把 16GB 当作硬性下限。
 
 原因：
 
-合并阶段需要同时保存：
+合并阶段通常需要同时存在：
 
-* 基础模型；
-* LoRA参数；
+* 基础模型（高精度）；
+* LoRA 参数；
 * 合并后权重。
 
 ---
 
 # 十三、常见问题排查
 
-| 问题                  | 原因           | 解决                 |
+| 问题                  | 常见原因（可能不止一种）           | 排查方向                 |
 | ------------------- | ------------ | ------------------ |
-| merge_and_unload不存在 | 未使用PeftModel | 检查加载方式             |
-| 合并后模型变大             | 正常现象         | 完整模型包含全部参数         |
-| 显存不足                | 加载FP16模型     | 使用CPU offload或增加显存 |
-| Tokenizer缺失         | 未保存Tokenizer | 重新save_pretrained  |
-| QLoRA合并失败           | 4bit权重限制     | 先转换精度              |
+| merge_and_unload不存在 | 当前对象不是 PeftModel（可能忘了用 `PeftModel.from_pretrained` 挂载 Adapter，或已经合并/加载成普通模型） | 确认加载方式，先得到 PeftModel 再调用             |
+| 合并后模型变大             | 正常现象：合并后是完整模型，不再是小体积 Adapter         | 无需处理；若在意体积可保留 Adapter 不合并         |
+| 显存不足                | 一次性加载高精度完整模型占用高；也可能是 dtype 用了 FP32、未做 offload/分片 | 改用 CPU 合并或 offload、用 FP16/BF16、分片加载 |
+| Tokenizer/配置缺失         | 只保存了模型未保存 tokenizer；或特殊 token / generation_config 未一并导出 | 重新 `save_pretrained` 并按 §七核查 tokenizer、generation_config、config  |
+| QLoRA合并失败或结果异常           | 原因可能不止一种：在 4-bit 状态直接合并、PEFT/bitsandbytes 版本不支持、量化包装未正确反量化、内存/显存不足 | 按 §十一先反量化到 FP16/BF16 再合并；核对版本；必要时用 CPU 合并；开 `safe_merge=True` 并做一致性验证              |
 
 ---
 
-# 十四、总结
+# 十四、与部署阶段的衔接：合并部署 vs 保留 Adapter 动态服务
+
+合并只是"训练后 → 部署前"的一种选择。到了实际推理部署（详见后续第 15 板块 vLLM 相关内容），通常会在两条路线之间权衡：
+
+## 14.1 路线A：合并后部署完整模型
+
+```text
+merge_and_unload()
+
+↓
+
+保存完整模型
+
+↓
+
+推理框架按普通模型加载（如 vLLM 直接加载 merged_model）
+```
+
+特点：
+
+* 部署链路简单，推理框架当作**普通模型**加载即可，无需理解 LoRA；
+* 推理时**不再有 Adapter 切换成本**；
+* 代价：每个 Adapter 都要保存/分发一份**完整模型**，多任务时存储成本高。
+
+## 14.2 路线B：保留 Adapter，用支持 LoRA 的推理框架动态服务
+
+一些推理框架（如 **vLLM**）支持在**同一份基础模型**上运行时加载/切换**多个 LoRA Adapter**（Multi-LoRA serving）。
+
+```text
+基础模型（只加载一份）
+
++
+
+运行时挂载多个 LoRA Adapter（A / B / C）
+
+↓
+
+按请求指定使用哪个 Adapter
+```
+
+特点：
+
+* 多任务/多租户时**只需一份基础模型 + 多个小体积 Adapter**，节省显存与存储；
+* 支持**热切换**，无需为每个任务各存一份完整模型；
+* 代价：依赖框架对 LoRA 的支持与相应配置，链路比"直接加载合并模型"略复杂；不同框架/版本对 LoRA 的支持范围与限制不同。
+
+## 14.3 如何选择
+
+> 经验参考（非硬性规则，以实际部署为准）：
+> - **单一 Adapter、追求最简部署** → 倾向路线A（合并）；
+> - **同一基础模型要服务多个 Adapter、且推理框架原生支持 LoRA** → 倾向路线B（保留 Adapter 动态服务）；
+> - **QLoRA 精度敏感** → 无论哪条路线，都建议按 §11.3 做合并前后/上线前的一致性验证。
+
+具体框架用法与限制留待第 15 板块（vLLM 部署）展开，这里只需建立"合并不是唯一部署方式"的认知。
+
+---
+
+# 十五、总结
 
 完成本章后，你已经掌握：
 
@@ -699,7 +807,7 @@ GPU推荐：
 
 核心流程：
 
-```text id="m3q8zs"
+```text
 LoRA训练
 
 ↓

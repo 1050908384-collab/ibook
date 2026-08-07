@@ -1,4 +1,4 @@
-# PEFT库LoraConfig配置详解：掌握target_modules、r、lora_alpha、lora_dropout参数（最终版）
+﻿# PEFT库LoraConfig配置详解：掌握target_modules、r、lora_alpha、lora_dropout参数（最终版）
 
 ## 参考资料
 
@@ -53,7 +53,7 @@ Parameter-Efficient Fine-Tuning
 
 LoRA训练流程：
 
-```text id="1h2m9z"
+```text
 加载基础模型
 
 ↓
@@ -75,7 +75,7 @@ LoRA训练流程：
 
 其中：
 
-```python id="a6t8cg"
+```python
 LoraConfig
 ```
 
@@ -90,7 +90,7 @@ LoraConfig
 
 ## 1.2 一个简单示例
 
-```python id="8p5vxm"
+```python
 from peft import LoraConfig
 
 
@@ -118,9 +118,9 @@ config = LoraConfig(
 
 # 二、LoRA配置整体流程（①③）
 
-完整代码关系：
+完整代码关系（下面是**流程关系示意**，不是可运行代码）：
 
-```python id="3y0v4m"
+```text
 model
     |
     |
@@ -135,7 +135,7 @@ LoRA模型
 
 例如：
 
-```python id="g8m2hk"
+```python
 from peft import (
     LoraConfig,
     get_peft_model
@@ -163,13 +163,13 @@ model = get_peft_model(
 
 原模型参数：
 
-```text id="4w7k3h"
+```text
 冻结
 ```
 
 新增LoRA参数：
 
-```text id="6x1d4p"
+```text
 训练
 ```
 
@@ -187,7 +187,7 @@ Transformer中：
 
 常见结构：
 
-```text id="s3x9fa"
+```text
 Attention
 
 ├── q_proj
@@ -203,7 +203,7 @@ LoRA不会默认修改所有层。
 
 需要指定：
 
-```python id="7m2pqa"
+```python
 target_modules=[
     "q_proj",
     "v_proj"
@@ -227,7 +227,7 @@ Attention计算：
 
 公式：
 
-```text id="k6z9mt"
+```text
 Attention(Q,K,V)
 
 =
@@ -240,7 +240,7 @@ Q：
 
 决定：
 
-```text id="j9q3sv"
+```text
 关注什么信息
 ```
 
@@ -248,7 +248,7 @@ V：
 
 决定：
 
-```text id="p7f4mz"
+```text
 传递什么信息
 ```
 
@@ -258,13 +258,15 @@ V：
 
 通常可以有效改变模型行为。
 
+> 重要说明：`q_proj`/`v_proj` 只是**常见起点**，不是所有模型都通用的"标准配置"。不同模型的模块命名不同（见第五章），**配置前应先查看模型实际模块名**（`model.named_modules()`），再决定 `target_modules`。此外，较新版本的 PEFT 还支持 `target_modules="all-linear"`，让 PEFT 自动匹配（几乎）所有线性层，省去手工枚举——是否用全线性层要在**参数量/显存**与**效果**之间权衡，并以验证集为准。
+
 ---
 
 常见配置：
 
 ## 方案1：只调整Q和V
 
-```python id="7j2hcx"
+```python
 target_modules=[
     "q_proj",
     "v_proj"
@@ -275,13 +277,13 @@ target_modules=[
 
 * 参数少；
 * 训练快；
-* 常用于7B模型。
+* 是一种常见的轻量起点（不限于某个特定规模，具体仍需看模型结构与效果）。
 
 ---
 
 ## 方案2：调整全部Attention
 
-```python id="4t9wsm"
+```python
 target_modules=[
     "q_proj",
     "k_proj",
@@ -303,7 +305,7 @@ target_modules=[
 
 还会加入：
 
-```python id="2m6xpw"
+```python
 gate_proj
 
 up_proj
@@ -313,7 +315,7 @@ down_proj
 
 例如：
 
-```python id="n3y6sa"
+```python
 target_modules=[
     "q_proj",
     "v_proj",
@@ -340,7 +342,7 @@ target_modules=[
 
 常见：
 
-```python id="t8w2kg"
+```python
 [
 "q_proj",
 "v_proj"
@@ -353,7 +355,7 @@ target_modules=[
 
 可能：
 
-```python id="5j3zq1"
+```python
 [
 "c_attn"
 ]
@@ -365,7 +367,7 @@ target_modules=[
 
 可能：
 
-```python id="2q4v8a"
+```python
 [
 "query",
 "value"
@@ -380,13 +382,13 @@ target_modules=[
 
 需要查看：
 
-```python id="q9v5mx"
+```python
 model.named_modules()
 ```
 
 例如：
 
-```python id="7d9fkg"
+```python
 for name,_ in model.named_modules():
 
     print(name)
@@ -394,13 +396,18 @@ for name,_ in model.named_modules():
 
 找到：
 
-```text id="5b6qpk"
+```text
 q_proj
 
 v_proj
 ```
 
 再配置。
+
+> 补充：
+> - **匹配机制**：`target_modules` 传入的字符串是按模块名做匹配的。PEFT 通常支持**后缀匹配**——例如写 `"q_proj"` 会匹配所有以 `q_proj` 结尾的层（各层各头都会命中）；也可以传更完整的名字做精确定位，或传正则。
+> - **GPT-2（Conv1D）**：GPT-2 的注意力用的是 `Conv1D` 而非普通 `nn.Linear`，模块名是 `c_attn`（把 q/k/v 合在一起）。它同样能被 LoRA 支持，但命名与结构和 LLaMA 系不同，不能照搬 `q_proj`/`v_proj`。
+> - **版本差异**：不同 Transformers/PEFT 版本、不同模型实现，模块命名可能变化；`"all-linear"` 等便捷写法也依赖较新版本。请以你实际加载模型 `named_modules()` 的输出与所用版本文档为准。
 
 ---
 
@@ -416,7 +423,7 @@ r：
 
 公式：
 
-```text id="0e7y1c"
+```text
 ΔW = BA
 ```
 
@@ -432,13 +439,13 @@ A、B中间维度。
 
 原矩阵：
 
-```text id="p2h7za"
+```text
 4096×4096
 ```
 
 设置：
 
-```python id="f0k7as"
+```python
 r=8
 ```
 
@@ -446,13 +453,13 @@ r=8
 
 A：
 
-```text id="0x2kma"
+```text
 8×4096
 ```
 
 B：
 
-```text id="k8d2zs"
+```text
 4096×8
 ```
 
@@ -474,13 +481,13 @@ r越大：
 
 ---
 
-常见：
+常见（下面均为**经验起始范围**，不是固定配方，应以验证集/基准任务结果选择）：
 
-| 场景     | r     |
+| 场景     | r（起点参考）     |
 | ------ | ----- |
-| 简单任务   | 4-8   |
-| 通用指令微调 | 8-32  |
-| 复杂领域任务 | 32-64 |
+| 简单任务   | 约 4-8   |
+| 通用指令微调 | 约 8-32  |
+| 复杂领域任务 | 约 32-64 |
 
 ---
 
@@ -492,13 +499,13 @@ LoRA最终更新：
 
 不是：
 
-```text id="h3z8mq"
+```text
 BA
 ```
 
 而是：
 
-```text id="6s4j2k"
+```text
 (alpha/r)BA
 ```
 
@@ -514,7 +521,7 @@ alpha控制：
 
 配置：
 
-```python id="x5q7lm"
+```python
 r=8
 
 lora_alpha=16
@@ -522,7 +529,7 @@ lora_alpha=16
 
 缩放：
 
-```text id="7b1r8h"
+```text
 16/8=2
 ```
 
@@ -536,15 +543,17 @@ LoRA影响增强。
 
 经验：
 
-通常：
+一种常见的**起点**是：
 
-```text id="y8k2vb"
+```text
 alpha = 2 × r
 ```
 
+> 说明：`alpha = 2 × r` 只是常见经验起点，不是通用规则。也有做法保持 alpha 固定而单独调 r，或用其它比例；最终应以验证集表现为准。
+
 例如：
 
-```python id="3q8m5w"
+```python
 r=8
 
 alpha=16
@@ -552,7 +561,7 @@ alpha=16
 
 或者：
 
-```python id="v7h3qd"
+```python
 r=16
 
 alpha=32
@@ -572,7 +581,7 @@ alpha=32
 
 减少：
 
-```text id="1h5c9v"
+```text
 过拟合
 ```
 
@@ -580,7 +589,7 @@ alpha=32
 
 配置：
 
-```python id="8m2v6p"
+```python
 lora_dropout=0.05
 ```
 
@@ -592,12 +601,12 @@ lora_dropout=0.05
 
 ## 8.2 如何选择dropout？
 
-常见：
+常见（**经验起点**，非固定规则，应结合验证集是否过拟合来调）：
 
-| 数据规模 | dropout  |
+| 数据规模 | dropout（起点参考）  |
 | ---- | -------- |
-| 数据少  | 0.05~0.1 |
-| 数据多  | 0~0.05   |
+| 数据少  | 约 0.05~0.1 |
+| 数据多  | 约 0~0.05   |
 
 ---
 
@@ -607,7 +616,7 @@ lora_dropout=0.05
 
 可以：
 
-```python id="5g8n2v"
+```python
 lora_dropout=0
 ```
 
@@ -621,7 +630,7 @@ lora_dropout=0
 
 7B模型测试。
 
-```python id="w8x4qm"
+```python
 from peft import LoraConfig
 
 
@@ -656,6 +665,15 @@ lora_config = LoraConfig(
 | dropout        | 0.05      | 防止过拟合  |
 | task_type      | CAUSAL_LM | 语言模型任务 |
 
+> 补充：`modules_to_save`
+>
+> 有些**额外模块**不属于 LoRA 注入的目标层，但在你的任务里需要**完整训练并一起保存**，这时用 `modules_to_save` 指定。典型场景：
+> - 序列分类任务里新初始化的**分类头**（如 `"classifier"`/`"score"`）；
+> - 奖励模型（RLHF）里的**奖励头**；
+> - 词表变化时需要一起训练的 embedding/lm_head 等。
+>
+> 例如：`LoraConfig(..., modules_to_save=["classifier"])`。不加它时，这些新头可能不会被训练/保存，导致重载后任务头缺失或为随机初始化。
+
 ---
 
 # 十、不同任务配置建议（参考文章⑤）
@@ -664,7 +682,7 @@ lora_config = LoraConfig(
 
 推荐：
 
-```python id="c8y1hx"
+```python
 r=8
 
 alpha=16
@@ -678,7 +696,7 @@ dropout=0.05
 
 推荐：
 
-```python id="z6x4kp"
+```python
 r=16
 
 alpha=32
@@ -692,11 +710,24 @@ dropout=0.05
 
 推荐：
 
-```python id="m5j8vq"
+```python
 r=32
 
 alpha=64
 ```
+
+---
+
+## 10.4 本文范围与扩展边界
+
+本文只覆盖**经典 LoRA** 的核心参数（`r`、`lora_alpha`、`target_modules`、`lora_dropout`、`bias`、`task_type`、`modules_to_save`）。PEFT 的 `LoraConfig` 还支持一些**扩展能力**，本文不展开，但需要知道它们的存在，避免以为"LoRA 只有上面几个参数"：
+
+- `use_rslora=True`：启用 RS-LoRA，缩放改用 `α/√r`；
+- `use_dora=True`：启用 DoRA（权重分解式 LoRA 变体）；
+- `rank_pattern` / `alpha_pattern`：为不同层单独设置 r / alpha；
+- `init_lora_weights`：LoRA 权重初始化策略（如默认初始化、`"gaussian"`、PiSSA、OLoRA 等）。
+
+这些扩展的行为、可用性与默认值随 PEFT 版本变化，使用前请查阅对应版本的官方文档。
 
 ---
 
@@ -748,13 +779,13 @@ QLoRA：
 
 # 十二、常见问题排查
 
-| 问题                | 原因        | 解决              |
+| 问题                | 常见原因（可能不止一种）        | 排查方向              |
 | ----------------- | --------- | --------------- |
-| target_modules找不到 | 模型结构不同    | 查看named_modules |
-| rank过大显存不足        | LoRA参数增加  | 降低r             |
-| 训练效果差             | rank过小    | 提高r             |
-| loss震荡            | alpha过高   | 降低alpha         |
-| 过拟合               | dropout过低 | 增加dropout       |
+| target_modules找不到 | 模块名写错/与该模型命名不符；也可能是版本差异导致命名变化 | 用 `named_modules()` 核对实际名字；确认后缀匹配是否命中；必要时试 `"all-linear"` |
+| rank过大显存不足        | r 过大只是原因之一；也可能是目标模块过多、序列过长、batch 过大、未开梯度检查点、基础模型本身占用高 | 降低 r、减少 target_modules、缩短序列/减小 batch、开梯度检查点，或改用 QLoRA |
+| 训练效果差             | 可能是 r 过小；也可能是学习率/训练步数不当、数据质量或数量不足、目标模块选得不合适、任务与预训练差距大 | 综合调 r、学习率、数据与目标模块，用验证集评估 |
+| loss震荡            | 可能是 `α/r` 缩放过大；也常来自学习率过高、batch 过小、精度/数值稳定性、缺梯度裁剪、数据质量 | 先降学习率并检查数据，再考虑调 alpha、加梯度裁剪 |
+| 过拟合               | dropout 过低只是其一；也可能数据太少、训练轮数过多、r 过大 | 增大 dropout、增加/清洗数据、早停、适当降 r |
 
 ---
 
@@ -772,7 +803,7 @@ QLoRA：
 
 核心配置：
 
-```python id="q5w8zr"
+```python
 LoraConfig(
 
     r=8,
@@ -791,7 +822,7 @@ LoraConfig(
 
 理解：
 
-```text id="7q3mns"
+```text
 target_modules
 决定改哪里
 
@@ -799,10 +830,10 @@ r
 决定LoRA容量
 
 alpha
-决定更新强度
+通过 α/r 缩放影响更新强度
 
 dropout
-决定泛化能力
+用于缓解过拟合（是影响泛化的因素之一，而非唯一决定项）
 ```
 
 下一阶段：

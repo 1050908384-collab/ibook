@@ -313,6 +313,18 @@ dataset = dataset.map(
 )
 ```
 
+> 说明：这里 `preprocess` 只做了 `truncation=True`，**没有做固定 padding**，因此不同样本长度不一。用 `Trainer` 组 batch 时，需要一个**动态填充的数据整理器**（`DataCollatorWithPadding`，见第十一章）在训练阶段按 batch 补齐，否则长度不一的样本拼成一个 batch 时可能报错。
+>
+> 另外，下面第八章、第十二章的示例会用到 `train_dataset` 和 `eval_dataset`。它们需要你从上面的 `dataset` 划分得到，例如：
+>
+> ```python
+> split = dataset.train_test_split(test_size=0.2, seed=42)
+> train_dataset = split["train"]
+> eval_dataset = split["test"]
+> ```
+>
+> 本章示例数据量极小（仅两条），仅用于跑通流程，真实训练需要足够规模的数据。
+
 ---
 
 # 六、TrainingArguments详解（参考文章⑥）
@@ -358,10 +370,12 @@ output_dir="./checkpoint"
 
 ```text
 checkpoint/
-├── model
-├── tokenizer
-└── trainer_state.json
+├── checkpoint-500/
+├── checkpoint-1000/
+└── ...
 ```
+
+> 说明：上面只是**示意**。`output_dir` 下实际生成的文件与目录结构会随保存方式（`save_model`/`save_steps`/`save_strategy`）、Transformers 版本与训练状态而变化，常见会看到若干 `checkpoint-<步数>/` 子目录，每个里面包含权重（如 `model.safetensors`）、`config.json`、优化器/调度器状态、`trainer_state.json` 等。不要把它记成固定的三个文件，具体以实际运行结果为准。
 
 ---
 
@@ -417,12 +431,14 @@ learning_rate=2e-5
 
 模型参数更新速度。
 
-常见：
+常见（下面仅为**常见起始范围**，不是固定规则）：
 
-| 任务     | 学习率       |
+| 任务     | 学习率（经验起点）       |
 | ------ | --------- |
-| 全参数微调  | 1e-5~5e-5 |
-| LoRA微调 | 1e-4左右    |
+| 全参数微调  | 约 1e-5~5e-5 |
+| LoRA微调 | 约 1e-4 量级（常比全参更大） |
+
+> 说明：合适的学习率与模型规模、数据量、任务类型、有效 batch size（`per_device_train_batch_size` × 梯度累积 × 设备数）、优化器与调度策略都相关，差异可能很大。上表只作为**起始参考**，实际应结合验证集表现（loss/指标是否稳定下降、是否震荡或发散）来调整。
 
 ---
 
@@ -467,6 +483,8 @@ evaluation_strategy="steps"
 | epoch | 每轮评估     |
 
 > 版本提示：该参数名在较新版本的 Transformers 中已改为 `eval_strategy`，`evaluation_strategy` 属于逐步弃用的旧写法。请以你所安装版本的官方文档为准；若运行报参数名相关的警告或错误，改用 `eval_strategy` 即可。
+>
+> 相关迁移：构造 `Trainer` 时用来传分词器/处理器的参数，在较新版本中也由 `tokenizer=` 迁移为 `processing_class=`（`tokenizer=` 仍可用但会告警并逐步弃用）。本章后续示例沿用了常见教程里的 `tokenizer=` 写法，如你的版本提示弃用，替换为 `processing_class=tokenizer` 即可。
 
 ---
 
@@ -565,10 +583,13 @@ my_model
 ├── tokenizer.json
 ```
 
-之后：
+之后（重新加载时应使用**与训练时一致的任务类**，本例训练用的是 `AutoModelForSequenceClassification`，重载也用它，才能带回分类头；若改用 `AutoModel` 只会得到不含分类头的主干）：
 
 ```python
-model = AutoModel.from_pretrained(
+from transformers import AutoModelForSequenceClassification
+
+
+model = AutoModelForSequenceClassification.from_pretrained(
     "./my_model"
 )
 ```
@@ -605,7 +626,9 @@ padding
 
 ---
 
-## 11.2 使用默认DataCollator
+## 11.2 使用 DataCollatorWithPadding
+
+`DataCollatorWithPadding` 是一个**具体的数据整理器**（并不是 Trainer 的"默认整理器"）：它在组 batch 时，按该 batch 内最长样本对 `input_ids`/`attention_mask` 等做**动态填充**，配合前面 `preprocess` 里只做 `truncation` 而不固定 padding 的做法。
 
 ```python
 from transformers import DataCollatorWithPadding
@@ -616,11 +639,16 @@ data_collator = DataCollatorWithPadding(
 )
 ```
 
-传入Trainer：
+传入Trainer（作为 `data_collator` 参数，与 `model`/`args`/`train_dataset` 等一起传入，此处仅示意该参数位置）：
 
 ```python
 trainer = Trainer(
-    data_collator=data_collator
+    model=model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
+    data_collator=data_collator,
+    tokenizer=tokenizer
 )
 ```
 
@@ -628,14 +656,18 @@ trainer = Trainer(
 
 # 十二、完整Trainer训练案例（参考文章⑤⑥）
 
+> 说明：下面是把前面各步骤串起来的**结构示例**。要真正跑通，还需在此之前完成：准备并 `map` 编码数据、划分 `train_dataset`/`eval_dataset`（见 5.3 的 `train_test_split`）、以及创建 `DataCollatorWithPadding`（见 11.2）。这里把这些依赖一并写出，形成一个更接近可运行的最小骨架：
+
 代码结构：
 
 ```python
+from datasets import Dataset
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     TrainingArguments,
-    Trainer
+    Trainer,
+    DataCollatorWithPadding
 )
 
 
@@ -651,6 +683,32 @@ model = AutoModelForSequenceClassification.from_pretrained(
     model_name,
     num_labels=2
 )
+
+
+# 1) 准备数据（真实场景请替换为足够规模的数据）
+dataset = Dataset.from_dict(
+    {
+        "text": ["I love this", "I hate this"],
+        "label": [1, 0]
+    }
+)
+
+
+def preprocess(example):
+    return tokenizer(example["text"], truncation=True)
+
+
+dataset = dataset.map(preprocess)
+
+
+# 2) 划分训练集/验证集
+split = dataset.train_test_split(test_size=0.5, seed=42)
+train_dataset = split["train"]
+eval_dataset = split["test"]
+
+
+# 3) 动态填充整理器
+data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
 
 training_args = TrainingArguments(
@@ -677,7 +735,9 @@ trainer = Trainer(
 
     eval_dataset=eval_dataset,
 
-    tokenizer=tokenizer
+    data_collator=data_collator,
+
+    tokenizer=tokenizer  # 新版本可改为 processing_class=tokenizer
 )
 
 
@@ -726,7 +786,7 @@ Trainer并不局限于全参数训练。
 
 后续：
 
-```python
+```text
 Trainer
 +
 LoraConfig

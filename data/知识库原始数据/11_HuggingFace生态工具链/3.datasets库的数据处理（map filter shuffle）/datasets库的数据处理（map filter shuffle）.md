@@ -204,6 +204,8 @@ print(dataset.column_names)
 
 > 对Dataset中的每一条数据执行一个处理函数。
 
+> 注意：默认（`batched=False`）时处理函数每次收到**单条样本**（形如 `{"text": "..."}`）；当设置 `batched=True` 时，函数收到的是**一批样本按列组织的字典**（形如 `{"text": ["...", "...", ...]}`），此时应对**列表**做批量处理。写函数前先确认自己处于哪种模式（详见后文第六章）。
+
 常见用途：
 
 * Tokenizer编码；
@@ -443,6 +445,8 @@ dataset = dataset.map(
 * 更适合大规模数据；
 * 充分利用Tokenizer批处理能力。
 
+> 注意：这里的 `padding=True` 只会把**当前这个 map batch 内**的样本补齐到该 batch 的最长长度，**不同 map batch 之间的序列长度仍可能不同**。若下游训练要求统一长度，应在训练阶段配合**动态填充的 DataCollator**（如 `DataCollatorWithPadding`，按训练 batch 动态补齐），或在这里直接用固定的 `padding="max_length", max_length=...`。
+
 ---
 
 # 七、remove_columns删除无用字段（参考文章⑦）
@@ -458,12 +462,19 @@ Tokenizer之后：
 }
 ```
 
-训练通常只需要：
+训练通常至少需要：
 
 ```python
 input_ids
 attention_mask
 ```
+
+> 补充：`input_ids` / `attention_mask` 是**输入**，训练还需要**标签**：
+> - 文本**分类**：需要 `labels`（类别 id）；
+> - **Causal LM**（自回归生成）：通常由 `input_ids` 构造 `labels`（常见做法是让 `labels = input_ids`，并把 prompt/padding 位置置为 `-100` 以忽略损失）；
+> - **Seq2Seq**（翻译/摘要）：除 encoder 输入外，还可能需要 decoder 侧的标签字段。
+>
+> 因此"只保留 `input_ids` 和 `attention_mask`"仅适用于**不需要额外标签列**的场景；删除列前请确认标签已正确构造。
 
 删除：
 
@@ -607,7 +618,9 @@ dataset = dataset.shuffle(
 
 ---
 
-# 十、完整数据预处理流程案例（参考文章⑥⑦）
+# 十、数据预处理流程示例（参考文章⑥⑦）
+
+> 说明：本节演示 `filter → shuffle → map(tokenize)` 这条**核心链路**，属于**概念片段**，用于理解顺序与各步骤作用。它**不是**可直接用于 LoRA/QLoRA 训练的完整数据准备流程——真实训练前通常还需要：`train_test_split()` / `DatasetDict` 划分训练验证集、删除多余列（`remove_columns`）、**构造训练标签**（分类的 `labels`、Causal LM 的 `labels` 及 prompt/padding 掩码为 `-100`）、以及按需要做样本拼接/截断与固定/动态 padding 等。请把本节当作"讲清楚步骤关系"的示意。
 
 假设：
 
@@ -728,10 +741,10 @@ Trainer
 
 # 十二、常见问题排查
 
-| 问题          | 原因        | 解决             |
+| 问题          | 常见原因（可能不止一种）        | 解决             |
 | ----------- | --------- | -------------- |
-| map速度慢      | 逐条处理      | 使用batched=True |
-| 内存占用高       | 一次加载大量数据  | 使用streaming    |
+| map速度慢      | 逐条处理只是常见原因之一；还可能是未开启缓存/缓存失效导致重复计算、磁盘 I/O 瓶颈、tokenizer 本身较慢、未用 `num_proc` 多进程、返回数据结构不利于 Arrow 列式存储等 | 优先 `batched=True`；按需开启缓存、设置 `num_proc`、优化处理函数，必要时用 `streaming` |
+| 内存占用高       | 一次加载大量数据只是原因之一；也可能是 map 返回超大列（如长序列/大数组）、`batched` 批过大、`writer_batch_size` 过大、未删除多余列使 Arrow 缓存膨胀等 | 需要时用 `streaming` 流式加载；同时可减小批大小、及时 `remove_columns`、控制返回列大小 |
 | 字段冲突        | map返回字段重复 | 检查返回内容         |
 | Tokenizer报错 | 文本字段错误    | 确认字段名称         |
 | shuffle结果不同 | 没有固定seed  | 设置seed         |
