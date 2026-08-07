@@ -260,6 +260,29 @@ V：
 
 > 重要说明：`q_proj`/`v_proj` 只是**常见起点**，不是所有模型都通用的"标准配置"。不同模型的模块命名不同（见第五章），**配置前应先查看模型实际模块名**（`model.named_modules()`），再决定 `target_modules`。此外，较新版本的 PEFT 还支持 `target_modules="all-linear"`，让 PEFT 自动匹配（几乎）所有线性层，省去手工枚举——是否用全线性层要在**参数量/显存**与**效果**之间权衡，并以验证集为准。
 
+`target_modules="all-linear"` 的**可运行示例**（需要较新版本 PEFT，一般 PEFT ≥ 0.7 起支持该便捷值；具体以你所装版本文档为准）：
+
+```python
+from peft import LoraConfig, get_peft_model
+from transformers import AutoModelForCausalLM
+
+model = AutoModelForCausalLM.from_pretrained("your/base-model")
+
+lora_config = LoraConfig(
+    r=8,
+    lora_alpha=16,
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM",
+    target_modules="all-linear",   # 自动匹配（几乎）所有 nn.Linear；一般不含输出层 lm_head
+)
+
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()   # 打印可训练参数量/占比，确认 LoRA 已注入
+```
+
+> 说明：`"all-linear"` 会自动把 LoRA 加到模型中（几乎）所有线性层（通常不含 `lm_head` 等输出层），无需手工枚举模块名；但覆盖模块变多会**增加可训练参数与显存**。若你的 PEFT 版本较旧、不支持该字符串，请退回到**显式列出模块名**的写法（见下方各方案），或升级 PEFT。用 `print_trainable_parameters()` 可以快速验证注入是否符合预期。
+
 ---
 
 常见配置：
@@ -360,6 +383,33 @@ target_modules=[
 "c_attn"
 ]
 ```
+
+> **GPT-2 的 `Conv1D` 权重布局与 `fan_in_fan_out=True`（重要）**：
+> GPT-2 的注意力用的是 Transformers 里的 `Conv1D`（不是普通 `nn.Linear`），它把 Q/K/V 三个投影合并在一个 `c_attn` 模块里。`Conv1D` 的权重形状是 `(in_features, out_features)`——**与 `nn.Linear` 的 `(out_features, in_features)` 正好转置**。因此在这类层上加 LoRA 时，需要设置 `fan_in_fan_out=True`，PEFT 才能按转置布局正确注入低秩矩阵。
+>
+> 可运行示例（GPT-2）：
+>
+> ```python
+> from peft import LoraConfig, get_peft_model
+> from transformers import AutoModelForCausalLM
+>
+> model = AutoModelForCausalLM.from_pretrained("gpt2")
+>
+> lora_config = LoraConfig(
+>     r=8,
+>     lora_alpha=16,
+>     lora_dropout=0.05,
+>     bias="none",
+>     task_type="CAUSAL_LM",
+>     target_modules=["c_attn"],   # GPT-2 的 Q/K/V 合并投影
+>     fan_in_fan_out=True,         # Conv1D 权重是 (in, out) 布局，需置 True
+> )
+>
+> model = get_peft_model(model, lora_config)
+> model.print_trainable_parameters()
+> ```
+>
+> **版本差异提示**：较新版本的 PEFT 对部分已知模型（含 GPT-2）能自动推断并处理 `fan_in_fan_out`，此时即使不显式设置也可能正常工作，甚至会给出提示日志；但为可读性与跨版本稳妥，遇到 `Conv1D`（如 GPT-2 的 `c_attn`/`c_proj`）时建议**显式写明 `fan_in_fan_out=True`**。具体行为以你所用 PEFT/Transformers 版本文档为准。
 
 ---
 
@@ -673,6 +723,52 @@ lora_config = LoraConfig(
 > - 词表变化时需要一起训练的 embedding/lm_head 等。
 >
 > 例如：`LoraConfig(..., modules_to_save=["classifier"])`。不加它时，这些新头可能不会被训练/保存，导致重载后任务头缺失或为随机初始化。
+
+带 `modules_to_save` 的**完整配置 + 保存 + 重新加载验证**示例（以序列分类的分类头为例）：
+
+```python
+import torch
+from peft import LoraConfig, get_peft_model, PeftModel
+from transformers import AutoModelForSequenceClassification
+
+base_name = "bert-base-uncased"
+
+# 1) 加载带分类头的基础模型（分类头是新初始化的，需要一起训练/保存）
+base_model = AutoModelForSequenceClassification.from_pretrained(base_name, num_labels=2)
+
+lora_config = LoraConfig(
+    r=8,
+    lora_alpha=16,
+    lora_dropout=0.05,
+    bias="none",
+    task_type="SEQ_CLS",                 # 序列分类任务
+    target_modules=["query", "value"],   # BERT 注意力模块名
+    modules_to_save=["classifier"],       # 关键：把新分类头也纳入训练并保存
+)
+
+model = get_peft_model(base_model, lora_config)
+model.print_trainable_parameters()       # 应看到 LoRA 参数 + classifier 一起可训练
+
+# ...（此处进行训练，略）...
+
+# 2) 保存：Adapter 权重 + modules_to_save 指定的分类头会一起被保存
+model.save_pretrained("./lora_ckpt")
+
+# 3) 重新加载并验证分类头确实被带回（而不是随机初始化）
+reload_base = AutoModelForSequenceClassification.from_pretrained(base_name, num_labels=2)
+reloaded = PeftModel.from_pretrained(reload_base, "./lora_ckpt")
+
+# 验证：重载后的分类头权重应与保存前一致（说明 classifier 被 modules_to_save 正确保存/恢复）
+w_before = model.base_model.model.classifier.weight.detach().cpu()
+w_after = reloaded.base_model.model.classifier.weight.detach().cpu()
+print("classifier 权重是否一致:", torch.allclose(w_before, w_after))
+```
+
+> 说明：
+> - `modules_to_save=["classifier"]` 会让分类头**参与训练并随 Adapter 一起保存**；若不加它，重载时分类头会退回基础模型的**随机初始化**，导致分类结果错乱。
+> - 上面用 `torch.allclose` 对比"保存前 / 重载后"的分类头权重来**验证**它确实被保存/恢复；实际项目里也可以用一批固定输入对比 logits 是否一致。
+> - `save_pretrained` 保存的是 **Adapter + `modules_to_save` 模块**（不是完整基础模型）；重载时需先加载**同一个**基础模型，再用 `PeftModel.from_pretrained` 挂载。
+> - 不同模型的分类头属性名可能不同（如 `classifier` / `score`），`base_model.model.<...>` 的访问路径也可能随版本/模型而变，请以实际结构为准。
 
 ---
 

@@ -704,9 +704,68 @@ map Tokenizer
 
 ---
 
+## 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充）
+
+上面的核心链路只做到"清洗 + 编码"。这里补一个更接近实战的 **Causal LM 数据准备**示例，覆盖报告强调的几步：`train_test_split()` 划分训练/验证集（得到 `DatasetDict`）、**文本拼接与截断**、**构造 `labels`**、以及训练阶段的**动态填充 DataCollator** 接入。
+
+```python
+from datasets import Dataset
+from transformers import (
+    AutoTokenizer,
+    DataCollatorForLanguageModeling,
+)
+
+# 1) 准备原始数据（这里用少量样本演示流程）
+raw = Dataset.from_dict({
+    "prompt": ["翻译成英文：你好", "续写：今天天气"],
+    "response": ["Hello", "很好，适合出门。"],
+})
+
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+
+MAX_LEN = 128
+
+# 2) 文本拼接 + 截断；Causal LM 通常让 labels = input_ids
+def build_example(example):
+    # 把 prompt 与 response 拼成一段训练文本（真实项目可用 chat template）
+    text = example["prompt"] + "\n" + example["response"] + tokenizer.eos_token
+    enc = tokenizer(text, truncation=True, max_length=MAX_LEN)
+    enc["labels"] = enc["input_ids"].copy()   # 语言模型标签
+    return enc
+
+# 先划分再各自处理，避免验证集信息在处理时"泄漏"进训练集统计
+split = raw.train_test_split(test_size=0.5, seed=42)   # 得到 DatasetDict(train/test)
+
+tokenized = split.map(
+    build_example,
+    remove_columns=split["train"].column_names,   # 去掉原始文本列，只留 input_ids/attention_mask/labels
+)
+
+# 3) 训练阶段动态填充：按每个训练 batch 的最长长度补齐（比在 map 里固定 max_length 更省算力）
+#    Causal LM 用 DataCollatorForLanguageModeling(mlm=False)；分类任务则用 DataCollatorWithPadding
+data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+
+# tokenized["train"] / tokenized["test"] 即可分别作为 train_dataset / eval_dataset
+# data_collator 传给 Trainer(..., data_collator=data_collator)（完整 Trainer 用法见 11.4）
+```
+
+要点说明：
+
+* **划分**：`train_test_split()` 返回 `DatasetDict`（含 `train` / `test`），用 `seed` 保证可复现；先划分后处理，避免验证集参与到训练集的统计/拼接中造成**数据泄漏**。
+* **标签**：
+  - **Causal LM**：常见做法 `labels = input_ids`（如需只对 response 计损失，可把 prompt/padding 位置置为 `-100`）；
+  - **分类**：应保留/构造 `labels`（类别 id），并改用 `DataCollatorWithPadding`。
+* **拼接与截断**：`truncation=True, max_length=...` 控制长度；真实对话数据建议用 `tokenizer.apply_chat_template` 拼接。
+* **动态填充**：不在 `map` 里固定 padding，而是用 DataCollator 在训练时按 batch 动态补齐，通常更省显存/算力（也可按需在 map 里固定 `padding="max_length"`）。
+* 上例样本量极小（仅演示流程），`test_size=0.5` 只适合走通链路，不能反映真实训练/评估效果。
+
+---
+
 # 十一、Dataset与Trainer训练流程连接（①⑤）
 
-后续使用Trainer训练：
+后续使用Trainer训练（下面是**结构示意**，不是完整可运行训练代码）：
 
 ```python
 trainer = Trainer(
@@ -714,6 +773,8 @@ trainer = Trainer(
     train_dataset=dataset
 )
 ```
+
+> 注意：上面只是为了说明"Dataset 是数据处理与 Trainer 之间的桥梁"，**不能直接复制当作训练代码**。真正训练至少还需要：`TrainingArguments`（输出目录、评估策略等）、**验证集** `eval_dataset`、**动态填充的 DataCollator**（如 `DataCollatorWithPadding`），以及**正确的标签列**（分类的 `labels` / Causal LM 的 `labels`）。完整、按当前版本 API 写的可运行案例见第 11.4 章《Trainer 与 TrainingArguments》，以及本章下面的 §十.1 causal LM 数据准备示例。
 
 因此：
 

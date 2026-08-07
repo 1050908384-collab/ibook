@@ -639,9 +639,41 @@ merge_and_unload()
 
 这样合并发生在高精度权重上，避免了 4-bit 状态下的类型/精度问题。
 
+上面流程对应的**可执行完整代码**如下（把基础模型以 FP16/BF16 重新加载、挂载同一份 Adapter、`merge_and_unload(safe_merge=True)`、保存模型与 tokenizer）：
+
+```python
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+
+base_model_path = "your/base-causal-lm"   # 训练 QLoRA 时用的同一个基础模型
+adapter_path = "./qlora_adapter"          # 训练保存下来的 LoRA Adapter 目录
+merged_out = "./merged_model"
+
+# 1) 关键：以高精度（FP16/BF16）重新加载基础模型，而不是再走 4-bit 量化
+#    合并要发生在高精度权重上，所以这里不传 quantization_config
+compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+base_model = AutoModelForCausalLM.from_pretrained(
+    base_model_path,
+    torch_dtype=compute_dtype,
+    device_map="auto",        # 显存不足时可改为 device_map={"": "cpu"} 在 CPU 上合并
+)
+
+# 2) 挂载训练得到的同一份 Adapter
+model = PeftModel.from_pretrained(base_model, adapter_path)
+
+# 3) 合并；safe_merge=True 会在合并时做数值检查（如检测 NaN）
+merged_model = model.merge_and_unload(safe_merge=True)
+
+# 4) 保存完整模型与 tokenizer（tokenizer 从基础模型或训练目录加载均可，保持与训练一致）
+tokenizer = AutoTokenizer.from_pretrained(base_model_path)
+merged_model.save_pretrained(merged_out)
+tokenizer.save_pretrained(merged_out)
+```
+
 > 提示（版本/内存）：
-> - **API/版本**：不同 PEFT 版本对"量化模型能否直接合并"的支持不同，部分版本要求或推荐先反量化；请查阅所用版本的 `merge_and_unload` 文档。
-> - **内存**：以高精度重新加载完整基础模型会占用**较多内存/显存**（约等于一份 FP16/BF16 完整模型），显存不足时可考虑在 CPU 上加载并合并，或使用 offload。
+> - **API/版本**：不同 PEFT 版本对"量化模型能否直接合并"的支持不同，部分版本要求或推荐先反量化；请查阅所用版本的 `merge_and_unload` 文档。上例的关键是**加载基础模型时不再传 `quantization_config`/`load_in_4bit`**，从而得到高精度权重再合并。
+> - **内存**：以高精度重新加载完整基础模型会占用**较多内存/显存**（约等于一份 FP16/BF16 完整模型），显存不足时可把 `device_map` 改为 `{"": "cpu"}` 在 CPU 上加载并合并（较慢），或使用 offload。
 > - **一致性**：QLoRA 合并得到的高精度模型，与"训练时 4-bit + Adapter"的推理结果**不会逐位相同**，通常只是**近似**；对精度敏感的场景需要按 §11.3 做验证。
 
 ---
@@ -668,7 +700,51 @@ merged_model = model.merge_and_unload(safe_merge=True)
 对比 logits / 生成文本是否基本一致
 ```
 
-> 说明：QLoRA 场景下合并前后**通常只是近似一致**（见 §11.2），因此重点是确认没有出现明显退化或 NaN，而不是要求逐位相同；LoRA（非量化）场景一般更接近一致。是否可接受以你的任务指标与验证集为准。
+对应的**最小验证代码**如下（用固定 prompt，先比 logits 的最大绝对差，再比贪心生成文本是否一致）：
+
+```python
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+
+# 变量沿用 §11.2：base_model_path、adapter_path、compute_dtype、tokenizer
+prompt = "请用一句话介绍你自己。"        # 换成你任务里有代表性的固定输入
+
+# 重要：merge_and_unload() 是"原地"操作，会就地修改并返回底层模型，
+#       合并后原来的 PeftModel 已经不再是"未合并"状态。
+#       所以要单独再加载一份"未合并的 PeftModel"来当作对比基准，
+#       不能拿 §11.2 里被合并过的对象当"合并前"。
+base_for_ref = AutoModelForCausalLM.from_pretrained(
+    base_model_path, torch_dtype=compute_dtype, device_map="auto",
+)
+model_before = PeftModel.from_pretrained(base_for_ref, adapter_path)   # 未合并：Base(高精度)+Adapter
+
+inputs = tokenizer(prompt, return_tensors="pt").to(merged_model.device)
+
+# 1) 比较 logits：未合并的 PeftModel vs §11.2 合并后的 merged_model
+with torch.no_grad():
+    logits_before = model_before(**inputs.to(model_before.device)).logits
+    logits_after = merged_model(**inputs).logits
+
+max_abs_diff = (logits_before.float().cpu() - logits_after.float().cpu()).abs().max().item()
+print("logits 最大绝对差:", max_abs_diff)   # 越接近 0 越好；QLoRA 场景通常是较小的近似值
+
+# 2) 比较贪心生成文本（do_sample=False 去掉随机性，便于对比）
+with torch.no_grad():
+    gen_before = model_before.generate(**inputs.to(model_before.device), max_new_tokens=32, do_sample=False)
+    gen_after = merged_model.generate(**inputs, max_new_tokens=32, do_sample=False)
+
+text_before = tokenizer.decode(gen_before[0], skip_special_tokens=True)
+text_after = tokenizer.decode(gen_after[0], skip_special_tokens=True)
+print("合并前:", text_before)
+print("合并后:", text_after)
+print("生成文本是否一致:", text_before == text_after)
+```
+
+> 说明：
+> - **为什么要单独再加载一份**：`merge_and_unload()` 会**原地**修改 §11.2 里的 `model`（把 Adapter 合进底层权重并移除 PEFT 包装），因此不能再拿它当"合并前"的对照——那样两边其实是同一份已合并权重，`max_abs_diff` 会恒为 0，验证就失去意义。上面用 `base_for_ref` + `model_before` 重新挂一份**未合并** Adapter 作为对照。
+> - **显存不够时**：若无法同时放下两个模型，就按"分两次跑"——先用未合并的 PeftModel 跑一遍、把 logits/文本存下来并释放显存，再加载合并后的模型对比。
+> - **结果预期**：QLoRA 场景下合并前后**通常只是近似一致**（见 §11.2），`max_abs_diff` 一般是个较小的非零值、生成文本也可能有个别 token 差异，重点是确认没有明显退化或 NaN，而不是要求逐位相同；LoRA（非量化）场景一般更接近一致，`max_abs_diff` 可以非常小。是否可接受以你的任务指标与验证集为准。
 
 ---
 
@@ -734,6 +810,10 @@ GPU推荐（下面为**带条件经验参考**，不是固定门槛）：
 | Tokenizer/配置缺失         | 只保存了模型未保存 tokenizer；或特殊 token / generation_config 未一并导出 | 重新 `save_pretrained` 并按 §七核查 tokenizer、generation_config、config  |
 | QLoRA合并失败或结果异常           | 原因可能不止一种：在 4-bit 状态直接合并、PEFT/bitsandbytes 版本不支持、量化包装未正确反量化、内存/显存不足 | 按 §十一先反量化到 FP16/BF16 再合并；核对版本；必要时用 CPU 合并；开 `safe_merge=True` 并做一致性验证              |
 
+> 关于"先反量化到 FP16/BF16"的**具体做法**：这里的"反量化"**不是**去手动逐层还原 4-bit 权重，而是——**重新加载一份不带量化配置的基础模型**。也就是用 `AutoModelForCausalLM.from_pretrained(base_model_path, torch_dtype=torch.bfloat16/float16)`（**不传** `quantization_config`/`load_in_4bit`）得到高精度权重，再 `PeftModel.from_pretrained` 挂载**同一份 Adapter** 后合并（完整代码见 §11.2）。这样合并发生在高精度权重上，天然避开了"在 4-bit 状态下合并"的类型/精度问题。
+>
+> **适用版本提示**：不同 PEFT / bitsandbytes / Transformers 版本对"量化模型能否直接调用 `merge_and_unload`"的支持不同——部分版本会直接报错或给出警告，部分较新版本对某些情形有一定支持但仍可能有精度损失。因此**"先反量化（重载高精度）再合并"是跨版本最稳妥的做法**；是否可以在量化状态下直接合并，请以你所装版本的 `merge_and_unload` 文档与实际运行结果为准。
+
 ---
 
 # 十四、与部署阶段的衔接：合并部署 vs 保留 Adapter 动态服务
@@ -781,6 +861,23 @@ merge_and_unload()
 * 多任务/多租户时**只需一份基础模型 + 多个小体积 Adapter**，节省显存与存储；
 * 支持**热切换**，无需为每个任务各存一份完整模型；
 * 代价：依赖框架对 LoRA 的支持与相应配置，链路比"直接加载合并模型"略复杂；不同框架/版本对 LoRA 的支持范围与限制不同。
+
+> **vLLM 启动 LoRA 服务的大致形态（版本敏感，仅示意）**：以 vLLM 为例，启动 OpenAI 兼容服务时通常需要**显式开启 LoRA 支持**并**声明每个 Adapter 的名字与路径**，请求里再用 Adapter 名字指定用哪个。命令行大致形如：
+>
+> ```text
+> vllm serve <base_model_path> \
+>     --enable-lora \
+>     --lora-modules adapterA=/path/to/adapterA adapterB=/path/to/adapterB \
+>     --max-loras 2 \
+>     --max-lora-rank 16
+> ```
+>
+> 其中 `--enable-lora` 开启多 LoRA 服务，`--lora-modules 名字=路径` 声明可用 Adapter（这里的**路径就是训练保存下来的 Adapter 目录**，即含 `adapter_model.safetensors` / `adapter_config.json` 的目录，**不是**合并后的完整模型），`--max-loras` 限制同时驻留的 Adapter 数、`--max-lora-rank` 需 **≥ 训练时 LoRA 的 r**。请求端通过把 `model` 字段设为对应 Adapter 名字来选择使用哪个。
+>
+> **限制与版本提示（重要）**：
+> - vLLM 的多 LoRA 是**运行时挂 Adapter**，因此走的是**路线B**——请传入的是**未合并的 Adapter 目录**，而不是 §11 合并后的完整模型（合并后的模型属于路线A，按普通模型直接加载）。
+> - 具体**参数名、默认值、是否支持运行时动态增删 Adapter、是否支持 QLoRA/量化基座 + LoRA 组合、以及对 `target_modules`/rank 的限制**都**随 vLLM 版本变化**；上面的 flag 只是**示意形态**，务必以你所装 vLLM 版本的官方文档（`vllm serve --help` / Multi-LoRA 章节）为准。
+> - 完整用法、性能与限制留待**第 15 板块（vLLM 部署）**结合当时实际版本展开，本章只需建立"保留 Adapter → 用支持 LoRA 的框架动态服务"这一认知。
 
 ## 14.3 如何选择
 

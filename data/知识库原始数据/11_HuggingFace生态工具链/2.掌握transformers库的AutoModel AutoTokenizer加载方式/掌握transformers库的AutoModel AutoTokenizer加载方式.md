@@ -28,7 +28,9 @@
 
 ---
 
-**适合人群**：已经完成 Hugging Face 环境准备、第一次接触大语言模型加载的学习者。本文会拆解“模型为什么需要 Tokenizer”“AutoModel 如何自动识别模型结构”“from_pretrained()到底做了什么”等核心概念，并通过完整代码演示加载模型、处理输入、执行推理全过程。完成本章后，你将能够独立使用 Transformers 加载 BERT、GPT、Llama、Qwen 等不同类型的大语言模型，为后续学习 Trainer、LoRA 微调和模型部署打下基础。
+**适合人群**：已经完成 Hugging Face 环境准备、第一次接触大语言模型加载的学习者。本文会拆解“模型为什么需要 Tokenizer”“AutoModel 如何自动识别模型结构”“from_pretrained()到底做了什么”等核心概念，并通过完整代码演示加载模型、处理输入、执行推理全过程。完成本章后，你将能够使用 Transformers 的统一入口加载 BERT、GPT、Llama、Qwen 等不同类型模型，为后续学习 Trainer、LoRA 微调和模型部署打下基础。
+
+> 提前说明（很重要）：`AutoModel` / `AutoTokenizer` 提供的是**统一的加载入口**——用相似的代码就能把不同模型的权重和分词器读进来。但"能用同一套代码加载"**不等于**"能用同一套推理参数和对话方式使用"。不同模型（尤其 Llama、Qwen 等 decoder-only 对话模型）还涉及各自的 **chat template**（`tokenizer.apply_chat_template`）、`pad_token` / `eos_token` 设置、是否为 **gated/授权模型**（需在模型页接受许可）、以及 `trust_remote_code=True` 会执行仓库自带代码（需确认来源可信）等差异。本章主要用 BERT / GPT-2 演示通用的"加载—编码—前向/生成"流程，对话模型的完整用法见后续章节。
 
 ---
 
@@ -512,6 +514,56 @@ model = AutoModelForCausalLM.from_pretrained(
 
 ---
 
+## 5.3 decoder-only 小模型完整生成示例（GPT-2）
+
+前面的 BERT 示例只做到"前向计算得到隐藏状态"，并没有真正**生成文本**。这里用小巧的 decoder-only 模型 GPT-2 演示一个**可运行的完整生成流程**，让本章与后续 LLM 微调路线衔接（真实对话模型如 Llama/Qwen 用法类似，但要额外套用 chat template，见后续章节）：
+
+```python
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+checkpoint = "gpt2"
+
+tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+model = AutoModelForCausalLM.from_pretrained(checkpoint)
+
+# GPT-2 默认没有 pad_token，批量/生成时需要指定，常用 eos_token 兼作 pad
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device)
+model.eval()
+
+prompt = "Artificial intelligence is"
+inputs = tokenizer(prompt, return_tensors="pt").to(device)
+
+with torch.no_grad():
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=30,
+        do_sample=True,
+        temperature=0.8,
+        top_p=0.9,
+        pad_token_id=tokenizer.pad_token_id,
+    )
+
+text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+print(text)
+```
+
+要点说明：
+
+* 生成模型用 `AutoModelForCausalLM`（带语言模型头），不是 `AutoModel`；
+* decoder-only 模型常需显式设置 `pad_token`（GPT-2 默认没有）；
+* 生成用 `model.generate(...)` 而非直接前向，`max_new_tokens` 控制新生成长度；
+* `do_sample` / `temperature` / `top_p` 是采样参数，取值影响输出风格（不是"越大越好"，需按任务调）；
+* **对话模型**（Llama/Qwen 等）在此基础上，还需先用 `tokenizer.apply_chat_template(messages, ...)` 把多轮消息拼成模型期望的格式，再交给 `generate`——这属于后续章节内容。
+
+> 提示：GPT-2 是英文小模型，输出质量有限，这里只用于演示"decoder-only 生成"的最小可运行链路，不代表真实对话效果。
+
+---
+
 # 六、模型加载参数详解（参考文章⑦）
 
 ## 6.1 device_map
@@ -641,7 +693,7 @@ model = AutoModel.from_pretrained(
 | 错误                   | 原因              | 解决                |
 | -------------------- | --------------- | ----------------- |
 | Model name not found | 模型名称错误          | 检查Hub名称           |
-| 401 Unauthorized     | 模型需要权限          | 先 `hf auth login`（旧写法 `huggingface-cli login`），并确认已在模型页接受授权 |
+| 401 Unauthorized     | 需要身份认证/权限（可能不止一种）：未登录、Token 权限不足（scope 不含所需权限）、gated 模型未在页面接受授权、无该私有仓库访问权限          | 先 `hf auth login`（旧写法 `huggingface-cli login`）；到模型页**接受授权协议**；确认账号对该（私有）仓库**有访问权限**；检查 Token 的 **scope/权限**（读私有模型需相应读权限） |
 | CUDA out of memory   | 显存不足            | 降低batch或使用量化      |
 | Tokenizer mismatch   | 模型和Tokenizer不匹配 | 使用同checkpoint     |
 | 下载速度慢                | 网络问题            | 配置缓存或镜像           |
