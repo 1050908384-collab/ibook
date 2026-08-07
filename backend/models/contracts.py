@@ -82,12 +82,11 @@ class AnswerGenerationInput(BaseModel):
     question: str
     stage: StageInfo
     profile: UserProfile
-    # === memory 上下文（供 Agent3 生成更贴合用户的回答）===
-    # 当前阶段 block_id，用于技术类回答时检索本阶段相关的知识文档
+    practice_profile: PracticeProfile = Field(default_factory=PracticeProfile)
     block_id: Optional[str] = None
-    # 当前会话的历史问答记录，用于理解用户上下文（技术类+日常类都使用）
+    # 当前阶段学习包教程（供 Agent3 基于本阶段内容回答问题）
+    tutorial: Optional[str] = None
     qa_history: List[dict] = Field(default_factory=list)
-    # 用户画像摘要文本，供日常类回答整合用户个性化信息
     profile_summary: Optional[str] = None
 
 
@@ -104,6 +103,7 @@ class AnswerRevisionInput(BaseModel):
     answer: str
     stage: StageInfo
     profile: UserProfile
+    practice_profile: PracticeProfile = Field(default_factory=PracticeProfile)
     technical_errors: List[ReviewError] = Field(default_factory=list)
     quality_errors: List[ReviewError] = Field(default_factory=list)
 

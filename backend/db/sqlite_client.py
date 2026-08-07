@@ -1167,8 +1167,8 @@ class SQLiteClient:
 
                 unfinished = [stage for stage in stages if stage["status"] != "completed"]
                 remaining_hours = round(requested_total - completed_hours, 2)
-                if stages and not unfinished and remaining_hours != 0:
-                    raise ValueError("Target hours cannot change because every stage is completed")
+                if stages and not unfinished:
+                    pass  # 全部阶段已完成，无需再分配学时，直接更新目标值
                 if unfinished:
                     current_total = sum(float(stage["estimated_hours"] or 0) for stage in unfinished)
                     allocated = 0.0
