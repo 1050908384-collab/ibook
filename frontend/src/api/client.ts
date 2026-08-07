@@ -1,5 +1,9 @@
 import axios from 'axios';
 
+// UI preview is intentionally local-only: no request is sent until a backend
+// integration is explicitly enabled in the frontend environment.
+export const isUiPreviewMode = import.meta.env.VITE_UI_PREVIEW === 'true';
+
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
   || `${window.location.protocol}//${window.location.hostname}:8500/api/v1`;
 const BASE_URL = configuredBaseUrl.replace(/\/$/, '');

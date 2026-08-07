@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import {
   apiClient,
+  isUiPreviewMode,
   type ApiLearningPackage,
   type ApiProfile,
   type ApiStage,
@@ -2268,9 +2269,9 @@ export default function App() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
   const [reuseUserProfile, setReuseUserProfile] = useState(false);
-  const [checkingUserProfile, setCheckingUserProfile] = useState(() => !localStorage.getItem('sessionId'));
+  const [checkingUserProfile, setCheckingUserProfile] = useState(() => !isUiPreviewMode && !localStorage.getItem('sessionId'));
   const [profileCheckError, setProfileCheckError] = useState<string | null>(null);
-  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsLoading, setProjectsLoading] = useState(!isUiPreviewMode);
   const [projectsError, setProjectsError] = useState<string | null>(null);
 
   const beginAgentRun = (agentIds: AgentId[], reset = false) => {
@@ -2377,6 +2378,11 @@ export default function App() {
   };
 
   const refreshRemoteProjects = async () => {
+    if (isUiPreviewMode) {
+      setProjectsLoading(false);
+      setProjectsError(null);
+      return;
+    }
     setProjectsLoading(true);
     setProjectsError(null);
     try {
@@ -2491,10 +2497,25 @@ export default function App() {
   }, [stageConversations]);
 
   useEffect(() => {
+    if (isUiPreviewMode) {
+      setSessionId(DEMO_SESSION_ID);
+      setProfile(fallbackProfile);
+      setStage(fallbackStage);
+      setLearningPackage(fallbackPackage);
+      setMessages(demoMessages);
+      setSelectedConversationId(`${DEMO_SESSION_ID}:${fallbackStage.stage_num ?? 1}`);
+      setLearningProjects([createDemoProject()]);
+      setStageConversations([createDemoConversation()]);
+      setWorkflow('learning');
+      setAgentStatuses(restoreAgentStatuses({ hasProfile: true, hasLearningPackage: true, phase: 'learning' }));
+      setProjectsLoading(false);
+      return;
+    }
     void refreshRemoteProjects();
   }, []);
 
   useEffect(() => {
+    if (isUiPreviewMode) return;
     if (localStorage.getItem('sessionId')) {
       setCheckingUserProfile(false);
       return;
@@ -2552,6 +2573,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (isUiPreviewMode) return;
     const savedSessionId = localStorage.getItem('sessionId');
     if (!savedSessionId) return;
     if (isLocalSessionId(savedSessionId)) {

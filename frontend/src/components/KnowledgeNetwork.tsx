@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CircleAlert, Loader2, LocateFixed, Map as MapIcon, Target } from 'lucide-react';
-import { apiClient, type KnowledgeNetworkSubtopicStatus } from '../api/client';
+import { apiClient, isUiPreviewMode, type KnowledgeNetworkSubtopicStatus } from '../api/client';
 import { knowledgeGraphBlocks, type KnowledgeGraphSubtopic } from '../data/knowledgeGraph';
 import { buildKnowledgeNetworkLayout, type KnowledgeRouteEdge } from '../utils/knowledgeNetworkLayout';
 
@@ -59,7 +59,7 @@ export default function KnowledgeNetwork({
   showNodeDetails = true
 }: KnowledgeNetworkProps) {
   const [statuses, setStatuses] = useState<KnowledgeNetworkSubtopicStatus[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isUiPreviewMode);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -67,6 +67,11 @@ export default function KnowledgeNetwork({
   const viewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (isUiPreviewMode) {
+      setLoading(false);
+      setLoadFailed(false);
+      return;
+    }
     let active = true;
     setLoading(true);
     setLoadFailed(false);
