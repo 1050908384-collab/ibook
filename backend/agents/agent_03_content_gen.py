@@ -79,7 +79,7 @@ def _generate_sources(block_id: str, related_docs: List[Dict[str, Any]]) -> List
             source_id=src_id,
             source_type="knowledge_doc",
             title=doc.get("title", f"文档{idx+1}"),
-            locator=doc.get("doc_id", f"doc_{idx}"),
+            locator=doc.get("source") or doc.get("doc_id", f"doc_{idx}"),
             content_ref=f"chunk:{doc.get('chunk_id', f'chk_{idx}')}",
             source_version=doc.get("version", "2026-07-31"),
             metadata_json={"block_id": block_id},
@@ -112,9 +112,10 @@ class ContentGeneratorAgent(BaseAgent):
     ) -> Dict[str, Any]:
         block_id = stage_info.get("block_id", "")
         block_name = stage_info.get("block_name", "")
+        subtopic_id = stage_info.get("subtopic_id", "")
         gap = stage_info.get("gap", {})
 
-        related_docs = await self.vector_search_tool.search_by_block(block_id)
+        related_docs = await self.vector_search_tool.search_by_block(block_id, subtopic_id)
         tutorial = await self.llm_generate_tool.generate_tutorial(block_id, gap, related_docs)
         code_examples = await self.code_generation_tool.generate_code(block_id, stage_info)
         questions = await self.question_extract_tool.extract_questions(tutorial, stage_info)
@@ -273,7 +274,7 @@ class ContentGeneratorAgent(BaseAgent):
         return package
 
     async def answer_question(self, session_id: str, question: str,
-                              block_id: str = "", qa_history: list = None,
+                              block_id: str = "", subtopic_id: str = "", qa_history: list = None,
                               profile_summary: str = "") -> dict:
         """回答用户问题：先分类（technical/daily），再走对应流程。
 
@@ -303,7 +304,7 @@ class ContentGeneratorAgent(BaseAgent):
 
         # 本阶段相关知识文档检索（用 block_id 过滤）
         if block_id:
-            related_docs = await self.vector_search_tool.search_by_block(block_id)
+            related_docs = await self.vector_search_tool.search_by_block(block_id, subtopic_id)
         else:
             related_docs = await self.vector_search_tool.search_by_query(question, top_k=3)
 

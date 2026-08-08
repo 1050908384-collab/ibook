@@ -12,6 +12,8 @@ class StageInfo(BaseModel):
     block_name: str
     subtopic_id: Optional[str] = None
     subtopic_name: Optional[str] = None
+    subtopic_ids: List[str] = Field(default_factory=list)
+    subtopic_names: List[str] = Field(default_factory=list)
     estimated_hours: float = 1.0
     gap_skill: str
     prerequisites: List[str] = Field(default_factory=list)

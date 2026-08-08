@@ -20,15 +20,20 @@ from models.review import ReviewError, TechnicalReviewResult
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
 from scripts.insert_knowledge_data import (
     BLOCKS_FILE_PATH,
-    DOCS_FILE_PATH,
     QUESTIONS_FILE_PATH,
     SUBTOPICS_FILE_PATH,
+    VIDEO_CATALOG_PATH,
+    insert_block_resources,
     insert_knowledge_blocks,
-    insert_knowledge_docs,
     insert_knowledge_subtopics,
+    insert_learning_resources,
+    insert_subtopic_resources,
     insert_test_questions,
     load_required_list,
+    load_video_catalog,
 )
+from scripts.import_local_learning_materials import import_lessons
+from config import settings
 
 
 class RejectOnceTechnicalReviewer:
@@ -97,13 +102,19 @@ class AlwaysPersistReviewer:
 
 class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
+        # Windows may keep SQLite's file handle briefly after SQLAlchemy
+        # disposal.  Do not turn that OS cleanup delay into a flow-test error.
+        self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.database_url = f"sqlite:///{(Path(self.temp_dir.name) / 'flow.db').as_posix()}"
+        self.database_path = Path(self.temp_dir.name) / "flow.db"
+        self.original_database_url = settings.DATABASE_URL
+        settings.DATABASE_URL = self.database_url
         self.clients = []
 
     def tearDown(self):
         for client in self.clients:
             client.close()
+        settings.DATABASE_URL = self.original_database_url
         self.temp_dir.cleanup()
 
     def create_harness(self) -> Harness:
@@ -114,9 +125,13 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
     def _seed_reference_data(self, client: SQLiteClient) -> None:
         insert_knowledge_blocks(client, load_required_list(BLOCKS_FILE_PATH))
-        insert_knowledge_docs(client, load_required_list(DOCS_FILE_PATH))
         insert_knowledge_subtopics(client, load_required_list(SUBTOPICS_FILE_PATH))
         insert_test_questions(client, load_required_list(QUESTIONS_FILE_PATH))
+        resources, subtopic_mappings, block_mappings = load_video_catalog(VIDEO_CATALOG_PATH)
+        insert_learning_resources(client, resources)
+        insert_subtopic_resources(client, subtopic_mappings)
+        insert_block_resources(client, block_mappings)
+        import_lessons(self.database_path)
 
     async def test_complete_flow_survives_new_harness(self):
         first = self.create_harness()
@@ -130,6 +145,10 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         # LoRA 目标现在显式展开其环境先修，第一阶段必须先完成 Linux 安装。
         self.assertEqual("Linux环境与命令行操作", initial["stage_info"]["block_name"])
         self.assertEqual("KBS-01-00", initial["stage_info"]["subtopic_id"])
+        self.assertEqual(
+            ["KBS-01-00", "KBS-01-01", "KBS-01-02"],
+            initial["stage_info"]["subtopic_ids"],
+        )
 
         started = await first.start_stage(session_id)
         self.assertTrue(started["review_passed"])
@@ -155,6 +174,25 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
         final = self.create_harness().state_manager.get_session(session_id)
         self.assertEqual("active", final["status"])
+
+    async def test_learning_package_uses_imported_local_lesson(self):
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        await harness.process_initial_input(session_id, "I want to learn LoRA")
+
+        started = await harness.start_stage(session_id)
+        package = started["learning_package"]
+        article_sources = [
+            source for source in package["sources"]
+            if source["source_type"] == "knowledge_doc"
+        ]
+
+        self.assertTrue(article_sources)
+        self.assertTrue(article_sources[0]["locator"].startswith("http"))
+        self.assertTrue(any(
+            source.get("content_ref", "").startswith("LOCAL-")
+            for source in article_sources
+        ))
 
     async def test_subtopic_status_persists_after_database_client_reloads(self):
         client = SQLiteClient(self.database_url)

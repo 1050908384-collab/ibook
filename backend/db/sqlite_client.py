@@ -1041,6 +1041,16 @@ class SQLiteClient:
             or (not target_ids and row["block_id"] in target_blocks)
         ]
         total_hours = round(sum(float(row.get("estimated_hours") or 0) for row in selected), 2)
+        # The active path may start with prerequisite stages outside the
+        # learner's final target block. A target total must never shrink below
+        # time already completed on that path.
+        with self.Session() as session:
+            completed_stage_hours = session.execute(text("""
+                SELECT COALESCE(SUM(estimated_hours), 0)
+                FROM stage_progress
+                WHERE session_id = :session_id AND status = 'completed'
+            """), {"session_id": session_id}).scalar_one()
+        total_hours = max(total_hours, round(float(completed_stage_hours or 0), 2))
         progress = round(
             sum(float(row.get("mastery_score") or 0) for row in selected) / len(selected), 4
         ) if selected else 0.0

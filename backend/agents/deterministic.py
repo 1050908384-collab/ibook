@@ -446,10 +446,16 @@ class DeterministicDiagnosticAgent:
 
         candidates = self.db_client.list_learnable_subtopics(
             session_id=request.session_id,
+            preferred_block_id=preferred_block.get("block_id") or gap.block_id,
             max_hours=request.profile.daily_hours,
         )
         if hard_levels:
-            candidates = [item for item in candidates if item["subtopic_id"] in hard_levels]
+            # Include nodes that will become unlocked after an earlier item in
+            # this same stage. Their prerequisites are checked again below.
+            candidates = [
+                item for item in self.db_client.list_subtopic_statuses(request.session_id)
+                if int(item.get("status", -1)) == -1 and item["subtopic_id"] in hard_levels
+            ]
             candidates.sort(
                 key=lambda item: (
                     hard_levels[item["subtopic_id"]],
@@ -458,6 +464,23 @@ class DeterministicDiagnosticAgent:
                     item["subtopic_id"],
                 )
             )
+            # A goal that directly names its own block (for example, "learn
+            # Python") should fill the daily budget with the following
+            # sequential subtopics in that same block. Do not do this while
+            # traversing prerequisites for a different final target such as
+            # LoRA, because those blocks are only preparatory.
+            if candidates and candidates[0].get("block_id") == preferred_block.get("block_id"):
+                planned_ids = {item["subtopic_id"] for item in candidates}
+                for item in self.db_client.list_subtopic_statuses(request.session_id):
+                    if (
+                        int(item.get("status", -1)) == -1
+                        and item.get("block_id") == preferred_block.get("block_id")
+                        and item["subtopic_id"] not in planned_ids
+                    ):
+                        candidates.append(item)
+                candidates.sort(key=lambda item: (
+                    int(item.get("sequence_index") or 0), item["subtopic_id"],
+                ))
         
         # Fallback: 当没有可学习的 subtopic 时，直接使用 gap 信息生成阶段
         if not candidates:
@@ -502,7 +525,36 @@ class DeterministicDiagnosticAgent:
             )
             return StagePlanningOutput(stage=stage)
 
-        subtopic = candidates[0]
+        # A stage consumes the learner's daily budget. Keep catalog order and
+        # only group currently unlocked nodes from the same planned closure.
+        selected_subtopics = []
+        budget = max(0.5, min(8.0, float(request.profile.daily_hours or 2.0)))
+        total_hours = 0.0
+        # Build this from the complete status list rather than using the
+        # block-scoped helper: prerequisites can belong to an earlier block.
+        completed_ids = {
+            item["subtopic_id"]
+            for item in self.db_client.list_subtopic_statuses(request.session_id)
+            if int(item.get("status", -1)) == 1
+        }
+        for candidate in candidates:
+            if selected_subtopics and candidate.get("block_id") != selected_subtopics[0].get("block_id"):
+                continue
+            prerequisites = candidate.get("prerequisites") or []
+            if isinstance(prerequisites, str):
+                try:
+                    prerequisites = json.loads(prerequisites)
+                except json.JSONDecodeError:
+                    prerequisites = []
+            if any(prerequisite not in completed_ids for prerequisite in prerequisites):
+                continue
+            hours = max(0.0, float(candidate.get("estimated_hours") or 0.0))
+            if selected_subtopics and hours > 0 and total_hours + hours > budget:
+                break
+            selected_subtopics.append(candidate)
+            total_hours += hours
+            completed_ids.add(candidate["subtopic_id"])
+        subtopic = selected_subtopics[0]
         block_info = preferred_block
         if subtopic.get("block_id") and subtopic.get("block_id") != preferred_block.get("block_id"):
             try:
@@ -538,18 +590,11 @@ class DeterministicDiagnosticAgent:
         stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, stable_key))
         block_id = subtopic.get("block_id") or block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
         block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
-        subtopic_hours = subtopic.get("estimated_hours")
-        if subtopic_hours is None:
-            subtopic_hours = (
-                block_info.get("estimated_hours")
-                or generated_stage.get("estimated_hours")
-                or 2.0
-            )
-        # 环境准备等 0h 子知识点不计学时，但作为独立学习阶段需给出合理预估，
-        # 否则 learner 会看到“预估时长：0 小时”这种不合理的展示。
-        if float(subtopic_hours) <= 0:
-            subtopic_hours = 0.5
-        estimated_hours = float(subtopic_hours)
+        estimated_hours = round(total_hours, 1)
+        # Environment setup may be catalogued as 0h. When it is the only
+        # selected item, present a practical minimum rather than 0 hours.
+        if estimated_hours <= 0:
+            estimated_hours = 0.5
         estimated_hours, recommended_daily_hours, suggested_study_days = self._stage_time_plan(
             estimated_hours,
             request.profile.daily_hours,
@@ -557,6 +602,11 @@ class DeterministicDiagnosticAgent:
         prerequisites = subtopic.get("prerequisites")
         if prerequisites is None:
             prerequisites = block_info.get("prerequisites") or generated_stage.get("prerequisites") or gap.prerequisites
+        if isinstance(prerequisites, str):
+            try:
+                prerequisites = json.loads(prerequisites)
+            except json.JSONDecodeError:
+                prerequisites = []
 
         stage = StageInfo(
             stage_id=stage_id,
@@ -565,6 +615,8 @@ class DeterministicDiagnosticAgent:
             block_name=block_name,
             subtopic_id=subtopic.get("subtopic_id"),
             subtopic_name=subtopic.get("subtopic_name"),
+            subtopic_ids=[item.get("subtopic_id") for item in selected_subtopics if item.get("subtopic_id")],
+            subtopic_names=[item.get("subtopic_name") for item in selected_subtopics if item.get("subtopic_name")],
             gap_skill=gap.skill,
             estimated_hours=estimated_hours,
             prerequisites=prerequisites,
@@ -580,7 +632,7 @@ class DeterministicDiagnosticAgent:
         )
         _agent_log(
             "Agent1",
-            f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopic={stage.subtopic_id or '-'} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
+            f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopics={','.join(stage.subtopic_ids) or '-'} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
         )
         return StagePlanningOutput(stage=stage)
 
@@ -865,32 +917,51 @@ class DeterministicContentAgent:
         self.video_search_tool = VideoSearchTool()
         self.learning_resource_tool = LearningResourceTool()
 
+    @staticmethod
+    def _stage_subtopic_ids(stage: StageInfo) -> list[str]:
+        ids = list(getattr(stage, "subtopic_ids", []) or [])
+        if not ids and stage.subtopic_id:
+            ids = [stage.subtopic_id]
+        return list(dict.fromkeys(item for item in ids if item))
+
+    async def _search_stage_docs(self, stage: StageInfo) -> list[dict]:
+        local_lessons = self.vector_search_tool.get_local_lessons(
+            stage.block_id, self._stage_subtopic_ids(stage),
+        )
+        if local_lessons:
+            return local_lessons
+
+        # Search snippets are used only when this stage has no imported local
+        # lesson. They remain useful for incomplete material collections.
+        docs = []
+        for subtopic_id in self._stage_subtopic_ids(stage):
+            subtopic_docs = await self.vector_search_tool.search_by_block(
+                stage.block_id, subtopic_id, top_k=6,
+            )
+            for doc in subtopic_docs:
+                doc["subtopic_id"] = subtopic_id
+            docs.extend(subtopic_docs)
+        return list({item.get("chunk_id"): item for item in docs if item.get("chunk_id")}.values())
+
+    async def _get_stage_videos(self, stage: StageInfo) -> list[dict]:
+        videos = []
+        for subtopic_id in self._stage_subtopic_ids(stage):
+            videos.extend(await self.learning_resource_tool.get_recommended_videos(stage.block_id, subtopic_id))
+        return list({item.get("resource_id"): item for item in videos if item.get("resource_id")}.values())
+
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
         _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
         stage = request.stage
         related_docs = []
         try:
-            related_docs = await self.vector_search_tool.search_by_block(stage.block_id)
+            related_docs = await self._search_stage_docs(stage)
         except Exception:
             related_docs = []
-        recommended_videos = await self.learning_resource_tool.get_recommended_videos(
-            stage.block_id, stage.subtopic_id
-        )
-        tutorial = (
-            f"# {stage.block_name}\n\n"
-            f"本阶段目标是理解 {stage.block_name} 的核心概念，并完成一次基础练习。\n\n"
-            "## 学习步骤\n\n"
-            "1. 阅读核心概念。\n"
-            "2. 用自己的语言复述。\n"
-            "3. 完成阶段测试题。\n"
-        )
+        recommended_videos = await self._get_stage_videos(stage)
+        tutorial = self._build_retrieved_material_tutorial(stage, related_docs)
         practice_note = self._practice_note(request.practice_profile)
         if practice_note:
             tutorial += f"\n## 实训提示\n\n{practice_note}\n"
-        if related_docs:
-            excerpts = "\n".join(f"- {item.get('content', '')[:120]}" for item in related_docs[:3])
-            tutorial += f"\n\n## 相关知识片段\n\n{excerpts}\n"
-
         extracted_questions = []
         try:
             extracted_questions = await self.question_extract_tool.extract_questions(
@@ -909,13 +980,14 @@ class DeterministicContentAgent:
 
         sources = []
         if related_docs:
-            for i, doc in enumerate(related_docs[:3]):
+            for i, doc in enumerate(related_docs):
                 doc_id = doc.get("doc_id") or doc.get("id") or f"doc_{i}"
                 sources.append(Source(
                     source_id=f"src_{doc_id}",
                     source_type="knowledge_doc",
                     title=doc.get("title", ""),
-                    locator=doc.get("chunk_id") or doc_id,
+                    locator=doc.get("source") or doc.get("chunk_id") or doc_id,
+                    content_ref=doc.get("chunk_id") or doc_id,
                 ))
 
         for video in recommended_videos:
@@ -984,8 +1056,32 @@ class DeterministicContentAgent:
             claims=claims,
             recommended_videos=recommended_videos,
         )
-        _agent_log("Agent3", f"content:done | docs={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
+        _agent_log("Agent3", f"content:done | materials={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
+
+    def _build_retrieved_material_tutorial(self, stage: StageInfo, docs: list[dict]) -> str:
+        """Build a usable package directly from the local lessons when LLM output is unavailable."""
+        names_by_id = dict(zip(stage.subtopic_ids, stage.subtopic_names))
+        parts = [
+            f"# {stage.block_name}",
+            f"本阶段预计 {stage.estimated_hours:g} 小时，覆盖：" + "、".join(
+                stage.subtopic_names or [stage.subtopic_name or stage.block_name]
+            ),
+        ]
+        for subtopic_id in self._stage_subtopic_ids(stage):
+            topic_docs = [item for item in docs if item.get("subtopic_id") == subtopic_id]
+            heading = names_by_id.get(subtopic_id, subtopic_id)
+            parts.append(f"## {heading}")
+            if not topic_docs:
+                parts.append("本知识点暂未匹配到本地学习资料。")
+                continue
+            source = topic_docs[0].get("source")
+            title = topic_docs[0].get("title") or heading
+            if source:
+                parts.append(f"资料来源：[{title}]({source})")
+            parts.append("### 学习内容")
+            parts.extend(item.get("content", "").strip() for item in topic_docs[:3] if item.get("content"))
+        return "\n\n".join(parts)
 
     @staticmethod
     def _practice_note(practice_profile: PracticeProfile) -> str:
@@ -1087,7 +1183,9 @@ class DeterministicContentAgent:
         related_docs = []
         try:
             if request.block_id:
-                related_docs = await self.vector_search_tool.search_by_block(request.block_id)
+                related_docs = await self.vector_search_tool.search_by_block(
+                    request.block_id, request.stage.subtopic_id or ""
+                )
             else:
                 related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
         except Exception:
@@ -1351,7 +1449,12 @@ class HybridContentAgent(DeterministicContentAgent):
         output = await super().run(request)
         _agent_log("Agent3", f"content:llm_enhance | block={request.stage.block_name}")
         stage = request.stage
+        related_docs = await self._search_stage_docs(stage)
         learning_profile = request.learning_profile.model_dump(mode="json") if request.learning_profile else {}
+        material_context = "\n\n".join(
+            f"## 资料：{item.get('title', '')}\n{item.get('content', '')}"
+            for item in related_docs
+        )
         prompt = f"""请为学习阶段“{stage.block_name}”生成一份Markdown教程。
 
 学习者画像：{json.dumps(learning_profile, ensure_ascii=False)}
@@ -1364,6 +1467,9 @@ class HybridContentAgent(DeterministicContentAgent):
 4. 根据学习者画像和资料库选择内容、示例难度和表达方式；
 5. 实训条件仅用于内容可执行性，不得改变 Agent1 的知识点路径，也不得将本地或云端选择作为教程目标。
 
+本节经检索确认的知识库资料：
+{material_context or '无可用资料，不得补充未验证的技术细节。'}
+
 内容生成规范：
 {self.content_skill_context}
 """
@@ -1372,9 +1478,11 @@ class HybridContentAgent(DeterministicContentAgent):
             system_prompt="你是严谨、清晰的个性化学习助手。",
             temperature=0.4,
         )
-        if self._is_valid_response(tutorial):
+        if self._is_usable_tutorial(tutorial, stage, related_docs):
             output.learning_package.tutorial = tutorial
             _agent_log("Agent3", f"content:llm_done | tutorial_len={len(tutorial)}")
+        else:
+            _agent_log("Agent3", "content:llm_invalid -> retrieved_material_fallback")
         return output
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
@@ -1452,7 +1560,7 @@ class HybridContentAgent(DeterministicContentAgent):
         related_docs = []
         try:
             if request.block_id:
-                related_docs = await self.vector_search_tool.search_by_block(request.block_id)
+                related_docs = await self._search_stage_docs(request.stage)
             else:
                 related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
         except Exception:
@@ -1703,6 +1811,27 @@ class HybridContentAgent(DeterministicContentAgent):
 
     def _is_valid_response(self, response: str) -> bool:
         return bool(response.strip()) and not response.startswith("Error:")
+
+    def _is_usable_tutorial(
+        self, response: str, stage: StageInfo, related_docs: list[dict],
+    ) -> bool:
+        """Reject successful but off-task local-model responses."""
+        if not self._is_valid_response(response):
+            return False
+        text = response.strip()
+        review_markers = (
+            "审查结果", "顶层函数", "严重性", "代码审查", "审核结果",
+            "输入输出规范", "异常处理规范", "配置化与安全规范", "代码风格参考标准",
+            "错误类型及其处理", "Google Python Style Guide", "OWASP",
+        )
+        if any(marker in text for marker in review_markers):
+            return False
+        # A complete learning package must be substantial enough to cover the
+        # imported stage materials. A short response is usually an unrelated
+        # template, even when it happens to be valid Markdown.
+        if related_docs and len(text) < 3000:
+            return False
+        return text.startswith("#") or stage.block_name in text
 
 
 class DeterministicTechnicalReviewAgent:

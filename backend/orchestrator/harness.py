@@ -509,10 +509,13 @@ class Harness:
         stage.accuracy = accuracy
         stage.strategy_used = decision.strategy
 
-        if stage.subtopic_id:
+        stage_subtopic_ids = list(getattr(stage, "subtopic_ids", []) or [])
+        if not stage_subtopic_ids and stage.subtopic_id:
+            stage_subtopic_ids = [stage.subtopic_id]
+        for subtopic_id in stage_subtopic_ids:
             self.state_manager.db_client.set_subtopic_status(
                 session_id=session_id,
-                subtopic_id=stage.subtopic_id,
+                subtopic_id=subtopic_id,
                 status=1 if accuracy >= 0.8 else 0,
                 mastery_score=1.0 if accuracy >= 0.8 else max(0.4, round(accuracy, 3)),
                 last_accuracy=accuracy,

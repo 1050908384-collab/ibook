@@ -74,7 +74,8 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
 
     query = input_data.get("query", "")
     block_id = input_data.get("block_id", "")
-    top_k = min(max(input_data.get("top_k", 3), 1), 5)
+    subtopic_id = input_data.get("subtopic_id", "")
+    top_k = min(max(input_data.get("top_k", 3), 1), 12)
 
     if not query.strip() and not block_id:
         return {
@@ -88,7 +89,7 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
         if use_mock:
             return _mock_search(input_data, top_k)
 
-        results, db_available = _search_chunks(query, block_id, top_k)
+        results, db_available = _search_chunks(query, block_id, subtopic_id, top_k)
         return {
             "status": "success",
             "data": {
@@ -111,17 +112,21 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
 # ------------------------------------------------------------------
 # 真实模式：Chroma 向量检索
 # ------------------------------------------------------------------
-def _search_chunks(query: str, block_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
+def _search_chunks(query: str, block_id: str, subtopic_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
     """
     Chroma 向量检索：从 knowledge_base 集合做语义检索。
     注：SQLite knowledge_chunks 表作为回退（Chroma 无数据时）。
     """
+    # The current Chroma collection predates subtopic metadata.  Exact lesson
+    # retrieval must therefore use SQLite until that derived index is rebuilt.
+    if subtopic_id:
+        return _search_sqlite_fallback(query, block_id, subtopic_id, top_k)
     chroma_results = _search_chroma(query, block_id, top_k)
     if chroma_results:
         return chroma_results, True
 
     logger.info("Chroma 无结果，回退 SQLite 关键词检索")
-    return _search_sqlite_fallback(query, block_id, top_k)
+    return _search_sqlite_fallback(query, block_id, subtopic_id, top_k)
 
 
 def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]]:
@@ -172,7 +177,7 @@ def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]
         return []
 
 
-def _search_sqlite_fallback(query: str, block_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
+def _search_sqlite_fallback(query: str, block_id: str, subtopic_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
     """SQLite 关键词检索回退（Chroma 无数据时使用）。"""
     db_path = _get_db_path()
     if not db_path.exists():
@@ -183,9 +188,26 @@ def _search_sqlite_fallback(query: str, block_id: str, top_k: int) -> tuple[List
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
             query_words = query.split()
+            if subtopic_id:
+                where_scope = "c.block_id = ? AND d.subtopic_id = ?"
+                scope_params = [block_id, subtopic_id]
+            elif block_id:
+                where_scope = "c.block_id = ?"
+                scope_params = [block_id]
+            else:
+                where_scope = "1 = 1"
+                scope_params = []
+
             if not query_words:
-                conn.close()
-                return [], True
+                rows = conn.execute(f"""
+                    SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
+                    FROM knowledge_chunks c
+                    JOIN knowledge_docs d ON c.doc_id = d.doc_id
+                    WHERE {where_scope}
+                    ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, c.chunk_index
+                    LIMIT ?
+                """, scope_params + [top_k]).fetchall()
+                return _rows_to_results(rows, query_words), True
 
             like_clauses = " OR ".join(["c.content LIKE ?" for _ in query_words])
             params = [f"%{word}%" for word in query_words]
@@ -195,11 +217,11 @@ def _search_sqlite_fallback(query: str, block_id: str, top_k: int) -> tuple[List
                     SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
                     FROM knowledge_chunks c
                     LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                    WHERE c.block_id = ? AND ({like_clauses})
-                    ORDER BY d.created_at DESC
+                    WHERE {where_scope} AND ({like_clauses})
+                    ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, d.created_at DESC
                     LIMIT ?
                     """
-                params = [block_id] + params + [top_k]
+                params = scope_params + params + [top_k]
             else:
                 sql = f"""
                     SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
@@ -216,22 +238,23 @@ def _search_sqlite_fallback(query: str, block_id: str, top_k: int) -> tuple[List
         finally:
             conn.close()
 
-        results = []
-        for i, r in enumerate(rows):
-            overlap = sum(1 for w in query_words if w.lower() in (r[2] or "").lower())
-            similarity = round(min(1.0, 0.3 + overlap / max(len(query_words), 1) * 0.7), 4)
-            results.append({
-                "chunk_id": r[0],
-                "block_id": r[1],
-                "content": r[2][:500] + "..." if len(r[2]) > 500 else r[2],
-                "source": r[3] or "",
-                "similarity": similarity,
-                "title": r[5] or "",
-            })
-        return results, True
+        return _rows_to_results(rows, query_words), True
     except sqlite3.Error as e:
         logger.warning("SQLite 回退检索失败: %s", e)
         return [], False
+
+
+def _rows_to_results(rows: list[tuple], query_words: list[str]) -> List[Dict[str, Any]]:
+    results = []
+    for r in rows:
+        overlap = sum(1 for word in query_words if word.lower() in (r[2] or "").lower())
+        similarity = round(min(1.0, 0.3 + overlap / max(len(query_words), 1) * 0.7), 4) if query_words else 1.0
+        results.append({
+            "chunk_id": r[0], "block_id": r[1],
+            "content": r[2][:500] + "..." if len(r[2]) > 500 else r[2],
+            "source": r[3] or "", "similarity": similarity, "title": r[5] or "",
+        })
+    return results
 
 
 def _get_chroma_path() -> Path:
@@ -321,11 +344,14 @@ class VectorSearchTool:
             return []
         return result["data"].get("results", [])
 
-    async def search_by_block(self, block_id: str) -> List[Dict[str, Any]]:
+    async def search_by_block(
+        self, block_id: str, subtopic_id: str = "", top_k: int = 3,
+    ) -> List[Dict[str, Any]]:
         result = vector_search({
             "query": "",
             "block_id": block_id,
-            "top_k": 3,
+            "subtopic_id": subtopic_id,
+            "top_k": top_k,
         }, config=self._default_config)
         if result.get("status") != "success":
             return []
@@ -340,3 +366,35 @@ class VectorSearchTool:
         if result.get("status") != "success":
             return []
         return result["data"].get("results", [])
+
+    def get_local_lessons(self, block_id: str, subtopic_ids: list[str]) -> List[Dict[str, Any]]:
+        """Load complete imported lessons for a learning package, not search snippets."""
+        if not block_id or not subtopic_ids:
+            return []
+        db_path = _get_db_path()
+        if not db_path.exists():
+            return []
+        placeholders = ", ".join("?" for _ in subtopic_ids)
+        try:
+            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            try:
+                rows = connection.execute(f"""
+                    SELECT doc_id, block_id, subtopic_id, title, content, source
+                    FROM knowledge_docs
+                    WHERE block_id = ?
+                      AND subtopic_id IN ({placeholders})
+                      AND doc_id LIKE 'LOCAL-%'
+                    ORDER BY subtopic_id, doc_id
+                """, [block_id, *subtopic_ids]).fetchall()
+            finally:
+                connection.close()
+        except sqlite3.Error as error:
+            logger.warning("读取本地学习资料失败: %s", error)
+            return []
+        return [
+            {
+                "doc_id": row[0], "block_id": row[1], "subtopic_id": row[2],
+                "title": row[3] or "", "content": row[4] or "", "source": row[5] or "",
+            }
+            for row in rows
+        ]
