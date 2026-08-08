@@ -70,7 +70,7 @@ Block 的内存布局：
 [num_layers, 2(K/V), num_heads, block_size=16, head_dim]
 ```
 
-**为什么这样写**：`block_size=16` 是 vLLM 的默认值，这个大小在 GPU 内存访问对齐和显存粒度之间取得了平衡。太小会增加块表管理开销，太大会增加内部碎片。
+**为什么这样写**：`block_size=16` 是部分 vLLM CUDA 版本上常见的默认值，这个大小在 GPU 内存访问对齐和显存粒度之间取得平衡：太小会增加块表管理开销，太大会增加内部碎片。需要注意，**默认值与可选范围可能随引擎版本、硬件平台变化**，这里的 16 只是特定版本/平台的示例，不是永久固定规则；实际请以 `vllm serve --help` 或所装版本文档为准。
 
 ### 2.2 Block Table——逻辑到物理的映射（②③）
 
@@ -80,16 +80,19 @@ Block 的内存布局：
 请求当前有 50 个 token（需要约 4 个 Block，50÷16=3.125→向上取整=4）
 
 Block Table（逻辑 Block → 物理 Block ID）：
-  逻辑 Block 0 → 物理 Block 23
-  逻辑 Block 1 → 物理 Block 45   （不连续！）
-  逻辑 Block 2 → 物理 Block 7
-  逻辑 Block 3 → 物理 Block 12
+  逻辑 Block 0 → 物理 Block 23   （存 token 0~15，已满）
+  逻辑 Block 1 → 物理 Block 45   （存 token 16~31，已满，且不连续！）
+  逻辑 Block 2 → 物理 Block 7    （存 token 32~47，已满）
+  逻辑 Block 3 → 物理 Block 12   （存 token 48~49，只用了 2 个槽位，还没满）
 
-当生成第 51 个 token 时：
-  - 当前 Block 3 已满（存了 token 48~50）
-  - 从全局 Free Block Pool 拿一个空闲 Block（比如 Block 67）
-  - 更新 Block Table：逻辑 Block 4 → 物理 Block 67
+当生成第 51、52…个 token 时：
+  - Block 3 还有空槽（16 个槽位里只用了 2 个），新 token 继续写入 Block 3
+  - 直到 Block 3 写满 16 个 token（即写完逻辑位置 48~63）后，
+    才从全局 Free Block Pool 申请一个新的空闲 Block（比如 Block 67），
+    并更新 Block Table：逻辑 Block 4 → 物理 Block 67
 ```
+
+**分配粒度说明**：Block 是"写满 `block_size` 个 token 才换下一块"的分配粒度。50 个 token 时逻辑 Block 3 只占用了 2 个槽位、远未写满，因此后续 token 应继续追加进 Block 3，而不是立刻申请新块——只有当前 Block 的 16 个槽位全部用完，才会向 Free Block Pool 索取新块。这正是分页分配"按块粒度、块内连续填充"的关键。
 
 **为什么这样写**：Block Table 是 PagedAttention 的核心数据结构。查询时只需计算 `block_number = position // block_size` 和 `offset = position % block_size`，即可通过 `block_table[block_number]` 找到物理 Block，时间复杂度 O(1)。
 
@@ -288,15 +291,21 @@ PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请�
 
 **为什么这样写**：Prefix Caching 通过哈希（`hash(token_ids[0:block_size])`）检测是否已有相同前缀的 Block，有则直接引用，O(1) 命中检测。这在 RAG、Chat 等**共享前缀占比高**的多轮对话场景中能带来可观的额外吞吐提升（具体幅度取决于前缀长度占比与命中率，前缀越长、命中越多收益越大，需以实测为准）。
 
-### 5.2 Copy-on-Write 机制（③）
+### 5.2 后缀写入与 Copy-on-Write 机制（③）
 
-当共享前缀的多个请求进入生成阶段时，新产生的 token 需要写入 KV Cache。此时触发 **Copy-on-Write**：
+多个请求共享同一段前缀 Block 后，各自继续生成时会产生不同的后缀 token。这里需要分清两种情况：
 
-1. 复制共享 Block → 创建私有副本
+- **已缓存的完整前缀 Block 保持只读**，可以被多个请求安全共享，不需要复制。
+- **新生成的后缀**通常写入各请求**自己新申请的私有 Block**，天然互不影响，这一步本身并不需要 Copy-on-Write。
+- **Copy-on-Write（写时复制）更典型地出现在"确实需要修改某个被共享的 Block"的场景**，例如并行采样（`n>1`）或束搜索中，多条序列共享同一个尚未写满的 Block、却要各自写入不同 token 时。此时才复制该共享 Block、生成私有副本再写入：
+
+```
+1. 需要修改某个仍被多个序列共享的 Block 时，才复制它 → 创建私有副本
 2. 在私有副本上写入新 token 的 K/V
 3. 原共享 Block 的引用计数减 1
+```
 
-**为什么这样写**：Copy-on-Write 确保共享只发生在"只读"的前缀部分，生成阶段各自独立，不会互相污染。
+**为什么这样写**：Prefix Caching 的常态是"只读共享前缀 + 各写各的私有后缀 Block"，并不会每次生成都触发 Copy-on-Write。只有当多条序列需要在**同一个共享 Block**上写入不同内容时，写时复制才登场，用来保证共享只发生在只读部分、写入互不污染。把 COW 说成"共享前缀一进入生成阶段就必然发生"是不准确的。
 
 ---
 
@@ -328,7 +337,7 @@ PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请�
 
 | 参数 | 作用 | 建议值 |
 |------|------|--------|
-| `block_size` | 每个 Block 存储的 token 数 | 16（默认，一般不改） |
+| `block_size` | 每个 Block 存储的 token 数 | 特定版本/平台常见默认 16，一般不改；不同引擎版本/硬件可能不同 |
 | `gpu_memory_utilization` | GPU 显存使用比例 | 0.85~0.95 |
 | `max_num_seqs` | 最大并发序列数 | 根据显存调整，256~512 |
 | `enable_prefix_caching` | 前缀缓存开关 | `True`（RAG/Chat 场景必开） |
@@ -339,7 +348,7 @@ PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请�
 
 | 坑点 | 现象 | 解决方案 |
 |------|------|---------|
-| **Block 大小设置不当** | `block_size` 太小导致块表过大，管理开销高；太大导致内部碎片 | 保持默认 16，除非有特殊需求 |
+| **Block 大小设置不当** | `block_size` 太小导致块表过大，管理开销高；太大导致内部碎片 | 通常保持所装版本的默认值（部分版本为 16），除非有特殊需求并已实测 |
 | **Prefix Caching 未开启** | 相同 system prompt 的多个请求各存一份 KV | 设置 `enable_prefix_caching=True` |
 | **显存利用率设太高** | OOM 或频繁 preemption（请求被抢占重算） | 降低 `gpu_memory_utilization` 到 0.85 |
 | **不理解 Paging 和 Batching 的关系** | 面试答不全 | 记住：**调度的灵活性建立在显存管理的灵活性之上** |
@@ -353,13 +362,13 @@ PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请�
 | 知识点 | 核心要点 |
 |--------|----------|
 | **PagedAttention 思想** | 借鉴 OS 虚拟内存分页，将 KV Cache 切成固定 Block，按需非连续分配 |
-| **Block** | 默认 16 tokens 的 K/V 存储单元，是显存分配的最小粒度 |
+| **Block** | K/V 存储的最小分配粒度；块内可容纳的 token 数由 `block_size` 决定（部分版本默认 16，随版本/平台变化） |
 | **Block Table** | 记录逻辑 token 位置到物理 Block ID 的映射，查询 O(1) |
 | **解决碎片** | 消灭内部碎片（按需分配）和外部碎片（固定大小块），显存利用率从"只有几成"提升到接近满载（百分比为示意） |
 | **Continuous Batching** | 每步迭代动态调度，完成即释放、新请求即加入，GPU 持续满载 |
 | **Scheduler 策略** | Decode 优先 + Prefill 填充 + Chunked Prefill 防阻塞 |
 | **两大机制配合** | Paging 管显存回收，Batching 管请求调度，后者建立在前者之上 |
-| **Prefix Caching** | 相同前缀请求共享 Block，Copy-on-Write 保证生成独立 |
+| **Prefix Caching** | 相同前缀请求只读共享 Block，后缀写各自私有 Block；Copy-on-Write 仅在需修改共享 Block（如并行采样/束搜索）时触发 |
 | **吞吐提升** | PagedAttention（省显存、提并发）与 Continuous Batching（提 GPU 利用率）叠加，通常能带来数倍到约一个数量级的吞吐提升（具体倍数依模型、序列长度、并发与对比基线而定，需实测，网上流传的"×N"数字多为特定场景示意） |
 
 ---
@@ -368,10 +377,10 @@ PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请�
 
 1. **把 Paging 和 Batching 当成一对来记**——单独理解任何一个都不完整，两者的配合才是 vLLM 快的原因
 2. **面试标准答法**：先讲 PagedAttention 解决显存碎片，再讲 Continuous Batching 解决调度浪费，最后强调"调度灵活性建立在显存管理灵活性之上"
-3. **Prefix Caching 是免费午餐**——RAG 和 Chat 场景必开，相同前缀只存一份，省显存又省计算
+3. **共享前缀场景优先开 Prefix Caching**——RAG 和多轮 Chat 里相同前缀只存一份，能省显存又省计算，但收益取决于前缀占比和命中率，需以实测为准
 4. **不要手动凑 batch**——vLLM 的 Scheduler 比你更聪明，把请求丢进去让它自动调度
 5. **监控 preemption 次数**——如果频繁出现请求被抢占重算，说明 `gpu_memory_utilization` 设太高了
-6. **Block size 一般不动**——16 是 vLLM 团队调优后的默认值，除非你有明确的性能分析数据
+6. **Block size 一般沿用默认**——部分版本默认 16 已是常见调优结果，默认值随版本/平台可能不同，除非你有明确的性能分析数据再调整
 
 ---
 

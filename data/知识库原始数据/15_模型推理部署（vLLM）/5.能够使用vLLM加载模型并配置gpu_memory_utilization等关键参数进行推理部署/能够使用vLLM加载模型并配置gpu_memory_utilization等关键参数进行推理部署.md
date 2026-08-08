@@ -23,7 +23,7 @@
 **适合人群**：已完成 vLLM 环境准备、采样参数配置和 PagedAttention/Continuous Batching 原理学习，希望亲手使用 vLLM 加载模型、配置关键参数并部署为生产可用推理服务的进阶学习者。每一步都拆解到"写什么、为什么这样写"，你只需要跟着敲。完成本章后，你将能够独立使用 `vllm serve` 命令启动推理服务，熟练配置 `gpu_memory_utilization`、`max_model_len`、`tensor_parallel_size` 等关键参数，并掌握显存优化与多卡部署技巧。
 
 **预计学习时长**：约 1.5 小时  
-**环境准备**：复用上一章的 vLLM 环境（Python 3.10~3.13、vLLM 已安装、NVIDIA GPU 显存 ≥16GB）
+**环境准备**：复用上一章的 vLLM 环境（Python 版本以所装 vLLM 发行说明为准、vLLM 已安装、NVIDIA GPU；具体显存需求随所选模型而定，本章 7B 示例约需 16GB 起）
 
 ---
 
@@ -82,17 +82,36 @@ vLLM 提供两种主要部署方式（②）：
 
 ### 2.2 模型规模与显存对照表（①）
 
-> **说明**：下表数值为**数量级估算**（权重按参数量×每参数字节数粗算，KV Cache 与序列长度、batch、KV 头数/GQA、精度等强相关），实际占用随模型结构与部署配置浮动，请以启动日志中 vLLM 打印的实测分配为准。
+> **说明**：下表只给 **权重的数量级估算**（权重 ≈ 参数量 × 每参数字节数，相对确定）。**KV Cache 单独列在 2.2.1 用公式说明**——它高度依赖 KV 头数（GQA/MQA）、层数、head_dim、缓存精度与序列长度/并发，用一个固定数字很容易误导。所有数值都是量级参考，实际占用请以启动日志中 vLLM 打印的实测分配为准。
 
-| 模型 | FP16 权重 | INT4 权重 | FP8 权重 | KV Cache（8K 上下文，单请求，约） |
-|------|----------|----------|---------|---------------------------|
-| Qwen2.5-7B | ~14 GB | ~3.5 GB | ~7 GB | ~2.4 GB |
-| Llama-3.1-8B | ~16 GB | ~4 GB | ~8 GB | ~3 GB |
-| Qwen2.5-14B | ~28 GB | ~7 GB | ~14 GB | ~4.8 GB |
-| Llama-3.1-70B | ~140 GB | ~35 GB | ~70 GB | ~20 GB |
-| DeepSeek-V3 (MoE) | ~400 GB | ~110 GB | ~200 GB | ~0.4 GB（MLA 压缩） |
+| 模型 | 参数量（约） | FP16 权重 | INT4 权重 | FP8 权重 |
+|------|----------|----------|----------|---------|
+| Qwen2.5-7B | ~7B | ~14 GB | ~3.5 GB | ~7 GB |
+| Llama-3.1-8B | ~8B | ~16 GB | ~4 GB | ~8 GB |
+| Qwen2.5-14B | ~14B | ~28 GB | ~7 GB | ~14 GB |
+| Llama-3.1-70B | ~70B | ~140 GB | ~35 GB | ~70 GB |
+| DeepSeek-V3（MoE，总参约 671B） | ~671B | 约 1.3 TB 量级 | 约 0.3 TB 量级 | 约 0.67 TB 量级 |
 
-**为什么这样写**：部署前必须先做"显存预算"。以 7B 模型 FP16 为例，粗算约需 14GB 权重 + 约 2.4GB KV Cache + 数 GB 其他 ≈ **20GB 上下**，在 24GB 显存上尚有余量，但一旦要支持多并发，KV Cache 会随并发近似线性增长，24GB 就可能不够——所以并发数需结合实测显存来定。
+> **关于 DeepSeek-V3**：它是 MoE 模型，**总参数量约 671B**，每 token 只激活其中一部分专家（激活参数约几十 B）。但部署时**权重需要整体驻留显存/多机显存**，因此显存要按"总参数量"估算：FP16 约 `671B × 2 ≈ 1.3 TB` 量级，需要**多机多卡**才能承载，绝不是几百 GB 单机能放下的。网上一些"约 400GB"的说法多半把"激活参数"当成了"驻留权重"，这是常见误区。它的 KV Cache 因采用 MLA（多头潜在注意力）等结构而相对更省，但这仍是"另算的一项"，不能与权重混为一谈。
+
+**为什么这样写**：部署前必须先做"显存预算"。以 7B 模型 FP16 为例，粗算约需 14GB 权重 + 数 GB KV Cache（按 2.2.1 公式估算）+ 数 GB 其他 ≈ **20GB 上下**，在 24GB 显存上尚有余量；但一旦要支持多并发，KV Cache 会随并发近似线性增长，24GB 就可能不够——所以并发数需结合实测显存来定。
+
+### 2.2.1 KV Cache 怎么估算（用公式，别套固定数字）
+
+不要直接抄"某模型 KV Cache = 固定 X GB"。这类数字往往没有正确体现 **GQA/MQA 的 KV 头数**，很容易偏大或偏小。更稳妥的做法是用公式估算再和实测对照：
+
+```text
+单请求 KV Cache 字节数
+≈ 2 × 层数(num_hidden_layers)
+     × KV头数(num_key_value_heads)
+     × head_dim
+     × token 数(序列长度)
+     × 每元素字节数(FP16=2, FP8=1)
+```
+
+- 开头的 `2` 表示 Key 和 Value 各一份。
+- **对于 GQA/MQA 模型，必须用 KV 头数 `num_key_value_heads`，而不是 Query 头数 `num_attention_heads`**——很多模型的 KV 头数远小于 Query 头数，用错会把估算放大数倍。
+- 参数从模型 `config.json` 读取，乘以计划支持的最大序列长度与并发请求数得到理论值，最后**以 vLLM 启动日志实际分配的 KV Cache 显存为准**修正。
 
 ### 2.3 显存诊断命令（①）
 
@@ -107,12 +126,11 @@ vllm serve Qwen/Qwen2.5-7B-Instruct --gpu-memory-utilization 0.9
 # 运行时监控显存
 nvidia-smi -l 2  # 每 2 秒刷新
 
-# 查看 vLLM 指标（Prometheus 格式）
+# 查看 vLLM 指标（Prometheus 格式），KV Cache 使用率、吞吐、排队等都在这里
 curl http://localhost:8000/metrics
-
-# 查看模型内部统计
-curl http://localhost:8000/v1/internal/stat
 ```
+
+> **说明**：运行时的显存/KV Cache/吞吐等指标以 `/metrics`（Prometheus 格式）为准；不同 vLLM 版本暴露的具体端点会有差异，请以你所装版本的官方文档（或 `vllm serve --help` 与启动日志）为准，不要臆造未文档化的调试端点。
 
 ---
 
@@ -129,19 +147,21 @@ vllm serve Qwen/Qwen2.5-7B-Instruct --gpu-memory-utilization 0.9
 ```
 
 **为什么这样写**：
-- 默认值为 `0.9`，即 vLLM 最多使用 90% 的 GPU 显存
-- 如果启动前 GPU 已有 50% 显存被占用，且 `--gpu-memory-utilization=0.9`，则 vLLM 只能分配剩余的 40%
-- 这个参数直接决定 KV Cache 能分配多少 Block，进而决定**最大并发数**
+- 默认值为 `0.9`，即 vLLM 会把**该卡总显存 × 0.9** 作为自己的显存预算目标（用来放模型权重 + KV Cache + 激活/CUDA Graph 等），而不是"在别人占用之外再额外拿 90%"
+- 因此，如果启动前这张卡已被其他进程占用了较多显存，vLLM 按 `总显存 × 0.9` 计算出的目标预算可能无法满足（权重都放不下），会直接**启动失败/报显存不足**，而不是"自动只用剩下的一点点"——共享 GPU 时要把这一比例往下调，或先腾出显存
+- 在权重占用固定的前提下，**调低这个比例主要是压缩留给 KV Cache 的空间**（进而降低可支持的并发/上下文），而不是"把模型权重变小"
 
 **调参建议**（⑥）：
 
 | 场景 | 建议值 | 理由 |
 |------|--------|------|
-| 显存充裕、追求高吞吐 | 0.90~0.95 | 最大化 KV Cache，支持更多并发 |
-| 显存紧张、防止 OOM | 0.70~0.85 | 预留余量应对峰值和碎片 |
-| 极限压缩（单卡跑大模型） | 0.35~0.50 | 配合量化 + CPU offloading |
+| 显存充裕、追求高吞吐 | 0.90~0.95 | 给 KV Cache 更多空间，支持更多并发 |
+| 显存紧张、防止 OOM / 共享 GPU | 0.70~0.85 | 预留余量应对峰值和碎片，或给同卡其他进程让出显存 |
+| 单卡硬塞大模型 | 需配合量化 + CPU offload | 注意：调低本参数只压缩 KV Cache、并不缩小权重；权重放不下要靠 `--cpu-offload-gb`/多卡，而不是把本参数调到很低 |
 
-**为什么这样写**：设太高（如 0.98）容易在峰值时 OOM；设太低（如 0.5）则浪费显存、吞吐上不去。0.85~0.90 是大多数生产环境的甜点区。
+> **纠一个常见误区**：不要把"单卡跑大模型"简单等价于"把 `gpu_memory_utilization` 调到 0.35~0.5"。这个比例决定的是 vLLM 的显存预算目标，调低它主要是**少给 KV Cache 留空间**；如果权重本身都放不下，调低它只会更早 OOM，真正该做的是量化 + `--cpu-offload-gb` + 必要时多卡。
+
+**为什么这样写**：设太高（如 0.98）容易在峰值时 OOM；设太低则给 KV Cache 的空间过小、吞吐上不去。0.85~0.90 是大多数生产环境（权重能放下的前提下）的甜点区。
 
 ### 3.2 max-model-len：上下文窗口的"硬天花板"（③⑤）
 
@@ -152,9 +172,9 @@ vllm serve Qwen/Qwen2.5-7B-Instruct --max-model-len 8192
 ```
 
 **为什么这样写**：
-- 如果不指定，vLLM 使用模型配置中的默认值（如 Llama-3 原生 8K，Qwen2.5 原生 128K）
-- 可以**超过**模型原始训练长度（如把 8K 模型设成 32K），但长上下文精度可能下降
-- **KV Cache 显存与序列长度成正比**——8K → 32K，KV Cache 翻 4 倍
+- 如果不指定，vLLM 使用模型配置中的默认最大长度（如 Llama-3 原生 8K，Qwen2.5 原生 128K）
+- **一般不要把它设得超过模型声明的最大上下文长度**：模型没在更长序列上训练过，直接调大不是"精度略降"这么简单，而可能显著劣化甚至输出异常。确需更长上下文时，应使用官方提供的长上下文方案（如对应的长上下文权重或 RoPE scaling 等外推配置），并**单独做质量验证**，而不是随手把 8K 模型设成 32K
+- **KV Cache 显存与序列长度成正比**——8K → 32K，KV Cache 约翻 4 倍，并发能力随之大幅下降
 
 **调参建议**：
 
@@ -177,8 +197,8 @@ vllm serve meta-llama/Meta-Llama-3.1-70B-Instruct --tensor-parallel-size 4
 ```
 
 **为什么这样写**：
-- 每张 GPU 只保存 $1/N$ 的模型权重
-- 需要**NVLink 或高速互联**，因为每步计算都要 AllReduce 同步
+- 每张 GPU 只保存约 $1/N$ 的模型权重
+- TP 每步计算都要跨卡做 AllReduce 同步，**强烈依赖高速卡间互联**——优先单机 NVLink/NVSwitch；用 PCIe 或跨节点并非不能运行，但通信开销更大，是否可接受应以基准测试为准
 - `tensor_parallel_size` 必须整除注意力头数（如 32 头可以切 2/4/8，不能切 3）
 
 **多卡部署对照表**（①⑤）：
@@ -195,12 +215,14 @@ vllm serve meta-llama/Meta-Llama-3.1-70B-Instruct --tensor-parallel-size 4
 
 | 参数 | 作用 | 默认值 | 调参建议 |
 |------|------|--------|---------|
-| `max_num_seqs` | 最大并发序列数 | 256 | 显存紧张时减小（如 8~64） |
-| `max_num_batched_tokens` | 每步最多处理的 token 数 | 不限制 | 限制 Prefill 峰值，小值 ITL 更好，大值 TTFT 更好 |
+| `max_num_seqs` | 单步可并行调度的最大序列数（调度上限） | 随版本而定（曾常见 256，请以 `vllm serve --help` 为准） | 显存紧张时减小（如 8~64） |
+| `max_num_batched_tokens` | 每步最多处理的 token 数 | 随版本/是否开启 chunked prefill 而定 | 限制 Prefill 峰值，小值 ITL 更好，大值 TTFT 更好 |
+
+> **说明**：上表默认值仅为示例，vLLM 各版本会调整这些默认行为，**请以 `vllm serve --help` 或所装版本文档为准**，不要把某个具体数字当成永久默认。
 
 **为什么这样写**：
-- `max_num_seqs` 直接决定 KV Cache 预留量。256 个并发 × 8K 上下文 = 海量 KV Cache
-- `max_num_batched_tokens` 控制 Chunked Prefill 的块大小。小值（2048）让 Decode 更频繁，降低 ITL；大值（16384）一次处理更多 Prefill，降低 TTFT
+- `max_num_seqs` 是"单步最多同时调度多少条序列"的**上限**，并不意味着一启动就按这个数把 KV Cache 全额预留；但它决定了高并发时 KV Cache 的峰值压力——并发越多、上下文越长，KV Cache 需求越大
+- `max_num_batched_tokens` 控制 Chunked Prefill 的块大小。小值（如 2048）让 Decode 更频繁，降低 ITL；大值（如 16384）一次处理更多 Prefill，降低 TTFT
 
 ---
 
@@ -227,8 +249,8 @@ vllm serve Qwen/Qwen2.5-7B-Instruct \
   --tensor-parallel-size 1 \
   --max-num-seqs 256 \
   --max-num-batched-tokens 8192 \
-  --enable-prefix-caching \
-  --trust-remote-code
+  --enable-prefix-caching
+  # 仅当模型确实需要自定义建模代码时，再另外追加 --trust-remote-code（见下方说明）
 ```
 
 **参数解读**：
@@ -239,26 +261,33 @@ vllm serve Qwen/Qwen2.5-7B-Instruct \
 | `--host 0.0.0.0` | 绑定所有网卡，允许外部访问 |
 | `--served-model-name my-qwen` | 对外暴露的模型名，客户端请求时用这个名字 |
 | `--dtype auto` | 自动检测模型精度（FP16/BF16） |
-| `--trust-remote-code` | 允许执行模型仓库中的自定义代码（Qwen/DeepSeek 等必须加） |
+| `--trust-remote-code` | **可选、且有风险**：仅当模型仓库依赖自定义建模代码（部分模型/自定义结构）时才需要，加上它等于允许执行仓库中的 Python 代码。是否需要因模型而异（很多主流模型已并入 transformers、无需此项），**不要无脑加**；启用前务必确认模型来源可信、代码已审查，避免供应链风险 |
 | `--enable-prefix-caching` | 开启自动前缀缓存，在共享 System Prompt 等长公共前缀场景下可明显降低 TTFT（幅度取决于前缀占比与命中率，需实测，非固定值） |
 
 ### 4.3 显存紧张时的降配配置（⑥）
 
+单卡跑不下的大模型，降配的思路是三条同时用：**换预量化权重（缩小权重）+ 缩小 KV Cache（限制长度和并发）+ 把放不下的部分 offload 到 CPU 内存**。下面给一个"单卡 + AWQ 预量化 70B"的示例骨架：
+
 ```bash
-vllm serve meta-llama/Llama-2-70b-hf \
+# 注意：--quantization awq 是"按 AWQ 格式加载权重"，因此 model 必须指向一个
+#       已经做过 AWQ 量化的仓库（如 *-AWQ），而不是原始 FP16 权重仓库
+vllm serve TheBloke/Llama-2-70B-AWQ \
+  --quantization awq \
   --tensor-parallel-size 1 \
-  --dtype float16 \
   --max-model-len 2048 \
   --max-num-batched-tokens 512 \
   --max-num-seqs 8 \
-  --gpu-memory-utilization 0.45 \
+  --gpu-memory-utilization 0.90 \
   --enable-chunked-prefill \
   --enforce-eager \
-  --quantization awq \
-  --swap-space 20
+  --cpu-offload-gb 40
 ```
 
-**为什么这样写**：这是参考文章⑥给出的一组实战配置，据其记载在单卡 A100 40GB 上把 70B 模型的显存占用大幅压下来（该文提到从约 38GB 降到约 19GB，为其特定环境下的实测值，具体数字随模型、量化方案、序列长度/并发与 vLLM 版本而变，请以自己环境实测为准）。核心三板斧：**量化（AWQ）+ 缩小 KV Cache（限制长度和并发）+ CPU offloading（swap-space）**。
+**为什么这样写**（几处容易踩的坑，务必注意）：
+- **量化模型要用预量化仓库**：`--quantization awq` 不会把一个普通的 FP16 仓库"临时量化"成 4bit，它期望模型本身就是 AWQ 格式的权重。用原始 `meta-llama/Llama-2-70b-hf` 再加 `--quantization awq` 是自相矛盾的，会加载失败。
+- **权重本身要先放得下**：70B 的 AWQ(4bit) 权重约 35GB 量级，再加激活/KV Cache/CUDA Graph，单卡 40GB 通常**放不下**。想在单卡硬跑，必须把一部分权重/缓存 **offload 到 CPU 内存**——这才用 `--cpu-offload-gb`（把约定大小的权重放到 CPU），而不是靠调低 `--gpu-memory-utilization` 把权重"变小"（它压的是 KV Cache，不是权重）。
+- **`--swap-space` 不是权重 offload**：`--swap-space` 是给 KV Cache 的 CPU 交换空间（抢占/换出时用），不能理解为"把模型权重放到内存"。把它当成权重 offload 手段是常见误解。
+- 上面的具体数值（`--cpu-offload-gb 40`、长度/并发等）都要按你的实际显存/内存反复实测调整；CPU offload 会带来明显的速度下降，属于"跑得起来优先于跑得快"的取舍。参考文章⑥给出过一组"在其特定环境下把占用大幅压下来"的数字，但那是它的环境实测值，**不能照搬当成通用结论**，请以自己环境为准。核心仍是三板斧：**预量化（AWQ）+ 缩小 KV Cache（限制长度和并发）+ CPU offload**。
 
 ---
 
@@ -266,7 +295,7 @@ vllm serve meta-llama/Llama-2-70b-hf \
 
 ### 5.1 OpenAI 兼容 API（②）
 
-vLLM 启动后，自动提供与 OpenAI 完全兼容的 RESTful API：
+vLLM 启动后，自动提供**兼容 OpenAI 常用接口**（如 Chat Completions、Completions、Models 等）的 RESTful API：
 
 ```bash
 # 测试服务是否启动
@@ -314,7 +343,7 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-**为什么这样写**：`openai` Python 包可以直接连接 vLLM 服务，无需任何修改。这是 vLLM 最大的优势之一——**零成本迁移**。
+**为什么这样写**：`openai` Python 包可以直接连接 vLLM 服务，常见场景下只改 `base_url`（和把 `api_key` 设为占位值）即可复用原有代码，迁移成本很低。这是 vLLM 的重要优势之一。不过"兼容"针对的是常用的 Chat/Completions 等接口，OpenAI 平台的部分高级特性、专有端点或最新字段不一定 1:1 支持，接入前建议对你实际用到的接口做一次验证。
 
 ### 5.3 流式输出（①）
 
@@ -347,14 +376,16 @@ for chunk in stream:
 | 项目 | 最低配置 | 推荐配置 |
 |------|---------|---------|
 | **操作系统** | Linux（Ubuntu 20.04+） | Linux（Ubuntu 22.04+） |
-| **GPU** | 1 张 NVIDIA GPU，显存 **≥16GB** | 1 张 RTX 4090（24GB）/ A100（40GB/80GB） |
+| **GPU** | 1 张 NVIDIA GPU（显存按目标模型而定，7B 示例约 16GB 起，更小模型可用更小显存验证） | 1 张 RTX 4090（24GB）/ A100（40GB/80GB） |
 | **CPU** | 8 核 | 16 核+ |
 | **内存** | 32GB | 64GB+ |
 | **磁盘** | 100GB SSD | 500GB+ NVMe SSD |
 | **NVIDIA 驱动** | 驱动支持 CUDA 11.8+ | 驱动支持 CUDA 12.1+ |
-| **Python** | 3.10 | 3.12 |
+| **Python** | 以所装 vLLM 支持范围为准（示例 3.10） | 示例 3.12（仍以发行说明为准） |
 | **网络** | 本地回环 | 10Gbps+（多机部署） |
 | **是否支持 CPU 运行** | ⚠️ 支持但极慢（仅调试） | — |
+
+> **显存说明**：表中"16GB"是针对本章 **7B 示例**的经验下限，并非"部署任何模型的统一门槛"——显存要求应随模型规模而定，用小模型仅做环境验证时几 GB 也够。
 
 ### 6.2 云端环境配置参考
 
@@ -370,9 +401,11 @@ for chunk in stream:
 | 并行策略 | 最低 GPU 数量 | 卡间带宽要求 | 网络要求 |
 |---------|-------------|-------------|---------|
 | 单卡 | 1 卡 | 无 | 无 |
-| TP（张量并行） | 2 卡（需整除 head 数） | **极高**（必须 NVLink） | 仅限单机 |
+| TP（张量并行） | 2 卡（需整除 head 数） | **很高**（强烈建议 NVLink/NVSwitch） | 优先单机；PCIe/跨节点并非不可用，但通信开销大，需实测评估 |
 | PP（流水线并行） | 2 卡 | 中 | 跨机需 10Gbps+ |
-| TP + PP 组合 | 4 卡+ | 组内极高、组间中 | 多机 InfiniBand |
+| TP + PP 组合 | 4 卡+ | 组内很高、组间中 | 多机 InfiniBand |
+
+> **说明**：TP 每步都要跨卡同步，对卡间带宽很敏感，因此**优先单机 NVLink/NVSwitch**；在 PCIe 或跨节点上运行 TP 是可行的，只是通信占比会明显上升，是否可接受应以基准测试为准，而非"没有 NVLink 就一定不能用 TP"。
 
 ---
 
@@ -396,14 +429,14 @@ for chunk in stream:
 | 知识点 | 核心要点 |
 |--------|----------|
 | **部署方式** | 离线推理（`LLM` API）vs 在线服务（`vllm serve`） |
-| **gpu_memory_utilization** | 显存总闸门，默认 0.9，紧张时降到 0.7~0.85，极限时 0.35~0.5 |
-| **max_model_len** | 上下文硬天花板，直接影响 KV Cache 大小，短文本设 2048~4096 |
+| **gpu_memory_utilization** | 按"总显存×比例"定 vLLM 的显存预算目标，默认 0.9；调低主要压缩 KV Cache（不是缩小权重），共享 GPU/防 OOM 时下调 |
+| **max_model_len** | 上下文硬天花板，直接影响 KV Cache 大小；短文本设 2048~4096，一般不超过模型声明的最大长度 |
 | **tensor_parallel_size** | 张量并行度，必须整除注意力头数，多卡部署大模型必需 |
-| **max_num_seqs** | 最大并发数，默认 256，显存紧张时减小 |
+| **max_num_seqs** | 单步可调度的最大序列数（调度上限），默认随版本而定（曾常见 256），显存紧张时减小 |
 | **max_num_batched_tokens** | 每步处理 token 上限，影响 Prefill/Decode 平衡 |
 | **生产配置模板** | port + host + served-model-name + dtype + max-model-len + gpu-memory-utilization + TP + prefix-caching |
-| **降配三板斧** | 量化（AWQ）+ 缩小 KV Cache（限制长度/并发）+ CPU offloading（swap-space） |
-| **OpenAI 兼容** | vLLM 自动提供 `/v1/chat/completions` 等端点，零成本迁移 |
+| **降配三板斧** | 预量化（AWQ 等）+ 缩小 KV Cache（限制长度/并发）+ CPU offload（权重用 `--cpu-offload-gb`，KV Cache 交换用 `--swap-space`） |
+| **OpenAI 兼容** | vLLM 自动提供 `/v1/chat/completions` 等常用端点，多数场景只改 `base_url` 即可迁移（高级/专有特性需自行验证） |
 
 ---
 
@@ -413,7 +446,7 @@ for chunk in stream:
 2. **从保守配置开始**——`gpu-memory-utilization=0.85`、`max-model-len=4096`，确认稳定后再上调
 3. **三个参数一起调**——`gpu_memory_utilization`、`max_model_len`、`max_num_seqs` 互相影响，需要联动调整
 4. **监控 preemption 次数**——频繁 preemption 说明显存不够，需要降并发或扩卡
-5. **量化是显存救星**——H100 用 FP8，消费级用 AWQ，70B 模型也能在 24GB 上跑
+5. **量化是显存救星，但别夸大**——H100 可用 FP8，消费级常用 AWQ/GPTQ。量化能大幅降低权重占用，但"能不能塞进某张卡"要按实际权重算：例如 70B 即便 4bit 也约 35GB 量级，再加激活/KV Cache，通常**放不进 24GB 单卡**——想在小显存上跑超大模型，往往还得配合多卡或 CPU offload，不能想当然
 6. **生产环境优先开 prefix caching**——在共享 System Prompt 等长公共前缀的场景下，可明显降低 TTFT（具体幅度视前缀占比与命中率，需实测）
 7. **API 密钥必设**——`--api-key` 防止未授权访问，即使在内网也不要裸奔
 
