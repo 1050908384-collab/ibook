@@ -76,6 +76,29 @@ def _agent_log(agent_name: str, message: str) -> None:
     print(f"[{agent_name}] {message}", flush=True)
 
 
+def _shorten_subtopic_name(name: str) -> str:
+    """清理并截断 subtopic_name，供阶段生成与结构化回答复用。
+
+    - 仅当首尾成对包裹括号时才去掉外层（如“（环境准备：...）”），避免误删
+      “常用Shell命令（cd/ls/mkdir/cp/mv）”这类内部内容括号。
+    - 过长时截断到第一个分隔符或30字。
+    - 去掉截断后可能悬挂的末尾开放括号。
+    """
+    name = name or ""
+    while len(name) >= 2 and name[0] in "（(" and name[-1] in "）)":
+        name = name[1:-1]
+    if len(name) > 30:
+        for sep in ["。", "，", ",", ".", "；", ";"]:
+            idx = name.find(sep)
+            if 10 < idx <= 35:
+                name = name[:idx]
+                break
+        else:
+            name = name[:30] + "..."
+    name = name.rstrip("（(").rstrip()
+    return name
+
+
 class DeterministicDiagnosticAgent:
     def __init__(self, db_client: SQLiteClient | None = None):
         self.extract_skills_tool = ExtractSkillsTool()
@@ -493,7 +516,7 @@ class DeterministicDiagnosticAgent:
         # 阶段内容必须以最终选中的子知识点为准。gap_skill 保留目标缺口，
         # 用于后续阶段推进；它不能覆盖当前阶段的教学主题。
         stage_gap = gap.model_dump(mode="json")
-        stage_gap["skill"] = subtopic.get("subtopic_name") or block_info.get("block_name") or gap.skill
+        stage_gap["skill"] = _shorten_subtopic_name(subtopic.get("subtopic_name") or "") or block_info.get("block_name") or gap.skill
         stage_block_info = dict(block_info)
         if subtopic.get("estimated_hours") is not None:
             stage_block_info["estimated_hours"] = subtopic["estimated_hours"]
@@ -516,13 +539,17 @@ class DeterministicDiagnosticAgent:
         block_id = subtopic.get("block_id") or block_info.get("block_id") or generated_stage.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
         block_name = block_info.get("block_name") or subtopic.get("block_name") or generated_stage.get("block_name") or gap.skill
         subtopic_hours = subtopic.get("estimated_hours")
-        estimated_hours = float(
-            subtopic_hours
-            if subtopic_hours is not None
-            else block_info.get("estimated_hours")
-            or generated_stage.get("estimated_hours")
-            or 2.0
-        )
+        if subtopic_hours is None:
+            subtopic_hours = (
+                block_info.get("estimated_hours")
+                or generated_stage.get("estimated_hours")
+                or 2.0
+            )
+        # 环境准备等 0h 子知识点不计学时，但作为独立学习阶段需给出合理预估，
+        # 否则 learner 会看到“预估时长：0 小时”这种不合理的展示。
+        if float(subtopic_hours) <= 0:
+            subtopic_hours = 0.5
+        estimated_hours = float(subtopic_hours)
         estimated_hours, recommended_daily_hours, suggested_study_days = self._stage_time_plan(
             estimated_hours,
             request.profile.daily_hours,
@@ -990,6 +1017,66 @@ class DeterministicContentAgent:
         question_type = self._classify_question_by_keywords(request.question)
         _agent_log("Agent3", f"answer:classified | type={question_type}")
 
+        # 检测是否为"学习内容/阶段信息"询问 — 结构化回答，不依赖 LLM
+        question = request.question
+        learning_content_keywords = [
+            "学习阶段", "阶段内容", "当前学", "知识点", "学习内容", "当前阶段",
+            "学什么", "学习什么", "阶段是什么", "现在学", "我的学习",
+            "什么阶段", "在什么阶段", "哪个阶段", "学到哪", "学到哪里",
+            "进度", "在学", "现在在", "目前在", "当前进度",
+        ]
+        is_learning_content_query = any(kw in question for kw in learning_content_keywords)
+
+        if is_learning_content_query:
+            subtopic_name = _shorten_subtopic_name(getattr(request.stage, "subtopic_name", "") or "")
+            objectives = getattr(request.stage, "objectives", []) or []
+            goal = getattr(request.profile, "goal", "") or "学习"
+            block_name = getattr(request.stage, "block_name", "") or "当前阶段"
+            estimated_hours = getattr(request.stage, "estimated_hours", 0) or 0
+            difficulty = getattr(request.stage, "difficulty", "") or ""
+            daily_hours = getattr(request.profile, "daily_hours", 2.0) or 2.0
+
+            learning_points = []
+            try:
+                if request.block_id:
+                    docs = await self.vector_search_tool.search_by_block(request.block_id)
+                    for doc in docs[:5]:
+                        content = doc.get("content", "") or ""
+                        if content and len(content) > 10:
+                            learning_points.append(content[:120])
+            except Exception:
+                pass
+
+            stage_num = getattr(request.stage, "stage_num", "?")
+            answer_lines = [f"## 当前学习阶段：第{stage_num}阶段 — {block_name}"]
+            if subtopic_name:
+                answer_lines.append(f"**知识点**：{subtopic_name}")
+            if difficulty:
+                answer_lines.append(f"**难度等级**：{difficulty}")
+            answer_lines.append(f"**预估时长**：{estimated_hours} 小时（每天学习 {daily_hours} 小时）")
+
+            if objectives:
+                answer_lines.append("\n**本阶段学习目标**：")
+                for i, obj in enumerate(objectives[:5], 1):
+                    answer_lines.append(f"  {i}. {obj}")
+
+            if learning_points:
+                answer_lines.append("\n**核心学习内容**：")
+                for point in learning_points:
+                    answer_lines.append(f"  • {point}")
+
+            answer_lines.append(f"\n**学习目标**：{goal}")
+
+            answer_text = "\n".join(answer_lines)
+
+            # 追加历史 memory
+            memory_context = self._build_memory_context(request)
+            if memory_context:
+                answer_text += f"\n\n{memory_context}"
+
+            _agent_log("Agent3", f"answer:structured_learning_content | len={len(answer_text)}")
+            return AnswerGenerationOutput(answer=answer_text, question_type="technical")
+
         if question_type == "daily":
             # 日常类：只用历史对话 memory + 画像，跳过 Agent4
             answer = self._generate_daily_answer(request)
@@ -1041,12 +1128,13 @@ class DeterministicContentAgent:
             "有什么用", "为什么学", "坚持", "放弃", "焦虑", "累", "难吗",
             "鼓励", "谢谢", "再见", "心情", "压力大", "看不懂",
         ]
-        # 技术类关键词
+        # 技术类关键词（包含学习内容询问）
         tech_keywords = [
             "代码", "报错", "error", "bug", "算法", "原理", "公式", "实现",
             "函数", "类", "接口", "api", "框架", "配置", "安装", "部署",
             "python", "pytorch", "transformer", "怎么写", "如何实现",
             "区别", "什么是", "解释", "运行",
+            "学习阶段", "阶段内容", "当前学", "知识点", "学习内容", "当前阶段",
         ]
         q_lower = question.lower()
         # 技术类关键词优先（保守策略，避免技术问题被误判为日常）
@@ -1301,7 +1389,65 @@ class HybridContentAgent(DeterministicContentAgent):
             answer = await self._generate_daily_answer_llm(request)
             return AnswerGenerationOutput(answer=answer, question_type="daily")
 
-        # 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory 整合
+        # 检测是否为"学习内容/阶段信息"询问（虽然被分类为 technical，但需要结构化回答）
+        question = request.question
+        learning_content_keywords = [
+            "学习阶段", "阶段内容", "当前学", "知识点", "学习内容", "当前阶段",
+            "学什么", "学习什么", "阶段是什么", "现在学", "我的学习",
+            "什么阶段", "在什么阶段", "哪个阶段", "学到哪", "学到哪里",
+            "进度", "在学", "现在在", "目前在", "当前进度",
+        ]
+        is_learning_content_query = any(kw in question for kw in learning_content_keywords)
+
+        if is_learning_content_query:
+            # 学习内容询问：直接用阶段数据构建回答，不依赖 LLM 自由发挥
+            subtopic_name = _shorten_subtopic_name(getattr(request.stage, "subtopic_name", "") or "")
+            objectives = getattr(request.stage, "objectives", []) or []
+            goal = getattr(request.profile, "goal", "") or "学习"
+            block_name = getattr(request.stage, "block_name", "") or "当前阶段"
+            estimated_hours = getattr(request.stage, "estimated_hours", 0) or 0
+            difficulty = getattr(request.stage, "difficulty", "") or ""
+            daily_hours = getattr(request.profile, "daily_hours", 2.0) or 2.0
+
+            # 收集本阶段相关知识文档摘要
+            learning_points = []
+            try:
+                if request.block_id:
+                    docs = await self.vector_search_tool.search_by_block(request.block_id)
+                    for doc in docs[:5]:
+                        content = doc.get("content", "") or ""
+                        if content and len(content) > 10:
+                            learning_points.append(content[:120])
+            except Exception:
+                pass
+
+            # 构建结构化的学习内容介绍
+            stage_num = getattr(request.stage, "stage_num", "?")
+            answer_lines = [f"## 当前学习阶段：第{stage_num}阶段 — {block_name}"]
+            if subtopic_name:
+                answer_lines.append(f"**知识点**：{subtopic_name}")
+            if difficulty:
+                answer_lines.append(f"**难度等级**：{difficulty}")
+            answer_lines.append(f"**预估时长**：{estimated_hours} 小时（每天学习 {daily_hours} 小时）")
+
+            if objectives:
+                answer_lines.append("\n**本阶段学习目标**：")
+                for i, obj in enumerate(objectives[:5], 1):
+                    answer_lines.append(f"  {i}. {obj}")
+
+            if learning_points:
+                answer_lines.append("\n**核心学习内容**：")
+                for point in learning_points:
+                    answer_lines.append(f"  • {point}")
+
+            answer_lines.append(f"\n**学习目标**：{goal}")
+
+            answer_text = "\n".join(answer_lines)
+
+            _agent_log("Agent3", f"answer:structured_learning_content | len={len(answer_text)}")
+            return AnswerGenerationOutput(answer=answer_text, question_type="technical")
+
+        # 技术类（非学习内容询问）：问题分析 + 本阶段相关知识文档检索 + 历史 memory 整合
         # 用 block_id 过滤，只检索本阶段相关的知识文档
         related_docs = []
         try:
@@ -1324,7 +1470,15 @@ class HybridContentAgent(DeterministicContentAgent):
         hardware_note = ""
         hardware = getattr(request.practice_profile, "hardware", "") if request.practice_profile else ""
         if hardware:
-            hardware_note = f"\n用户设备/平台：{hardware}（请据此生成对应平台的命令和操作步骤）"
+            # 判断是否包含明确的操作系统/平台信息
+            has_platform = any(kw in hardware.lower() for kw in (
+                "windows", "win", "mac", "osx", "linux", "ubuntu", "wsl", "centos", "debian",
+            ))
+            if has_platform:
+                hardware_note = f"\n用户设备/平台：{hardware}（请据此生成对应平台的命令和操作步骤）"
+            else:
+                # 只有硬件信息无平台信息，提示 LLM 给出跨平台方案
+                hardware_note = f"\n用户硬件条件：{hardware}（请优先给出跨平台通用方法；如需命令，请同时提供 Windows 和 Linux 两种写法）"
 
         prompt = f"""当前学习阶段：{request.stage.block_name}
 用户学习目标：{request.profile.goal}
@@ -1351,8 +1505,10 @@ class HybridContentAgent(DeterministicContentAgent):
         system_prompt = """你是一个问题分类器。请判断用户的问题属于"技术类"还是"日常类"。
 
 分类标准：
-- technical（技术类）：涉及代码、算法、概念解释、技术原理、API使用、报错排查、编程实现、框架工具等技术性问题
-- daily（日常类）：学习计划咨询（如"我该怎么学"）、学习状态/情绪（如"今天状态不好"）、学习意义咨询（如"学这个有什么用"）、非技术闲聊等
+- technical（技术类）：涉及代码、算法、概念解释、技术原理、API使用、报错排查、编程实现、框架工具、学习内容/阶段知识询问（如"当前学什么"、"阶段内容是什么"、"知识点有哪些"）等
+- daily（日常类）：学习计划/路线咨询（如"我该怎么学"、"学习路线"）、学习状态/情绪（如"今天状态不好"、"学不进去"）、学习意义咨询（如"学这个有什么用"）、非技术闲聊/问候（如"你好"、"谢谢"）
+
+关键区分：问"当前学习内容/知识/阶段"归 technical；问"学习计划/路线/情绪"归 daily。
 
 请只输出一个JSON：{"type": "technical"} 或 {"type": "daily"}"""
         prompt = f"请判断以下问题属于技术类还是日常类：\n用户问题：{question}\n请输出JSON格式结果。"
@@ -1393,6 +1549,45 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def _generate_daily_answer_llm(self, request: AnswerGenerationInput) -> str:
         """Hybrid 模式下用 LLM 生成日常类回答，只用历史对话 memory + 画像。"""
+        # 检测是否为学习内容询问（虽然被分类为 daily，但需要给出实质内容）
+        question = request.question
+        learning_content_keywords = ["学习阶段", "阶段内容", "当前学", "知识点", "学习内容", "当前阶段", "学什么"]
+        is_learning_content_query = any(kw in question for kw in learning_content_keywords)
+
+        if is_learning_content_query:
+            # 学习内容询问：给出结构化的当前阶段内容介绍
+            subtopic_name = getattr(request.stage, "subtopic_name", "") or ""
+            objectives = getattr(request.stage, "objectives", []) or []
+            goal = getattr(request.profile, "goal", "") or "学习"
+            block_name = getattr(request.stage, "block_name", "") or "当前阶段"
+
+            stage_intro = f"你当前正在学习「{block_name}」"
+            if subtopic_name:
+                stage_intro += f"（知识点：{subtopic_name}）"
+
+            objectives_text = ""
+            if objectives:
+                objectives_text = "\n\n本阶段学习目标：\n" + "\n".join(
+                    f"  {i+1}. {obj}" for i, obj in enumerate(objectives[:5])
+                )
+
+            prompt = f"""用户问：{question}
+
+用户学习目标：{goal}
+当前学习阶段：{block_name}
+{stage_intro}
+{objectives_text}
+
+请基于以上信息，清晰地告诉用户当前阶段的学习内容是什么。用简洁明了的语言列出核心知识点和学习目标。"""
+
+            answer = await self.llm_client.complete(
+                prompt,
+                system_prompt="你是一个专业的学习助手，能够清晰地介绍当前学习阶段的内容。",
+                temperature=0.3,
+            )
+            return answer
+
+        # 普通日常类问题：情感支持/学习咨询
         history_text = ""
         if request.qa_history:
             recent = request.qa_history[-5:]
@@ -1465,7 +1660,17 @@ class HybridContentAgent(DeterministicContentAgent):
     async def revise_answer(self, request: AnswerRevisionInput) -> AnswerGenerationOutput:
         feedback = self._format_feedback(request.technical_errors, request.quality_errors)
         hardware = getattr(request.practice_profile, "hardware", "") if request.practice_profile else ""
-        hardware_note = f"\n用户设备/平台：{hardware}（请据此生成对应平台的命令和操作步骤）" if hardware else ""
+        if hardware:
+            has_platform = any(kw in hardware.lower() for kw in (
+                "windows", "win", "mac", "osx", "linux", "ubuntu", "wsl",
+            ))
+            hardware_note = (
+                f"\n用户设备/平台：{hardware}（请据此生成对应平台的命令）"
+                if has_platform
+                else f"\n用户硬件条件：{hardware}（如需命令，请同时提供 Windows 和 Linux 两种写法）"
+            )
+        else:
+            hardware_note = ""
         prompt = f"""请根据审核意见修改回答。
 
 用户问题：{request.question}

@@ -170,7 +170,7 @@ async def main() -> None:
     mastered = prompt("Mastered skills (comma-separated; optional)")
     daily_hours_text = prompt("Daily study hours", "2")
     learning_style = prompt("Learning style", "mixed")
-    hardware = prompt("Practice hardware/environment (Agent3-only; optional)")
+    hardware = prompt("Practice hardware/environment (Agent3-only; 例: Windows 11, RTX 5060)", "")
 
     try:
         daily_hours = float(daily_hours_text)

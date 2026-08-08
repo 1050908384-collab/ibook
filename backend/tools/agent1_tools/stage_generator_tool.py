@@ -163,6 +163,8 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
             "stage_num": stage_num,
             "block_id": block_id,
             "block_name": skill_name,
+            "subtopic_id": profile.get("subtopic_id", "") or block_info.get("subtopic_id", ""),
+            "subtopic_name": profile.get("subtopic_name", "") or block_info.get("subtopic_name", ""),
             "estimated_hours": adjusted_hours,
             "gap_skill": skill_name,
             "prerequisites": block_info.get("prerequisites", []),
@@ -259,6 +261,13 @@ def _fallback_stage(session_id: str, skill_name: str, level: str, goal: str,
     stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{session_id}:{stage_num}:{skill_name}"))
     block_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{skill_name}"))
 
+    # 尝试从 profile 中获取 subtopic 信息
+    subtopic_id = profile.get("subtopic_id", "")
+    subtopic_name = profile.get("subtopic_name", "")
+    if not subtopic_name:
+        # 用 skill_name 作为默认 subtopic_name
+        subtopic_name = skill_name
+
     difficulty_map = {"beginner": "初级", "intermediate": "中级", "advanced": "高级"}
 
     daily_hours = float(profile.get("daily_hours", 2.0))
@@ -274,6 +283,8 @@ def _fallback_stage(session_id: str, skill_name: str, level: str, goal: str,
         "stage_num": stage_num,
         "block_id": block_id,
         "block_name": skill_name,
+        "subtopic_id": subtopic_id,
+        "subtopic_name": subtopic_name,
         "estimated_hours": adjusted_hours,
         "gap_skill": skill_name,
         "prerequisites": [],
@@ -351,6 +362,35 @@ class StageGeneratorTool:
     async def generate_stage(self, session_id: str, gap: Dict[str, Any],
                              block_info: Dict[str, Any], goal: str, stage_num: int = 1,
                              profile: Dict[str, Any] = None) -> Dict[str, Any]:
+        # 从 gap 中提取 subtopic 信息
+        subtopic_id = ""
+        subtopic_name = ""
+        target_ids = gap.get("target_subtopic_ids", [])
+        if target_ids and isinstance(target_ids, list) and len(target_ids) > 0:
+            subtopic_id = target_ids[0] if isinstance(target_ids[0], str) else str(target_ids[0])
+        # 从 block_info 的 subtopics 列表中找到匹配的 subtopic 名称
+        subtopics = block_info.get("subtopics", [])
+        if subtopics and isinstance(subtopics, list):
+            for sub in subtopics:
+                if isinstance(sub, dict):
+                    sid = sub.get("subtopic_id", "") or sub.get("id", "")
+                    if sid == subtopic_id or not subtopic_id:
+                        subtopic_id = sid or subtopic_id
+                        subtopic_name = sub.get("subtopic_name", "") or sub.get("name", "") or sub.get("title", "")
+                        break
+            if not subtopic_name and subtopics:
+                first_sub = subtopics[0]
+                if isinstance(first_sub, dict):
+                    subtopic_name = first_sub.get("subtopic_name", "") or first_sub.get("name", "") or first_sub.get("title", "")
+                    subtopic_id = subtopic_id or first_sub.get("subtopic_id", "") or first_sub.get("id", "")
+
+        # 将 subtopic 信息注入 profile 供 _generate_stage 和 _fallback_stage 使用
+        profile = profile or {}
+        if subtopic_id:
+            profile["subtopic_id"] = subtopic_id
+        if subtopic_name:
+            profile["subtopic_name"] = subtopic_name
+
         input_data = {
             "session_id": session_id,
             "gap": gap,

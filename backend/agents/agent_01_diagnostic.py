@@ -82,11 +82,25 @@ class DiagnosticAgent(BaseAgent):
         except Exception:
             generated_stage = {}
         
+        # 从 block_info 中提取首个 subtopic（知识点级阶段）
+        subtopic_id = ""
+        subtopic_name = ""
+        subtopics = block_info.get("subtopics", [])
+        if subtopics and isinstance(subtopics, list) and len(subtopics) > 0:
+            first_sub = subtopics[0]
+            if isinstance(first_sub, dict):
+                subtopic_id = first_sub.get("subtopic_id", "") or first_sub.get("id", "")
+                subtopic_name = first_sub.get("subtopic_name", "") or first_sub.get("name", "") or first_sub.get("title", "")
+            elif isinstance(first_sub, str):
+                subtopic_name = first_sub
+
         return {
             "stage_id": generated_stage.get("stage_id", ""),
             "stage_num": stage_num,
             "block_id": block_info.get("block_id", ""),
             "block_name": block_info.get("block_name", skill_name),
+            "subtopic_id": subtopic_id,
+            "subtopic_name": subtopic_name,
             "estimated_hours": generated_stage.get("estimated_hours", 2.0),
             "gap_skill": skill_name,
             "prerequisites": block_info.get("prerequisites", []),
