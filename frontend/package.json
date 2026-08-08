@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test:agent-flow": "tsc --target ES2020 --module ES2020 --moduleResolution Node --outDir node_modules/.cache/agent-flow-tests src/utils/agentFlowState.ts src/utils/buildDiagnosticMessage.ts src/data/knowledgeGraph.ts src/utils/knowledgeNetworkLayout.ts && node --test tests/*.test.mjs",
+    "test:agent-flow": "tsc --target ES2020 --module ES2020 --moduleResolution Node --outDir node_modules/.cache/agent-flow-tests src/utils/agentFlowState.ts src/utils/buildDiagnosticMessage.ts src/data/knowledgeGraph.ts src/utils/knowledgeNetworkLayout.ts src/utils/learningProjects.ts && node --test tests/*.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

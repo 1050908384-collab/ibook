@@ -6,9 +6,12 @@ import {
   BookOpen,
   Bot,
   Brain,
+  CalendarDays,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Circle,
   Clock,
   Code2,
@@ -18,7 +21,6 @@ import {
   FileText,
   Folder,
   Gauge,
-  Eye,
   LayoutDashboard,
   ListTree,
   Loader2,
@@ -31,11 +33,13 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Search,
   Send,
   Settings,
   Sparkles,
   SquarePen,
   Target,
+  Trash2,
   UserRound,
   Video,
   X
@@ -67,6 +71,7 @@ import {
   type AgentId,
   type AgentStatusMap
 } from './utils/agentFlowState';
+import { filterProjectsForDashboard, formatProjectCreatedDate, sortProjectsForDashboard } from './utils/learningProjects';
 
 type View = 'chat' | 'learn' | 'settings' | 'result';
 type WorkflowState = 'onboarding' | 'diagnosing' | 'needs_more_info' | 'profile_ready' | 'starting_stage' | 'learning';
@@ -177,6 +182,7 @@ type LearningProject = {
   stageName: string;
   stageNum: number;
   phase?: string;
+  createdAt?: number;
   updatedAt: number;
   profile?: Profile;
   stages?: StageInfo[];
@@ -235,6 +241,12 @@ function rememberOwnedSessionId(sessionId: string) {
   if (!sessionId || isLocalSessionId(sessionId)) return;
   const sessionIds = readOwnedSessionIds();
   sessionIds.add(sessionId);
+  localStorage.setItem(OWNED_SESSION_IDS_STORAGE_KEY, JSON.stringify([...sessionIds]));
+}
+
+function forgetOwnedSessionId(sessionId: string) {
+  const sessionIds = readOwnedSessionIds();
+  sessionIds.delete(sessionId);
   localStorage.setItem(OWNED_SESSION_IDS_STORAGE_KEY, JSON.stringify([...sessionIds]));
 }
 
@@ -372,12 +384,14 @@ const demoMessages: Message[] = [
 ];
 
 function createDemoProject(): LearningProject {
+  const now = Date.now();
   return {
     sessionId: DEMO_SESSION_ID,
     goal: fallbackProfile.goal || 'LoRA 微调与部署',
     stageName: fallbackStage.block_name || '第一阶段',
     stageNum: fallbackStage.stage_num ?? 1,
-    updatedAt: Date.now(),
+    createdAt: now,
+    updatedAt: now,
     profile: fallbackProfile,
     stages: [fallbackStage]
   };
@@ -938,6 +952,7 @@ function sessionSummaryToProject(item: SessionListItem): LearningProject | null 
     stageName: item.current_stage_name || '等待阶段规划',
     stageNum: item.current_stage_num || 1,
     phase: item.phase,
+    createdAt: item.created_at ? Date.parse(item.created_at) || undefined : undefined,
     updatedAt: item.updated_at ? Date.parse(item.updated_at) || Date.now() : Date.now(),
     profile: profile || undefined,
     targetTotalHours: item.target_total_hours,
@@ -1782,6 +1797,7 @@ function LearningDashboardView({
   stage,
   setView,
   onSelectProject,
+  onDeleteProject,
   onUpdateTargetDuration,
   projectsLoading,
   projectsError,
@@ -1795,6 +1811,7 @@ function LearningDashboardView({
   stage: StageInfo;
   setView: (view: View) => void;
   onSelectProject: (sessionId: string) => void;
+  onDeleteProject: (sessionId: string) => Promise<void>;
   onUpdateTargetDuration: (sessionId: string, totalHours: number, dailyHours: number) => Promise<void>;
   projectsLoading: boolean;
   projectsError: string | null;
@@ -1802,23 +1819,44 @@ function LearningDashboardView({
   loading: boolean;
   error: string | null;
 }) {
-  const [selectedProject, setSelectedProject] = useState<LearningProject | null>(null);
+  const [pendingDeleteProject, setPendingDeleteProject] = useState<LearningProject | null>(null);
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const [projectSearch, setProjectSearch] = useState('');
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
   const [targetDurationDraft, setTargetDurationDraft] = useState({ total: '', daily: '' });
-  const sortedProjects = [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
+  const sortedProjects = sortProjectsForDashboard(projects, currentSessionId);
+  const visibleProjects = filterProjectsForDashboard(sortedProjects, projectSearch);
   const currentProject = projects.find((project) => project.sessionId === currentSessionId);
 
   return (
     <div className="page-shell">
       <Topbar title="学习仪表盘" subtitle="学习画像、阶段进度和策略决策汇总" loading={loading} error={error} />
       <main className="all-profiles-page learning-dashboard-page">
-        <section className="profile-library-section">
+        <section className={`profile-library-section ${projectsExpanded ? 'is-expanded' : 'is-collapsed'}`}>
           <header>
-            <div>
-              <span>学习画像</span>
+            <button
+              type="button"
+              className="profile-library-toggle"
+              onClick={() => setProjectsExpanded((expanded) => !expanded)}
+              aria-expanded={projectsExpanded}
+              aria-controls="learning-goal-list"
+            >
               <h2>全部学习目标</h2>
-            </div>
-            <strong>{sortedProjects.length} 个目标</strong>
+              <span>{sortedProjects.length} 个目标</span>
+              {projectsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+            {projectsExpanded && (
+              <label className="profile-project-search">
+                <Search size={16} />
+                <input
+                  type="search"
+                  value={projectSearch}
+                  onChange={(event) => setProjectSearch(event.target.value)}
+                  placeholder="搜索学习目标"
+                  aria-label="搜索学习目标"
+                />
+              </label>
+            )}
           </header>
           {projectsError && (
             <div className="profile-list-state error">
@@ -1826,11 +1864,11 @@ function LearningDashboardView({
               <button type="button" onClick={onRetryProjects}>重新读取</button>
             </div>
           )}
-          <div className="profile-goal-list">
+          {projectsExpanded && <div className="profile-goal-list" id="learning-goal-list">
             {projectsLoading && sortedProjects.length === 0 && (
               <div className="profile-list-state loading"><Loader2 className="spin" size={18} />正在读取学习目标</div>
             )}
-            {sortedProjects.map((project) => {
+            {visibleProjects.map((project) => {
               const current = project.sessionId === currentSessionId;
               const stageTotal = (project.stages || []).reduce((sum, item) => sum + (item.estimated_hours || 0), 0);
               const targetTotal = project.targetTotalHours || stageTotal;
@@ -1853,6 +1891,7 @@ function LearningDashboardView({
                     <div className="goal-duration-summary">
                       <span><Clock size={12} />总计 {targetTotal || 0} 小时</span>
                       <span>每日 {targetDaily} 小时</span>
+                      <span><CalendarDays size={12} />建立于 {formatProjectCreatedDate(project.createdAt ?? project.updatedAt)}</span>
                     </div>
                     {editingDuration && (
                       <div className="duration-editor target">
@@ -1893,20 +1932,16 @@ function LearningDashboardView({
                   </div>
                   <div className="profile-goal-actions">
                     <button
-                      className="secondary icon-only"
+                      className="secondary edit-target-button"
                       type="button"
                       onClick={() => {
                         setEditingTargetId(editingDuration ? null : project.sessionId);
                         setTargetDurationDraft({ total: String(targetTotal || 0.5), daily: String(targetDaily) });
                       }}
-                      title="编辑目标时长"
-                      aria-label="编辑目标时长"
+                      title="调整目标时长"
                     >
-                      <Pencil size={16} />
-                    </button>
-                    <button className="secondary" onClick={() => setSelectedProject(project)}>
-                      <Eye size={16} />
-                      查看画像
+                      <Pencil size={15} />
+                      调整时长
                     </button>
                     <button
                       className="primary"
@@ -1915,6 +1950,16 @@ function LearningDashboardView({
                     >
                       {current ? <Check size={16} /> : <LayoutDashboard size={16} />}
                       {current ? '正在查看' : '查看仪表盘'}
+                    </button>
+                    <button
+                      className="delete-target-button"
+                      type="button"
+                      onClick={() => setPendingDeleteProject(project)}
+                      disabled={loading}
+                      title="删除学习目标"
+                      aria-label={`删除学习目标：${project.goal}`}
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </article>
@@ -1927,7 +1972,14 @@ function LearningDashboardView({
                 <span>创建学习目标并完成诊断后，画像会显示在这里。</span>
               </div>
             )}
-          </div>
+            {!projectsLoading && !projectsError && sortedProjects.length > 0 && visibleProjects.length === 0 && (
+              <div className="profiles-empty search-empty">
+                <Search size={24} />
+                <strong>未找到匹配目标</strong>
+                <span>请尝试其他关键词。</span>
+              </div>
+            )}
+          </div>}
         </section>
 
         {profile ? (
@@ -1935,6 +1987,7 @@ function LearningDashboardView({
             profile={profile}
             stage={stage}
             averageAccuracy={currentProject?.averageAccuracy ?? null}
+            targetDailyHours={currentProject?.targetDailyHours ?? profile.daily_hours ?? 2}
             setView={setView}
             loading={loading}
             error={error}
@@ -1948,7 +2001,33 @@ function LearningDashboardView({
           </section>
         ) : null}
       </main>
-      {selectedProject && <ProfileDetailModal project={selectedProject} onClose={() => setSelectedProject(null)} />}
+      {pendingDeleteProject && (
+        <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setPendingDeleteProject(null)}>
+          <section className="delete-goal-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-goal-title">
+            <span className="delete-goal-icon"><Trash2 size={20} /></span>
+            <h2 id="delete-goal-title">删除学习目标？</h2>
+            <p>“{pendingDeleteProject.goal}”及其学习记录将从目标列表中移除。</p>
+            <div className="delete-goal-actions">
+              <button type="button" onClick={() => setPendingDeleteProject(null)} disabled={loading}>取消</button>
+              <button
+                type="button"
+                className="danger"
+                disabled={loading}
+                onClick={async () => {
+                  try {
+                    await onDeleteProject(pendingDeleteProject.sessionId);
+                    setPendingDeleteProject(null);
+                  } catch {
+                    // The parent keeps the dialog open and displays the API error.
+                  }
+                }}
+              >
+                {loading ? <><Loader2 className="spin" size={14} />删除中</> : '确认删除'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
@@ -1957,6 +2036,7 @@ function DashboardView({
   profile,
   stage,
   averageAccuracy,
+  targetDailyHours,
   setView,
   loading,
   error,
@@ -1965,6 +2045,7 @@ function DashboardView({
   profile: Profile;
   stage: StageInfo;
   averageAccuracy: number | null;
+  targetDailyHours: number;
   setView: (view: View) => void;
   loading: boolean;
   error: string | null;
@@ -1972,6 +2053,8 @@ function DashboardView({
 }) {
   const gaps = profile.knowledge_gaps || [];
   const mastered = gaps.filter((gap) => gap.status === '已掌握').length;
+  const foundations = (profile.skill_tags || []).filter(Boolean);
+  const gapNames = gaps.map((gap) => gap.skill).filter(Boolean);
 
   const content = (
     <>
@@ -1986,7 +2069,37 @@ function DashboardView({
           </button>
         </div>
 
-        <div className="metric-grid">
+        <div className="dashboard-profile-grid">
+          <div className="metric dashboard-profile-tags">
+            <span className="metric-icon blue"><BookOpen size={20} /></span>
+            <div>
+              <small>已有基础</small>
+              <div className="dashboard-profile-tag-list">
+                {foundations.length
+                  ? foundations.map((foundation) => <strong key={foundation}>{foundation}</strong>)
+                  : <em>暂未记录</em>}
+              </div>
+            </div>
+          </div>
+          <div className="metric dashboard-profile-tags gaps">
+            <span className="metric-icon orange"><Target size={20} /></span>
+            <div>
+              <small>知识盲区</small>
+              <div className="dashboard-profile-tag-list">
+                {gapNames.length
+                  ? gapNames.map((gap) => <strong key={gap}>{gap}</strong>)
+                  : <em>暂未发现</em>}
+              </div>
+            </div>
+          </div>
+          <div className="metric">
+            <span className="metric-icon green"><Clock size={20} /></span>
+            <div>
+              <small>学习时长</small>
+              <strong>{targetDailyHours}<em> 小时/日</em></strong>
+              <p>当前目标每日安排</p>
+            </div>
+          </div>
           <div className="metric">
             <span className="metric-icon blue"><Gauge size={22} /></span>
             <div>
@@ -2173,13 +2286,7 @@ function SettingsView({
             <input value={hardware} onChange={(event) => setHardware(event.target.value)} placeholder="例如 RTX 4060 / MacBook / 无独显" />
           </div>
           <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
-            <header>
-              <div>
-                <strong>已有知识基础</strong>
-                <h3 id="settings-knowledge-title">知识图谱</h3>
-              </div>
-              <p>青色外圈表示首次填写时已有的知识基础</p>
-            </header>
+            <h3 id="settings-knowledge-title">已有知识基础</h3>
             <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
           </div>
           <div className="setting-row">
@@ -2279,6 +2386,7 @@ export default function App() {
         stageName: nextStage?.block_name || existing?.stageName || '等待阶段规划',
         stageNum: nextStage?.stage_num ?? existing?.stageNum ?? 1,
         phase: phase || existing?.phase,
+        createdAt: existing?.createdAt ?? Date.now(),
         updatedAt: Date.now(),
         profile: nextProfile,
         stages: knownStages.sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1)),
@@ -2361,6 +2469,7 @@ export default function App() {
     try {
       const response = await apiClient.listSessions();
       const remoteProjects = (response.sessions || [])
+        .filter((item) => item.status !== 'abandoned')
         .map(sessionSummaryToProject)
         .filter((item): item is LearningProject => Boolean(item));
       setLearningProjects((prev) => {
@@ -3121,8 +3230,13 @@ export default function App() {
     setNewGoalReturnState(null);
   };
 
-  const switchLearningProject = async (nextSessionId: string, requestedStageNum?: number, destination: View = 'chat') => {
-    if (nextSessionId === sessionId || loading) {
+  const switchLearningProject = async (
+    nextSessionId: string,
+    requestedStageNum?: number,
+    destination: View = 'chat',
+    ignoreBusy = false
+  ) => {
+    if (!ignoreBusy && (nextSessionId === sessionId || loading)) {
       if (nextSessionId === sessionId && requestedStageNum) {
         setSelectedConversationId(`${nextSessionId}:${requestedStageNum}`);
       }
@@ -3177,6 +3291,47 @@ export default function App() {
       setProjectSwitcherOpen(false);
     } catch (caught) {
       setError(`无法切换项目：${getErrorMessage(caught)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteLearningProject = async (targetSessionId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!isLocalSessionId(targetSessionId)) {
+        await apiClient.abandonSession(targetSessionId);
+      }
+      forgetOwnedSessionId(targetSessionId);
+      const remainingProjects = learningProjects.filter((project) => project.sessionId !== targetSessionId);
+      setLearningProjects(remainingProjects);
+      setStageConversations((conversations) => conversations.filter((item) => item.sessionId !== targetSessionId));
+
+      if (targetSessionId !== sessionId) return;
+
+      localStorage.removeItem('sessionId');
+      const nextProject = sortProjectsForDashboard(remainingProjects, null)[0];
+      if (nextProject && !isLocalSessionId(nextProject.sessionId)) {
+        await switchLearningProject(nextProject.sessionId, undefined, 'learn', true);
+        return;
+      }
+
+      setSessionId(null);
+      setProfile(null);
+      setStage(null);
+      setLearningPackage(null);
+      setPlannedStage(null);
+      setResult(null);
+      setAssessmentState({ attemptId: null, questions: [] });
+      setMessages(initialMessages);
+      setSelectedConversationId('');
+      setAgentStatuses(createAgentStatusMap());
+      setWorkflow('onboarding');
+      setView('learn');
+    } catch (caught) {
+      setError(`删除学习目标失败：${getErrorMessage(caught)}`);
+      throw caught;
     } finally {
       setLoading(false);
     }
@@ -3284,6 +3439,7 @@ export default function App() {
           stage={workspaceStage}
           setView={setView}
           onSelectProject={(nextSessionId) => void switchLearningProject(nextSessionId, undefined, 'learn')}
+          onDeleteProject={deleteLearningProject}
           onUpdateTargetDuration={updateTargetDuration}
           projectsLoading={projectsLoading}
           projectsError={projectsError}

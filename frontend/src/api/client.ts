@@ -116,6 +116,7 @@ export type SessionListItem = {
   title?: string;
   status?: string;
   phase?: string;
+  created_at?: string;
   updated_at?: string;
   goal?: string;
   grade?: string;

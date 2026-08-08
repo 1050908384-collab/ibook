@@ -1298,7 +1298,7 @@ class SQLiteClient:
         """获取所有会话列表（含 profile_summary，供账号级"所有学习画像/所有项目"列表使用）"""
         with self.Session() as session:
             rows = session.execute(text("""
-                SELECT s.session_id, s.status, s.current_stage, s.updated_at,
+                SELECT s.session_id, s.status, s.current_stage, s.created_at, s.updated_at,
                        s.target_total_hours, s.target_daily_hours,
                        ss.state_json
                 FROM sessions s
@@ -1350,6 +1350,7 @@ class SQLiteClient:
                     "title": state_json.get("title", ""),
                     "status": status,
                     "phase": phase,
+                    "created_at": row["created_at"],
                     "updated_at": row["updated_at"],
                     # profile_summary：账号级"所有学习画像/所有项目"列表
                     "profile_summary": {
