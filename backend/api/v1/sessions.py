@@ -26,6 +26,7 @@ class SessionSummary(BaseModel):
     status: str
     phase: str
     profile_summary: dict[str, Any] = Field(default_factory=dict)
+    created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
 
@@ -161,6 +162,7 @@ async def list_sessions():
                 "current_stage_num": ps.get("current_stage_num", 0),
                 "current_stage_name": ps.get("current_stage_name", ""),
                 "progress": ps.get("progress", 0),
+                "created_at": s.get("created_at"),
                 "updated_at": s.get("updated_at"),
                 # 保留 profile_summary 嵌套对象，便于前端按需读取
                 "profile_summary": ps,
