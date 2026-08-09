@@ -1041,6 +1041,35 @@ body.resizing-workspace-panels * {
   line-height: 1.5;
 }
 
+.goal-stage-empty {
+  display: grid;
+  gap: 7px;
+  padding: 4px 9px 6px;
+}
+
+.goal-stage-empty p {
+  margin: 0;
+}
+
+.goal-stage-empty button {
+  justify-self: start;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #d8d5f5;
+  border-radius: 6px;
+  background: #f5f3ff;
+  color: #5148b9;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.goal-stage-empty button:hover {
+  border-color: #aaa3e8;
+  background: #ece9ff;
+}
+
 .historical-conversation-note {
   width: min(760px, 92%);
   min-height: 48px;
@@ -1095,12 +1124,16 @@ body.resizing-workspace-panels * {
 
 .learning-dashboard-page {
   display: block;
+  padding-left: clamp(12px, 2vw, 32px);
+  padding-right: clamp(12px, 2vw, 32px);
 }
 
 .profile-library-section,
 .learning-dashboard-page .dashboard-overview-section {
-  max-width: 1380px;
+  width: min(100%, 1600px);
+  max-width: none;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .profile-library-section {
@@ -1215,6 +1248,8 @@ body.resizing-workspace-panels * {
 }
 
 .profile-goal-list > article {
+  min-width: 0;
+  box-sizing: border-box;
   min-height: 124px;
   border: 1px solid #e1e4eb;
   border-radius: 8px;
@@ -2350,9 +2385,17 @@ body.resizing-workspace-panels * {
 }
 
 .duration-editor.target {
-  grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
   margin-top: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.duration-editor.target .duration-editor-actions {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
 }
 
 .duration-editor.dark {

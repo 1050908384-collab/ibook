@@ -703,7 +703,8 @@ function ProfilePanel({
   timerSeconds,
   timerRunning,
   onToggleTimer,
-  onUpdateStageDuration
+  onUpdateStageDuration,
+  onStartStage
 }: {
   stage: StageInfo;
   projects: LearningProject[];
@@ -718,6 +719,7 @@ function ProfilePanel({
   timerRunning: boolean;
   onToggleTimer: () => void;
   onUpdateStageDuration: (stageId: string, hours: number) => Promise<void>;
+  onStartStage: () => void;
 }) {
   const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({});
   const [editingDuration, setEditingDuration] = useState(false);
@@ -859,7 +861,16 @@ function ProfilePanel({
                       </button>
                     );
                   })}
-                  {stages.length === 0 && <p>完成画像后生成第一阶段</p>}
+                  {stages.length === 0 && project.sessionId === currentSessionId ? (
+                    <div className="goal-stage-empty">
+                      <p>画像已完成，确认后即可生成第一阶段</p>
+                      <button type="button" onClick={onStartStage} disabled={loading}>
+                        {loading ? '正在生成…' : '确认画像并生成第一阶段'}
+                      </button>
+                    </div>
+                  ) : stages.length === 0 ? (
+                    <p>完成画像后生成第一阶段</p>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -1187,6 +1198,7 @@ function ChatView({
   selectedConversationId,
   onSelectProjectStage,
   onUpdateStageDuration,
+  onStartStage,
   readOnly,
   readOnlyNotice,
   loading,
@@ -1215,6 +1227,7 @@ function ChatView({
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
   onUpdateStageDuration: (stageId: string, hours: number) => Promise<void>;
+  onStartStage: () => void;
   readOnly: boolean;
   readOnlyNotice: string;
   loading: boolean;
@@ -1289,6 +1302,7 @@ function ChatView({
           timerRunning={timerRunning}
           onToggleTimer={onToggleTimer}
           onUpdateStageDuration={onUpdateStageDuration}
+          onStartStage={onStartStage}
         />
 
         <CurrentMaterialPanel
@@ -2331,8 +2345,8 @@ function SettingsView({
             </button>
           </div>
           <div className="setting-row">
-            <div><strong>当前会话</strong><p>清除后会回到本地演示状态</p></div>
-            <button className="danger" onClick={onClear}>清除本地会话</button>
+            <div><strong>重新开始</strong><p>放弃当前学习目标并清除本地会话缓存，用户基础可在上方重新确定</p></div>
+            <button className="danger" onClick={onClear}>清除会话并重新开始</button>
           </div>
         </section>
       </main>
@@ -3040,13 +3054,20 @@ export default function App() {
   };
 
   const clearLocalSession = async () => {
-    const reusableProfile = profile || learningProjects.find((project) => project.profile)?.profile;
-    if (sessionId && !sessionId.startsWith('local-goal-') && sessionId !== DEMO_SESSION_ID) {
+    const targetSessionId = sessionId;
+    const confirmed = window.confirm('将放弃当前学习目标并清除本地会话缓存，确定重新开始吗？');
+    if (!confirmed) return;
+    if (targetSessionId && !targetSessionId.startsWith('local-goal-') && targetSessionId !== DEMO_SESSION_ID) {
       try {
-        await apiClient.abandonSession(sessionId);
+        await apiClient.abandonSession(targetSessionId);
       } catch {
         // Keep local reset usable even if abandon fails remotely.
       }
+    }
+    if (targetSessionId) {
+      forgetOwnedSessionId(targetSessionId);
+      setLearningProjects((projects) => projects.filter((project) => project.sessionId !== targetSessionId));
+      setStageConversations((conversations) => conversations.filter((item) => item.sessionId !== targetSessionId));
     }
     localStorage.removeItem('sessionId');
     setError(null);
@@ -3059,13 +3080,8 @@ export default function App() {
     setMessages(initialMessages);
     setSelectedConversationId('');
     setInput('');
-    setReuseUserProfile(Boolean(reusableProfile));
-    setOnboardingForm(reusableProfile ? {
-      ...formDataFromProfile(reusableProfile),
-      goal: '',
-      daily_hours: String(reusableProfile.daily_hours ?? 2),
-      learning_style: 'mixed'
-    } : emptyOnboardingForm);
+    setReuseUserProfile(false);
+    setOnboardingForm(emptyOnboardingForm);
     setFollowupQuestions([]);
     setHighlightedFields([]);
     setTimerSeconds(0);
@@ -3506,6 +3522,7 @@ export default function App() {
           selectedConversationId={selectedConversationId || currentConversationId}
           onSelectProjectStage={selectProjectStage}
           onUpdateStageDuration={updateStageDuration}
+          onStartStage={() => void startStage()}
           readOnly={historicalConversationSelected}
           readOnlyNotice={readOnlyConversationNotice}
           loading={loading}
