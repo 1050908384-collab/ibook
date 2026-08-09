@@ -18,7 +18,6 @@ import {
   Copy,
   ExternalLink,
   FileQuestion,
-  FileText,
   Folder,
   Gauge,
   LayoutDashboard,
@@ -41,7 +40,6 @@ import {
   Target,
   Trash2,
   UserRound,
-  Video,
   X
 } from 'lucide-react';
 import {
@@ -122,6 +120,8 @@ type StageInfo = {
   block_name?: string;
   subtopic_id?: string;
   subtopic_name?: string;
+  subtopic_ids?: string[];
+  subtopic_names?: string[];
   estimated_hours?: number;
   gap_skill?: string;
   prerequisites?: string[];
@@ -154,6 +154,7 @@ type LearningResource = {
   metadata_json?: Record<string, unknown>;
 };
 type LearningPackage = {
+  subtopic_name?: string;
   tutorial?: string;
   code_examples?: Array<{ title?: string; code?: string; language?: string }>;
   questions?: TestQuestion[];
@@ -885,12 +886,50 @@ function uniqueResources(resources: LearningResource[]) {
   });
 }
 
-function getEmbeddedVideoUrl(url: string) {
-  const youtubeMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-  if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-  const bilibiliMatch = url.match(/bilibili\.com\/video\/(BV[A-Za-z0-9]+)/i);
-  if (bilibiliMatch) return `https://player.bilibili.com/player.html?bvid=${bilibiliMatch[1]}`;
-  return '';
+function resolveStageSubtopics(profile: Profile, stage: StageInfo): KnowledgeSubtopic[] {
+  const directSubtopics = (stage.subtopic_names || []).map((subtopic_name, index) => ({
+    subtopic_name,
+    subtopic_id: stage.subtopic_ids?.[index],
+    sequence_index: index
+  })).filter((topic) => topic.subtopic_name);
+  if (directSubtopics.length > 0) return directSubtopics;
+
+  const currentGraphBlock = findKnowledgeGraphBlock(stage.block_id, stage.block_name, stage.gap_skill);
+  const currentGap = (profile.knowledge_gaps || []).find((gap) => (
+    Boolean(stage.block_id && gap.block_id === stage.block_id)
+    || gap.skill === stage.gap_skill
+    || gap.block_name === stage.block_name
+    || Boolean(currentGraphBlock && findKnowledgeGraphBlock(gap.block_id, gap.block_name, gap.skill)?.block_id === currentGraphBlock.block_id)
+  ));
+  const apiSubtopics = currentGap?.subtopics || currentGap?.target_subtopics || [];
+  const targetIds = new Set(currentGap?.target_subtopic_ids || []);
+  const catalogSubtopics = currentGraphBlock?.subtopics || [];
+  const selectedCatalogSubtopics = targetIds.size
+    ? catalogSubtopics.filter((topic) => targetIds.has(topic.subtopic_id))
+    : catalogSubtopics;
+  return (apiSubtopics.length ? apiSubtopics : selectedCatalogSubtopics)
+    .map((topic) => ({ ...topic }))
+    .sort((a, b) => (a.sequence_index ?? 0) - (b.sequence_index ?? 0));
+}
+
+function topicKey(topic?: KnowledgeSubtopic | null) {
+  return topic?.subtopic_id || topic?.subtopic_name || '';
+}
+
+function getTopicTutorial(tutorial: string | undefined, topicName: string) {
+  if (!tutorial?.trim() || !topicName.trim()) return tutorial;
+  const normalizedTopic = topicName.trim().replace(/\s+/g, ' ');
+  const headingPattern = /^##\s+(.+?)\s*$/gm;
+  let match: RegExpExecArray | null;
+  while ((match = headingPattern.exec(tutorial))) {
+    const heading = match[1].trim().replace(/\s+/g, ' ');
+    if (heading !== normalizedTopic && !heading.includes(normalizedTopic) && !normalizedTopic.includes(heading)) continue;
+    const contentStart = match.index + match[0].length;
+    const remainder = tutorial.slice(contentStart);
+    const nextHeading = remainder.search(/^##\s+/m);
+    return remainder.slice(0, nextHeading < 0 ? remainder.length : nextHeading).trim();
+  }
+  return tutorial;
 }
 
 function resolveSessionStage(session: {
@@ -988,10 +1027,12 @@ function qaItemsToMessages(items?: Array<{
 function MaterialDocument({
   stage,
   learningPackage,
+  selectedSubtopic,
   compact = false
 }: {
   stage: StageInfo;
   learningPackage: LearningPackage;
+  selectedSubtopic?: KnowledgeSubtopic;
   compact?: boolean;
 }) {
   const codeExamples = learningPackage.code_examples || [];
@@ -1008,14 +1049,15 @@ function MaterialDocument({
   const codeResourceItems = uniqueResources(
     learningResources.filter((resource) => resource.resource_type === 'code' && Boolean(resource.content_summary || getResourceUrl(resource)))
   );
-  const videos = uniqueResources(
-    learningResources.filter((resource) => resource.resource_type === 'video' && Boolean(getResourceUrl(resource)))
-  );
-  const articles = uniqueResources(
-    learningResources.filter((resource) => resource.resource_type === 'article' && Boolean(getResourceUrl(resource)))
-  );
+  const selectedTopicName = selectedSubtopic?.subtopic_name
+    || stage.subtopic_name
+    || learningPackage.subtopic_name
+    || stage.block_name
+    || learningPackage.block_name
+    || '未命名学习材料';
+  const topicTutorial = getTopicTutorial(learningPackage.tutorial, selectedTopicName);
   const hasTextContent = Boolean(
-    learningPackage.tutorial?.trim()
+    topicTutorial?.trim()
     || codeExamples.length
     || documentationResources.length
     || codeResourceItems.length
@@ -1026,12 +1068,12 @@ function MaterialDocument({
         <span>阶段 {stage.stage_num ?? 1}</span>
         <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
       </div>
-      <h2>{stage.block_name || learningPackage.block_name || '未命名学习材料'}</h2>
+      <h2>{selectedTopicName}</h2>
       <section className="material-resource-section text-resources">
         <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
         {hasTextContent ? (
           <>
-            {learningPackage.tutorial?.trim() && <div className="material-markdown"><ReactMarkdown>{learningPackage.tutorial}</ReactMarkdown></div>}
+            {topicTutorial?.trim() && <div className="material-markdown"><ReactMarkdown>{topicTutorial}</ReactMarkdown></div>}
             {documentationResources.length > 0 && (
               <div className="material-article-list">
                 {documentationResources.map((resource, index) => {
@@ -1078,48 +1120,6 @@ function MaterialDocument({
           </>
         ) : <p className="material-empty">无</p>}
       </section>
-      <section className="material-resource-section article-resources">
-        <div className="material-section-heading"><FileText size={16} /><h3>文章网址</h3></div>
-        {articles.length > 0 ? (
-          <div className="material-article-list">
-            {articles.map((article, index) => {
-              const url = getResourceUrl(article);
-              return (
-                <a href={url} target="_blank" rel="noreferrer" key={article.resource_id || article.source_id || `${url}-${index}`}>
-                  <span><strong>{article.title || `参考文章 ${index + 1}`}</strong>{article.content_summary && <small>{article.content_summary}</small>}</span>
-                  <ExternalLink size={15} />
-                </a>
-              );
-            })}
-          </div>
-        ) : <p className="material-empty">无</p>}
-      </section>
-      <section className="material-resource-section video-resources">
-        <div className="material-section-heading"><Video size={16} /><h3>视频网址</h3></div>
-        {videos.length > 0 ? (
-          <div className="material-video-list">
-            {videos.map((video, index) => {
-              const url = getResourceUrl(video);
-              const embedUrl = getEmbeddedVideoUrl(url);
-              const directVideo = /\.(mp4|webm|ogg)(?:\?|$)/i.test(url);
-              return (
-                <article key={video.resource_id || video.source_id || `${url}-${index}`}>
-                  {embedUrl ? (
-                    <iframe src={embedUrl} title={video.title || `阶段视频 ${index + 1}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-                  ) : directVideo ? (
-                    <video controls preload="metadata" playsInline src={url} />
-                  ) : null}
-                  <div>
-                    <strong>{video.title || `阶段视频 ${index + 1}`}</strong>
-                    {video.content_summary && <p>{video.content_summary}</p>}
-                    {url && <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={13} />跳转播放</a>}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : <p className="material-empty">无</p>}
-      </section>
     </article>
   );
 }
@@ -1127,12 +1127,14 @@ function MaterialDocument({
 function CurrentMaterialPanel({
   stage,
   learningPackage,
+  selectedSubtopic,
   onTest,
   stageResultReady,
   onOpenResult
 }: {
   stage: StageInfo;
   learningPackage: LearningPackage | null;
+  selectedSubtopic?: KnowledgeSubtopic;
   onTest: () => void;
   stageResultReady: boolean;
   onOpenResult: () => void;
@@ -1147,7 +1149,7 @@ function CurrentMaterialPanel({
         </div>
       </header>
       <div className="current-material-scroll">
-        <MaterialDocument stage={stage} learningPackage={content} compact />
+        <MaterialDocument stage={stage} learningPackage={content} selectedSubtopic={selectedSubtopic} compact />
       </div>
       <footer>
         <button onClick={stageResultReady ? onOpenResult : onTest}>
@@ -1173,6 +1175,8 @@ function ChatView({
   onOpenLearningPath,
   onOpenProfile,
   learningPackage,
+  stageSubtopics,
+  selectedSubtopicId,
   onTest,
   stageResultReady,
   onOpenResult,
@@ -1199,6 +1203,8 @@ function ChatView({
   onOpenLearningPath: () => void;
   onOpenProfile: () => void;
   learningPackage: LearningPackage | null;
+  stageSubtopics: KnowledgeSubtopic[];
+  selectedSubtopicId: string | null;
   onTest: () => void;
   stageResultReady: boolean;
   onOpenResult: () => void;
@@ -1286,6 +1292,7 @@ function ChatView({
         <CurrentMaterialPanel
           stage={stage}
           learningPackage={learningPackage}
+          selectedSubtopic={stageSubtopics.find((topic) => topicKey(topic) === selectedSubtopicId) || stageSubtopics[0]}
           onTest={onTest}
           stageResultReady={stageResultReady}
           onOpenResult={onOpenResult}
@@ -1735,28 +1742,17 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
 function LearningPathModal({
   profile,
   stage,
+  selectedSubtopicId,
+  onSelectSubtopic,
   onClose
 }: {
   profile: Profile;
   stage: StageInfo;
+  selectedSubtopicId: string | null;
+  onSelectSubtopic: (subtopicId: string) => void;
   onClose: () => void;
 }) {
-  const currentGraphBlock = findKnowledgeGraphBlock(stage.block_id, stage.block_name, stage.gap_skill);
-  const currentGap = (profile.knowledge_gaps || []).find((gap) => (
-    Boolean(stage.block_id && gap.block_id === stage.block_id)
-    || gap.skill === stage.gap_skill
-    || gap.block_name === stage.block_name
-    || Boolean(currentGraphBlock && findKnowledgeGraphBlock(gap.block_id, gap.block_name, gap.skill)?.block_id === currentGraphBlock.block_id)
-  ));
-  const apiSubtopics = currentGap?.subtopics || currentGap?.target_subtopics || [];
-  const targetIds = new Set(currentGap?.target_subtopic_ids || []);
-  const catalogSubtopics = currentGraphBlock?.subtopics || [];
-  const selectedCatalogSubtopics = targetIds.size
-    ? catalogSubtopics.filter((topic) => targetIds.has(topic.subtopic_id))
-    : catalogSubtopics;
-  const subtopics: KnowledgeSubtopic[] = (apiSubtopics.length ? apiSubtopics : selectedCatalogSubtopics)
-    .map((topic) => ({ ...topic }))
-    .sort((a, b) => (a.sequence_index ?? 0) - (b.sequence_index ?? 0));
+  const subtopics = resolveStageSubtopics(profile, stage);
   const prerequisites = Array.from(new Set(stage.prerequisites || []));
 
   return (
@@ -1769,14 +1765,31 @@ function LearningPathModal({
         <div className="learning-path-modal-body">
           <section className="stage-knowledge-panel">
             <div className="stage-knowledge-heading">
-              <div><span>阶段 {stage.stage_num ?? 1}</span><h3>{stage.block_name || currentGraphBlock?.block_name || '当前学习阶段'}</h3></div>
+              <div><span>阶段 {stage.stage_num ?? 1}</span><h3>{stage.block_name || '当前学习阶段'}</h3></div>
               <strong>{subtopics.length} 个知识点</strong>
             </div>
             {prerequisites.length > 0 && <div className="stage-knowledge-prerequisites"><span>前置要求</span>{prerequisites.map((name) => <b key={name}>{name}</b>)}</div>}
             {subtopics.length > 0 ? (
-              <div className="stage-knowledge-list">
+              <div className="stage-knowledge-list" role="tablist" aria-label="阶段知识点">
                 {subtopics.map((topic, index) => (
-                  <div className="path-subtopic" key={topic.subtopic_id || `${topic.subtopic_name}-${index}`}>
+                  <div
+                    className={`path-subtopic ${topicKey(topic) === selectedSubtopicId ? 'current' : ''}`}
+                    key={topicKey(topic) || `${topic.subtopic_name}-${index}`}
+                    role="tab"
+                    tabIndex={0}
+                    aria-selected={topicKey(topic) === selectedSubtopicId}
+                    onClick={() => {
+                      onSelectSubtopic(topicKey(topic));
+                      onClose();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onSelectSubtopic(topicKey(topic));
+                        onClose();
+                      }
+                    }}
+                  >
                     <i>{index + 1}</i>
                     <span>{topic.subtopic_name}</span>
                   </div>
@@ -2346,6 +2359,7 @@ export default function App() {
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
   const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);
+  const [selectedSubtopicId, setSelectedSubtopicId] = useState<string | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
   const [reuseUserProfile, setReuseUserProfile] = useState(false);
@@ -3352,6 +3366,13 @@ export default function App() {
 
   const workspaceProfile = profile || fallbackProfile;
   const workspaceStage = stage || unavailableStage;
+  const stageSubtopics = useMemo(
+    () => resolveStageSubtopics(workspaceProfile, workspaceStage),
+    [workspaceProfile, workspaceStage]
+  );
+  const activeSubtopicId = stageSubtopics.some((topic) => topicKey(topic) === selectedSubtopicId)
+    ? selectedSubtopicId
+    : topicKey(stageSubtopics[0]) || null;
   const currentConversationId = sessionId && stage ? `${sessionId}:${stage.stage_num ?? 1}` : '';
   const selectedConversation = stageConversations.find((item) => item.id === selectedConversationId);
   const conversationStage = selectedConversation?.stage || workspaceStage;
@@ -3412,12 +3433,14 @@ export default function App() {
           conversationStage={conversationStage}
           timerSeconds={timerSeconds}
           timerRunning={timerRunning}
-        onToggleTimer={toggleStageTimer}
-        onCreateGoal={createLearningGoal}
-        onOpenLearningPath={() => setLearningPathOpen(true)}
-        onOpenProfile={() => setProfileModalOpen(true)}
-        learningPackage={learningPackage}
-        onTest={openTestModal}
+          onToggleTimer={toggleStageTimer}
+          onCreateGoal={createLearningGoal}
+          onOpenLearningPath={() => setLearningPathOpen(true)}
+          onOpenProfile={() => setProfileModalOpen(true)}
+          learningPackage={learningPackage}
+          stageSubtopics={stageSubtopics}
+          selectedSubtopicId={activeSubtopicId}
+          onTest={openTestModal}
           stageResultReady={Boolean(result)}
           onOpenResult={() => setView('result')}
           projects={learningProjects}
@@ -3466,7 +3489,15 @@ export default function App() {
         />
       )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
-      {learningPathOpen && profile && stage && <LearningPathModal profile={profile} stage={stage} onClose={() => setLearningPathOpen(false)} />}
+      {learningPathOpen && profile && stage && (
+        <LearningPathModal
+          profile={profile}
+          stage={stage}
+          selectedSubtopicId={activeSubtopicId}
+          onSelectSubtopic={setSelectedSubtopicId}
+          onClose={() => setLearningPathOpen(false)}
+        />
+      )}
       {profileModalOpen && profile && (
         <ProfileDetailModal
           project={{
