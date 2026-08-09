@@ -428,9 +428,15 @@ class TechnicalReviewAgent(BaseAgent):
             except Exception:
                 pass
             # 步骤2：事实检查（幻觉检测）
+            # 有 claims 时按 Claim 粒度送检（幻觉 issue 精确归属 claim_id/section_ref）；
+            # 无 claims 时回退到整篇送检，保证向后兼容。
             try:
-                hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["tutorial"])
-                raw_errors.extend(hallucination_errors)
+                claim_hallucinations = await self._verify_claims_hallucination(claims)
+                if claim_hallucinations:
+                    raw_errors.extend(claim_hallucinations)
+                else:
+                    hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["tutorial"])
+                    raw_errors.extend(hallucination_errors)
             except Exception:
                 pass
             # 步骤3-4：质量审核（难度/认知负荷/风格匹配）
@@ -644,6 +650,40 @@ class TechnicalReviewAgent(BaseAgent):
                     return claim
         return None
 
+    async def _verify_claims_hallucination(
+        self,
+        claims: Optional[List[Dict[str, Any]]],
+    ) -> List[Dict[str, Any]]:
+        """按 Claim 粒度做幻觉检测，使幻觉 issue 能精确归属到具体 claim_id / section_ref。
+
+        整篇 tutorial 作为单条陈述送检时，知识库相似度会被无关文字稀释，且产出的
+        hallucination issue 无法归属到某条 Claim（claim_id/location 只能落空）。
+        这里对每条「关键技术 Claim」单独送检：命中幻觉/存疑时，直接带出该 Claim 的
+        claim_id 与 section_ref（作为 location），供 _enrich_debate_fields 关联来源与派生 must_fix。
+
+        仅对 is_key_technical=true 的 Claim 送检（非关键陈述不因相似度低而误报），
+        无 claims 时返回空列表，由调用方回退到整篇送检。
+        """
+        claim_errors: List[Dict[str, Any]] = []
+        for c in claims or []:
+            if not isinstance(c, dict) or not c.get("is_key_technical"):
+                continue
+            text = c.get("text") or ""
+            if not text.strip():
+                continue
+            try:
+                errs = await self.knowledge_verify_tool.verify_knowledge(text)
+            except Exception:
+                continue
+            for e in errs:
+                # 把幻觉 issue 锚定到该 Claim：claim_id 供 _match_claim 直接命中，
+                # location=section_ref 供按位置回退匹配，两者任一都能建立归属。
+                e["claim_id"] = c.get("claim_id")
+                if c.get("section_ref"):
+                    e["location"] = c.get("section_ref")
+                claim_errors.append(e)
+        return claim_errors
+
     def _enrich_debate_fields(
         self,
         errors: List[ReviewError],
@@ -809,17 +849,29 @@ class TechnicalReviewAgent(BaseAgent):
 
         if disposition == "partially_accepted":
             # 部分整改：风险下降但未完全消除 → 降级（critical→major，或解除 must_fix）。
-            # 但「降级」会经 Orchestrator 解除 must_fix 并降 severity，一轮即放松红线，
-            # 因此必须以「真实整改证据」为前提，避免无实质动作的口头「部分接受」放松关键错误：
-            #   1) 无任何证据（既无新来源也无 patch）→ 不予降级，保守 persist；
-            #   2) 质量红线类（认知负荷/难度超载）只能靠改写正文缓解，补来源无效 →
-            #      必须提供正文 patch 才降级，否则 persist；
-            #   3) 事实/来源类的部分整改（有新来源或 patch）→ 按原规则降级。
+            # 但「降级」会经 Orchestrator 解除 must_fix 并降 severity，一轮即放松红线。
+            #
+            # 关键：rebut 发生在 Agent3.modify_package 之前，此时正文尚未真正修改，
+            # patched_sections 往往只是 Agent3 对 issue.location 的回显（其 modify_package
+            # 目前仅在文末追加「## 辩论修订」说明，并不定点改正原文，见检查报告问题③.2）。
+            # 因此 patched_sections 不能单独作为「已整改」的证据，否则会「口头部分接受即一轮放行」。
+            #
+            # 收紧规则（P1）：
+            #   1) 无任何证据（既无新来源也无 patch）→ persist；
+            #   2) must_fix issue：必须提供「新来源」source_refs 作为可核验证据才降级；
+            #      仅有 patched_sections（无新来源）→ persist，交由下一轮重新审核核验实际改动；
+            #   3) 质量红线类（认知负荷/难度超载）：靠改写正文缓解，且需下一轮复核 →
+            #      一律 persist，仅补来源不算整改；
+            #   4) 非 must_fix 的部分整改（有新来源或 patch）→ 按原规则降级。
             has_evidence = bool(reply_source_refs or patched)
             if not has_evidence:
                 return "persist"
-            if _is_quality_redline_error_type(error_type) and not patched:
-                # 质量红线：仅补来源不算整改，需正文 patch
+            if _is_quality_redline_error_type(error_type):
+                # 质量红线：改动效果需下一轮实测，rebut 阶段不预先降级
+                return "persist"
+            if must_fix and not reply_source_refs:
+                # must_fix 且仅回显 patched_sections、无可核验新来源 →
+                # 不预先降级，persist 交下一轮 re-review 核验正文是否真的改对
                 return "persist"
             return "downgrade"
 

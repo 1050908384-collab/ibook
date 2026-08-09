@@ -1893,6 +1893,7 @@ class DeterministicTechnicalReviewAgent:
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         errors = []
         video_resource_errors = []
+        raw_hallucinations: List[Dict[str, Any]] = []
         if not request.content.strip():
             errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
             return TechnicalReviewResult(passed=False, errors=errors)
@@ -1907,11 +1908,22 @@ class DeterministicTechnicalReviewAgent:
             pass
 
         # 步骤2：事实检查（幻觉检测 — 知识依据验证，sim<0.65判幻觉）
+        # 有 claims 时按 Claim 粒度送检，使幻觉 issue 精确归属 claim_id/section_ref
+        # （供协议字段补全关联来源、派生 must_fix）；无 claims 时回退整篇送检。
+        # 保留原始 dict（raw_hallucinations，含显式 claim_id）传入协议补全，
+        # 避免 normalize 丢弃 claim_id 后仅靠 location 匹配（同 section 多 claim 时会误配）。
         try:
-            hallucination_errors = normalize_review_errors(
-                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
+                request.claims
             )
-            errors.extend(hallucination_errors)
+            if claim_hallucinations:
+                raw_hallucinations = claim_hallucinations
+                errors.extend(normalize_review_errors(claim_hallucinations))
+            else:
+                hallucination_errors = normalize_review_errors(
+                    await self.knowledge_verify_tool.verify_knowledge(request.content)
+                )
+                errors.extend(hallucination_errors)
         except Exception:
             pass
 
@@ -1937,12 +1949,13 @@ class DeterministicTechnicalReviewAgent:
             except Exception:
                 video_resource_errors = []
         # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        # raw_errors 汇入视频错误与逐 Claim 幻觉原始 dict（后者含显式 claim_id，供精确归属）
         errors = self._protocol_agent._enrich_debate_fields(
             errors,
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
-            raw_errors=video_resource_errors,
+            raw_errors=list(video_resource_errors) + raw_hallucinations,
         )
 
         # 步骤6：综合裁决（有critical错误或errors非空则不通过）
@@ -1994,10 +2007,20 @@ class HybridTechnicalReviewAgent:
             rule_errors = []
 
         # 步骤2：事实检查（幻觉检测 — 知识依据验证）— 异常兜底
+        # 有 claims 时按 Claim 粒度送检，使幻觉 issue 精确归属 claim_id/section_ref；
+        # 保留原始 dict（raw_hallucinations，含显式 claim_id）供协议补全精确匹配。
+        raw_hallucinations: List[Dict[str, Any]] = []
         try:
-            hallucination_errors = normalize_review_errors(
-                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
+                request.claims
             )
+            if claim_hallucinations:
+                raw_hallucinations = claim_hallucinations
+                hallucination_errors = normalize_review_errors(claim_hallucinations)
+            else:
+                hallucination_errors = normalize_review_errors(
+                    await self.knowledge_verify_tool.verify_knowledge(request.content)
+                )
         except Exception:
             hallucination_errors = []
 
@@ -2060,7 +2083,7 @@ class HybridTechnicalReviewAgent:
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
-            raw_errors=video_resource_errors,
+            raw_errors=list(video_resource_errors) + raw_hallucinations,
         )
 
         print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
