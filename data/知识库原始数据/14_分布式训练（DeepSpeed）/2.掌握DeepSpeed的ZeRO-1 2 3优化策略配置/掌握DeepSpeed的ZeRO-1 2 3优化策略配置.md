@@ -80,11 +80,11 @@ ZeRO-1 是最轻量级的 ZeRO 阶段，它只分片**优化器状态**（Optimi
 
 **工作流程**：
 1. 前向/反向传播：每张卡独立计算，得到完整梯度
-2. 梯度同步：各卡对梯度做规约同步（实现上等价于 Reduce-Scatter + All-Gather，与 DDP 的 AllReduce 通信数据量处于同一量级）
-3. 优化器更新：每张卡只更新自己分到的那部分参数对应的优化器状态与参数分片
-4. 参数分发：更新后各卡通过 All-Gather 拿到其他分片更新后的参数，恢复出完整参数
+2. 梯度规约：使用 **Reduce-Scatter** 规约梯度，让每张卡只拿到"自己负责的那个参数分片"对应的梯度（注意：这一步只是 Reduce-Scatter，**不包含**把梯度再 All-Gather 回全量）
+3. 优化器更新：每张卡用上一步拿到的分片梯度，更新自己负责的优化器状态与参数分片
+4. 参数分发：更新后各卡通过 **All-Gather** 交换各自更新过的参数分片，恢复出完整参数
 
-> **说明**：这里容易产生的误解是"在完整 DDP 的 AllReduce 之外，又额外加了一次参数 AllGather"。更准确的理解是：ZeRO-1 把梯度同步 + 参数分发拆成 Reduce-Scatter 与 All-Gather 两步，**总的通信数据量与 DDP 的一次 AllReduce 大致相当**（AllReduce 本身在多数实现里就等于 Reduce-Scatter + All-Gather）；区别更多体现在"通信操作次数/调度方式"上，而不是数据量翻倍。
+> **说明**：ZeRO-1 的通信由"一次梯度 **Reduce-Scatter** + 一次更新参数 **All-Gather**"构成，与环形 AllReduce 的实现（AllReduce ≈ Reduce-Scatter + All-Gather）处于**同一量级**——所以说它"通信量与 DDP 的一次 AllReduce 大致相当"。常见的两个误解要避免：一是把第 2 步的梯度规约说成"完整的 AllReduce"（那等于多算了一次梯度 All-Gather），二是以为"梯度 Reduce-Scatter + 参数 All-Gather"比 DDP 多出一倍通信。正确的图景是：梯度只 Reduce-Scatter 一次、参数只 All-Gather 一次，数据量没有翻倍，区别主要在通信操作的次数/调度方式上。
 
 ### 2.2 显存节省效果
 
@@ -364,7 +364,7 @@ ZeRO-3 还可以进一步将数据卸载到 CPU 内存甚至 NVMe 硬盘，形�
 | **显存节省** | 最高约 4×（理论上界，4 卡实际约 2.3×） | 最高约 8×（理论上界，实际更低） | 线性（随 GPU 数 1/N） |
 | **通信开销** | 与 DDP 相同（低） | 与 DDP 相同（低） | 高（1.5~2× DDP） |
 | **保留的完整数据** | 参数 + 梯度 | 参数 | 无 |
-| **优化器状态 Offload（CPU）** | ❌ | ✅（ZeRO-Offload 可在 Stage 2 卸载优化器状态与优化器计算） | ✅ |
+| **优化器状态 Offload（CPU）** | ✅（`offload_optimizer` 对 Stage 1/2/3 均可用，官方多以 Stage 2 讲解 ZeRO-Offload） | ✅（ZeRO-Offload 可在 Stage 2 卸载优化器状态与优化器计算） | ✅ |
 | **参数 Offload（CPU/NVMe）** | ❌ | ❌ | ✅（参数卸载、NVMe 卸载主要与 Stage 3 / ZeRO-Infinity 组合） |
 | **代码修改** | 无（仅改配置） | 无（仅改配置） | 几乎无（HF 集成时无） |
 | **推荐场景** | 小模型、低通信 | **通用首选** | 超大模型、小显存 |

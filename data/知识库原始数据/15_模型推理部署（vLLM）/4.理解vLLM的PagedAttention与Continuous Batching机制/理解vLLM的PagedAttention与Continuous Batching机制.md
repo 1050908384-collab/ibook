@@ -11,6 +11,15 @@
 
 ---
 
+> **本板块目标版本（示例，请以你实际安装的发行为准）**
+> - vLLM：v0.6.4（本文正文示例均以该版本的可运行接口为准；旧版写法见文末"历史版本差异"附录，如无则以正文为准）
+> - Python：3.10~3.12（以该 vLLM 版本的官方发行说明为准）
+> - PyTorch / CUDA wheel：以 `pip install vllm==0.6.4` 实际解析到的依赖及该发行说明为准（如常见 cu121）
+> - GPU：示例按常见 NVIDIA GPU（具体型号 / 显存以你的机器为准）
+> - 文档审校日期：2026-08（内容为静态审校，未在多 GPU 环境逐条实机验证）
+
+---
+
 **适合人群**：已掌握 vLLM 环境准备和采样参数配置，希望深入理解 vLLM 两大核心机制——PagedAttention 和 Continuous Batching——的工作原理、配合关系与源码实现，从而真正理解"为什么 vLLM 在高并发下往往比朴素推理快出一个数量级"的进阶学习者。每一步都拆解到"是什么、为什么、怎么配合"，你只需要跟着理解。完成本章后，你将能够从源码级视角解释 PagedAttention 的显存管理、Continuous Batching 的请求调度，以及两者如何协同工作，为后续"使用 vLLM 加载模型并配置 gpu_memory_utilization 等关键参数进行推理部署"打下坚实基础。
 
 **预计学习时长**：约 1.5 小时  
@@ -66,11 +75,13 @@ PagedAttention 将 KV Cache 切成**固定大小的块（Block）**，默认每�
 ```
 一个 Block = 16 个 token 的 K/V 向量
 
-Block 的内存布局：
+用于"估算容量"的概念形状（不代表单个 Block 的真实内存布局）：
 [num_layers, 2(K/V), num_heads, block_size=16, head_dim]
 ```
 
 **为什么这样写**：`block_size=16` 是部分 vLLM CUDA 版本上常见的默认值，这个大小在 GPU 内存访问对齐和显存粒度之间取得平衡：太小会增加块表管理开销，太大会增加内部碎片。需要注意，**默认值与可选范围可能随引擎版本、硬件平台变化**，这里的 16 只是特定版本/平台的示例，不是永久固定规则；实际请以 `vllm serve --help` 或所装版本文档为准。
+
+> **关于上面的"形状"**：`[num_layers, 2(K/V), num_heads, block_size, head_dim]` 是一个**便于估算 KV Cache 总容量的概念形状**（把各层、K/V 两份、注意力头都乘进去，方便算显存），**并不代表单个物理 Block 在显存里的真实内存布局**。实际实现中 KV Cache 通常**按层分别维护**（每层各自持有若干 Block），K 与 V 是否分开存放、`num_heads` 用的是 Query 头数还是 KV 头数（GQA/MQA 场景）、各维度的先后顺序等，都取决于具体 backend、精度与 vLLM 版本。这里给出该形状只是为了帮助你估算容量，不要据此推断底层张量的排布。
 
 ### 2.2 Block Table——逻辑到物理的映射（②③）
 
@@ -340,7 +351,7 @@ PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请�
 | `block_size` | 每个 Block 存储的 token 数 | 特定版本/平台常见默认 16，一般不改；不同引擎版本/硬件可能不同 |
 | `gpu_memory_utilization` | GPU 显存使用比例 | 0.85~0.95 |
 | `max_num_seqs` | 最大并发序列数 | 根据显存调整，256~512 |
-| `enable_prefix_caching` | 前缀缓存开关 | `True`（RAG/Chat 场景必开） |
+| `enable_prefix_caching` | 前缀缓存开关 | 存在较长的**共享前缀**且命中率较高时（如统一 system prompt、多轮 Chat、RAG）建议开启，并实测 TTFT/吞吐/命中率再决定是否常开 |
 
 ---
 
@@ -364,7 +375,7 @@ PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请�
 | **PagedAttention 思想** | 借鉴 OS 虚拟内存分页，将 KV Cache 切成固定 Block，按需非连续分配 |
 | **Block** | K/V 存储的最小分配粒度；块内可容纳的 token 数由 `block_size` 决定（部分版本默认 16，随版本/平台变化） |
 | **Block Table** | 记录逻辑 token 位置到物理 Block ID 的映射，查询 O(1) |
-| **解决碎片** | 消灭内部碎片（按需分配）和外部碎片（固定大小块），显存利用率从"只有几成"提升到接近满载（百分比为示意） |
+| **解决碎片** | 把内部碎片限制在每条序列**最后一个未写满的 Block**（最多浪费 `block_size-1` 个槽位），并基本消除对**连续物理地址**的要求（外部碎片），显存利用率从"只有几成"提升到接近满载（百分比为示意） |
 | **Continuous Batching** | 每步迭代动态调度，完成即释放、新请求即加入，GPU 持续满载 |
 | **Scheduler 策略** | Decode 优先 + Prefill 填充 + Chunked Prefill 防阻塞 |
 | **两大机制配合** | Paging 管显存回收，Batching 管请求调度，后者建立在前者之上 |
