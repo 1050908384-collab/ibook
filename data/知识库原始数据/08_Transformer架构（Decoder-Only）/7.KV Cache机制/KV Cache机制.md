@@ -20,7 +20,7 @@
 
 ### 1.1 自回归生成的重复计算
 
-Decoder-Only 模型（如 GPT、Llama）在推理时采用**自回归生成**（auto-regressive generation）：逐个生成 token，每个新 token 都依赖之前所有已生成的 token。（权威①）
+Decoder-Only 模型（如 GPT、`meta-llama/Llama-2-7b`）在推理时采用**自回归生成**（auto-regressive generation）：逐个生成 token，每个新 token 都依赖之前所有已生成的 token。（权威①）
 
 假设已经生成了 $t-1$ 个 token，现在需要生成第 $t$ 个 token。如果不使用任何缓存，模型需要将完整的序列 $[x_1, x_2, \ldots, x_{t-1}, x_t]$ 重新输入，计算每一层的 Attention：
 
@@ -101,36 +101,46 @@ Attention 的本质是"用当前的问题（Q）去匹配历史的主题（K）�
 
 KV Cache 的引入以**空间换时间**。理解它的内存占用，是分析 LLM 推理显存瓶颈的基础。（①）
 
-### 3.1 计算公式
+### 3.1 通用计算公式
 
 对于一层 Self-Attention，KV Cache 的内存占用为：
 
-$$\text{Memory}_{\text{per layer}} = \text{batch\_size} \times \text{seq\_len} \times \text{num\_heads} \times \text{head\_dim} \times 2 \times \text{bytes\_per\_elem}$$
+$$\text{Memory}_{\text{per layer}} = \text{batch\_size} \times \text{seq\_len} \times \text{num\_key\_value\_heads} \times \text{head\_dim} \times 2 \times \text{bytes\_per\_elem}$$
 
 其中：
 - $2$：同时缓存 K 和 V
-- $\text{num\_heads} \times \text{head\_dim} = d_{\text{model}}$（模型隐藏层维度）
+- $\text{num\_key\_value\_heads}$：KV 头的数量（注意不是 Query 头数）
+
+**不同注意力机制的 `num_key_value_heads` 差异**：
+
+| 注意力类型 | `num_key_value_heads` 配置 | 典型模型示例 |
+|-----------|--------------------------|-------------|
+| **标准多头注意力 (MHA)** | `num_key_value_heads = num_heads` | `openai-community/gpt2`、`meta-llama/Llama-2-7b` |
+| **分组查询注意力 (GQA)** | `num_key_value_heads < num_heads`（如 1/4 或 1/8） | `meta-llama/Llama-2-70b`、`meta-llama/Llama-3-8B` |
+| **多查询注意力 (MQA)** | `num_key_value_heads = 1` | `google/palm-2-xxx`、`tiiuae/falcon-7b` |
 
 对于全部 $L$ 层：
 
-$$\text{Memory}_{\text{total}} = \text{batch\_size} \times \text{seq\_len} \times L \times d_{\text{model}} \times 2 \times \text{bytes\_per\_elem}$$
+$$\text{Memory}_{\text{total}} = \text{batch\_size} \times \text{seq\_len} \times L \times \text{num\_key\_value\_heads} \times \text{head\_dim} \times 2 \times \text{bytes\_per\_elem}$$
 
-### 3.2 实例：LLaMA 7B
+> **注意**：在标准多头注意力中，`num_key_value_heads × head_dim = d_model`，因此公式可简化为 `batch × seq × L × d_model × 2 × bytes`。但在 GQA/MQA 中，`num_key_value_heads × head_dim < d_model`，缓存占用按实际 KV 头数计算。
 
-以 LLaMA 7B 为例（FP16，即 2 bytes/参数）：（①）
+### 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力）
+
+以 `meta-llama/Llama-2-7b` 为例（标准多头注意力，`num_key_value_heads = num_heads = 32`，FP16，即 2 bytes/参数）：（①）
 
 - $L = 32$ 层
-- $d_{\text{model}} = 4096$
-- 每 token 每层 K+V：$2 \times 4096 \times 2\ \text{bytes} = 16\ \text{KB}$
+- `num_key_value_heads = 32`，`head_dim = 128`，即 $d_{\text{model}} = 4096$
+- 每 token 每层 K+V：$32 \times 128 \times 2\ \text{bytes} \times 2 = 16\ \text{KB}$
 - 每 token 全部层：$32 \times 16\ \text{KB} = 512\ \text{KB}$
 
 当 `batch_size = 64`，`seq_len = 2048` 时：
 
 $$\text{Memory} = 64 \times 2048 \times 512\ \text{KB} = 64\ \text{GB}$$
 
-而 LLaMA 7B 的模型参数本身仅占约 14 GB（FP16）。这意味着**KV Cache 的内存占用可以达到模型参数量的 4 倍以上**，是长上下文、大 batch 推理时的主要显存瓶颈。（①）
+而 `meta-llama/Llama-2-7b` 的模型参数本身仅占约 14 GB（FP16）。这意味着**KV Cache 的内存占用可以达到模型参数量的数倍**，是长上下文、大 batch 推理时的主要显存瓶颈。（①）
 
-> **直观理解**：在 A100 40GB 显卡上，如果 batch_size=1、seq_len=4096，KV Cache 约需 2 GB，这看起来不多；但当 batch_size=16、seq_len=8192 时，KV Cache 就需要约 64 GB，远超单卡容量。
+> **直观理解**：在 NVIDIA A100 40GB 显卡上，如果 batch_size=1、seq_len=4096，KV Cache 约需 2 GB，这看起来不多；但当 batch_size=16、seq_len=8192 时，KV Cache 就需要约 64 GB，远超单卡容量。
 
 ## 四、极简代码实现
 
@@ -142,32 +152,36 @@ import torch.nn as nn
 import math
 
 class DecoderLayerWithKVCache(nn.Module):
-    def __init__(self, d_model, n_heads):
+    def __init__(self, d_model, n_heads, num_key_value_heads=None):
         super().__init__()
         self.n_heads = n_heads
+        self.num_key_value_heads = num_key_value_heads or n_heads
         self.head_dim = d_model // n_heads
         
         self.Wq = nn.Linear(d_model, d_model)
-        self.Wk = nn.Linear(d_model, d_model)
-        self.Wv = nn.Linear(d_model, d_model)
+        # 注意：GQA/MQA 中 Wk/Wv 的输出维度可能小于 d_model
+        kv_dim = self.num_key_value_heads * self.head_dim
+        self.Wk = nn.Linear(d_model, kv_dim)
+        self.Wv = nn.Linear(d_model, kv_dim)
         self.Wo = nn.Linear(d_model, d_model)
         
     def forward(self, x, past_kv=None):
         """
         x: [batch_size, seq_len, d_model]
-        past_kv: tuple of (K, V), each [batch_size, n_heads, past_len, head_dim]
+        past_kv: tuple of (K, V), each [batch_size, num_kv_heads, past_len, head_dim]
         """
         batch_size, seq_len, _ = x.shape
         
         # 计算当前输入的 Q, K, V
         q = self.Wq(x)  # [batch, seq, d_model]
-        k = self.Wk(x)
-        v = self.Wv(x)
+        k = self.Wk(x)  # [batch, seq, kv_dim]
+        v = self.Wv(x)  # [batch, seq, kv_dim]
         
-        #  reshape 为多头: [batch, seq, n_heads, head_dim] -> [batch, n_heads, seq, head_dim]
+        # reshape 为多头: [batch, seq, n_heads, head_dim] -> [batch, n_heads, seq, head_dim]
         q = q.view(batch_size, seq_len, self.n_heads, self.head_dim).transpose(1, 2)
-        k = k.view(batch_size, seq_len, self.n_heads, self.head_dim).transpose(1, 2)
-        v = v.view(batch_size, seq_len, self.n_heads, self.head_dim).transpose(1, 2)
+        # K/V 按实际 KV 头数 reshape
+        k = k.view(batch_size, seq_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
+        v = v.view(batch_size, seq_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
         
         # 如果有历史缓存，拼接
         if past_kv is not None:
@@ -175,13 +189,18 @@ class DecoderLayerWithKVCache(nn.Module):
             k = torch.cat([past_k, k], dim=2)   # 沿序列长度维度拼接
             v = torch.cat([past_v, v], dim=2)
         
+        # 为了计算，需要将 K/V 广播到与 Q 相同的头数（GQA/MQA 场景）
+        # 简化处理：假设标准多头注意力，num_kv_heads == n_heads
         # Scaled Dot-Product Attention
         scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
         
-        # Causal Mask：确保只能看到当前及之前的位置
-        # 当 seq_len=1（逐token生成）时，mask只需保证不看到未来，这里用下三角
+        # Causal Mask：q 中第 i 个 token 只能看到 k 中前 (past_len + i + 1) 个位置
         seq_len_total = k.size(2)
-        mask = torch.triu(torch.ones(seq_len, seq_len_total), diagonal=1).bool()
+        past_len = seq_len_total - seq_len
+        # 历史部分全部可见，当前输入部分按 causal mask 处理
+        past_mask = torch.zeros(seq_len, past_len, dtype=torch.bool)
+        curr_mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).bool()
+        mask = torch.cat([past_mask, curr_mask], dim=1)
         scores = scores.masked_fill(mask.to(scores.device), float('-inf'))
         
         attn = torch.softmax(scores, dim=-1)
@@ -210,7 +229,8 @@ for i, layer in enumerate(layers):
     x, past_kvs[i] = layer(x, past_kv=past_kvs[i])
 
 print(f"Prefill 后，每层 KV Cache 形状: {past_kvs[0][0].shape}")
-# 输出: [1, 8, 10, 64] 即 [batch, heads, seq_len, head_dim]
+# 预期输出格式: [1, 8, 10, 64] 即 [batch, heads, seq_len, head_dim]
+# 实际以运行结果为准
 
 # Decoding：逐 token 生成
 for step in range(5):
@@ -229,9 +249,9 @@ for step in range(5):
 
 ### 4.1 关键代码解读
 
-1. **`past_kv` 参数**：接收上一层的 `(K, V)` 缓存，形状为 `[batch, n_heads, past_len, head_dim]`
+1. **`past_kv` 参数**：接收上一层的 `(K, V)` 缓存，形状为 `[batch, num_kv_heads, past_len, head_dim]`
 2. **`torch.cat` 拼接**：将历史 K/V 与当前新 token 的 K/V 沿序列长度维度拼接
-3. **Causal Mask**：即使使用缓存，也必须保证当前 token 只能 attend 到之前的位置
+3. **Causal Mask**：`q` 中第 `i` 个 token 只能看到 `k` 中前 `past_len + i + 1` 个位置。当 `past_len=0` 时退化为标准下三角 mask；当 `seq_len=1`（逐 token 解码）时，当前 token 可看到全部历史位置
 4. **Prefill vs Decoding**：Prefill 阶段输入完整 prompt，Decoding 阶段每步只输入 1 个新 token
 
 ## 五、工业级挑战：KV Cache 内存管理
@@ -250,7 +270,7 @@ KV Cache 虽然降低了计算复杂度，但引入了巨大的**内存管理挑
 | **Internal Fragmentation（内部碎片）** | 请求实际长度远小于最大长度，预分配的空间大部分未使用 | 内存利用率低 |
 | **External Fragmentation（外部碎片）** | 不同请求预分配大小不同，释放后留下不连续的小块 | 无法分配给新请求 |
 
-根据 vLLM 论文的测试，现有系统中**实际有效内存利用率低至 20.4% - 38.2%**，超过 60% 的 KV Cache 内存被浪费。（权威②）
+根据 vLLM 论文（权威②）在 NVIDIA A10G GPU、OPT-13B 模型、ShareGPT 数据集上的测试，现有系统中**实际有效内存利用率低至 20.4% - 38.2%**，超过 60% 的 KV Cache 内存被浪费。（权威②）
 
 ### 5.2 PagedAttention：类比操作系统的虚拟内存
 
@@ -277,7 +297,7 @@ vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定�
 2. 当某个序列需要写入新 token 到共享块时，触发 **Copy-on-Write**：复制该块到新物理块，再写入
 3. 原块的引用计数减 1
 
-在束搜索（Beam Search）中，不同 beam 候选可以共享大部分前缀，vLLM 的实验显示这可以节省 **37.6% - 55.2%** 的内存。（权威②）
+在束搜索（Beam Search）中，不同 beam 候选可以共享大部分前缀。根据 vLLM 论文（权威②）在相同测试条件下的实验，这可以节省 **37.6% - 55.2%** 的内存。（权威②）
 
 ### 5.4 调度与抢占
 
@@ -292,15 +312,19 @@ vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定�
 
 ### 6.1 Multi-Query Attention (MQA)
 
-所有 Query 头**共享同一组 K 和 V**。KV Cache 大小降为原来的 $1/\text{num\_heads}$。PaLM、Falcon 等模型采用，推理速度提升明显，但可能带来轻微质量损失。（①）
+所有 Query 头**共享同一组 K 和 V**。KV Cache 大小降为原来的 $1/\text{num\_heads}$。`google/palm-2-xxx`、`tiiuae/falcon-7b` 等模型采用，在特定条件下可提升推理速度，但可能带来轻微质量损失。（①）
 
 ### 6.2 Grouped-Query Attention (GQA)
 
-将 Query 头分组，每组共享一个 K、V 头。这是 MQA 和标准多头注意力的折中。LLaMA 2/3 采用 GQA（如 7B 模型使用 32 个 Q 头、8 个 KV 头），缓存大小降至 $1/4$。（①）
+将 Query 头分组，每组共享一个 K、V 头。这是 MQA 和标准多头注意力的折中。不同模型的 GQA 配置差异较大，需以具体模型的 `config.json` 为准：（①）
+
+- `meta-llama/Llama-2-7b`：`num_heads=32`，`num_key_value_heads=32`（标准多头注意力，**非 GQA**）
+- `meta-llama/Llama-2-70b`：`num_heads=64`，`num_key_value_heads=8`（GQA，缓存大小降至 $1/8$）
+- `meta-llama/Llama-3-8B`：`num_heads=32`，`num_key_value_heads=8`（GQA，缓存大小降至 $1/4$）
 
 ### 6.3 KV Cache 量化
 
-对 KV Cache 使用 INT8 甚至 INT4 量化。研究表明适度量化可以在保持生成质量的同时减少 50% - 75% 的缓存占用。（①）
+部分研究表明，对 KV Cache 使用 INT8 甚至 INT4 量化，在特定条件下可以在保持生成质量可接受的同时减少 50% - 75% 的缓存占用。具体效果取决于量化方法和任务类型。（①）
 
 ### 6.4 滑动窗口缓存
 
@@ -315,7 +339,7 @@ vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定�
 | "Prefill 阶段为什么还是很慢？" | 期望全程加速 | Prefill 需要计算完整 prompt 的 K/V，无法避免；KV Cache 只加速 Decoding 阶段（①） |
 | "为什么长上下文容易 OOM？" | 忽略内存公式 | KV Cache 随 seq_len 线性增长，长序列 + 大 batch 时显存爆炸，需用 PagedAttention 或量化（权威②） |
 | "KV Cache 和模型参数哪个占显存多？" | 不了解具体数字 | 短序列时参数占主导；长序列（>2048）或大 batch 时 KV Cache 可能超过参数（①） |
-| "MQA 和 GQA 会影响模型效果吗？" | 担心压缩损失 | 论文显示影响很小，LLaMA 2/3、Gemma 等主流模型均采用 GQA，效果依然优秀（①） |
+| "MQA 和 GQA 会影响模型效果吗？" | 担心压缩损失 | 部分测试显示影响较小，`meta-llama/Llama-2-70b`、`meta-llama/Llama-3-8B` 等主流模型采用 GQA，在测试条件下效果通常较好（①） |
 
 ## 八、总结与后续学习路线（权威①+②）
 
@@ -323,8 +347,8 @@ vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定�
 
 - ✅ **为什么需要 KV Cache**：自回归生成存在大量重复计算，不加缓存时复杂度为 $O(T^3)$
 - ✅ **核心原理**：只缓存历史 token 静态不变的 K 和 V，每步只需计算新 token 的 Q，复杂度降为 $O(T^2)$
-- ✅ **内存开销**：能够用公式估算任意模型的 KV Cache 显存占用，理解它是长上下文推理的主要瓶颈
-- ✅ **代码实现**：理解 `past_key_values` 的工作模式，掌握 Prefill 和 Decoding 两阶段的分工
+- ✅ **内存开销**：能够用公式估算任意模型的 KV Cache 显存占用，理解 `num_key_value_heads` 在标准多头/GQA/MQA 中的差异
+- ✅ **代码实现**：理解 `past_key_values` 的工作模式，掌握 Prefill 和 Decoding 两阶段的分工，以及带 `past_len` 偏移的 Causal Mask
 - ✅ **工业级优化**：理解 PagedAttention 如何通过块级内存管理解决碎片问题，以及 MQA/GQA/量化等压缩技术
 
 > **下一步预告**：在下一节 **"前向传播实验（加载 GPT-2 验证理解）"** 中，我们将使用 Hugging Face Transformers 库加载真实的 GPT-2 模型，实际观察 `past_key_values` 的返回结构，验证我们对 Decoder-Only 架构、RoPE、KV Cache 的理解。现在，试着修改上面的代码，将 `batch_size` 设为 4，观察 KV Cache 的 shape 变化，并计算此时生成 1000 个 token 的预估显存占用！

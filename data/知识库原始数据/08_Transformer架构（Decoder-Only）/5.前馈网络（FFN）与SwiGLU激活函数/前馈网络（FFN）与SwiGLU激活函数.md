@@ -25,16 +25,16 @@
 >
 > **前置说明**：上节我们拆解了 RMSNorm 与残差连接，知道了现代 Decoder-Only 模型中每一层的结构是 `x + Sublayer(RMSNorm(x))`。本节将深入 Transformer 层的第二个子层——**前馈网络（FFN）**，回答：为什么 Attention 已经做了全局信息融合，还需要 FFN？为什么 Llama 要抛弃 ReLU 选择 SwiGLU？SwiGLU 的中间维度为什么是 $\frac{8}{3} \cdot d$ 这种奇怪的数字？所有代码请在已安装 `torch` 的 Python 环境中运行。
 
-## 一、FFN 的定位：Attention 的"完美搭档"
+## 一、FFN 的定位：Attention 的"搭档"
 
 在 Decoder-Only 的每一层中，有两个核心子层：
 
 1. **Masked Self-Attention**：让每个 token"看到"序列中其他 token 的信息，解决的是 **"token 之间如何交流"** 的问题。
 2. **Feed-Forward Network（FFN）**：对每个 token 独立做非线性特征变换，解决的是 **"每个 token 如何变得更'聪明'"** 的问题。（①）
 
-二者缺一不可：没有 Attention，模型无法捕捉长距离依赖；没有 FFN，模型的特征表达能力会被限制在线性空间，无法拟合复杂的语言模式。（①）
+二者缺一不可：没有 Attention，模型无法捕捉长距离依赖；没有 FFN，模型的特征表达能力会被限制在线性空间，难以拟合复杂的语言模式。（①）
 
-原始 Transformer 中，FFN 的数学定义非常简洁：
+原始 Transformer 中，FFN 的数学定义：
 
 $$\text{FFN}(x) = \max\left( 0,xW_{1} + b_{1} \right)W_{2} + b_{2}$$
 
@@ -73,7 +73,7 @@ $$\text{FFN}(x) = z_{2}W_{2} + b_{2}$$
 ### 3.1 ReLU 的局限
 
 ReLU 虽然计算简单，但在深层网络中存在明显缺陷：
-- **神经元死亡（Dying ReLU）**：负数区域梯度恒为 0，一旦神经元输出为负，后续训练中将永远不被激活
+- **神经元死亡（Dying ReLU）**：当神经元对训练数据长期处于负区间、梯度无法促使其恢复时，才会形成死亡 ReLU；单次输出为负不代表永久失活。负数区域梯度为 0，如果参数更新无法将其拉回正区间，该神经元可能长期不被激活（②）
 - **梯度稀疏**：负半轴信息完全丢失，导致梯度流不够平滑（②）
 
 ### 3.2 GLU：门控机制的引入
@@ -108,7 +108,7 @@ $$\text{FFN}_{\text{SwiGLU}}(x) = \left( \text{Swish}(xW) \otimes xV \right)W_{2
 - $xV$ 是**值路径**
 - 二者逐元素相乘后，再经 $W_{2}$ 投影回原始维度（权威②）
 
-GLU 论文实验表明，SwiGLU 在预训练困惑度和下游任务上均优于 ReLU、GELU 和原始 GLU（权威②）。
+GLU 论文实验表明，在测试条件下，SwiGLU 在预训练困惑度和下游任务上通常优于 ReLU、GELU 和原始 GLU（权威②）。
 
 ## 四、SwiGLU 的维度设计：为什么是 $\frac{8}{3} \cdot d$？
 
@@ -247,15 +247,15 @@ $$[1.735, 0.54] \cdot W_{2} = [1.735 \times 0.5 + 0.54 \times (-0.5),\ 1.735 \ti
 | "为什么 Attention 后还要 FFN？" | 混淆了 Attention 与 FFN 的分工 | Attention 负责 token 间信息交互，FFN 负责 per-token 非线性特征变换，二者互补（①） |
 | "SwiGLU 为什么要用三个矩阵？" | 不理解门控结构 | 门控路径 + 值路径 + 输出投影，参数量通过 8/3·d 控制（④） |
 | "8/3·d 是拍脑袋定的吗？" | 未理解参数量守恒原理 | 令 SwiGLU 三矩阵参数量 3dd_ff 等于原始 FFN 的 8d²，解得 d_ff = 8d/3（④） |
-| "Swish 和 ReLU 哪个更快？" | 担心 Swish 引入额外计算 | Swish 仅多一次 sigmoid，在现代 GPU 上开销极小；且 SwiGLU 的 8/3·d 中间维度比 ReLU 的 4d 更小，总计算量基本持平（②） |
+| "Swish 和 ReLU 哪个更快？" | 担心 Swish 引入额外计算 | Swish 仅多一次 sigmoid，在现代 GPU 上开销通常较小；且 SwiGLU 的 8/3·d 中间维度比 ReLU 的 4d 更小，总计算量基本持平（②） |
 | "实际中间维度不是 8/3·d 的精确值？" | 忽略 GPU 对齐要求 | 工程实现中向上对齐到 256 的倍数，如 LLaMA-7B 的 11008（④） |
-| "代码里为什么 bias=False？" | 不理解现代 LLM 的简化趋势 | LLaMA、PaLM 等模型在 FFN 中去掉 bias，减少参数量和计算量，不影响性能（权威③） |
+| "代码里为什么 bias=False？" | 不理解现代 LLM 的简化趋势 | LLaMA、PaLM 等模型在 FFN 中去掉 bias，减少参数量和计算量，在测试条件下通常不影响性能（权威③） |
 
 ## 七、总结与后续学习路线（权威③+①）
 
 恭喜你完成了 FFN 与 SwiGLU 的学习！你现在应该掌握了：
 
-- ✅ FFN 的数学本质：升维 → 非线性激活 → 降维，与 Attention 形成完美互补
+- ✅ FFN 的数学本质：升维 → 非线性激活 → 降维，与 Attention 形成互补
 - ✅ 从 ReLU 到 SwiGLU 的演进逻辑：ReLU 的神经元死亡问题 → GLU 门控机制 → Swish 平滑激活 → SwiGLU 结合
 - ✅ SwiGLU 的维度设计原理：参数量守恒推导，$d_{\text{ff}} = \frac{8}{3}d$
 - ✅ 工业级实现细节：256 倍数对齐、bias=False、PyTorch 中 `F.silu()` 即 $\beta=1$ 的 Swish

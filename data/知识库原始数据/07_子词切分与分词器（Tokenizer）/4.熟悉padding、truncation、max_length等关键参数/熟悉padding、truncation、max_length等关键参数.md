@@ -1,4 +1,3 @@
-
 # 熟悉 padding、truncation、max_length 等关键参数
 
 权威文章：《Tokenizers - Hugging Face NLP Course》\
@@ -18,14 +17,14 @@
 
 > **适合人群**：已完成"掌握 HuggingFace Tokenizer 的加载与使用"章节，能够使用 `AutoTokenizer.from_pretrained()` 加载分词器并执行基础编码解码的初学者。本节时长约 0.5 小时，目标是深入理解 `padding`、`truncation`、`max_length` 等关键参数的行为差异，能够根据任务场景选择正确的配置，避免"维度不匹配"等常见错误。（①+②）
 >
-> **前置说明**：上节我们学会了加载分词器和基础编码。但在实际训练中，一个 batch 里的句子长度往往参差不齐——有的 10 个 token，有的 500 个 token。神经网络要求输入是固定维度的张量，因此需要**填充（padding）**短句和**截断（truncation）**长句。本节将详细讲解这些参数的含义、组合方式和最佳实践。所有代码请在已安装 `transformers` 的 `pytorch` conda 环境中运行。
+> **前置说明**：上节我们学会了加载分词器和基础编码。但在实际训练中，一个 batch 里的句子长度往往参差不齐——有的 10 个 token，有的 500 个 token。神经网络要求输入是固定维度的张量，因此需要使用 `pad_token_id` 补齐短句（padding）和截断长句（truncation）。本节将详细讲解这些参数的含义、组合方式和常用配置。所有代码请在已安装 `transformers` 的 `pytorch` conda 环境中运行。
 
 ## 一、为什么需要 padding 和 truncation？（②）
 
 神经网络（尤其是 Transformer）的输入必须是**固定形状的张量。**
 
-- **padding**：将短句补零到统一长度，使 batch 内所有样本维度一致，才能堆叠成矩阵。（②）
-- **truncation**：将长句截断到最大长度，避免超出模型的处理能力（如 BERT 最大 512 token）。（②）
+- **padding**：使用 `pad_token_id` 将短句补齐到统一长度，并通过 `attention_mask` 标识补齐位置，使 batch 内所有样本维度一致，才能堆叠成矩阵。（②）
+- **truncation**：将长句截断到最大长度，避免超出模型的处理能力（如 `bert-base-chinese` 通常限制在 512 token 以内）。（②）
 
 > **常见错误**：如果不设置 `padding=True`，batch 内各样本长度不一致，PyTorch `DataLoader` 会报错 `RuntimeError: stack expects each tensor to be equal size`。（②）
 
@@ -39,8 +38,8 @@
 
 | 取值 | 行为 | 适用场景 |
 |---|---|---|
-| `True` 或 `'longest'` | 填充到当前 batch 中最长序列的长度 | **最常用**，动态 padding，节省计算 |
-| `'max_length'` | 填充到 `max_length` 指定的长度（或模型默认最大长度） | 需要固定输入尺寸的场景 |
+| `True` 或 `'longest'` | 填充到当前 batch 中最长序列的长度（含特殊 token） | 训练时常用，动态 padding，通常更节省计算 |
+| `'max_length'` | 填充到 `max_length` 指定的长度（或 tokenizer 的默认最大长度） | 需要固定输入尺寸的场景 |
 | `False` 或 `'do_not_pad'`（默认） | 不填充，返回原始长度 | 单条推理或自定义 collator |
 
 ### 2.2 代码演示（①+②）
@@ -52,27 +51,25 @@ tokenizer = AutoTokenizer.from_pretrained("bert-base-chinese")
 
 texts = ["我喜欢自然语言处理", "深度学习很有趣", "你好"]
 
-# padding='longest'：填充到 batch 内最长句子的长度
+# padding='longest'：填充到当前 batch 中最长序列的长度
 encoded = tokenizer(texts, padding=True, return_tensors="pt")
 print("padding=True 形状:", encoded["input_ids"].shape)
-# torch.Size([3, 9]) —— 最长句子 9 个 token，其余补零
 
 # padding='max_length' + max_length：填充到指定长度
 encoded = tokenizer(texts, padding="max_length", max_length=12, return_tensors="pt")
 print("padding=max_length 形状:", encoded["input_ids"].shape)
-# torch.Size([3, 12]) —— 全部填充到 12
 
 # padding=False：不填充
 encoded = tokenizer(texts, padding=False)
 print("padding=False 长度:", [len(ids) for ids in encoded["input_ids"]])
-# [9, 7, 3] —— 保持原始长度，无法直接 stack
+# 注意：上述长度为模型输入长度（含 [CLS]、[SEP] 等特殊 token），与纯 tokenize 长度不同
 ```
 
-> **注意**：`padding=True` 是训练时的**推荐做法**，它只填充到 batch 内最长长度，避免不必要的计算。（②）
+> **注意**：`padding=True` 是训练时较为常用的做法，它只填充到 batch 内最长序列的长度（含特殊 token），避免不必要的计算。（②）
 
 ### 2.3 padding 方向：left vs right（权威②）
 
-默认情况下，BERT/GPT 等模型使用 **right padding**（右侧补零）。某些生成模型（如 GPT）在推理时可能需要 **left padding**，让生成 token 出现在右侧。
+默认情况下，BERT/GPT 等模型使用 **right padding**（右侧补齐）。某些生成模型（如 GPT）在推理时可能需要 **left padding**，让生成 token 出现在右侧。
 
 ```python
 # 设置左侧填充（少数场景需要）
@@ -88,38 +85,38 @@ encoded = tokenizer(texts, padding=True, return_tensors="pt")
 
 | 取值 | 行为 | 适用场景 |
 |---|---|---|
-| `True` 或 `'longest_first'` | 从最长序列开始，轮流从两端删 token | 通用场景，保持句子对的比例 |
-| `'only_first'` | 只截断第一个序列（句子对中的第一句） | 问答任务中截断过长的 context |
-| `'only_second'` | 只截断第二个序列（句子对中的第二句） | 保留问题，截断上下文 |
-| `False` 或 `'do_not_truncate'`（默认） | 不截断，超长时报错 | 确保不丢失信息 |
+| `True` 或 `'longest_first'` | 对于单个序列从右侧截断；对于句子对，同时从两个序列中移除 token，直到总长度满足要求 | 通用场景 |
+| `'only_first'` | 只截断第一个序列（句子对中的第一个参数） | 问答任务中截断过长的 context，保留 question |
+| `'only_second'` | 只截断第二个序列（句子对中的第二个参数） | 保留 context，截断 question |
+| `False` 或 `'do_not_truncate'`（默认） | 不截断，超长时可能报错 | 确保不丢失信息 |
 
 ### 3.2 代码演示（②）
 
 ```python
 long_text = "自然语言处理" * 200  # 构造一个超长文本
 
-# truncation=True：截断到模型最大长度（BERT 默认 512）
-encoded = tokenizer(long_text, truncation=True, return_tensors="pt")
-print("截断后长度:", encoded["input_ids"].shape[1])  # 512
+# truncation=True：截断到 max_length 指定的长度（或 tokenizer 默认最大长度）
+encoded = tokenizer(long_text, truncation=True, max_length=512, return_tensors="pt")
+print("截断后长度:", encoded["input_ids"].shape[1])
 
 # truncation=True + max_length=10：截断到指定长度
 encoded = tokenizer(long_text, truncation=True, max_length=10, return_tensors="pt")
-print("截断到 10:", encoded["input_ids"].shape[1])  # 10
+print("截断到 10:", encoded["input_ids"].shape[1])
 
-# 句子对截断策略
+# 句子对截断策略：第一个参数为 context（长文本），第二个参数为 question
 encoded = tokenizer(long_text, "这是一个问题", truncation="only_first", max_length=20, return_tensors="pt")
-# 只截断第一个序列（long_text），保留第二个序列完整
+# truncation="only_first"：只截断第一个参数（context），保留第二个参数（question）完整
 ```
 
 ### 3.3 关键规则：max_length 的作用（权威②）
 
 - 如果设置了 `max_length`，truncation 和 padding 都以此为上限。
-- 如果未设置 `max_length`，使用 tokenizer 的 `model_max_length`（如 BERT 是 512）。
-- 如果模型没有定义最大长度（如 XLNet），则 truncation 不会生效，除非显式设置 `max_length`。
+- 如果未设置 `max_length`，通常使用 tokenizer 的 `model_max_length`（如 `bert-base-chinese` 通常为 512）。
+- 如果 tokenizer 未定义 `model_max_length` 且未显式设置 `max_length`，`truncation=True` 的行为可能因 transformers 版本而异。建议始终显式设置 `max_length`，或在不确定时查阅当前版本的官方文档。
 
 ## 四、完整参数组合实战（①+②+③）
 
-实际训练中最常用的组合：
+实际训练中较为常用的组合：
 
 ```python
 from transformers import AutoTokenizer
@@ -138,10 +135,11 @@ encoded = tokenizer(
 )
 
 print(encoded.keys())
-# dict_keys(['input_ids', 'attention_mask', 'token_type_ids'])
+# 预期输出格式类似：dict_keys(['input_ids', 'attention_mask', 'token_type_ids'])
+# 实际以运行结果为准
 
 print(encoded["input_ids"].shape)
-# torch.Size([2, 10]) — 两个句子都统一到 10 个 token
+# 形状由当前 batch 中最长序列决定，实际以运行结果为准
 ```
 
 > **本地运行配置要求**：此代码纯 CPU 运行即可，内存 ≥ 4GB。
@@ -159,7 +157,7 @@ data_collator = DataCollatorWithPadding(tokenizer)
 # DataCollator 会在每个 batch 内动态 padding 到该 batch 的最长长度
 ```
 
-> 这比预先对所有数据做 `padding='max_length'` 更高效，因为不同 batch 的最长长度可能不同。（③）
+> 这比预先对所有数据做 `padding='max_length'` 通常更高效，因为不同 batch 的最长长度可能不同。（③）
 
 ## 六、在 Trainer 中使用（③）
 

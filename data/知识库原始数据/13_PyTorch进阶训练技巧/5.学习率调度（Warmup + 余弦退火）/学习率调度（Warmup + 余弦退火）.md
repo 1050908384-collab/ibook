@@ -14,7 +14,7 @@
 
 > **适合人群**：已完成"梯度检查点"章节，理解训练循环、优化器、反向传播的初学者。本节时长约 1 小时，目标是理解学习率调度的必要性、掌握 Warmup + 余弦退火的数学原理与 PyTorch 工程实现，能够独立配置 `SequentialLR` 并避开常见陷阱。（①）
 >
-> **前置说明**：前面我们解决了训练的"硬件瓶颈"问题------通过 AMP 降低显存占用、通过梯度累积模拟大 batch、通过梯度检查点进一步压缩激活值。但即使显存和计算都够，如果学习率设置不当，模型依然可能训练失败。想象一下：你有一辆性能完美的赛车（优化好的训练流程），但如果没有一个聪明的变速箱（学习率调度），要么起步就爆缸（学习率过大导致梯度爆炸），要么全程龟速（学习率过小收敛极慢）。**Warmup + 余弦退火** 就是现代大模型训练中最通用、最稳健的"智能变速箱"。本节将带你从原理到代码，彻底掌握这套组合拳。
+> **前置说明**：前面我们解决了训练的"硬件瓶颈"问题——通过 AMP 降低显存占用、通过梯度累积模拟大 batch、通过梯度检查点进一步压缩激活值。但即使显存和计算都够，如果学习率设置不当，模型依然可能训练失败。想象一下：你有一辆性能完美的赛车（优化好的训练流程），但如果没有一个聪明的变速箱（学习率调度），要么起步就爆缸（学习率过大导致梯度爆炸），要么全程龟速（学习率过小收敛极慢）。**Warmup + 余弦退火** 是现代大模型训练中较为常用、效果较好的学习率调度策略之一。本节将带你从原理到代码，掌握这套组合拳。
 
 ## 一、为什么需要学习率调度？
 
@@ -56,7 +56,7 @@ $$\text{更新项} \propto \frac{m_t}{\sqrt{v_t} + \epsilon}$$
   **稳定期**        保持极小值或常数        微调最后几层，确保充分收敛
   ------------------------------------------------------------------------------------
 
-> **经典佐证**：Transformer 原论文《Attention Is All You Need》明确指出："We use the same learning rate schedule as in the original paper: linearly increase for the first $warmup\_steps$, then decrease proportionally." 实验证明，**无 Warmup 的 Transformer 几乎无法收敛**。（①）
+> **经典佐证**：Transformer 原论文《Attention Is All You Need》明确指出："We use the same learning rate schedule as in the original paper: linearly increase for the first $warmup\_steps$, then decrease proportionally." 实验表明，在特定条件下，**无 Warmup 的 Transformer 训练可能极不稳定**。（①）
 
 ## 二、Warmup：给模型一个"热身运动"
 
@@ -162,16 +162,16 @@ PyTorch 提供了多种学习率调度器，各有适用场景：（③+④）
 
   **ReduceLROnPlateau**     基于验证指标自动衰减        不确定何时该降学习率时的保底方案
 
-  **CosineAnnealingLR**     余弦平滑衰减                **现代大模型训练的首选**（②）
+  **CosineAnnealingLR**     余弦平滑衰减                现代大模型训练的常用选择之一（②）
 
   **LambdaLR**              自定义函数                  需要特殊曲线（如多项式衰减）时
   ---------------------------------------------------------------------------------------
 
-> **选型建议**：对于 Transformer 和 LLM 训练，**Warmup + CosineAnnealingLR** 是当前学术界和工业界的事实标准。StepLR 等离散衰减策略在大模型上已被证明劣于余弦退火。（②）
+> **选型建议**：对于 Transformer 和 LLM 训练，**Warmup + CosineAnnealingLR** 是较为常用的组合之一，在特定条件下效果通常较好。StepLR 等离散衰减策略在某些大模型训练场景中可能不如余弦退火平滑。（②）
 
 ## 四、PyTorch 工程实践：SequentialLR
 
-PyTorch 1.9+ 提供了 `SequentialLR`，可以像拼积木一样把 Warmup 和衰减串联起来。这是工业界的标准写法。（①）
+PyTorch 1.9+ 提供了 `SequentialLR`，可以像拼积木一样把 Warmup 和衰减串联起来。这是工业界的常见写法。（①）
 
 ### 4.1 核心 API 详解
 
@@ -180,12 +180,14 @@ PyTorch 1.9+ 提供了 `SequentialLR`，可以像拼积木一样把 Warmup 和�
 ```python
 torch.optim.lr_scheduler.LinearLR(
     optimizer,           # [必填] 优化器实例
-    start_factor=0.0,    # 起始系数，Warmup 时设为 0.0（从 0 开始）
+    start_factor=1e-8,   # 起始系数，设为极小正数（如 1e-8）模拟从 0 开始
     end_factor=1.0,      # 结束系数，预热结束时达到 1.0 × base_lr
     total_iters=...,     # [关键] 预热总步数（Step，不是 Epoch！）
     last_epoch=-1        # 断点续训时使用
 )
 ```
+
+> **⚠️ 兼容性提示**：在某些 PyTorch 版本中，`start_factor=0.0` 可能引发除零错误或警告。使用 `1e-8` 等极小正数通常更安全，效果等价。如需严格从 0 开始，也可使用 `LambdaLR` 自定义实现。
 
 **`CosineAnnealingLR`**：负责衰减阶段
 
@@ -210,7 +212,7 @@ torch.optim.lr_scheduler.SequentialLR(
 
 > **⚠️ 关键陷阱**：`milestones` 传入的是**累积步数**。如果 Warmup 占 1000 步，就写 `[1000]`，表示前 1000 步用第一个调度器，之后用第二个。（①）
 
-### 4.2 标准训练模板
+### 4.2 训练模板
 
 以下代码可直接用于实际项目：（①+②）
 
@@ -232,10 +234,10 @@ warmup_steps = warmup_epochs * steps_per_epoch
 total_steps = epochs * steps_per_epoch
 decay_steps = total_steps - warmup_steps
 
-# 1. Warmup：从 0 线性增长到 base_lr
+# 1. Warmup：从极小值线性增长到 base_lr
 scheduler_warmup = LinearLR(
     optimizer,
-    start_factor=0.0,
+    start_factor=1e-8,
     end_factor=1.0,
     total_iters=warmup_steps
 )
@@ -291,30 +293,35 @@ for epoch in range(epochs):
 
 ### 5.1 与梯度累积的配合
 
-梯度累积改变了"参数更新频率"，但**不改变学习率调度的步数计算**。`scheduler.step()` 仍然应该在**每个 batch 结束后调用**，而不是在累积满后才调用。
+梯度累积改变了"参数更新频率"。基于优化步数设计的调度器（如 `LinearLR`、`CosineAnnealingLR`）应与 `optimizer.step()` 对齐，在真正执行参数更新后调用 `scheduler.step()`。
 
 ```python
+from torch import amp
+
+scaler = amp.GradScaler()
 accumulation_steps = 4
 
 for i, (inputs, labels) in enumerate(train_loader):
-    with autocast():
-        loss = model(inputs) / accumulation_steps
+    with amp.autocast(device_type='cuda'):
+        outputs = model(inputs)
+        loss = criterion(outputs, labels) / accumulation_steps
+    
     scaler.scale(loss).backward()
 
     if (i + 1) % accumulation_steps == 0:
         scaler.step(optimizer)
         scaler.update()
         optimizer.zero_grad()
-
-    # 学习率调度：每个 batch 都更新，与累积周期无关
-    scheduler.step()
+        
+        # 学习率调度：与参数更新对齐，每 accumulation_steps 步调用一次
+        scheduler.step()
 ```
 
-> **原因**：学习率调度依据的是"已见数据量"，而不是"参数更新次数"。即使梯度没累积满，模型已经看到了新数据，学习率应该相应调整。（①）
+> **原因**：基于优化步数设计的调度器通常与参数更新次数对齐。梯度累积时，虽然每步都见到了新数据，但参数实际每 `accumulation_steps` 步才更新一次。如果每个 micro-batch 都调用 `scheduler.step()`，当 `accumulation_steps=4` 时，学习率变化速度会变为预期的 4 倍。（①）
 
 ### 5.2 与 AMP 的配合
 
-AMP 的 `GradScaler` 和学习率调度器是**完全独立**的两个系统：
+AMP 的 `GradScaler` 和学习率调度器是**相互独立**的两个系统：
 - `GradScaler` 管理**损失缩放因子**（解决 FP16 下溢）
 - `Scheduler` 管理**学习率**（优化参数更新步长）
 
@@ -348,7 +355,7 @@ $$\eta_{new} = \eta_{base} \times \frac{\text{batch\_size}_{new}}{\text{batch\_s
 
 例如：base batch_size=32 时 lr=1e-4，等效 batch_size=128 时，lr 应调整为 $4 \times 10^{-4}$。
 
-> **注意**：此规则在 batch size < 256 时效果较好。超大 batch 需配合 Warmup 使用，否则初期仍可能不稳定。
+> **注意**：此规则在 batch size < 256 时效果通常较好。超大 batch 需配合 Warmup 使用，否则初期仍可能不稳定。
 
 ## 七、手动实现（理解原理）
 
@@ -387,7 +394,7 @@ for epoch in range(epochs):
   ---------------------------------------------------------------------------------------------------------------------------
   问题                        可能原因                        解决方案
   --------------------------- ------------------------------- -----------------------------------------------------------
-  "Loss 在训练初期剧烈震荡或   缺少 Warmup，学习率过大导致     添加 Warmup（至少 3~5 个 epoch），初始学习率从 0
+  "Loss 在训练初期剧烈震荡或   缺少 Warmup，学习率过大导致     添加 Warmup（至少 3~5 个 epoch），初始学习率从极小值
   变 NaN"                     梯度爆炸                        线性增长（①）
 
   "Warmup 结束后 Loss 不降     Warmup 时长不够，动量统计量     延长 Warmup 到总步数的 10%；或降低 base_lr
@@ -416,8 +423,8 @@ for epoch in range(epochs):
 - ✅ **为什么需要学习率调度**：固定学习率在 Transformer 上会导致梯度爆炸、动量偏差和糟糕局部最优
 - ✅ **Warmup 原理**：从"冷启动"到"热热身"，线性/余弦增长保护训练初期稳定性
 - ✅ **余弦退火优势**：相比 StepLR 的断崖式下降，余弦曲线提供更平滑的收敛路径
-- ✅ **PyTorch 工程实现**：`LinearLR` + `CosineAnnealingLR` + `SequentialLR` 的标准组合
+- ✅ **PyTorch 工程实现**：`LinearLR` + `CosineAnnealingLR` + `SequentialLR` 的常见组合
 - ✅ **关键陷阱规避**：step 与 epoch 的单位区分、`scheduler.step()` 的正确调用位置
-- ✅ **与 AMP/梯度累积的配合**：调度器独立于其他技巧，每个 batch 更新一次
+- ✅ **与 AMP/梯度累积的配合**：调度器独立于其他技巧，与 `optimizer.step()` 对齐
 
-> **下一步预告**：在下一板块 **"大语言模型（LLM）核心特性"** 中，我们将跳出技术实现细节，从更高维度理解现代大模型的能力边界------什么是**涌现能力**？为什么大模型能进行**上下文学习（In-Context Learning）**？**指令遵循**和**逐步推理**是如何实现的？以及我们必须正视的**幻觉问题**。现在，试着修改上面的代码，将 Warmup 策略分别改为"线性"和"余弦"，绘制学习率曲线并对比两者的差异！
+> **下一步预告**：在下一板块 **"大语言模型（LLM）核心特性"** 中，我们将跳出技术实现细节，从更高维度理解现代大模型的能力边界——什么是**涌现能力**？为什么大模型能进行**上下文学习（In-Context Learning）**？**指令遵循**和**逐步推理**是如何实现的？以及我们必须正视的**幻觉问题**。现在，试着修改上面的代码，将 Warmup 策略分别改为"线性"和"余弦"，绘制学习率曲线并对比两者的差异！

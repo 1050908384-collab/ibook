@@ -139,7 +139,7 @@ print("最终词汇表示例:", list(final_vocab.items())[:5])
 
 ### 2.5 Byte-level BPE（②）
 
-标准 BPE 以 Unicode 字符为基，但包含所有 Unicode 字符会使基词表过大。GPT-2 使用**Byte-level BPE**：以 256 个字节值为基词表，确保任何文本都能被分词，不会出现 `<unk>`。GPT-2 的词表大小为 50,257（256 字节 token + 50,000 次合并 + 1 个特殊 token）。
+标准 BPE 以 Unicode 字符为基，但包含所有 Unicode 字符会使基词表过大。GPT-2 使用**Byte-level BPE**：以 256 个字节值为基词表，确保任何文本都能被分词，避免出现 `<unk>`。例如 `openai-community/gpt2` 的词表大小为 50,257（256 字节 token + 50,000 次合并 + 1 个特殊 token）。
 
 ## 三、WordPiece：最大化语言模型似然（①+②）
 
@@ -150,7 +150,7 @@ WordPiece 与 BPE 非常相似，都是自底向上迭代合并，但**合并准
 - **BPE**：选**频率最高**的字符对。
 - **WordPiece**：选**最大化训练数据似然**的字符对。
 
-具体得分公式为：（①）
+具体得分公式为（教学简化版，实际实现可能更复杂）：（①）
 
 ```
 score(x, y) = freq(x, y) / (freq(x) × freq(y))
@@ -160,7 +160,9 @@ score(x, y) = freq(x, y) / (freq(x) × freq(y))
 
 ### 3.2 算法演示（①）
 
-沿用前面的语料库。WordPiece 计算各字符对的得分：
+> **以下是一个独立简化示例**，使用另一组假设语料来演示 WordPiece 的得分计算逻辑，与前文 BPE 演示的语料不同。
+
+沿用另一组假设语料，WordPiece 计算各字符对的得分：
 
 | 字符对 | freq(x,y) | freq(x) | freq(y) | score |
 |---|---|---|---|---|
@@ -333,7 +335,7 @@ probs = train_unigram(texts, vocab_size=20, num_iters=10)
 print("最终词汇:", sorted(probs.keys()))
 ```
 
-## 五、三种算法对比与应用场景（①+②）
+## 五、三种算法对比与典型模型示例（①+②）
 
 ### 5.1 核心差异速查（①+②）
 
@@ -345,23 +347,26 @@ print("最终词汇:", sorted(probs.keys()))
 | **多语言支持** | 中等 | 中等 | **优秀** |
 | **编码方式** | 按合并规则 | 贪心最长匹配 | 维特比算法 |
 | **训练速度** | 快 | 中等 | 慢 |
-| **典型模型** | GPT、Llama、Qwen | BERT、DistilBERT | XLM-R、mT5、T5 |
 
-### 5.2 实际应用案例（②）
+### 5.2 典型模型示例（并非所有版本都适用）（②）
 
-- **GPT 系列**：使用 **Byte-level BPE**。以 256 字节为基词表，词表大小约 5 万，能处理任何 Unicode 字符包括表情符号。（②）
-- **BERT 系列**：使用 **WordPiece**。词表大小 30,522，用 `##` 标记非词首子词。例如 `unaffable` → `["un", "##aff", "##able"]`。（②）
-- **多语言模型**（XLM-R、mT5）：使用 **SentencePiece + Unigram**。词表大小 10 万~25 万，同时处理 100 多种语言，无需语言特定的预处理。（②）
+以下列举了一些常见模型的分词方案，但**不同版本或变体可能采用不同策略**，具体以模型仓库配置为准：
+
+- **`openai-community/gpt2`**：使用 **Byte-level BPE**。以 256 字节为基词表，词表大小约 5 万，能处理任何 Unicode 字符包括表情符号。（②）
+- **`google-bert/bert-base-uncased`**：使用 **WordPiece**。词表大小 30,522，用 `##` 标记非词首子词。例如 `unaffable` → `["un", "##aff", "##able"]`。（②）
+- **`FacebookAI/xlm-roberta-base`**、`**google-t5/t5-base**`：使用 **SentencePiece + Unigram**。词表大小通常在 10 万~25 万量级，同时处理多种语言，无需语言特定的预处理。（②）
 
 ### 5.3 如何选择？（②）
 
-| 场景 | 推荐算法 |
+| 场景 | 通常推荐的算法 |
 |---|---|
 | 英语单语言模型 | WordPiece（BERT 风格）或 BPE（GPT 风格） |
 | 形态丰富的语言（德语、俄语） | BPE |
 | 无空格语言（中文、日文） | **SentencePiece** |
-| 多语言模型 | **SentencePiece**（几乎是唯一选择） |
+| 多语言模型 | **SentencePiece**（常见选择之一） |
 | 追求训练速度 | BPE |
+
+> **注意**：上述建议为一般性参考，实际选型需结合具体模型版本、语料特点和实验结果综合判断。
 
 ## 六、词表大小的选择（②）
 
@@ -370,22 +375,22 @@ print("最终词汇:", sorted(probs.keys()))
 - **太小**（如 < 5,000）：序列过长，信息碎片化，模型效率低。
 - **太大**（如 > 200,000）：增加模型参数，embedding 层过大，降低泛化能力。
 
-**一般建议**：（②）
+**一般建议**（在特定条件下，具体需实验验证）：（②）
 
-| 模型类型 | 推荐词表大小 |
+| 模型类型 | 通常推荐的词表大小范围 |
 |---|---|
 | 单语言模型 | 1 万 ~ 5 万 |
 | 多语言模型 | 5 万 ~ 25 万 |
 
-> 例如 GPT-2 词表 50,257，BERT 词表 30,522，Llama 2 词表 32,000。
+> 例如 `openai-community/gpt2` 词表 50,257，`google-bert/bert-base-uncased` 词表 30,522，`meta-llama/Llama-2-7b-hf` 词表 32,000。
 
 ## 七、常见问题与解决（①+②）
 
 | 问题 | 解答 |
 |---|---|
-| BPE 和 WordPiece 哪个更好？ | 没有绝对优劣。BPE 简单高效，WordPiece 子词更具语言学意义。现代生成模型（GPT/Llama）多用 BPE，理解模型（BERT）多用 WordPiece。 |
+| BPE 和 WordPiece 哪个更好？ | 没有绝对优劣。在特定条件下，BPE 简单高效，WordPiece 子词更具语言学意义。现代生成模型（如 GPT-2、Llama 系列）多用 BPE，理解模型（如 BERT）多用 WordPiece。 |
 | 为什么中文模型也用 BPE？ | 中文虽然无空格，但可以通过预分词（如按字或按词）后应用 BPE。更现代的做法是直接使用 SentencePiece。 |
-| `<unk>`  token 还会出现吗？ | Byte-level BPE 和 SentencePiece 基本不会出现，因为基词表覆盖了所有字节/字符。标准 BPE 和 WordPiece 在基词表覆盖不全时仍可能出现。 |
+| `<unk>` token 还会出现吗？ | Byte-level tokenizer 或启用 byte fallback 的 tokenizer 通常能覆盖未知字节；普通 SentencePiece 是否产生 `<unk>` 取决于具体配置（如是否启用 byte fallback、词表覆盖范围等）。标准 BPE 和 WordPiece 在基词表覆盖不全时仍可能出现。 |
 | 可以自己训练词表吗？ | 可以。HuggingFace `tokenizers` 库提供了 `BpeTrainer`、`WordPieceTrainer`、`UnigramTrainer`。但通常直接加载预训练模型的词表即可。 |
 
 ## 八、总结与后续学习路线（①+②）
@@ -393,9 +398,9 @@ print("最终词汇:", sorted(probs.keys()))
 恭喜你完成了 BPE、WordPiece、SentencePiece 算法原理的学习！你现在应该掌握了：
 
 -   ✅ 子词分词的核心思想：在词汇量与语义表达之间取平衡
--   ✅ **BPE**：自底向上贪婪合并最高频字符对，GPT/Llama 使用
--   ✅ **WordPiece**：基于似然最大化选择合并对，BERT 使用
--   ✅ **SentencePiece (Unigram)**：语言无关的端到端分词，多语言模型使用
+-   ✅ **BPE**：自底向上贪婪合并最高频字符对，GPT-2 等模型使用
+-   ✅ **WordPiece**：基于似然最大化选择合并对，BERT 等模型使用
+-   ✅ **SentencePiece (Unigram)**：语言无关的端到端分词，XLM-R、mT5 等模型使用
 -   ✅ 三种算法的核心差异、适用场景和实际应用案例
 -   ✅ 词表大小选择的一般建议
 
