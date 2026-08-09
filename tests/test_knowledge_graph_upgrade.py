@@ -91,6 +91,69 @@ class KnowledgeGraphUpgradeTest(unittest.IsolatedAsyncioTestCase):
         result = await agent.generate_stage(StagePlanningInput(session_id=session_id, profile=profile, stage_num=1))
         self.assertEqual("KBS-12-03", result.stage.subtopic_id)
 
+    async def test_lora_stage_resumes_user_level_in_progress_prerequisite(self):
+        session_id = "lora-with-in-progress-prerequisites"
+        self.client.create_session(session_id)
+        self.client.set_subtopic_status(session_id, "KBS-01-00", 0)
+        self.client.set_subtopic_status(session_id, "KBS-02-00", 0)
+
+        agent = DeterministicDiagnosticAgent(db_client=self.client)
+        profile = UserProfile(
+            session_id=session_id,
+            goal="掌握Lora",
+            daily_hours=2,
+            knowledge_gaps=[KnowledgeGap(
+                skill="LoRA",
+                block_id="KB-12",
+                target_subtopic_ids=["KBS-12-03"],
+            )],
+        )
+
+        result = await agent.generate_stage(StagePlanningInput(
+            session_id=session_id,
+            profile=profile,
+            stage_num=1,
+        ))
+
+        self.assertEqual("KBS-01-00", result.stage.subtopic_id)
+        self.assertTrue(result.stage.subtopic_ids)
+
+    async def test_stage_planning_falls_back_when_all_candidates_are_blocked(self):
+        session_id = "blocked-stage-candidates"
+        self.client.create_session(session_id)
+        graph = GraphQueryTool()
+        levels = await graph.minimal_hard_prerequisite_subgraph(["KBS-12-03"], "掌握Lora")
+        agent = DeterministicDiagnosticAgent(db_client=self.client)
+        stored_statuses = self.client.list_subtopic_statuses(session_id)
+        agent.db_client.list_subtopic_statuses = lambda _: [
+            item for item in stored_statuses
+            if levels.get(item["subtopic_id"], -1) != 0
+        ]
+
+        async def empty_fallback(*_args, **_kwargs):
+            return {}
+
+        agent.stage_generator_tool.generate_stage = empty_fallback
+        profile = UserProfile(
+            session_id=session_id,
+            goal="掌握Lora",
+            daily_hours=2,
+            knowledge_gaps=[KnowledgeGap(
+                skill="LoRA",
+                block_id="KB-12",
+                target_subtopic_ids=["KBS-12-03"],
+            )],
+        )
+
+        result = await agent.generate_stage(StagePlanningInput(
+            session_id=session_id,
+            profile=profile,
+            stage_num=1,
+        ))
+
+        self.assertEqual("KB-12", result.stage.block_id)
+        self.assertIsNone(result.stage.subtopic_id)
+
     async def test_agent1_parses_zero_foundation_and_calculates_stage_days(self):
         session_id = "linux-time-budget"
         self.client.create_session(session_id)
@@ -113,8 +176,8 @@ class KnowledgeGraphUpgradeTest(unittest.IsolatedAsyncioTestCase):
             stage_num=1,
         ))).stage
         self.assertEqual("KBS-01-00", first_stage.subtopic_id)
-        self.assertEqual(0.0, first_stage.estimated_hours)
-        self.assertEqual(0.0, first_stage.recommended_daily_hours)
+        self.assertEqual(0.5, first_stage.estimated_hours)
+        self.assertEqual(0.5, first_stage.recommended_daily_hours)
         self.assertEqual(1, first_stage.suggested_study_days)
 
         self.client.set_subtopic_status(session_id, "KBS-01-00", 1, 1.0, 1.0, False)
