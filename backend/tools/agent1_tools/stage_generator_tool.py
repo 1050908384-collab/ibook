@@ -157,14 +157,29 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
     hardware_notes = _generate_hardware_notes(hardware, skill_name)
     personalization_summary = _generate_summary(grade, daily_hours, learning_style, adjusted_hours, study_days)
 
+    subtopic_id = profile.get("subtopic_id", "") or block_info.get("subtopic_id", "")
+    subtopic_name = profile.get("subtopic_name", "") or block_info.get("subtopic_name", "")
+    subtopic_ids = list(profile.get("subtopic_ids", []) or block_info.get("subtopic_ids", []) or [])
+    subtopic_names = list(profile.get("subtopic_names", []) or block_info.get("subtopic_names", []) or [])
+    # 始终保证列表与单值字段一致：若列表为空，用单值填充降级；若单值为空，用列表首项填充
+    if not subtopic_ids and subtopic_id:
+        subtopic_ids = [subtopic_id]
+    if not subtopic_names and subtopic_name:
+        subtopic_names = [subtopic_name]
+    if not subtopic_id and subtopic_ids:
+        subtopic_id = subtopic_ids[0]
+    if not subtopic_name and subtopic_names:
+        subtopic_name = subtopic_names[0]
     return {
         "stage": {
             "stage_id": stage_id,
             "stage_num": stage_num,
             "block_id": block_id,
             "block_name": skill_name,
-            "subtopic_id": profile.get("subtopic_id", "") or block_info.get("subtopic_id", ""),
-            "subtopic_name": profile.get("subtopic_name", "") or block_info.get("subtopic_name", ""),
+            "subtopic_id": subtopic_id,
+            "subtopic_name": subtopic_name,
+            "subtopic_ids": subtopic_ids,
+            "subtopic_names": subtopic_names,
             "estimated_hours": adjusted_hours,
             "gap_skill": skill_name,
             "prerequisites": block_info.get("prerequisites", []),
@@ -267,6 +282,16 @@ def _fallback_stage(session_id: str, skill_name: str, level: str, goal: str,
     if not subtopic_name:
         # 用 skill_name 作为默认 subtopic_name
         subtopic_name = skill_name
+    subtopic_ids = list(profile.get("subtopic_ids", []) or [])
+    subtopic_names = list(profile.get("subtopic_names", []) or [])
+    if not subtopic_ids and subtopic_id:
+        subtopic_ids = [subtopic_id]
+    if not subtopic_names and subtopic_name:
+        subtopic_names = [subtopic_name]
+    if not subtopic_id and subtopic_ids:
+        subtopic_id = subtopic_ids[0]
+    if not subtopic_name and subtopic_names:
+        subtopic_name = subtopic_names[0]
 
     difficulty_map = {"beginner": "初级", "intermediate": "中级", "advanced": "高级"}
 
@@ -285,6 +310,8 @@ def _fallback_stage(session_id: str, skill_name: str, level: str, goal: str,
         "block_name": skill_name,
         "subtopic_id": subtopic_id,
         "subtopic_name": subtopic_name,
+        "subtopic_ids": subtopic_ids,
+        "subtopic_names": subtopic_names,
         "estimated_hours": adjusted_hours,
         "gap_skill": skill_name,
         "prerequisites": [],

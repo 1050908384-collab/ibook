@@ -122,6 +122,26 @@ def _extract_questions(
                 """
                 params = [block_name, count]
             rows = conn.execute(sql, params).fetchall()
+
+            # 兜底：按 block_id + subtopic_ids 过滤时，若 subtopic 级无匹配题目，回退到 block 级取题
+            if block_id and subtopic_ids and not rows:
+                logger.info(
+                    "subtopic 级无题目（%s / %s），回退 block 级取题",
+                    block_id, ",".join(subtopic_ids),
+                )
+                fallback_sql = """
+                    SELECT question_id, block_id, subtopic_id, question_type, question_text, options,
+                           correct_answer, difficulty, explanation, expected_output, grading_mode, source, hint
+                    FROM test_questions
+                    WHERE block_id = ?
+                    ORDER BY CASE
+                        WHEN question_type IN ('fill_blank', 'single_choice', 'true_false', 'multi_choice', 'match', 'ordering') THEN 0
+                        WHEN question_type IN ('short_answer', 'practical', 'essay', 'case_analysis') THEN 1
+                        ELSE 2
+                    END, difficulty ASC, question_id ASC
+                    LIMIT ?
+                """
+                rows = conn.execute(fallback_sql, [block_id, count]).fetchall()
         finally:
             conn.close()
 
