@@ -81,13 +81,19 @@ async def run_case(goal: str, daily_hours: float, question: str, mode: str = "de
             print(answer)
             print("-" * 72)
 
-            # 断言（精确匹配，避免子串误判）
+            # 断言（精确匹配多知识点展示 + 预估时长）
             ok_hours = "**预估时长**：0 小时" not in answer
-            ok_kp = "**知识点**：环境准备：安装Python 3.10+" in answer
+            ok_multi = "**本阶段知识点**（3个）：" in answer
+            ok_1 = "  1. 环境准备：安装Python 3.10+" in answer
+            ok_2 = "  2. 语法" in answer
+            ok_3 = "  3. 数据结构" in answer
             ok_obj = "（环境准备：安装Python 3.10+，配置conda" not in answer
             print(f"\n[校验]")
             print(f"  预估时长非0      : {'✅ 通过' if ok_hours else '❌ 仍为0小时'}")
-            print(f"  知识点行无括号残留: {'✅ 通过' if ok_kp else '❌ 知识点行异常'}")
+            print(f"  多知识点数量头   : {'✅ 通过' if ok_multi else '❌ 未显示3个知识点标题'}")
+            print(f"  知识点1(环境准备): {'✅ 通过' if ok_1 else '❌ 知识点1异常'}")
+            print(f"  知识点2(语法)    : {'✅ 通过' if ok_2 else '❌ 知识点2异常'}")
+            print(f"  知识点3(数据结构): {'✅ 通过' if ok_3 else '❌ 知识点3异常'}")
             print(f"  objectives无长串括号: {'✅ 通过' if ok_obj else '❌ objectives仍有长串'}")
         finally:
             client.close()
