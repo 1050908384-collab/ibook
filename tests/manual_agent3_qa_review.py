@@ -31,19 +31,24 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = PROJECT_ROOT / "backend"
 sys.path[:0] = [str(PROJECT_ROOT), str(BACKEND_DIR)]
 
+from config import settings
 from db.sqlite_client import SQLiteClient
 from orchestrator.harness import Harness
 from orchestrator.state_manager import StateManager
+from scripts.import_local_learning_materials import import_lessons
 from scripts.insert_knowledge_data import (
     BLOCKS_FILE_PATH,
-    DOCS_FILE_PATH,
     QUESTIONS_FILE_PATH,
     SUBTOPICS_FILE_PATH,
+    VIDEO_CATALOG_PATH,
+    insert_block_resources,
     insert_knowledge_blocks,
-    insert_knowledge_docs,
     insert_knowledge_subtopics,
+    insert_learning_resources,
+    insert_subtopic_resources,
     insert_test_questions,
     load_required_list,
+    load_video_catalog,
 )
 
 
@@ -188,13 +193,20 @@ async def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="agent3-qa-") as temp_dir:
         db_path = Path(temp_dir) / "agent3_qa.db"
-        client = SQLiteClient(f"sqlite:///{db_path.as_posix()}")
+        database_url = f"sqlite:///{db_path.as_posix()}"
+        original_database_url = settings.DATABASE_URL
+        settings.DATABASE_URL = database_url
+        client = SQLiteClient(database_url)
         try:
             # 加载知识数据（题目表供 start_stage 使用）
             insert_knowledge_blocks(client, load_required_list(BLOCKS_FILE_PATH))
-            insert_knowledge_docs(client, load_required_list(DOCS_FILE_PATH))
             insert_knowledge_subtopics(client, load_required_list(SUBTOPICS_FILE_PATH))
             insert_test_questions(client, load_required_list(QUESTIONS_FILE_PATH))
+            resources, subtopic_mappings, block_mappings = load_video_catalog(VIDEO_CATALOG_PATH)
+            insert_learning_resources(client, resources)
+            insert_subtopic_resources(client, subtopic_mappings)
+            insert_block_resources(client, block_mappings)
+            import_lessons(db_path)
 
             harness = Harness(StateManager(client), execution_mode=mode)
             harness.state_manager.create_session(session_id)
@@ -302,6 +314,7 @@ async def main() -> None:
                           f"需人工复核: {review_summary.get('needs_human_review', False)}")
         finally:
             client.close()
+            settings.DATABASE_URL = original_database_url
 
 
 if __name__ == "__main__":

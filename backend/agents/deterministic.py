@@ -947,23 +947,36 @@ class DeterministicContentAgent:
         return list(dict.fromkeys(item for item in ids if item))
 
     async def _search_stage_docs(self, stage: StageInfo) -> list[dict]:
+        subtopic_ids = self._stage_subtopic_ids(stage)
         local_lessons = self.vector_search_tool.get_local_lessons(
-            stage.block_id, self._stage_subtopic_ids(stage),
+            stage.block_id, subtopic_ids,
         )
-        if local_lessons:
-            return local_lessons
+        local_subtopic_ids = {
+            item.get("subtopic_id") for item in local_lessons if item.get("subtopic_id")
+        }
 
-        # Search snippets are used only when this stage has no imported local
-        # lesson. They remain useful for incomplete material collections.
-        docs = []
-        for subtopic_id in self._stage_subtopic_ids(stage):
+        # Local lessons are the authoritative learner-facing materials.  Fall
+        # back only for a stage subtopic that has no imported local lesson.
+        docs = list(local_lessons)
+        for subtopic_id in subtopic_ids:
+            if subtopic_id in local_subtopic_ids:
+                continue
             subtopic_docs = await self.vector_search_tool.search_by_block(
                 stage.block_id, subtopic_id, top_k=6,
             )
             for doc in subtopic_docs:
                 doc["subtopic_id"] = subtopic_id
             docs.extend(subtopic_docs)
-        return list({item.get("chunk_id"): item for item in docs if item.get("chunk_id")}.values())
+
+        unique_docs = []
+        seen_doc_keys = set()
+        for doc in docs:
+            doc_key = doc.get("doc_id") or doc.get("chunk_id")
+            if not doc_key or doc_key in seen_doc_keys:
+                continue
+            seen_doc_keys.add(doc_key)
+            unique_docs.append(doc)
+        return unique_docs
 
     async def _get_stage_videos(self, stage: StageInfo) -> list[dict]:
         videos = []
@@ -1010,6 +1023,11 @@ class DeterministicContentAgent:
                     title=doc.get("title", ""),
                     locator=doc.get("source") or doc.get("chunk_id") or doc_id,
                     content_ref=doc.get("chunk_id") or doc_id,
+                    metadata_json={
+                        "block_id": doc.get("block_id", stage.block_id),
+                        "subtopic_id": doc.get("subtopic_id"),
+                        "doc_id": doc_id,
+                    },
                 ))
 
         for video in recommended_videos:

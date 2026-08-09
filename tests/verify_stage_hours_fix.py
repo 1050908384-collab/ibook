@@ -14,16 +14,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = PROJECT_ROOT / "backend"
 sys.path[:0] = [str(PROJECT_ROOT), str(BACKEND_DIR)]
 
+from config import settings
 from db.sqlite_client import SQLiteClient
 from orchestrator.harness import Harness
 from orchestrator.state_manager import StateManager
+from scripts.import_local_learning_materials import import_lessons
 from scripts.insert_knowledge_data import (
     BLOCKS_FILE_PATH,
-    DOCS_FILE_PATH,
     QUESTIONS_FILE_PATH,
     SUBTOPICS_FILE_PATH,
     insert_knowledge_blocks,
-    insert_knowledge_docs,
     insert_knowledge_subtopics,
     insert_test_questions,
     load_required_list,
@@ -37,12 +37,15 @@ async def run_case(goal: str, daily_hours: float, question: str, mode: str = "de
 
     with tempfile.TemporaryDirectory(prefix="verify-hours-") as temp_dir:
         db_path = Path(temp_dir) / "verify.db"
-        client = SQLiteClient(f"sqlite:///{db_path.as_posix()}")
+        database_url = f"sqlite:///{db_path.as_posix()}"
+        original_database_url = settings.DATABASE_URL
+        settings.DATABASE_URL = database_url
+        client = SQLiteClient(database_url)
         try:
             insert_knowledge_blocks(client, load_required_list(BLOCKS_FILE_PATH))
-            insert_knowledge_docs(client, load_required_list(DOCS_FILE_PATH))
             insert_knowledge_subtopics(client, load_required_list(SUBTOPICS_FILE_PATH))
             insert_test_questions(client, load_required_list(QUESTIONS_FILE_PATH))
+            import_lessons(db_path)
 
             harness = Harness(StateManager(client), execution_mode=mode)
             session_id = f"verify-hours-{uuid.uuid4().hex[:8]}"
@@ -88,6 +91,7 @@ async def run_case(goal: str, daily_hours: float, question: str, mode: str = "de
             print(f"  objectives无长串括号: {'✅ 通过' if ok_obj else '❌ objectives仍有长串'}")
         finally:
             client.close()
+            settings.DATABASE_URL = original_database_url
 
 
 async def main() -> None:
