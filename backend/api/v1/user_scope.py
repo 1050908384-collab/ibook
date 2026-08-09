@@ -137,3 +137,27 @@ async def update_stage_duration(session_id: str, stage_id: str, request: StageDu
         return stage
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# === 知识板块/知识点查询（分步诊断用） ===
+
+@router.get("/knowledge-blocks/{block_id}/subtopics")
+async def get_block_subtopics(block_id: str):
+    """
+    获取指定知识板块下的所有知识点。
+
+    GET /api/v1/knowledge-blocks/{block_id}/subtopics
+
+    前端流程第 2 步：用户选择已掌握的板块后，
+    调用此接口获取该板块下的知识点列表，供用户选择。
+    """
+    from tools.agent1_tools.knowledge_catalog_tool import KnowledgeCatalogTool
+    catalog = KnowledgeCatalogTool()
+    block = catalog.get_block(block_id)
+    if not block:
+        raise HTTPException(status_code=404, detail=f"Knowledge block '{block_id}' not found")
+    return {
+        "block_id": block_id,
+        "block_name": block.get("block_name", block_id),
+        "subtopics": block.get("subtopics", []),
+    }

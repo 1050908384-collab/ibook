@@ -106,11 +106,18 @@ def print_current_stage(harness: Harness, session_id: str) -> None:
     pkg = session.get("learning_package") or {}
     prerequisites = stage.get("prerequisites") or []
     prerequisites_str = ", ".join(prerequisites) if prerequisites else "none"
-    subtopic_ids = stage.get("subtopic_ids") or [stage.get("subtopic_id", "?")]
-    subtopic_names = stage.get("subtopic_names") or [stage.get("subtopic_name", "?")]
-    print(f"  Stage {stage.get('stage_num', '?')}: {stage.get('block_id', '?')} / {', '.join(subtopic_ids)}")
+    # 知识点列表（知识点级阶段，一个阶段可含多个 subtopic）
+    subtopic_ids = stage.get("subtopic_ids") or []
+    subtopic_names = stage.get("subtopic_names") or []
+    if not subtopic_ids and stage.get("subtopic_id"):
+        subtopic_ids = [stage["subtopic_id"]]
+    if not subtopic_names and stage.get("subtopic_name"):
+        subtopic_names = [stage["subtopic_name"]]
+    print(f"  Stage {stage.get('stage_num', '?')}: {stage.get('block_id', '?')} / {','.join(subtopic_ids) or '?'}")
     print(f"    Block: {stage.get('block_name', '?')}")
-    print(f"    Subtopics: {', '.join(subtopic_names)}")
+    print(f"    Subtopics ({len(subtopic_names)}):")
+    for i, name in enumerate(subtopic_names, 1):
+        print(f"      [{i}] {name}")
     print(f"    Estimated hours: {stage.get('estimated_hours', '?')}")
     print(f"    Daily study time: {stage.get('recommended_daily_hours', '?')}")
     print(f"    Suggested study days: {stage.get('suggested_study_days', '?')}")
@@ -154,8 +161,11 @@ async def advance_stage(harness: Harness, session_id: str) -> bool:
     print("[推进阶段] 规划下一阶段 ...")
     planned = await harness.plan_next_stage(session_id)
     next_stage = planned.get("next_stage", {}) or {}
+    next_names = next_stage.get("subtopic_names") or (
+        [next_stage.get("subtopic_name")] if next_stage.get("subtopic_name") else []
+    )
     print(f"  下一阶段: {next_stage.get('block_name', '?')} "
-          f"(subtopic={next_stage.get('subtopic_name', '?')})")
+          f"(subtopics={len(next_names)}: {', '.join(next_names) or '?'})")
 
     # 3. 启动下一阶段
     print("[推进阶段] 启动下一阶段，生成学习包 ...")
@@ -236,7 +246,15 @@ async def main() -> None:
 
             stage_info = initial["stage_info"]
             print(f"  阶段   : {stage_info['block_name']} (block_id={stage_info['block_id']})")
-            print(f"  子知识点: {stage_info.get('subtopic_name', '')} (subtopic_id={stage_info.get('subtopic_id', '')})")
+            sub_ids = stage_info.get("subtopic_ids") or []
+            sub_names = stage_info.get("subtopic_names") or []
+            if not sub_ids and stage_info.get("subtopic_id"):
+                sub_ids = [stage_info["subtopic_id"]]
+            if not sub_names and stage_info.get("subtopic_name"):
+                sub_names = [stage_info["subtopic_name"]]
+            print(f"  子知识点 ({len(sub_names)}个): {', '.join(sub_ids)}")
+            for i, name in enumerate(sub_names, 1):
+                print(f"    [{i}] {name}")
 
             # 显示知识盲区（帮助用户了解完整学习路径）
             profile = initial.get("profile", {})

@@ -46,6 +46,9 @@ THRESHOLD_PASS = 0.80      # >= 此值判为有依据
 
 MOCK_FILE = DATA_DIR / "test_data" / "mock_knowledge_verify_tool.json"
 
+# knowledge_chunks 进程内缓存（按 db 路径 + mtime 失效），见 _load_chunks
+_CHUNK_CACHE: Dict[str, Any] = {"key": None, "chunks": [], "db_available": False}
+
 # 英文停用词（用于关键词提取去噪）
 _STOPWORDS = {
     "the", "a", "an", "is", "are", "of", "to", "in", "on", "for", "and", "or",
@@ -106,6 +109,23 @@ def knowledge_verify(input_data: dict, config: dict = None) -> dict:
 
         # 真实模式：查 knowledge_chunks 表做语义检索
         chunks, db_available = _load_chunks()
+
+        # 安全兜底：知识库为空/不可用时，真实检索会对每条陈述判 similarity=0.0，
+        # 从而把所有内容误报为 hallucination（critical）。此时缺乏可比对语料，
+        # 无法做出可信的幻觉判定，降级回 Mock 以避免全量误报。
+        # （知识库导入分块后，chunks 非空即自动走真实检索。）
+        if not chunks:
+            logger.warning(
+                "knowledge_chunks 为空或不可用（db_available=%s），降级为 Mock 幻觉判定",
+                db_available,
+            )
+            result = _mock_verify(statement, input_data)
+            if isinstance(result.get("data"), dict):
+                result["data"]["db_available"] = db_available
+                result["data"]["checked_chunks"] = 0
+                result["data"]["fallback_reason"] = "knowledge_chunks_empty"
+            return result
+
         stmt_terms = _tokenize(statement)
 
         scored: List[Dict[str, Any]] = []
@@ -172,11 +192,23 @@ def _load_chunks() -> tuple[List[Dict[str, str]], bool]:
     SQL: 从 knowledge_chunks 表读取全部分块（doc_id/block_id 关联 knowledge_docs/knowledge_blocks）。
     knowledge_chunks 是向量检索的源表，chunk_id 与 Chroma 向量库 ID 一一对应。
     数据库或表不存在时返回空列表与 db_available=False，调用方据此降级。
+
+    带进程内缓存：按 (db路径, 文件mtime) 缓存结果，避免同一次审核对多条 Claim 逐条送检时
+    反复全表读取。知识库文件更新（mtime 变化）后缓存自动失效。
     """
     db_path = _get_db_path()
     if not db_path.exists():
         logger.warning("数据库不存在: %s，knowledge_verify 无可用知识库", db_path)
         return [], False
+
+    try:
+        mtime = db_path.stat().st_mtime
+    except OSError:
+        mtime = None
+    cache_key = (str(db_path), mtime)
+    if _CHUNK_CACHE.get("key") == cache_key:
+        return _CHUNK_CACHE["chunks"], _CHUNK_CACHE["db_available"]
+
     try:
         # sqlite3 只读连接，避免对库产生任何写副作用
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
@@ -196,6 +228,7 @@ def _load_chunks() -> tuple[List[Dict[str, str]], bool]:
             {"chunk_id": r[0], "doc_id": r[1], "block_id": r[2], "content": r[3]}
             for r in rows
         ]
+        _CHUNK_CACHE.update(key=cache_key, chunks=chunks, db_available=True)
         return chunks, True
     except sqlite3.Error as e:
         logger.warning("读取 knowledge_chunks 失败: %s", e)
@@ -737,7 +770,10 @@ def _load_mock() -> dict:
 # ------------------------------------------------------------------
 class KnowledgeVerifyTool:
     def __init__(self):
-        self._default_config = {"use_mock": True}
+        # 真实模式：查 knowledge_chunks 表做语义近似检索（关键词重叠归一化相似度）。
+        # 与 rule_check_tool / Agent1 各工具一致，默认走真实检索而非 Mock，
+        # 否则 Agent4 的“交叉验证/幻觉检测”名存实亡（见《Agent34学习包三问题检查报告》问题①）。
+        self._default_config = {"use_mock": False}
 
     async def verify_knowledge(self, content: str) -> List[Dict[str, Any]]:
         result = knowledge_verify({"statement": content}, config=self._default_config)

@@ -17,6 +17,44 @@ class DiagnosticOutput(BaseModel):
     followup_questions: List[str] = Field(default_factory=list)
 
 
+# === 分步诊断：目标 → 知识板块 → 知识点 → 确定 ===
+
+class GoalBlocksRequest(BaseModel):
+    """按学习目标返回其下所有知识板块。"""
+    goal: str
+
+
+class GoalBlockItem(BaseModel):
+    """知识板块选项（含知识点列表供前端展开）。"""
+    block_id: str
+    block_name: str
+    description: str = ""
+    difficulty: str = ""
+    estimated_hours: float = 0
+    subtopics: List[dict] = Field(default_factory=list)
+
+
+class GoalBlocksResponse(BaseModel):
+    goal: str
+    blocks: List[GoalBlockItem] = Field(default_factory=list)
+
+
+class FoundationSubmitRequest(BaseModel):
+    """用户确认已掌握知识点后提交，生成画像并进入阶段规划。"""
+    session_id: str
+    goal: str
+    mastered_subtopic_ids: List[str] = Field(default_factory=list)
+    daily_hours: float = 2.0
+    learning_style: str = "mixed"
+
+
+class FoundationSubmitResponse(BaseModel):
+    status: str  # "profile_ready" | "needs_more_info"
+    profile: Optional[dict] = None
+    stage: Optional[dict] = None
+    followup_questions: List[str] = Field(default_factory=list)
+
+
 class StagePlanningInput(BaseModel):
     session_id: str
     profile: UserProfile

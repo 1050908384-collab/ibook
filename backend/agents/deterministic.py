@@ -199,6 +199,151 @@ class DeterministicDiagnosticAgent:
         _agent_log("Agent1", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
         return DiagnosticOutput(profile=profile, followup_questions=followup_questions)
 
+    # ------------------------------------------------------------------
+    # 分步诊断：目标 → 知识板块 → 知识点 → 确定
+    # ------------------------------------------------------------------
+
+    def get_goal_blocks(self, goal: str) -> list[dict[str, Any]]:
+        """根据学习目标返回其下所有知识板块（含知识点列表）。
+
+        优先按目标语义匹配相关板块；若无匹配则返回全量目录。
+        每个板块都附带 subtopics 列表，供前端展开选择。
+        """
+        target_text = (goal or "").strip()
+        candidates = self._select_target_candidates(target_text) if target_text else []
+        if candidates:
+            blocks = []
+            for candidate in candidates:
+                block_id = str(candidate.get("block_id", ""))
+                resolved = self.knowledge_catalog_tool.get_block(block_id) or candidate
+                blocks.append({
+                    "block_id": block_id,
+                    "block_name": resolved.get("block_name", block_id),
+                    "description": resolved.get("description", ""),
+                    "difficulty": resolved.get("difficulty", ""),
+                    "estimated_hours": resolved.get("estimated_hours", 0),
+                    "subtopics": resolved.get("subtopics", []),
+                })
+            return blocks
+        # 无匹配 → 返回全量目录
+        return [
+            {
+                "block_id": block.get("block_id", ""),
+                "block_name": block.get("block_name", ""),
+                "description": block.get("description", ""),
+                "difficulty": block.get("difficulty", ""),
+                "estimated_hours": block.get("estimated_hours", 0),
+                "subtopics": block.get("subtopics", []),
+            }
+            for block in self.knowledge_catalog_tool.list_blocks()
+        ]
+
+    async def run_with_foundation(
+        self,
+        session_id: str,
+        goal: str,
+        mastered_subtopic_ids: list[str],
+        daily_hours: float = 2.0,
+        learning_style: str = "mixed",
+    ) -> DiagnosticOutput:
+        """接收用户已掌握知识点，直接构建画像，不依赖文本解析。
+
+        流程：
+        1. 按 goal 搜索目标板块（同 run 中的 _select_target_candidates）
+        2. 将 mastered_subtopic_ids 按 block_id 分组，找出完全掌握的板块
+        3. 构建 gaps（目标板块中未全部掌握的）
+        4. 生成 UserProfile
+        """
+        target_text = (goal or "").strip()
+        mastered_set = set(mastered_subtopic_ids or [])
+
+        # 找目标板块
+        candidates = self._select_target_candidates(target_text) if target_text else []
+        gaps = await self._build_grounded_gaps(
+            target_text, candidates, [],  # mastered_skills 通过知识点级别处理
+        )
+
+        # 标记已掌握的知识点：将 mastered_subtopic_ids 对应的 subtopic 状态设为已掌握
+        # 同时构建 session 级别的已掌握状态映射（供候选筛选使用）
+        for subtopic_id in mastered_set:
+            try:
+                self.db_client.set_subtopic_status(session_id, subtopic_id, 1, 1.0, 1.0, True)
+            except Exception:
+                pass
+
+        # 修复 run_with_foundation 的 gaps：
+        # 1) 对每个 gap，target_subtopic_ids = 板块中「所有 subtopic - 已掌握 subtopic」
+        # 2) 如果板块中所有 subtopic 都掌握了，删掉该 gap
+        filtered_gaps: list[KnowledgeGap] = []
+        for gap in gaps:
+            if not gap.block_id:
+                filtered_gaps.append(gap)
+                continue
+            block = self.knowledge_catalog_tool.get_block(gap.block_id) or {}
+            subtopics = block.get("subtopics", []) or []
+            all_block_sub_ids: list[str] = []
+            for s in subtopics:
+                sid = str(s.get("subtopic_id") or s.get("id") or "")
+                if sid:
+                    all_block_sub_ids.append(sid)
+            unmastered_ids = [sid for sid in all_block_sub_ids if sid not in mastered_set]
+            if not unmastered_ids:
+                # 此板块所有知识点都掌握了，不再纳入 gap
+                continue
+            # 按原始子知识点的相对顺序写回 target_subtopic_ids
+            existing_targets = list(getattr(gap, "target_subtopic_ids", []) or [])
+            if existing_targets:
+                # 保留原 target 顺序，但过滤掉已掌握的 + 补齐未包含的未掌握
+                preserved = [sid for sid in existing_targets if sid not in mastered_set and sid in all_block_sub_ids]
+                extra = [sid for sid in unmastered_ids if sid not in preserved]
+                gap.target_subtopic_ids = preserved + extra
+            else:
+                gap.target_subtopic_ids = list(unmastered_ids)
+            filtered_gaps.append(gap)
+        gaps = filtered_gaps
+
+        # 找出完全掌握的板块（该板块所有知识点都在 mastered_set 中）
+        mastered_blocks: list[str] = []
+        all_blocks = self.knowledge_catalog_tool.list_blocks()
+        for block in all_blocks:
+            block_id = str(block.get("block_id", ""))
+            subtopics = block.get("subtopics", [])
+            if not subtopics:
+                continue
+            all_subtopic_ids = {s.get("subtopic_id", "") for s in subtopics}
+            if all_subtopic_ids and all_subtopic_ids.issubset(mastered_set):
+                mastered_blocks.append(block_id)
+
+        # 将完全掌握的板块名作为 skill_tags
+        skill_tags = []
+        for block_id in mastered_blocks:
+            block = self.knowledge_catalog_tool.get_block(block_id)
+            if block:
+                skill_tags.append(str(block.get("block_name", block_id)))
+
+        # 构建置信度：有目标匹配 + 有已掌握知识点 → 高置信度
+        confidence = 0.75
+        if candidates and gaps and all(gap.block_id and gap.mapping_confidence >= 0.8 for gap in gaps):
+            confidence = max(confidence, 0.9)
+        if mastered_set:
+            confidence = max(confidence, 0.8)
+
+        profile = UserProfile(
+            session_id=session_id,
+            skill_tags=skill_tags,
+            knowledge_gaps=gaps if gaps else [KnowledgeGap(skill=target_text or "通用学习目标")],
+            goal=target_text or "学习",
+            daily_hours=max(0.5, min(8.0, float(daily_hours or 2.0))),
+            learning_style=learning_style or "mixed",
+            confidence=confidence,
+        )
+        _agent_log(
+            "Agent1",
+            f"foundation:done | goal={profile.goal} | mastered_subtopics={len(mastered_set)} | "
+            f"mastered_blocks={len(mastered_blocks)} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}",
+        )
+        return DiagnosticOutput(profile=profile, followup_questions=[])
+
     def _select_target_candidates(self, target_text: str) -> list[dict[str, Any]]:
         candidates = self._recall_candidates(target_text)
         if not candidates:
@@ -605,10 +750,63 @@ class DeterministicDiagnosticAgent:
         gap: KnowledgeGap,
         preferred_block: dict[str, Any],
     ) -> StagePlanningOutput:
+        # 修复：fallback 前先过滤 target_subtopic_ids 里已完成的 subtopic，
+        # 避免反复返回同一个已掌握 subtopic 导致阶段无限重复。
+        # 先查询当前 session 的 subtopic 状态，找出已完成集合
+        try:
+            all_statuses = self.db_client.list_subtopic_statuses(request.session_id)
+            completed_ids = {
+                s.get("subtopic_id", "")
+                for s in all_statuses
+                if int(s.get("status", -1)) == 1
+            }
+        except Exception:
+            completed_ids = set()
+
+        # 将 gap.target_subtopic_ids 过滤为「未完成」集合
+        target_ids = [sid for sid in list(getattr(gap, "target_subtopic_ids", []) or []) if sid not in completed_ids]
+
+        # 如果 target_subtopic_ids 为空或全部完成，再从 block.subtopics 中找第一个未完成的
+        block_subtopics = preferred_block.get("subtopics", []) or []
+        if not target_ids:
+            for sub in block_subtopics:
+                sid = str(sub.get("subtopic_id") or sub.get("id") or "")
+                if sid and sid not in completed_ids:
+                    target_ids = [sid]
+                    break
+
+        # 如果仍无候选 → 此 gap 下无未掌握知识点，返回空 stage，让调用方停止
+        if not target_ids:
+            empty_stage = StageInfo(
+                stage_id=f"empty-{request.session_id}-{request.stage_num}",
+                stage_num=request.stage_num,
+                block_id=gap.block_id or preferred_block.get("block_id") or "",
+                block_name=gap.skill or gap.block_name or preferred_block.get("block_name") or "",
+                subtopic_id="",
+                subtopic_name="",
+                subtopic_ids=[],
+                subtopic_names=[],
+                gap_skill=gap.skill,
+                estimated_hours=0.0,
+                prerequisites=[],
+                title="已完成全部知识点",
+                description="当前 gap 下没有需要学习的知识点了",
+                objectives=[],
+                difficulty="初级",
+                recommended_daily_hours=0.0,
+                suggested_study_days=0,
+            )
+            _agent_log("Agent1", f"stage_planning:fallback | gap fully mastered, stop")
+            return StagePlanningOutput(stage=empty_stage)
+
+        # 构造一个临时 gap，target_subtopic_ids 为未完成集合（确保 stage_generator_tool 选对）
+        gap_dict = gap.model_dump(mode="json")
+        gap_dict["target_subtopic_ids"] = target_ids
+
         try:
             fallback_stage = await self.stage_generator_tool.generate_stage(
                 request.session_id,
-                gap.model_dump(mode="json"),
+                gap_dict,
                 preferred_block,
                 request.profile.goal,
                 request.stage_num,
@@ -628,8 +826,28 @@ class DeterministicDiagnosticAgent:
             or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, gap.skill).hex[:8].upper()}"
         )
         block_name = gap.skill or gap.block_name or preferred_block.get("block_name")
+
+        # subtopic 单值 + 列表字段：从 stage_generator_tool 返回值提取
+        # （stage_generator_tool 已按知识点级生成 subtopic_ids/subtopic_names 列表）
+        fb_sub_id = fallback_stage.get("subtopic_id")
+        fb_sub_name = fallback_stage.get("subtopic_name")
+        fb_sub_ids = list(fallback_stage.get("subtopic_ids", []) or [])
+        fb_sub_names = list(fallback_stage.get("subtopic_names", []) or [])
+        if not fb_sub_ids and fb_sub_id:
+            fb_sub_ids = [fb_sub_id]
+        if not fb_sub_names and fb_sub_name:
+            fb_sub_names = [fb_sub_name]
+        if not fb_sub_id and fb_sub_ids:
+            fb_sub_id = fb_sub_ids[0]
+        if not fb_sub_name and fb_sub_names:
+            fb_sub_name = fb_sub_names[0]
+
+        # estimated_hours 兜底：对 0 小时 subtopic 给 0.5 小时（避免预估时长 0 问题）
+        raw_hours = fallback_stage.get("estimated_hours")
+        if raw_hours is None or float(raw_hours or 0.0) < 0.1:
+            raw_hours = max(0.5, float(len(fb_sub_ids or []) or 1) * 0.5)
         estimated_hours, recommended_daily_hours, suggested_study_days = self._stage_time_plan(
-            fallback_stage.get("estimated_hours", 2.0),
+            raw_hours,
             request.profile.daily_hours,
         )
         stage = StageInfo(
@@ -637,8 +855,10 @@ class DeterministicDiagnosticAgent:
             stage_num=request.stage_num,
             block_id=block_id,
             block_name=block_name,
-            subtopic_id=None,
-            subtopic_name=None,
+            subtopic_id=fb_sub_id,
+            subtopic_name=fb_sub_name,
+            subtopic_ids=fb_sub_ids,
+            subtopic_names=fb_sub_names,
             gap_skill=gap.skill,
             estimated_hours=estimated_hours,
             prerequisites=gap.prerequisites,
@@ -654,7 +874,7 @@ class DeterministicDiagnosticAgent:
         )
         _agent_log(
             "Agent1",
-            f"stage_planning:fallback | block={stage.block_name} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
+            f"stage_planning:fallback | block={stage.block_name} | subtopics={','.join(fb_sub_ids)} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
         )
         return StagePlanningOutput(stage=stage)
 
@@ -946,6 +1166,22 @@ class DeterministicContentAgent:
             ids = [stage.subtopic_id]
         return list(dict.fromkeys(item for item in ids if item))
 
+    @staticmethod
+    def _stage_subtopic_names(stage: StageInfo) -> list[str]:
+        """返回阶段内所有清理过括号/截断后的知识点名称（按 subtopic_ids 对齐）。
+
+        优先使用 subtopic_names 列表，否则降级到单个 subtopic_name，最后兜底 block_name。
+        """
+        names = list(getattr(stage, "subtopic_names", []) or [])
+        if not names:
+            single = getattr(stage, "subtopic_name", "") or ""
+            names = [single] if single else []
+        cleaned = [_shorten_subtopic_name(n) for n in names if n]
+        if not cleaned:
+            fallback = getattr(stage, "block_name", "") or "当前阶段"
+            cleaned = [fallback]
+        return cleaned
+
     async def _search_stage_docs(self, stage: StageInfo) -> list[dict]:
         subtopic_ids = self._stage_subtopic_ids(stage)
         local_lessons = self.vector_search_tool.get_local_lessons(
@@ -1169,7 +1405,8 @@ class DeterministicContentAgent:
         is_learning_content_query = any(kw in question for kw in learning_content_keywords)
 
         if is_learning_content_query:
-            subtopic_name = _shorten_subtopic_name(getattr(request.stage, "subtopic_name", "") or "")
+            subtopic_names = self._stage_subtopic_names(request.stage)
+            subtopic_count = len(subtopic_names)
             objectives = getattr(request.stage, "objectives", []) or []
             goal = getattr(request.profile, "goal", "") or "学习"
             block_name = getattr(request.stage, "block_name", "") or "当前阶段"
@@ -1180,7 +1417,7 @@ class DeterministicContentAgent:
             learning_points = []
             try:
                 if request.block_id:
-                    docs = await self.vector_search_tool.search_by_block(request.block_id)
+                    docs = await self._search_stage_docs(request.stage)
                     for doc in docs[:5]:
                         content = doc.get("content", "") or ""
                         if content and len(content) > 10:
@@ -1190,8 +1427,11 @@ class DeterministicContentAgent:
 
             stage_num = getattr(request.stage, "stage_num", "?")
             answer_lines = [f"## 当前学习阶段：第{stage_num}阶段 — {block_name}"]
-            if subtopic_name:
-                answer_lines.append(f"**知识点**：{subtopic_name}")
+            # 多知识点编号列表展示（阶段是知识点级，一个阶段可含多个知识点）
+            label = "本阶段知识点" if subtopic_count > 1 else "知识点"
+            answer_lines.append(f"**{label}**（{subtopic_count}个）：")
+            for i, name in enumerate(subtopic_names, 1):
+                answer_lines.append(f"  {i}. {name}")
             if difficulty:
                 answer_lines.append(f"**难度等级**：{difficulty}")
             answer_lines.append(f"**预估时长**：{estimated_hours} 小时（每天学习 {daily_hours} 小时）")
@@ -1223,15 +1463,25 @@ class DeterministicContentAgent:
             answer = self._generate_daily_answer(request)
             return AnswerGenerationOutput(answer=answer, question_type="daily")
 
+        # 自测/检验掌握程度 意图：走专门路径返回本阶段练习题，不依赖 LLM 自由发挥
+        # （本地 LLM 易把"如何检验掌握程度"误解为"用代码捕捉错误"）
+        if self._is_self_assessment_query(question):
+            answer_text = await self._build_self_assessment_answer(request)
+            memory_context = self._build_memory_context(request)
+            if memory_context:
+                answer_text += f"\n\n{memory_context}"
+            _agent_log("Agent3", f"answer:structured_self_assessment | len={len(answer_text)}")
+            return AnswerGenerationOutput(answer=answer_text, question_type="technical")
+
         # 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory 整合
-        # 用 block_id 过滤，只检索本阶段相关的知识文档（不是当前学习包）
+        # 按用户问题语义检索本阶段相关文档（不是取阶段所有文档，避免 LLM 被带偏）
         related_docs = []
         try:
             if request.block_id:
-                related_docs = await self.vector_search_tool.search_by_block(
-                    request.block_id, request.stage.subtopic_id or ""
+                related_docs = await self.vector_search_tool.search(
+                    request.question, block_id=request.block_id, top_k=5,
                 )
-            else:
+            if not related_docs:
                 related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
         except Exception:
             related_docs = []
@@ -1239,16 +1489,19 @@ class DeterministicContentAgent:
         # 构建历史 memory 上下文
         memory_context = self._build_memory_context(request)
 
+        # 阶段知识点概览（让学习者知道当前阶段覆盖哪些知识点）
+        stage_topic_names = self._stage_subtopic_names(request.stage)
+        stage_topic_text = "、".join(stage_topic_names)
         if related_docs:
             references = "\n".join(f"- {item.get('content', '')[:160]}" for item in related_docs)
             answer = (
-                f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
-                f"可以先参考这些相关知识片段：\n{references}"
+                f"你当前学习的是 {request.stage.block_name}（本阶段知识点：{stage_topic_text}）。"
+                f"针对“{request.question}”，可以先参考这些与问题相关的知识片段：\n{references}"
             )
         else:
             answer = (
-                f"你当前学习的是 {request.stage.block_name}。针对“{request.question}”，"
-                "建议先回到本阶段核心概念，再结合练习验证理解。"
+                f"你当前学习的是 {request.stage.block_name}（本阶段知识点：{stage_topic_text}）。"
+                f"针对“{request.question}”，建议先回到本阶段核心概念，再结合练习验证理解。"
             )
 
         # 如果有历史 memory 上下文，追加到回答中
@@ -1256,6 +1509,126 @@ class DeterministicContentAgent:
             answer = f"{answer}\n\n{memory_context}"
 
         return AnswerGenerationOutput(answer=answer, question_type="technical")
+
+    # ------------------------------------------------------------------
+    # 自测/检验掌握程度 意图识别与结构化回答
+    # ------------------------------------------------------------------
+    # 本地 LLM 容易把"如何检验掌握程度"误解为"用代码捕捉错误（try-except）"，
+    # 因此在技术类 LLM 回答之前用规则识别这类意图，走专门路径返回本阶段练习题
+    # 作为自测方案，结果可控且可操作。
+    SELF_ASSESSMENT_ACTION_WORDS = (
+        "检验", "测试", "检查", "评估", "考察", "验证", "衡量", "考查",
+    )
+    SELF_ASSESSMENT_TARGET_WORDS = (
+        "掌握程度", "掌握情况", "学习效果", "理解程度", "理解情况",
+        "学会", "学得怎样", "学得怎么样", "水平", "掌握",
+    )
+    SELF_ASSESSMENT_STRONG_WORDS = ("自测", "测验", "自我检测", "自我测试")
+
+    @classmethod
+    def _is_self_assessment_query(cls, question: str) -> bool:
+        """检测是否为"检验/测试掌握程度"类自测意图。"""
+        q = question or ""
+        if any(w in q for w in cls.SELF_ASSESSMENT_STRONG_WORDS):
+            return True
+        has_action = any(w in q for w in cls.SELF_ASSESSMENT_ACTION_WORDS)
+        has_target = any(w in q for w in cls.SELF_ASSESSMENT_TARGET_WORDS)
+        return has_action and has_target
+
+    async def _build_self_assessment_answer(self, request: AnswerGenerationInput) -> str:
+        """构建自测方案回答：提取本阶段练习题作为自测题目。
+
+        不依赖 LLM 自由发挥，直接用 test_questions 表的本阶段题目构建结构化
+        自测方案；无题目时降级为通用自测建议。
+        """
+        stage = request.stage
+        block_name = getattr(stage, "block_name", "") or "当前阶段"
+        goal = getattr(request.profile, "goal", "") or "学习"
+        subtopic_names = self._stage_subtopic_names(stage)
+        stage_num = getattr(stage, "stage_num", "?")
+
+        questions: list[dict] = []
+        try:
+            extracted = await self.question_extract_tool.extract_questions(
+                "",
+                {"block_id": stage.block_id, "block_name": block_name, "question_count": 3},
+            )
+            questions = [q for q in extracted if isinstance(q, dict)] if extracted else []
+        except Exception:
+            questions = []
+
+        answer_lines = [f"## 检验本阶段掌握程度（第{stage_num}阶段 — {block_name}）"]
+
+        label = "本阶段知识点" if len(subtopic_names) > 1 else "知识点"
+        answer_lines.append(f"**{label}**（{len(subtopic_names)}个）：")
+        for i, name in enumerate(subtopic_names, 1):
+            answer_lines.append(f"  {i}. {name}")
+
+        if questions:
+            answer_lines.append(f"\n**自测题目**（{len(questions)}道，建议先独立作答）：")
+            for i, q in enumerate(questions, 1):
+                q_text = (q.get("question_text", "") or "").strip()
+                if not q_text:
+                    continue
+                difficulty = q.get("difficulty", "") or ""
+                header = f"### 题目{i}"
+                if difficulty:
+                    header += f"（{difficulty}）"
+                answer_lines.append(header)
+                answer_lines.append(q_text)
+                options_text = self._format_question_options(q.get("options", ""))
+                if options_text:
+                    answer_lines.append(options_text)
+            answer_lines.append("\n**自测建议**：")
+            answer_lines.append("- 先独立作答，不要查资料；")
+            answer_lines.append("- 作答后可以问我某道题的答案或解析；")
+            answer_lines.append("- 如果某题完全没思路，说明对应知识点需要复习。")
+        else:
+            answer_lines.append("\n**自测建议**：")
+            answer_lines.append("- 尝试独立写一个小程序，练习本阶段知识点；")
+            answer_lines.append("- 对照上面的知识点列表，用自己的话复述每个知识点的核心概念；")
+            answer_lines.append("- 完成后可以问我具体知识点的解析或示例。")
+
+        answer_lines.append(f"\n**学习目标**：{goal}")
+        return "\n".join(answer_lines)
+
+    @staticmethod
+    def _format_question_options(options: Any) -> str:
+        """将题目选项格式化为用户友好的多行文本。
+
+        支持以下输入：
+        - list[dict]：如 [{"key": "A", "text": "..."}, ...]
+        - JSON 字符串：如 '[{"key":"A","text":"..."}]'
+        - 普通字符串：直接返回
+        - 其他/空：返回空串
+        """
+        if not options:
+            return ""
+        # list[dict] 情况
+        if isinstance(options, list):
+            lines = []
+            for opt in options:
+                if isinstance(opt, dict):
+                    key = str(opt.get("key", "")).strip()
+                    text = str(opt.get("text", "")).strip()
+                    if key and text:
+                        lines.append(f"{key}. {text}")
+                    elif text:
+                        lines.append(text)
+                elif isinstance(opt, str):
+                    lines.append(opt)
+            return "\n".join(lines) if lines else ""
+        # 字符串情况：尝试解析为 JSON
+        if isinstance(options, str):
+            stripped = options.strip()
+            if stripped.startswith("[") or stripped.startswith("{"):
+                try:
+                    parsed = json.loads(stripped)
+                    return DeterministicContentAgent._format_question_options(parsed)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+            return stripped if stripped else ""
+        return ""
 
     @staticmethod
     def _classify_question_by_keywords(question: str) -> str:
@@ -1500,7 +1873,13 @@ class HybridContentAgent(DeterministicContentAgent):
             f"## 资料：{item.get('title', '')}\n{item.get('content', '')}"
             for item in related_docs
         )
+        # 阶段知识点列表（让 LLM 知道本阶段要覆盖的所有知识点，教程结构对齐 agent1 的知识点级阶段）
+        stage_topic_names = self._stage_subtopic_names(stage)
+        stage_topic_text = "、".join(stage_topic_names)
         prompt = f"""请为学习阶段“{stage.block_name}”生成一份Markdown教程。
+
+本阶段包含 {len(stage_topic_names)} 个知识点：{stage_topic_text}
+教程需要覆盖上述所有知识点，按顺序组织章节。
 
 学习者画像：{json.dumps(learning_profile, ensure_ascii=False)}
 实训条件：{json.dumps(request.practice_profile.model_dump(mode="json"), ensure_ascii=False)}
@@ -1554,7 +1933,8 @@ class HybridContentAgent(DeterministicContentAgent):
 
         if is_learning_content_query:
             # 学习内容询问：直接用阶段数据构建回答，不依赖 LLM 自由发挥
-            subtopic_name = _shorten_subtopic_name(getattr(request.stage, "subtopic_name", "") or "")
+            subtopic_names = self._stage_subtopic_names(request.stage)
+            subtopic_count = len(subtopic_names)
             objectives = getattr(request.stage, "objectives", []) or []
             goal = getattr(request.profile, "goal", "") or "学习"
             block_name = getattr(request.stage, "block_name", "") or "当前阶段"
@@ -1562,11 +1942,11 @@ class HybridContentAgent(DeterministicContentAgent):
             difficulty = getattr(request.stage, "difficulty", "") or ""
             daily_hours = getattr(request.profile, "daily_hours", 2.0) or 2.0
 
-            # 收集本阶段相关知识文档摘要
+            # 收集本阶段所有知识点的相关文档摘要（按多知识点检索）
             learning_points = []
             try:
                 if request.block_id:
-                    docs = await self.vector_search_tool.search_by_block(request.block_id)
+                    docs = await self._search_stage_docs(request.stage)
                     for doc in docs[:5]:
                         content = doc.get("content", "") or ""
                         if content and len(content) > 10:
@@ -1577,8 +1957,10 @@ class HybridContentAgent(DeterministicContentAgent):
             # 构建结构化的学习内容介绍
             stage_num = getattr(request.stage, "stage_num", "?")
             answer_lines = [f"## 当前学习阶段：第{stage_num}阶段 — {block_name}"]
-            if subtopic_name:
-                answer_lines.append(f"**知识点**：{subtopic_name}")
+            label = "本阶段知识点" if subtopic_count > 1 else "知识点"
+            answer_lines.append(f"**{label}**（{subtopic_count}个）：")
+            for i, name in enumerate(subtopic_names, 1):
+                answer_lines.append(f"  {i}. {name}")
             if difficulty:
                 answer_lines.append(f"**难度等级**：{difficulty}")
             answer_lines.append(f"**预估时长**：{estimated_hours} 小时（每天学习 {daily_hours} 小时）")
@@ -1600,19 +1982,30 @@ class HybridContentAgent(DeterministicContentAgent):
             _agent_log("Agent3", f"answer:structured_learning_content | len={len(answer_text)}")
             return AnswerGenerationOutput(answer=answer_text, question_type="technical")
 
-        # 技术类（非学习内容询问）：问题分析 + 本阶段相关知识文档检索 + 历史 memory 整合
-        # 用 block_id 过滤，只检索本阶段相关的知识文档
+        # 自测/检验掌握程度 意图：走专门路径返回本阶段练习题，不依赖 LLM 自由发挥
+        # （本地 LLM 易把"如何检验掌握程度"误解为"用代码捕捉错误"）
+        if self._is_self_assessment_query(question):
+            answer_text = await self._build_self_assessment_answer(request)
+            _agent_log("Agent3", f"answer:structured_self_assessment | len={len(answer_text)}")
+            return AnswerGenerationOutput(answer=answer_text, question_type="technical")
+
+        # 技术类（非学习内容询问）：按用户问题语义检索本阶段相关文档 + LLM 回答
+        # 关键：必须按 query 检索与问题相关的文档，而不是取阶段所有文档，
+        # 否则 LLM 会被不相关文档带偏（如问"语法"却答"环境准备"）
         related_docs = []
         try:
             if request.block_id:
-                related_docs = await self._search_stage_docs(request.stage)
-            else:
+                # 优先按问题语义 + 当前 block 范围检索
+                related_docs = await self.vector_search_tool.search(
+                    request.question, block_id=request.block_id, top_k=5,
+                )
+            if not related_docs:
                 related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
         except Exception:
             related_docs = []
         context = ""
         if related_docs:
-            context = "\n\n本阶段相关知识片段：\n" + "\n".join(
+            context = "\n\n以下知识库资料仅供参考（与问题相关时使用，无关时忽略）：\n" + "\n".join(
                 f"- {item.get('content', '')[:200]}" for item in related_docs
             )
 
@@ -1633,11 +2026,21 @@ class HybridContentAgent(DeterministicContentAgent):
                 # 只有硬件信息无平台信息，提示 LLM 给出跨平台方案
                 hardware_note = f"\n用户硬件条件：{hardware}（请优先给出跨平台通用方法；如需命令，请同时提供 Windows 和 Linux 两种写法）"
 
+        # 阶段知识点列表（让 LLM 知道当前阶段覆盖的所有知识点，回答更聚焦）
+        stage_topic_names = self._stage_subtopic_names(request.stage)
+        stage_topic_text = "、".join(stage_topic_names)
         prompt = f"""当前学习阶段：{request.stage.block_name}
+本阶段知识点（{len(stage_topic_names)}个）：{stage_topic_text}
 用户学习目标：{request.profile.goal}
 用户问题：{request.question}{hardware_note}
 
-请直接回答问题。先给出简明结论，再解释原理；需要时提供示例。不要编造来源。{context}"""
+请聚焦回答用户提出的实际问题，先给出简明结论，再解释原理；需要时提供示例。
+重要：知识库资料仅供参考，如果与用户问题无关请忽略，不要复述资料中与问题无关的内容。不要编造来源。
+
+意图识别提示：
+- 若用户询问"如何检验/测试掌握程度、怎么知道学会了、学习效果如何"等自测类问题，应推荐自测方式（做练习题、写小项目、对照知识点复述），不要回答具体的异常捕获或错误处理语法。
+- 若用户询问某个具体技术点（语法、数据类型、函数等），直接解释该技术点。
+{context}"""
         if memory_context:
             prompt += f"\n\n{memory_context}"
         prompt += f"\n\n答疑规范：\n{self.answer_skill_context}"
@@ -1893,6 +2296,7 @@ class DeterministicTechnicalReviewAgent:
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
         errors = []
         video_resource_errors = []
+        raw_hallucinations: List[Dict[str, Any]] = []
         if not request.content.strip():
             errors.append(ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空"))
             return TechnicalReviewResult(passed=False, errors=errors)
@@ -1907,11 +2311,22 @@ class DeterministicTechnicalReviewAgent:
             pass
 
         # 步骤2：事实检查（幻觉检测 — 知识依据验证，sim<0.65判幻觉）
+        # 有 claims 时按 Claim 粒度送检，使幻觉 issue 精确归属 claim_id/section_ref
+        # （供协议字段补全关联来源、派生 must_fix）；无 claims 时回退整篇送检。
+        # 保留原始 dict（raw_hallucinations，含显式 claim_id）传入协议补全，
+        # 避免 normalize 丢弃 claim_id 后仅靠 location 匹配（同 section 多 claim 时会误配）。
         try:
-            hallucination_errors = normalize_review_errors(
-                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
+                request.claims
             )
-            errors.extend(hallucination_errors)
+            if claim_hallucinations:
+                raw_hallucinations = claim_hallucinations
+                errors.extend(normalize_review_errors(claim_hallucinations))
+            else:
+                hallucination_errors = normalize_review_errors(
+                    await self.knowledge_verify_tool.verify_knowledge(request.content)
+                )
+                errors.extend(hallucination_errors)
         except Exception:
             pass
 
@@ -1937,12 +2352,13 @@ class DeterministicTechnicalReviewAgent:
             except Exception:
                 video_resource_errors = []
         # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        # raw_errors 汇入视频错误与逐 Claim 幻觉原始 dict（后者含显式 claim_id，供精确归属）
         errors = self._protocol_agent._enrich_debate_fields(
             errors,
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
-            raw_errors=video_resource_errors,
+            raw_errors=list(video_resource_errors) + raw_hallucinations,
         )
 
         # 步骤6：综合裁决（有critical错误或errors非空则不通过）
@@ -1994,10 +2410,20 @@ class HybridTechnicalReviewAgent:
             rule_errors = []
 
         # 步骤2：事实检查（幻觉检测 — 知识依据验证）— 异常兜底
+        # 有 claims 时按 Claim 粒度送检，使幻觉 issue 精确归属 claim_id/section_ref；
+        # 保留原始 dict（raw_hallucinations，含显式 claim_id）供协议补全精确匹配。
+        raw_hallucinations: List[Dict[str, Any]] = []
         try:
-            hallucination_errors = normalize_review_errors(
-                await self.knowledge_verify_tool.verify_knowledge(request.content)
+            claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
+                request.claims
             )
+            if claim_hallucinations:
+                raw_hallucinations = claim_hallucinations
+                hallucination_errors = normalize_review_errors(claim_hallucinations)
+            else:
+                hallucination_errors = normalize_review_errors(
+                    await self.knowledge_verify_tool.verify_knowledge(request.content)
+                )
         except Exception:
             hallucination_errors = []
 
@@ -2060,7 +2486,7 @@ class HybridTechnicalReviewAgent:
             sources=request.sources,
             claims=request.claims,
             round_index=request.round_index,
-            raw_errors=video_resource_errors,
+            raw_errors=list(video_resource_errors) + raw_hallucinations,
         )
 
         print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")

@@ -10,9 +10,44 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from api.dependencies import get_harness
+from models.contracts import StagePlanningInput
 
 router = APIRouter(prefix="/sessions/{session_id}/diagnosis", tags=["Diagnosis"])
 harness = get_harness()
+
+
+# === 分步诊断模型 ===
+
+class GoalBlocksRequest(BaseModel):
+    goal: str
+
+
+class GoalBlockItem(BaseModel):
+    block_id: str
+    block_name: str
+    description: str = ""
+    difficulty: str = ""
+    estimated_hours: float = 0
+    subtopics: list[dict] = Field(default_factory=list)
+
+
+class GoalBlocksResponse(BaseModel):
+    goal: str
+    blocks: list[GoalBlockItem] = Field(default_factory=list)
+
+
+class FoundationSubmitRequest(BaseModel):
+    goal: str
+    mastered_subtopic_ids: list[str] = Field(default_factory=list)
+    daily_hours: float = 2.0
+    learning_style: str = "mixed"
+
+
+class FoundationSubmitResponse(BaseModel):
+    status: str
+    profile: Optional[dict] = None
+    stage: Optional[dict] = None
+    followup_questions: list[str] = Field(default_factory=list)
 
 
 class DiagnosisMessageRequest(BaseModel):
@@ -218,4 +253,87 @@ async def get_diagnosis_messages(session_id: str):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================================================================
+# 分步诊断：目标 → 知识板块 → 知识点 → 确定
+# ==================================================================
+
+@router.post("/goal-blocks", response_model=GoalBlocksResponse)
+async def get_goal_blocks(session_id: str, request: GoalBlocksRequest):
+    """
+    根据学习目标返回其下所有知识板块（含知识点列表）。
+
+    POST /api/v1/sessions/{session_id}/diagnosis/goal-blocks
+
+    前端流程第 1 步：用户输入大目标后调用此接口，
+    获取目标匹配的知识板块列表，每块含 subtopics 供前端展开。
+    """
+    try:
+        blocks = harness.agent1.get_goal_blocks(request.goal)
+        return {"goal": request.goal, "blocks": blocks}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/foundation", response_model=FoundationSubmitResponse)
+async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
+    """
+    用户确认已掌握知识点后提交，生成画像并进入阶段规划。
+
+    POST /api/v1/sessions/{session_id}/diagnosis/foundation
+
+    前端流程最后一步：用户选好已掌握的知识点后点击"确定"，
+    将 mastered_subtopic_ids 提交给 Agent1，生成 profile 和第一个学习阶段。
+    """
+    try:
+        session = harness.get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        diagnostic = await harness.agent1.run_with_foundation(
+            session_id=session_id,
+            goal=request.goal,
+            mastered_subtopic_ids=request.mastered_subtopic_ids,
+            daily_hours=request.daily_hours,
+            learning_style=request.learning_style,
+        )
+        profile = diagnostic.profile
+        harness.state_manager.update_profile(session_id, profile)
+        harness.state_manager.add_interaction(session_id, "initial_diagnostic", {
+            "user_input": f"目标：{request.goal}；已掌握知识点：{len(request.mastered_subtopic_ids)}个",
+        })
+
+        if profile.confidence < 0.7:
+            return {
+                "status": "needs_more_info",
+                "profile": profile.model_dump(mode="json"),
+                "stage": None,
+                "followup_questions": diagnostic.followup_questions,
+            }
+
+        # 生成第一个学习阶段
+        stage_output = await harness.agent1.generate_stage(StagePlanningInput(
+            session_id=session_id,
+            profile=profile,
+            stage_num=1,
+        ))
+        harness.state_manager.update_stage(session_id, stage_output.stage)
+        harness.state_manager.update_field(session_id, "phase", "stage_ready")
+        harness.state_manager.update_field(session_id, "available_actions", ["start_stage", "edit_profile"])
+
+        return {
+            "status": "profile_ready",
+            "profile": profile.model_dump(mode="json"),
+            "stage": stage_output.stage.model_dump(mode="json"),
+            "followup_questions": [],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
