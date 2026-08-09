@@ -205,6 +205,8 @@ from torch.utils.checkpoint import checkpoint
 scaler = amp.GradScaler()
 accumulation_steps = 4
 checkpoint_every = 2
+num_batches = len(train_loader)
+tail_steps = num_batches % accumulation_steps
 
 model.train()
 for epoch in range(num_epochs):
@@ -217,11 +219,17 @@ for epoch in range(num_epochs):
         with amp.autocast(device_type='cuda'):
             # 在模型内部，每层根据 checkpoint_every 决定是否使用 checkpoint
             outputs = model(inputs)  # model 内部已集成 checkpoint
-            loss = criterion(outputs, labels) / accumulation_steps
+            current_cycle_steps = (
+                tail_steps
+                if tail_steps > 0 and i >= num_batches - tail_steps
+                else accumulation_steps
+            )
+            loss = criterion(outputs, labels) / current_cycle_steps
         
         scaler.scale(loss).backward()  # 反向时自动触发重计算
         
-        if (i + 1) % accumulation_steps == 0:
+        should_step = ((i + 1) % accumulation_steps == 0) or (i + 1 == num_batches)
+        if should_step:
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()

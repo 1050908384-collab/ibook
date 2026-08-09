@@ -46,7 +46,13 @@ def question_extract(input_data: dict, config: dict = None, database_url: str = 
         if use_mock:
             return _mock_extract(input_data, count)
 
-        questions, db_available = _extract_questions(block_id, block_name, count, database_url)
+        questions, db_available = _extract_questions(
+            block_id,
+            block_name,
+            count,
+            input_data.get("subtopic_ids"),
+            database_url,
+        )
         return {
             "status": "success",
             "data": {"questions": questions, "db_available": db_available},
@@ -63,7 +69,13 @@ def question_extract(input_data: dict, config: dict = None, database_url: str = 
         }
 
 
-def _extract_questions(block_id: str, block_name: str, count: int, database_url: str = None) -> tuple[List[Dict[str, Any]], bool]:
+def _extract_questions(
+    block_id: str,
+    block_name: str,
+    count: int,
+    subtopic_ids: List[str] | None = None,
+    database_url: str = None,
+) -> tuple[List[Dict[str, Any]], bool]:
     db_path = _get_db_path(database_url)
     if not db_path.exists():
         logger.warning("Database not found for question extraction: %s", db_path)
@@ -73,11 +85,19 @@ def _extract_questions(block_id: str, block_name: str, count: int, database_url:
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
             if block_id:
+                subtopic_ids = list(dict.fromkeys(subtopic_ids or []))
+                subtopic_filter = ""
+                params: list[Any] = [block_id]
+                if subtopic_ids:
+                    placeholders = ", ".join("?" for _ in subtopic_ids)
+                    subtopic_filter = f" AND subtopic_id IN ({placeholders})"
+                    params.extend(subtopic_ids)
                 sql = """
                     SELECT question_id, block_id, subtopic_id, question_type, question_text, options,
                            correct_answer, difficulty, explanation, expected_output, grading_mode, source, hint
                     FROM test_questions
                     WHERE block_id = ?
+                """ + subtopic_filter + """
                     ORDER BY CASE
                         WHEN question_type IN ('fill_blank', 'single_choice', 'true_false', 'multi_choice', 'match', 'ordering') THEN 0
                         WHEN question_type IN ('short_answer', 'practical', 'essay', 'case_analysis') THEN 1
@@ -85,7 +105,7 @@ def _extract_questions(block_id: str, block_name: str, count: int, database_url:
                     END, difficulty ASC, question_id ASC
                     LIMIT ?
                 """
-                params = [block_id, count]
+                params.append(count)
             else:
                 sql = """
                     SELECT q.question_id, q.block_id, q.subtopic_id, q.question_type, q.question_text, q.options,
@@ -189,6 +209,7 @@ class QuestionExtractTool:
             {
                 "block_id": stage_info.get("block_id", ""),
                 "block_name": stage_info.get("block_name", ""),
+                "subtopic_ids": stage_info.get("subtopic_ids", []),
                 "count": stage_info.get("question_count", 2),
             },
             config=self._default_config,

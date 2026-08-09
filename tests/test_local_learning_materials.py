@@ -59,8 +59,21 @@ class LocalLearningMaterialsTest(unittest.TestCase):
             local_count = connection.execute(
                 "SELECT COUNT(*) FROM knowledge_docs WHERE doc_id LIKE 'LOCAL-%'"
             ).fetchone()[0]
+            chunk_count = connection.execute(
+                "SELECT COUNT(*) FROM knowledge_chunks "
+                "WHERE doc_id LIKE 'LOCAL-%'"
+            ).fetchone()[0]
+
+        block_counts = {}
+        for block_id, _, _ in rows:
+            block_counts[block_id] = block_counts.get(block_id, 0) + 1
+        print(
+            f"[OK] local_learning_materials: documents={local_count}, "
+            f"chunks={chunk_count}, by_block={block_counts}"
+        )
 
         self.assertEqual(73, local_count)
+        self.assertEqual(first_chunks, chunk_count)
         self.assertTrue(all(count == 1 for _, _, count in rows))
         self.assertEqual(
             {"KB-07", "KB-08", "KB-13", "KB-14", "KB-15"},

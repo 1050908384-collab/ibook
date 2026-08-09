@@ -1001,7 +1001,12 @@ class DeterministicContentAgent:
         try:
             extracted_questions = await self.question_extract_tool.extract_questions(
                 tutorial,
-                {"block_id": stage.block_id, "block_name": stage.block_name, "question_count": 2},
+                {
+                    "block_id": stage.block_id,
+                    "block_name": stage.block_name,
+                    "subtopic_ids": self._stage_subtopic_ids(stage),
+                    "question_count": 2,
+                },
             )
         except Exception:
             extracted_questions = []
@@ -1926,7 +1931,7 @@ class DeterministicTechnicalReviewAgent:
                 video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
                     request.recommended_videos,
                     request.stage.block_id,
-                    request.stage.subtopic_id,
+                    self._stage_subtopic_ids(request.stage),
                 )
                 errors.extend(normalize_review_errors(video_resource_errors))
             except Exception:
@@ -2012,7 +2017,7 @@ class HybridTechnicalReviewAgent:
                 video_resource_errors = await self.learning_resource_tool.validate_recommended_videos(
                     request.recommended_videos,
                     request.stage.block_id,
-                    request.stage.subtopic_id,
+                    DeterministicContentAgent._stage_subtopic_ids(request.stage),
                 )
                 video_errors = normalize_review_errors(video_resource_errors)
             except Exception:

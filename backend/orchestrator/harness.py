@@ -219,12 +219,16 @@ class Harness:
 
         stage.status = "learning" if review_passed else "pending"
         self.state_manager.update_stage(session_id, stage)
-        if review_passed and stage.subtopic_id:
-            self.state_manager.db_client.set_subtopic_status(
-                session_id=session_id,
-                subtopic_id=stage.subtopic_id,
-                status=0,
-            )
+        if review_passed:
+            stage_subtopic_ids = list(dict.fromkeys(stage.subtopic_ids or []))
+            if not stage_subtopic_ids and stage.subtopic_id:
+                stage_subtopic_ids = [stage.subtopic_id]
+            for subtopic_id in stage_subtopic_ids:
+                self.state_manager.db_client.set_subtopic_status(
+                    session_id=session_id,
+                    subtopic_id=subtopic_id,
+                    status=0,
+                )
         self.state_manager.update_learning_package(session_id, learning_package)
         self.state_manager.add_interaction(session_id, "stage_review_completed", {
             "stage_id": stage.stage_id,

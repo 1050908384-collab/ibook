@@ -216,13 +216,13 @@ KV 头数: 2          ← GQA：14 个 Q 头共享 2 组 KV
 FFN 中间维: 4864
 位置编码: RoPE (rope_theta=1000000.0)  ← ABF：基频从 1e4 提升到 1e6
 归一化: RMSNorm (rms_norm_eps=1e-06)
-QKV bias: False     ← 无 bias，配合 QK-Norm 稳定训练
+QKV bias: False     ← Attention 投影层不使用 bias
 ```
 
 > **关键观察**：
 > - `num_key_value_heads < num_attention_heads` 是 **GQA** 的标志
 > - `rope_theta=1000000.0` 是 **ABF（Attention Base Frequency）** 的体现，用于长上下文外推
-> - `attention_bias=False` 是 Qwen3 等现代模型的趋势，去掉 bias 后用 QK-Norm 稳定训练（②）
+> - `attention_bias=False` 表示该 Qwen2.5 配置的 Attention 投影层不使用 bias；它本身不能证明模型使用了 QK-Norm。QK-Norm 是 Qwen3 的独立架构特征。（②）
 
 > **本地运行配置要求**：Qwen2.5-0.5B 约 1GB，首次加载需联网下载。CPU 即可运行，内存 ≥ 4GB。
 

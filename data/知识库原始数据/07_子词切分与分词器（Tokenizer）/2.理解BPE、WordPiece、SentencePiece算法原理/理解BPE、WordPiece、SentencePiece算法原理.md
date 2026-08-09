@@ -287,6 +287,7 @@ tokenizer.pre_tokenizer = pre_tokenizers.Metaspace()
 # 配置训练器
 trainer = trainers.UnigramTrainer(
     vocab_size=50,
+    unk_token="<unk>",
     special_tokens=["<pad>", "<unk>", "<s>", "</s>"],
     show_progress=True,
 )
@@ -360,6 +361,7 @@ def train_unigram(texts, vocab_size=100, num_iters=10):
     """简化的 Unigram 训练（教学演示版，非完整 EM 实现）。"""
     raw_vocab = init_vocab(texts, max_len=4)
     vocab = list(raw_vocab.keys())
+    base_chars = {w for w in vocab if len(w) == 1}
     total_count = sum(raw_vocab.values())
     probs = {w: raw_vocab[w] / total_count for w in vocab}
 
@@ -375,8 +377,13 @@ def train_unigram(texts, vocab_size=100, num_iters=10):
 
         if total == 0:
             break
-            
-        probs = {w: counts[w]/total for w in vocab if counts[w] > 0}
+
+        # 为基础字符保留极小的平滑计数，确保它们不会因本轮未被选中而消失
+        for char in base_chars:
+            if char in vocab and counts[char] == 0:
+                counts[char] = 1e-8
+        normalizer = sum(counts[w] for w in vocab)
+        probs = {w: counts[w] / normalizer for w in vocab if counts[w] > 0}
 
         # 剪枝：优先删除低概率的长子词，保护单字符不被剪光
         while len(probs) > vocab_size:

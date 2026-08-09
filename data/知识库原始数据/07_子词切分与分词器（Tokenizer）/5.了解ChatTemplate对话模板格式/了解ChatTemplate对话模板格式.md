@@ -57,7 +57,7 @@ print(prompt)
 | `tokenize` | `bool` | `False` → 返回字符串；`True` → 返回 token IDs 列表 |
 | `add_generation_prompt` | `bool` | `True` 时在末尾添加 assistant 开始标记，提示模型生成 |
 | `return_tensors` | `str` | 当 `tokenize=True` 时，返回 `"pt"`/`"np"` 张量 |
-| `continue_final_message` | `bool`/`str` | 让模型继续最后一条消息（用于 prefill），不能与 `add_generation_prompt` 同用 |
+| `continue_final_message` | `bool` | 让模型继续最后一条消息（用于 prefill），不能与 `add_generation_prompt` 同用 |
 
 ## 四、推理 vs 微调：add_generation_prompt 的区别（权威+①+②）
 
@@ -90,7 +90,7 @@ inputs = tokenizer.apply_chat_template(
 
 **场景一：完整对话序列训练（最常用）**
 
-训练数据已经包含完整的 user + assistant 对话，且由数据整理器（Data Collator）或 `apply_chat_template` 统一套模板。此时应设为 `False`，因为 assistant 的回复已经在训练数据中：
+训练数据已经包含完整的 user + assistant 对话，且由预处理函数显式调用 `apply_chat_template`，或由明确支持 conversational dataset 的训练框架统一套模板。此时应设为 `False`，因为 assistant 的回复已经在训练数据中：
 
 ```python
 def format_example(example):
@@ -107,7 +107,9 @@ dataset = raw_dataset.map(format_example)
 
 **场景二：只训练 assistant 回复**
 
-某些框架（如 TRL）会在内部自动调用 `apply_chat_template`，此时你的原始数据不应预先套模板，只需提供原始 messages，由框架统一处理 `add_generation_prompt`。
+某些框架（如部分版本的 TRL）会在内部自动调用 `apply_chat_template`，此时你的原始数据不应预先套模板，只需提供原始 messages，由框架统一处理格式化。
+
+> **注意**：自动套用 ChatTemplate 只负责对话格式化，不代表训练时只计算 assistant 回复的 loss。只训练 assistant 回复还需要使用框架提供的 assistant-only loss 配置（如支持时设置 `assistant_only_loss=True`，并使用能够生成 assistant mask 的模板），或自行将非 assistant 位置的 labels 设为 `-100`。
 
 **场景三：在 dataset.map() 预处理阶段显式套模板（推荐做法）**
 

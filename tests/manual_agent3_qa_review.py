@@ -27,6 +27,12 @@ import uuid
 from pathlib import Path
 
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = PROJECT_ROOT / "backend"
 sys.path[:0] = [str(PROJECT_ROOT), str(BACKEND_DIR)]
@@ -100,9 +106,11 @@ def print_current_stage(harness: Harness, session_id: str) -> None:
     pkg = session.get("learning_package") or {}
     prerequisites = stage.get("prerequisites") or []
     prerequisites_str = ", ".join(prerequisites) if prerequisites else "none"
-    print(f"  Stage {stage.get('stage_num', '?')}: {stage.get('block_id', '?')} / {stage.get('subtopic_id', '?')}")
+    subtopic_ids = stage.get("subtopic_ids") or [stage.get("subtopic_id", "?")]
+    subtopic_names = stage.get("subtopic_names") or [stage.get("subtopic_name", "?")]
+    print(f"  Stage {stage.get('stage_num', '?')}: {stage.get('block_id', '?')} / {', '.join(subtopic_ids)}")
     print(f"    Block: {stage.get('block_name', '?')}")
-    print(f"    Subtopic: {stage.get('subtopic_name', '?')}")
+    print(f"    Subtopics: {', '.join(subtopic_names)}")
     print(f"    Estimated hours: {stage.get('estimated_hours', '?')}")
     print(f"    Daily study time: {stage.get('recommended_daily_hours', '?')}")
     print(f"    Suggested study days: {stage.get('suggested_study_days', '?')}")

@@ -22,6 +22,7 @@ from models.profile import UserProfile
 from models.stage import StageInfo
 from models.review import ReviewError, TechnicalReviewResult
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
+from tools.learning_resource_tool import LearningResourceTool
 from scripts.insert_knowledge_data import (
     BLOCKS_FILE_PATH,
     QUESTIONS_FILE_PATH,
@@ -156,6 +157,15 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
         started = await first.start_stage(session_id)
         self.assertTrue(started["review_passed"])
+        for subtopic_id in initial["stage_info"]["subtopic_ids"]:
+            progress = first.state_manager.db_client.get_subtopic_status(session_id, subtopic_id)
+            self.assertIsNotNone(progress)
+            self.assertEqual(0, progress["status"])
+        self.assertTrue(started["learning_package"]["questions"])
+        self.assertTrue(all(
+            question["subtopic_id"] in initial["stage_info"]["subtopic_ids"]
+            for question in started["learning_package"]["questions"]
+        ))
         question = started["learning_package"]["questions"][0]
         submitted = await first.submit_answer(
             session_id,
@@ -235,6 +245,22 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
                 and source.metadata_json["subtopic_id"] == subtopic_id
                 for source in sources
             ), block_id)
+
+    async def test_agent4_video_validation_accepts_all_stage_subtopics(self):
+        client = SQLiteClient(self.database_url)
+        self._seed_reference_data(client)
+        self.clients.append(client)
+        tool = LearningResourceTool()
+        stage_subtopic_ids = ["KBS-01-00", "KBS-01-01", "KBS-01-02"]
+        videos_by_id = {}
+        for subtopic_id in stage_subtopic_ids:
+            for video in await tool.get_recommended_videos("KB-01", subtopic_id):
+                videos_by_id[video["resource_id"]] = video
+
+        errors = await tool.validate_recommended_videos(
+            list(videos_by_id.values()), "KB-01", stage_subtopic_ids
+        )
+        self.assertFalse(any(error["error_type"] == "video_resource_mismatch" for error in errors))
 
     async def test_subtopic_status_persists_after_database_client_reloads(self):
         client = SQLiteClient(self.database_url)

@@ -52,12 +52,9 @@ $$L_{\text{batch}} = \frac{1}{B} \sum_{i=1}^{B} \ell_i$$
 
 $$g_{\text{batch}} \propto \nabla L_{\text{batch}} = \frac{1}{B} \sum_{i=1}^{B} \nabla \ell_i$$
 
-**关键结论**：当使用 `mean` 时，**梯度大小与 batch size 成反比**。（①）
+**关键结论**：`mean` 中虽然包含 $1/B$，但分子同时包含 $B$ 个样本梯度，因此不能简单地说梯度大小与 batch size 成反比。增大 batch size 的主要影响是降低随机梯度估计的方差，使梯度方向通常更稳定。（①）
 
-- batch_size = 32 → 梯度 $\propto 1/32$
-- batch_size = 128 → 梯度 $\propto 1/128$
-
-在相同数据量下，小 batch 的梯度是大 batch 的 4 倍。
+在梯度累积场景中，需要比较的是“多个 micro-batch 的平均梯度之和”与“合并后大 batch 的平均梯度”。前者直接相加会多出一个累积步数因子，因此才需要对每个 micro-batch 的 loss 做缩放。
 
 ### 2.2 场景分析：模拟 batch_size=128
 
@@ -130,7 +127,7 @@ $$g_{\text{batch}} \propto \sum_{i=1}^{B} \nabla \ell_i$$
 
 | 特性 | 小 batch size | 大 batch size |
 |------|--------------|--------------|
-| 梯度幅度（未缩放时） | 大 | 小 |
+| 平均梯度的量级 | 不由 batch size 简单决定 | 不由 batch size 简单决定 |
 | 梯度方向噪声 | 高（随机震荡） | 低（稳定精准） |
 | 训练稳定性 | 低，loss 曲线振荡 | 高，loss 平滑下降 |
 | 泛化能力 | 往往更好，能跳出尖锐局部极小 | 可能收敛到尖锐极小，泛化稍差 |

@@ -300,15 +300,23 @@ from torch import amp
 
 scaler = amp.GradScaler()
 accumulation_steps = 4
+num_batches = len(train_loader)
+tail_steps = num_batches % accumulation_steps
 
 for i, (inputs, labels) in enumerate(train_loader):
     with amp.autocast(device_type='cuda'):
         outputs = model(inputs)
-        loss = criterion(outputs, labels) / accumulation_steps
+        current_cycle_steps = (
+            tail_steps
+            if tail_steps > 0 and i >= num_batches - tail_steps
+            else accumulation_steps
+        )
+        loss = criterion(outputs, labels) / current_cycle_steps
     
     scaler.scale(loss).backward()
 
-    if (i + 1) % accumulation_steps == 0:
+    should_step = ((i + 1) % accumulation_steps == 0) or (i + 1 == num_batches)
+    if should_step:
         scaler.step(optimizer)
         scaler.update()
         optimizer.zero_grad()

@@ -86,7 +86,7 @@ def my_forward(self, x):
 
 > **`cast_inputs` 参数说明**：`cast_inputs=None`（默认）表示该函数的前向输入会遵循当前 `autocast` 上下文的自动转换规则；`cast_inputs=torch.float32` 则强制将输入转换为 FP32，使该函数内部完全在 FP32 下运行。如果你希望自定义层**始终**以 FP32 执行（不受外部 autocast 影响），应显式设置 `cast_inputs=torch.float32`。（①）
 >
-> **兼容性说明**：在 PyTorch 1.x 版本中，AMP API 位于 `torch.cuda.amp`，即 `from torch.cuda.amp import autocast, GradScaler`。从 PyTorch 2.0 起，推荐使用统一的 `torch.amp` 接口：`from torch import amp`，然后通过 `amp.autocast(device_type='cuda')` 和 `amp.GradScaler()` 调用。旧接口目前仍可运行，但建议新代码使用新 API。
+> **兼容性说明**：本项目当前使用 PyTorch 2.11，可通过 `from torch import amp` 调用 `amp.autocast(device_type='cuda')` 和 `amp.GradScaler()`。不同 PyTorch 2.x 小版本的统一 AMP 入口并不完全一致；需要兼容其他版本时，应检测 `torch.amp.GradScaler` 是否存在，不存在则使用相应版本的 `torch.cuda.amp` 接口。
 
 ## 二、GradScaler：动态损失缩放的算法细节
 
@@ -168,6 +168,8 @@ from torch import amp
 
 scaler = amp.GradScaler()
 accumulation_steps = 4  # 与梯度累积配合
+num_batches = len(train_loader)
+tail_steps = num_batches % accumulation_steps
 
 model.train()
 for epoch in range(num_epochs):
@@ -181,13 +183,20 @@ for epoch in range(num_epochs):
         with amp.autocast(device_type='cuda'):
             outputs = model(inputs)
             loss = criterion(outputs, labels)
-            loss = loss / accumulation_steps  # 梯度累积修正
+            # 尾部周期不足 accumulation_steps 时，按实际累积步数归一化
+            current_cycle_steps = (
+                tail_steps
+                if tail_steps > 0 and i >= num_batches - tail_steps
+                else accumulation_steps
+            )
+            loss = loss / current_cycle_steps
         
         # 2. 反向传播：缩放损失后计算梯度
         scaler.scale(loss).backward()
         
-        # 3. 每 accumulation_steps 步更新一次参数
-        if (i + 1) % accumulation_steps == 0:
+        # 3. 累积满或到达最后一个 batch 时更新参数
+        should_step = ((i + 1) % accumulation_steps == 0) or (i + 1 == num_batches)
+        if should_step:
             # scaler.step 内部检查梯度合法性，合法才执行 optimizer.step()
             scaler.step(optimizer)
             scaler.update()      # 调整缩放因子
@@ -195,7 +204,7 @@ for epoch in range(num_epochs):
         
         # 监控（注意：打印的是缩放前的 loss）
         if i % 100 == 0:
-            print(f"Epoch {epoch}, Step {i}, Loss: {loss.item() * accumulation_steps:.4f}, "
+            print(f"Epoch {epoch}, Step {i}, Loss: {loss.item() * current_cycle_steps:.4f}, "
                   f"Scale: {scaler.get_scale()}")
 ```
 

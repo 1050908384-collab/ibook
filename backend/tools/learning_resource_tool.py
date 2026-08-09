@@ -88,15 +88,18 @@ class LearningResourceTool:
         self,
         videos: list[dict[str, Any]],
         block_id: str,
-        subtopic_id: str | None,
+        subtopic_id: str | list[str] | None,
     ) -> list[dict[str, Any]]:
         """校验 Agent3 输出的视频仍属于当前阶段，并提示未完成内容审核的资源。"""
         if not videos or not block_id:
             return []
-        expected = {
-            item["resource_id"]: item
-            for item in await self.get_recommended_videos(block_id, subtopic_id)
-        }
+        subtopic_ids = [subtopic_id] if isinstance(subtopic_id, str) else list(subtopic_id or [])
+        if not subtopic_ids:
+            subtopic_ids = [None]
+        expected: dict[str, dict[str, Any]] = {}
+        for current_subtopic_id in dict.fromkeys(subtopic_ids):
+            for item in await self.get_recommended_videos(block_id, current_subtopic_id):
+                expected[item["resource_id"]] = item
         errors: list[dict[str, Any]] = []
         for video in videos:
             resource_id = str(video.get("resource_id") or "")
@@ -106,7 +109,7 @@ class LearningResourceTool:
                     "error_type": "video_resource_mismatch",
                     "severity": "major",
                     "description": f"推荐视频 {resource_id or '未提供资源ID'} 不属于当前学习阶段。",
-                    "suggestion": "仅返回当前 block_id 与 subtopic_id 已确认关联的视频资源。",
+                    "suggestion": "仅返回当前 block_id 与阶段 subtopic_ids 已确认关联的视频资源。",
                     "source_ref": f"src_video_{resource_id}" if resource_id else None,
                     "change_request": {"required": True, "action": "replace_video_resource"},
                 })
