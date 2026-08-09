@@ -17,7 +17,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIR = PROJECT_ROOT / "data" / "知识库原始数据"
 SUBTOPICS_FILE = PROJECT_ROOT / "data" / "seeds" / "knowledge_subtopics.json"
 DATABASE_PATH = PROJECT_ROOT / "data" / "sqlite_data" / "project.db"
-ACTIVE_BLOCKS = {f"KB-{number:02d}" for number in (*range(1, 7), *range(9, 13))}
 
 
 @dataclass(frozen=True)
@@ -39,8 +38,7 @@ def _load_subtopics() -> dict[str, list[dict]]:
     records = json.loads(SUBTOPICS_FILE.read_text(encoding="utf-8"))
     by_block: dict[str, list[dict]] = {}
     for record in records:
-        if record["block_id"] in ACTIVE_BLOCKS:
-            by_block.setdefault(record["block_id"], []).append(record)
+        by_block.setdefault(record["block_id"], []).append(record)
     for records_in_block in by_block.values():
         records_in_block.sort(key=lambda item: item["sequence_index"])
     return by_block
@@ -49,15 +47,16 @@ def _load_subtopics() -> dict[str, list[dict]]:
 def discover_lessons() -> list[LessonFile]:
     subtopics_by_block = _load_subtopics()
     lessons: list[LessonFile] = []
+    discovered_subtopic_ids: set[str] = set()
 
     for block_dir in sorted(SOURCE_DIR.iterdir()):
         if not block_dir.is_dir():
             continue
         block_number = _directory_order(block_dir.name)
         block_id = f"KB-{block_number:02d}"
-        if block_id not in ACTIVE_BLOCKS:
-            continue
         subtopics = subtopics_by_block.get(block_id, [])
+        if not subtopics:
+            raise ValueError(f"{block_dir} does not map to a seeded knowledge block")
         for subtopic_dir in sorted((item for item in block_dir.iterdir() if item.is_dir()), key=lambda item: _directory_order(item.name)):
             index = _directory_order(subtopic_dir.name) - 1
             if index < 0 or index >= len(subtopics):
@@ -68,12 +67,28 @@ def discover_lessons() -> list[LessonFile]:
             markdown_file = markdown_files[0]
             if markdown_file.stat().st_size == 0:
                 continue
+            subtopic_id = subtopics[index]["subtopic_id"]
+            if subtopic_id in discovered_subtopic_ids:
+                raise ValueError(f"Duplicate local lesson mapping for {subtopic_id}")
+            discovered_subtopic_ids.add(subtopic_id)
             lessons.append(LessonFile(
                 path=markdown_file,
                 block_id=block_id,
-                subtopic_id=subtopics[index]["subtopic_id"],
+                subtopic_id=subtopic_id,
                 difficulty=subtopics[index].get("difficulty") or "中级",
             ))
+
+    expected_subtopic_ids = {
+        record["subtopic_id"]
+        for records in subtopics_by_block.values()
+        for record in records
+    }
+    missing_subtopic_ids = sorted(expected_subtopic_ids - discovered_subtopic_ids)
+    if missing_subtopic_ids:
+        raise ValueError(
+            "Missing local lesson directories for seeded subtopics: "
+            + ", ".join(missing_subtopic_ids)
+        )
     return lessons
 
 

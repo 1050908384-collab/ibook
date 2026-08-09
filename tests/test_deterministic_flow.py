@@ -16,6 +16,10 @@ os.environ.setdefault("EXECUTION_MODE", "deterministic")
 from db.sqlite_client import SQLiteClient
 from orchestrator.harness import Harness
 from orchestrator.state_manager import StateManager
+from agents.deterministic import DeterministicContentAgent
+from models.contracts import ContentGenerationInput
+from models.profile import UserProfile
+from models.stage import StageInfo
 from models.review import ReviewError, TechnicalReviewResult
 from tools.agent4_tools.rule_check_tool import RuleCheckTool
 from scripts.insert_knowledge_data import (
@@ -193,6 +197,44 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
             source.get("content_ref", "").startswith("LOCAL-")
             for source in article_sources
         ))
+
+    async def test_agent3_uses_local_lessons_for_every_completed_material_block(self):
+        client = SQLiteClient(self.database_url)
+        self._seed_reference_data(client)
+        self.clients.append(client)
+        agent = DeterministicContentAgent(database_url=self.database_url)
+        profile = UserProfile(session_id="local-materials", goal="validate materials")
+
+        for block_id, subtopic_id in (
+            ("KB-07", "KBS-07-00"),
+            ("KB-08", "KBS-08-00"),
+            ("KB-13", "KBS-13-00"),
+            ("KB-14", "KBS-14-00"),
+            ("KB-15", "KBS-15-00"),
+        ):
+            output = await agent.run(ContentGenerationInput(
+                session_id=f"local-material-{block_id}",
+                stage=StageInfo(
+                    stage_id=f"stage-{block_id}",
+                    stage_num=1,
+                    block_id=block_id,
+                    block_name=block_id,
+                    subtopic_id=subtopic_id,
+                    subtopic_ids=[subtopic_id],
+                    subtopic_name=subtopic_id,
+                    subtopic_names=[subtopic_id],
+                    gap_skill=block_id,
+                ),
+                learning_profile=profile,
+            ))
+            sources = output.learning_package.sources
+            self.assertTrue(any(
+                source.source_type == "knowledge_doc"
+                and source.content_ref == f"LOCAL-{subtopic_id}"
+                and source.metadata_json["block_id"] == block_id
+                and source.metadata_json["subtopic_id"] == subtopic_id
+                for source in sources
+            ), block_id)
 
     async def test_subtopic_status_persists_after_database_client_reloads(self):
         client = SQLiteClient(self.database_url)
