@@ -1175,6 +1175,7 @@ function CurrentMaterialPanel({
 }
 
 function ChatView({
+  goalTitle,
   messages,
   input,
   setInput,
@@ -1204,6 +1205,7 @@ function ChatView({
   loading,
   error
 }: {
+  goalTitle: string;
   messages: Message[];
   input: string;
   setInput: (input: string) => void;
@@ -1277,8 +1279,8 @@ function ChatView({
   return (
     <div className="page-shell">
       <Topbar
-        title={conversationStage.block_name || `学习阶段 ${conversationStage.stage_num ?? 1}`}
-        subtitle={conversationStage.subtopic_name || conversationStage.gap_skill || '阶段学习与实时答疑'}
+        title={goalTitle}
+        subtitle={conversationStage.block_name || conversationStage.subtopic_name || conversationStage.gap_skill || '阶段学习与实时答疑'}
         loading={loading}
         error={error}
         onOpenLearningPath={onOpenLearningPath}
@@ -1865,14 +1867,12 @@ function LearningDashboardView({
           <header>
             <button
               type="button"
-              className="profile-library-toggle"
+              className="profile-library-title-toggle"
               onClick={() => setProjectsExpanded((expanded) => !expanded)}
               aria-expanded={projectsExpanded}
               aria-controls="learning-goal-list"
             >
               <h2>全部学习目标</h2>
-              <span>{sortedProjects.length} 个目标</span>
-              {projectsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
             {projectsExpanded && (
               <label className="profile-project-search">
@@ -1886,6 +1886,17 @@ function LearningDashboardView({
                 />
               </label>
             )}
+            <button
+              type="button"
+              className="profile-library-meta-toggle"
+              onClick={() => setProjectsExpanded((expanded) => !expanded)}
+              aria-expanded={projectsExpanded}
+              aria-controls="learning-goal-list"
+              aria-label={projectsExpanded ? '收起全部学习目标' : '展开全部学习目标'}
+            >
+              <span>{sortedProjects.length} 个目标</span>
+              {projectsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
           </header>
           {projectsError && (
             <div className="profile-list-state error">
@@ -1908,7 +1919,10 @@ function LearningDashboardView({
               const invalidTargetDuration = !Number.isFinite(draftTotal) || draftTotal < 0.5 || draftTotal > 1000
                 || !Number.isFinite(draftDaily) || draftDaily < 0.5 || draftDaily > 24;
               return (
-                <article className={current ? 'current' : ''} key={project.sessionId}>
+                <article
+                  className={`${current ? 'current ' : ''}${editingDuration ? 'editing-duration' : ''}`.trim()}
+                  key={project.sessionId}
+                >
                   <span className="profile-goal-icon"><Target size={19} /></span>
                   <div className="profile-goal-copy">
                     <div className="profile-goal-title">
@@ -1922,42 +1936,6 @@ function LearningDashboardView({
                       <span>每日 {targetDaily} 小时</span>
                       <span><CalendarDays size={12} />建立于 {formatProjectCreatedDate(project.createdAt ?? project.updatedAt)}</span>
                     </div>
-                    {editingDuration && (
-                      <div className="duration-editor target">
-                        <DurationField
-                          label="目标总时长"
-                          value={targetDurationDraft.total}
-                          onChange={(total) => setTargetDurationDraft((draft) => ({ ...draft, total }))}
-                          min={0.5}
-                          max={1000}
-                        />
-                        <DurationField
-                          label="每日时长"
-                          value={targetDurationDraft.daily}
-                          onChange={(daily) => setTargetDurationDraft((draft) => ({ ...draft, daily }))}
-                          min={0.5}
-                          max={24}
-                        />
-                        <div className="duration-editor-actions">
-                          <button type="button" onClick={() => setEditingTargetId(null)} disabled={loading}>取消</button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              const total = Number(targetDurationDraft.total);
-                              const daily = Number(targetDurationDraft.daily);
-                              if (!Number.isFinite(total) || !Number.isFinite(daily) || total < 0.5 || daily < 0.5) return;
-                              try {
-                                await onUpdateTargetDuration(project.sessionId, total, daily);
-                                setEditingTargetId(null);
-                              } catch {
-                                // The parent displays the API error and keeps the editor open.
-                              }
-                            }}
-                            disabled={loading || invalidTargetDuration}
-                          >保存</button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                   <div className="profile-goal-actions">
                     <button
@@ -1991,6 +1969,42 @@ function LearningDashboardView({
                       <Trash2 size={16} />
                     </button>
                   </div>
+                  {editingDuration && (
+                    <div className="duration-editor target">
+                      <DurationField
+                        label="目标总时长"
+                        value={targetDurationDraft.total}
+                        onChange={(total) => setTargetDurationDraft((draft) => ({ ...draft, total }))}
+                        min={0.5}
+                        max={1000}
+                      />
+                      <DurationField
+                        label="每日时长"
+                        value={targetDurationDraft.daily}
+                        onChange={(daily) => setTargetDurationDraft((draft) => ({ ...draft, daily }))}
+                        min={0.5}
+                        max={24}
+                      />
+                      <div className="duration-editor-actions">
+                        <button type="button" onClick={() => setEditingTargetId(null)} disabled={loading}>取消</button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const total = Number(targetDurationDraft.total);
+                            const daily = Number(targetDurationDraft.daily);
+                            if (!Number.isFinite(total) || !Number.isFinite(daily) || total < 0.5 || daily < 0.5) return;
+                            try {
+                              await onUpdateTargetDuration(project.sessionId, total, daily);
+                              setEditingTargetId(null);
+                            } catch {
+                              // The parent displays the API error and keeps the editor open.
+                            }
+                          }}
+                          disabled={loading || invalidTargetDuration}
+                        >保存</button>
+                      </div>
+                    </div>
+                  )}
                 </article>
               );
             })}
@@ -2275,8 +2289,7 @@ function SettingsView({
   error,
   onClear,
   onSave,
-  foundationNames,
-  onOpenFoundation
+  foundationNames
 }: {
   profile: Profile;
   loading: boolean;
@@ -2284,7 +2297,6 @@ function SettingsView({
   onClear: () => void;
   onSave: (data: { grade: string; skill_tags: string[]; hardware: string }) => void;
   foundationNames: string[];
-  onOpenFoundation: () => void;
 }) {
   const [grade, setGrade] = useState(profile.grade || '');
   const [hardware, setHardware] = useState(profile.hardware || '');
@@ -2299,11 +2311,11 @@ function SettingsView({
 
   return (
     <div className="page-shell">
-      <Topbar title="设置" subtitle="修改所有学习目标共用的用户基础" loading={loading} error={error} />
+      <Topbar title="设置" subtitle="管理所有学习目标共用的用户信息" loading={loading} error={error} />
       <main className="settings-page">
         <div className="settings-intro">
           <h2>用户基础与设备条件</h2>
-          <p>这些信息由全部学习目标共用；学习方式在每次创建目标时单独设置。</p>
+          <p>身份背景和设备条件由全部学习目标共用；已有知识基础仅在首次填写画像时确定。</p>
         </div>
         {error && <div className="settings-inline-state error">{error}</div>}
         {(!profile.grade || !profile.skill_tags?.length) && (
@@ -2320,13 +2332,13 @@ function SettingsView({
           </div>
           <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
             <h3 id="settings-knowledge-title">已有知识基础</h3>
-            <div className="settings-foundation-summary">
+            <div className="settings-foundation-summary is-readonly">
               {foundationNames.length > 0 ? (
                 <div className={`foundation-summary-list ${foundationNames.length > 3 ? 'has-overflow' : ''}`} title={foundationNames.join('、')}>
                   {foundationNames.map((name) => <span key={name}>{name}</span>)}
                 </div>
               ) : <span className="foundation-summary-empty">尚未确定基础</span>}
-              <button type="button" className="foundation-trigger" onClick={onOpenFoundation}>重新确定</button>
+              <small>首次画像确定后不可修改</small>
             </div>
             <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
           </div>
@@ -2345,7 +2357,7 @@ function SettingsView({
             </button>
           </div>
           <div className="setting-row">
-            <div><strong>重新开始</strong><p>放弃当前学习目标并清除本地会话缓存，用户基础可在上方重新确定</p></div>
+            <div><strong>重新开始</strong><p>放弃当前学习目标并清除本地会话缓存</p></div>
             <button className="danger" onClick={onClear}>清除会话并重新开始</button>
           </div>
         </section>
@@ -3100,9 +3112,20 @@ export default function App() {
     setError(null);
     try {
       const updated = await apiClient.updateUserProfile(data);
-      const nextProfile = { ...(profile || fallbackProfile), ...data, ...(toProfile(updated) || {}), daily_hours: profile?.daily_hours };
-      setProfile(nextProfile);
-      setOnboardingForm(formDataFromProfile(nextProfile));
+      const profileBeforeGoalCreation = newGoalReturnState?.profile;
+      const sourceProfile = profile || profileBeforeGoalCreation || fallbackProfile;
+      const nextProfile = { ...sourceProfile, ...data, ...(toProfile(updated) || {}), daily_hours: sourceProfile.daily_hours };
+      if (profile) {
+        setProfile(nextProfile);
+      } else if (newGoalReturnState) {
+        setNewGoalReturnState((current) => current ? { ...current, profile: nextProfile } : current);
+      }
+      setOnboardingForm((current) => ({
+        ...current,
+        grade: nextProfile.grade || '',
+        skill_tags: nextProfile.skill_tags || [],
+        hardware: nextProfile.hardware || ''
+      }));
       setLearningProjects((projects) => projects.map((project) => ({
         ...project,
         profile: project.profile ? { ...project.profile, ...data } : project.profile
@@ -3413,6 +3436,7 @@ export default function App() {
     setView('chat');
   };
 
+  const settingsProfile = profile || newGoalReturnState?.profile || null;
   const workspaceProfile = profile || fallbackProfile;
   const workspaceStage = stage || unavailableStage;
   const onboardingFoundationNames = useMemo(
@@ -3420,8 +3444,8 @@ export default function App() {
     [onboardingForm.skill_tags]
   );
   const settingsFoundationNames = useMemo(
-    () => foundationNamesFromTags(workspaceProfile.skill_tags || []),
-    [workspaceProfile.skill_tags]
+    () => foundationNamesFromTags(settingsProfile?.skill_tags || []),
+    [settingsProfile?.skill_tags]
   );
   const foundationPickerGoal = foundationPickerContext === 'settings'
     ? workspaceProfile.goal || onboardingForm.goal
@@ -3448,6 +3472,10 @@ export default function App() {
   const currentConversationId = sessionId && stage ? `${sessionId}:${stage.stage_num ?? 1}` : '';
   const selectedConversation = stageConversations.find((item) => item.id === selectedConversationId);
   const conversationStage = selectedConversation?.stage || workspaceStage;
+  const conversationProject = learningProjects.find((project) => (
+    project.sessionId === (selectedConversation?.sessionId || sessionId)
+  ));
+  const conversationGoalTitle = conversationProject?.goal || workspaceProfile.goal || '当前学习目标';
   const displayedMessages = selectedConversationId && selectedConversationId !== currentConversationId
     ? selectedConversation?.messages || []
     : messages;
@@ -3467,7 +3495,7 @@ export default function App() {
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
       />
-      {view !== 'learn' && (!profile || workflow === 'onboarding' || workflow === 'diagnosing' || workflow === 'needs_more_info') && (
+      {view === 'chat' && (!profile || workflow === 'onboarding' || workflow === 'diagnosing' || workflow === 'needs_more_info') && (
         <OnboardingPage
           formData={onboardingForm}
           onChange={setOnboardingForm}
@@ -3486,7 +3514,7 @@ export default function App() {
           onOpenFoundation={() => openFoundationPicker('onboarding')}
         />
       )}
-      {view !== 'learn' && profile && (workflow === 'profile_ready' || workflow === 'starting_stage') && (
+      {view === 'chat' && profile && (workflow === 'profile_ready' || workflow === 'starting_stage') && (
         <ProfileConfirmPage
           profile={profile}
           stage={workspaceStage}
@@ -3499,6 +3527,7 @@ export default function App() {
       )}
       {profile && workflow === 'learning' && view === 'chat' && (
         <ChatView
+          goalTitle={conversationGoalTitle}
           messages={displayedMessages}
           input={input}
           setInput={setInput}
@@ -3546,7 +3575,7 @@ export default function App() {
           error={error}
         />
       )}
-      {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} onOpenFoundation={() => openFoundationPicker('settings')} />}
+      {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} />}
       <FoundationPickerModal
         open={foundationPickerContext !== null}
         goal={foundationPickerGoal}

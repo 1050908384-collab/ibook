@@ -134,7 +134,7 @@ export default function ProfileSetupForm({
               {foundationNames.map((name) => <span key={name}>{name}</span>)}
             </div>
           ) : <span className="foundation-summary-empty">尚未确定，默认从基础开始</span>}
-          {targetOnly && <small>可在设置中重新确定</small>}
+          {targetOnly && <small>首次画像已确定，不可修改</small>}
         </div>
       </section>
 
