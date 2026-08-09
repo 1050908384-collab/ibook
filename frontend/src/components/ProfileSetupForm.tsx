@@ -1,5 +1,5 @@
-import { FormEvent, KeyboardEvent, useMemo, useState } from 'react';
-import { AlertCircle, Loader2, Plus, X } from 'lucide-react';
+import { FormEvent, useMemo } from 'react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import {
   getFormCompleteness,
   isOnboardingFormComplete,
@@ -19,6 +19,8 @@ type ProfileSetupFormProps = {
   error: string | null;
   highlightedFields: OnboardingField[];
   targetOnly?: boolean;
+  foundationNames: string[];
+  onOpenFoundation: () => void;
 };
 
 const fieldLabels: Record<OnboardingField, string> = {
@@ -36,13 +38,6 @@ const styleOptions = [
   { value: 'mixed', title: '混合型', desc: '理论和实践均衡推进' }
 ] as const;
 
-function splitTags(raw: string) {
-  return raw
-    .split(/[、,，;；\n]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 export default function ProfileSetupForm({
   value,
   onChange,
@@ -52,31 +47,15 @@ export default function ProfileSetupForm({
   questions,
   error,
   highlightedFields,
-  targetOnly = false
+  targetOnly = false,
+  foundationNames,
+  onOpenFoundation
 }: ProfileSetupFormProps) {
-  const [tagDraft, setTagDraft] = useState('');
   const completeness = useMemo(() => getFormCompleteness(value, targetOnly), [value, targetOnly]);
   const canSubmit = isOnboardingFormComplete(value, targetOnly) && !loading;
 
   const update = <K extends OnboardingField>(field: K, fieldValue: OnboardingFormData[K]) => {
     onChange({ ...value, [field]: fieldValue });
-  };
-
-  const addTags = (raw: string) => {
-    const tags = splitTags(raw).filter((tag) => !value.skill_tags.includes(tag));
-    if (!tags.length) return;
-    update('skill_tags', [...value.skill_tags, ...tags]);
-    setTagDraft('');
-  };
-
-  const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== 'Enter' && event.key !== ',') return;
-    event.preventDefault();
-    addTags(tagDraft);
-  };
-
-  const removeTag = (tag: string) => {
-    update('skill_tags', value.skill_tags.filter((item) => item !== tag));
   };
 
   const submit = (event: FormEvent) => {
@@ -129,36 +108,6 @@ export default function ProfileSetupForm({
         />
       </section>}
 
-      {!targetOnly && <section className={`form-section ${isHighlighted('skill_tags') ? 'needs-attention' : ''}`}>
-        <label htmlFor="skill-tags">{fieldLabels.skill_tags} *</label>
-        <p>输入你已经掌握或接触过的知识，可用逗号分隔，也可以逐个添加。</p>
-        <div className="tag-input-wrap">
-          <div className="setup-tags">
-            {value.skill_tags.map((tag) => (
-              <span key={tag}>
-                {tag}
-                <button type="button" onClick={() => removeTag(tag)} aria-label={`移除 ${tag}`}>
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="tag-entry">
-            <input
-              id="skill-tags"
-              value={tagDraft}
-              onChange={(event) => setTagDraft(event.target.value)}
-              onKeyDown={handleTagKeyDown}
-              onBlur={() => addTags(tagDraft)}
-              placeholder="例如：Python、PyTorch、Transformer"
-            />
-            <button type="button" onClick={() => addTags(tagDraft)} aria-label="添加标签">
-              <Plus size={16} />
-            </button>
-          </div>
-        </div>
-      </section>}
-
       <section className={`form-section ${isHighlighted('goal') ? 'needs-attention' : ''}`}>
         <label htmlFor="goal">{fieldLabels.goal} *</label>
         <p>描述你希望达成的真实结果，Agent 会据此推断知识盲区和第一阶段。</p>
@@ -169,6 +118,24 @@ export default function ProfileSetupForm({
           rows={4}
           placeholder="例如：掌握 LoRA 微调并能独立部署"
         />
+      </section>
+
+      <section className={`form-section foundation-summary-section ${isHighlighted('skill_tags') ? 'needs-attention' : ''}`}>
+        <div className="foundation-summary-heading">
+          <div>
+            <label>确定基础</label>
+            <p>选择你已经完整掌握的知识板块，系统会据此规划更合适的起点。</p>
+          </div>
+          {!targetOnly && <button type="button" className="foundation-trigger" onClick={onOpenFoundation} disabled={!value.goal.trim()}>明确我的基础</button>}
+        </div>
+        <div className="foundation-summary-content">
+          {foundationNames.length > 0 ? (
+            <div className={`foundation-summary-list ${foundationNames.length > 3 ? 'has-overflow' : ''}`} title={foundationNames.join('、')}>
+              {foundationNames.map((name) => <span key={name}>{name}</span>)}
+            </div>
+          ) : <span className="foundation-summary-empty">尚未确定，默认从基础开始</span>}
+          {targetOnly && <small>可在设置中重新确定</small>}
+        </div>
       </section>
 
       <div className="form-two-col">

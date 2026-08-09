@@ -36,7 +36,7 @@ export function buildDiagnosticMessage(formData: OnboardingFormData, targetOnly 
   if (!targetOnly) {
     lines.unshift(
       `我的身份背景：${formData.grade.trim()}`,
-      `我的已有基础：${formData.skill_tags.join('、')}`,
+      `我的已有基础：${formData.skill_tags.length ? formData.skill_tags.join('、') : '无基础'}`,
     );
   }
 
@@ -54,7 +54,6 @@ export function getFormCompleteness(formData: OnboardingFormData, targetOnly = f
     Boolean(formData.learning_style),
   ] : [
     Boolean(formData.grade.trim()),
-    formData.skill_tags.length > 0,
     Boolean(formData.goal.trim()),
     isValidDailyHours(formData.daily_hours),
     Boolean(formData.learning_style),

@@ -50,7 +50,8 @@ import {
   type ApiStage,
   type SessionListItem
 } from './api/client';
-import { findKnowledgeGraphBlock } from './data/knowledgeGraph';
+import { findKnowledgeGraphBlock, knowledgeGraphBlocks } from './data/knowledgeGraph';
+import FoundationPickerModal from './components/FoundationPickerModal';
 import KnowledgeNetwork from './components/KnowledgeNetwork';
 import OnboardingPage from './pages/OnboardingPage';
 import ProfileConfirmPage from './pages/ProfileConfirmPage';
@@ -70,6 +71,7 @@ import {
   type AgentStatusMap
 } from './utils/agentFlowState';
 import { filterProjectsForDashboard, formatProjectCreatedDate, sortProjectsForDashboard } from './utils/learningProjects';
+import { foundationBlocksFromTags, foundationNamesFromTags, getRelevantFoundationBlocks } from './utils/foundation';
 
 type View = 'chat' | 'learn' | 'settings' | 'result';
 type WorkflowState = 'onboarding' | 'diagnosing' | 'needs_more_info' | 'profile_ready' | 'starting_stage' | 'learning';
@@ -2258,13 +2260,17 @@ function SettingsView({
   loading,
   error,
   onClear,
-  onSave
+  onSave,
+  foundationNames,
+  onOpenFoundation
 }: {
   profile: Profile;
   loading: boolean;
   error: string | null;
   onClear: () => void;
   onSave: (data: { grade: string; skill_tags: string[]; hardware: string }) => void;
+  foundationNames: string[];
+  onOpenFoundation: () => void;
 }) {
   const [grade, setGrade] = useState(profile.grade || '');
   const [hardware, setHardware] = useState(profile.hardware || '');
@@ -2300,6 +2306,14 @@ function SettingsView({
           </div>
           <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
             <h3 id="settings-knowledge-title">已有知识基础</h3>
+            <div className="settings-foundation-summary">
+              {foundationNames.length > 0 ? (
+                <div className={`foundation-summary-list ${foundationNames.length > 3 ? 'has-overflow' : ''}`} title={foundationNames.join('、')}>
+                  {foundationNames.map((name) => <span key={name}>{name}</span>)}
+                </div>
+              ) : <span className="foundation-summary-empty">尚未确定基础</span>}
+              <button type="button" className="foundation-trigger" onClick={onOpenFoundation}>重新确定</button>
+            </div>
             <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
           </div>
           <div className="setting-row">
@@ -2360,6 +2374,7 @@ export default function App() {
   const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string | null>(null);
+  const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | 'settings' | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
   const [reuseUserProfile, setReuseUserProfile] = useState(false);
@@ -3310,6 +3325,24 @@ export default function App() {
     }
   };
 
+  const openFoundationPicker = (context: 'onboarding' | 'settings') => {
+    setFoundationPickerContext(context);
+  };
+
+  const confirmFoundation = (selectedBlockIds: string[]) => {
+    const selectedBlocks = knowledgeGraphBlocks.filter((block) => selectedBlockIds.includes(block.block_id));
+    const skillTags = selectedBlocks.map((block) => block.block_name);
+    setOnboardingForm((current) => ({ ...current, skill_tags: skillTags }));
+    if (foundationPickerContext === 'settings' && profile) {
+      void saveProfileSettings({
+        grade: profile.grade || '',
+        skill_tags: skillTags,
+        hardware: profile.hardware || ''
+      });
+    }
+    setFoundationPickerContext(null);
+  };
+
   const deleteLearningProject = async (targetSessionId: string) => {
     setLoading(true);
     setError(null);
@@ -3366,6 +3399,29 @@ export default function App() {
 
   const workspaceProfile = profile || fallbackProfile;
   const workspaceStage = stage || unavailableStage;
+  const onboardingFoundationNames = useMemo(
+    () => foundationNamesFromTags(onboardingForm.skill_tags),
+    [onboardingForm.skill_tags]
+  );
+  const settingsFoundationNames = useMemo(
+    () => foundationNamesFromTags(workspaceProfile.skill_tags || []),
+    [workspaceProfile.skill_tags]
+  );
+  const foundationPickerGoal = foundationPickerContext === 'settings'
+    ? workspaceProfile.goal || onboardingForm.goal
+    : onboardingForm.goal;
+  const foundationPickerBlocks = useMemo(
+    () => foundationPickerContext === 'settings'
+      ? knowledgeGraphBlocks
+      : getRelevantFoundationBlocks(foundationPickerGoal),
+    [foundationPickerContext, foundationPickerGoal]
+  );
+  const foundationPickerInitialBlockIds = useMemo(() => {
+    const tags = foundationPickerContext === 'settings'
+      ? workspaceProfile.skill_tags || []
+      : onboardingForm.skill_tags;
+    return foundationBlocksFromTags(tags).map((block) => block.block_id);
+  }, [foundationPickerContext, onboardingForm.skill_tags, workspaceProfile.skill_tags]);
   const stageSubtopics = useMemo(
     () => resolveStageSubtopics(workspaceProfile, workspaceStage),
     [workspaceProfile, workspaceStage]
@@ -3410,6 +3466,8 @@ export default function App() {
           checkingUserProfile={checkingUserProfile}
           profileCheckError={profileCheckError}
           onRetryProfileCheck={() => void checkUserFoundation()}
+          foundationNames={onboardingFoundationNames}
+          onOpenFoundation={() => openFoundationPicker('onboarding')}
         />
       )}
       {view !== 'learn' && profile && (workflow === 'profile_ready' || workflow === 'starting_stage') && (
@@ -3471,7 +3529,15 @@ export default function App() {
           error={error}
         />
       )}
-      {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} />}
+      {profile && workflow === 'learning' && view === 'settings' && <SettingsView profile={workspaceProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} onOpenFoundation={() => openFoundationPicker('settings')} />}
+      <FoundationPickerModal
+        open={foundationPickerContext !== null}
+        goal={foundationPickerGoal}
+        blocks={foundationPickerBlocks}
+        initialSelectedBlockIds={foundationPickerInitialBlockIds}
+        onClose={() => setFoundationPickerContext(null)}
+        onConfirm={confirmFoundation}
+      />
       {profile && workflow === 'learning' && view === 'result' && (
         <ResultView
           profile={workspaceProfile}
