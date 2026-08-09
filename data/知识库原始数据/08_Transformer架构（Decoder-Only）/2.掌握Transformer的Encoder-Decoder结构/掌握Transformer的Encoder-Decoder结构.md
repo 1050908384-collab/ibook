@@ -69,7 +69,7 @@ Encoder 的每一层包含两个子层：
 ### 3.1 Multi-Head Self-Attention
 
 - **Q/K/V 来源**：都来自 Encoder 前一层的输出
-- **Mask**：无（双向，所有位置互相可见）
+- **Mask**：无因果 mask（双向，所有位置互相可见；批处理时通常仍有 padding/attention mask 处理变长序列）
 - **作用**：让每个位置聚合整个输入序列的上下文信息
 
 ### 3.2 Position-wise Feed-Forward Network (FFN)
@@ -130,7 +130,7 @@ $$\text{score}_{ij} = \begin{cases} \frac{q_i \cdot k_j}{\sqrt{d_k}} & \text{if 
 
 - **Q 来源**：Decoder 前一层
 - **K/V 来源**：**Encoder 的输出** $\mathbf{z}$
-- **Mask**：无（可以看到完整的输入序列）
+- **Mask**：无因果 mask（可以看到完整的输入序列；批处理时通常仍有 padding mask）
 - **作用**：让 Decoder 关注输入序列，是 Encoder 和 Decoder 之间的"桥梁"
 
 > **重要**：Encoder 输出 $\mathbf{z}$ 被送到**每一层** Decoder 的 Cross-Attention（共 6 次），而不是只送给第一层。这确保每一层 Decoder 都能直接访问输入信息。（①）
@@ -159,9 +159,9 @@ $$
 
 | Attention 类型 | 所在位置 | Q 来源 | K 来源 | V 来源 | Mask | 作用 |
 |---|---|---|---|---|---|---|
-| **Encoder Self-Attention** | Encoder 每层 | Encoder 前一层 | Encoder 前一层 | Encoder 前一层 | 无 | 编码输入序列的上下文 |
+| **Encoder Self-Attention** | Encoder 每层 | Encoder 前一层 | Encoder 前一层 | Encoder 前一层 | 无因果 mask（批处理时通常有 padding mask） | 编码输入序列的上下文 |
 | **Decoder Masked Self-Attention** | Decoder 每层 | Decoder 前一层 | Decoder 前一层 | Decoder 前一层 | 因果 mask | 自回归生成，防止"看到未来" |
-| **Decoder Cross-Attention** | Decoder 每层 | Decoder 前一层 | **Encoder 输出** | **Encoder 输出** | 无 | 让 Decoder 关注输入序列 |
+| **Decoder Cross-Attention** | Decoder 每层 | Decoder 前一层 | **Encoder 输出** | **Encoder 输出** | 无因果 mask（批处理时通常有 padding mask） | 让 Decoder 关注输入序列 |
 
 > **面试常考点**：三种 Attention 都调用同一个 `MultiHeadAttention` 函数，区别只在于传入的 Q/K/V 参数不同。这体现了 Attention 机制的统一性——"用 Q 查询 K/V"。（①）
 
@@ -176,19 +176,15 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 model = T5ForConditionalGeneration.from_pretrained("google-t5/t5-small")
 tokenizer = T5Tokenizer.from_pretrained("google-t5/t5-small")
 
-# 查看 Encoder 层数
+# 查看 Encoder 和 Decoder 层数
 print(f"Encoder 层数: {model.config.num_layers}")
-# Encoder 层数: 6
-
-# 查看 Decoder 层数
 print(f"Decoder 层数: {model.config.num_decoder_layers}")
-# Decoder 层数: 6
 
 # 查看模型结构
 print(model)
 ```
 
-> **本地运行配置要求**：T5-small 模型约 240MB，首次加载需联网下载。CPU 即可运行，内存建议 ≥ 4GB。
+> **本地运行配置要求**：`google-t5/t5-small` 模型约 240MB，首次加载需联网下载。CPU 即可运行，内存建议 ≥ 4GB。
 
 ### 6.1 观察 Encoder-Decoder 的前向传播
 
@@ -212,20 +208,14 @@ with torch.no_grad():
         output_hidden_states=True
     )
 
+# 观察各输出形状
 print(f"Encoder 最后一层隐藏状态形状: {outputs.encoder_last_hidden_state.shape}")
-# torch.Size([1, 11, 512]) —— [batch, seq_len, hidden_dim]
-
 print(f"Decoder 最后一层隐藏状态形状: {outputs.decoder_hidden_states[-1].shape}")
-# torch.Size([1, 3, 512]) —— [batch, decoder_seq_len, hidden_dim]
-
-print(f"Cross-Attention 数量: {len(outputs.cross_attentions)}")
-# 6 —— 每层 Decoder 一个 Cross-Attention
-
+print(f"Cross-Attention 层数: {len(outputs.cross_attentions)}")
 print(f"每层 Cross-Attention 形状: {outputs.cross_attentions[0].shape}")
-# torch.Size([1, 8, 3, 11]) —— [batch, n_heads, decoder_len, encoder_len]
 ```
 
-> **关键观察**：`cross_attentions[0].shape` 的最后两个维度是 `[decoder_len, encoder_len]`，说明 Decoder 的每个位置都在关注 Encoder 的所有位置。这正是 Cross-Attention 的作用。（①）
+> **关键观察**：`cross_attentions[0].shape` 的最后两个维度通常是 `[decoder_len, encoder_len]`，说明 Decoder 的每个位置都在关注 Encoder 的所有位置。这正是 Cross-Attention 的作用。上述输出会随 transformers 版本和模型版本变化，实际以运行结果为准。（①）
 
 > **本地运行配置要求**：此代码纯 CPU 运行即可，内存 ≥ 4GB。
 
@@ -248,15 +238,15 @@ print(f"每层 Cross-Attention 形状: {outputs.cross_attentions[0].shape}")
   - 架构更简单，参数量全部集中在 Decoder，更容易扩展到超大规模
   - 统一的训练目标，不需要成对的输入-输出数据
   - KV Cache 只需要缓存 Decoder 自己的 K 和 V，不需要额外缓存 Encoder 输出
-- **劣势**：只能单向建模（但在生成任务上这不是问题）
+- **劣势**：只能单向建模（但在生成任务上通常不是主要限制）
 
-### 7.3 Encoder-Decoder 并未消失（①）
+### 7.3 Encoder-Decoder 仍有广泛应用（①）
 
-虽然通用语言模型主流是 Decoder-only，但 Encoder-Decoder 在特定任务中仍然是 SOTA：
+虽然通用语言模型主流是 Decoder-only，但 Encoder-Decoder 在特定任务中仍有广泛应用，在特定条件下可能取得优异效果：
 
-- **机器翻译**：T5、mBART
-- **语音识别**：Whisper（音频 Encoder + 文本 Decoder）
-- **多模态**：LLaVA（视觉 Encoder + 语言 Decoder）
+- **机器翻译**：`google-t5/t5-small`、`facebook/mbart-large-50` 等
+- **语音识别**：`openai/whisper-base` 等
+- **多模态**：`llava-hf/llava-1.5-7b-hf` 等
 
 > 后续"重点理解 Decoder-Only 架构"章节会深入讲解：为什么 GPT 去掉 Encoder 后仍然能工作？答案是——**把输入和输出拼接在一起**，用统一的 Causal Mask 处理。（①）
 

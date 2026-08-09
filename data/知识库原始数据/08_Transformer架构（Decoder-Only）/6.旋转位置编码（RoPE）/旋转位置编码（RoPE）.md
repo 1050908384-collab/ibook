@@ -20,7 +20,7 @@
 
 > **适合人群**：已完成"前馈网络（FFN）与 SwiGLU 激活函数"章节，理解 Decoder-Only 模型中 Attention 和 FFN 分工的初学者。本节时长约 1 小时，目标是理解 RoPE 的数学原理、掌握旋转矩阵的推导逻辑、能够手写 RoPE 代码并理解其相对位置编码的本质。（①）
 >
-> **前置说明**：上节我们拆解了 FFN 与 SwiGLU，知道了现代 Decoder-Only 模型中每一层的结构是 `x + Attention(RMSNorm(x))` 和 `x + FFN(RMSNorm(x))`。但 Attention 本身是无序的——交换两个 token 的位置，Attention 的输出不变。本节将讲解现代 LLM（Llama、Qwen 等）如何解决这一问题——**旋转位置编码（RoPE）**。回答：为什么不用原始正弦位置编码？RoPE 的"旋转"到底在转什么？为什么说 RoPE 是"用绝对位置编码的方式实现了相对位置编码"？所有代码请在已安装 `torch` 的 Python 环境中运行。
+> **前置说明**：上节我们拆解了 FFN 与 SwiGLU，知道了现代 Decoder-Only 模型中每一层的结构是 `x + Attention(RMSNorm(x))` 和 `x + FFN(RMSNorm(x))`。但 Attention 本身是无序的——交换两个 token 的位置，Attention 的输出会随之交换，但模型无法感知"谁应该在哪个位置"。本节将讲解现代 LLM（如 `meta-llama/Llama-2-7b`、`Qwen/Qwen2.5-0.5B-Instruct` 等）如何解决这一问题——**旋转位置编码（RoPE）**。回答：为什么不用原始正弦位置编码？RoPE 的"旋转"到底在转什么？为什么说 RoPE 是"用绝对位置编码的方式实现了相对位置编码"？所有代码请在已安装 `torch` 的 Python 环境中运行。
 
 ## 一、为什么需要位置编码？
 
@@ -28,14 +28,14 @@ Transformer 的核心是 Self-Attention，而 Attention 的计算本质是**加�
 
 $$\text{Attention}(Q,K,V) = \text{softmax}\left( \frac{QK^T}{\sqrt{d_k}} \right)V$$
 
-关键问题：**Attention 对输入顺序不敏感**。如果你把序列中第 1 个 token 和第 10 个 token 交换位置，Attention 的输出完全不变。（①）
+关键问题：**不加入位置编码的 Self-Attention 对序列排列具有等变性**。如果你把序列中第 1 个 token 和第 10 个 token 交换位置，对应位置的输出也会随之交换，不是整个输出完全不变。这意味着模型无法感知"谁应该在哪个位置"这一顺序信息。（①）
 
-这意味着，如果没有位置编码，以下两句话对模型来说没有任何区别：
+因此，如果没有位置编码，以下两句话对模型来说，仅就 Attention 计算本身而言，无法区分它们的顺序差异：
 
 - "从 北京 到 上海 的 火车票"
 - "从 上海 到 北京 的 火车票"
 
-因此，必须引入某种机制让模型感知"谁在哪个位置"。（①）
+所以，必须引入某种机制让模型感知"谁在哪个位置"。（①）
 
 ### 1.1 绝对位置编码：原始 Transformer 的选择
 
@@ -216,7 +216,7 @@ def rope(x):
 
 ### 5.2 工业级版：支持缓存与广播
 
-实际 LLM 推理中，RoPE 的 cos/sin 值会被反复使用，因此需要缓存。以下是接近 LLaMA 实现的版本：
+实际 LLM 推理中，RoPE 的 cos/sin 值会被反复使用，因此需要缓存。以下是接近 `meta-llama/Llama-2-7b` 实现风格的版本：
 
 ```python
 import torch
@@ -438,7 +438,7 @@ plot_rope_decay()
 
 恭喜你完成了 RoPE 的学习！你现在应该掌握了：
 
-- ✅ **为什么需要位置编码**：Transformer 的 Attention 本身位置无关，必须显式注入顺序信息
+- ✅ **为什么需要位置编码**：不加入位置编码的 Self-Attention 对序列排列具有等变性，必须显式注入顺序信息
 - ✅ **RoPE 的核心思想**：通过旋转矩阵将位置信息编码到 Q/K 向量中，实现"绝对旋转，相对感知"
 - ✅ **数学推导**：2D 旋转 → 高维分块旋转 → 频率参数设计 → 块对角矩阵的高效实现
 - ✅ **关键性质**：长距离衰减、与线性 Attention 兼容、外推性

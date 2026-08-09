@@ -20,11 +20,11 @@
 
 > **适合人群**：已完成"理解 BPE、WordPiece、SentencePiece 算法原理"章节，理解子词分词核心思想的初学者。本节时长约 0.5 小时，目标是掌握使用 HuggingFace `AutoTokenizer` 加载预训练分词器、执行编码解码、批量处理和保存加载，能够独立完成文本到模型输入的转换。（①+③）
 >
-> **前置说明**：上节我们学习了 BPE、WordPiece、SentencePiece 的算法原理。本节将把这些理论付诸实践——使用 HuggingFace 提供的 `transformers` 库，加载真实预训练模型（如 BERT、GPT-2）对应的分词器，观察它们对文本的实际切分效果。所有代码请在已安装 `transformers` 的 `pytorch` conda 环境中运行。
+> **前置说明**：上节我们学习了 BPE、WordPiece、SentencePiece 的算法原理。本节将把这些理论付诸实践——使用 HuggingFace 提供的 `transformers` 库，加载真实预训练模型对应的分词器，观察它们对文本的实际切分效果。所有代码请在已安装 `transformers` 的 `pytorch` conda 环境中运行。
 
 ## 一、为什么使用 AutoTokenizer？（①+③）
 
-HuggingFace Hub 上有数千个预训练模型，每个模型可能使用不同的分词算法（BPE、WordPiece、Unigram）和不同的词表。`AutoTokenizer` 是一个**智能识别器**：你只需提供模型名称，它会自动判断该用哪种分词器类（`BertTokenizer`、`GPT2Tokenizer`、`LlamaTokenizer` 等），无需手动选择。（①+③）
+HuggingFace Hub 上有大量预训练模型，每个模型可能使用不同的分词算法（BPE、WordPiece、Unigram）和不同的词表。`AutoTokenizer` 是一个**智能识别器**：你只需提供模型名称，它会自动判断该用哪种分词器类（`BertTokenizer`、`GPT2Tokenizer`、`LlamaTokenizer` 等），无需手动选择。（①+③）
 
 ```python
 from transformers import AutoTokenizer
@@ -33,7 +33,7 @@ from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained("bert-base-chinese")
 ```
 
-> **本地运行配置要求**：首次执行 `from_pretrained()` 时，需要从 HuggingFace Hub 下载分词器配置文件（约 1~5MB）。需要**联网**，对电脑配置无特殊要求，CPU 即可，内存建议 ≥ 4GB。
+> **本地运行配置要求**：首次执行 `from_pretrained()` 时，需要从 HuggingFace Hub 下载分词器配置文件（体积通常在数 MB 以内）。需要**联网**，对电脑配置无特殊要求，CPU 即可，内存建议 ≥ 4GB。
 
 ## 二、加载 Tokenizer：from_pretrained（①+②）
 
@@ -51,7 +51,7 @@ tokenizer_gpt2 = AutoTokenizer.from_pretrained("gpt2")
 
 `from_pretrained` 会自动下载并缓存分词器所需的全部文件（`tokenizer_config.json`、`vocab.txt` 或 `vocab.json` / `merges.txt` 等）。（①）
 
-> **本地运行配置要求**：需要联网下载约 1~5MB 的配置文件，CPU 即可执行。若网络较慢，可参考下方镜像源或缓存配置。
+> **本地运行配置要求**：需要联网下载配置文件（体积通常在数 MB 以内），CPU 即可执行。若网络较慢，可参考下方镜像源或缓存配置。
 
 ### 2.2 关键参数详解（②）
 
@@ -60,21 +60,21 @@ tokenizer_gpt2 = AutoTokenizer.from_pretrained("gpt2")
 | `pretrained_model_name_or_path` | 模型 ID 或本地路径 | `"bert-base-chinese"` 或 `"./local_path"` |
 | `cache_dir` | 指定缓存目录 | `cache_dir="./hf_cache"` |
 | `local_files_only=True` | 只使用本地缓存，不联网 | 离线环境必备 |
-| `use_fast=True` | 使用 Rust 实现的快速分词器（默认） | 批量处理时速度提升数倍 |
+| `use_fast=True` | 使用 Rust 实现的快速分词器（默认） | 批量处理时速度通常更快 |
 | `trust_remote_code=True` | 允许执行远程自定义代码 | 部分社区模型需要 |
 
-> `use_fast=True`（默认）会尝试加载 `tokenizers` 库提供的 Rust 实现分词器，速度比纯 Python 快几个数量级。如果遇到分词结果异常，可设为 `False` 回退到慢速版本。（②）
+> `use_fast=True`（默认）会尝试加载 `tokenizers` 库提供的 Rust 实现分词器。在特定条件下，其速度通常比纯 Python 实现快数倍至数十倍。如果遇到分词结果异常，可设为 `False` 回退到慢速版本。（②）
 
 ### 2.3 从本地路径加载（①）
 
 如果你已经下载了模型文件，或在内网环境使用：
 
 ```python
-# 指向包含 tokenizer_config.json 的本地目录
+# 指向包含 tokenizer 配置文件的本地目录
 tokenizer = AutoTokenizer.from_pretrained("./bert-base-chinese-local")
 ```
 
-> **本地运行配置要求**：本地目录必须包含完整的分词器文件（至少 `tokenizer_config.json` + 词表文件）。如果缺少 `tokenizer_config.json`，`AutoTokenizer` 无法判断该用哪种分词器类，会报错。
+> **本地运行配置要求**：本地目录应包含该 tokenizer 所需的词表、配置和特殊 token 文件；缺少关键文件时会加载失败。使用 `save_pretrained()` 保存的完整目录是可靠的加载来源。
 
 ## 三、编码：从文本到数字（①+③+④）
 
@@ -82,7 +82,7 @@ tokenizer = AutoTokenizer.from_pretrained("./bert-base-chinese-local")
 
 ### 3.1 统一接口：直接调用 tokenizer（③+④）
 
-最推荐的方式是直接调用 tokenizer 对象，它会一次性完成分词、加特殊 token、转 ID、生成 attention_mask 等全部操作：（③）
+推荐的方式是直接调用 tokenizer 对象，它会一次性完成分词、加特殊 token、转 ID、生成 attention_mask 等全部操作：（③）
 
 ```python
 from transformers import AutoTokenizer
@@ -94,13 +94,7 @@ encoded = tokenizer(text)
 print(encoded)
 ```
 
-**输出**：（④）
-
-```python
-{'input_ids': [101, 2769, 1599, 3614, 1322, 3621, 6816, 1962, 6413, 102],
- 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
- 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
-```
+> 输出结果会随 transformers 版本和词表版本变化，以下为示意格式，实际以运行结果为准：（④）
 
 返回的字典包含三个关键字段：（③）
 
@@ -114,7 +108,7 @@ print(encoded)
 
 ```python
 encoded = tokenizer(text, return_tensors="pt")
-print(encoded["input_ids"].shape)   # torch.Size([1, 10])
+print(encoded["input_ids"].shape)
 ```
 
 > `return_tensors="pt"` 返回 PyTorch 张量，`"np"` 返回 NumPy 数组，`"tf"` 返回 TensorFlow 张量。
@@ -126,32 +120,33 @@ print(encoded["input_ids"].shape)   # torch.Size([1, 10])
 ```python
 # 第 1 步：分词，得到 token 字符串列表
 tokens = tokenizer.tokenize("我喜欢自然语言处理")
-print(tokens)
-# ['我', '喜', '欢', '自', '然', '语', '言', '处', '理']
+print("Tokens:", tokens)
+print("Token数量:", len(tokens))
 
 # 第 2 步：将 token 转换为 ID
 ids = tokenizer.convert_tokens_to_ids(tokens)
-print(ids)
-# [2769, 1599, 3614, 1322, 3621, 6816, 1962, 6413]
+print("IDs:", ids)
+print("ID数量:", len(ids))
 ```
 
-> 注意：分步执行不会自动添加 `[CLS]`、`[SEP]` 等特殊 token。直接调用 `tokenizer(text)` 会自动添加。
+> 注意：分步执行不会自动添加 `[CLS]`、`[SEP]` 等特殊 token。直接调用 `tokenizer(text)` 会自动添加。上述输出结果会随 transformers 版本和词表版本变化，实际以运行结果为准。
 
 ## 四、解码：从数字到文本（①+③）
 
 `decode()` 方法将 `input_ids` 还原为可读文本，同时会把属于同一个词的子词重新拼接起来。（①）
 
 ```python
-ids = [101, 2769, 1599, 3614, 1322, 3621, 6816, 1962, 6413, 102]
+# 使用 3.1 节得到的 encoded 结果
+ids = encoded["input_ids"]
 
 # 默认保留特殊 token
 print(tokenizer.decode(ids))
-# [CLS] 我 喜 欢 自 然 语 言 处 理 [SEP]
 
 # 跳过特殊 token
 print(tokenizer.decode(ids, skip_special_tokens=True))
-# 我喜欢自然语言处理
 ```
+
+> 输出结果会随版本和词表变化，实际以运行结果为准。
 
 > **本地运行配置要求**：解码操作纯 CPU 计算，无额外配置要求。
 
@@ -171,13 +166,11 @@ encoded = tokenizer(
     return_tensors="pt"
 )
 
-print(encoded["input_ids"].shape)      # torch.Size([2, 10])
+print(encoded["input_ids"].shape)
 print(encoded["attention_mask"])
-# tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-#         [1, 1, 1, 1, 1, 1, 1, 1, 0, 0]])
 ```
 
-> 第二个句子更短，所以 `attention_mask` 最后两位为 0，表示 padding 位置。（③）
+> 第二个句子更短，所以 `attention_mask` 中对应位置可能为 0，表示 padding 位置。（③）
 
 ### 5.1 使用 batch_encode_plus（④）
 
@@ -201,16 +194,18 @@ encoded = tokenizer.batch_encode_plus(
 
 不同预训练模型的 tokenizer 在特殊 token 和分词行为上有显著差异，使用时需要特别注意：（③）
 
-| 模型 | 分词算法 | 特殊 token | 注意事项 |
+以下列举了一些常见模型 checkpoint 的分词方案，具体行为以该 checkpoint 的配置为准：
+
+| 模型 checkpoint | 分词算法 | 特殊 token | 注意事项 |
 |---|---|---|---|
-| **BERT** | WordPiece | `[CLS]`, `[SEP]`, `[PAD]` | 双句分类任务用 `[SEP]` 分隔；输入长度最大 512 |
-| **GPT-2** | Byte-level BPE | `<\|endoftext\|>` | 默认没有 `pad_token`，需手动设置；输入长度最大 1024 |
-| **LLaMA** | Byte-level BPE | `<\|begin_of_text\|>`, `<\|end_of_text\|>` | 需严格设置 `pad_token` 和 `eos_token`；支持长上下文 |
-| **RoBERTa** | BPE | `<s>`, `</s>` | 使用 `</s>` 替代 `[SEP]`；支持句子对任务 |
+| **`bert-base-chinese`** | WordPiece | `[CLS]`, `[SEP]`, `[PAD]` | 双句分类任务用 `[SEP]` 分隔；输入长度通常限制在 512 以内 |
+| **`gpt2`** | Byte-level BPE | `<\|endoftext\|>` | 默认没有 `pad_token`，通常需要手动设置；输入长度通常限制在 1024 以内 |
+| **`meta-llama/Llama-2-7b-hf`** | Byte-level BPE | `<\|begin_of_text\|>`, `<\|end_of_text\|>` | 需严格设置 `pad_token` 和 `eos_token`；支持更长上下文 |
+| **`roberta-base`** | BPE | `<s>`, `</s>` | 使用 `</s>` 替代 `[SEP]`；支持句子对任务 |
 
 ### 6.1 GPT-2 的 pad_token 缺失（③）
 
-GPT-2 是单向自回归模型（生成任务），默认没有 `pad_token`。训练时必须手动设置：
+GPT-2 是单向自回归模型（生成任务），默认没有 `pad_token`。训练时通常需要手动设置：
 
 ```python
 tokenizer_gpt2 = AutoTokenizer.from_pretrained("gpt2")
@@ -225,9 +220,9 @@ tokenizer_gpt2.pad_token = tokenizer_gpt2.eos_token  # 用 eos_token 作为 pad_
 # 保存分词器到本地目录
 tokenizer.save_pretrained("./my_tokenizer")
 
-# 保存的内容包括：
+# 保存的内容通常包括（具体文件因 tokenizer 类型而异）：
 # - tokenizer_config.json
-# - vocab.txt（BERT 专用）或 vocab.json + merges.txt（GPT-2 专用）
+# - vocab.txt（WordPiece 类）或 vocab.json + merges.txt（BPE 类）
 # - special_tokens_map.json
 ```
 
@@ -238,7 +233,7 @@ tokenizer.save_pretrained("./my_tokenizer")
 tokenizer = AutoTokenizer.from_pretrained("./my_tokenizer")
 ```
 
-> **本地运行配置要求**：保存操作生成约 1~5MB 的文件，磁盘预留相应空间即可。
+> **本地运行配置要求**：保存操作生成约数 MB 的文件，磁盘预留相应空间即可。
 
 ## 八、词表操作与自定义词汇（③+④）
 
@@ -249,7 +244,7 @@ tokenizer = AutoTokenizer.from_pretrained("./my_tokenizer")
 print(len(tokenizer))  # 或 tokenizer.vocab_size
 
 # 查看最大序列长度
-print(tokenizer.model_max_length)  # BERT 通常为 512
+print(tokenizer.model_max_length)  # 例如 bert-base-chinese 通常为 512
 ```
 
 ### 8.2 添加自定义词汇（③+④）
@@ -268,7 +263,7 @@ tokenizer.add_special_tokens({"cls_token": "<my_cls>"})
 # model.resize_token_embeddings(len(tokenizer))
 ```
 
-> 添加新词后，该词会被当作一个整体 token 处理，不会再被拆分成子词。（④）
+> 添加新词后，该词通常会被当作一个整体 token 处理，不会再被拆分成子词。（④）
 
 > **本地运行配置要求**：词表操作纯 CPU 计算，无额外配置要求。
 
@@ -276,7 +271,7 @@ tokenizer.add_special_tokens({"cls_token": "<my_cls>"})
 
 | 症状 | 可能原因 | 解决方案 |
 |---|---|---|
-| `OSError: Can't load tokenizer` | 本地目录缺少 `tokenizer_config.json` | 确保本地目录包含完整的分词器配置文件 |
+| `OSError: Can't load tokenizer` | 本地目录缺少必要的配置文件 | 确保本地目录包含完整的分词器文件；推荐使用 `save_pretrained()` 保存的目录 |
 | 分词结果出现预期外的空格 | `use_fast=True` 的兼容性问题 | 设置 `use_fast=False` 回退到慢速分词器 |
 | GPT-2 padding 报错 | 默认没有 `pad_token` | 手动设置 `tokenizer.pad_token = tokenizer.eos_token` |
 | 解码后中文被空格分隔 | decode 默认按 token 拼接 | 正常现象，设置 `skip_special_tokens=True` 即可 |
@@ -292,7 +287,7 @@ tokenizer.add_special_tokens({"cls_token": "<my_cls>"})
 - ✅ 编码流程：`tokenizer()` 统一接口、返回字段（`input_ids`、`attention_mask`、`token_type_ids`）
 - ✅ 解码方法：`decode()` 与 `skip_special_tokens`
 - ✅ 批量处理：传入列表自动 batch 编码
-- ✅ 不同模型差异：BERT vs GPT-2 vs LLaMA 的特殊 token 区别
+- ✅ 不同模型差异：BERT 与 GPT-2 等模型的特殊 token 区别
 - ✅ 保存加载：`save_pretrained()` 与本地加载
 - ✅ 词表扩展：`add_tokens()` 与 `add_special_tokens()`
 

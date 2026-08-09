@@ -32,7 +32,7 @@
 |------|--------------------------------|-----------------------------------|
 | **核心思想** | 用时间换 batch size | 用时间换空间 |
 | **显存节省来源** | 始终使用小 batch，激活值少 | 丢弃中间激活值，反向传播时重算 |
-| **计算开销** | 无额外计算，但更新次数减少 | 增加约 30% 计算时间 |
+| **计算开销** | 无额外计算，但更新次数减少 | 在特定条件下可能增加约 30% 计算时间（②） |
 | **代码实现** | `accumulation_steps` 参数控制 | `torch.utils.checkpoint` |
 | **适用场景** | 需要大 batch 稳定性但显存不足 | 模型极深，激活值是主要瓶颈 |
 
@@ -103,7 +103,7 @@ $$g_i' \propto \frac{1}{128} \sum_{j \in \text{batch}_i} \nabla \ell_j$$
 
 $$G_{\text{final}} = \sum_{i=1}^{4} g_i' \propto \frac{\sum_{i=1}^{128} \nabla \ell_i}{128} = G_{\text{target}}$$
 
-**完美等价**！`loss = loss / accumulation_steps` 是梯度累积中必不可少的修正。（①）
+**数学上等价**！`loss = loss / accumulation_steps` 是梯度累积中通常必不可少的修正。（①）
 
 ### 2.3 如果 loss 用 reduction='sum' 呢？
 
@@ -122,7 +122,7 @@ $$g_{\text{batch}} \propto \sum_{i=1}^{B} \nabla \ell_i$$
 
 **结论**：如果使用 `reduction='sum'`，不需要除以 `accumulation_steps`！（①）
 
-> **但注意**：绝大多数情况下我们都用默认的 `reduction='mean'`，因为 mean 让 loss 数值与 batch size 无关，方便监控。所以**请务必记得除以 accumulation_steps**。
+> **但注意**：通常情况下我们都用默认的 `reduction='mean'`，因为 mean 让 loss 数值与 batch size 无关，方便监控。所以**请务必记得除以 accumulation_steps**。
 
 ### 2.4 物理直觉：batch size 与训练稳定性
 
@@ -196,19 +196,19 @@ for epoch in range(num_epochs):
 
 ### 3.3 与 AMP 混合精度配合
 
-上节我们学习了 AMP，现在将两者结合——这是大模型训练的标准配置：
+上节我们学习了 AMP，现在将两者结合——这是大模型训练中常见的配置：
 
 ```python
-from torch.cuda.amp import autocast, GradScaler
+from torch import amp
 
-scaler = GradScaler()
+scaler = amp.GradScaler()
 accumulation_steps = 4
 
 for epoch in range(num_epochs):
     optimizer.zero_grad()
     
     for i, (inputs, labels) in enumerate(dataloader):
-        with autocast():
+        with amp.autocast(device_type='cuda'):
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss = loss / accumulation_steps  # 缩放损失
@@ -237,16 +237,16 @@ $$\eta_{\text{new}} = \eta_{\text{base}} \times \frac{\text{batch\_size}_{\text{
 - 目标：等效 batch_size=128（通过梯度累积）
 - 新学习率：$1\text{e-4} \times \frac{128}{32} = 4\text{e-4}$
 
-> **注意**：这个规则在 batch size 较小时（<256）效果较好。当 batch size 极大时，需要配合 Warmup 使用，否则初期训练不稳定。
+> **注意**：这个规则在 batch size 较小时（<256）效果通常较好。当 batch size 极大时，需要配合 Warmup 使用，否则初期训练不稳定。
 
 ### 4.2 临界点理论：batch size 越大越好吗？
 
-研究表明（如 ResNet 训练 ImageNet），存在一个**临界 batch size**（通常为 256 或 512）：（①）
+部分研究表明（如 ResNet 训练 ImageNet），存在一个**临界 batch size**，在特定条件下可能在 256 或 512 附近：（①）
 
-- **< 临界点**：增大 batch size 显著提升速度，不影响精度
-- **> 临界点**：速度提升变缓，**测试精度开始明显下降**
+- **< 临界点**：增大 batch size 通常显著提升速度，对精度影响较小
+- **> 临界点**：速度提升变缓，**测试精度可能开始下降**
 
-原因：超大 batch 的梯度方向过于"精准"，模型容易一头扎进**尖锐的局部最优解**（Sharp Minima）。这种解在训练数据上表现完美，但对参数扰动极其敏感，泛化性差。而小 batch 的梯度噪声反而帮助模型落入**平坦的全局最优解**（Flat Minima），泛化性更好。（①）
+原因：超大 batch 的梯度方向过于"精准"，模型容易一头扎进**尖锐的局部最优解**（Sharp Minima）。这种解在训练数据上表现较好，但对参数扰动极其敏感，泛化性通常较差。而小 batch 的梯度噪声反而帮助模型落入**平坦的全局最优解**（Flat Minima），泛化性通常更好。（①）
 
 因此，梯度累积虽然能模拟任意大的 batch size，但**不建议将等效 batch size 设置得过大**。通常 64~256 是性价比较高的区间。
 

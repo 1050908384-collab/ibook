@@ -12,9 +12,9 @@
 ② 参考文章：《手写Mini-GPT：从零实现因果语言模型的前向与反向传播》  
 　　网址：https://blog.csdn.net/weixin_29775479/article/details/161847337
 
-> **适合人群**：已完成 Decoder-Only 架构全部理论章节（RMSNorm、FFN/SwiGLU、RoPE、KV Cache），希望用真实模型验证理解的初学者。本节时长约 0.5 小时，目标是能够使用 Hugging Face Transformers 加载 GPT-2，执行前向传播，观察并验证模型内部结构与前面所学知识的对应关系。（①）
+> **适合人群**：已完成 Decoder-Only 架构全部理论章节（RMSNorm、FFN/SwiGLU、RoPE、KV Cache），希望用真实模型验证理解的初学者。本节时长约 0.5 小时，目标是能够使用 Hugging Face Transformers 加载 GPT-2，执行前向传播，观察并验证模型内部结构与前面所学知识的对应关系，同时理解 GPT-2 与现代模型（如 `meta-llama/Llama-2-7b`、`Qwen/Qwen2.5-0.5B-Instruct`）在组件选型上的差异。（①）
 >
-> **前置说明**：前面我们拆解了 Decoder-Only 模型的每一个组件——RMSNorm、残差连接、SwiGLU、RoPE、KV Cache。但这些知识是否真实存在于模型中？本节我们将加载一个真实的 **GPT-2** 模型（约 1.37 亿参数），执行前向传播，逐层观察它的输入输出形状、Attention 权重分布、Hidden States 变化，以及 KV Cache 的实际工作方式。你会惊讶地发现：前面学过的每一个公式，都能在这几行代码的打印结果中找到对应。所有代码请在已安装 `torch` 和 `transformers` 的 Python 环境中运行。
+> **前置说明**：前面我们拆解了 Decoder-Only 模型的每一个组件——RMSNorm、残差连接、SwiGLU、RoPE、KV Cache。本节我们将加载一个真实的 **GPT-2** 模型（约 1.37 亿参数），执行前向传播，验证 Decoder-Only 架构、因果注意力、残差连接、FFN 和 KV Cache 等核心概念。同时，我们也会对比 GPT-2 与现代 `meta-llama/Llama-2-7b`、`Qwen/Qwen2.5-0.5B-Instruct` 等模型在归一化、激活函数和位置编码上的差异——GPT-2 使用 **LayerNorm**（而非 RMSNorm）、**GELU**（而非 SwiGLU）和**可学习绝对位置编码**（而非 RoPE）。所有代码请在已安装 `torch` 和 `transformers` 的 Python 环境中运行。
 
 ## 一、环境准备与模型加载
 
@@ -29,7 +29,7 @@ conda activate llm
 pip install torch transformers
 ```
 
-> **本地运行配置要求**：以下代码在 CPU 上即可运行（GPT-2 仅 137M 参数），内存建议 ≥ 4GB。如有 GPU，推理速度更快，但不是必需。
+> **本地运行配置要求**：以下代码在 CPU 上即可运行（GPT-2 仅 137M 参数），内存建议 ≥ 4GB。如有 GPU，推理速度通常更快，但不是必需。
 
 ### 1.2 加载 GPT-2 模型和 Tokenizer
 
@@ -52,18 +52,9 @@ print(f"上下文长度: {config.n_positions}")
 print(f"FFN 中间层维度: {config.n_inner or 4 * config.n_embd}")
 ```
 
-**预期输出**：
-
-```
-词汇表大小: 50257
-隐藏层维度: 768
-层数: 12
-注意力头数: 12
-上下文长度: 1024
-FFN 中间层维度: 3072
-```
-
-> **知识验证**：GPT-2 是标准的 Decoder-Only 架构。12 层、768 维、12 头，与我们前面学习的 "Transformer Decoder 堆叠" 完全一致。注意：原始 GPT-2 使用 **LayerNorm**（而非 RMSNorm）和 **GELU**（而非 SwiGLU），这是历史版本与现代 LLaMA 系模型的区别。（权威①）
+> 上述配置参数会随 transformers 版本和模型版本变化，实际以运行结果为准。
+>
+> **知识验证**：GPT-2 是标准的 Decoder-Only 架构。12 层、768 维、12 头，与我们前面学习的 "Transformer Decoder 堆叠" 基本一致。注意：原始 GPT-2 使用 **LayerNorm**（而非 RMSNorm）和 **GELU**（而非 SwiGLU），这是历史版本与现代 LLaMA 系模型的区别。（权威①）
 
 ### 1.3 准备输入文本
 
@@ -75,13 +66,8 @@ print("input_ids:", inputs["input_ids"])
 print("tokens:", tokenizer.convert_ids_to_tokens(inputs["input_ids"][0]))
 ```
 
-**预期输出**：
-
-```
-input_ids: tensor([[  8211,  28084,   318,   318]])
-tokens: ['Trans', 'former', 'Ġarchitecture', 'Ġis']
-```
-
+> 输出结果会随 transformers 版本和词表版本变化，实际以运行结果为准。
+>
 > **注意**：GPT-2 使用 BPE 分词，`Ġ` 表示该 token 前有一个空格。`Transformer` 被拆成了 `Trans` + `former`，这是子词切分的典型表现，呼应了前面"子词切分与分词器"章节的内容。
 
 ## 二、执行前向传播并观察输出
@@ -98,12 +84,7 @@ print("输出类型:", type(outputs))
 print("logits 形状:", outputs.logits.shape)
 ```
 
-**预期输出**：
-
-```
-输出类型: <class 'transformers.modeling_outputs.CausalLMOutputWithCrossAttentions'>
-logits 形状: torch.Size([1, 4, 50257])
-```
+> 输出结果会随 transformers 版本和模型版本变化，实际以运行结果为准。
 
 **维度解读**：（权威① + ①）
 - `[1]`：batch_size = 1
@@ -136,16 +117,9 @@ print(f"第 1 层 Transformer 输出形状: {hidden_states[1].shape}")
 print(f"第 12 层 Transformer 输出形状: {hidden_states[12].shape}")
 ```
 
-**预期输出**：
-
-```
-Hidden States 层数: 13
-输入 Embedding 层输出形状: torch.Size([1, 4, 768])
-第 1 层 Transformer 输出形状: torch.Size([1, 4, 768])
-第 12 层 Transformer 输出形状: torch.Size([1, 4, 768])
-```
-
-> **关键观察**：`hidden_states` 包含 13 个张量——第 0 个是 Embedding 层输出，第 1-12 个是 12 层 Transformer Decoder 的输出。每一层的输出形状都是 `[1, 4, 768]`，这正是**残差连接**保证的：无论经过多少层，序列长度和维度保持不变，信息可以逐层叠加而不失真。（权威①）
+> 输出结果会随 transformers 版本和模型版本变化，实际以运行结果为准。
+>
+> **关键观察**：`hidden_states` 包含 13 个张量——第 0 个是 Embedding 层输出，第 1-12 个是 12 层 Transformer Decoder 的输出。每一层的输出形状通常保持 `[1, 4, 768]`，这正是**残差连接**保证的：无论经过多少层，序列长度和维度保持不变，信息可以逐层叠加而不失真。（权威①）
 
 ### 2.3 观察 Attention Weights（注意力权重）
 
@@ -161,12 +135,7 @@ print(f"Attention 层数: {len(attentions)}")
 print(f"第 1 层 Attention 权重形状: {attentions[0].shape}")
 ```
 
-**预期输出**：
-
-```
-Attention 层数: 12
-第 1 层 Attention 权重形状: torch.Size([1, 12, 4, 4])
-```
+> 输出结果会随 transformers 版本和模型版本变化，实际以运行结果为准。
 
 **维度解读**：（权威①）
 - `[1]`：batch_size
@@ -193,7 +162,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-> **观察要点**：热力图的**上三角应该接近 0**（被 causal mask 屏蔽），下三角有非零值。这验证了我们前面学习的"Decoder-Only 模型使用下三角掩码防止看到未来信息"。（权威①）
+> **观察要点**：热力图的**上三角通常接近 0**（被 causal mask 屏蔽），下三角有非零值。这验证了我们前面学习的"Decoder-Only 模型使用下三角掩码防止看到未来信息"。（权威①）
 
 ## 三、验证 KV Cache 机制
 
@@ -224,7 +193,18 @@ generated = inputs["input_ids"]
 past_kv = None  # 初始无缓存
 print("=== 使用 KV Cache ===")
 
-for i in range(3):
+# 第 1 步：输入完整 prompt，获得初始 past_key_values
+with torch.no_grad():
+    outputs = model(generated, use_cache=True)
+past_kv = outputs.past_key_values
+next_token = torch.argmax(outputs.logits[:, -1, :], dim=-1, keepdim=True)
+generated = torch.cat([generated, next_token], dim=1)
+print(f"Prefill: 输入长度 {inputs['input_ids'].size(1)}, "
+      f"KV Cache 层数 {len(past_kv)}, K 形状 {past_kv[0][0].shape}, "
+      f"输出 token: {tokenizer.decode(next_token[0])}")
+
+# 第 2 步起：每次只输入最新生成的 1 个 token，并传入上一步的缓存
+for i in range(2):
     with torch.no_grad():
         # 只输入最新生成的 1 个 token，同时传入 past_key_values
         outputs = model(generated[:, -1:], past_key_values=past_kv, use_cache=True)
@@ -238,19 +218,11 @@ for i in range(3):
           f"K 形状 {past_kv[0][0].shape}, 输出 token: {tokenizer.decode(next_token[0])}")
 ```
 
-**预期输出**：
-
-```
-=== 使用 KV Cache ===
-Step 1: 输入长度 1, KV Cache 层数 12, K 形状 torch.Size([1, 12, 5, 64]), 输出 token: ...
-Step 2: 输入长度 1, KV Cache 层数 12, K 形状 torch.Size([1, 12, 6, 64]), 输出 token: ...
-Step 3: 输入长度 1, KV Cache 层数 12, K 形状 torch.Size([1, 12, 7, 64]), 输出 token: ...
-```
-
 > **关键验证**：
-> 1. **输入长度始终为 1**：每步只输入最新 token，而非完整序列
-> 2. **KV Cache 有 12 层**：与模型层数一致，每层缓存独立的 K 和 V
-> 3. **K 形状 `[1, 12, 5, 64]`**：`1` 是 batch，`12` 是头数，`5` 是累计序列长度（4 个输入 + 1 个新生成），`64` 是 head_dim（768/12）。这与我们前面推导的 KV Cache 公式完全一致！（①）
+> 1. **Prefill 阶段输入完整 prompt**：第一次调用 `model(generated, use_cache=True)` 输入完整序列，获得完整的初始 `past_key_values`
+> 2. **Decoding 阶段输入长度始终为 1**：后续每步只输入最新 token，而非完整序列
+> 3. **KV Cache 有 12 层**：与模型层数一致，每层缓存独立的 K 和 V
+> 4. **K 形状 `[1, 12, 5, 64]`**：`1` 是 batch，`12` 是头数，`5` 是累计序列长度（4 个输入 + 1 个新生成），`64` 是 head_dim（768/12）。这与我们前面推导的 KV Cache 公式基本一致！（①）
 
 ### 3.3 KV Cache 的内存占用估算
 
@@ -270,13 +242,9 @@ kv_cache_memory = batch_size * seq_len * n_layers * n_heads * head_dim * 2 * byt
 print(f"GPT-2 KV Cache 最大内存: {kv_cache_memory / 1024 / 1024:.2f} MB")
 ```
 
-**预期输出**：
-
-```
-GPT-2 KV Cache 最大内存: 72.00 MB
-```
-
-> **对比**：GPT-2 模型参数约 137M × 4 bytes ≈ 548 MB。KV Cache 在最大上下文时仅占 72 MB，远小于模型参数。但对于现代 7B 模型，KV Cache 可达数十 GB，这正是我们上一节学习的瓶颈所在。（①）
+> 输出结果会随运行环境变化，实际以运行结果为准。
+>
+> **对比**：GPT-2 模型参数约 137M × 4 bytes ≈ 548 MB。KV Cache 在最大上下文时约占 72 MB，远小于模型参数。但对于现代 7B 模型，KV Cache 可达数十 GB，这正是我们上一节学习的瓶颈所在。（①）
 
 ## 四、模型结构拆解：与理论知识的对应
 
@@ -287,36 +255,17 @@ GPT-2 KV Cache 最大内存: 72.00 MB
 print(model.transformer.h[0])  # 第 1 层 Decoder Block
 ```
 
-**预期输出（节选）**：
-
-```
-GPT2Block(
-  (ln_1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
-  (attn): GPT2Attention(
-    (c_attn): Conv1D()
-    (c_proj): Conv1D()
-    (attn_dropout): Dropout(p=0.1, inplace=False)
-    (resid_dropout): Dropout(p=0.1, inplace=False)
-  )
-  (ln_2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
-  (mlp): GPT2MLP(
-    (c_fc): Conv1D()
-    (c_proj): Conv1D()
-    (act): NewGELUActivation()
-    (dropout): Dropout(p=0.1, inplace=False)
-  )
-)
-```
+> 输出结果会随 transformers 版本和模型版本变化，实际以运行结果为准。
 
 **与理论知识的对应**：（权威① + ②）
 
-| 组件 | GPT-2 中的名称 | 前面学过的对应知识 |
-|------|---------------|------------------|
-| `ln_1` | LayerNorm | 预归一化（Pre-LN）：Attention 之前做归一化 |
-| `attn` | GPT2Attention | Multi-Head Self-Attention + Causal Mask |
-| `ln_2` | LayerNorm | FFN 之前的归一化 |
-| `mlp` | GPT2MLP | FFN：Conv1D 实现 `xW + b`，激活函数为 GELU |
-| 残差连接 | 未显式显示 | 在 `forward` 中实现：`x + Attention(LN(x))` |
+| 组件 | GPT-2 中的名称 | 前面学过的对应知识 | 现代模型（如 Llama/Qwen）的差异 |
+|------|---------------|------------------|------------------------------|
+| `ln_1` | LayerNorm | 预归一化（Pre-LN）：Attention 之前做归一化 | 现代模型通常使用 **RMSNorm** |
+| `attn` | GPT2Attention | Multi-Head Self-Attention + Causal Mask | 现代模型通常使用 **RoPE** 位置编码 |
+| `ln_2` | LayerNorm | FFN 之前的归一化 | 现代模型通常使用 **RMSNorm** |
+| `mlp` | GPT2MLP | FFN：Conv1D 实现 `xW + b`，激活函数为 GELU | 现代模型通常使用 **SwiGLU** |
+| 残差连接 | 未显式显示 | 在 `forward` 中实现：`x + Attention(LN(x))` | 结构基本一致 |
 
 > **注意**：GPT-2 使用的是 **LayerNorm** 而非 RMSNorm，**GELU** 而非 SwiGLU，**可学习位置编码** 而非 RoPE。这些都是 GPT-2（2019）与 LLaMA（2023）时代的差异。现代 Decoder-Only 模型在结构上基本遵循相同的范式，但在归一化、激活函数和位置编码上做了优化升级。（权威①）
 
@@ -364,10 +313,11 @@ print(f"生成结果: {generated_text}")
 
 恭喜你完成了 Transformer 架构（Decoder-Only）板块的全部内容！通过本次实验，你应当已经验证了：
 
-- ✅ **模型结构真实存在**：GPT-2 的 12 层 Decoder、768 维隐藏层、12 头 Attention 与理论完全一致
+- ✅ **模型结构真实存在**：GPT-2 的 12 层 Decoder、768 维隐藏层、12 头 Attention 与理论基本一致
 - ✅ **残差连接保持维度**：每一层的 hidden states 形状不变，信息逐层叠加
-- ✅ **Causal Mask 生效**：Attention 权重热力图的上三角被正确屏蔽
-- ✅ **KV Cache 工作正常**：使用 `past_key_values` 后每步只需输入 1 个 token，K/V 缓存形状与公式推导一致
+- ✅ **Causal Mask 生效**：Attention 权重热力图的上三角通常被正确屏蔽
+- ✅ **KV Cache 工作正常**：Prefill 阶段输入完整 prompt 获得初始缓存，Decoding 阶段每步只输入 1 个新 token，K/V 缓存形状与公式推导基本一致
 - ✅ **能够独立加载真实模型并执行前向传播**
+- ✅ **理解 GPT-2 与现代模型在组件选型上的差异**：LayerNorm vs RMSNorm、GELU vs SwiGLU、可学习位置编码 vs RoPE
 
 > **下一步预告**：在下一板块 **"大语言模型（LLM）核心特性"** 中，我们将跳出架构细节，从更高维度理解现代 LLM 的能力——什么是**涌现能力**？为什么大模型能进行**上下文学习（In-Context Learning）**？**指令遵循**和**逐步推理**是如何实现的？以及我们必须正视的**幻觉问题**。现在，试着修改上面的代码，将 GPT-2 换成 `gpt2-medium`（3.45 亿参数），观察层数、维度是否变化，并估算其最大 KV Cache 内存占用！
