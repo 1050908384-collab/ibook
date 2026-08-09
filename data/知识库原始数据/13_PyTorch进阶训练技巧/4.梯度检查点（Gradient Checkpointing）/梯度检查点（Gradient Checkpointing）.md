@@ -72,7 +72,7 @@ output = checkpoint(layer, x, use_reentrant=False)
 |------|------|
 | `function` | 需要检查点的模块或函数 |
 | `*args` | 输入参数 |
-| `use_reentrant` | `True`：旧版实现，反向时重新调用 `forward`；`False`：使用 saved tensor hooks，推荐 |
+| `use_reentrant` | `True`：旧版实现，反向时重新调用 `forward()`；`False`：使用 saved tensor hooks，推荐 |
 | `preserve_rng_state` | 是否保留随机状态（确保 dropout 等随机操作重计算时一致） |
 
 ### 2.2 在 Transformer 中使用
@@ -146,32 +146,26 @@ output = checkpoint_sequential(
 )
 ```
 
-`segments` 参数决定了检查点的粒度：
-- `segments=1`：整个序列作为一个检查点（显存最小，重算最多）
-- `segments=L`：每层都是检查点（显存较大，重算最少）
+`segments` 参数决定了将序列分成多少段。需要注意的是，`checkpoint_sequential` 的内部实现中，**最后一段不会被 checkpoint**（它会在反向传播时直接保留激活值）。因此：
+
+- `segments=1`：整个序列作为一段，且这一段就是"最后一段"，基本等于**没有使用 checkpoint**
+- `segments` 增大时：更多的前置分段会被 checkpoint，显存节省效果随之增强，但重计算开销也相应增加
+
+> **提醒**：`segments` 的具体效果与模型结构和 PyTorch 版本相关，建议结合 `torch.cuda.memory_stats()` 在实际环境中测试后选择。
 
 ## 三、粒度选择：在显存和时间之间找平衡
 
-### 3.1 实测数据：LLaMA-7B 上的对比
+### 3.1 显存与计算开销的权衡规律
 
-底稿①在 LLaMA-7B（配置：$L=32, H=4096$，FP16，batch_size=4，seq_len=2048，NVIDIA A100 40GB）上测试了不同 `checkpoint_every` 配置的效果：
+梯度检查点的核心是以计算换显存。`checkpoint_every`（自定义实现中每多少层 checkpoint 一次）或 `segments`（`checkpoint_sequential` 中分成几段）的取值直接决定了这个权衡的走向：
 
-| 策略 | 峰值显存 | 训练时间 | 相对计算量 |
-|------|---------|---------|-----------|
-| 无 checkpoint | 68 GB | 100% | 1.0× |
-| `checkpoint_every=4` | 52 GB | 112% | 1.12× |
-| `checkpoint_every=2` | 38 GB | 122% | 1.22× |
-| `checkpoint_every=1` | 28 GB | 138% | 1.38× |
+**一般性规律**（在特定条件下，具体数值需在你的环境中实测）：（①）
 
-**关键观察**：（①）
+1. **显存节省显著**：当检查点较密集时（如每层或每两层一个检查点），激活值显存通常可降低 30%~60%（取决于模型深度、batch size 和序列长度）
+2. **计算开销低于直觉**：即使每层都 checkpoint，额外计算时间通常也低于 50%。原因是重计算只发生在反向传播阶段，且现代 PyTorch 的 `use_reentrant=False` 通过 saved tensor hooks 优化了计算图重建
+3. **边际递减效应**：从"无 checkpoint"到"稀疏 checkpoint"通常能获得较显著的显存下降；继续加密检查点，显存节省的增量会递减，而计算开销的增量会递增
 
-1. **显存节省显著**：`checkpoint_every=1` 时显存从 68GB 降至 28GB，在该测试条件下节省了约 **60%**
-2. **计算开销低于直觉**：每层都 checkpoint 的计算开销在该测试条件下约 38%，而不是 naive 预期的 100%。原因是：
-   - 重计算只发生在反向传播阶段
-   - `use_reentrant=False` 通过 saved tensor hooks 优化了计算图重建
-3. **边际递减**：从 `every=4` 到 `every=2` 节省 14GB，代价 10% 时间；从 `every=2` 到 `every=1` 节省 10GB，代价 16% 时间
-
-> **注意**：上述数据来自底稿①在特定配置下的测试，实际数值会因模型结构、硬件、PyTorch 版本等因素而异。
+> **建议**：由于显存占用和计算开销高度依赖模型结构、硬件架构和 PyTorch 版本，**强烈建议在你的实际环境中通过 `torch.cuda.memory_stats()` 或 `nvidia-smi` 实测不同配置下的峰值显存和迭代时间**，再做出选择。
 
 ### 3.2 如何选择最优粒度？
 

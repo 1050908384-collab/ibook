@@ -165,6 +165,7 @@ accumulation_steps = 4
 
 for epoch in range(num_epochs):
     optimizer.zero_grad()  # 每个 epoch 开始时清零
+    accumulated_steps = 0  # 记录当前周期已累积的步数
     
     for i, (inputs, labels) in enumerate(dataloader):  # 每次 32 个样本
         outputs = model(inputs)
@@ -173,14 +174,24 @@ for epoch in range(num_epochs):
         # 关键：除以 accumulation_steps
         loss = loss / accumulation_steps
         loss.backward()  # 梯度自动累加到 .grad
+        accumulated_steps += 1
         
-        # 每 accumulation_steps 步更新一次参数
-        if (i + 1) % accumulation_steps == 0:
+        # 判断是否为最后一个 batch
+        is_last_batch = (i == len(dataloader) - 1)
+        
+        # 每 accumulation_steps 步更新一次参数；
+        # 如果是最后一个 batch 且累积未满，也执行更新，避免丢失尾部梯度
+        if accumulated_steps == accumulation_steps or (is_last_batch and accumulated_steps > 0):
+            # 如果是不完整周期，补偿梯度以正确归一化
+            if is_last_batch and accumulated_steps < accumulation_steps:
+                scale_factor = accumulation_steps / accumulated_steps
+                for param in model.parameters():
+                    if param.grad is not None:
+                        param.grad.mul_(scale_factor)
+            
             optimizer.step()
             optimizer.zero_grad()
-    
-    # 处理最后一个不完整的累积周期（如果数据量不是 accumulation_steps 的整数倍）
-    # 实际上，如果 dataloader 的 drop_last=True，则不需要；否则需要额外处理
+            accumulated_steps = 0
 ```
 
 > **本地运行配置要求**：上述代码在 CPU 或单卡 GPU 上均可运行，内存 ≥ 4GB。
@@ -189,10 +200,9 @@ for epoch in range(num_epochs):
 
 1. **`loss = loss / accumulation_steps`**：这是数学等价性的核心。如果不做这步，累积梯度会过大。
 2. **`optimizer.zero_grad()` 的位置**：在每个累积周期开始时清零，而不是每个 batch 都清零。如果每个 batch 都清零，梯度就无法累加。
-3. **`(i + 1) % accumulation_steps == 0`**：判断是否已经累积了足够的小 batch。注意用 `i + 1` 是因为 `enumerate` 从 0 开始计数。
-4. **最后一个不完整周期**：如果数据集大小不是 `accumulation_steps` 的整数倍，最后一个周期可能不足 $N$ 步。此时可以选择：
-   - 设置 `DataLoader(drop_last=True)` 丢弃最后不足一批的数据
-   - 或者保留，但注意此时实际梯度是"不完整的"，学习率需要相应调整
+3. **`is_last_batch` 判断**：通过 `i == len(dataloader) - 1` 检测最后一个 batch，确保即使累积未满也执行参数更新，避免尾部梯度丢失。
+4. **不完整周期补偿**：如果最后一个周期只累积了 `accumulated_steps` 步（小于 `accumulation_steps`），由于之前每步都按 `accumulation_steps` 缩放，当前梯度是目标梯度的 `accumulated_steps / accumulation_steps` 倍。通过 `grad.mul_(accumulation_steps / accumulated_steps)` 补偿，使最终梯度等效于按实际步数归一化。
+5. **`accumulated_steps` 计数器**：显式追踪当前周期已累积的步数，比 `(i + 1) % accumulation_steps == 0` 更灵活，能优雅处理尾部不完整周期。
 
 ### 3.3 与 AMP 混合精度配合
 
@@ -206,6 +216,7 @@ accumulation_steps = 4
 
 for epoch in range(num_epochs):
     optimizer.zero_grad()
+    accumulated_steps = 0
     
     for i, (inputs, labels) in enumerate(dataloader):
         with amp.autocast(device_type='cuda'):
@@ -215,11 +226,23 @@ for epoch in range(num_epochs):
         
         # scaler 自动处理 FP16 梯度的缩放和累加
         scaler.scale(loss).backward()
+        accumulated_steps += 1
         
-        if (i + 1) % accumulation_steps == 0:
+        is_last_batch = (i == len(dataloader) - 1)
+        
+        # 满步更新，或最后一个 batch 时强制更新
+        if accumulated_steps == accumulation_steps or (is_last_batch and accumulated_steps > 0):
+            # 不完整周期补偿
+            if is_last_batch and accumulated_steps < accumulation_steps:
+                scale_factor = accumulation_steps / accumulated_steps
+                for param in model.parameters():
+                    if param.grad is not None:
+                        param.grad.mul_(scale_factor)
+            
             scaler.step(optimizer)  # 内部检查梯度合法性后更新
             scaler.update()
             optimizer.zero_grad()
+            accumulated_steps = 0
 ```
 
 > **注意**：`scaler.scale(loss)` 会在 `loss / accumulation_steps` 的基础上再做一次损失缩放（loss scaling），两者互不冲突。`accumulation_steps` 修正的是 batch size 带来的梯度尺度问题，`GradScaler` 修正的是 FP16 的动态范围问题。（①）
@@ -256,7 +279,7 @@ $$\eta_{\text{new}} = \eta_{\text{base}} \times \frac{\text{batch\_size}_{\text{
 |------|---------|---------|
 | "忘了除以 accumulation_steps，loss 不降反升" | 累积梯度过大，更新步长失控 | 务必添加 `loss = loss / accumulation_steps`（①） |
 | "梯度累积后训练速度变慢" | 正常现象，用时间换空间 | 确认 GPU 利用率是否饱和；如果已饱和，这是预期代价（②） |
-| "最后一个 epoch 的梯度不完整" | 数据集大小不是 accumulation_steps 的整数倍 | 设置 `DataLoader(drop_last=True)`，或调整学习率补偿（①） |
+| "最后一个 epoch 的梯度不完整" | 数据集大小不是 accumulation_steps 的整数倍 | 使用本文 3.1 节的代码：通过 `is_last_batch` 判断强制更新，并对不完整周期进行梯度补偿（①） |
 | "与 AMP 配合时出现 NaN" | 双重缩放冲突或学习率过大 | 检查 `loss / accumulation_steps` 是否在 `autocast` 内；降低学习率（①） |
 | "不确定等效 batch size 该设多大" | 不了解临界点理论 | 从 64~128 开始实验，观察验证集精度，逐步调整（①） |
 | "梯度累积和梯度检查点能一起用吗？" | 混淆两者 | 可以！梯度检查点减少激活值显存，梯度累积模拟大 batch，两者互补（②） |
@@ -267,8 +290,8 @@ $$\eta_{\text{new}} = \eta_{\text{base}} \times \frac{\text{batch\_size}_{\text{
 
 - ✅ **为什么需要梯度累积**：显存不足时，用小 batch 模拟大 batch 的训练效果
 - ✅ **数学原理**：PyTorch 默认 `reduction='mean'` 导致梯度与 batch size 成反比，必须通过 `loss / accumulation_steps` 修正
-- ✅ **代码实现**：正确的 `zero_grad()` 位置、`backward()` 累加、`step()` 触发时机
-- ✅ **与 AMP 配合**：`scaler.scale(loss / accumulation_steps).backward()` 的标准写法
+- ✅ **代码实现**：正确的 `zero_grad()` 位置、`backward()` 累加、`step()` 触发时机，以及**尾部不完整周期的检测与梯度补偿**
+- ✅ **与 AMP 配合**：`scaler.scale(loss / accumulation_steps).backward()` 的标准写法，包含尾部补偿
 - ✅ **工程权衡**：梯度累积是"用时间换空间"，与梯度检查点互补而非替代
 
 > **下一步预告**：在下一节 **"混合精度训练（AMP）"** 中，我们将深入讲解 `autocast` 和 `GradScaler` 的底层机制，理解 FP16 的动态范围限制、损失缩放的数学原理，以及如何在训练出现 NaN 时进行调试。现在，试着修改上面的代码，将 `accumulation_steps` 分别设为 2、4、8，观察在相同 epoch 数下训练 loss 的收敛曲线差异！

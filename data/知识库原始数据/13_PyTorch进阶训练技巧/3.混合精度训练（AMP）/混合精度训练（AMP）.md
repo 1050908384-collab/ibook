@@ -25,35 +25,29 @@ with amp.autocast(device_type='cuda'):
     output = model(input)   # 在此上下文中，PyTorch 自动选择精度
 ```
 
-> **重要**：`autocast` 的具体行为**取决于具体算子、输入 dtype、CPU/CUDA 设备、FP16/BF16、PyTorch 版本**，不应视为固定不变的规则。以下表格仅为一般性说明，实际行为请以当前 PyTorch 版本的官方文档为准。
+> **重要**：`autocast` 的具体行为**取决于具体算子、输入 dtype、CPU/CUDA 设备、FP16/BF16、PyTorch 版本**，不应视为固定不变的规则。以下仅为一般性说明，实际行为请以当前 PyTorch 版本的官方文档为准。
 
 ### 1.2 哪些操作通常转 FP16？
 
-在 CUDA 设备上，`autocast` 通常会将以下类型的操作自动切换到 FP16/BF16：（①）
+在 CUDA 设备上，`autocast` 通常会将**计算密集型**的操作自动切换到 FP16/BF16，典型示例包括：（①）
 
-| 操作类型 | 典型算子 | 原因 |
-|---------|---------|------|
-| 线性变换 | `nn.Linear`, `nn.Conv1d/2d/3d` | 计算密集型，Tensor Core 对 FP16 有专门优化 |
-| 矩阵乘法 | `torch.mm`, `torch.matmul`, `torch.bmm` | 同上，在支持 Tensor Core 的 GPU 上 FP16 速度通常明显快于 FP32 |
-| 卷积 | `nn.ConvTranspose`, `nn.GroupNorm`（部分） | 计算密集型 |
-| 激活函数 | `nn.ReLU`, `nn.Tanh`, `nn.Sigmoid` | 逐元素操作，FP16 通常无精度问题 |
-| 逐元素运算 | `torch.add`, `torch.mul` | 开销小，FP16 通常安全 |
+- **矩阵乘法**：`torch.mm`、`torch.matmul`、`torch.bmm`
+- **卷积与线性变换**：`nn.Conv1d/2d/3d`、`nn.Linear`
 
-> **注意**：上述行为会因 PyTorch 版本、设备类型和具体配置而异。例如，在 CPU 上 `autocast` 的行为与 CUDA 上可能不同；使用 BF16 时部分算子的处理逻辑也可能与 FP16 不同。
+这些操作在支持 Tensor Core 的 GPU 上，FP16 的计算速度通常明显快于 FP32，且数值稳定性通常较好。
+
+> **完整算子列表**：PyTorch 官方维护了一份随版本更新的 Autocast Op Reference，请查阅当前版本的官方文档获取完整列表：https://pytorch.org/docs/stable/amp.html#autocast-op-reference
 
 ### 1.3 哪些操作通常保留 FP32？
 
-以下操作对数值精度较为敏感，`autocast` 在特定条件下可能会强制或建议它们在 FP32 下执行：（①+②）
+以下类型的操作对数值精度较为敏感，在特定条件下 `autocast` 可能会强制或建议它们在 FP32 下执行：（①+②）
 
-| 操作类型 | 典型算子 | 保留 FP32 的原因 |
-|---------|---------|----------------|
-| 归一化 | `nn.LayerNorm`, `nn.BatchNorm`, `nn.InstanceNorm` | 统计量（均值、方差）在 FP16 下精度可能不足 |
-| 概率分布 | `nn.Softmax`, `nn.LogSoftmax`, `nn.NLLLoss` | 指数运算容易上溢/下溢 |
-| 损失函数 | `nn.CrossEntropyLoss`, `nn.BCELoss`, `nn.MSELoss` | 涉及 log、除法等数值敏感操作 |
-| 优化器状态 | Adam 的动量、二阶矩 | 参数更新需要较高精度避免漂移 |
-| 大规模归约 | `torch.sum`, `torch.mean`（大维度） | 累加误差在 FP16 下可能累积 |
+- **归一化层**：如 LayerNorm、BatchNorm，统计量（均值、方差）在 FP16 下精度可能不足
+- **概率分布与损失函数**：如 Softmax、CrossEntropyLoss，涉及指数运算容易上溢/下溢
+- **大规模归约**：如大维度的 sum、mean，累加误差在 FP16 下可能累积
+- **优化器状态更新**：Adam 的动量、二阶矩需要较高精度避免漂移
 
-> **关键理解**：你不需要记住这张表。`autocast` 通常会替你做出较合适的决策。但在调试 NaN 时，知道"哪些操作在特定条件下可能保留 FP32"能帮你快速定位问题。具体行为请以当前 PyTorch 版本的官方文档为准。
+> **关键理解**：你不需要记住完整的算子列表。`autocast` 通常会替你做出较合适的决策。但在调试 NaN 时，知道"哪些类型的操作在特定条件下可能保留 FP32"能帮你快速定位问题。具体行为请以当前 PyTorch 版本的官方文档为准。
 
 ### 1.4 自定义层的精度控制
 
@@ -80,15 +74,18 @@ for m in model.modules():
         m.float()  # 参数和缓存都转为 FP32
 ```
 
-**方法 3：装饰器（适用于函数级别）**
+**方法 3：装饰器（适用于自定义函数/模块）**
 
 ```python
-@torch.amp.custom_fwd(device_type='cuda')
+@torch.amp.custom_fwd(device_type='cuda', cast_inputs=None)
 def my_forward(self, x):
-    # 自定义前向，autocast 不会自动转换
+    # cast_inputs=None（默认）：遵循 autocast 的自动转换规则
+    # cast_inputs=torch.float32：强制输入为 FP32，不受 autocast 影响
     return x
 ```
 
+> **`cast_inputs` 参数说明**：`cast_inputs=None`（默认）表示该函数的前向输入会遵循当前 `autocast` 上下文的自动转换规则；`cast_inputs=torch.float32` 则强制将输入转换为 FP32，使该函数内部完全在 FP32 下运行。如果你希望自定义层**始终**以 FP32 执行（不受外部 autocast 影响），应显式设置 `cast_inputs=torch.float32`。（①）
+>
 > **兼容性说明**：在 PyTorch 1.x 版本中，AMP API 位于 `torch.cuda.amp`，即 `from torch.cuda.amp import autocast, GradScaler`。从 PyTorch 2.0 起，推荐使用统一的 `torch.amp` 接口：`from torch import amp`，然后通过 `amp.autocast(device_type='cuda')` 和 `amp.GradScaler()` 调用。旧接口目前仍可运行，但建议新代码使用新 API。
 
 ## 二、GradScaler：动态损失缩放的算法细节
