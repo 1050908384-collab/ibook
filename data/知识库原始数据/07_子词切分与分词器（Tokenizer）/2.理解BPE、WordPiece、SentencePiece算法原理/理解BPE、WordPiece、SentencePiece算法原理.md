@@ -1,20 +1,20 @@
 # 理解 BPE、WordPiece、SentencePiece 算法原理
 
-权威文章：《Tokenizers》\
+权威文章：《Tokenizers》  
 　　网址：https://huggingface.co/docs/tokenizers
 
-权威文章：《Tokenization algorithms》\
+权威文章：《Tokenization algorithms》  
 　　网址：https://huggingface.co/docs/transformers/en/tokenizer_summary
 
-① 底稿：《文本分词算法：Byte-Pair Encoding (BPE)、WordPiece 和 SentencePiece》\
+① 底稿：《文本分词算法：Byte-Pair Encoding (BPE)、WordPiece 和 SentencePiece》  
 　　网址：https://blog.csdn.net/shanglianlm/article/details/162464312
 
-② 参考文章：《【大语言模型 22】Tokenization深度技术：BPE、WordPiece、SentencePiece完全指南》\
+② 参考文章：《【大语言模型 22】Tokenization深度技术：BPE、WordPiece、SentencePiece完全指南》  
 　　网址：https://blog.csdn.net/maoyu_dual/article/details/150786404
 
 > **适合人群**：已完成"环境准备：在 Python 环境中安装 transformers、tokenizers 库"章节，能够成功导入 `transformers` 和 `tokenizers` 的初学者。本节时长约 1.5 小时，目标是理解现代大语言模型使用的三种核心子词分词算法（BPE、WordPiece、SentencePiece）的原理与区别，能够用手写代码模拟算法流程，为下一节实际加载和使用 HuggingFace Tokenizer 建立理论基础。（①+②）
 >
-> **前置说明**：在将文本输入大语言模型之前，必须先将其转换为模型能够计算的数字序列，这一过程称为**分词（Tokenization）**。现代大模型普遍采用**子词分词（Subword Tokenization）**：高频词保留完整，低频词拆成有意义的子词片段。本节将深入讲解三种主流子词分词算法的原理。所有代码请在已安装 PyTorch 和 transformers 的 `pytorch` conda 环境中运行。
+> **前置说明**：在将文本输入大语言模型之前，必须先将其转换为模型能够计算的数字序列，这一过程称为**分词（Tokenization）**。现代大模型通常采用**子词分词（Subword Tokenization）**：高频词保留完整，低频词拆成有意义的子词片段。本节将深入讲解三种主流子词分词算法的原理。所有代码请在已安装 PyTorch 和 transformers 的 `pytorch` conda 环境中运行。
 
 ## 一、为什么需要子词分词？（①+②）
 
@@ -231,15 +231,17 @@ print("WordPiece 合并顺序:", merges)
 
 ### 4.1 核心创新（①+②）
 
-BPE 和 WordPiece 都依赖**预分词**（如按空格切分），这对中文、日文等无空格语言不友好。SentencePiece 的核心创新是：（①+②）
+BPE 和 WordPiece 的传统实现通常依赖**预分词**（如按空格切分），这对中文、日文等无空格语言不友好。SentencePiece 的核心创新是：（①+②）
 
-1. **将空格视为普通字符**：用 `▁`（或 `_`）表示空格，直接对原始文本流进行操作。
-2. **不依赖预分词**：把输入视为原始字节/字符流。
+1. **将空格视为普通字符**：用 `▁`（U+2581，SentencePiece 专用空格标记）表示空格，直接对经过规范化的原始文本流进行操作。
+2. **不依赖预分词**：把输入视为经过规范化的原始文本流，无需预先按空格切分。
 3. **支持多种算法**：内置 BPE 和 Unigram 两种算法。
+
+> **关于 byte fallback**：SentencePiece 支持将未登录字符回退到字节序列（byte fallback），但这是一种可选配置（如 `--byte_fallback` 标志），并非默认行为。默认情况下，SentencePiece 仍依赖词表覆盖文本中的字符。此外，`▁`（U+2581）是 SentencePiece 的专用空格标记，与普通下划线 `_` 不同；下文手写示例中若使用 `_`，仅作为演示替代符号。
 
 ### 4.2 Unigram 算法原理（①+②）
 
-SentencePiece 最具代表性的算法是 **Unigram 语言模型**：（①+②）
+SentencePiece 最具代表性的算法之一是 **Unigram 语言模型**：（①+②）
 
 1. 从一个**很大的候选词表**出发（包含所有可能的子串）。
 2. 假设每个子词的出现相互独立，句子的概率为各子词概率的乘积。
@@ -259,29 +261,75 @@ SentencePiece 最具代表性的算法是 **Unigram 语言模型**：（①+②�
 | 日文 | `こんにちは世界` | `["こん", "にちは", "世界"]` |
 | 混合 | `Hello你好` | `["▁He", "llo", "你", "好"]` |
 
-### 4.4 Python 实现：Unigram 简化版（①）
+> 注：表格中的 `▁` 为 SentencePiece 专用空格标记（U+2581）。下文手写代码示例中使用普通下划线 `_` 仅为演示便利，二者不等同。
+
+### 4.4 真实训练：使用 HuggingFace tokenizers（推荐）
+
+以下代码使用 HuggingFace `tokenizers` 库演示真实的 Unigram 训练流程，与生产环境一致：
+
+```python
+from tokenizers import Tokenizer, models, trainers, pre_tokenizers
+
+# 准备语料（实际项目中应为大量文本）
+texts = [
+    "low lower newest widest",
+    "lowering lowers new widely",
+    "hello world",
+    "natural language processing"
+]
+
+# 初始化 Unigram 模型
+tokenizer = Tokenizer(models.Unigram())
+
+# 使用 Metaspace 预分词器：将空格替换为 ▁（U+2581）
+tokenizer.pre_tokenizer = pre_tokenizers.Metaspace()
+
+# 配置训练器
+trainer = trainers.UnigramTrainer(
+    vocab_size=50,
+    special_tokens=["<pad>", "<unk>", "<s>", "</s>"],
+    show_progress=True,
+)
+
+# 从迭代器训练
+tokenizer.train_from_iterator(texts, trainer=trainer)
+
+# 测试编码
+output = tokenizer.encode("lowest")
+print("Tokens:", output.tokens)
+print("IDs:", output.ids)
+```
+
+> **本地运行配置要求**：需安装 `tokenizers` 库（`pip install tokenizers`），纯 CPU 运行，内存 ≥ 4GB。
+
+### 4.5 手写简化版：理解核心逻辑（教学演示）
+
+> **⚠️ 重要提示**：以下代码是**极度简化的教学演示，不是完整的 EM 实现**。真实的 SentencePiece 包含更复杂的平滑、回退、子词采样和优化策略。代码中使用普通下划线 `_` 代替 SentencePiece 的专用空格标记 `▁`（U+2581），仅为手写示例便利。
 
 ```python
 from collections import Counter
-import math
 
 def init_vocab(texts, max_len=3):
-    """收集所有长度 <= max_len 的子串作为初始候选词汇"""
+    """收集所有长度 <= max_len 的子串作为初始候选词汇。
+    保留所有子串（包括仅出现1次的），避免基础字符被过早剪枝导致词表为空。"""
     vocab = Counter()
     for text in texts:
+        # 注意：这里用普通下划线 _ 仅作为手写示例的替代符号，
+        # 实际 SentencePiece 使用的是专用空格标记 ▁ (U+2581)
         text = text.replace(' ', '_')
         for i in range(len(text)):
             for j in range(1, max_len+1):
                 if i+j <= len(text):
                     vocab[text[i:i+j]] += 1
-    return {w: c for w, c in vocab.items() if c >= 2}
+    return dict(vocab)
 
 def viterbi_segment(text, vocab_probs):
-    """用动态规划找概率最大的分割路径"""
+    """用动态规划找概率最大的分割路径。
+    若不存在覆盖全句的有效路径，则 fallback 为逐字符切分。"""
     n = len(text)
     dp = [0.0] * (n+1)
     dp[0] = 1.0
-    back = [0] * (n+1)
+    back = [None] * (n+1)
 
     for i in range(n):
         if dp[i] == 0:
@@ -294,19 +342,26 @@ def viterbi_segment(text, vocab_probs):
                     dp[j] = prob
                     back[j] = i
 
+    # 无有效路径时 fallback 到逐字符切分
+    if dp[n] == 0:
+        return list(text)
+    
     segments = []
     idx = n
     while idx > 0:
         prev = back[idx]
+        if prev is None:
+            return list(text)
         segments.append(text[prev:idx])
         idx = prev
     return segments[::-1]
 
 def train_unigram(texts, vocab_size=100, num_iters=10):
-    """简化的 Unigram 训练"""
+    """简化的 Unigram 训练（教学演示版，非完整 EM 实现）。"""
     raw_vocab = init_vocab(texts, max_len=4)
     vocab = list(raw_vocab.keys())
-    probs = {w: 1/len(vocab) for w in vocab}
+    total_count = sum(raw_vocab.values())
+    probs = {w: raw_vocab[w] / total_count for w in vocab}
 
     for it in range(num_iters):
         counts = Counter()
@@ -318,10 +373,17 @@ def train_unigram(texts, vocab_size=100, num_iters=10):
                 counts[sub] += 1
                 total += 1
 
+        if total == 0:
+            break
+            
         probs = {w: counts[w]/total for w in vocab if counts[w] > 0}
 
+        # 剪枝：优先删除低概率的长子词，保护单字符不被剪光
         while len(probs) > vocab_size:
-            worst = min(probs, key=probs.get)
+            deletable = {w: p for w, p in probs.items() if len(w) > 1}
+            if not deletable:
+                break
+            worst = min(deletable, key=deletable.get)
             del probs[worst]
 
         vocab = list(probs.keys())
@@ -329,10 +391,15 @@ def train_unigram(texts, vocab_size=100, num_iters=10):
 
     return probs
 
-# 使用演示
-texts = ["low lower newest widest"]
-probs = train_unigram(texts, vocab_size=20, num_iters=10)
-print("最终词汇:", sorted(probs.keys()))
+# 使用演示：使用稍丰富的语料，避免词表过小导致退化
+texts = [
+    "low lower newest widest",
+    "lowering lowers new widely",
+    "hello world hello world"
+]
+probs = train_unigram(texts, vocab_size=30, num_iters=10)
+print("最终词汇 (按概率排序):", 
+      sorted(probs.keys(), key=lambda x: (-probs[x], x))[:20])
 ```
 
 ## 五、三种算法对比与典型模型示例（①+②）
@@ -342,7 +409,7 @@ print("最终词汇:", sorted(probs.keys()))
 | 特性 | BPE | WordPiece | SentencePiece (Unigram) |
 |---|---|---|---|
 | **合并准则** | 频率最高 | 似然最大化 | 概率模型 + EM 算法 |
-| **预分词依赖** | 需要（按空格） | 需要（按空格） | **不需要**（原始字节流） |
+| **预分词依赖** | 需要（按空格） | 需要（按空格） | **不需要**（经过规范化的原始文本流） |
 | **空格处理** | 预分词时处理 | 预分词时处理 | 编码为 `▁` 加入词表 |
 | **多语言支持** | 中等 | 中等 | **优秀** |
 | **编码方式** | 按合并规则 | 贪心最长匹配 | 维特比算法 |

@@ -1,18 +1,18 @@
 # 熟悉 padding、truncation、max_length 等关键参数
 
-权威文章：《Tokenizers - Hugging Face NLP Course》\
+权威文章：《Tokenizers - Hugging Face NLP Course》  
 　　网址：https://huggingface.co/learn/nlp-course/chapter2/4
 
-权威文章：《Tokenizer API Reference》\
+权威文章：《Tokenizer API Reference》  
 　　网址：https://huggingface.co/docs/transformers/main_classes/tokenizer
 
-① 底稿：《Hugging Face transformers 库中 tokenizer 常用的方法和属性》\
+① 底稿：《Hugging Face transformers 库中 tokenizer 常用的方法和属性》  
 　　网址：https://blog.csdn.net/u013172930/article/details/146155496
 
-② 参考文章：《Hugging Face Tokenizer的padding、truncation参数详解：如何让你的BERT/RoBERTa输入不出错？》\
+② 参考文章：《Hugging Face Tokenizer的padding、truncation参数详解：如何让你的BERT/RoBERTa输入不出错？》  
 　　网址：https://blog.csdn.net/weixin_42537499/article/details/161131794
 
-③ 参考文章：《HuggingFace Transformers库实战：Tokenizer与Model的高效应用指南》\
+③ 参考文章：《HuggingFace Transformers库实战：Tokenizer与Model的高效应用指南》  
 　　网址：https://blog.csdn.net/p8q9r0/article/details/151163743
 
 > **适合人群**：已完成"掌握 HuggingFace Tokenizer 的加载与使用"章节，能够使用 `AutoTokenizer.from_pretrained()` 加载分词器并执行基础编码解码的初学者。本节时长约 0.5 小时，目标是深入理解 `padding`、`truncation`、`max_length` 等关键参数的行为差异，能够根据任务场景选择正确的配置，避免"维度不匹配"等常见错误。（①+②）
@@ -85,7 +85,7 @@ encoded = tokenizer(texts, padding=True, return_tensors="pt")
 
 | 取值 | 行为 | 适用场景 |
 |---|---|---|
-| `True` 或 `'longest_first'` | 对于单个序列从右侧截断；对于句子对，同时从两个序列中移除 token，直到总长度满足要求 | 通用场景 |
+| `True` 或 `'longest_first'` | 对单序列按照 `truncation_side` 截断；对句子对逐步从当前较长的序列中删除 token，直到满足 `max_length` | 通用场景 |
 | `'only_first'` | 只截断第一个序列（句子对中的第一个参数） | 问答任务中截断过长的 context，保留 question |
 | `'only_second'` | 只截断第二个序列（句子对中的第二个参数） | 保留 context，截断 question |
 | `False` 或 `'do_not_truncate'`（默认） | 不截断，超长时可能报错 | 确保不丢失信息 |
@@ -183,7 +183,7 @@ trainer = Trainer(
 |---|---|---|
 | `RuntimeError: stack expects each tensor...` | batch 内长度不一致且未设置 padding | 添加 `padding=True` 或 `padding='max_length'` |
 | 截断后丢失关键信息 | truncation 策略不当 | 使用 `only_first`/`only_second` 精准控制 |
-| padding 后 attention_mask 全为 1 | 未正确设置 padding | 检查 `attention_mask` 是否为 0/1 混合 |
+| 预期存在 padding 但 `attention_mask` 对应位置仍为 1 | tokenizer 或 padding 配置异常 | 检查 tokenizer 的 `pad_token_id` 和 `padding` 参数是否正确设置 |
 | 生成模型输出异常 | GPT 等模型用了 right padding | 设置 `padding_side='left'` |
 | 显存占用过高 | `max_length` 设置过大 | 根据实际数据分布设置合理的 `max_length` |
 

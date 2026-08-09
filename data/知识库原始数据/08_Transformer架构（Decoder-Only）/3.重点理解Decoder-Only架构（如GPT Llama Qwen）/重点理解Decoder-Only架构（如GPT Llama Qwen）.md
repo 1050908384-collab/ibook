@@ -1,15 +1,15 @@
 # 重点理解 Decoder-Only 架构（如 GPT / Llama / Qwen）
 
-权威文章：《LLaMA: Open and Efficient Foundation Language Models》\
+权威文章：《LLaMA: Open and Efficient Foundation Language Models》  
 　　网址：https://arxiv.org/abs/2302.13971
 
-权威文章：《Introduction - Hugging Face NLP Course》\
+权威文章：《Introduction - Hugging Face NLP Course》  
 　　网址：https://huggingface.co/learn/nlp-course/chapter1/1
 
-① 底稿：《面试题详解：GPT 系列、Llama 系列、Qwen 系列全解析》\
+① 底稿：《面试题详解：GPT 系列、Llama 系列、Qwen 系列全解析》  
 　　网址：https://blog.csdn.net/qq1137623160/article/details/161144938
 
-② 参考文章：《Qwen 3 架构介绍：模块详解与相对 Qwen 1 / Qwen 2 的演进》\
+② 参考文章：《Qwen 3 架构介绍：模块详解与相对 Qwen 1 / Qwen 2 的演进》  
 　　网址：https://blog.csdn.net/zyctimes/article/details/159828385
 
 > **适合人群**：已完成"掌握 Transformer 的 Encoder-Decoder 结构"章节，理解 Encoder 双向编码、Decoder 单向自回归生成、三种 Attention 数据流差异的初学者。本节时长约 1 小时，目标是理解 Decoder-Only 架构的设计动机，掌握 GPT、Llama、Qwen 三条演进主线的核心差异，能够回答"为什么 GPT 去掉 Encoder 后仍然能工作"这一关键问题。（①）
@@ -20,24 +20,7 @@
 
 ### 1.1 为什么可以去掉 Encoder？（①）
 
-原始 Transformer 的 Encoder-Decoder 结构是为**机器翻译**这类 Seq2Seq 任务设计的：Encoder 把源语言编码成中间表示，Decoder 根据中间表示生成目标语言。这里有一个前提——**输入和输出是不同模态或不同语言的序列**，所以需要 Encoder 专门做"理解"、Decoder 专门做"生成"。
-
-但大语言模型（LLM）面对的任务往往**输入和输出是同一种语言**（都是自然语言文本）。例如：
-- 翻译：输入英文 → 输出中文（Seq2Seq，需要 Encoder-Decoder）
-- 续写：输入"今天天气很好" → 输出"适合去公园散步"（输入输出都是中文）
-- 问答：输入"什么是注意力机制？" → 输出解释文本（输入输出都是自然语言）
-
-对于后两类任务，我们可以把**输入和输出拼接在一起**，统一用**因果掩码**处理：（①）
-
-```
-输入:  今天天气很好
-输出:  适合去公园散步
-拼接:  今天天气很好适合去公园散步
-        ↑ 这部分是"已知的过去"
-                          ↑ 这部分是"要预测的未来"
-```
-
-Decoder 的因果掩码天然支持这种"已知部分双向可见、未知部分只能看过去"的模式。因此，**不需要单独的 Encoder 来做理解**，Decoder 自己就能同时承担"理解输入"和"生成输出"的双重职责。（①）
+Decoder-Only 使用统一的因果语言建模目标，将输入与输出组织为同一个 token 序列。prompt 内部仍遵守从左到右的因果可见性，而输出 token 能访问其之前的全部 prompt。Decoder-Only 通过统一目标和结构获得较好的扩展性，但 Encoder-Decoder 在翻译、摘要等条件生成任务中仍具有独立编码输入、计算复用和任务归纳偏置等优势。架构选择取决于训练目标、任务类型和工程约束，不能仅根据输入输出是否为同一种模态判断。（①）
 
 ### 1.2 统一框架：Causal Language Modeling（①）
 
@@ -53,10 +36,10 @@ $$P(x_1, x_2, ..., x_n) = \prod_{t=1}^{n} P(x_t | x_1, ..., x_{t-1})$$
 |---|---|
 | **架构简化** | 没有 Encoder 和 Cross-Attention，参数量全部集中在 Decoder，更容易扩展到超大规模 |
 | **数据要求低** | 不需要成对的输入-输出数据，任何纯文本都可以作为训练数据 |
-| **统一接口** | 所有任务（问答、摘要、翻译、代码）都转化为"续写"问题，通过 prompt 设计即可切换 |
+| **统一接口** | 问答、摘要、代码等任务可转化为"续写"问题，通过 prompt 设计即可切换 |
 | **推理高效** | KV Cache 只需要缓存 Decoder 自己的 K 和 V，不需要额外缓存 Encoder 输出 |
 
-> **关键理解**：Decoder-Only 不是"偷工减料"，而是针对"输入输出同模态"任务的**架构归一化**。当输入和输出都是文本时，Encoder-Decoder 中的 Cross-Attention 是冗余的——Decoder 的因果注意力已经能让每个输出位置关注到所有输入位置。（①）
+> **关键理解**：Decoder-Only 针对"输入输出同模态"任务做了架构归一化。当输入和输出都是文本时，Decoder 的因果注意力已能让每个输出位置关注到所有输入位置，但 Encoder-Decoder 在特定条件生成任务中仍有其独特优势。（①）
 
 ## 二、GPT 系列：Decoder-Only 的开山鼻祖（①）
 
@@ -170,7 +153,7 @@ Qwen3 的预训练不是"一把梭"，而是分阶段推进：（②）
 | **推理模式** | 单一生成 | 单一生成 | **Thinking / Non-Thinking 统一** |
 | **开源策略** | 闭源（GPT-3 后） | 开源权重 | 开源权重（Apache 2.0） |
 
-> **面试高频考点**：回答"GPT / Llama / Qwen 有什么区别"时，最稳的层次是：先答"它们都是 Decoder-only Transformer"，再答"各自在组件选择、规模策略、训练数据、后训练方式上的差异"，最后补"这些差异带来了什么能力变化"。（①）
+> **面试高频考点**：回答"GPT / Llama / Qwen 有什么区别"时，较为稳妥的层次是：先答"它们都是 Decoder-only Transformer"，再答"各自在组件选择、规模策略、训练数据、后训练方式上的差异"，最后补"这些差异带来了什么能力变化"。（①）
 
 ## 六、用 transformers 库观察 Decoder-Only 模型结构（权威① + ②）
 
@@ -282,7 +265,7 @@ Qwen2.5-0.5B (假设 MHA) KV Cache: 8.20 MB
 | 问题 | 可能原因 | 解决方案 |
 |---|---|---|
 | "Decoder-Only 怎么理解输入？" | 忽略了输入输出拼接机制 | 输入和输出拼接为统一序列，因果掩码让输出位置能看到所有输入位置（①） |
-| "为什么不用 Encoder-Decoder 做 LLM？" | 混淆了任务类型 | Encoder-Decoder 适合输入输出不同模态（如翻译）；Decoder-Only 适合同模态文本任务（①） |
+| "为什么不用 Encoder-Decoder 做 LLM？" | 混淆了任务类型 | Encoder-Decoder 适合输入输出不同模态（如翻译）；Decoder-Only 适合同模态文本任务，但架构选择需综合考虑任务类型和工程约束（①） |
 | "Llama 和 GPT 架构完全不同吗？" | 过度夸大差异 | 核心都是 Decoder-Only，差异主要在组件选择（RMSNorm、RoPE、SwiGLU）（权威①） |
 | "Qwen3 的 MoE 是多出来的层吗？" | 误解 MoE 结构 | MoE **只替换 FFN**，注意力层与稠密模型完全相同（②） |
 | "Thinking / Non-Thinking 是两套权重吗？" | 误解模式切换 | 同一套权重，通过后训练和 chat template 控制行为（①） |
@@ -291,7 +274,7 @@ Qwen2.5-0.5B (假设 MHA) KV Cache: 8.20 MB
 
 恭喜你完成了 Decoder-Only 架构的深入学习！你现在应该掌握了：
 
-- ✅ Decoder-Only 的设计动机：输入输出同模态时，因果掩码已足够，无需 Encoder 和 Cross-Attention
+- ✅ Decoder-Only 的设计动机：使用统一因果语言建模目标，将输入输出组织为同一序列，但 Encoder-Decoder 在条件生成任务中仍有优势
 - ✅ 统一训练目标 Causal Language Modeling（Next Token Prediction）的优势
 - ✅ GPT 系列演进：GPT-1（预训练+微调）→ GPT-2（zero-shot 涌现）→ GPT-3（prompt 即接口）
 - ✅ Llama 系列核心改进：Pre-RMSNorm、RoPE、SwiGLU，以及三代定位差异

@@ -1,12 +1,12 @@
 # 了解 ChatTemplate 对话模板格式
 
-权威文章：《Chat templates》\
+权威文章：《Chat templates》  
 　　网址：https://huggingface.co/docs/transformers/main/en/chat_templating
 
-① 底稿：《tokenizer.apply_chat_template()》\
+① 底稿：《tokenizer.apply_chat_template()》  
 　　网址：https://blog.csdn.net/KIKI3666/article/details/156544210
 
-② 参考文章：《tokenizer的apply_chat_template》\
+② 参考文章：《tokenizer的apply_chat_template》  
 　　网址：https://blog.csdn.net/l963852k/article/details/148840510
 
 > **适合人群**：已完成"熟悉 padding、truncation、max_length 等关键参数"章节，能够使用 `AutoTokenizer` 进行编码的初学者。本节时长约 0.5 小时，目标是理解 ChatTemplate 的作用，掌握 `apply_chat_template` 的用法，能够区分不同模型的对话格式，并在推理和微调场景中正确应用。（①+②）
@@ -22,7 +22,7 @@
 - **`meta-llama/Meta-Llama-3-8B-Instruct`** 使用 `<|start_header_id|>user<|end_header_id|>\n...<|eot_id|>`
 - **`HuggingFaceH4/zephyr-7b-beta`** 使用 `<|user|>\n...<|assistant|>\n`
 
-> **关键认知**：这些控制 token 不是装饰，而是模型训练时的"语法"。用错格式，模型性能可能急剧下降。（②）
+> **关键认知**：这些控制 token 不是装饰，而是模型训练时的"语法"。用错格式，模型效果通常会很差。（②）
 
 > **本地运行配置要求**：本节代码均为纯 Python 操作，无需 GPU，CPU 即可运行，内存建议 ≥ 4GB。首次加载模型时需要联网下载 tokenizer 配置文件（体积通常在数 MB 以内）。
 
@@ -109,9 +109,29 @@ dataset = raw_dataset.map(format_example)
 
 某些框架（如 TRL）会在内部自动调用 `apply_chat_template`，此时你的原始数据不应预先套模板，只需提供原始 messages，由框架统一处理 `add_generation_prompt`。
 
-**场景三：由数据整理器自动套模板**
+**场景三：在 dataset.map() 预处理阶段显式套模板（推荐做法）**
 
-如果使用 `DataCollatorForSeq2Seq` 等工具，它们通常会在 collate 阶段自动拼接输入和标签。此时需要确认 collator 是否已内部处理了 chat template，避免在预处理阶段重复调用 `apply_chat_template`。
+如果你使用标准的 `Trainer` 或自定义训练循环，推荐在数据预处理阶段通过 `dataset.map()` 显式调用 `apply_chat_template`，将 messages 转换为模型输入字符串。数据整理器（Data Collator）只负责 padding 和 tensor 拼接，**不会自动套用 ChatTemplate**：
+
+```python
+def format_example(example):
+    # 显式调用 apply_chat_template，在预处理阶段完成格式转换
+    text = tokenizer.apply_chat_template(
+        example["messages"],
+        tokenize=False,
+        add_generation_prompt=False
+    )
+    return {"text": text}
+
+dataset = raw_dataset.map(format_example)
+# 后续由 DataCollator 或自定义 collator 处理 padding
+```
+
+> **注意**：`DataCollatorForSeq2Seq` 等普通数据整理器不会自动调用 `apply_chat_template`。如果你在预处理阶段没有显式套模板，训练时模型看到的将是未经格式化的原始文本，导致效果下降。（权威+①）
+
+**场景四：使用 TRL 等框架的自动处理**
+
+如果你使用 TRL（Transformer Reinforcement Learning）库进行微调，部分版本（如 TRL ≥ 0.8）的 `SFTTrainer` 支持在内部自动处理 conversational 数据集。此时需要查阅对应版本的文档，确认是否需要在预处理阶段手动调用 `apply_chat_template`。例如，某些 TRL 版本要求数据格式为 `{"messages": [...]}`，由 `SFTTrainer` 内部调用模板；而另一些版本则要求预处理后的文本格式。请以你使用的 TRL 版本官方文档为准。
 
 > **关键提醒**：不要在数据预处理阶段手动套模板后，又在 collator 或训练器中再次套模板；也不要在已有 assistant 回复的数据上额外添加 `add_generation_prompt=True`，否则会导致标签错位。（权威+①）
 
@@ -124,7 +144,7 @@ dataset = raw_dataset.map(format_example)
 | `HuggingFaceH4/zephyr-7b-beta` | Zephyr | `<|user|>\n...<|assistant|>\n` |
 | `mistralai/Mistral-7B-Instruct-v0.2` | Mistral | `<s>[INST] ... [/INST]` |
 
-> **重要**：不同模型模板**不能混用**！用 `Qwen/Qwen2.5-0.5B-Instruct` 的模板去调 `meta-llama/Meta-Llama-3-8B-Instruct` 模型，效果通常会很差。（②）
+> **重要**：不同模型模板**通常不能混用**。用 `Qwen/Qwen2.5-0.5B-Instruct` 的模板去调 `meta-llama/Meta-Llama-3-8B-Instruct` 模型，效果通常会很差。（②）
 
 ## 六、查看和自定义模板（①）
 
@@ -180,6 +200,10 @@ print(tokenizer.decode(outputs[0], skip_special_tokens=True))
 
 ### 7.2 CUDA 推理（需要 NVIDIA GPU）
 
+> **环境依赖**：CUDA 推理示例需要安装 `accelerate` 库（`pip install accelerate`），用于 `device_map="auto"` 的自动设备分配。经测试，`accelerate` ≥ 0.20 版本通常可与 `transformers` 配合正常工作，具体兼容版本请以官方文档为准。
+>
+> **硬件兼容性说明**：`torch.bfloat16` 需要 GPU 支持 BF16（如 NVIDIA Ampere 架构及以后的 A100、RTX 30/40 系列等）。如果你的 GPU 不支持 BF16（如 Pascal、Turing 架构的 GTX 1080 Ti、RTX 2080 等），请将 `torch_dtype` 改为 `torch.float16`；CPU 推理请使用 `torch.float32`（见 7.1 节）。
+
 ```python
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
@@ -187,10 +211,10 @@ import torch
 model_id = "Qwen/Qwen2.5-0.5B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-# CUDA 推理可使用 bfloat16 节省显存
+# CUDA 推理：支持 BF16 的 GPU（Ampere+）使用 bfloat16，否则改用 float16
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
-    torch_dtype=torch.bfloat16,
+    torch_dtype=torch.bfloat16,  # 不支持 BF16 的 GPU 请改为 torch.float16
     device_map="auto"
 )
 

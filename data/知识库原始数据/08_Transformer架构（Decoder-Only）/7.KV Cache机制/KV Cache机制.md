@@ -117,7 +117,7 @@ $$\text{Memory}_{\text{per layer}} = \text{batch\_size} \times \text{seq\_len} \
 |-----------|--------------------------|-------------|
 | **标准多头注意力 (MHA)** | `num_key_value_heads = num_heads` | `openai-community/gpt2`、`meta-llama/Llama-2-7b` |
 | **分组查询注意力 (GQA)** | `num_key_value_heads < num_heads`（如 1/4 或 1/8） | `meta-llama/Llama-2-70b`、`meta-llama/Llama-3-8B` |
-| **多查询注意力 (MQA)** | `num_key_value_heads = 1` | `google/palm-2-xxx`、`tiiuae/falcon-7b` |
+| **多查询注意力 (MQA)** | `num_key_value_heads = 1` | PaLM 系列（《PaLM: Scaling Language Modeling with Pathways》）、`tiiuae/falcon-7b` |
 
 对于全部 $L$ 层：
 
@@ -144,12 +144,28 @@ $$\text{Memory} = 64 \times 2048 \times 512\ \text{KB} = 64\ \text{GB}$$
 
 ## 四、极简代码实现
 
-以下是一个接近 Hugging Face Transformers 风格的极简实现，帮助你理解 KV Cache 在代码中如何工作。（①）
+以下是一个接近 Hugging Face Transformers 风格的极简实现，支持 MHA、GQA 和 MQA，帮助你理解 KV Cache 在代码中如何工作。（①）
 
 ```python
 import torch
 import torch.nn as nn
 import math
+
+def repeat_kv(hidden_states, n_rep):
+    """
+    将 K/V 从 [batch, num_kv_heads, seq_len, head_dim] 
+    重复扩展到 [batch, num_heads, seq_len, head_dim]，
+    用于 GQA/MQA 场景。
+    """
+    batch, num_kv_heads, slen, head_dim = hidden_states.shape
+    if n_rep == 1:
+        return hidden_states
+    # 先扩展维度，再 reshape
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
+    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
+
 
 class DecoderLayerWithKVCache(nn.Module):
     def __init__(self, d_model, n_heads, num_key_value_heads=None):
@@ -158,8 +174,13 @@ class DecoderLayerWithKVCache(nn.Module):
         self.num_key_value_heads = num_key_value_heads or n_heads
         self.head_dim = d_model // n_heads
         
+        # GQA/MQA 要求 n_heads 能被 num_key_value_heads 整除
+        assert n_heads % self.num_key_value_heads == 0, \
+            f"n_heads ({n_heads}) 必须能被 num_key_value_heads ({self.num_key_value_heads}) 整除"
+        self.n_rep = n_heads // self.num_key_value_heads
+        
         self.Wq = nn.Linear(d_model, d_model)
-        # 注意：GQA/MQA 中 Wk/Wv 的输出维度可能小于 d_model
+        # GQA/MQA 中 Wk/Wv 的输出维度按实际 KV 头数计算
         kv_dim = self.num_key_value_heads * self.head_dim
         self.Wk = nn.Linear(d_model, kv_dim)
         self.Wv = nn.Linear(d_model, kv_dim)
@@ -183,16 +204,18 @@ class DecoderLayerWithKVCache(nn.Module):
         k = k.view(batch_size, seq_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
         v = v.view(batch_size, seq_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
         
-        # 如果有历史缓存，拼接
+        # 如果有历史缓存，拼接（缓存中始终保存未扩展的 K/V）
         if past_kv is not None:
             past_k, past_v = past_kv
             k = torch.cat([past_k, k], dim=2)   # 沿序列长度维度拼接
             v = torch.cat([past_v, v], dim=2)
         
-        # 为了计算，需要将 K/V 广播到与 Q 相同的头数（GQA/MQA 场景）
-        # 简化处理：假设标准多头注意力，num_kv_heads == n_heads
+        # GQA/MQA：将 K/V 临时扩展到与 Q 相同的头数，再计算 Attention
+        k_expanded = repeat_kv(k, self.n_rep)
+        v_expanded = repeat_kv(v, self.n_rep)
+        
         # Scaled Dot-Product Attention
-        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        scores = torch.matmul(q, k_expanded.transpose(-2, -1)) / math.sqrt(self.head_dim)
         
         # Causal Mask：q 中第 i 个 token 只能看到 k 中前 (past_len + i + 1) 个位置
         seq_len_total = k.size(2)
@@ -204,16 +227,16 @@ class DecoderLayerWithKVCache(nn.Module):
         scores = scores.masked_fill(mask.to(scores.device), float('-inf'))
         
         attn = torch.softmax(scores, dim=-1)
-        out = torch.matmul(attn, v)  # [batch, n_heads, seq, head_dim]
+        out = torch.matmul(attn, v_expanded)  # [batch, n_heads, seq, head_dim]
         
         # 合并多头
         out = out.transpose(1, 2).contiguous().view(batch_size, seq_len, -1)
         out = self.Wo(out)
         
-        return out, (k, v)  # 返回输出和更新后的 KV Cache
+        return out, (k, v)  # 返回输出和未扩展的 KV Cache
 
 
-# ========== 推理演示 ==========
+# ========== 推理演示：标准 MHA ==========
 d_model, n_heads, num_layers = 512, 8, 6
 layers = [DecoderLayerWithKVCache(d_model, n_heads) for _ in range(num_layers)]
 
@@ -243,16 +266,38 @@ for step in range(5):
     print(f"Step {step+1}: KV Cache 长度变为 {past_kvs[0][0].size(2)}")
 
 # 最终 KV Cache 长度 = prompt_len + 5 = 15
+
+
+# ========== 推理演示：GQA（num_kv_heads=2） ==========
+print("\n=== GQA 演示（n_heads=8, num_kv_heads=2）===")
+layers_gqa = [DecoderLayerWithKVCache(d_model, n_heads=8, num_key_value_heads=2) 
+              for _ in range(num_layers)]
+
+x = torch.randn(1, prompt_len, d_model)
+past_kvs_gqa = [None] * num_layers
+
+for i, layer in enumerate(layers_gqa):
+    x, past_kvs_gqa[i] = layer(x, past_kv=past_kvs_gqa[i])
+
+print(f"GQA Prefill 后 K 形状: {past_kvs_gqa[0][0].shape}")
+# 预期: [1, 2, 10, 64] —— 缓存中只保存 2 个 KV 头，而非 8 个
+
+for step in range(3):
+    x_new = torch.randn(1, 1, d_model)
+    for i, layer in enumerate(layers_gqa):
+        x_new, past_kvs_gqa[i] = layer(x_new, past_kv=past_kvs_gqa[i])
+    print(f"GQA Step {step+1}: KV Cache 长度 {past_kvs_gqa[0][0].size(2)}")
 ```
 
 > **本地运行配置要求**：纯 CPU 即可运行，内存 ≥ 4GB。
 
 ### 4.1 关键代码解读
 
-1. **`past_kv` 参数**：接收上一层的 `(K, V)` 缓存，形状为 `[batch, num_kv_heads, past_len, head_dim]`
-2. **`torch.cat` 拼接**：将历史 K/V 与当前新 token 的 K/V 沿序列长度维度拼接
-3. **Causal Mask**：`q` 中第 `i` 个 token 只能看到 `k` 中前 `past_len + i + 1` 个位置。当 `past_len=0` 时退化为标准下三角 mask；当 `seq_len=1`（逐 token 解码）时，当前 token 可看到全部历史位置
-4. **Prefill vs Decoding**：Prefill 阶段输入完整 prompt，Decoding 阶段每步只输入 1 个新 token
+1. **`repeat_kv` 函数**：GQA/MQA 的核心。将 K/V 从 `num_kv_heads` 通过维度扩展+reshape 重复到 `num_heads`，使 Q/K/V 头数对齐以计算 Attention。计算完成后，缓存中仍保存未扩展的 K/V，保持显存节省效果。
+2. **`past_kv` 参数**：接收上一层的 `(K, V)` 缓存，形状为 `[batch, num_kv_heads, past_len, head_dim]`。
+3. **`torch.cat` 拼接**：将历史 K/V 与当前新 token 的 K/V 沿序列长度维度拼接。
+4. **Causal Mask**：`q` 中第 `i` 个 token 只能看到 `k` 中前 `past_len + i + 1` 个位置。当 `past_len=0` 时退化为标准下三角 mask；当 `seq_len=1`（逐 token 解码）时，当前 token 可看到全部历史位置。
+5. **Prefill vs Decoding**：Prefill 阶段输入完整 prompt，Decoding 阶段每步只输入 1 个新 token。
 
 ## 五、工业级挑战：KV Cache 内存管理
 
@@ -312,7 +357,7 @@ vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定�
 
 ### 6.1 Multi-Query Attention (MQA)
 
-所有 Query 头**共享同一组 K 和 V**。KV Cache 大小降为原来的 $1/\text{num\_heads}$。`google/palm-2-xxx`、`tiiuae/falcon-7b` 等模型采用，在特定条件下可提升推理速度，但可能带来轻微质量损失。（①）
+所有 Query 头**共享同一组 K 和 V**。KV Cache 大小降为原来的 $1/\text{num\_heads}$。PaLM 系列（《PaLM: Scaling Language Modeling with Pathways》）、`tiiuae/falcon-7b` 等模型采用，在特定条件下可提升推理速度，但可能带来轻微质量损失。（①）
 
 ### 6.2 Grouped-Query Attention (GQA)
 
@@ -348,7 +393,7 @@ vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定�
 - ✅ **为什么需要 KV Cache**：自回归生成存在大量重复计算，不加缓存时复杂度为 $O(T^3)$
 - ✅ **核心原理**：只缓存历史 token 静态不变的 K 和 V，每步只需计算新 token 的 Q，复杂度降为 $O(T^2)$
 - ✅ **内存开销**：能够用公式估算任意模型的 KV Cache 显存占用，理解 `num_key_value_heads` 在标准多头/GQA/MQA 中的差异
-- ✅ **代码实现**：理解 `past_key_values` 的工作模式，掌握 Prefill 和 Decoding 两阶段的分工，以及带 `past_len` 偏移的 Causal Mask
+- ✅ **代码实现**：理解 `past_key_values` 的工作模式，掌握 Prefill 和 Decoding 两阶段的分工，以及带 `past_len` 偏移的 Causal Mask；通过 `repeat_kv` 支持 GQA/MQA
 - ✅ **工业级优化**：理解 PagedAttention 如何通过块级内存管理解决碎片问题，以及 MQA/GQA/量化等压缩技术
 
 > **下一步预告**：在下一节 **"前向传播实验（加载 GPT-2 验证理解）"** 中，我们将使用 Hugging Face Transformers 库加载真实的 GPT-2 模型，实际观察 `past_key_values` 的返回结构，验证我们对 Decoder-Only 架构、RoPE、KV Cache 的理解。现在，试着修改上面的代码，将 `batch_size` 设为 4，观察 KV Cache 的 shape 变化，并计算此时生成 1000 个 token 的预估显存占用！

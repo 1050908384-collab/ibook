@@ -1,21 +1,21 @@
 # 掌握 HuggingFace Tokenizer 的加载与使用
 
-权威文章：《Tokenizers - Hugging Face NLP Course》\
+权威文章：《Tokenizers - Hugging Face NLP Course》  
 　　网址：https://huggingface.co/learn/nlp-course/chapter2/4
 
-权威文章：《Tokenizer API Reference》\
+权威文章：《Tokenizer API Reference》  
 　　网址：https://huggingface.co/docs/tokenizers/api/tokenizer
 
-① 底稿：《Hugging Face transformers 库中的 from_pretrained 和 save_pretrained：加载和保存模型及分词器》\
+① 底稿：《Hugging Face transformers 库中的 from_pretrained 和 save_pretrained：加载和保存模型及分词器》  
 　　网址：https://blog.csdn.net/u013172930/article/details/146151747
 
-② 参考文章：《深入解析 AutoTokenizer.from_pretrained 参数及其应用场景》\
+② 参考文章：《深入解析 AutoTokenizer.from_pretrained 参数及其应用场景》  
 　　网址：https://blog.csdn.net/weixin_29201313/article/details/158904800
 
-③ 参考文章：《（详细讲解）transformers 中的 AutoTokenizer 的用法》\
+③ 参考文章：《（详细讲解）transformers 中的 AutoTokenizer 的用法》  
 　　网址：https://blog.csdn.net/qq_43391414/article/details/149350893
 
-④ 参考文章：《HuggingFace 学习笔记--Tokenizer 的使用》\
+④ 参考文章：《HuggingFace 学习笔记--Tokenizer 的使用》  
 　　网址：https://blog.csdn.net/weixin_43863869/article/details/134631725
 
 > **适合人群**：已完成"理解 BPE、WordPiece、SentencePiece 算法原理"章节，理解子词分词核心思想的初学者。本节时长约 0.5 小时，目标是掌握使用 HuggingFace `AutoTokenizer` 加载预训练分词器、执行编码解码、批量处理和保存加载，能够独立完成文本到模型输入的转换。（①+③）
@@ -63,7 +63,7 @@ tokenizer_gpt2 = AutoTokenizer.from_pretrained("gpt2")
 | `use_fast=True` | 使用 Rust 实现的快速分词器（默认） | 批量处理时速度通常更快 |
 | `trust_remote_code=True` | 允许执行远程自定义代码 | 部分社区模型需要 |
 
-> `use_fast=True`（默认）会尝试加载 `tokenizers` 库提供的 Rust 实现分词器。在特定条件下，其速度通常比纯 Python 实现快数倍至数十倍。如果遇到分词结果异常，可设为 `False` 回退到慢速版本。（②）
+> `use_fast=True`（默认）会尝试加载 `tokenizers` 库提供的 Rust 实现分词器。在批量处理场景下，其速度通常比纯 Python 实现快数倍至数十倍（具体取决于文本长度和 batch size）。如果遇到分词结果异常，可设为 `False` 回退到慢速版本。（②）
 
 ### 2.3 从本地路径加载（①）
 
@@ -200,7 +200,7 @@ encoded = tokenizer.batch_encode_plus(
 |---|---|---|---|
 | **`bert-base-chinese`** | WordPiece | `[CLS]`, `[SEP]`, `[PAD]` | 双句分类任务用 `[SEP]` 分隔；输入长度通常限制在 512 以内 |
 | **`gpt2`** | Byte-level BPE | `<\|endoftext\|>` | 默认没有 `pad_token`，通常需要手动设置；输入长度通常限制在 1024 以内 |
-| **`meta-llama/Llama-2-7b-hf`** | Byte-level BPE | `<\|begin_of_text\|>`, `<\|end_of_text\|>` | 需严格设置 `pad_token` 和 `eos_token`；支持更长上下文 |
+| **`meta-llama/Llama-2-7b-hf`** | SentencePiece BPE | `<s>`, `</s>` | 需严格设置 `pad_token`；原始上下文长度 4096 |
 | **`roberta-base`** | BPE | `<s>`, `</s>` | 使用 `</s>` 替代 `[SEP]`；支持句子对任务 |
 
 ### 6.1 GPT-2 的 pad_token 缺失（③）
