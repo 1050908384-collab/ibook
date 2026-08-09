@@ -1215,14 +1215,14 @@ body.resizing-workspace-panels * {
 }
 
 .profile-goal-list > article {
-  min-height: 94px;
+  min-height: 124px;
   border: 1px solid #e1e4eb;
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 5px 16px rgba(28, 34, 53, 0.04);
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   gap: 14px;
   padding: 14px 16px;
 }
@@ -1313,6 +1313,7 @@ body.resizing-workspace-panels * {
   display: flex;
   align-items: center;
   gap: 8px;
+  align-self: center;
 }
 
 .profile-goal-actions button {
@@ -1784,6 +1785,21 @@ body.resizing-workspace-panels * {
   background: #fff;
   color: #3f4757;
   padding: 7px 10px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.stage-knowledge-list .path-subtopic:hover,
+.stage-knowledge-list .path-subtopic:focus-visible {
+  border-color: #bdb8ef;
+  background: #faf9ff;
+  outline: none;
+}
+
+.stage-knowledge-list .path-subtopic.current {
+  border-color: #6258d9;
+  background: #f1efff;
+  color: #5147bd;
 }
 
 .stage-knowledge-list .path-subtopic > i {

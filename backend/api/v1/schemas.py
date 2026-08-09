@@ -112,11 +112,23 @@ def to_public_learning_package(
             for index, video in enumerate(package.get("recommended_videos", []), start=1)
             if isinstance(video, dict)
         ]
+    # Fallback stages can intentionally omit a catalog subtopic.  The public
+    # contract still requires a displayable string, so use the diagnosed gap
+    # or block title instead of passing None into Pydantic validation.
+    public_subtopic_name = (
+        stage.get("subtopic_name")
+        or package.get("subtopic_name")
+        or stage.get("gap_skill")
+        or package.get("gap_skill")
+        or stage.get("block_name")
+        or package.get("block_name", "")
+    )
+
     return PublicLearningPackage(
         stage_id=stage.get("stage_id", package.get("stage_id")),
         stage_num=stage.get("stage_num", 1),
         block_name=stage.get("block_name", package.get("block_name", "")),
-        subtopic_name=stage.get("subtopic_name", ""),
+        subtopic_name=public_subtopic_name,
         estimated_hours=stage.get("estimated_hours", 0),
         tutorial=package.get("tutorial"),
         code_examples=package.get("code_examples", []),
