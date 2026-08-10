@@ -34,10 +34,8 @@
 
 ---
 
-# 一、为什么需要 AutoModel 和 AutoTokenizer？（①②）
-
-## 1.1 Transformers加载模型的基本流程（①）
-
+## 一、为什么需要 AutoModel 和 AutoTokenizer？（①②）
+### 1.1 Transformers加载模型的基本流程（①）
 大语言模型不能直接理解文本。
 
 例如：
@@ -79,8 +77,7 @@ Hugging Face Transformers提供了统一接口，让不同模型都可以使用�
 
 ---
 
-## 1.2 为什么不用具体模型类？
-
+### 1.2 为什么不用具体模型类？
 传统方式：
 
 加载BERT：
@@ -126,10 +123,8 @@ AutoTokenizer
 
 ---
 
-# 二、AutoTokenizer：自动加载分词器（参考文章⑥⑧）
-
-## 2.1 Tokenizer是什么？
-
+## 二、AutoTokenizer：自动加载分词器（参考文章⑥⑧）
+### 2.1 Tokenizer是什么？
 Tokenizer负责：
 
 1. 文本切分；
@@ -158,8 +153,7 @@ Hello AI
 
 ---
 
-## 2.2 使用AutoTokenizer加载模型（①⑥）
-
+### 2.2 使用AutoTokenizer加载模型（①⑥）
 基础代码：
 
 ```python
@@ -191,8 +185,7 @@ Transformers会自动：
 
 ---
 
-## 2.3 使用Tokenizer处理文本（②）
-
+### 2.3 使用Tokenizer处理文本（②）
 示例：
 
 ```python
@@ -237,10 +230,8 @@ print(inputs)
 
 ---
 
-# 三、AutoModel：自动加载模型（参考文章⑦）
-
-## 3.1 AutoModel是什么？
-
+## 三、AutoModel：自动加载模型（参考文章⑦）
+### 3.1 AutoModel是什么？
 `AutoModel` 是 Transformers 提供的自动模型加载接口。
 
 作用：
@@ -282,8 +273,7 @@ Auto Classes会根据模型名称或路径推断对应架构。
 
 ---
 
-## 电脑配置批注
-
+### 电脑配置批注
 本节包含本地模型下载与推理测试。
 
 最低配置：
@@ -319,10 +309,8 @@ Auto Classes会根据模型名称或路径推断对应架构。
 
 ---
 
-# 四、AutoModel + AutoTokenizer完整使用流程（参考文章⑥⑧）
-
-## 4.1 加载模型
-
+## 四、AutoModel + AutoTokenizer完整使用流程（参考文章⑥⑧）
+### 4.1 加载模型
 完整代码：
 
 ```python
@@ -360,8 +348,7 @@ model
 
 ---
 
-## 4.2 输入文本
-
+### 4.2 输入文本
 ```python
 text = "Hugging Face is amazing"
 
@@ -396,8 +383,7 @@ attention_mask: tensor(...)
 
 ---
 
-## 4.3 输入模型
-
+### 4.3 输入模型
 ```python
 outputs = model(**inputs)
 ```
@@ -423,8 +409,7 @@ model(
 
 ---
 
-## 4.4 查看模型输出
-
+### 4.4 查看模型输出
 ```python
 print(outputs)
 ```
@@ -444,10 +429,8 @@ pooler_output
 
 ---
 
-# 五、AutoModelFor系列：实际大模型更常用（参考文章⑦）
-
-## 5.1 为什么不用AutoModel？
-
+## 五、AutoModelFor系列：实际大模型更常用（参考文章⑦）
+### 5.1 为什么不用AutoModel？
 `AutoModel`返回：
 
 ```
@@ -473,8 +456,7 @@ AutoModelForCausalLM
 
 ---
 
-## 5.2 加载GPT类模型
-
+### 5.2 加载GPT类模型
 示例：
 
 ```python
@@ -514,8 +496,7 @@ model = AutoModelForCausalLM.from_pretrained(
 
 ---
 
-## 5.3 decoder-only 小模型完整生成示例（GPT-2）
-
+### 5.3 decoder-only 小模型完整生成示例（GPT-2）
 前面的 BERT 示例只做到"前向计算得到隐藏状态"，并没有真正**生成文本**。这里用小巧的 decoder-only 模型 GPT-2 演示一个**可运行的完整生成流程**，让本章与后续 LLM 微调路线衔接（真实对话模型如 Llama/Qwen 用法类似，但要额外套用 chat template，见后续章节）：
 
 ```python
@@ -564,10 +545,8 @@ print(text)
 
 ---
 
-# 六、模型加载参数详解（参考文章⑦）
-
-## 6.1 device_map
-
+## 六、模型加载参数详解（参考文章⑦）
+### 6.1 device_map
 指定设备：
 
 ```python
@@ -590,8 +569,7 @@ CPU
 
 ---
 
-## 6.2 torch_dtype
-
+### 6.2 torch_dtype
 指定精度：
 
 ```python
@@ -615,8 +593,7 @@ bfloat16
 
 ---
 
-## 6.3 local_files_only
-
+### 6.3 local_files_only
 只读取本地缓存：
 
 ```python
@@ -633,8 +610,7 @@ model = AutoModel.from_pretrained(
 
 ---
 
-# 七、从本地路径加载模型（参考文章⑧）
-
+## 七、从本地路径加载模型（参考文章⑧）
 除了：
 
 ```python
@@ -688,8 +664,7 @@ model = AutoModel.from_pretrained(
 
 ---
 
-# 八、常见错误排查
-
+## 八、常见错误排查
 | 错误                   | 原因              | 解决                |
 | -------------------- | --------------- | ----------------- |
 | Model name not found | 模型名称错误          | 检查Hub名称           |
@@ -700,8 +675,7 @@ model = AutoModel.from_pretrained(
 
 ---
 
-# 九、环境验证实验
-
+## 九、环境验证实验
 创建：
 
 ```
@@ -764,8 +738,7 @@ torch.Size([1, seq_len, 768])
 
 ---
 
-# 十、总结与后续学习路线
-
+## 十、总结与后续学习路线
 本章完成后，你已经掌握：
 
 ✅ AutoTokenizer加载方式
