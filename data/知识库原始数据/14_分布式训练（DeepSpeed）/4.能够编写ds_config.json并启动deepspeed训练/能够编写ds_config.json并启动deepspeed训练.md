@@ -1,3 +1,5 @@
+# 能够编写ds_config.json并启动deepspeed训练
+
 > **参考文章链接**
 > 
 > ① 底稿：《【DeepSpeed】多节点分布式训练》

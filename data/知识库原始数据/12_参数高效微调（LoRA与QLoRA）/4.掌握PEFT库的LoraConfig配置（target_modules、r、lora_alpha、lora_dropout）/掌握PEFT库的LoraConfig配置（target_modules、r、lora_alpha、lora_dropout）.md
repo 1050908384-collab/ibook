@@ -1,4 +1,4 @@
-﻿# PEFT库LoraConfig配置详解：掌握target_modules、r、lora_alpha、lora_dropout参数（最终版）
+# PEFT库LoraConfig配置详解：掌握target_modules、r、lora_alpha、lora_dropout参数（最终版）
 
 ## 参考资料
 
@@ -41,10 +41,8 @@ LoraConfig
 
 ---
 
-# 一、LoraConfig是什么？（①②③）
-
-## 1.1 PEFT中的LoraConfig作用
-
+## 一、LoraConfig是什么？（①②③）
+### 1.1 PEFT中的LoraConfig作用
 PEFT：
 
 Parameter-Efficient Fine-Tuning
@@ -88,8 +86,7 @@ LoraConfig
 
 ---
 
-## 1.2 一个简单示例
-
+### 1.2 一个简单示例
 ```python
 from peft import LoraConfig
 
@@ -116,8 +113,7 @@ config = LoraConfig(
 
 ---
 
-# 二、LoRA配置整体流程（①③）
-
+## 二、LoRA配置整体流程（①③）
 完整代码关系（下面是**流程关系示意**，不是可运行代码）：
 
 ```text
@@ -175,10 +171,8 @@ model = get_peft_model(
 
 ---
 
-# 三、target_modules参数详解（重点）（①②③）
-
-## 3.1 target_modules是什么？
-
+## 三、target_modules参数详解（重点）（①②③）
+### 3.1 target_modules是什么？
 定义：
 
 > 指定LoRA注入哪些模型模块。
@@ -221,8 +215,7 @@ target_modules=[
 
 ---
 
-# 四、为什么选择q_proj和v_proj？（③④）
-
+## 四、为什么选择q_proj和v_proj？（③④）
 Attention计算：
 
 公式：
@@ -287,8 +280,7 @@ model.print_trainable_parameters()   # 打印可训练参数量/占比，确认 
 
 常见配置：
 
-## 方案1：只调整Q和V
-
+### 方案1：只调整Q和V
 ```python
 target_modules=[
     "q_proj",
@@ -304,8 +296,7 @@ target_modules=[
 
 ---
 
-## 方案2：调整全部Attention
-
+### 方案2：调整全部Attention
 ```python
 target_modules=[
     "q_proj",
@@ -322,8 +313,7 @@ target_modules=[
 
 ---
 
-## 方案3：加入FFN层
-
+### 方案3：加入FFN层
 部分任务：
 
 还会加入：
@@ -355,14 +345,12 @@ target_modules=[
 
 ---
 
-# 五、不同模型target_modules区别（参考文章⑤）
-
+## 五、不同模型target_modules区别（参考文章⑤）
 不同模型命名不同。
 
 例如：
 
-## LLaMA系列
-
+### LLaMA系列
 常见：
 
 ```python
@@ -374,8 +362,7 @@ target_modules=[
 
 ---
 
-## GPT-2
-
+### GPT-2
 可能：
 
 ```python
@@ -413,8 +400,7 @@ target_modules=[
 
 ---
 
-## BERT
-
+### BERT
 可能：
 
 ```python
@@ -461,10 +447,8 @@ v_proj
 
 ---
 
-# 六、r参数详解（rank）（③④）
-
-## 6.1 r是什么？
-
+## 六、r参数详解（rank）（③④）
+### 6.1 r是什么？
 r：
 
 即rank。
@@ -515,8 +499,7 @@ B：
 
 ---
 
-## 6.2 r影响什么？
-
+### 6.2 r影响什么？
 r越大：
 
 优势：
@@ -541,10 +524,8 @@ r越大：
 
 ---
 
-# 七、lora_alpha参数详解（重点）（③④）
-
-## 7.1 alpha作用
-
+## 七、lora_alpha参数详解（重点）（③④）
+### 7.1 alpha作用
 LoRA最终更新：
 
 不是：
@@ -589,8 +570,7 @@ LoRA影响增强。
 
 ---
 
-## 7.2 alpha常见设置
-
+### 7.2 alpha常见设置
 经验：
 
 一种常见的**起点**是：
@@ -619,10 +599,8 @@ alpha=32
 
 ---
 
-# 八、lora_dropout参数详解（③⑤）
-
-## 8.1 dropout作用
-
+## 八、lora_dropout参数详解（③⑤）
+### 8.1 dropout作用
 训练过程中：
 
 随机关闭部分LoRA神经连接。
@@ -649,8 +627,7 @@ lora_dropout=0.05
 
 ---
 
-## 8.2 如何选择dropout？
-
+### 8.2 如何选择dropout？
 常见（**经验起点**，非固定规则，应结合验证集是否过拟合来调）：
 
 | 数据规模 | dropout（起点参考）  |
@@ -672,10 +649,8 @@ lora_dropout=0
 
 ---
 
-# 九、完整LoraConfig案例（重点）（①③）
-
-## 9.1 基础配置
-
+## 九、完整LoraConfig案例（重点）（①③）
+### 9.1 基础配置
 适合：
 
 7B模型测试。
@@ -772,10 +747,8 @@ print("classifier 权重是否一致:", torch.allclose(w_before, w_after))
 
 ---
 
-# 十、不同任务配置建议（参考文章⑤）
-
-## 10.1 普通文本生成
-
+## 十、不同任务配置建议（参考文章⑤）
+### 10.1 普通文本生成
 推荐：
 
 ```python
@@ -788,8 +761,7 @@ dropout=0.05
 
 ---
 
-## 10.2 指令微调
-
+### 10.2 指令微调
 推荐：
 
 ```python
@@ -802,8 +774,7 @@ dropout=0.05
 
 ---
 
-## 10.3 领域知识增强
-
+### 10.3 领域知识增强
 推荐：
 
 ```python
@@ -814,8 +785,7 @@ alpha=64
 
 ---
 
-## 10.4 本文范围与扩展边界
-
+### 10.4 本文范围与扩展边界
 本文只覆盖**经典 LoRA** 的核心参数（`r`、`lora_alpha`、`target_modules`、`lora_dropout`、`bias`、`task_type`、`modules_to_save`）。PEFT 的 `LoraConfig` 还支持一些**扩展能力**，本文不展开，但需要知道它们的存在，避免以为"LoRA 只有上面几个参数"：
 
 - `use_rslora=True`：启用 RS-LoRA，缩放改用 `α/√r`；
@@ -827,8 +797,7 @@ alpha=64
 
 ---
 
-# 十一、电脑配置批注
-
+## 十一、电脑配置批注
 本章节包含：
 
 * LoraConfig配置；
@@ -873,8 +842,7 @@ QLoRA：
 
 ---
 
-# 十二、常见问题排查
-
+## 十二、常见问题排查
 | 问题                | 常见原因（可能不止一种）        | 排查方向              |
 | ----------------- | --------- | --------------- |
 | target_modules找不到 | 模块名写错/与该模型命名不符；也可能是版本差异导致命名变化 | 用 `named_modules()` 核对实际名字；确认后缀匹配是否命中；必要时试 `"all-linear"` |
@@ -885,8 +853,7 @@ QLoRA：
 
 ---
 
-# 十三、总结
-
+## 十三、总结
 完成本章后，你已经掌握：
 
 ✅ LoraConfig作用

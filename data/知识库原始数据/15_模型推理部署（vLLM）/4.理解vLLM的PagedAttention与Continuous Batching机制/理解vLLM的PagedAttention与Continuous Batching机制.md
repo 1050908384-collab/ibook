@@ -1,3 +1,5 @@
+# 理解vLLM的PagedAttention与Continuous Batching机制
+
 > **参考文章链接**
 > 
 > ① 底稿：《【infra之路】阶段三 · 推理线：vLLM 两大法宝原理 — PagedAttention & Continuous Batching》

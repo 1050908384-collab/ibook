@@ -26,10 +26,8 @@
 
 ---
 
-# 一、为什么需要Trainer训练器？（①②）
-
-## 1.1 大模型训练流程回顾
-
+## 一、为什么需要Trainer训练器？（①②）
+### 1.1 大模型训练流程回顾
 前面章节已经学习：
 
 ```text
@@ -99,10 +97,8 @@ Trainer
 
 ---
 
-# 二、Trainer是什么？（①②）
-
-## 2.1 Trainer核心作用
-
+## 二、Trainer是什么？（①②）
+### 2.1 Trainer核心作用
 Trainer 是 Transformers 提供的高级训练封装。
 
 它负责：
@@ -147,8 +143,7 @@ Trainer：
 
 ---
 
-# 三、Trainer训练需要哪些组件？（参考文章⑤）
-
+## 三、Trainer训练需要哪些组件？（参考文章⑤）
 完整Trainer需要：
 
 ```python
@@ -173,10 +168,8 @@ Trainer(
 
 ---
 
-# 四、环境准备
-
-## 4.1 安装依赖
-
+## 四、环境准备
+### 4.1 安装依赖
 安装：
 
 ```bash
@@ -194,8 +187,7 @@ import datasets
 
 ---
 
-## 电脑配置批注
-
+### 电脑配置批注
 本章节涉及真实模型训练。
 
 最低配置：
@@ -238,10 +230,8 @@ import datasets
 
 ---
 
-# 五、准备训练模型和数据（参考文章⑤）
-
-## 5.1 加载模型
-
+## 五、准备训练模型和数据（参考文章⑤）
+### 5.1 加载模型
 示例：
 
 ```python
@@ -264,8 +254,7 @@ num_labels=2
 
 ---
 
-## 5.2 准备Dataset
-
+### 5.2 准备Dataset
 例如：
 
 ```python
@@ -289,8 +278,7 @@ dataset = Dataset.from_dict(
 
 ---
 
-## 5.3 Tokenizer处理
-
+### 5.3 Tokenizer处理
 ```python
 from transformers import AutoTokenizer
 
@@ -327,10 +315,8 @@ dataset = dataset.map(
 
 ---
 
-# 六、TrainingArguments详解（参考文章⑥）
-
-## 6.1 TrainingArguments是什么？
-
+## 六、TrainingArguments详解（参考文章⑥）
+### 6.1 TrainingArguments是什么？
 TrainingArguments：
 
 > 用于集中管理训练配置。
@@ -356,10 +342,8 @@ training_args = TrainingArguments(
 
 ---
 
-# 七、常用TrainingArguments参数（参考文章⑥）
-
-## 7.1 output_dir
-
+## 七、常用TrainingArguments参数（参考文章⑥）
+### 7.1 output_dir
 保存训练结果目录：
 
 ```python
@@ -379,8 +363,7 @@ checkpoint/
 
 ---
 
-## 7.2 num_train_epochs
-
+### 7.2 num_train_epochs
 训练轮数：
 
 ```python
@@ -393,8 +376,7 @@ num_train_epochs=3
 
 ---
 
-## 7.3 per_device_train_batch_size
-
+### 7.3 per_device_train_batch_size
 单GPU batch大小：
 
 ```python
@@ -419,8 +401,7 @@ batch：
 
 ---
 
-## 7.4 learning_rate
-
+### 7.4 learning_rate
 学习率：
 
 ```python
@@ -448,8 +429,7 @@ learning_rate=2e-5
 
 ---
 
-## 7.5 logging_steps
-
+### 7.5 logging_steps
 日志输出频率：
 
 ```python
@@ -460,8 +440,7 @@ logging_steps=10
 
 ---
 
-## 7.6 save_steps
-
+### 7.6 save_steps
 保存checkpoint频率：
 
 ```python
@@ -472,8 +451,7 @@ save_steps=500
 
 ---
 
-## 7.7 evaluation_strategy
-
+### 7.7 evaluation_strategy
 评估策略：
 
 ```python
@@ -494,8 +472,7 @@ evaluation_strategy="steps"
 
 ---
 
-# 八、创建Trainer（重点）（参考文章⑤）
-
+## 八、创建Trainer（重点）（参考文章⑤）
 > 说明：下面这段是**结构片段**，用来说明 `Trainer(...)` 需要哪些组件，它**依赖前文的变量**（`model`、`training_args`、`train_dataset`、`eval_dataset`、`tokenizer`）。要真正跑通，请以第十二章的**完整最小骨架**为准。
 
 结构片段：
@@ -545,8 +522,7 @@ Dataset
 
 ---
 
-# 九、启动训练（参考文章⑤）
-
+## 九、启动训练（参考文章⑤）
 执行：
 
 ```python
@@ -569,8 +545,7 @@ loss:0.21
 
 ---
 
-# 十、保存训练结果（参考文章⑤）
-
+## 十、保存训练结果（参考文章⑤）
 训练完成：
 
 ```python
@@ -606,10 +581,8 @@ model = AutoModelForSequenceClassification.from_pretrained(
 
 ---
 
-# 十一、DataCollator数据整理器（参考文章⑤）
-
-## 11.1 为什么需要DataCollator？
-
+## 十一、DataCollator数据整理器（参考文章⑤）
+### 11.1 为什么需要DataCollator？
 不同文本长度：
 
 例如：
@@ -634,8 +607,7 @@ padding
 
 ---
 
-## 11.2 使用 DataCollatorWithPadding
-
+### 11.2 使用 DataCollatorWithPadding
 `DataCollatorWithPadding` 是一个**具体的数据整理器**（并不是 Trainer 的"默认整理器"）：它在组 batch 时，按该 batch 内最长样本对 `input_ids`/`attention_mask` 等做**动态填充**，配合前面 `preprocess` 里只做 `truncation` 而不固定 padding 的做法。
 
 ```python
@@ -662,8 +634,7 @@ trainer = Trainer(
 
 ---
 
-# 十二、完整Trainer训练案例（参考文章⑤⑥）
-
+## 十二、完整Trainer训练案例（参考文章⑤⑥）
 > 说明：下面是把前面各步骤串起来的**结构示例**。要真正跑通，还需在此之前完成：准备并 `map` 编码数据、划分 `train_dataset`/`eval_dataset`（见 5.3 的 `train_test_split`）、以及创建 `DataCollatorWithPadding`（见 11.2）。这里把这些依赖一并写出，形成一个更接近可运行的最小骨架：
 >
 > **本案例的定位（重要）**：这是一个 **BERT 文本分类**案例，目的只是把「模型 + 数据 + `TrainingArguments` + `Trainer`」这条 **Trainer API 主流程**跑通，**不是** Causal LM / 大模型 / LoRA 微调的范例。真正的 LLM 指令微调在数据格式（对话拼接、`labels` 及 prompt/padding 掩码为 `-100`）、模型类（`AutoModelForCausalLM`）、以及是否叠加 PEFT/LoRA 上都不同，请以后续第 12 板块（LoRA/QLoRA）为准。
@@ -790,8 +761,7 @@ trainer.train()
 
 ---
 
-# 十三、常见问题排查
-
+## 十三、常见问题排查
 | 问题                 | 原因          | 解决              |
 | ------------------ | ----------- | --------------- |
 | CUDA out of memory | batch太大     | 降低batch         |
@@ -802,8 +772,7 @@ trainer.train()
 
 ---
 
-# 十四、Trainer与后续LoRA微调关系
-
+## 十四、Trainer与后续LoRA微调关系
 实际大模型微调：
 
 ```text
@@ -844,8 +813,7 @@ PEFT
 
 ---
 
-# 十五、总结与后续学习路线
-
+## 十五、总结与后续学习路线
 本章完成后，你已经掌握：
 
 ✅ Trainer作用

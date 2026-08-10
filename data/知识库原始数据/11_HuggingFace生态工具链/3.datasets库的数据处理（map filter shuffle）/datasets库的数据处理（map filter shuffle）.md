@@ -29,10 +29,8 @@
 
 ---
 
-# 一、为什么需要Datasets库？（①②）
-
-## 1.1 大模型训练为什么需要数据处理？
-
+## 一、为什么需要Datasets库？（①②）
+### 1.1 大模型训练为什么需要数据处理？
 大语言模型训练流程：
 
 ```
@@ -84,8 +82,7 @@ Dataset
 
 ---
 
-## 1.2 Hugging Face Datasets是什么？（①）
-
+### 1.2 Hugging Face Datasets是什么？（①）
 `datasets` 是 Hugging Face 提供的数据处理库。
 
 主要功能：
@@ -112,10 +109,8 @@ from datasets import Dataset
 
 ---
 
-# 二、Dataset基础概念（①②）
-
-## 2.1 Dataset是什么？
-
+## 二、Dataset基础概念（①②）
+### 2.1 Dataset是什么？
 Dataset可以理解为：
 
 > 一个专门用于机器学习训练的数据表。
@@ -166,8 +161,7 @@ num_rows:2
 
 ---
 
-## 2.2 查看数据内容
-
+### 2.2 查看数据内容
 查看第一条：
 
 ```python
@@ -196,10 +190,8 @@ print(dataset.column_names)
 
 ---
 
-# 三、map()：数据转换核心方法（参考文章⑥⑦）
-
-## 3.1 map()是什么？
-
+## 三、map()：数据转换核心方法（参考文章⑥⑦）
+### 3.1 map()是什么？
 `map()` 用于：
 
 > 对Dataset中的每一条数据执行一个处理函数。
@@ -217,8 +209,7 @@ print(dataset.column_names)
 
 ---
 
-## 电脑配置批注
-
+### 电脑配置批注
 本章节主要进行数据处理，不涉及模型训练。
 
 最低配置：
@@ -252,10 +243,8 @@ GPU：
 
 ---
 
-# 四、使用map进行数据修改（参考文章⑥）
-
-## 4.1 基础map使用
-
+## 四、使用map进行数据修改（参考文章⑥）
+### 4.1 基础map使用
 创建数据：
 
 ```python
@@ -309,8 +298,7 @@ length:5
 
 ---
 
-# 五、map进行Tokenizer编码（重点）（参考文章⑥⑦）
-
+## 五、map进行Tokenizer编码（重点）（参考文章⑥⑦）
 大模型训练最常见：
 
 ```
@@ -331,8 +319,7 @@ input_ids
 
 ---
 
-## 5.1 加载Tokenizer
-
+### 5.1 加载Tokenizer
 例如：
 
 ```python
@@ -346,8 +333,7 @@ tokenizer = AutoTokenizer.from_pretrained(
 
 ---
 
-## 5.2 编写Tokenize函数
-
+### 5.2 编写Tokenize函数
 ```python
 def tokenize(example):
 
@@ -361,8 +347,7 @@ def tokenize(example):
 
 ---
 
-## 5.3 使用map批量处理
-
+### 5.3 使用map批量处理
 ```python
 tokenized_dataset = dataset.map(
     tokenize
@@ -387,10 +372,8 @@ print(tokenized_dataset[0])
 
 ---
 
-# 六、batched参数：批量处理优化（参考文章⑥）
-
-## 6.1 为什么需要batched？
-
+## 六、batched参数：批量处理优化（参考文章⑥）
+### 6.1 为什么需要batched？
 默认：
 
 一次处理一条数据：
@@ -421,8 +404,7 @@ example3
 
 ---
 
-## 6.2 示例
-
+### 6.2 示例
 ```python
 def tokenize_batch(batch):
 
@@ -449,8 +431,7 @@ dataset = dataset.map(
 
 ---
 
-# 七、remove_columns删除无用字段（参考文章⑦）
-
+## 七、remove_columns删除无用字段（参考文章⑦）
 Tokenizer之后：
 
 原始：
@@ -501,10 +482,8 @@ print(dataset.column_names)
 
 ---
 
-# 八、filter()：过滤数据（参考文章⑥⑦）
-
-## 8.1 filter是什么？
-
+## 八、filter()：过滤数据（参考文章⑥⑦）
+### 8.1 filter是什么？
 `filter()`：
 
 > 根据条件删除不符合要求的数据。
@@ -519,8 +498,7 @@ print(dataset.column_names)
 
 ---
 
-## 8.2 基础使用
-
+### 8.2 基础使用
 数据：
 
 ```python
@@ -570,10 +548,8 @@ hi
 
 ---
 
-# 九、shuffle()：随机打乱数据（参考文章⑥）
-
-## 9.1 为什么需要shuffle？
-
+## 九、shuffle()：随机打乱数据（参考文章⑥）
+### 9.1 为什么需要shuffle？
 训练模型时：
 
 如果数据顺序固定：
@@ -594,16 +570,14 @@ shuffle：
 
 ---
 
-## 9.2 基础使用
-
+### 9.2 基础使用
 ```python
 dataset = dataset.shuffle()
 ```
 
 ---
 
-## 9.3 设置随机种子
-
+### 9.3 设置随机种子
 为了复现实验：
 
 ```python
@@ -618,8 +592,7 @@ dataset = dataset.shuffle(
 
 ---
 
-# 十、数据预处理流程示例（参考文章⑥⑦）
-
+## 十、数据预处理流程示例（参考文章⑥⑦）
 > 说明：本节演示 `filter → shuffle → map(tokenize)` 这条**核心链路**，属于**概念片段**，用于理解顺序与各步骤作用。它**不是**可直接用于 LoRA/QLoRA 训练的完整数据准备流程——真实训练前通常还需要：`train_test_split()` / `DatasetDict` 划分训练验证集、删除多余列（`remove_columns`）、**构造训练标签**（分类的 `labels`、Causal LM 的 `labels` 及 prompt/padding 掩码为 `-100`）、以及按需要做样本拼接/截断与固定/动态 padding 等。请把本节当作"讲清楚步骤关系"的示意。
 
 假设：
@@ -640,8 +613,7 @@ dataset = Dataset.from_dict(
 
 ---
 
-## 第一步：清洗数据
-
+### 第一步：清洗数据
 ```python
 dataset = dataset.filter(
     lambda x:
@@ -651,8 +623,7 @@ dataset = dataset.filter(
 
 ---
 
-## 第二步：随机打乱
-
+### 第二步：随机打乱
 ```python
 dataset = dataset.shuffle(
     seed=42
@@ -661,8 +632,7 @@ dataset = dataset.shuffle(
 
 ---
 
-## 第三步：Tokenizer编码
-
+### 第三步：Tokenizer编码
 ```python
 def preprocess(example):
 
@@ -704,8 +674,7 @@ map Tokenizer
 
 ---
 
-## 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充）
-
+### 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充）
 上面的核心链路只做到"清洗 + 编码"。这里补一个更接近实战的 **Causal LM 数据准备**示例，覆盖报告强调的几步：`train_test_split()` 划分训练/验证集（得到 `DatasetDict`）、**文本拼接与截断**、**构造 `labels`**、以及训练阶段的**动态填充 DataCollator** 接入。
 
 ```python
@@ -763,8 +732,7 @@ data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
 ---
 
-# 十一、Dataset与Trainer训练流程连接（①⑤）
-
+## 十一、Dataset与Trainer训练流程连接（①⑤）
 后续使用Trainer训练（下面是**结构示意**，不是完整可运行训练代码）：
 
 ```python
@@ -800,8 +768,7 @@ Trainer
 
 ---
 
-# 十二、常见问题排查
-
+## 十二、常见问题排查
 | 问题          | 常见原因（可能不止一种）        | 解决             |
 | ----------- | --------- | -------------- |
 | map速度慢      | 逐条处理只是常见原因之一；还可能是未开启缓存/缓存失效导致重复计算、磁盘 I/O 瓶颈、tokenizer 本身较慢、未用 `num_proc` 多进程、返回数据结构不利于 Arrow 列式存储等 | 优先 `batched=True`；按需开启缓存、设置 `num_proc`、优化处理函数，必要时用 `streaming` |
@@ -812,8 +779,7 @@ Trainer
 
 ---
 
-# 十三、环境验证实验
-
+## 十三、环境验证实验
 创建：
 
 ```bash
@@ -874,8 +840,7 @@ num_rows:2
 
 ---
 
-# 十四、总结与后续学习路线
-
+## 十四、总结与后续学习路线
 本章完成后，你已经掌握：
 
 ✅ Dataset基本结构

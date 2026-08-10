@@ -145,6 +145,7 @@ class SQLiteClient:
                     doc_type VARCHAR(20) CHECK (doc_type IN ('tutorial', 'code', 'spec', 'best_practice', 'pitfall')),
                     source VARCHAR(200),
                     difficulty VARCHAR(20) CHECK (difficulty IN ('初级', '中级', '高级')),
+                    source_file_path TEXT NOT NULL DEFAULT '',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
                 )
@@ -173,6 +174,11 @@ class SQLiteClient:
                     chunk_type VARCHAR(20) CHECK (chunk_type IN ('text', 'code', 'table')),
                     char_start INT,
                     char_end INT,
+                    heading_path TEXT NOT NULL DEFAULT '',
+                    heading_level INTEGER NOT NULL DEFAULT 0,
+                    source_line_start INTEGER NOT NULL DEFAULT 0,
+                    source_line_end INTEGER NOT NULL DEFAULT 0,
+                    chunk_strategy TEXT NOT NULL DEFAULT '',
                     FOREIGN KEY (doc_id) REFERENCES knowledge_docs(doc_id),
                     FOREIGN KEY (block_id) REFERENCES knowledge_blocks(block_id)
                 )
@@ -286,6 +292,13 @@ class SQLiteClient:
             self._ensure_column(conn, "stage_progress", "subtopic_id", "VARCHAR(50)")
             self._ensure_column(conn, "stage_progress", "estimated_hours", "FLOAT DEFAULT 1.0")
             self._ensure_column(conn, "knowledge_docs", "subtopic_id", "VARCHAR(50)")
+            # 标题级分块新增字段（见《知识库分块新增字段说明.md》）
+            self._ensure_column(conn, "knowledge_docs", "source_file_path", "TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(conn, "knowledge_chunks", "heading_path", "TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(conn, "knowledge_chunks", "heading_level", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_column(conn, "knowledge_chunks", "source_line_start", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_column(conn, "knowledge_chunks", "source_line_end", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_column(conn, "knowledge_chunks", "chunk_strategy", "TEXT NOT NULL DEFAULT ''")
             self._ensure_column(conn, "sessions", "user_id", f"VARCHAR(50) DEFAULT '{DEFAULT_USER_ID}'")
             self._ensure_column(conn, "sessions", "goal", "TEXT")
             self._ensure_column(conn, "sessions", "target_knowledge_gaps", "TEXT DEFAULT '[]'")
