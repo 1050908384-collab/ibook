@@ -3,6 +3,7 @@ import asyncio
 import json
 import re
 import uuid
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from agents.deterministic import (
@@ -33,6 +34,27 @@ from orchestrator.state_manager import StateManager
 
 # 审核辩论协议常量（协议第 7 节）
 MAX_DEBATE_ROUNDS = 2  # 内层答辩复核轮次上限
+
+# 块级流水线并发上限：Agent3 生成/修改、Agent4 复核均限制为同时 2 个块在飞，
+# 兼顾低配设备（不做成 settings 开关——属内部调度细节，非运维旋钮）。
+BLOCK_CONCURRENCY = 2
+
+
+@dataclass
+class BlockState:
+    """块级流水线中单个内容块的运行态（可变、不落库）。
+
+    - open_issues 为空 ⇒ 该块已 done；
+    - block.version 即版本追踪（modify_block 自增），无需另存；
+    - rounds_sent 记录该块被交还 Agent3 的次数（每块二级防死循环）。
+    """
+    cid: str
+    block: Any
+    open_issues: List[ReviewError]
+    last_review: TechnicalReviewResult
+    rounds_sent: int = 0
+    recheck_task: Optional[asyncio.Task] = None
+
 
 
 class Harness:
@@ -794,10 +816,12 @@ class Harness:
         return current_package, history
 
     # ==================================================================
-    # 块级并行流水线（任务 5）：Agent3 逐块生成 × Agent4 逐块审核并行推进。
-    # Phase A：生成×审核并行（asyncio.gather，每块 generate→review_block 为一条协程）
-    # Phase B：统一答辩→复核→裁决，改一块送一块复审（revision_queue 流水）
-    # Phase C：聚合所有块为一个 LearningPackage
+    # 块级真并发流水线：Agent3 生成/修改与 Agent4 审核/复核并发推进。
+    # Phase A：生成×首轮审核并发（asyncio.gather + Semaphore(2)，每块 generate→review_block）
+    # 首轮后：一次性构造完整 issue_package（按 content_block_id 分组）交给 Agent3
+    # Phase C：并发修改（Semaphore(2)），每块改完立即 create_task 派发独立复核
+    #          （块1复核不阻塞块2修改）；双层防死循环（全局轮次 + 每块 rounds_sent ≤ MAX）
+    # Phase D：聚合所有块为一个 LearningPackage
     # ==================================================================
     async def _generate_and_review_block(
         self,
@@ -869,6 +893,40 @@ class Harness:
             review_trace_id=trace_id,
         )
 
+    @staticmethod
+    async def _run_capped(sem: asyncio.Semaphore, coro_factory):
+        """并发上限原语：持有 sem 期间执行一个协程（生成/修改两阶段共用）。"""
+        async with sem:
+            return await coro_factory()
+
+    async def _recheck_block(
+        self,
+        st: "BlockState",
+        stage: StageInfo,
+        profile: UserProfile,
+        round_index: int,
+    ) -> None:
+        """只复核单个已修改块，并把结果覆盖回该块的 open_issues（任务 4）。
+
+        覆盖语义即「关闭/重开/新增」：不再返回的问题=关闭，仍返回的=保留，新出现的=新增。
+        作为独立 task 派发，故不阻塞其它块的修改（REQ-C）。异常兜底为 critical 留在 open_issues。
+        """
+        try:
+            rr = await self.agent4.review_block(
+                block=st.block, stage=stage, profile=profile, round_index=round_index,
+            )
+        except Exception as exc:
+            rr = TechnicalReviewResult(
+                passed=False,
+                errors=[ReviewError(
+                    error_type="review_system_error", severity="critical",
+                    description=f"re-review failed: {exc}", content_block_id=st.cid,
+                    content_version=getattr(st.block, "version", None),
+                )],
+            )
+        st.last_review = rr
+        st.open_issues = list(rr.errors)
+
     async def _review_learning_package_pipeline(
         self,
         session_id: str,
@@ -876,9 +934,14 @@ class Harness:
         profile: UserProfile,
         practice_profile: PracticeProfile,
     ) -> tuple[LearningPackage, list[ReviewRound]]:
-        """块级并行流水线主流程（任务 5）。
+        """块级真并发生产者/消费者流水线（任务 5 + 真并发改造）。
 
-        无可用原始 chunk 时安全降级为原整篇链路（生成整包 → _review_learning_package）。
+        - 生成：并发上限 BLOCK_CONCURRENCY（=2），每块生成后立即首轮审核；
+        - 首轮后一次性构造完整 issue_package（按块分组），交给 Agent3；
+        - 修改：并发上限 BLOCK_CONCURRENCY（=2），每块改完立即派发独立复核 task
+          （块1复核不阻塞块2修改）；
+        - 全部块无 open 问题才 passed；Agent4 交还问题清单最多 MAX_REVIEW_ITERATIONS 次；
+        - 无可用原始 chunk 时安全降级为原整篇链路。
         """
         history: list[ReviewRound] = []
         trace_id = f"tr_{uuid.uuid4().hex[:16]}"
@@ -898,22 +961,29 @@ class Harness:
                 session_id, generated.learning_package, stage, profile,
             )
 
-        # ---- Phase A：生成×审核并行 ----
-        self._log(session_id, "pipeline:phaseA_start", f"chunks={len(source_chunks)}")
+        # ---- Phase A：生成（并发上限 2）× 每块生成后立即首轮审核 ----
+        self._log(session_id, "pipeline:phaseA_start", f"chunks={len(source_chunks)}, cap={BLOCK_CONCURRENCY}")
+        gen_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
         pairs = await asyncio.gather(*[
-            self._generate_and_review_block(
-                session_id, stage, profile, practice_profile, chunk, idx, round_index=1,
+            self._run_capped(
+                gen_sem,
+                lambda c=chunk, i=idx: self._generate_and_review_block(
+                    session_id, stage, profile, practice_profile, c, i, round_index=1,
+                ),
             )
             for idx, chunk in enumerate(source_chunks)
         ])
-        # blocks_by_id：块的当前版本；reviews_by_id：块最近一次审核结果
-        blocks_by_id: Dict[str, Any] = {}
-        reviews_by_id: Dict[str, TechnicalReviewResult] = {}
+        # 每块建立运行态 BlockState（当前版本、open 问题、复核结果、交还次数）
+        states: Dict[str, BlockState] = {}
         for blk, review in pairs:
-            blocks_by_id[blk.content_block_id] = blk
-            reviews_by_id[blk.content_block_id] = review
+            states[blk.content_block_id] = BlockState(
+                cid=blk.content_block_id,
+                block=blk,
+                open_issues=list(review.errors),
+                last_review=review,
+            )
 
-        first_round_errors = [e for r in reviews_by_id.values() for e in r.errors]
+        first_round_errors = [e for st in states.values() for e in st.open_issues]
         history.append(ReviewRound(
             iteration=1,
             technical=TechnicalReviewResult(passed=not first_round_errors, errors=list(first_round_errors)),
@@ -921,34 +991,56 @@ class Harness:
         ))
         self._log(
             session_id, "pipeline:phaseA_done",
-            f"blocks={len(blocks_by_id)}, issues={len(first_round_errors)}",
+            f"blocks={len(states)}, issues={len(first_round_errors)}",
         )
 
-        # ---- Phase B：统一答辩→复核→裁决，改一块送一块复审 ----
+        # ---- 构造完整 issue_package（按 content_block_id 分组，一次性交付）----
+        issue_package: Dict[str, List[ReviewError]] = {
+            cid: st.open_issues for cid, st in states.items() if st.open_issues
+        }
+        self._log(session_id, "pipeline:issue_package", f"blocks_with_issues={len(issue_package)}")
+
+        # ---- 落库：首轮聚合出一个 draft 学习包并创建 trace（sources/claims）----
+        # trace init 需要 sources/claims，故此处先聚合一次 draft 包用于建 trace；
+        # 学习包正式聚合在 Phase D 结束时再做一次（含最终修订块）。
+        draft_package = self._aggregate_blocks(
+            session_id, stage, [st.block for st in states.values()], trace_id,
+        )
+        self._persist_trace_init(trace_id, session_id, stage, draft_package)
+        # 首轮审核结果作为第 1 轮 review_round 落库（Agent4 异步审核结果统一留痕）
+        self._record_review_round(session_id, "learning_package", history[0])
+
+        # ---- Phase C：修改（并发上限 2）+ 每块改完并发复核 ----
         final_status = "passed"
         package_status = "approved"
         total_unresolved = 0
 
-        for iteration in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
-            # 收集本轮所有块的未决 issue（跳过已通过的块）
-            pending = {
-                cid: rv for cid, rv in reviews_by_id.items() if rv.errors
-            }
+        for round_num in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
+            # 本轮待修改块：仍有 open 问题、且未超过每块交还上限
+            pending = [
+                cid for cid, st in states.items()
+                if st.open_issues and st.rounds_sent < settings.MAX_REVIEW_ITERATIONS
+            ]
             if not pending:
                 final_status = "passed"
                 package_status = "approved"
                 break
 
-            round_unresolved = 0
-            round_errors: List[ReviewError] = []
+            modify_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
+            # 收集本轮各块辩论产物，供统一落库（_persist_debate_round）
+            round_debate: List[Dict[str, Any]] = []
 
-            # 改一块送一块：逐块答辩→复核→裁决→定点修改→立即复审
-            for cid, review in pending.items():
-                block = blocks_by_id[cid]
-                issues = [e.model_dump(mode="json") for e in review.errors]
-                block_dict = block.model_dump(mode="json")
+            async def _fix_one(cid: str) -> int:
+                """单块：答辩→复核裁决→定点修改→派发独立复核 task。返回该块未决 must_fix 数。"""
+                st = states[cid]
+                st.rounds_sent += 1
+                st.recheck_task = None
+                # 记录本轮该块的原始 issues（修改前快照，用于辩论落库）
+                pre_errors = list(st.open_issues)
+                issues = [e.model_dump(mode="json") for e in pre_errors]
+                block_dict = st.block.model_dump(mode="json")
 
-                # Agent3 答辩（复用整包答辩逻辑，块作为最小上下文）
+                # Agent3 答辩（块作为最小上下文）
                 try:
                     author_replies = await self.agent3.reply_to_review(session_id, issues, block_dict)
                 except Exception:
@@ -959,55 +1051,86 @@ class Harness:
                 except Exception:
                     verdicts = {}
                 accepted_issues, unresolved_must_fix_count = self._adjudicate_issues(
-                    review.errors, verdicts,
+                    pre_errors, verdicts,
                 )
-                round_unresolved += unresolved_must_fix_count
+                # 缓存辩论产物（轮末统一落库）
+                round_debate.append({
+                    "errors": pre_errors,
+                    "author_replies": author_replies,
+                    "verdicts": verdicts,
+                    "accepted_issues": accepted_issues,
+                    "unresolved_must_fix_count": unresolved_must_fix_count,
+                })
 
-                # Agent3 定点修改本块（只回传修订后的问题块 + 版本号 + 修改说明），并立即复审
                 if accepted_issues:
-                    revised = await self.agent3.modify_block(block, accepted_issues)
-                    blocks_by_id[cid] = revised
+                    # 定点修改本块（version+1、revision_note），修改槽只在此期间持有
                     try:
-                        re_review = await self.agent4.review_block(
-                            block=revised, stage=stage, profile=profile,
-                            round_index=iteration + 1,
-                        )
+                        revised = await self.agent3.modify_block(st.block, accepted_issues)
+                        st.block = revised
                     except Exception as exc:
-                        re_review = TechnicalReviewResult(
-                            passed=False,
-                            errors=[ReviewError(
-                                error_type="review_system_error", severity="critical",
-                                description=f"re-review failed: {exc}", content_block_id=cid,
-                            )],
-                        )
-                    reviews_by_id[cid] = re_review
-                    round_errors.extend(re_review.errors)
+                        # 修改失败：保留原 open_issues，不派复核，交由后续轮次/人工
+                        self._log(session_id, "pipeline:modify_failed", f"cid={cid}, err={exc}")
+                        return unresolved_must_fix_count
+                    # 立即派发独立复核 task（不占修改槽 → 块1复核不阻塞块2修改）
+                    st.recheck_task = asyncio.create_task(
+                        self._recheck_block(st, stage, profile, round_num + 1)
+                    )
                 else:
-                    # 无接受的修改（全部 persist 且非 must_fix，或复核全撤）：清空该块残留 issue
-                    reviews_by_id[cid] = TechnicalReviewResult(passed=True, errors=[])
+                    # 无接受的修改：该块视为已解决，清空残留 open 问题
+                    st.open_issues = []
+                return unresolved_must_fix_count
 
-            history.append(ReviewRound(
-                iteration=iteration + 1,
+            # 并发修改（上限 2）
+            unresolved_list = await asyncio.gather(*[
+                self._run_capped(modify_sem, lambda c=cid: _fix_one(c)) for cid in pending
+            ])
+            round_unresolved = sum(unresolved_list)
+
+            # 汇合本轮所有并发复核（复核内部已兜底异常，不会抛）
+            recheck_tasks = [states[cid].recheck_task for cid in pending if states[cid].recheck_task]
+            if recheck_tasks:
+                await asyncio.gather(*recheck_tasks)
+
+            # 落库：把本轮所有块的辩论产物合并成一条 review_debate_round（P2）
+            self._persist_pipeline_round(trace_id, round_num, round_debate)
+
+            round_errors = [e for st in states.values() for e in st.open_issues]
+            round_result = ReviewRound(
+                iteration=round_num + 1,
                 technical=TechnicalReviewResult(passed=not round_errors, errors=list(round_errors)),
                 quality=QualityReviewResult(passed=not round_errors, errors=list(round_errors)),
-            ))
+            )
+            history.append(round_result)
+            self._record_review_round(session_id, "learning_package", round_result)
             self._log(
-                session_id, "pipeline:phaseB_round",
-                f"iter={iteration}, unresolved_must_fix={round_unresolved}, errors={len(round_errors)}",
+                session_id, "pipeline:phaseC_round",
+                f"round={round_num}, unresolved_must_fix={round_unresolved}, open_errors={len(round_errors)}",
             )
 
-            total_unresolved = round_unresolved
-            if round_unresolved == 0:
+            # 终止判定统一以「修改+复核后」的真实状态 any_open 为准（修复问题A）。
+            # round_unresolved 是「修改前」快照，仅用于日志/统计，不再参与终止判定，
+            # 避免本轮已被 recheck 解决的问题在末轮被误判为 needs_human_review。
+            any_open = any(st.open_issues for st in states.values())
+            if not any_open:
+                # 全部块复核后无 open 问题 → 完成（任务 5）
                 final_status = "passed"
                 package_status = "approved"
                 break
-            if iteration == settings.MAX_REVIEW_ITERATIONS:
+            # 交还次数封顶（任务 6：≤ MAX_REVIEW_ITERATIONS）仍有残留 open → 需人工
+            if round_num == settings.MAX_REVIEW_ITERATIONS:
                 final_status = "needs_human_review"
                 package_status = "provisional"
                 break
 
-        # ---- Phase C：聚合块为学习包 ----
-        package = self._aggregate_blocks(session_id, stage, list(blocks_by_id.values()), trace_id)
+        # ---- Phase D：聚合块为学习包 ----
+        package = self._aggregate_blocks(
+            session_id, stage, [st.block for st in states.values()], trace_id,
+        )
+        # 修订后 claims 状态更新落库（P2）
+        self._persist_claims_update(trace_id, package)
+        total_unresolved = sum(
+            1 for st in states.values() for e in st.open_issues if getattr(e, "must_fix", False)
+        )
         self._last_review_trace = {
             "trace_id": trace_id,
             "final_status": final_status,
@@ -1015,9 +1138,11 @@ class Harness:
             "unresolved_issue_count": total_unresolved,
             "unresolved_must_fix_count": total_unresolved,
         }
+        # 落库：更新 trace 最终状态（P2）
+        self._persist_trace_finalize(trace_id, final_status, package_status, total_unresolved)
         self._log(
             session_id, "pipeline:done",
-            f"final_status={final_status}, blocks={len(blocks_by_id)}, unresolved={total_unresolved}",
+            f"final_status={final_status}, blocks={len(states)}, unresolved={total_unresolved}",
         )
         return package, history
 
@@ -1144,6 +1269,33 @@ class Harness:
                     )
         except Exception as e:
             print(f"[Harness] 落库失败（debate round）: {e}")
+
+    def _persist_pipeline_round(
+        self, trace_id: str, round_num: int, round_debate: List[Dict[str, Any]],
+    ) -> None:
+        """块级流水线专用：把「本轮多个块」的辩论产物合并为一条 review_debate_round 落库。
+
+        每个块的 _fix_one 产出一份辩论片段（errors/author_replies/verdicts/accepted_issues/
+        unresolved_must_fix_count）；此处合并后复用 _persist_debate_round（本身已 try/except 兜底）。
+        无辩论片段（本轮无块进入修改）则跳过。
+        """
+        if not round_debate:
+            return
+        merged_errors: List[ReviewError] = []
+        merged_replies: List[Dict[str, Any]] = []
+        merged_verdicts: Dict[str, str] = {}
+        merged_accepted: List[Dict[str, Any]] = []
+        total_unresolved = 0
+        for frag in round_debate:
+            merged_errors.extend(frag.get("errors", []))
+            merged_replies.extend(frag.get("author_replies", []))
+            merged_verdicts.update(frag.get("verdicts", {}))
+            merged_accepted.extend(frag.get("accepted_issues", []))
+            total_unresolved += int(frag.get("unresolved_must_fix_count", 0))
+        self._persist_debate_round(
+            trace_id, round_num, merged_errors,
+            merged_replies, merged_verdicts, merged_accepted, total_unresolved,
+        )
 
     def _persist_claims_update(self, trace_id: str, package: LearningPackage) -> None:
         """落库：modify_package 后更新 claims（status 变为 revised/dropped）。"""

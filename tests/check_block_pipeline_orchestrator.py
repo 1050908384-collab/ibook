@@ -111,13 +111,16 @@ async def run(checker: Checker) -> None:
     from models.stage import LearningPackage, StageInfo
 
     harness = Harness(execution_mode="deterministic")
-    # 生产路径中 start_stage 一定发生在 create_session 之后：真实 session 行存在，
-    # 才能满足 review_traces / review_round 落库的 FK 与 require_session 约束。
+    # 生产路径中 start_stage 一定发生在 create_session + update_stage 之后：真实
+    # session 行与 stage_progress 行都存在，才能满足 review_traces 的
+    # FK(session_id → sessions, stage_id → stage_progress) 与 require_session 约束。
     harness.state_manager.create_session("orch-block")
     stage = StageInfo(
         stage_id="stage-orch-01", stage_num=1, block_id="KB-12",
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA", subtopic_id="KBS-12-01",
     )
+    # 落库 stage 以满足 review_traces.stage_id 外键（对齐生产 start_stage 前置条件）。
+    harness.state_manager.update_stage("orch-block", stage)
     profile = UserProfile(session_id="orch-block", goal="掌握LoRA微调", learning_style="示例驱动")
     practice = PracticeProfile(hardware="RTX 4090 24GB")
 
@@ -143,6 +146,29 @@ async def run(checker: Checker) -> None:
     checker.check(trace.get("final_status") == "needs_human_review",
                   "未决 must_fix 时终止为 needs_human_review（不死循环）",
                   f"unresolved={trace.get('unresolved_must_fix_count')}")
+
+    # ---- 审核 trace 落库验证（问题B 修复）：块级流水线也应写入 review_traces / rounds ----
+    from sqlalchemy import text
+    tid = trace.get("trace_id")
+    with harness.state_manager.db_client.engine.connect() as conn:
+        trace_row = conn.execute(
+            text("SELECT final_status, package_status FROM review_traces WHERE trace_id=:t"),
+            {"t": tid},
+        ).fetchone()
+        round_cnt = conn.execute(
+            text("SELECT COUNT(*) FROM review_debate_rounds WHERE trace_id=:t"),
+            {"t": tid},
+        ).scalar()
+        claim_cnt = conn.execute(
+            text("SELECT COUNT(*) FROM learning_package_claims WHERE trace_id=:t"),
+            {"t": tid},
+        ).scalar()
+    checker.check(trace_row is not None, "review_traces 已落库（块级流水线补齐持久化）", f"trace_id={tid}")
+    checker.check(bool(trace_row) and trace_row[0] == "needs_human_review",
+                  "review_traces.final_status 已落库为最终状态",
+                  str(trace_row[0]) if trace_row else "None")
+    checker.check((round_cnt or 0) >= 1, "review_debate_round 至少落库 1 轮", f"rounds={round_cnt}")
+    checker.check((claim_cnt or 0) >= 1, "learning_package_claims 已落库", f"claims={claim_cnt}")
 
     harness.state_manager.db_client.close()
 
@@ -171,6 +197,8 @@ async def run_no_chunks(checker: Checker, temp_dir: str) -> None:
         stage_id="stage-orch-02", stage_num=1, block_id="KB-12",
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA", subtopic_id="KBS-12-01",
     )
+    # 落库 stage 满足 review_traces.stage_id 外键（降级整篇链路同样会落库审核 trace）。
+    harness.state_manager.update_stage("orch-empty", stage)
     profile = UserProfile(session_id="orch-empty", goal="掌握LoRA微调")
     practice = PracticeProfile(hardware="")
     try:

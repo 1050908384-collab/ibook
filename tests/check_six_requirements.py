@@ -439,6 +439,8 @@ async def check_req_5(checker: Checker, temp_dir: str) -> None:
         stage_id="stage-r5", stage_num=1, block_id="KB-12",
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA", subtopic_id="KBS-12-01",
     )
+    # 落库 stage 满足审核 trace 落库的 stage_id 外键（保持日志干净，与生产一致）。
+    harness.state_manager.update_stage("orch-r5", stage)
     profile = UserProfile(session_id="orch-r5", goal="掌握LoRA微调", learning_style="示例驱动")
     practice = PracticeProfile(hardware="RTX 4090 24GB")
 

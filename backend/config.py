@@ -32,8 +32,9 @@ class Settings(BaseSettings):
     CONFIDENCE_THRESHOLD: float = 0.7
     EXECUTION_MODE: str = "hybrid"
     # 块级并行流水线开关（Agent3/Agent4 按块并行生成+审核）。
-    # 默认关闭：保持原整篇审核链路；置 True 后 start_stage 走块级流水线。
-    BLOCK_PIPELINE_ENABLED: bool = False
+    # 默认开启：start_stage 走块级真并发流水线（生成/修改并发上限 2）；
+    # 如需回退旧整篇审核链路，可在 .env 覆盖为 False。
+    BLOCK_PIPELINE_ENABLED: bool = True
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",

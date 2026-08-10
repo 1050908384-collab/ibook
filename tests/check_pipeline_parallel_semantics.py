@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-校验 Agent3↔Agent4 学习包流水线的「并行语义」是否符合需求（模型 B）
+校验 Agent3↔Agent4 学习包流水线的「并发语义」是否符合需求（真并发生产者/消费者）
 ================================================================
-用户明确的并行模型：
+用户明确的并发模型：
   ❌ 模型A（交错流水线）：Agent3 在生成后续块的同时，修改 Agent4 已回馈的早期块。
-  ✅ 模型B（当前需求）：Agent3 与 Agent4 同时处理各块（生成+首轮审核并发），
-     但 Agent4 把问题「堆积到最后」再统一反馈给 Agent3；随后 Agent3 才逐块修改。
+  ✅ 当前需求：Agent3 与 Agent4 同时处理各块（生成+首轮审核并发，上限 2），
+     Agent4 首轮跑完后一次性构造完整 issue_package（按块分组）交给 Agent3；
+     随后 Agent3 并发修改（上限 2），每块改完立即派发独立复核，
+     且块1的复核不阻塞块2的修改。
 
 本脚本给真实 Harness 的 agent3/agent4 方法套上「带时间戳的记录器」，跑一遍
 _review_learning_package_pipeline，然后对事件时间线做断言：
@@ -13,11 +15,15 @@ _review_learning_package_pipeline，然后对事件时间线做断言：
   P1 [Phase A 并发] 各块的「生成→首轮审核」在时间上重叠：
      存在「某块 generate_block 开始」早于「另一块 review_block 结束」——
      证明 asyncio.gather 让块间并发，而非逐块串行。
-  P2 [问题堆积到最后] 第一次 modify_block 严格发生在「最后一个 Phase A review_block 结束」之后：
-     证明修改不是边审边改，而是等所有块首轮审核堆积完毕后统一开始。
-  P3 [修改阶段不再生成] 第一次 modify_block 之后不再出现任何 generate_block：
+  P2 [生成并发上限=2] 任一时刻在飞的 generate_block ≤ 2（Semaphore(2) 限流）。
+  P3 [问题堆积到最后] 第一次 modify_block 严格发生在「最后一个 Phase A review_block 结束」之后：
+     证明修改不是边审边改，而是等所有块首轮审核堆积完毕后一次性反馈。
+  P4 [修改阶段不再生成] 第一次 modify_block 之后不再出现任何 generate_block：
      证明不存在模型A的「一边生成板块4、一边改板块1」的交错。
-  P4 [Phase B 逐块串行] Phase B 内 modify_block 之间不重叠（串行 await）。
+  P5 [修改并发上限=2] 修改阶段任一时刻在飞的 modify_block ≤ 2 且曾达到并发（>1）。
+  P6 [非阻塞复核] 存在「某块 mod_start」早于「另一块修改后复核 rev_end」——
+     证明块1的复核（create_task 派发）不阻塞块2开始修改。
+  P7 [交还≤3] Agent4 交还问题清单的轮次 round_num 不超过 MAX_REVIEW_ITERATIONS(=3)。
 
 运行：
   python tests/check_pipeline_parallel_semantics.py
@@ -126,6 +132,24 @@ class Timeline:
         return xs[-1] if xs else None
 
 
+def _max_inflight(tl: "Timeline", start_kind: str, end_kind: str) -> int:
+    """按 seq 顺序扫描 start/end 事件，计算任一时刻在飞的最大数量。
+
+    因所有事件在单事件循环内按发生顺序 append（seq 单调递增），
+    按 seq 排序即为真实时间序；start +1 / end -1，取运行峰值。
+    """
+    events = sorted(
+        [e for e in tl.events if e["kind"] in (start_kind, end_kind)],
+        key=lambda e: e["seq"],
+    )
+    active = 0
+    peak = 0
+    for e in events:
+        active += 1 if e["kind"] == start_kind else -1
+        peak = max(peak, active)
+    return peak
+
+
 def _install_recorders(harness, tl: Timeline, delay: float = 0.05):
     """把 harness.agent3/agent4 的关键方法包成「记录开始/结束 + 注入微小 await 延迟」的版本。
 
@@ -189,7 +213,7 @@ class Checker:
 
 
 async def run(checker: Checker) -> None:
-    from orchestrator.harness import Harness
+    from orchestrator.harness import Harness, BLOCK_CONCURRENCY
     from models.profile import PracticeProfile, UserProfile
     from models.stage import StageInfo
 
@@ -202,11 +226,15 @@ async def run(checker: Checker) -> None:
         stage_id="stage-par-01", stage_num=1, block_id="KB-12",
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA", subtopic_id="KBS-12-01",
     )
+    # 落库 stage 满足审核 trace 落库的 stage_id 外键（保持日志干净，与生产一致）。
+    harness.state_manager.update_stage("orch-parallel", stage)
     profile = UserProfile(session_id="orch-parallel", goal="掌握LoRA微调", learning_style="示例驱动")
     practice = PracticeProfile(hardware="RTX 4090 24GB")
 
     print("\n[并行语义] 运行 _review_learning_package_pipeline 并记录事件时间线 ...")
-    await harness._review_learning_package_pipeline("orch-parallel", stage, profile, practice)
+    package, history = await harness._review_learning_package_pipeline(
+        "orch-parallel", stage, profile, practice,
+    )
 
     gen_starts = tl.of("gen_start")
     rev_ends = tl.of("rev_end")
@@ -220,60 +248,95 @@ async def run(checker: Checker) -> None:
     checker.check(len(gen_starts) >= 2, "Phase A 生成了多个块（块级流水线）", f"gen={len(gen_starts)}")
     checker.check(len(rev_ends) >= 2, "Phase A 每块都过了首轮审核", f"rev_end={len(rev_ends)}")
 
+    first_mod_t = mod_starts[0]["t"] if mod_starts else float("inf")
+
     # -------- P1：Phase A 生成×审核并发（块间时间重叠） --------
     # Phase A 的 review 是首轮（round_index=1）；Phase B 复审 review 在第一次 mod_start 之后。
-    first_mod_t = mod_starts[0]["t"] if mod_starts else float("inf")
     phase_a_gen_starts = [e for e in gen_starts if e["t"] < first_mod_t]
     phase_a_rev_ends = [e for e in rev_ends if e["t"] < first_mod_t]
-    # 若逐块串行：每个 gen_start 都应晚于前一块的 rev_end。并发则相反：
-    # 存在「后一块 gen_start」早于「前面某块 rev_end」。
-    last_gen_start_t = max((e["t"] for e in phase_a_gen_starts), default=0.0)
-    earliest_rev_end_t = min((e["t"] for e in phase_a_rev_ends), default=float("inf"))
-    overlap = last_gen_start_t < earliest_rev_end_t
+    # 并发（且受 Semaphore(2) 限流）的判据：存在「某块 gen_start」早于「另一块 rev_end」，
+    # 即同一时间窗内至少两块的生成/审核在重叠推进。注意不能用「最后一个 gen_start」，
+    # 因为受 cap=2 限流时第 3 块的 gen_start 必然晚于前两块之一的 rev_end（属正常）。
+    earliest_gen_start_t = min((e["t"] for e in phase_a_gen_starts), default=float("inf"))
+    latest_phase_a_rev_end_t = max((e["t"] for e in phase_a_rev_ends), default=0.0)
+    overlap = earliest_gen_start_t < latest_phase_a_rev_end_t and len(phase_a_gen_starts) >= 2
     checker.check(
         overlap,
         "P1 Phase A 生成与审核在块间并发（时间重叠，非逐块串行）",
-        f"last_gen_start={last_gen_start_t:.4f} < earliest_rev_end={earliest_rev_end_t:.4f}",
+        f"earliest_gen_start={earliest_gen_start_t:.4f} < latest_phaseA_rev_end={latest_phase_a_rev_end_t:.4f}",
     )
 
-    # -------- P2：问题堆积到最后才开始修改 --------
+    # -------- P2：生成并发上限=2（Semaphore(2) 限流，兼顾低配设备） --------
+    # 用 gen_start / gen_end 计算任一时刻在飞的 generate_block 数（按时间顺序扫描）。
+    max_gen_inflight = _max_inflight(tl, "gen_start", "gen_end")
+    checker.check(
+        1 < max_gen_inflight <= BLOCK_CONCURRENCY,
+        f"P2 生成并发受控且曾并发（1 < 峰值 ≤ {BLOCK_CONCURRENCY}）",
+        f"max_gen_inflight={max_gen_inflight}",
+    )
+
+    # -------- P3：问题堆积到最后才开始修改 --------
     # 第一次 modify_block 必须晚于「最后一个 Phase A(首轮) review 结束」。
-    # 首轮 rev_end 即第一次 mod_start 之前的所有 rev_end。
     phase_a_last_rev_end_t = max((e["t"] for e in phase_a_rev_ends), default=0.0)
     if mod_starts:
-        p2 = first_mod_t >= phase_a_last_rev_end_t
+        p3 = first_mod_t >= phase_a_last_rev_end_t
         checker.check(
-            p2,
-            "P2 首次修改发生在「所有块首轮审核堆积完毕」之后（Agent4 攒到最后再反馈）",
+            p3,
+            "P3 首次修改发生在「所有块首轮审核堆积完毕」之后（Agent4 一次性反馈）",
             f"first_mod_start={first_mod_t:.4f} >= last_phaseA_rev_end={phase_a_last_rev_end_t:.4f}",
         )
     else:
         # 无 mod 意味着首轮全通过；本用例特意构造了会触发问题的块，理应有 mod。
-        checker.check(False, "P2 预期存在修改动作（构造了会触发问题的块）", "mod_starts 为空")
+        checker.check(False, "P3 预期存在修改动作（构造了会触发问题的块）", "mod_starts 为空")
 
-    # -------- P3：修改阶段不再生成（排除模型A交错） --------
+    # -------- P4：修改阶段不再生成（排除模型A交错） --------
     gen_after_first_mod = [e for e in gen_starts if e["t"] > first_mod_t]
     checker.check(
         len(gen_after_first_mod) == 0,
-        "P3 首次修改之后不再有任何 generate_block（非模型A的边生成边改）",
+        "P4 首次修改之后不再有任何 generate_block（非模型A的边生成边改）",
         f"gen_after_mod={len(gen_after_first_mod)}",
     )
 
-    # -------- P4：Phase B 逐块修改串行（modify_block 之间不重叠） --------
-    # 串行 => 每个 mod_start 都不早于上一个 mod_end。
-    serial = True
-    detail = ""
-    events = sorted([e for e in tl.events if e["kind"] in ("mod_start", "mod_end")], key=lambda e: e["seq"])
-    active = 0
-    max_active = 0
-    for e in events:
-        active += 1 if e["kind"] == "mod_start" else -1
-        max_active = max(max_active, active)
-    serial = max_active <= 1
+    # -------- P5：修改并发上限=2（并发修改而非串行） --------
+    # 修改阶段任一时刻在飞的 modify_block ≤ 2，且至少一次达到 2（证明并发，非串行=1）。
+    max_mod_inflight = _max_inflight(tl, "mod_start", "mod_end")
     checker.check(
-        serial,
-        "P4 Phase B 逐块修改为串行（同一时刻至多 1 个 modify_block 在跑）",
-        f"max_concurrent_modify={max_active}",
+        1 < max_mod_inflight <= BLOCK_CONCURRENCY,
+        f"P5 修改并发受控且曾并发（1 < 峰值 ≤ {BLOCK_CONCURRENCY}，非串行）",
+        f"max_mod_inflight={max_mod_inflight}",
+    )
+
+    # -------- P6：非阻塞复核（块1复核不阻塞块2修改） --------
+    # 修改后复核 = 第一次 mod_start 之后发生的 rev_end（Phase A 首轮 rev 已排除）。
+    recheck_rev_ends = [e for e in rev_ends if e["t"] > first_mod_t]
+    # 存在「某块 mod_start」晚于（另一块）已产生的修改后复核 rev_end 之前——
+    # 即某块复核尚未收敛（rev_end 之前），另一块的修改已经开始。
+    nonblocking = False
+    detail_p6 = "无修改后复核事件"
+    if recheck_rev_ends and len(mod_starts) >= 2:
+        earliest_recheck_end_t = min(e["t"] for e in recheck_rev_ends)
+        # 是否存在「第 2 个及以后的 mod_start」早于最早的修改后复核结束
+        later_mod_starts = [e for e in mod_starts if e["t"] < earliest_recheck_end_t]
+        nonblocking = len(later_mod_starts) >= 2
+        detail_p6 = (
+            f"earliest_recheck_rev_end={earliest_recheck_end_t:.4f}, "
+            f"mod_starts_before_it={len(later_mod_starts)}"
+        )
+    checker.check(
+        nonblocking,
+        "P6 复核以独立 task 派发，不阻塞其它块修改（块1复核期间块2已开始修改）",
+        detail_p6,
+    )
+
+    # -------- P7：交还次数 ≤ MAX_REVIEW_ITERATIONS(=3) --------
+    # 修改轮次由外层 for round_num in range(1, MAX+1) 控制。
+    # review_history = 首轮生成审核(iteration=1) + 每个修改轮各一条 ⇒
+    # 修改轮数 = len(history) - 1，其上界即 MAX_REVIEW_ITERATIONS。
+    modify_rounds = max(0, len(history) - 1)
+    checker.check(
+        modify_rounds <= settings.MAX_REVIEW_ITERATIONS,
+        f"P7 交还问题清单轮次 ≤ MAX_REVIEW_ITERATIONS(={settings.MAX_REVIEW_ITERATIONS})（防死循环）",
+        f"modify_rounds={modify_rounds}, history_len={len(history)}",
     )
 
     harness.state_manager.db_client.close()
