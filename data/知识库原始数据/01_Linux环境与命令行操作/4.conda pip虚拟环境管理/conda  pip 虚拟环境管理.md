@@ -349,13 +349,13 @@ rm -rf myenv
 
 即使使用 pip，也应该配置国内镜像源加速下载。（④）
 
-#### 临时使用（单次生效）（④）
+### 临时使用（单次生效）（④）
 
 ```bash
 pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-#### 永久配置（推荐）（④）
+### 永久配置（推荐）（④）
 
 ```bash
 # 创建/编辑 pip 配置文件

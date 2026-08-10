@@ -222,11 +222,12 @@ def _chunk_with_h3(lines: list[str], headings: list[tuple[int, int, str]]) -> li
     for i, (h3_idx, h3_text) in enumerate(h3_headings):
         # 块开始位置
         if i == 0:
-            # 第一个 H3：从文件开头（含 H1、所有前置 H2 章节、引言等）
+            # 第一个 H3：保留文件前导的 H1/H2/引言，避免丢失文章开篇上下文。
             chunk_start_idx = 0
         else:
-            # 后续 H3：从上一个 H3 之后开始
-            chunk_start_idx = h3_headings[i - 1][0] + 1
+            # 后续块从当前 H3 本身开始。若从上一个 H3 后开始，会把上一个
+            # H3 的正文重复装入当前块，进而破坏后续 H4/段落拆分的行号范围。
+            chunk_start_idx = h3_idx
 
         # 块结束位置
         if i + 1 < len(h3_headings):
