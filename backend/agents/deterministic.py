@@ -30,9 +30,9 @@ from models.contracts import (
 from models.material import TestQuestion
 from models.profile import KnowledgeGap, PracticeProfile, UserProfile
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
-from models.stage import Claim, LearningPackage, Source, StageInfo
+from models.stage import Claim, ContentBlock, LearningPackage, Source, StageInfo
 from tools.learning_resource_tool import LearningResourceTool
-from agents.agent_04_tech_review import TechnicalReviewAgent
+from agents.agent_04_tech_review import TechnicalReviewAgent, _select_key_claims
 from skills import load_skills
 from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
 from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
@@ -1855,6 +1855,198 @@ class DeterministicContentAgent:
             package["version"] = package.get("version", 1) + 1
         return package
 
+    # ==================================================================
+    # 块级流水线（任务 3 / 任务 6）：Agent3 逐块生成个性化内容 + 定点修改回传
+    # ==================================================================
+    def iter_stage_chunks(self, stage: StageInfo) -> List[Dict[str, Any]]:
+        """读取当前阶段（block + 子知识点集合）的原始 knowledge_chunk 列表。
+
+        - 按 (subtopic_id, chunk_index) 稳定排序，保证块顺序可复现；
+        - 库不可用/为空返回 []（上层据此降级，不臆造内容）。
+        每个元素即一个原始 chunk dict，供 generate_block 逐块个性化。
+        """
+        subtopic_ids = self._stage_subtopic_ids(stage)
+        try:
+            return self.vector_search_tool.get_stage_chunks(stage.block_id, subtopic_ids)
+        except Exception:
+            return []
+
+    @staticmethod
+    def _chunk_source_note(source_chunk: Dict[str, Any], title: str) -> str:
+        """构造人类可读的来源说明（标题路径 + 原文行号，缺失优雅省略）。"""
+        parts: List[str] = []
+        heading_path = source_chunk.get("heading_path")
+        if heading_path:
+            parts.append(f"标题路径：{heading_path}")
+        elif title:
+            parts.append(f"资料：{title}")
+        start = source_chunk.get("source_line_start")
+        end = source_chunk.get("source_line_end")
+        if start is not None and end is not None:
+            parts.append(f"原文行号：{start}-{end}")
+        chunk_id = source_chunk.get("chunk_id")
+        if chunk_id:
+            parts.append(f"来源块：{chunk_id}")
+        return "；".join(parts) if parts else "来源：本地学习资料"
+
+    def _personalize_chunk_text(
+        self,
+        stage: StageInfo,
+        source_text: str,
+        profile: Optional[UserProfile],
+        practice: Optional[PracticeProfile],
+    ) -> str:
+        """确定性块级个性化：不改写事实，只在原文块外围补充可执行/降维提示。
+
+        deterministic 模式无 LLM，保留原始块正文作为事实主体（避免引入幻觉），
+        再依据画像/实训条件追加一段个性化说明。Hybrid 版会覆盖为 LLM 改写。
+        """
+        body = (source_text or "").strip()
+        practice_note = self._practice_note(practice) if practice else ""
+        style_note = ""
+        if profile is not None:
+            style = getattr(profile, "learning_style", "") or ""
+            level = getattr(profile, "level", "") or getattr(profile, "current_level", "") or ""
+            hints = []
+            if style:
+                hints.append(f"学习风格：{style}")
+            if level:
+                hints.append(f"当前水平：{level}")
+            if hints:
+                style_note = "（个性化提示：" + "，".join(hints) + "）"
+        parts = [body] if body else []
+        if style_note:
+            parts.append(style_note)
+        if practice_note:
+            parts.append(f"实训提示：{practice_note}")
+        return "\n\n".join(parts).strip()
+
+    async def generate_block(
+        self,
+        stage: StageInfo,
+        source_chunk: Dict[str, Any],
+        profile: Optional[UserProfile] = None,
+        practice: Optional[PracticeProfile] = None,
+        block_index: int = 0,
+        session_id: str = "",
+    ) -> ContentBlock:
+        """对单个原始 knowledge_chunk 生成一个个性化内容块（ContentBlock）。
+
+        完成条件（任务 3）：每完成一个块即可独立提交给 Agent4 审核。输出保留
+        source_chunk_id / 标题路径 / 来源说明 / Claim，Claim 绑定来源块以便块级事实核验。
+        异步签名统一：Hybrid 版覆盖为 LLM 改写，deterministic 版仅做保守个性化。
+        """
+        chunk_id = source_chunk.get("chunk_id") or source_chunk.get("source_chunk_id") or ""
+        doc_id = source_chunk.get("doc_id")
+        subtopic_id = source_chunk.get("subtopic_id")
+        title = source_chunk.get("title") or ""
+        source_locator = source_chunk.get("source") or ""
+        source_text = source_chunk.get("content") or ""
+
+        content_block_id = "_".join(
+            str(p) for p in ("cb", session_id, stage.stage_id, chunk_id or block_index) if p != ""
+        )
+        content_block_id = re.sub(r"_+", "_", content_block_id).strip("_")
+
+        personalized = self._personalize_chunk_text(stage, source_text, profile, practice)
+        source_note = self._chunk_source_note(source_chunk, title)
+
+        # 来源：回指原始块，Agent4 据 content_ref/metadata 的 source_chunk_id 回查核验
+        source = Source(
+            source_id=f"src_{chunk_id or block_index}",
+            source_type="knowledge_doc",
+            title=title,
+            locator=source_locator or chunk_id,
+            content_ref=chunk_id,
+            metadata_json={
+                "block_id": source_chunk.get("block_id", stage.block_id),
+                "subtopic_id": subtopic_id,
+                "doc_id": doc_id,
+                "source_chunk_id": chunk_id,
+                "heading_path": source_chunk.get("heading_path"),
+                "source_line_start": source_chunk.get("source_line_start"),
+                "source_line_end": source_chunk.get("source_line_end"),
+            },
+        )
+
+        # 每块一条关键技术 Claim，claim_id 绑定 content_block_id，便于 Agent4 逐块核验
+        claim_id = f"clm_{content_block_id}"
+        claim = Claim(
+            claim_id=claim_id,
+            text=(source_text or f"{stage.block_name}的核心概念").strip()[:500],
+            source_ref=source.source_id if chunk_id else None,
+            section_ref=f"block:{content_block_id}",
+            claim_type="concept",
+            is_key_technical=bool(chunk_id),
+            confidence=0.8,
+            metadata_json={"source_chunk_id": chunk_id},
+        )
+
+        return ContentBlock(
+            content_block_id=content_block_id,
+            session_id=session_id or "",
+            stage_id=stage.stage_id,
+            block_id=stage.block_id,
+            subtopic_id=subtopic_id,
+            block_name=stage.block_name,
+            block_index=block_index,
+            source_chunk_id=chunk_id or None,
+            source_doc_id=doc_id,
+            heading_path=source_chunk.get("heading_path"),
+            heading_level=source_chunk.get("heading_level"),
+            source_line_start=source_chunk.get("source_line_start"),
+            source_line_end=source_chunk.get("source_line_end"),
+            source_note=source_note,
+            personalized_content=personalized,
+            claims=[claim],
+            sources=[source],
+            version=1,
+            status="draft",
+        )
+
+    async def modify_block(
+        self,
+        block: ContentBlock,
+        issues: List[Dict[str, Any]],
+        revision_note: Optional[str] = None,
+    ) -> ContentBlock:
+        """定点修改单个内容块（任务 6：只回传修订后的问题块、版本号和修改说明）。
+
+        - 只处理传入的当前块 issue（块级审核结果），不触碰其它块；
+        - version 递增；status 置 revised；写入 revision_note（自述修改说明）；
+        - Claim 状态按 issue 更新（有事实类 issue 的 Claim → revised）。
+        deterministic 版做保守修订（在正文追加修订说明），Hybrid 版覆盖为 LLM 改写。
+        """
+        updated = block.model_copy(deep=True)
+        applied_notes: List[str] = []
+        touched_claim_ids = set()
+        for issue in issues or []:
+            desc = issue.get("suggestion") or issue.get("description") or ""
+            if desc:
+                applied_notes.append(desc)
+            cid = issue.get("claim_id")
+            if cid:
+                touched_claim_ids.add(cid)
+
+        if applied_notes:
+            updated.personalized_content = (
+                (updated.personalized_content or "").rstrip()
+                + "\n\n## 修订说明\n\n"
+                + "\n".join(f"- {n}" for n in applied_notes)
+            )
+
+        for claim in updated.claims:
+            if claim.claim_id in touched_claim_ids and claim.status == "active":
+                claim.status = "revised"
+
+        updated.version = (block.version or 1) + 1
+        updated.status = "revised"
+        updated.revision_note = revision_note or (
+            "已按审核建议定点修订本块：" + "；".join(applied_notes)
+            if applied_notes else "本块无需修改（无有效 issue）"
+        )
+        return updated
+
 
 class HybridContentAgent(DeterministicContentAgent):
     def __init__(self, database_url: str = None):
@@ -1908,6 +2100,114 @@ class HybridContentAgent(DeterministicContentAgent):
         else:
             _agent_log("Agent3", "content:llm_invalid -> retrieved_material_fallback")
         return output
+
+    async def generate_block(
+        self,
+        stage: StageInfo,
+        source_chunk: Dict[str, Any],
+        profile: Optional[UserProfile] = None,
+        practice: Optional[PracticeProfile] = None,
+        block_index: int = 0,
+        session_id: str = "",
+    ) -> ContentBlock:
+        """块级个性化（Hybrid）：先构造确定性块骨架，再用 LLM 对本块做解释/降维/补例。
+
+        仅改写 personalized_content（表达层），不改动 source_chunk_id / 标题路径 /
+        Claim 等溯源字段，保证 Agent4 仍能回查来源块做事实核验。LLM 失败或产出
+        不可用时保留确定性个性化正文兜底。
+        """
+        block = await super().generate_block(
+            stage, source_chunk, profile, practice, block_index, session_id,
+        )
+        source_text = (source_chunk.get("content") or "").strip()
+        if not source_text:
+            return block
+
+        learning_profile = profile.model_dump(mode="json") if profile is not None else {}
+        practice_profile = practice.model_dump(mode="json") if practice is not None else {}
+        heading_path = source_chunk.get("heading_path") or block.block_name
+        prompt = f"""请对以下原始学习资料「块」进行个性化改写，使其贴合学习者画像与实训条件。
+
+所属知识点/标题路径：{heading_path}
+学习者画像：{json.dumps(learning_profile, ensure_ascii=False)}
+实训条件：{json.dumps(practice_profile, ensure_ascii=False)}
+
+原始资料（本块，禁止引入原文之外未经核验的技术事实）：
+{source_text}
+
+要求：
+1. 仅解释、降维或补充可执行示例，不得添加原文没有的技术断言；
+2. 保持与本块知识点一致，不跨块扩展；
+3. 依据画像调整表达难度和示例；实训条件仅用于示例可执行性；
+4. 输出 Markdown 正文，不要输出标题层级之外的元信息。
+
+内容生成规范：
+{self.content_skill_context}
+"""
+        try:
+            rewritten = await self.llm_client.complete(
+                prompt,
+                system_prompt="你是严谨、清晰的个性化学习助手，只在给定资料范围内改写。",
+                temperature=0.4,
+            )
+        except Exception:
+            rewritten = ""
+        if rewritten and len(rewritten.strip()) >= 20:
+            block.personalized_content = rewritten.strip()
+            _agent_log("Agent3", f"block:llm_done | cb={block.content_block_id} | len={len(rewritten)}")
+        else:
+            _agent_log("Agent3", f"block:llm_invalid -> deterministic_fallback | cb={block.content_block_id}")
+        return block
+
+    async def modify_block(
+        self,
+        block: ContentBlock,
+        issues: List[Dict[str, Any]],
+        revision_note: Optional[str] = None,
+    ) -> ContentBlock:
+        """块级定点修改（Hybrid）：用 LLM 依据本块 issue 重写正文，版本递增。
+
+        仅回传修订后的单块（任务 6）；LLM 失败时回退确定性修订。溯源字段不变。
+        """
+        base = await super().modify_block(block, issues, revision_note)
+        if not issues:
+            return base
+
+        issue_lines = []
+        for issue in issues:
+            loc = issue.get("in_chunk_position") or issue.get("location") or ""
+            desc = issue.get("description") or ""
+            sug = issue.get("suggestion") or ""
+            issue_lines.append(f"- 位置[{loc}] 问题：{desc}；建议：{sug}")
+        issues_text = "\n".join(issue_lines)
+        prompt = f"""请依据审核意见对以下个性化内容「块」做定点修订，只改有问题的部分，其余保持不变。
+
+块标识：{block.content_block_id}（来源块 {block.source_chunk_id or '未知'}）
+当前正文：
+{block.personalized_content}
+
+审核意见（本块）：
+{issues_text}
+
+要求：
+1. 逐条落实审核意见，不得引入新的未核验技术事实；
+2. 保持与来源块一致，不跨块扩展；
+3. 输出修订后的完整 Markdown 正文。
+
+内容生成规范：
+{self.content_skill_context}
+"""
+        try:
+            rewritten = await self.llm_client.complete(
+                prompt,
+                system_prompt="你是严谨的个性化学习助手，按审核意见定点修订，不越界。",
+                temperature=0.3,
+            )
+        except Exception:
+            rewritten = ""
+        if rewritten and len(rewritten.strip()) >= 20:
+            base.personalized_content = rewritten.strip()
+        return base
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
         _agent_log("Agent3", f"answer:hybrid_start | question={request.question[:60]}")
@@ -2311,15 +2611,16 @@ class DeterministicTechnicalReviewAgent:
             pass
 
         # 步骤2：事实检查（幻觉检测 — 知识依据验证，sim<0.65判幻觉）
-        # 有 claims 时按 Claim 粒度送检，使幻觉 issue 精确归属 claim_id/section_ref
-        # （供协议字段补全关联来源、派生 must_fix）；无 claims 时回退整篇送检。
-        # 保留原始 dict（raw_hallucinations，含显式 claim_id）传入协议补全，
-        # 避免 normalize 丢弃 claim_id 后仅靠 location 匹配（同 section 多 claim 时会误配）。
+        # Claim 回退修正（任务 2）：存在有效关键 Claim 时，只对 Claim 核验（结果可为空，
+        # 不再回退整篇），避免整篇送检重新产生全文级误报；无有效关键 Claim 时才回退整篇。
+        # 保留原始 dict（raw_hallucinations，含显式 claim_id/块溯源）传入协议补全，
+        # 避免 normalize 丢弃 claim_id/块字段后仅靠 location 匹配（同 section 多 claim 时会误配）。
         try:
-            claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
-                request.claims
-            )
-            if claim_hallucinations:
+            key_claims = _select_key_claims(request.claims)
+            if key_claims:
+                claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
+                    key_claims
+                )
                 raw_hallucinations = claim_hallucinations
                 errors.extend(normalize_review_errors(claim_hallucinations))
             else:
@@ -2373,6 +2674,22 @@ class DeterministicTechnicalReviewAgent:
         """委托 Agent4 实现复核裁决（对接需求清单 2.2）。"""
         return await self._protocol_agent.rebut(session_id, issues, author_replies)
 
+    # ==================================================================
+    # 块级审核（任务 4）：输入一个个性化内容块，回查来源块做事实核验，
+    # 审核范围限定当前块，issue 绑定 content_chunk_id/content_version/claim_id/块内位置。
+    # ==================================================================
+    async def review_block(
+        self,
+        block: Any,
+        stage: StageInfo,
+        profile: Any = None,
+        round_index: int = 1,
+        trace_id: Optional[str] = None,
+    ) -> TechnicalReviewResult:
+        return await _review_block_impl(
+            self, block, stage, profile, round_index, trace_id, use_llm=False,
+        )
+
 
 # DeterministicQualityReviewAgent 和 HybridQualityReviewAgent 已合并至 Agent4
 # 质量审核功能已集成到 DeterministicTechnicalReviewAgent 和 HybridTechnicalReviewAgent
@@ -2410,14 +2727,16 @@ class HybridTechnicalReviewAgent:
             rule_errors = []
 
         # 步骤2：事实检查（幻觉检测 — 知识依据验证）— 异常兜底
-        # 有 claims 时按 Claim 粒度送检，使幻觉 issue 精确归属 claim_id/section_ref；
-        # 保留原始 dict（raw_hallucinations，含显式 claim_id）供协议补全精确匹配。
+        # Claim 回退修正（任务 2）：存在有效关键 Claim 时，只对 Claim 核验（结果可为空，
+        # 不再回退整篇）；无有效关键 Claim 时才回退整篇。保留原始 dict（raw_hallucinations，
+        # 含显式 claim_id/块溯源）供协议补全精确匹配。
         raw_hallucinations: List[Dict[str, Any]] = []
         try:
-            claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
-                request.claims
-            )
-            if claim_hallucinations:
+            key_claims = _select_key_claims(request.claims)
+            if key_claims:
+                claim_hallucinations = await self._protocol_agent._verify_claims_hallucination(
+                    key_claims
+                )
                 raw_hallucinations = claim_hallucinations
                 hallucination_errors = normalize_review_errors(claim_hallucinations)
             else:
@@ -2503,6 +2822,19 @@ class HybridTechnicalReviewAgent:
         返回 {canonical_error_id: "persist" | "withdraw" | "downgrade"}。
         """
         return await self._protocol_agent.rebut(session_id, issues, author_replies)
+
+    async def review_block(
+        self,
+        block: Any,
+        stage: StageInfo,
+        profile: Any = None,
+        round_index: int = 1,
+        trace_id: Optional[str] = None,
+    ) -> TechnicalReviewResult:
+        """块级审核（Hybrid）：确定性块级事实/质量核验 + LLM 语义补充（范围限定当前块）。"""
+        return await _review_block_impl(
+            self, block, stage, profile, round_index, trace_id, use_llm=True,
+        )
 
     def _build_prompt(self, request: ReviewInput) -> str:
         domain_reference = self._domain_reference(request.stage.block_name)
@@ -2614,6 +2946,170 @@ def normalize_review_errors(raw_errors: list) -> list[ReviewError]:
             suggestion=raw.get("suggestion"),
         ))
     return errors
+
+
+def _block_to_dict(block: Any) -> Dict[str, Any]:
+    """把 ContentBlock（模型或 dict）统一转成 dict，容错缺字段。"""
+    if isinstance(block, dict):
+        return block
+    if hasattr(block, "model_dump"):
+        return block.model_dump(mode="json")
+    return {}
+
+
+async def _review_block_impl(
+    agent: Any,
+    block: Any,
+    stage: StageInfo,
+    profile: Any,
+    round_index: int,
+    trace_id: Optional[str],
+    use_llm: bool,
+) -> TechnicalReviewResult:
+    """块级审核共享实现（Deterministic / Hybrid 共用）。
+
+    任务 4 约束：
+      - 输入一个个性化内容块 + 其来源块信息；
+      - 回查 source_chunk_id 对应的原始资料做事实核验（verify_against_chunk）；
+      - 每条 issue 绑定 content_chunk_id / content_version / claim_id / 块内位置 / 原因 / 证据 / 建议；
+      - 保留难度/认知负荷/风格/代码（规则）审核，但审核范围限定为当前块正文。
+    """
+    bd = _block_to_dict(block)
+    content = (bd.get("personalized_content") or "").strip()
+    content_block_id = bd.get("content_block_id")
+    content_version = bd.get("version", 1)
+    source_chunk_id = bd.get("source_chunk_id")
+    block_claims = bd.get("claims") or []
+    sources = bd.get("sources") or []
+
+    _agent_log(
+        "Agent4",
+        f"review_block:start | cb={content_block_id} | src_chunk={source_chunk_id} | v={content_version}",
+    )
+
+    if not content:
+        err = ReviewError(
+            error_type="missing_content",
+            severity="critical",
+            description="内容块正文为空",
+            content_block_id=content_block_id,
+            content_version=content_version,
+        )
+        return TechnicalReviewResult(passed=False, errors=[err])
+
+    errors: List[ReviewError] = []
+    raw_facts: List[Dict[str, Any]] = []
+
+    # 步骤1：硬性规则检查（限定本块正文）
+    try:
+        errors.extend(normalize_review_errors(await agent.rule_check_tool.check_rules(content)))
+    except Exception:
+        pass
+
+    # 步骤2：事实核验（Claim 优先，回查来源块）。块级只对本块 Claim 核验，
+    # 不回退整篇；Claim 已带 source_chunk_id，_verify_claims_hallucination 会走 verify_against_chunk。
+    key_claims = _select_key_claims(block_claims)
+    try:
+        if key_claims:
+            claim_facts = await agent._protocol_agent._verify_claims_hallucination(key_claims)
+            raw_facts = claim_facts
+            errors.extend(normalize_review_errors(claim_facts))
+        elif source_chunk_id:
+            # 无显式关键 Claim，但有来源块：对本块正文按来源块核验（仍绑定确切块，不整篇送检）
+            chunk_facts = await agent.knowledge_verify_tool.verify_against_chunk(content, source_chunk_id)
+            raw_facts = chunk_facts
+            errors.extend(normalize_review_errors(chunk_facts))
+        # 既无关键 Claim 又无来源块时，不做全库整篇送检（块级不制造全文级误报）
+    except Exception:
+        pass
+
+    # 步骤3-4：质量审核（难度/认知负荷/风格），范围限定本块正文
+    profile_json = profile.model_dump(mode="json") if hasattr(profile, "model_dump") else profile
+    try:
+        quality: List[Any] = []
+        quality.extend(await agent.difficulty_analyzer_tool.analyze(content, profile=profile_json))
+        quality.extend(await agent.cognitive_load_tool.analyze(content))
+        quality.extend(await agent.style_match_tool.check(content, profile=profile_json))
+        errors.extend(normalize_review_errors(quality))
+    except Exception:
+        pass
+
+    # 步骤4.5（Hybrid）：LLM 语义审核，范围限定本块，补充事实/表达类问题
+    if use_llm:
+        try:
+            llm_errors = await _llm_review_block(agent, block=bd, stage=stage)
+            errors.extend(normalize_review_errors(llm_errors))
+        except Exception:
+            pass
+
+    # 步骤5：审核辩论协议字段补全（复用现有 enrich，raw_facts 携带 claim_id/块溯源）
+    errors = agent._protocol_agent._enrich_debate_fields(
+        errors,
+        sources=sources,
+        claims=block_claims,
+        round_index=round_index,
+        raw_errors=raw_facts,
+    )
+
+    # 步骤6：块级溯源强制回填——每条 issue 必须携带块标识与版本（任务 4 强约束）。
+    # in_chunk_position / claim_id 由 enrich/事实核验尽力填充；此处兜底补齐块级字段。
+    for e in errors:
+        if getattr(e, "content_block_id", None) is None:
+            e.content_block_id = content_block_id
+        if getattr(e, "content_version", None) is None:
+            e.content_version = content_version
+        if getattr(e, "content_chunk_id", None) is None and source_chunk_id:
+            e.content_chunk_id = source_chunk_id
+
+    _agent_log(
+        "Agent4",
+        f"review_block:done | cb={content_block_id} | errors={len(errors)}",
+    )
+    return TechnicalReviewResult(passed=not errors, errors=errors)
+
+
+async def _llm_review_block(agent: Any, block: Dict[str, Any], stage: StageInfo) -> List[Dict[str, Any]]:
+    """Hybrid 块级 LLM 审核：只针对当前块正文找技术/表达问题，输出结构化 issue 列表。
+
+    返回 raw dict issue 列表（error_type/severity/description/evidence/suggestion/in_chunk_position），
+    由调用方 normalize + enrich 补齐协议字段。LLM 失败或解析失败返回 []。
+    """
+    content = (block.get("personalized_content") or "").strip()
+    heading_path = block.get("heading_path") or block.get("block_name") or ""
+    source_chunk_id = block.get("source_chunk_id") or ""
+    prompt = f"""请只审核下面这一个「内容块」的技术正确性与表达质量，不要扩展到其它内容。
+
+所属知识点/标题路径：{heading_path}
+来源块：{source_chunk_id or '未知'}
+
+待审核内容块：
+{content[:8000]}
+
+审核规范：
+{agent.skill_context}
+
+要求：以 JSON 返回 {{"issues": [{{"error_type": "...", "severity": "critical|major|minor", "description": "...", "evidence": "...", "suggestion": "...", "in_chunk_position": "..."}}]}}。
+若本块无问题返回 {{"issues": []}}。只针对本块，不要臆造原文之外的事实。"""
+    response = await agent.llm_client.complete(
+        prompt,
+        system_prompt="你是Agent4块级审核专家，只审核给定内容块，不越界，不因表达流畅默认正确。",
+        temperature=0.1,
+        json_mode=True,
+    )
+    if not response or not isinstance(response, str):
+        return []
+    try:
+        data = json.loads(response)
+    except (json.JSONDecodeError, ValueError):
+        return []
+    issues = data.get("issues") if isinstance(data, dict) else None
+    if not isinstance(issues, list):
+        return []
+    cleaned: List[Dict[str, Any]] = []
+    for it in issues:
+        if isinstance(it, dict) and (it.get("description") or it.get("message")):
+            cleaned.append(it)
+    return cleaned
 
 
 class DeterministicStageDecisionAgent:

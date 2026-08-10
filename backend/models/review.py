@@ -17,6 +17,12 @@ class ReviewError(BaseModel):
     must_fix: bool = False                                  # 流程约束级别，非 severity（协议第 6 节派生）
     must_fix_reason: Optional[str] = None
     claim_id: Optional[str] = None                          # 关联的 Claim（协议 2.2）
+    # === 块级审核扩展字段（块级并行流水线）===
+    # 注意：这些字段仅作元数据，不参与 canonical_error_id 哈希种子（避免跨轮追踪断裂）。
+    content_block_id: Optional[str] = None                  # 被审核的个性化内容块 ID
+    content_chunk_id: Optional[str] = None                  # 回指的原始 knowledge_chunk ID
+    content_version: Optional[int] = None                   # 被审核块的版本号
+    in_chunk_position: Optional[str] = None                 # 块内定位（供 Agent3 定点修改）
 
 class ReviewResult(BaseModel):
     reviewer: Literal["technical", "quality"]

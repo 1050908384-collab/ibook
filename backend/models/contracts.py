@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, computed_field
 
 from models.profile import PracticeProfile, UserProfile
 from models.review import ReviewError, ReviewResult
-from models.stage import LearningPackage, StageInfo
+from models.stage import ContentBlock, LearningPackage, StageInfo
 
 
 class DiagnosticInput(BaseModel):
@@ -75,6 +75,7 @@ class ContentGenerationInput(BaseModel):
 
 class ContentGenerationOutput(BaseModel):
     learning_package: LearningPackage
+    blocks: List[ContentBlock] = Field(default_factory=list)  # 块级流水线产出（旧整篇路径留空）
 
 
 class ReviewInput(BaseModel):
@@ -91,6 +92,20 @@ class ReviewInput(BaseModel):
     claims: List[dict] = Field(default_factory=list)     # Agent3 产出的可验证陈述（协议 2.2）
     recommended_videos: List[dict] = Field(default_factory=list)  # Agent3 按当前子知识点推荐的视频资源
     round_index: int = 1                                 # 当前审核轮次，用于 error_id 后缀 _r{round_index}
+    # === 块级审核扩展（块级并行流水线）：整篇路径留空，块级路径由 review_block 填充 ===
+    content_block_id: Optional[str] = None
+    content_version: Optional[int] = None
+    source_chunk_id: Optional[str] = None
+    heading_path: Optional[str] = None
+    source_line_start: Optional[int] = None
+    source_line_end: Optional[int] = None
+
+
+class BlockRevisionInput(BaseModel):
+    """Agent3 块级定点修改输入：一个待修订块 + 该块相关的 issues。"""
+    session_id: str
+    block: ContentBlock
+    issues: List[dict] = Field(default_factory=list)
 
 
 class RebutInput(BaseModel):

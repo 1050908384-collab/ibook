@@ -197,18 +197,24 @@ class Harness:
             self.state_manager.get_practice_profile(session_id)
         )
         self._log(session_id, "start_stage:start", f"stage={stage.stage_num}, block={stage.block_name}")
-        generated = await self.agent3.run(ContentGenerationInput(
-            session_id=session_id,
-            stage=stage,
-            learning_profile=profile,
-            practice_profile=practice_profile,
-        ))
-        learning_package, review_history = await self._review_learning_package(
-            session_id,
-            generated.learning_package,
-            stage,
-            profile,
-        )
+        if settings.BLOCK_PIPELINE_ENABLED:
+            # 块级并行流水线：Agent3 逐块生成、Agent4 逐块审核并行推进（任务 5）。
+            learning_package, review_history = await self._review_learning_package_pipeline(
+                session_id, stage, profile, practice_profile,
+            )
+        else:
+            generated = await self.agent3.run(ContentGenerationInput(
+                session_id=session_id,
+                stage=stage,
+                learning_profile=profile,
+                practice_profile=practice_profile,
+            ))
+            learning_package, review_history = await self._review_learning_package(
+                session_id,
+                generated.learning_package,
+                stage,
+                profile,
+            )
         # 从 _review_learning_package 获取审核 trace 信息（P3）
         review_trace = getattr(self, "_last_review_trace", None) or {}
         final_status = review_trace.get("final_status", "passed")
@@ -786,6 +792,234 @@ class Harness:
         # 落库：更新 trace 最终状态（P2）
         self._persist_trace_finalize(trace_id, final_status, package_status, unresolved_count)
         return current_package, history
+
+    # ==================================================================
+    # 块级并行流水线（任务 5）：Agent3 逐块生成 × Agent4 逐块审核并行推进。
+    # Phase A：生成×审核并行（asyncio.gather，每块 generate→review_block 为一条协程）
+    # Phase B：统一答辩→复核→裁决，改一块送一块复审（revision_queue 流水）
+    # Phase C：聚合所有块为一个 LearningPackage
+    # ==================================================================
+    async def _generate_and_review_block(
+        self,
+        session_id: str,
+        stage: StageInfo,
+        profile: UserProfile,
+        practice_profile: PracticeProfile,
+        source_chunk: Dict[str, Any],
+        block_index: int,
+        round_index: int,
+    ) -> tuple[Any, TechnicalReviewResult]:
+        """单块流水线：Agent3 生成个性化块 → Agent4 块级审核。并行时每块独立跑此协程。"""
+        block = await self.agent3.generate_block(
+            stage=stage,
+            source_chunk=source_chunk,
+            profile=profile,
+            practice=practice_profile,
+            block_index=block_index,
+            session_id=session_id,
+        )
+        try:
+            review = await self.agent4.review_block(
+                block=block, stage=stage, profile=profile, round_index=round_index,
+            )
+        except Exception as exc:
+            review = TechnicalReviewResult(
+                passed=False,
+                errors=[ReviewError(
+                    error_type="review_system_error",
+                    severity="critical",
+                    description=f"Agent4 review_block failed: {exc}",
+                    content_block_id=getattr(block, "content_block_id", None),
+                )],
+            )
+        return block, review
+
+    def _aggregate_blocks(
+        self,
+        session_id: str,
+        stage: StageInfo,
+        blocks: List[Any],
+        trace_id: str,
+    ) -> LearningPackage:
+        """把已生成/修订的内容块按 block_index 聚合成一个 LearningPackage。"""
+        ordered = sorted(blocks, key=lambda b: getattr(b, "block_index", 0))
+        tutorial_parts: List[str] = [f"# {stage.block_name}"]
+        all_sources: List[Any] = []
+        all_claims: List[Any] = []
+        seen_source_ids: set = set()
+        for blk in ordered:
+            heading = blk.heading_path or blk.block_name or ""
+            if heading:
+                tutorial_parts.append(f"## {heading}")
+            if blk.personalized_content:
+                tutorial_parts.append(blk.personalized_content)
+            for src in blk.sources or []:
+                if src.source_id not in seen_source_ids:
+                    seen_source_ids.add(src.source_id)
+                    all_sources.append(src)
+            all_claims.extend(blk.claims or [])
+        return LearningPackage(
+            session_id=session_id,
+            stage_id=stage.stage_id,
+            block_id=stage.block_id,
+            block_name=stage.block_name,
+            tutorial="\n\n".join(p for p in tutorial_parts if p),
+            sources=all_sources,
+            claims=all_claims,
+            review_trace_id=trace_id,
+        )
+
+    async def _review_learning_package_pipeline(
+        self,
+        session_id: str,
+        stage: StageInfo,
+        profile: UserProfile,
+        practice_profile: PracticeProfile,
+    ) -> tuple[LearningPackage, list[ReviewRound]]:
+        """块级并行流水线主流程（任务 5）。
+
+        无可用原始 chunk 时安全降级为原整篇链路（生成整包 → _review_learning_package）。
+        """
+        history: list[ReviewRound] = []
+        trace_id = f"tr_{uuid.uuid4().hex[:16]}"
+
+        # 读取本阶段原始 knowledge_chunks（分块由数据侧负责入库）。
+        source_chunks = self.agent3.iter_stage_chunks(stage)
+        if not source_chunks:
+            # 无块可用：降级回整篇链路，保证不因缺块中断学习流。
+            self._log(session_id, "pipeline:no_chunks -> fallback_full", f"stage={stage.stage_num}")
+            generated = await self.agent3.run(ContentGenerationInput(
+                session_id=session_id,
+                stage=stage,
+                learning_profile=profile,
+                practice_profile=practice_profile,
+            ))
+            return await self._review_learning_package(
+                session_id, generated.learning_package, stage, profile,
+            )
+
+        # ---- Phase A：生成×审核并行 ----
+        self._log(session_id, "pipeline:phaseA_start", f"chunks={len(source_chunks)}")
+        pairs = await asyncio.gather(*[
+            self._generate_and_review_block(
+                session_id, stage, profile, practice_profile, chunk, idx, round_index=1,
+            )
+            for idx, chunk in enumerate(source_chunks)
+        ])
+        # blocks_by_id：块的当前版本；reviews_by_id：块最近一次审核结果
+        blocks_by_id: Dict[str, Any] = {}
+        reviews_by_id: Dict[str, TechnicalReviewResult] = {}
+        for blk, review in pairs:
+            blocks_by_id[blk.content_block_id] = blk
+            reviews_by_id[blk.content_block_id] = review
+
+        first_round_errors = [e for r in reviews_by_id.values() for e in r.errors]
+        history.append(ReviewRound(
+            iteration=1,
+            technical=TechnicalReviewResult(passed=not first_round_errors, errors=list(first_round_errors)),
+            quality=QualityReviewResult(passed=not first_round_errors, errors=list(first_round_errors)),
+        ))
+        self._log(
+            session_id, "pipeline:phaseA_done",
+            f"blocks={len(blocks_by_id)}, issues={len(first_round_errors)}",
+        )
+
+        # ---- Phase B：统一答辩→复核→裁决，改一块送一块复审 ----
+        final_status = "passed"
+        package_status = "approved"
+        total_unresolved = 0
+
+        for iteration in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
+            # 收集本轮所有块的未决 issue（跳过已通过的块）
+            pending = {
+                cid: rv for cid, rv in reviews_by_id.items() if rv.errors
+            }
+            if not pending:
+                final_status = "passed"
+                package_status = "approved"
+                break
+
+            round_unresolved = 0
+            round_errors: List[ReviewError] = []
+
+            # 改一块送一块：逐块答辩→复核→裁决→定点修改→立即复审
+            for cid, review in pending.items():
+                block = blocks_by_id[cid]
+                issues = [e.model_dump(mode="json") for e in review.errors]
+                block_dict = block.model_dump(mode="json")
+
+                # Agent3 答辩（复用整包答辩逻辑，块作为最小上下文）
+                try:
+                    author_replies = await self.agent3.reply_to_review(session_id, issues, block_dict)
+                except Exception:
+                    author_replies = []
+                # Agent4 复核裁决
+                try:
+                    verdicts = await self.agent4.rebut(session_id, issues, author_replies)
+                except Exception:
+                    verdicts = {}
+                accepted_issues, unresolved_must_fix_count = self._adjudicate_issues(
+                    review.errors, verdicts,
+                )
+                round_unresolved += unresolved_must_fix_count
+
+                # Agent3 定点修改本块（只回传修订后的问题块 + 版本号 + 修改说明），并立即复审
+                if accepted_issues:
+                    revised = await self.agent3.modify_block(block, accepted_issues)
+                    blocks_by_id[cid] = revised
+                    try:
+                        re_review = await self.agent4.review_block(
+                            block=revised, stage=stage, profile=profile,
+                            round_index=iteration + 1,
+                        )
+                    except Exception as exc:
+                        re_review = TechnicalReviewResult(
+                            passed=False,
+                            errors=[ReviewError(
+                                error_type="review_system_error", severity="critical",
+                                description=f"re-review failed: {exc}", content_block_id=cid,
+                            )],
+                        )
+                    reviews_by_id[cid] = re_review
+                    round_errors.extend(re_review.errors)
+                else:
+                    # 无接受的修改（全部 persist 且非 must_fix，或复核全撤）：清空该块残留 issue
+                    reviews_by_id[cid] = TechnicalReviewResult(passed=True, errors=[])
+
+            history.append(ReviewRound(
+                iteration=iteration + 1,
+                technical=TechnicalReviewResult(passed=not round_errors, errors=list(round_errors)),
+                quality=QualityReviewResult(passed=not round_errors, errors=list(round_errors)),
+            ))
+            self._log(
+                session_id, "pipeline:phaseB_round",
+                f"iter={iteration}, unresolved_must_fix={round_unresolved}, errors={len(round_errors)}",
+            )
+
+            total_unresolved = round_unresolved
+            if round_unresolved == 0:
+                final_status = "passed"
+                package_status = "approved"
+                break
+            if iteration == settings.MAX_REVIEW_ITERATIONS:
+                final_status = "needs_human_review"
+                package_status = "provisional"
+                break
+
+        # ---- Phase C：聚合块为学习包 ----
+        package = self._aggregate_blocks(session_id, stage, list(blocks_by_id.values()), trace_id)
+        self._last_review_trace = {
+            "trace_id": trace_id,
+            "final_status": final_status,
+            "package_status": package_status,
+            "unresolved_issue_count": total_unresolved,
+            "unresolved_must_fix_count": total_unresolved,
+        }
+        self._log(
+            session_id, "pipeline:done",
+            f"final_status={final_status}, blocks={len(blocks_by_id)}, unresolved={total_unresolved}",
+        )
+        return package, history
 
     def _persist_trace_init(
         self, trace_id: str, session_id: str, stage: StageInfo, package: LearningPackage

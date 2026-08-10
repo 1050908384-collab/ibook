@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     MAX_REVIEW_ITERATIONS: int = 3
     CONFIDENCE_THRESHOLD: float = 0.7
     EXECUTION_MODE: str = "hybrid"
+    # 块级并行流水线开关（Agent3/Agent4 按块并行生成+审核）。
+    # 默认关闭：保持原整篇审核链路；置 True 后 start_stage 走块级流水线。
+    BLOCK_PIPELINE_ENABLED: bool = False
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",

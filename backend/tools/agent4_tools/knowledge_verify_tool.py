@@ -142,6 +142,10 @@ def knowledge_verify(input_data: dict, config: dict = None) -> dict:
                         "block_id": ch["block_id"],
                         "content": ch["content"][:200],
                         "similarity": round(sim, 4),
+                        "heading_path": ch.get("heading_path"),
+                        "source_line_start": ch.get("source_line_start"),
+                        "source_line_end": ch.get("source_line_end"),
+                        "chunk_index": ch.get("chunk_index"),
                     })
 
         scored.sort(key=lambda x: x["similarity"], reverse=True)
@@ -213,10 +217,20 @@ def _load_chunks() -> tuple[List[Dict[str, str]], bool]:
         # sqlite3 只读连接，避免对库产生任何写副作用
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
+            # 防御式探测新列（heading_path/source_line_*/chunk_index），缺失即以 NULL 降级，
+            # 保证「数据侧尚未入库新字段」时不崩溃（见《知识库分块新增字段说明.md》）。
+            try:
+                cols = {r[1] for r in conn.execute("PRAGMA table_info(knowledge_chunks)").fetchall()}
+            except sqlite3.Error:
+                cols = set()
+            optional = ["heading_path", "source_line_start", "source_line_end", "chunk_index"]
+            select_parts = ["chunk_id", "doc_id", "block_id", "content"]
+            for col in optional:
+                select_parts.append(col if col in cols else f"NULL AS {col}")
             cur = conn.execute(
-                """
+                f"""
                 -- 读取全部分块用于相似度评分；字段对齐 knowledge_chunks 表定义
-                SELECT chunk_id, doc_id, block_id, content
+                SELECT {', '.join(select_parts)}
                 FROM knowledge_chunks
                 WHERE content IS NOT NULL AND content <> ''
                 """
@@ -225,7 +239,11 @@ def _load_chunks() -> tuple[List[Dict[str, str]], bool]:
         finally:
             conn.close()
         chunks = [
-            {"chunk_id": r[0], "doc_id": r[1], "block_id": r[2], "content": r[3]}
+            {
+                "chunk_id": r[0], "doc_id": r[1], "block_id": r[2], "content": r[3],
+                "heading_path": r[4], "source_line_start": r[5],
+                "source_line_end": r[6], "chunk_index": r[7],
+            }
             for r in rows
         ]
         _CHUNK_CACHE.update(key=cache_key, chunks=chunks, db_available=True)
@@ -233,6 +251,54 @@ def _load_chunks() -> tuple[List[Dict[str, str]], bool]:
     except sqlite3.Error as e:
         logger.warning("读取 knowledge_chunks 失败: %s", e)
         return [], False
+
+
+def _load_chunk_by_id(chunk_id: str) -> Dict[str, Any] | None:
+    """按 chunk_id 从缓存后的全量分块中定位单个来源块（供 verify_against_chunk）。
+
+    复用 _load_chunks 的进程内缓存，避免重复全表读取；库不可用/未找到返回 None。
+    """
+    if not chunk_id:
+        return None
+    try:
+        chunks, _ = _load_chunks()
+    except Exception:
+        return None
+    for ch in chunks:
+        if ch.get("chunk_id") == chunk_id:
+            return ch
+    return None
+
+
+def _format_in_chunk_position(match: Dict[str, Any] | None) -> str | None:
+    """根据命中块的原文行号构造块内定位串（缺列则返回 None）。"""
+    if not match:
+        return None
+    start = match.get("source_line_start")
+    end = match.get("source_line_end")
+    if start is not None and end is not None:
+        return f"lines:{start}-{end}"
+    if start is not None:
+        return f"lines:{start}"
+    idx = match.get("chunk_index")
+    if idx is not None:
+        return f"chunk_index:{idx}"
+    return None
+
+
+def _build_chunk_evidence(confidence: float, match: Dict[str, Any] | None) -> str:
+    """构造带来源块/标题路径/原文行号的证据串（字段缺失优雅省略）。"""
+    if not match:
+        return f"knowledge_verify_tool.similarity={confidence:.2f}，知识库无对应声明依据"
+    parts = [f"knowledge_verify_tool.similarity={confidence:.2f}"]
+    if match.get("chunk_id"):
+        parts.append(f"chunk={match['chunk_id']}")
+    if match.get("heading_path"):
+        parts.append(f"heading_path={match['heading_path']}")
+    pos = _format_in_chunk_position(match)
+    if pos and pos.startswith("lines:"):
+        parts.append(pos.replace("lines:", "lines="))
+    return "，".join(parts)
 
 
 def _tokenize(text: str) -> set:
@@ -782,10 +848,11 @@ class KnowledgeVerifyTool:
         data = result["data"]
         confidence = data.get("confidence", 0.0)
         matched = data.get("matched_chunks", [])
-        evidence = (
-            f"knowledge_verify_tool.similarity={confidence:.2f}"
-            + (f"，命中分块 {matched[0]['chunk_id']}" if matched else "，知识库无对应声明依据")
-        )
+        top = matched[0] if matched else None
+        evidence = _build_chunk_evidence(confidence, top)
+        # 机器可读溯源字段：命中来源块 ID + 原文行号（缺列时为 None，不影响流程）
+        content_chunk_id = top.get("chunk_id") if top else None
+        in_chunk_position = _format_in_chunk_position(top) if top else None
 
         if confidence < THRESHOLD_CRITICAL:
             return [{
@@ -797,6 +864,8 @@ class KnowledgeVerifyTool:
                 "suggestion": "删除无法验证的技术声明或补充可靠来源。",
                 "type": "hallucination",
                 "message": f"知识库相似度 {confidence:.2f}，存在潜在幻觉风险。",
+                "content_chunk_id": content_chunk_id,
+                "in_chunk_position": in_chunk_position,
             }]
         if confidence < THRESHOLD_PASS:
             return [{
@@ -808,6 +877,64 @@ class KnowledgeVerifyTool:
                 "suggestion": "补充知识库依据或人工复核后放行。",
                 "type": "review_needed",
                 "message": f"知识库相似度 {confidence:.2f}，存疑需复核。",
+                "content_chunk_id": content_chunk_id,
+                "in_chunk_position": in_chunk_position,
+            }]
+        return []
+
+    async def verify_against_chunk(self, statement: str, chunk_id: str) -> List[Dict[str, Any]]:
+        """对单个已知来源块（chunk_id）核验某陈述（块级审核精确绑定来源）。
+
+        - 回查该 chunk 原文，用同一相似度打分（recall+density）与阈值分类；
+        - 块缺失 / 库不可用 / chunk 不存在时返回 []（**不产生假幻觉**，延续空库降级原则）；
+        - 命中时 evidence/字段绑定到该确切来源块。
+        """
+        if not statement or not statement.strip() or not chunk_id:
+            return []
+        chunk = _load_chunk_by_id(chunk_id)
+        if not chunk:
+            # 未知来源块或库不可用：无可比对语料，不臆造幻觉。
+            return []
+        stmt_terms = _tokenize(statement)
+        chunk_terms = _tokenize(chunk.get("content") or "")
+        if not stmt_terms or not chunk_terms:
+            return []
+        confidence = round(_similarity(stmt_terms, chunk_terms), 4)
+        top = {
+            "chunk_id": chunk.get("chunk_id"),
+            "similarity": confidence,
+            "heading_path": chunk.get("heading_path"),
+            "source_line_start": chunk.get("source_line_start"),
+            "source_line_end": chunk.get("source_line_end"),
+            "chunk_index": chunk.get("chunk_index"),
+        }
+        evidence = _build_chunk_evidence(confidence, top)
+        in_chunk_position = _format_in_chunk_position(top)
+        if confidence < THRESHOLD_CRITICAL:
+            return [{
+                "error_type": "hallucination",
+                "severity": "critical",
+                "location": "技术陈述",
+                "description": f"与来源块 {chunk_id} 相似度 {confidence:.2f} < {THRESHOLD_CRITICAL}，该陈述在来源块中缺乏依据。",
+                "evidence": evidence,
+                "suggestion": "修正为来源块支持的表述或补充可靠来源。",
+                "type": "hallucination",
+                "message": f"来源块相似度 {confidence:.2f}，存在潜在幻觉风险。",
+                "content_chunk_id": chunk.get("chunk_id"),
+                "in_chunk_position": in_chunk_position,
+            }]
+        if confidence < THRESHOLD_PASS:
+            return [{
+                "error_type": "review_needed",
+                "severity": "major",
+                "location": "技术陈述",
+                "description": f"与来源块 {chunk_id} 相似度 {confidence:.2f} 处于存疑区间，需人工复核。",
+                "evidence": evidence,
+                "suggestion": "补充来源块依据或人工复核后放行。",
+                "type": "review_needed",
+                "message": f"来源块相似度 {confidence:.2f}，存疑需复核。",
+                "content_chunk_id": chunk.get("chunk_id"),
+                "in_chunk_position": in_chunk_position,
             }]
         return []
 

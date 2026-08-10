@@ -22,7 +22,7 @@ import json
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from config import BACKEND_DIR, DATA_DIR, settings
 
@@ -327,6 +327,51 @@ def _load_mock() -> dict:
         return {}
 
 
+def _table_columns(connection: sqlite3.Connection, table: str) -> set[str]:
+    """PRAGMA 探测某表实际列名集合（用于新字段缺失即降级）。"""
+    try:
+        rows = connection.execute(f"PRAGMA table_info({table})").fetchall()
+        return {row[1] for row in rows}
+    except sqlite3.Error:
+        return set()
+
+
+# knowledge_chunks 数据侧新增字段（他人负责入库；见《知识库分块新增字段说明.md》）。
+_CHUNK_OPTIONAL_COLS = [
+    "heading_path", "heading_level", "source_line_start",
+    "source_line_end", "chunk_strategy",
+]
+
+
+def _select_chunk_columns(available: set[str]) -> tuple[str, list[str]]:
+    """构造 knowledge_chunks 的防御式 SELECT 列表达式。
+
+    始终选取基础列（chunk_id/doc_id/block_id/chunk_index/content），
+    可选新列存在则 SELECT，不存在则 `NULL AS col`。
+    返回 (select_expr, ordered_column_names)。
+    """
+    base = ["c.chunk_id", "c.doc_id", "c.block_id", "c.chunk_index", "c.content"]
+    names = ["chunk_id", "doc_id", "block_id", "chunk_index", "content"]
+    exprs = list(base)
+    for col in _CHUNK_OPTIONAL_COLS:
+        if col in available:
+            exprs.append(f"c.{col}")
+        else:
+            exprs.append(f"NULL AS {col}")
+        names.append(col)
+    return ", ".join(exprs), names
+
+
+def _chunk_row_to_dict(row: tuple, names: list[str], title: str = "", source: str = "",
+                       subtopic_id: str = "") -> Dict[str, Any]:
+    data = {names[i]: row[i] for i in range(len(names))}
+    data["title"] = title or ""
+    data["source"] = source or ""
+    if subtopic_id:
+        data["subtopic_id"] = subtopic_id
+    return data
+
+
 # ------------------------------------------------------------------
 # 向后兼容适配器
 # ------------------------------------------------------------------
@@ -398,3 +443,83 @@ class VectorSearchTool:
             }
             for row in rows
         ]
+
+    def get_stage_chunks(self, block_id: str, subtopic_ids: list[str]) -> List[Dict[str, Any]]:
+        """读取某阶段（block + 子知识点集合）的原始 knowledge_chunks（供 Agent3 块级生成）。
+
+        - 只读 sqlite，按 (subtopic_id, chunk_index) 稳定排序；
+        - PRAGMA 探测新列（heading_path 等），缺失即以 NULL 降级，不崩溃；
+        - 数据库不存在或空库返回 []（由上层降级到 local lessons / pseudo chunks）。
+        """
+        if not block_id:
+            return []
+        db_path = _get_db_path()
+        if not db_path.exists():
+            return []
+        try:
+            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            try:
+                available = _table_columns(connection, "knowledge_chunks")
+                if not available:
+                    return []
+                select_expr, names = _select_chunk_columns(available)
+                if subtopic_ids:
+                    placeholders = ", ".join("?" for _ in subtopic_ids)
+                    where = f"c.block_id = ? AND d.subtopic_id IN ({placeholders})"
+                    params = [block_id, *subtopic_ids]
+                else:
+                    where = "c.block_id = ?"
+                    params = [block_id]
+                sql = f"""
+                    SELECT {select_expr}, d.title, d.source, d.subtopic_id
+                    FROM knowledge_chunks c
+                    JOIN knowledge_docs d ON c.doc_id = d.doc_id
+                    WHERE {where}
+                    ORDER BY d.subtopic_id, c.chunk_index
+                """
+                rows = connection.execute(sql, params).fetchall()
+            finally:
+                connection.close()
+        except sqlite3.Error as error:
+            logger.warning("读取阶段 chunks 失败: %s", error)
+            return []
+        n = len(names)
+        return [
+            _chunk_row_to_dict(row, names, title=row[n], source=row[n + 1], subtopic_id=row[n + 2])
+            for row in rows
+        ]
+
+    def get_chunk_by_id(self, chunk_id: str) -> Optional[Dict[str, Any]]:
+        """按 chunk_id 回查单个原始 knowledge_chunk（供 Agent4 回查来源块）。
+
+        同样防御式列选择；未找到或库不可用返回 None（不产生假数据）。
+        """
+        if not chunk_id:
+            return None
+        db_path = _get_db_path()
+        if not db_path.exists():
+            return None
+        try:
+            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            try:
+                available = _table_columns(connection, "knowledge_chunks")
+                if not available:
+                    return None
+                select_expr, names = _select_chunk_columns(available)
+                sql = f"""
+                    SELECT {select_expr}, d.title, d.source, d.subtopic_id
+                    FROM knowledge_chunks c
+                    LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
+                    WHERE c.chunk_id = ?
+                    LIMIT 1
+                """
+                row = connection.execute(sql, [chunk_id]).fetchone()
+            finally:
+                connection.close()
+        except sqlite3.Error as error:
+            logger.warning("回查 chunk 失败: %s", error)
+            return None
+        if not row:
+            return None
+        n = len(names)
+        return _chunk_row_to_dict(row, names, title=row[n], source=row[n + 1], subtopic_id=row[n + 2])

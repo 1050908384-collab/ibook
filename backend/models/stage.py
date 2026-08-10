@@ -67,6 +67,35 @@ class Claim(BaseModel):
         return self
 
 
+class ContentBlock(BaseModel):
+    """块级个性化内容单元（对应一个原始 knowledge_chunk）。
+
+    Agent3 逐块生成、Agent4 逐块审核的最小交换单位。所有来源溯源字段可选，
+    数据侧新字段（heading_path 等）缺失时优雅降级，不影响块级流水线运行。
+    """
+    content_block_id: str                                   # 个性化内容块唯一 ID
+    session_id: str
+    stage_id: str
+    block_id: str                                           # 所属知识板块（KB-xx）
+    subtopic_id: Optional[str] = None                       # 所属子知识点
+    block_name: str
+    block_index: int                                        # 块在阶段内的顺序（用于聚合拼装）
+    # 来源溯源（回指原始 knowledge_chunk；字段缺失即降级）
+    source_chunk_id: Optional[str] = None
+    source_doc_id: Optional[str] = None
+    heading_path: Optional[str] = None
+    heading_level: Optional[int] = None
+    source_line_start: Optional[int] = None
+    source_line_end: Optional[int] = None
+    source_note: str = ""                                   # 人类可读来源说明
+    personalized_content: str = ""                          # 个性化后的正文
+    claims: List[Claim] = Field(default_factory=list)
+    sources: List[Source] = Field(default_factory=list)
+    version: int = 1
+    revision_note: Optional[str] = None                     # 修改说明（modify_block 回传）
+    status: Literal["draft", "reviewing", "revised", "approved", "needs_human_review"] = "draft"
+
+
 class LearningPackage(BaseModel):
     session_id: str
     stage_id: str

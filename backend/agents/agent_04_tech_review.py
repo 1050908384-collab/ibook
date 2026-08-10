@@ -217,6 +217,26 @@ def _build_source_index(sources: Optional[List[Dict[str, Any]]]) -> Dict[str, Di
     return index
 
 
+def _select_key_claims(claims: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    """筛出「有效关键 Claim」：is_key_technical=true、text 非空、且未被丢弃（status!=dropped）。
+
+    Claim 回退修正（任务 2）的判定依据：存在有效关键 Claim 时只核验 Claim，
+    不再回退整篇；无有效关键 Claim 时才回退整篇。
+    """
+    result: List[Dict[str, Any]] = []
+    for c in claims or []:
+        if not isinstance(c, dict):
+            continue
+        if not c.get("is_key_technical"):
+            continue
+        if c.get("status") == "dropped":
+            continue
+        if not (c.get("text") or "").strip():
+            continue
+        result.append(c)
+    return result
+
+
 def _resolve_source_refs(
     raw: Dict[str, Any],
     source_index: Dict[str, Dict[str, Any]],
@@ -428,11 +448,12 @@ class TechnicalReviewAgent(BaseAgent):
             except Exception:
                 pass
             # 步骤2：事实检查（幻觉检测）
-            # 有 claims 时按 Claim 粒度送检（幻觉 issue 精确归属 claim_id/section_ref）；
-            # 无 claims 时回退到整篇送检，保证向后兼容。
+            # Claim 回退修正（任务 2）：存在有效关键 Claim 时，只对 Claim 核验（结果可为空，
+            # 不再回退整篇），避免整篇送检重新产生全文级误报；没有有效关键 Claim 时才回退整篇。
             try:
-                claim_hallucinations = await self._verify_claims_hallucination(claims)
-                if claim_hallucinations:
+                key_claims = _select_key_claims(claims)
+                if key_claims:
+                    claim_hallucinations = await self._verify_claims_hallucination(key_claims)
                     raw_errors.extend(claim_hallucinations)
                 else:
                     hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["tutorial"])
@@ -668,11 +689,19 @@ class TechnicalReviewAgent(BaseAgent):
         for c in claims or []:
             if not isinstance(c, dict) or not c.get("is_key_technical"):
                 continue
+            # 已被 Agent3 修改/丢弃的 Claim 不再送检（status=dropped 语义上已作废）。
+            if c.get("status") == "dropped":
+                continue
             text = c.get("text") or ""
             if not text.strip():
                 continue
+            source_chunk_id = c.get("source_chunk_id") or (c.get("metadata_json") or {}).get("source_chunk_id")
             try:
-                errs = await self.knowledge_verify_tool.verify_knowledge(text)
+                # 有精确来源块时按块核验（绑定确切 chunk），否则退回全库相似度检索。
+                if source_chunk_id:
+                    errs = await self.knowledge_verify_tool.verify_against_chunk(text, source_chunk_id)
+                else:
+                    errs = await self.knowledge_verify_tool.verify_knowledge(text)
             except Exception:
                 continue
             for e in errs:
@@ -681,6 +710,9 @@ class TechnicalReviewAgent(BaseAgent):
                 e["claim_id"] = c.get("claim_id")
                 if c.get("section_ref"):
                     e["location"] = c.get("section_ref")
+                # 块级溯源：来源块 ID 与块内位置随 issue 带出（供 _enrich_debate_fields 回填）。
+                if source_chunk_id and not e.get("content_chunk_id"):
+                    e["content_chunk_id"] = source_chunk_id
                 claim_errors.append(e)
         return claim_errors
 
@@ -766,6 +798,17 @@ class TechnicalReviewAgent(BaseAgent):
             else:
                 seen_error_ids[error_id] = 0
             err.error_id = error_id
+
+            # 6. 块级溯源字段回填（块级并行流水线）：normalize_review_errors 会丢弃未知键，
+            #    故从 raw（工具/Claim 输出）回填到 ReviewError 的可选字段。
+            if raw.get("content_chunk_id") and not err.content_chunk_id:
+                err.content_chunk_id = raw.get("content_chunk_id")
+            if raw.get("in_chunk_position") and not err.in_chunk_position:
+                err.in_chunk_position = raw.get("in_chunk_position")
+            if raw.get("content_block_id") and not err.content_block_id:
+                err.content_block_id = raw.get("content_block_id")
+            if raw.get("content_version") is not None and err.content_version is None:
+                err.content_version = raw.get("content_version")
 
         return errors
 
