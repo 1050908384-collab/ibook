@@ -1158,6 +1158,9 @@ class DeterministicContentAgent:
         self.question_extract_tool = QuestionExtractTool(database_url=database_url)
         self.video_search_tool = VideoSearchTool()
         self.learning_resource_tool = LearningResourceTool()
+        # 以 session 为键保存当前轮完整问题列表。块级流水线先一次性交付
+        # issue_package，再由 Agent3 从该队列中并发取块修改。
+        self._revision_queues: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
 
     @staticmethod
     def _stage_subtopic_ids(stage: StageInfo) -> list[str]:
@@ -1785,6 +1788,44 @@ class DeterministicContentAgent:
                 "patched_sections": patched_sections,
             })
         return replies
+
+    async def receive_issue_package(
+        self,
+        session_id: str,
+        issue_package: Dict[str, List[Any]],
+        blocks_by_id: Dict[str, Any],
+    ) -> List[str]:
+        """一次接收 Agent4 的完整问题列表，并建立本轮待修改块队列。
+
+        ``issue_package`` 以 ``content_block_id`` 分组，故 Agent3 在开始修改
+        任一块之前已经掌握本轮所有待处理块和对应问题。返回值按块顺序稳定排列，
+        Orchestrator 可据此以受控并发执行 ``modify_block``。
+        """
+        normalized: Dict[str, List[Dict[str, Any]]] = {}
+        for content_block_id, raw_issues in (issue_package or {}).items():
+            if content_block_id not in blocks_by_id:
+                continue
+            issues: List[Dict[str, Any]] = []
+            for issue in raw_issues or []:
+                if hasattr(issue, "model_dump"):
+                    issues.append(issue.model_dump(mode="json"))
+                elif isinstance(issue, dict):
+                    issues.append(dict(issue))
+            if issues:
+                normalized[content_block_id] = issues
+
+        self._revision_queues[session_id] = normalized
+        return sorted(
+            normalized,
+            key=lambda cid: (
+                getattr(blocks_by_id[cid], "block_index", 0),
+                cid,
+            ),
+        )
+
+    def queued_issues(self, session_id: str, content_block_id: str) -> List[Dict[str, Any]]:
+        """读取 Agent3 已接收的当前问题队列中的一个块，供修改阶段消费。"""
+        return list(self._revision_queues.get(session_id, {}).get(content_block_id, []))
 
     async def modify_package(
         self,

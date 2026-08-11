@@ -817,7 +817,7 @@ class Harness:
 
     # ==================================================================
     # 块级真并发流水线：Agent3 生成/修改与 Agent4 审核/复核并发推进。
-    # Phase A：生成×首轮审核并发（asyncio.gather + Semaphore(2)，每块 generate→review_block）
+    # Phase A：Agent3 受控生成，Agent4 独立消费已生成块
     # 首轮后：一次性构造完整 issue_package（按 content_block_id 分组）交给 Agent3
     # Phase C：并发修改（Semaphore(2)），每块改完立即 create_task 派发独立复核
     #          （块1复核不阻塞块2修改）；双层防死循环（全局轮次 + 每块 rounds_sent ≤ MAX）
@@ -832,19 +832,31 @@ class Harness:
         source_chunk: Dict[str, Any],
         block_index: int,
         round_index: int,
+        generation_sem: asyncio.Semaphore,
+        review_sem: asyncio.Semaphore,
     ) -> tuple[Any, TechnicalReviewResult]:
-        """单块流水线：Agent3 生成个性化块 → Agent4 块级审核。并行时每块独立跑此协程。"""
-        block = await self.agent3.generate_block(
-            stage=stage,
-            source_chunk=source_chunk,
-            profile=profile,
-            practice=practice_profile,
-            block_index=block_index,
-            session_id=session_id,
+        """单块生产/消费：Agent3 生成后立即提交 Agent4 审核。
+
+        两个 Semaphore 有意分离：审核等待或执行时不占用 Agent3 的生成槽，
+        因此 Agent3 可继续生产后续块，Agent4 独立消费已完成的块。
+        """
+        block = await self._run_capped(
+            generation_sem,
+            lambda: self.agent3.generate_block(
+                stage=stage,
+                source_chunk=source_chunk,
+                profile=profile,
+                practice=practice_profile,
+                block_index=block_index,
+                session_id=session_id,
+            ),
         )
         try:
-            review = await self.agent4.review_block(
-                block=block, stage=stage, profile=profile, round_index=round_index,
+            review = await self._run_capped(
+                review_sem,
+                lambda: self.agent4.review_block(
+                    block=block, stage=stage, profile=profile, round_index=round_index,
+                ),
             )
         except Exception as exc:
             review = TechnicalReviewResult(
@@ -936,7 +948,7 @@ class Harness:
     ) -> tuple[LearningPackage, list[ReviewRound]]:
         """块级真并发生产者/消费者流水线（任务 5 + 真并发改造）。
 
-        - 生成：并发上限 BLOCK_CONCURRENCY（=2），每块生成后立即首轮审核；
+        - 生成：并发上限 BLOCK_CONCURRENCY（=2），每块生成后立即提交独立审核；
         - 首轮后一次性构造完整 issue_package（按块分组），交给 Agent3；
         - 修改：并发上限 BLOCK_CONCURRENCY（=2），每块改完立即派发独立复核 task
           （块1复核不阻塞块2修改）；
@@ -964,12 +976,11 @@ class Harness:
         # ---- Phase A：生成（并发上限 2）× 每块生成后立即首轮审核 ----
         self._log(session_id, "pipeline:phaseA_start", f"chunks={len(source_chunks)}, cap={BLOCK_CONCURRENCY}")
         gen_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
+        review_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
         pairs = await asyncio.gather(*[
-            self._run_capped(
-                gen_sem,
-                lambda c=chunk, i=idx: self._generate_and_review_block(
-                    session_id, stage, profile, practice_profile, c, i, round_index=1,
-                ),
+            self._generate_and_review_block(
+                session_id, stage, profile, practice_profile, chunk, idx, round_index=1,
+                generation_sem=gen_sem, review_sem=review_sem,
             )
             for idx, chunk in enumerate(source_chunks)
         ])
@@ -1016,10 +1027,16 @@ class Harness:
         total_unresolved = 0
 
         for round_num in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
-            # 本轮待修改块：仍有 open 问题、且未超过每块交还上限
+            # Agent3 先接收本轮完整问题列表，再从已建立的待修改队列中取块。
+            # 后续轮次同样以完整列表重新交付，已通过的块不会进入该列表。
+            revision_queue = await self.agent3.receive_issue_package(
+                session_id,
+                issue_package,
+                {cid: st.block for cid, st in states.items()},
+            )
             pending = [
-                cid for cid, st in states.items()
-                if st.open_issues and st.rounds_sent < settings.MAX_REVIEW_ITERATIONS
+                cid for cid in revision_queue
+                if states[cid].rounds_sent < settings.MAX_REVIEW_ITERATIONS
             ]
             if not pending:
                 final_status = "passed"
@@ -1037,7 +1054,9 @@ class Harness:
                 st.recheck_task = None
                 # 记录本轮该块的原始 issues（修改前快照，用于辩论落库）
                 pre_errors = list(st.open_issues)
-                issues = [e.model_dump(mode="json") for e in pre_errors]
+                # 从 Agent3 已接收的完整 issue_package 队列取本块问题；状态快照
+                # 仍保留 ReviewError 实例，供 Orchestrator 做裁决和落库。
+                issues = self.agent3.queued_issues(session_id, cid)
                 block_dict = st.block.model_dump(mode="json")
 
                 # Agent3 答辩（块作为最小上下文）
@@ -1090,6 +1109,11 @@ class Harness:
             recheck_tasks = [states[cid].recheck_task for cid in pending if states[cid].recheck_task]
             if recheck_tasks:
                 await asyncio.gather(*recheck_tasks)
+
+            # Agent4 完成本轮复核后，再构造下一轮完整问题列表；只含仍未通过的块。
+            issue_package = {
+                cid: st.open_issues for cid, st in states.items() if st.open_issues
+            }
 
             # 落库：把本轮所有块的辩论产物合并成一条 review_debate_round（P2）
             self._persist_pipeline_round(trace_id, round_num, round_debate)

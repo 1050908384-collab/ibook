@@ -159,6 +159,7 @@ def _install_recorders(harness, tl: Timeline, delay: float = 0.05):
     a4 = harness.agent4
     orig_gen = a3.generate_block
     orig_mod = a3.modify_block
+    orig_receive_issue_package = a3.receive_issue_package
     orig_rev = a4.review_block
 
     def _cid_of_block(block) -> str:
@@ -191,8 +192,14 @@ def _install_recorders(harness, tl: Timeline, delay: float = 0.05):
         tl.record("mod_end", cid)
         return revised
 
+    async def receive_issue_package(session_id, issue_package, blocks_by_id):
+        # 记录 Agent3 实际收到的完整问题列表，而不是只记录 Harness 构造了它。
+        tl.record("issue_package_received", "|".join(sorted(issue_package)))
+        return await orig_receive_issue_package(session_id, issue_package, blocks_by_id)
+
     a3.generate_block = gen
     a3.modify_block = mod
+    a3.receive_issue_package = receive_issue_package
     a4.review_block = rev
 
 
@@ -275,6 +282,17 @@ async def run(checker: Checker) -> None:
         f"max_gen_inflight={max_gen_inflight}",
     )
 
+    # -------- P2-1：审核不占用 Agent3 生成槽 --------
+    # 三块用例中，第 3 块的生成必须在任一首轮审核结束前开始；否则 generation
+    # semaphore 仍然错误地包住了 generate→review 整条协程。
+    third_gen_start_t = phase_a_gen_starts[2]["t"] if len(phase_a_gen_starts) >= 3 else float("inf")
+    first_phase_a_review_end_t = min((e["t"] for e in phase_a_rev_ends), default=0.0)
+    checker.check(
+        len(phase_a_gen_starts) >= 3 and third_gen_start_t < first_phase_a_review_end_t,
+        "P2-1 Agent4 审核不占用 Agent3 生成槽（第3块在首轮审核结束前开始生成）",
+        f"third_gen_start={third_gen_start_t:.4f} < first_phaseA_rev_end={first_phase_a_review_end_t:.4f}",
+    )
+
     # -------- P3：问题堆积到最后才开始修改 --------
     # 第一次 modify_block 必须晚于「最后一个 Phase A(首轮) review 结束」。
     phase_a_last_rev_end_t = max((e["t"] for e in phase_a_rev_ends), default=0.0)
@@ -288,6 +306,18 @@ async def run(checker: Checker) -> None:
     else:
         # 无 mod 意味着首轮全通过；本用例特意构造了会触发问题的块，理应有 mod。
         checker.check(False, "P3 预期存在修改动作（构造了会触发问题的块）", "mod_starts 为空")
+
+    # -------- P3-1：Agent3 先收到完整问题列表，再开始块级修改 --------
+    package_receipts = tl.of("issue_package_received")
+    first_receipt = package_receipts[0] if package_receipts else None
+    first_receipt_blocks = first_receipt["cid"].split("|") if first_receipt else []
+    checker.check(
+        bool(first_receipt)
+        and first_receipt["t"] <= first_mod_t
+        and len(first_receipt_blocks) == 3,
+        "P3-1 Agent3 首次修改前收到完整 issue_package（含全部问题块）",
+        f"received_blocks={len(first_receipt_blocks)}",
+    )
 
     # -------- P4：修改阶段不再生成（排除模型A交错） --------
     gen_after_first_mod = [e for e in gen_starts if e["t"] > first_mod_t]
