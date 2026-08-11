@@ -17,6 +17,8 @@ class Settings(BaseSettings):
 
     OLLMA_BASE_URL: str = "http://localhost:11434"
     OLLMA_MODEL: str = "deepseek-r1:7b"
+    # Chroma 向量库使用的 Ollama embedding 模型（中文语义检索）
+    EMBEDDING_MODEL: str = "bge-m3"
 
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_BASE: str = "https://api.deepseek.com"

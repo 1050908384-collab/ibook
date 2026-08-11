@@ -130,7 +130,7 @@ def _search_chunks(query: str, block_id: str, subtopic_id: str, top_k: int) -> t
 
 
 def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]]:
-    """Chroma 向量检索 knowledge_base 集合。"""
+    """Chroma 向量检索 knowledge_base 集合（使用 Ollama bge-m3 中文 embedding）。"""
     try:
         from chromadb import PersistentClient
 
@@ -139,7 +139,19 @@ def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]
             return []
 
         chroma_client = PersistentClient(path=str(chroma_path))
-        collection = chroma_client.get_or_create_collection("knowledge_base")
+        # 必须传入与写入时相同的 embedding function，否则 query 和 document
+        # 不在同一向量空间。
+        from backend.db.chroma_client import CHROMA_COLLECTION, get_embedding_function
+        ef = get_embedding_function()
+        # EF 为 None 时绝不用 None 创建 collection——Chroma 会静默回退英文模型，
+        # 导致中文检索 sim 全部失真。直接降级到 SQLite 关键词匹配。
+        if ef is None:
+            logger.warning("Embedding function 不可用，跳过 Chroma 检索，回退 SQLite")
+            return []
+        collection = chroma_client.get_or_create_collection(
+            CHROMA_COLLECTION,
+            embedding_function=ef,
+        )
         if collection.count() == 0:
             return []
 
