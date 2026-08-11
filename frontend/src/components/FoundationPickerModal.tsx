@@ -8,7 +8,7 @@ type FoundationPickerModalProps = {
   blocks: KnowledgeGraphBlock[];
   initialSelectedBlockIds: string[];
   onClose: () => void;
-  onConfirm: (selectedBlockIds: string[]) => void;
+  onConfirm: (selectedSubtopicIds: string[]) => void;
 };
 
 function fullBlockIds(blocks: KnowledgeGraphBlock[], selectedSubtopicIds: Set<string>) {
@@ -78,7 +78,7 @@ export default function FoundationPickerModal({
     });
   };
 
-  const confirm = () => onConfirm([...completedBlockIds]);
+  const confirm = () => onConfirm([...selectedSubtopicIds]);
   const chooseNoFoundation = () => onConfirm([]);
 
   return (

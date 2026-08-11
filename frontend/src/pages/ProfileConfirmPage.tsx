@@ -1,5 +1,4 @@
 import { ArrowLeft, Clock, Play, ShieldCheck, Target, UserRound } from 'lucide-react';
-import RadarChart from '../components/RadarChart';
 import { learningStyleText } from '../utils/buildDiagnosticMessage';
 
 type KnowledgeGap = {
@@ -53,11 +52,6 @@ function displayStyle(style?: string) {
 
 export default function ProfileConfirmPage({ profile, stage, loading, error, onEdit, onStart, onCancel }: ProfileConfirmPageProps) {
   const gaps = profile.knowledge_gaps || [];
-  const radarData = {
-    labels: gaps.length ? gaps.slice(0, 5).map((gap) => gap.skill) : ['基础', '目标', '实践', '部署', '复盘'],
-    values: gaps.length ? gaps.slice(0, 5).map((gap) => Math.round((gap.progress ?? 0.2) * 100)) : [55, 45, 35, 30, 50]
-  };
-
   return (
     <div className="page-shell confirm-shell">
       <main className="profile-confirm-page">
@@ -94,16 +88,6 @@ export default function ProfileConfirmPage({ profile, stage, loading, error, onE
               <div><dt>学习方式</dt><dd>{displayStyle(profile.learning_style)}</dd></div>
               <div><dt>设备条件</dt><dd>{profile.hardware || '未提供'}</dd></div>
             </dl>
-          </section>
-
-          <section className="white-card confirm-card">
-            <div className="card-title">
-              <div>
-                <h3>能力雷达图</h3>
-                <p>根据待补齐知识点生成</p>
-              </div>
-            </div>
-            <RadarChart data={radarData} />
           </section>
         </div>
 

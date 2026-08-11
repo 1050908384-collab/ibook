@@ -21,6 +21,7 @@ type ProfileSetupFormProps = {
   targetOnly?: boolean;
   foundationNames: string[];
   onOpenFoundation: () => void;
+  foundationLoading?: boolean;
 };
 
 const fieldLabels: Record<OnboardingField, string> = {
@@ -49,7 +50,8 @@ export default function ProfileSetupForm({
   highlightedFields,
   targetOnly = false,
   foundationNames,
-  onOpenFoundation
+  onOpenFoundation,
+  foundationLoading = false
 }: ProfileSetupFormProps) {
   const completeness = useMemo(() => getFormCompleteness(value, targetOnly), [value, targetOnly]);
   const canSubmit = isOnboardingFormComplete(value, targetOnly) && !loading;
@@ -126,7 +128,9 @@ export default function ProfileSetupForm({
             <label>确定基础</label>
             <p>选择你已经完整掌握的知识板块，系统会据此规划更合适的起点。</p>
           </div>
-          {!targetOnly && <button type="button" className="foundation-trigger" onClick={onOpenFoundation} disabled={!value.goal.trim()}>明确我的基础</button>}
+          {!targetOnly && <button type="button" className="foundation-trigger" onClick={onOpenFoundation} disabled={!value.goal.trim() || foundationLoading}>
+            {foundationLoading ? <><Loader2 className="spin" size={14} />读取目标知识板块</> : '明确我的基础'}
+          </button>}
         </div>
         <div className="foundation-summary-content">
           {foundationNames.length > 0 ? (

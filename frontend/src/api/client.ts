@@ -91,6 +91,32 @@ export type DiagnosisResponse = {
   confidence: number;
 };
 
+export type GoalBlock = {
+  block_id: string;
+  block_name: string;
+  description?: string;
+  difficulty?: string;
+  estimated_hours?: number;
+  subtopics: Array<{
+    subtopic_id: string;
+    subtopic_name: string;
+    sequence_index?: number;
+    prerequisites?: string[];
+  }>;
+};
+
+export type GoalBlocksResponse = {
+  goal: string;
+  blocks: GoalBlock[];
+};
+
+export type FoundationResponse = {
+  status: 'needs_more_info' | 'profile_ready' | string;
+  profile?: ApiProfile | null;
+  stage?: ApiStage | null;
+  followup_questions?: string[];
+};
+
 export type AssessmentAttempt = {
   attempt_id: string;
   session_id: string;
@@ -130,7 +156,7 @@ export type SessionListItem = {
   current_stage_num?: number;
   current_stage_name?: string;
   progress?: number;
-  profile_summary?: string;
+  profile_summary?: Record<string, unknown>;
 };
 
 export type SessionListResponse = {
@@ -216,6 +242,8 @@ export const apiClient = {
     skill_tags?: string[];
     learning_style?: string;
     hardware?: string;
+    default_daily_hours?: number;
+    learning_rhythm?: string;
   }) => {
     const response = await axios.patch<ApiProfile & { user_id: string; default_daily_hours?: number }>(
       `${BASE_URL}/users/local-user/profile`,
@@ -261,6 +289,25 @@ export const apiClient = {
 
   getDiagnosisMessages: async (sessionId: string) => {
     const response = await axios.get<DiagnosisHistoryResponse>(`${BASE_URL}/sessions/${sessionId}/diagnosis/messages`);
+    return response.data;
+  },
+
+  getGoalBlocks: async (sessionId: string, goal: string) => {
+    const response = await axios.post<GoalBlocksResponse>(
+      `${BASE_URL}/sessions/${sessionId}/diagnosis/goal-blocks`,
+      { goal }
+    );
+    return response.data;
+  },
+
+  submitFoundation: async (
+    sessionId: string,
+    data: { goal: string; mastered_subtopic_ids: string[]; daily_hours: number; learning_style: string }
+  ) => {
+    const response = await axios.post<FoundationResponse>(
+      `${BASE_URL}/sessions/${sessionId}/diagnosis/foundation`,
+      data
+    );
     return response.data;
   },
 

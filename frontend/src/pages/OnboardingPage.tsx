@@ -18,6 +18,7 @@ type OnboardingPageProps = {
   onRetryProfileCheck?: () => void;
   foundationNames: string[];
   onOpenFoundation: () => void;
+  foundationLoading?: boolean;
 };
 
 export default function OnboardingPage({
@@ -35,7 +36,8 @@ export default function OnboardingPage({
   profileCheckError = null,
   onRetryProfileCheck,
   foundationNames,
-  onOpenFoundation
+  onOpenFoundation,
+  foundationLoading = false
 }: OnboardingPageProps) {
   if (checkingUserProfile) {
     return (
@@ -101,6 +103,7 @@ export default function OnboardingPage({
           targetOnly={reuseUserProfile}
           foundationNames={foundationNames}
           onOpenFoundation={onOpenFoundation}
+          foundationLoading={foundationLoading}
         />
       </main>
     </div>

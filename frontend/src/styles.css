@@ -5756,7 +5756,7 @@ body.resizing-workspace-panels * {
 
 .confirm-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -5791,10 +5791,6 @@ body.resizing-workspace-panels * {
   font-size: 12px;
   line-height: 1.6;
   font-weight: 700;
-}
-
-.radar-chart h3 {
-  display: none;
 }
 
 .current-stage-panel {

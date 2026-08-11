@@ -48,15 +48,15 @@ import {
   type ApiLearningPackage,
   type ApiProfile,
   type ApiStage,
+  type GoalBlock,
   type SessionListItem
 } from './api/client';
-import { findKnowledgeGraphBlock, knowledgeGraphBlocks } from './data/knowledgeGraph';
+import { findKnowledgeGraphBlock, knowledgeGraphBlocks, type KnowledgeGraphBlock } from './data/knowledgeGraph';
 import FoundationPickerModal from './components/FoundationPickerModal';
 import KnowledgeNetwork from './components/KnowledgeNetwork';
 import OnboardingPage from './pages/OnboardingPage';
 import ProfileConfirmPage from './pages/ProfileConfirmPage';
 import {
-  buildDiagnosticMessage,
   emptyOnboardingForm,
   formDataFromProfile,
   OnboardingField,
@@ -71,9 +71,25 @@ import {
   type AgentStatusMap
 } from './utils/agentFlowState';
 import { filterProjectsForDashboard, formatProjectCreatedDate, sortProjectsForDashboard } from './utils/learningProjects';
-import { foundationBlocksFromTags, foundationNamesFromTags, getRelevantFoundationBlocks } from './utils/foundation';
+import { foundationBlocksFromTags, foundationNamesFromTags } from './utils/foundation';
 
 type View = 'chat' | 'learn' | 'settings' | 'result';
+
+function toKnowledgeGraphBlocks(blocks: GoalBlock[]): KnowledgeGraphBlock[] {
+  return blocks.map((block) => ({
+    block_id: block.block_id,
+    block_name: block.block_name,
+    aliases: [],
+    prerequisites: [],
+    subtopics: block.subtopics.map((topic, index) => ({
+      subtopic_id: topic.subtopic_id,
+      subtopic_name: topic.subtopic_name,
+      sequence_index: topic.sequence_index ?? index,
+      prerequisites: topic.prerequisites ?? []
+    }))
+  }));
+}
+
 type WorkflowState = 'onboarding' | 'diagnosing' | 'needs_more_info' | 'profile_ready' | 'starting_stage' | 'learning';
 type Message = {
   id: string;
@@ -2401,6 +2417,9 @@ export default function App() {
   const [learningPathOpen, setLearningPathOpen] = useState(false);
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string | null>(null);
   const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | 'settings' | null>(null);
+  const [foundationPickerBlocks, setFoundationPickerBlocks] = useState<KnowledgeGraphBlock[]>(knowledgeGraphBlocks);
+  const [foundationSubtopicIds, setFoundationSubtopicIds] = useState<string[]>([]);
+  const [foundationPickerLoading, setFoundationPickerLoading] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
   const [reuseUserProfile, setReuseUserProfile] = useState(false);
@@ -2802,28 +2821,33 @@ export default function App() {
 
     try {
       const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
-      const response = await apiClient.submitDiagnosis(
-        activeSessionId,
-        buildDiagnosticMessage(onboardingForm, reuseUserProfile)
-      );
+      const response = await apiClient.submitFoundation(activeSessionId, {
+        goal: onboardingForm.goal.trim(),
+        mastered_subtopic_ids: foundationSubtopicIds,
+        daily_hours: Number(onboardingForm.daily_hours),
+        learning_style: onboardingForm.learning_style
+      });
       setSessionId(activeSessionId);
       localStorage.setItem('sessionId', activeSessionId);
 
       if (response.status === 'needs_more_info') {
         const questions = response.followup_questions || [];
-        const requestedFields = response.missing_fields?.length
-          ? response.missing_fields as OnboardingField[]
-          : inferHighlightedFields(questions);
+        const requestedFields = inferHighlightedFields(questions);
         const visibleFields = reuseUserProfile
           ? requestedFields.filter((field) => field === 'goal' || field === 'daily_hours' || field === 'learning_style')
           : requestedFields;
         setFollowupQuestions(questions);
         setHighlightedFields(visibleFields);
-        if (response.profile_draft) {
-          const draftProfile = toProfile(response.profile_draft);
+        if (response.profile) {
+          const draftProfile = toProfile(response.profile);
           if (draftProfile) {
-            setProfile(draftProfile);
-            setOnboardingForm((current) => ({ ...current, ...formDataFromProfile(draftProfile) }));
+            const enrichedProfile = {
+              ...draftProfile,
+              grade: reuseUserProfile ? (profile?.grade || '') : onboardingForm.grade.trim(),
+              hardware: reuseUserProfile ? (profile?.hardware || '') : onboardingForm.hardware.trim()
+            };
+            setProfile(enrichedProfile);
+            setOnboardingForm((current) => ({ ...current, ...formDataFromProfile(enrichedProfile) }));
           }
         }
         setWorkflow('needs_more_info');
@@ -2831,11 +2855,25 @@ export default function App() {
         return;
       }
 
-      if (response.profile_draft) {
-        const nextProfile = { ...(toProfile(response.profile_draft) || fallbackProfile), confidence: response.confidence } as Profile;
+      if (response.profile) {
+        const nextProfile = {
+          ...(toProfile(response.profile) || fallbackProfile),
+          grade: reuseUserProfile ? (profile?.grade || '') : onboardingForm.grade.trim(),
+          hardware: reuseUserProfile ? (profile?.hardware || '') : onboardingForm.hardware.trim()
+        } as Profile;
         setProfile(nextProfile);
         setOnboardingForm(formDataFromProfile(nextProfile));
-        rememberProject(activeSessionId, nextProfile, null);
+        if (!reuseUserProfile) {
+          await apiClient.updateUserProfile({
+            grade: nextProfile.grade,
+            skill_tags: nextProfile.skill_tags || [],
+            learning_style: nextProfile.learning_style,
+            hardware: nextProfile.hardware,
+            default_daily_hours: nextProfile.daily_hours
+          });
+        }
+        setStage(toStageInfo(response.stage));
+        rememberProject(activeSessionId, nextProfile, toStageInfo(response.stage), 'stage_ready');
       }
       void refreshRemoteProjects();
       finishAgentRun(['agent1'], true);
@@ -3067,22 +3105,33 @@ export default function App() {
 
   const clearLocalSession = async () => {
     const targetSessionId = sessionId;
-    const confirmed = window.confirm('将放弃当前学习目标并清除本地会话缓存，确定重新开始吗？');
+    const confirmed = window.confirm('将放弃全部学习目标并清除本地记录，确定重新开始吗？');
     if (!confirmed) return;
-    if (targetSessionId && !targetSessionId.startsWith('local-goal-') && targetSessionId !== DEMO_SESSION_ID) {
-      try {
-        await apiClient.abandonSession(targetSessionId);
-      } catch {
-        // Keep local reset usable even if abandon fails remotely.
-      }
+
+    // The session list is server-backed. Abandon every active remote target
+    // before clearing local state, otherwise refreshRemoteProjects restores it.
+    const remoteSessionIds = new Set<string>();
+    try {
+      const response = await apiClient.listSessions();
+      response.sessions
+        .filter((item) => item.status !== 'abandoned' && !isLocalSessionId(item.session_id))
+        .forEach((item) => remoteSessionIds.add(item.session_id));
+    } catch {
+      // Local data can still be cleared when the server is unavailable.
     }
-    if (targetSessionId) {
-      forgetOwnedSessionId(targetSessionId);
-      setLearningProjects((projects) => projects.filter((project) => project.sessionId !== targetSessionId));
-      setStageConversations((conversations) => conversations.filter((item) => item.sessionId !== targetSessionId));
-    }
+    readOwnedSessionIds().forEach((ownedSessionId) => {
+      if (!isLocalSessionId(ownedSessionId)) remoteSessionIds.add(ownedSessionId);
+    });
+    if (targetSessionId && !isLocalSessionId(targetSessionId)) remoteSessionIds.add(targetSessionId);
+
+    await Promise.allSettled([...remoteSessionIds].map((remoteSessionId) => apiClient.abandonSession(remoteSessionId)));
+
     localStorage.removeItem('sessionId');
-    setError(null);
+    localStorage.removeItem(PROJECTS_STORAGE_KEY);
+    localStorage.removeItem(CONVERSATIONS_STORAGE_KEY);
+    localStorage.removeItem(OWNED_SESSION_IDS_STORAGE_KEY);
+    setLearningProjects([]);
+    setStageConversations([]);
     setSessionId(null);
     setProfile(null);
     setStage(null);
@@ -3094,6 +3143,8 @@ export default function App() {
     setInput('');
     setReuseUserProfile(false);
     setOnboardingForm(emptyOnboardingForm);
+    setFoundationSubtopicIds([]);
+    setFoundationPickerBlocks(knowledgeGraphBlocks);
     setFollowupQuestions([]);
     setHighlightedFields([]);
     setTimerSeconds(0);
@@ -3104,7 +3155,9 @@ export default function App() {
     setAgentStatuses(createAgentStatusMap());
     setWorkflow('onboarding');
     setView('chat');
-    void refreshRemoteProjects();
+    setError(null);
+    void checkUserFoundation();
+    return;
   };
 
   const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string }) => {
@@ -3364,13 +3417,38 @@ export default function App() {
     }
   };
 
-  const openFoundationPicker = (context: 'onboarding' | 'settings') => {
-    setFoundationPickerContext(context);
+  const openFoundationPicker = async (context: 'onboarding' | 'settings') => {
+    if (context === 'settings') {
+      setFoundationPickerBlocks(knowledgeGraphBlocks);
+      setFoundationPickerContext(context);
+      return;
+    }
+    const goal = onboardingForm.goal.trim();
+    if (!goal) return;
+    setFoundationPickerLoading(true);
+    setError(null);
+    try {
+      const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
+      setSessionId(activeSessionId);
+      localStorage.setItem('sessionId', activeSessionId);
+      const response = await apiClient.getGoalBlocks(activeSessionId, goal);
+      const blocks = toKnowledgeGraphBlocks(response.blocks || []);
+      setFoundationPickerBlocks(blocks.length ? blocks : knowledgeGraphBlocks);
+      setFoundationPickerContext(context);
+    } catch (caught) {
+      setError(`读取目标知识板块失败：${getErrorMessage(caught)}`);
+    } finally {
+      setFoundationPickerLoading(false);
+    }
   };
 
-  const confirmFoundation = (selectedBlockIds: string[]) => {
-    const selectedBlocks = knowledgeGraphBlocks.filter((block) => selectedBlockIds.includes(block.block_id));
+  const confirmFoundation = (selectedSubtopicIds: string[]) => {
+    const selectedBlocks = foundationPickerBlocks.filter((block) => (
+      block.subtopics.length > 0
+      && block.subtopics.every((topic) => selectedSubtopicIds.includes(topic.subtopic_id))
+    ));
     const skillTags = selectedBlocks.map((block) => block.block_name);
+    if (foundationPickerContext === 'onboarding') setFoundationSubtopicIds(selectedSubtopicIds);
     setOnboardingForm((current) => ({ ...current, skill_tags: skillTags }));
     if (foundationPickerContext === 'settings' && profile) {
       void saveProfileSettings({
@@ -3427,6 +3505,20 @@ export default function App() {
     void switchLearningProject(nextSessionId, stageNum);
   };
 
+  const openLearningPath = async () => {
+    if (sessionId) {
+      try {
+        const latestSession = await apiClient.getSession(sessionId);
+        const latestStage = resolveSessionStage(latestSession);
+        if (latestStage) setStage(toStageInfo(latestStage));
+      } catch (caught) {
+        // Keep the locally cached stage available when refreshing the modal fails.
+        console.warn('[learning path] failed to refresh current stage', caught);
+      }
+    }
+    setLearningPathOpen(true);
+  };
+
   const editProfile = () => {
     if (profile) setOnboardingForm(formDataFromProfile(profile));
     setError(null);
@@ -3450,18 +3542,15 @@ export default function App() {
   const foundationPickerGoal = foundationPickerContext === 'settings'
     ? workspaceProfile.goal || onboardingForm.goal
     : onboardingForm.goal;
-  const foundationPickerBlocks = useMemo(
-    () => foundationPickerContext === 'settings'
-      ? knowledgeGraphBlocks
-      : getRelevantFoundationBlocks(foundationPickerGoal),
-    [foundationPickerContext, foundationPickerGoal]
-  );
   const foundationPickerInitialBlockIds = useMemo(() => {
     const tags = foundationPickerContext === 'settings'
       ? workspaceProfile.skill_tags || []
       : onboardingForm.skill_tags;
-    return foundationBlocksFromTags(tags).map((block) => block.block_id);
-  }, [foundationPickerContext, onboardingForm.skill_tags, workspaceProfile.skill_tags]);
+    return foundationPickerBlocks.filter((block) => block.subtopics.length > 0 && block.subtopics.every((topic) => {
+      const matched = foundationBlocksFromTags(tags).find((candidate) => candidate.block_id === block.block_id);
+      return Boolean(matched);
+    })).map((block) => block.block_id);
+  }, [foundationPickerContext, foundationPickerBlocks, onboardingForm.skill_tags, workspaceProfile.skill_tags]);
   const stageSubtopics = useMemo(
     () => resolveStageSubtopics(workspaceProfile, workspaceStage),
     [workspaceProfile, workspaceStage]
@@ -3498,7 +3587,10 @@ export default function App() {
       {view === 'chat' && (!profile || workflow === 'onboarding' || workflow === 'diagnosing' || workflow === 'needs_more_info') && (
         <OnboardingPage
           formData={onboardingForm}
-          onChange={setOnboardingForm}
+          onChange={(next) => {
+            if (next.goal !== onboardingForm.goal) setFoundationSubtopicIds([]);
+            setOnboardingForm(next);
+          }}
           onSubmit={submitOnboarding}
           onCancel={newGoalReturnState ? cancelCreateLearningGoal : undefined}
           loading={loading}
@@ -3512,6 +3604,7 @@ export default function App() {
           onRetryProfileCheck={() => void checkUserFoundation()}
           foundationNames={onboardingFoundationNames}
           onOpenFoundation={() => openFoundationPicker('onboarding')}
+          foundationLoading={foundationPickerLoading}
         />
       )}
       {view === 'chat' && profile && (workflow === 'profile_ready' || workflow === 'starting_stage') && (
@@ -3538,7 +3631,7 @@ export default function App() {
           timerRunning={timerRunning}
           onToggleTimer={toggleStageTimer}
           onCreateGoal={createLearningGoal}
-          onOpenLearningPath={() => setLearningPathOpen(true)}
+          onOpenLearningPath={() => void openLearningPath()}
           onOpenProfile={() => setProfileModalOpen(true)}
           learningPackage={learningPackage}
           stageSubtopics={stageSubtopics}
