@@ -1,4 +1,4 @@
-# Agent3/Agent4 审核辩论协议 v0.1
+# Agent3/Agent4 审核辩论协议 v0.2
 
 本文档定义 Agent3 与 Agent4 在“学习包纠错机制”中的结构化协议，并与 `project.db` 中的审核辩论表保持一致。
 
@@ -7,6 +7,17 @@
 - 让 Agent4 的审核从“单向报错”升级为“带证据的可追溯审核”
 - 让 Agent3 的修改从“整包重写”升级为“逐条答辩 + 逐条修改”
 - 让 Orchestrator 能记录审核闭环，并在超轮次时返回 `needs_human_review`
+
+## 1.1 当前学习包块级流水线（生效规则）
+
+学习包处理的最小单位是 `content_block_id` 对应的内容块，而不是整篇文章或整包教程。`knowledge_chunks` 中的原始块由 Agent3 逐块个性化，Agent4 逐块审核，最终再由 Orchestrator 按原顺序聚合为一个 `LearningPackage`。
+
+1. **首轮生产/审核**：Agent3 最多并发生成 2 个块；每个块生成完成后立即提交 Agent4。Agent4 使用独立的并发上限 2，不占用 Agent3 的生成槽，因此 Agent3 可以连续生产后续块。
+2. **首轮问题交付**：Agent4 完成全部块的首轮审核后，Orchestrator 构造一次完整 `issue_package`，按 `content_block_id` 分组，整体交给 Agent3。首轮没有问题的块不进入列表。
+3. **修改/复核**：Agent3 建立待修改块队列，最多并发修改 2 个块；每个块修改完成后立即交给 Agent4 复核，其他块的修改不等待该复核完成。回传对象只包含该块、递增后的 `content_version` 和 `revision_note`。
+4. **后续问题列表**：每轮复核结束后重新构造完整问题列表，只保留仍未解决的问题块，再整体交给 Agent3。问题列表最多交付 3 次；仍未解决的块进入 `needs_human_review`。
+
+上述块级规则只适用于学习包；用户问题仍沿用本协议的回答审核链路。若阶段没有可用 `knowledge_chunks`，运行时才回退到旧的整包流程。
 
 ## 2. 核心对象
 

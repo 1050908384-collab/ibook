@@ -1635,35 +1635,40 @@ class DeterministicContentAgent:
 
     @staticmethod
     def _classify_question_by_keywords(question: str) -> str:
-        """Deterministic 模式下用关键词分类问题（无 LLM）。
+        """Deterministic 模式下用规则分类问题（无 LLM）。
 
-        返回 "technical" 或 "daily"。
-        - technical: 涉及代码、算法、概念解释、技术原理、API使用、报错排查等
-        - daily: 学习计划咨询、情绪疏导、学习鼓励、非技术闲聊等
+        返回 "technical" 或 "daily"。明确技术诉求优先；高置信问候、闲聊、
+        情绪表达和学习状态咨询归为 daily，避免进入知识检索与 Agent4 审核。
         """
-        # 日常类关键词
-        daily_keywords = [
-            "怎么学", "如何学", "学习计划", "学习路线", "状态不好", "学不进去",
-            "有什么用", "为什么学", "坚持", "放弃", "焦虑", "累", "难吗",
-            "鼓励", "谢谢", "再见", "心情", "压力大", "看不懂",
-        ]
-        # 技术类关键词（包含学习内容询问）
+        q = (question or "").strip()
+        q_lower = q.lower()
+
+        # 情绪词可以和技术问题同时出现，例如“CUDA 报错让我很焦虑”。
+        # 只要有明确技术诉求，仍应进入知识检索和 Agent4 审核。
         tech_keywords = [
             "代码", "报错", "error", "bug", "算法", "原理", "公式", "实现",
             "函数", "类", "接口", "api", "框架", "配置", "安装", "部署",
             "python", "pytorch", "transformer", "怎么写", "如何实现",
-            "区别", "什么是", "解释", "运行",
+            "区别", "什么是", "解释", "运行", "命令", "参数", "显存", "模型",
+            "lora", "qlora", "vllm", "cuda", "deepspeed", "微调", "推理",
             "学习阶段", "阶段内容", "当前学", "知识点", "学习内容", "当前阶段",
         ]
-        q_lower = question.lower()
-        # 技术类关键词优先（保守策略，避免技术问题被误判为日常）
-        for kw in tech_keywords:
-            if kw in q_lower:
-                return "technical"
-        for kw in daily_keywords:
-            if kw in question:
-                return "daily"
-        # 默认按技术类处理
+        if any(keyword in q_lower for keyword in tech_keywords):
+            return "technical"
+
+        daily_patterns = [
+            r"^(你好|您好|嗨|哈喽|hello|hi|早上好|中午好|下午好|晚上好)[啊呀嘛吗！!。,.，\s]*$",
+            r"^(谢谢|感谢|多谢|辛苦了|再见|拜拜|晚安|回头见)[你了啊呀！!。,.，\s]*$",
+            r"(心情|情绪|焦虑|紧张|难过|沮丧|烦躁|压力|疲惫|好累|累死|崩溃|害怕|担心|没信心|想放弃)",
+            r"(学不进去|不想学|不想学习|没有动力|没动力|注意力不集中|状态不好|看不下去|坚持不住)",
+            r"(鼓励我|安慰我|陪我聊|聊聊天|闲聊|讲个笑话|你是谁|你叫什么|你在吗)",
+            r"(今天过得|今天怎么样|最近怎么样|你好吗|心情怎么样|吃饭了吗|在干嘛)",
+            r"(学习计划|学习路线|怎么学|如何学|每天学多久|时间怎么安排|怎么坚持|为什么要学|学这个有什么用)",
+        ]
+        if any(re.search(pattern, q_lower) for pattern in daily_patterns):
+            return "daily"
+
+        # 无法高置信识别时保持技术类，避免漏掉没有显式关键词的技术问题。
         return "technical"
 
     def _build_memory_context(self, request: AnswerGenerationInput) -> str:
@@ -2399,6 +2404,11 @@ class HybridContentAgent(DeterministicContentAgent):
     async def _classify_question_by_llm(self, question: str) -> str:
         """Hybrid 模式下用 LLM 分类问题，失败时回退到关键词分类。"""
         import json as _json
+        rule_type = self._classify_question_by_keywords(question)
+        # 高置信日常表达直接短路，避免分类模型波动导致问候、闲聊或情绪表达
+        # 误入知识库检索和 Agent4 技术审核。
+        if rule_type == "daily":
+            return "daily"
         system_prompt = """你是一个问题分类器。请判断用户的问题属于"技术类"还是"日常类"。
 
 分类标准：

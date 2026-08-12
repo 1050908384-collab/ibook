@@ -1,7 +1,9 @@
 # Agent4 审核辩论机制 — 核心对接需求清单
 
 > 依据：`docs/Agent34审核辩论协议.md`、`数据库框架.md` 第九节、`Agent4任务说明.md`。
-> 前提：**暂不落库**（辩论过程只在单次运行内存中完成），暂不要求 Agent3 主动反驳。
+> 前提：审核辩论过程由 Orchestrator 按 `trace_id` 写入 `project.db` 的 `review_traces`、`review_debate_rounds`、`review_debate_issues`、`review_debate_responses` 及来源/Claim 表；Agent3 不负责直接写库。
+>
+> 学习包采用块级流水线：首轮审核完成后一次性交付完整问题列表；Agent3 最多并发修改 2 个块，每块完成即交 Agent4 复核；问题列表最多交付 3 次。
 >
 > **运行时执行体选型 = 方案 B（原地嫁接）**：Harness 实际调用的是 `deterministic.HybridTechnicalReviewAgent`，
 > 它含一步 **LLM 独立语义审核**（重算参数量、辨析 LoRA 机制、注入领域基线），这是抓“读起来通顺但机制/参数讲错”的核心手段。
@@ -9,7 +11,7 @@
 > 方案 B 保留 Hybrid 的完整审核链，只在其产出 errors 后**委托** `agent_04_tech_review` 的已就绪函数补协议字段，并加 `rebut`。
 >
 > Agent4 侧（`review.py` + `agent_04_tech_review.py`）已严格符合三份文档，无需再改。
-> **仍需修改的是 3 个禁改文件，均由项目负责人 / Orchestrator 负责：`contracts.py`、`deterministic.py`、`harness.py`。**
+> **上述 3 个项目负责人文件已经完成对接：`contracts.py`、`deterministic.py`、`harness.py`。本清单用于运行验收和接口约束，不再表示待开发任务。**
 
 ---
 

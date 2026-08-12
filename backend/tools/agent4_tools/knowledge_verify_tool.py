@@ -20,9 +20,9 @@ knowledge_verify_tool — Agent4 知识依据验证工具（幻觉检测 + 代�
     - similarity >= 0.80        → 有依据     (pass)
 
 实现说明：
-    生产环境应通过 Chroma 向量库（db/chroma_client.py）做真正的语义检索；
-    本工具在向量库未就绪时退化为对 knowledge_chunks 表的关键词重叠检索，
-    相似度经归一化映射到 [0,1]，作为可运行的语义近似。
+    本工具不依赖 Chroma。块级审核优先按 source_chunk_id 精确回查 SQLite
+    knowledge_chunks；没有明确来源块的陈述审核，才使用全库关键词重叠相似度
+    作为候选依据强度参考。该分数不是严格的语义等价或事实正确性证明。
     输出结构对齐 models/review.py 的 ReviewError 字段。
     保留 KnowledgeVerifyTool 类作为向后兼容适配器。
 """
@@ -112,19 +112,30 @@ def knowledge_verify(input_data: dict, config: dict = None) -> dict:
 
         # 安全兜底：知识库为空/不可用时，真实检索会对每条陈述判 similarity=0.0，
         # 从而把所有内容误报为 hallucination（critical）。此时缺乏可比对语料，
-        # 无法做出可信的幻觉判定，降级回 Mock 以避免全量误报。
+        # 只能标记为“未核验”，不能用 Mock 或低置信度替代事实判断。
         # （知识库导入分块后，chunks 非空即自动走真实检索。）
         if not chunks:
             logger.warning(
-                "knowledge_chunks 为空或不可用（db_available=%s），降级为 Mock 幻觉判定",
+                "knowledge_chunks 为空或不可用（db_available=%s），跳过幻觉判定",
                 db_available,
             )
-            result = _mock_verify(statement, input_data)
-            if isinstance(result.get("data"), dict):
-                result["data"]["db_available"] = db_available
-                result["data"]["checked_chunks"] = 0
-                result["data"]["fallback_reason"] = "knowledge_chunks_empty"
-            return result
+            return {
+                "status": "success",
+                "data": {
+                    "statement": statement[:200],
+                    "confidence": 0.0,
+                    "has_basis": None,
+                    "level": "unverifiable",
+                    "thresholds": {"critical": THRESHOLD_CRITICAL, "pass": THRESHOLD_PASS},
+                    "matched_chunks": [],
+                    "checked_chunks": 0,
+                    "db_available": db_available,
+                    "fallback_reason": "knowledge_chunks_empty",
+                    "verification_skipped": True,
+                },
+                "message": "knowledge_chunks 为空或不可用，已跳过事实核验，不产生幻觉结论。",
+                "mock_used": False,
+            }
 
         stmt_terms = _tokenize(statement)
 
@@ -194,7 +205,7 @@ def _get_db_path() -> Path:
 def _load_chunks() -> tuple[List[Dict[str, str]], bool]:
     """
     SQL: 从 knowledge_chunks 表读取全部分块（doc_id/block_id 关联 knowledge_docs/knowledge_blocks）。
-    knowledge_chunks 是向量检索的源表，chunk_id 与 Chroma 向量库 ID 一一对应。
+    knowledge_chunks 是 Agent4 的事实核验来源表，chunk_id 用于精确绑定 Agent3 来源块。
     数据库或表不存在时返回空列表与 db_available=False，调用方据此降级。
 
     带进程内缓存：按 (db路径, 文件mtime) 缓存结果，避免同一次审核对多条 Claim 逐条送检时
@@ -846,6 +857,8 @@ class KnowledgeVerifyTool:
         if result.get("status") != "success":
             return []
         data = result["data"]
+        if data.get("verification_skipped"):
+            return []
         confidence = data.get("confidence", 0.0)
         matched = data.get("matched_chunks", [])
         top = matched[0] if matched else None
