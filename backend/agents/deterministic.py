@@ -721,6 +721,9 @@ class DeterministicDiagnosticAgent:
             stage_num=request.stage_num,
             block_id=block_id,
             block_name=block_name,
+            block_ids=list(dict.fromkeys(
+                item.get("block_id") for item in selected_subtopics if item.get("block_id")
+            )) or [block_id],
             subtopic_id=subtopic.get("subtopic_id"),
             subtopic_name=subtopic.get("subtopic_name"),
             subtopic_ids=[item.get("subtopic_id") for item in selected_subtopics if item.get("subtopic_id")],
@@ -1169,6 +1172,16 @@ class DeterministicContentAgent:
             ids = [stage.subtopic_id]
         return list(dict.fromkeys(item for item in ids if item))
 
+    def _stage_block_ids(self, stage: StageInfo) -> list[str]:
+        """解析阶段全部板块，兼容旧的单 block_id 数据。"""
+        explicit_ids = list(getattr(stage, "block_ids", []) or [])
+        resolved_ids = self.vector_search_tool.get_block_ids_for_subtopics(
+            self._stage_subtopic_ids(stage),
+        )
+        return list(dict.fromkeys(
+            item for item in [*explicit_ids, *resolved_ids, stage.block_id] if item
+        ))
+
     @staticmethod
     def _stage_subtopic_names(stage: StageInfo) -> list[str]:
         """返回阶段内所有清理过括号/截断后的知识点名称（按 subtopic_ids 对齐）。
@@ -1480,9 +1493,13 @@ class DeterministicContentAgent:
         # 按用户问题语义检索本阶段相关文档（不是取阶段所有文档，避免 LLM 被带偏）
         related_docs = []
         try:
-            if request.block_id:
+            stage_block_ids = self._stage_block_ids(request.stage)
+            if stage_block_ids:
                 related_docs = await self.vector_search_tool.search(
-                    request.question, block_id=request.block_id, top_k=5,
+                    request.question,
+                    block_ids=stage_block_ids,
+                    subtopic_ids=self._stage_subtopic_ids(request.stage),
+                    top_k=5,
                 )
             if not related_docs:
                 related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)
@@ -2340,10 +2357,14 @@ class HybridContentAgent(DeterministicContentAgent):
         # 否则 LLM 会被不相关文档带偏（如问"语法"却答"环境准备"）
         related_docs = []
         try:
-            if request.block_id:
-                # 优先按问题语义 + 当前 block 范围检索
+            stage_block_ids = self._stage_block_ids(request.stage)
+            if stage_block_ids:
+                # 优先按问题语义 + 当前阶段全部板块/知识点范围检索。
                 related_docs = await self.vector_search_tool.search(
-                    request.question, block_id=request.block_id, top_k=5,
+                    request.question,
+                    block_ids=stage_block_ids,
+                    subtopic_ids=self._stage_subtopic_ids(request.stage),
+                    top_k=5,
                 )
             if not related_docs:
                 related_docs = await self.vector_search_tool.search_by_query(request.question, top_k=3)

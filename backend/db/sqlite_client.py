@@ -311,7 +311,55 @@ class SQLiteClient:
             self._create_assessment_tables(conn)
             self._migrate_review_protocol_tables(conn)
             self._migrate_learning_package_source_types(conn)
+            self._create_knowledge_chunks_fts(conn)
             conn.commit()
+
+    @staticmethod
+    def _create_knowledge_chunks_fts(conn) -> None:
+        """创建并维护 Agent3 技术问答使用的 FTS5/BM25 索引。"""
+        conn.execute(text("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunks_fts
+            USING fts5(
+                chunk_id UNINDEXED,
+                block_id UNINDEXED,
+                subtopic_id UNINDEXED,
+                content,
+                tokenize='trigram'
+            )
+        """))
+        conn.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS knowledge_chunks_fts_insert
+            AFTER INSERT ON knowledge_chunks BEGIN
+                INSERT INTO knowledge_chunks_fts(chunk_id, block_id, subtopic_id, content)
+                SELECT NEW.chunk_id, NEW.block_id, COALESCE(d.subtopic_id, ''), NEW.content
+                FROM knowledge_docs d WHERE d.doc_id = NEW.doc_id;
+            END
+        """))
+        conn.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS knowledge_chunks_fts_delete
+            AFTER DELETE ON knowledge_chunks BEGIN
+                DELETE FROM knowledge_chunks_fts WHERE chunk_id = OLD.chunk_id;
+            END
+        """))
+        conn.execute(text("""
+            CREATE TRIGGER IF NOT EXISTS knowledge_chunks_fts_update
+            AFTER UPDATE OF chunk_id, doc_id, block_id, content ON knowledge_chunks BEGIN
+                DELETE FROM knowledge_chunks_fts WHERE chunk_id = OLD.chunk_id;
+                INSERT INTO knowledge_chunks_fts(chunk_id, block_id, subtopic_id, content)
+                SELECT NEW.chunk_id, NEW.block_id, COALESCE(d.subtopic_id, ''), NEW.content
+                FROM knowledge_docs d WHERE d.doc_id = NEW.doc_id;
+            END
+        """))
+        fts_count = conn.execute(text("SELECT COUNT(*) FROM knowledge_chunks_fts")).scalar_one()
+        chunk_count = conn.execute(text("SELECT COUNT(*) FROM knowledge_chunks")).scalar_one()
+        if fts_count != chunk_count:
+            conn.execute(text("DELETE FROM knowledge_chunks_fts"))
+            conn.execute(text("""
+                INSERT INTO knowledge_chunks_fts(chunk_id, block_id, subtopic_id, content)
+                SELECT c.chunk_id, c.block_id, COALESCE(d.subtopic_id, ''), c.content
+                FROM knowledge_chunks c
+                LEFT JOIN knowledge_docs d ON d.doc_id = c.doc_id
+            """))
 
     def _create_user_scope_tables(self, conn) -> None:
         conn.execute(text("""

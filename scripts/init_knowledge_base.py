@@ -33,6 +33,26 @@ def _resolve_chroma_path() -> Path:
 
 
 def init_knowledge_base():
+    # Validate source data and the embedding endpoint before deleting old data.
+    if not DB_PATH.exists():
+        raise FileNotFoundError(f"SQLite database does not exist: {DB_PATH}")
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        source_count = conn.execute("SELECT COUNT(*) FROM knowledge_chunks").fetchone()[0]
+    finally:
+        conn.close()
+    if source_count == 0:
+        raise RuntimeError("knowledge_chunks is empty; rebuild cancelled to preserve the existing collection")
+
+    from backend.db.chroma_client import get_embedding_function
+    embedding_function = get_embedding_function()
+    if embedding_function is None:
+        raise RuntimeError("Embedding function is unavailable; rebuild cancelled")
+    probe = embedding_function(["embedding connectivity check"])
+    if len(probe) != 1 or len(probe[0]) == 0:
+        raise RuntimeError("Embedding model returned no vector; rebuild cancelled")
+    print(f"Embedding model ready: {settings.EMBEDDING_MODEL} ({len(probe[0])} dimensions)")
+
     print("重建 Chroma 向量索引...")
 
     if not DB_PATH.exists():
@@ -102,6 +122,8 @@ def init_knowledge_base():
 
     # 5. 验证
     count = chroma_client.count()
+    if count != total:
+        raise RuntimeError(f"Chroma count mismatch: expected={total}, actual={count}")
     print(f"\n[DONE] 已写入 {count} 条向量到 Chroma (collection={CHROMA_COLLECTION})")
     print(f"  Chroma 路径: {chroma_path}")
 

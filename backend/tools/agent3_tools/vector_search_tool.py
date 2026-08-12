@@ -20,6 +20,7 @@ vector_search_tool — Agent3 语义检索工具
 
 import json
 import logging
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -74,7 +75,9 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
 
     query = input_data.get("query", "")
     block_id = input_data.get("block_id", "")
+    block_ids = list(dict.fromkeys(input_data.get("block_ids", []) or ([] if not block_id else [block_id])))
     subtopic_id = input_data.get("subtopic_id", "")
+    subtopic_ids = list(dict.fromkeys(input_data.get("subtopic_ids", []) or ([] if not subtopic_id else [subtopic_id])))
     top_k = min(max(input_data.get("top_k", 3), 1), 12)
 
     if not query.strip() and not block_id:
@@ -89,7 +92,7 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
         if use_mock:
             return _mock_search(input_data, top_k)
 
-        results, db_available = _search_chunks(query, block_id, subtopic_id, top_k)
+        results, db_available = _search_chunks(query, block_ids, subtopic_ids, top_k)
         return {
             "status": "success",
             "data": {
@@ -112,25 +115,21 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
 # ------------------------------------------------------------------
 # 真实模式：Chroma 向量检索
 # ------------------------------------------------------------------
-def _search_chunks(query: str, block_id: str, subtopic_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
+def _search_chunks(query: str, block_ids: List[str], subtopic_ids: List[str], top_k: int) -> tuple[List[Dict[str, Any]], bool]:
     """
     Chroma 向量检索：从 knowledge_base 集合做语义检索。
     注：SQLite knowledge_chunks 表作为回退（Chroma 无数据时）。
     """
-    # The current Chroma collection predates subtopic metadata.  Exact lesson
-    # retrieval must therefore use SQLite until that derived index is rebuilt.
-    if subtopic_id:
-        return _search_sqlite_fallback(query, block_id, subtopic_id, top_k)
-    chroma_results = _search_chroma(query, block_id, top_k)
+    chroma_results = _search_chroma(query, block_ids, subtopic_ids, top_k)
     if chroma_results:
         return chroma_results, True
 
-    logger.info("Chroma 无结果，回退 SQLite 关键词检索")
-    return _search_sqlite_fallback(query, block_id, subtopic_id, top_k)
+    logger.info("Chroma 无结果，回退 SQLite FTS5/BM25 检索")
+    return _search_sqlite_fallback(query, block_ids, subtopic_ids, top_k)
 
 
-def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]]:
-    """Chroma 向量检索 knowledge_base 集合（使用 Ollama bge-m3 中文 embedding）。"""
+def _search_chroma(query: str, block_ids: List[str], subtopic_ids: List[str], top_k: int) -> List[Dict[str, Any]]:
+    """Chroma 向量检索 knowledge_base 集合（使用配置的 Ollama embedding 模型）。"""
     try:
         from chromadb import PersistentClient
 
@@ -155,7 +154,12 @@ def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]
         if collection.count() == 0:
             return []
 
-        where_filter = {"block_id": block_id} if block_id else None
+        filters = []
+        if block_ids:
+            filters.append({"block_id": {"$in": block_ids}})
+        if subtopic_ids:
+            filters.append({"subtopic_id": {"$in": subtopic_ids}})
+        where_filter = filters[0] if len(filters) == 1 else ({"$and": filters} if filters else None)
         results = collection.query(
             query_texts=[query],
             n_results=top_k,
@@ -189,8 +193,21 @@ def _search_chroma(query: str, block_id: str, top_k: int) -> List[Dict[str, Any]
         return []
 
 
-def _search_sqlite_fallback(query: str, block_id: str, subtopic_id: str, top_k: int) -> tuple[List[Dict[str, Any]], bool]:
-    """SQLite 关键词检索回退（Chroma 无数据时使用）。"""
+def _build_fts_match_query(query: str) -> str:
+    """构造适用于 trigram FTS5 的安全查询，兼容中文连续文本和英文技术词。"""
+    terms: list[str] = []
+    terms.extend(re.findall(r"[a-zA-Z][a-zA-Z0-9_\-]{1,}", query))
+    for segment in re.findall(r"[\u4e00-\u9fff]+", query):
+        if len(segment) < 3:
+            terms.append(segment)
+        else:
+            terms.extend(segment[index:index + 3] for index in range(len(segment) - 2))
+    unique_terms = list(dict.fromkeys(term.replace('"', '""') for term in terms if term.strip()))[:24]
+    return " OR ".join(f'"{term}"' for term in unique_terms)
+
+
+def _search_sqlite_fallback(query: str, block_ids: List[str], subtopic_ids: List[str], top_k: int) -> tuple[List[Dict[str, Any]], bool]:
+    """SQLite FTS5/BM25 回退（Chroma 无数据时使用）。"""
     db_path = _get_db_path()
     if not db_path.exists():
         logger.warning("数据库不存在: %s", db_path)
@@ -199,58 +216,42 @@ def _search_sqlite_fallback(query: str, block_id: str, subtopic_id: str, top_k: 
     try:
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
-            query_words = query.split()
-            if subtopic_id:
-                where_scope = "c.block_id = ? AND d.subtopic_id = ?"
-                scope_params = [block_id, subtopic_id]
-            elif block_id:
-                where_scope = "c.block_id = ?"
-                scope_params = [block_id]
-            else:
-                where_scope = "1 = 1"
-                scope_params = []
+            match_query = _build_fts_match_query(query)
+            scope_clauses = []
+            scope_params: list[str] = []
+            if block_ids:
+                scope_clauses.append(f"f.block_id IN ({', '.join('?' for _ in block_ids)})")
+                scope_params.extend(block_ids)
+            if subtopic_ids:
+                scope_clauses.append(f"f.subtopic_id IN ({', '.join('?' for _ in subtopic_ids)})")
+                scope_params.extend(subtopic_ids)
+            where_scope = " AND ".join(scope_clauses) if scope_clauses else "1 = 1"
 
-            if not query_words:
+            if not match_query:
                 rows = conn.execute(f"""
                     SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
                     FROM knowledge_chunks c
                     JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                    WHERE {where_scope}
+                    WHERE {where_scope.replace('f.', 'c.')}
                     ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, c.chunk_index
                     LIMIT ?
                 """, scope_params + [top_k]).fetchall()
-                return _rows_to_results(rows, query_words), True
+                return _rows_to_results(rows, []), True
 
-            like_clauses = " OR ".join(["c.content LIKE ?" for _ in query_words])
-            params = [f"%{word}%" for word in query_words]
-
-            if block_id:
-                sql = f"""
-                    SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
-                    FROM knowledge_chunks c
-                    LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                    WHERE {where_scope} AND ({like_clauses})
-                    ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, d.created_at DESC
-                    LIMIT ?
-                    """
-                params = scope_params + params + [top_k]
-            else:
-                sql = f"""
-                    SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
-                    FROM knowledge_chunks c
-                    LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                    WHERE {like_clauses}
-                    ORDER BY d.created_at DESC
-                    LIMIT ?
-                    """
-                params = params + [top_k]
-
-            cur = conn.execute(sql, params)
-            rows = cur.fetchall()
+            rows = conn.execute(f"""
+                SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title,
+                       bm25(knowledge_chunks_fts) AS score
+                FROM knowledge_chunks_fts f
+                JOIN knowledge_chunks c ON c.chunk_id = f.chunk_id
+                LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
+                WHERE knowledge_chunks_fts MATCH ? AND {where_scope}
+                ORDER BY score ASC
+                LIMIT ?
+            """, [match_query, *scope_params, top_k]).fetchall()
         finally:
             conn.close()
 
-        return _rows_to_results(rows, query_words), True
+        return _fts_rows_to_results(rows), True
     except sqlite3.Error as e:
         logger.warning("SQLite 回退检索失败: %s", e)
         return [], False
@@ -265,6 +266,19 @@ def _rows_to_results(rows: list[tuple], query_words: list[str]) -> List[Dict[str
             "chunk_id": r[0], "block_id": r[1],
             "content": r[2][:500] + "..." if len(r[2]) > 500 else r[2],
             "source": r[3] or "", "similarity": similarity, "title": r[5] or "",
+        })
+    return results
+
+
+def _fts_rows_to_results(rows: list[tuple]) -> List[Dict[str, Any]]:
+    """转换 BM25 结果；BM25 值越小代表越相关。"""
+    results = []
+    for rank, row in enumerate(rows):
+        results.append({
+            "chunk_id": row[0], "block_id": row[1],
+            "content": row[2][:500] + "..." if len(row[2]) > 500 else row[2],
+            "source": row[3] or "", "similarity": round(max(0.1, 1.0 - rank * 0.1), 4),
+            "title": row[5] or "", "bm25_score": row[6],
         })
     return results
 
@@ -391,10 +405,19 @@ class VectorSearchTool:
     def __init__(self):
         self._default_config = {"use_mock": False}
 
-    async def search(self, query: str, block_id: str = "", top_k: int = 3) -> List[Dict[str, Any]]:
+    async def search(
+        self,
+        query: str,
+        block_id: str = "",
+        block_ids: Optional[List[str]] = None,
+        subtopic_ids: Optional[List[str]] = None,
+        top_k: int = 3,
+    ) -> List[Dict[str, Any]]:
         result = vector_search({
             "query": query,
             "block_id": block_id,
+            "block_ids": block_ids or [],
+            "subtopic_ids": subtopic_ids or [],
             "top_k": top_k,
         }, config=self._default_config)
         if result.get("status") != "success":
@@ -455,6 +478,28 @@ class VectorSearchTool:
             }
             for row in rows
         ]
+
+    def get_block_ids_for_subtopics(self, subtopic_ids: list[str]) -> List[str]:
+        """按阶段知识点解析全部所属板块，兼容旧的单 block_id 阶段。"""
+        if not subtopic_ids:
+            return []
+        db_path = _get_db_path()
+        if not db_path.exists():
+            return []
+        placeholders = ", ".join("?" for _ in subtopic_ids)
+        try:
+            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            try:
+                rows = connection.execute(
+                    f"SELECT DISTINCT block_id FROM knowledge_subtopics WHERE subtopic_id IN ({placeholders})",
+                    subtopic_ids,
+                ).fetchall()
+            finally:
+                connection.close()
+        except sqlite3.Error as error:
+            logger.warning("解析阶段知识点所属板块失败: %s", error)
+            return []
+        return [row[0] for row in rows if row[0]]
 
     def get_stage_chunks(self, block_id: str, subtopic_ids: list[str]) -> List[Dict[str, Any]]:
         """读取某阶段（block + 子知识点集合）的原始 knowledge_chunks（供 Agent3 块级生成）。

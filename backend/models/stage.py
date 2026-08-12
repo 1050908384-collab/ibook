@@ -10,6 +10,8 @@ class StageInfo(BaseModel):
     stage_num: int
     block_id: str
     block_name: str
+    # 一个阶段可覆盖多个知识板块；block_id 保留为旧接口的主板块。
+    block_ids: List[str] = Field(default_factory=list)
     subtopic_id: Optional[str] = None
     subtopic_name: Optional[str] = None
     subtopic_ids: List[str] = Field(default_factory=list)

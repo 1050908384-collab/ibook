@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Chroma 向量库连接
-# Embedding 使用 Ollama 的 bge-m3 模型（中文语义检索）
+# Embedding uses the configured Ollama model for Chinese semantic search.
 from __future__ import annotations
 
 import logging
@@ -50,7 +50,7 @@ class _OllamaEFProxySafe(EmbeddingFunction):
         if not inputs:
             return []
         # truncate=True：超长文本由 Ollama 自动截断，避免静默失败
-        # （bge-m3 上下文 8192 tokens，当前最大块 ~1942 tokens 暂无风险，留作防御）
+        # Truncate oversized chunks at the embedding model's context limit.
         payload = {"model": self.model_name, "input": inputs, "truncate": True}
         last_err: Exception | None = None
         for attempt in range(1, self.max_retries + 1):
@@ -105,7 +105,7 @@ class _OllamaEFProxySafe(EmbeddingFunction):
 def get_embedding_function():
     """返回代理安全的 Ollama embedding function。
 
-    使用 settings.OLLMA_BASE_URL + settings.EMBEDDING_MODEL（默认 bge-m3）。
+    使用 settings.OLLMA_BASE_URL + settings.EMBEDDING_MODEL。
     若 chromadb / httpx 未安装或构造失败，返回 None 并记录错误日志。
 
     ⚠ 调用方注意：返回 None 时**绝不能**用 None 作为 embedding_function

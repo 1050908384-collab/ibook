@@ -16,7 +16,7 @@
 
 - **后端**：FastAPI, Python 3.12+
 - **数据库**：SQLite, Chroma Vector DB, NetworkX
-- **LLM**：Ollama 本地模型 (deepseek-r1/ qwen2.5)
+- **LLM**：Ollama 本地模型 (deepseek-r1/ qwen2.5)；Agent3 技术问答使用 `qwen3-embedding:0.6b` 进行 Chroma 语义检索
 - **前端**：React + TypeScript
 
 后端默认使用 `EXECUTION_MODE=hybrid`：Agent1 先以用户表单字段为事实源，使用别名精确匹配与轻量语义召回定位候选知识板块，LLM 仅在候选内细化盲区；阶段选路、状态管理和答题判定保持确定性，教程与问答由 Ollama 生成。设置为 `deterministic` 后，无需启动 Ollama 也可以跑通完整闭环。
@@ -58,6 +58,18 @@ cp .env.example .env
 # 编辑 .env 文件
 ```
 
+Agent3 的技术问答需要 Ollama embedding 模型。首次部署先下载并配置：
+
+```bash
+ollama pull qwen3-embedding:0.6b
+```
+
+```env
+EMBEDDING_MODEL=qwen3-embedding:0.6b
+```
+
+该模型只负责编码问题和知识片段，用于技术资料检索，不负责生成回答；日常问候、闲聊和情绪表达不会调用它。切换 embedding 模型或更新 `knowledge_chunks` 后，必须重新执行 `python scripts/init_knowledge_base.py`。
+
 ### 初始化数据
 
 ```bash
@@ -87,7 +99,9 @@ python scripts/verify_catalog_runtime.py
 - `render_knowledge_graph.py`：生成 `docs/知识图谱可视化.html`，可直接在浏览器打开查看。
 - `verify_catalog_runtime.py`：校验 Agent1 图谱依赖查询，以及 Agent3 的数据库/目录视频 URL 查询。
 
-### Agent1 轻量语义索引
+### Agent1 与 Agent3 语义索引
+
+`python scripts/init_knowledge_base.py` 使用 Ollama 的 `EMBEDDING_MODEL`（默认 `qwen3-embedding:0.6b`）读取 SQLite 的 `knowledge_chunks`，重建 Chroma 的 `knowledge_base` collection，供 Agent3 技术类问答按当前阶段的多个知识板块和知识点进行语义检索。脚本会先验证 embedding 服务，再重建 collection 并校验条目数；SQLite FTS5/BM25 保留为 Chroma 不可用时的回退。
 
 `python scripts/init_agent1_semantic_index.py` 首次执行会下载并缓存 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（模型文件约 90MB，CPU 运行，运行时通常额外占用约 200MB 内存），然后为 68 条 `knowledge_docs` 建立 Agent1 专用索引。首次下载耗时取决于网络，通常是几十秒级。下载与建索引只应由源码开发者或部署方执行；可用下面的命令检查中文召回：
 
@@ -139,6 +153,7 @@ python scripts/check_review_schema.py
 - 历史库 `data/knowledge.db` 不再参与运行链路，仅保留备份归档用途
 - 所有后端代码和初始化脚本统一读取 `DATABASE_URL`
 - 所有 Chroma 数据统一读取 `CHROMA_PATH`
+- Agent3 使用 `knowledge_base` collection 对 `knowledge_chunks` 做技术问答语义检索；首次部署须执行 `ollama pull qwen3-embedding:0.6b`，并在知识块或 embedding 模型变更后执行 `python scripts/init_knowledge_base.py`
 - Agent1 使用 `agent1_knowledge_docs` collection 对 `knowledge_docs` 的 68 条文档做语义召回；初始化或更新种子文档后执行 `python scripts/init_agent1_semantic_index.py`
 - Agent1 索引独立使用 FastEmbed 的 `BAAI/bge-small-zh-v1.5`（约 90MB、CPU 运行）与 cosine 距离，不依赖 Ollama。
 - **源码开发/部署者**：执行一次 `python scripts/init_agent1_semantic_index.py` 与 `python scripts/evaluate_agent1_retrieval.py`，模型缓存和索引会生成在 `data/fastembed_models/`、`data/chroma_db/`。
