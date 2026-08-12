@@ -208,6 +208,7 @@ type LearningProject = {
   targetTotalHours?: number;
   targetDailyHours?: number;
   averageAccuracy?: number | null;
+  overallProgress?: number;
 };
 type StoredStageConversation = {
   id: string;
@@ -710,6 +711,7 @@ function ProfilePanel({
   stage,
   projects,
   currentSessionId,
+  overallProgress,
   selectedConversationId,
   onSelectProjectStage,
   onCreateGoal,
@@ -719,12 +721,12 @@ function ProfilePanel({
   timerSeconds,
   timerRunning,
   onToggleTimer,
-  onUpdateStageDuration,
   onStartStage
 }: {
   stage: StageInfo;
   projects: LearningProject[];
   currentSessionId: string | null;
+  overallProgress?: number;
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
   onCreateGoal: () => void;
@@ -734,12 +736,9 @@ function ProfilePanel({
   timerSeconds: number;
   timerRunning: boolean;
   onToggleTimer: () => void;
-  onUpdateStageDuration: (stageId: string, hours: number) => Promise<void>;
   onStartStage: () => void;
 }) {
   const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({});
-  const [editingDuration, setEditingDuration] = useState(false);
-  const [durationDraft, setDurationDraft] = useState(String(stage.estimated_hours ?? 1));
   const stageDuration = Math.round((stage.estimated_hours ?? 1) * 3600);
   const timerLabel = timerRunning
     ? '暂停提醒'
@@ -754,13 +753,6 @@ function ProfilePanel({
       [sessionId]: !(prev[sessionId] ?? sessionId === currentSessionId)
     }));
   };
-  const stageCompleted = stage.status === 'completed';
-
-  useEffect(() => {
-    setDurationDraft(String(stage.estimated_hours ?? 1));
-    setEditingDuration(false);
-  }, [stage.stage_id, stage.estimated_hours]);
-
   return (
     <aside className={`context-panel ${collapsed ? 'collapsed' : ''}`}>
       <div className="context-panel-controls">
@@ -787,47 +779,14 @@ function ProfilePanel({
             : '正在同步当前学习阶段。'}</p>
         <div className="stage-meta">
           <span>
-            <Clock size={15} />
-            {stage.estimated_hours ?? 1} 小时
-            {stage.stage_id && !stageCompleted && (
-              <button
-                className="stage-duration-edit-trigger"
-                type="button"
-                onClick={() => setEditingDuration((value) => !value)}
-                title="编辑阶段时长"
-                aria-label="编辑阶段时长"
-              >
-                <Pencil size={12} />
-              </button>
-            )}
+            <Target size={15} />
+            当前进度 {overallProgress == null ? '--' : `${pct(overallProgress)}%`}
           </span>
           <span>
             <Target size={15} />
             {statusText[stage.status || 'pending'] || stage.status}
           </span>
         </div>
-        {editingDuration && stage.stage_id && (
-          <div className="duration-editor dark">
-            <DurationField label="阶段时长" value={durationDraft} onChange={setDurationDraft} min={0.5} max={1000} />
-            <div className="duration-editor-actions">
-              <button type="button" onClick={() => setEditingDuration(false)} disabled={loading}>取消</button>
-              <button
-                type="button"
-                onClick={async () => {
-                  const hours = Number(durationDraft);
-                  if (!Number.isFinite(hours) || hours < 0.5) return;
-                  try {
-                    await onUpdateStageDuration(stage.stage_id!, hours);
-                    setEditingDuration(false);
-                  } catch {
-                    // The parent displays the API error and keeps the editor open.
-                  }
-                }}
-                disabled={loading || !Number.isFinite(Number(durationDraft)) || Number(durationDraft) < 0.5 || Number(durationDraft) > 1000}
-              >保存</button>
-            </div>
-          </div>
-        )}
         <button className={`stage-timer-button ${timerRunning ? 'running' : ''}`} onClick={onToggleTimer}>
           {timerRunning ? <Pause size={17} /> : <Play size={17} />}
           <span>{timerLabel}</span>
@@ -1024,7 +983,8 @@ function sessionSummaryToProject(item: SessionListItem): LearningProject | null 
     updatedAt: item.updated_at ? Date.parse(item.updated_at) || Date.now() : Date.now(),
     profile: profile || undefined,
     targetTotalHours: item.target_total_hours,
-    targetDailyHours: item.target_daily_hours ?? item.daily_hours
+    targetDailyHours: item.target_daily_hours ?? item.daily_hours,
+    overallProgress: typeof item.progress === 'number' ? item.progress / 100 : undefined
   };
 }
 
@@ -1214,7 +1174,6 @@ function ChatView({
   currentSessionId,
   selectedConversationId,
   onSelectProjectStage,
-  onUpdateStageDuration,
   onStartStage,
   readOnly,
   readOnlyNotice,
@@ -1244,7 +1203,6 @@ function ChatView({
   currentSessionId: string | null;
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
-  onUpdateStageDuration: (stageId: string, hours: number) => Promise<void>;
   onStartStage: () => void;
   readOnly: boolean;
   readOnlyNotice: string;
@@ -1310,6 +1268,7 @@ function ChatView({
           stage={stage}
           projects={projects}
           currentSessionId={currentSessionId}
+          overallProgress={projects.find((project) => project.sessionId === currentSessionId)?.overallProgress}
           selectedConversationId={selectedConversationId}
           onSelectProjectStage={onSelectProjectStage}
           onCreateGoal={onCreateGoal}
@@ -1319,7 +1278,6 @@ function ChatView({
           timerSeconds={timerSeconds}
           timerRunning={timerRunning}
           onToggleTimer={onToggleTimer}
-          onUpdateStageDuration={onUpdateStageDuration}
           onStartStage={onStartStage}
         />
 
@@ -1846,6 +1804,7 @@ function LearningDashboardView({
   onSelectProject,
   onDeleteProject,
   onUpdateTargetDuration,
+  onLoadTargetSettings,
   projectsLoading,
   projectsError,
   onRetryProjects,
@@ -1860,6 +1819,7 @@ function LearningDashboardView({
   onSelectProject: (sessionId: string) => void;
   onDeleteProject: (sessionId: string) => Promise<void>;
   onUpdateTargetDuration: (sessionId: string, totalHours: number, dailyHours: number) => Promise<void>;
+  onLoadTargetSettings: (sessionId: string) => Promise<{ total: number; daily: number } | null>;
   projectsLoading: boolean;
   projectsError: string | null;
   onRetryProjects: () => void;
@@ -1958,8 +1918,17 @@ function LearningDashboardView({
                       className="secondary edit-target-button"
                       type="button"
                       onClick={() => {
-                        setEditingTargetId(editingDuration ? null : project.sessionId);
-                        setTargetDurationDraft({ total: String(targetTotal || 0.5), daily: String(targetDaily) });
+                        if (editingDuration) {
+                          setEditingTargetId(null);
+                          return;
+                        }
+                        void onLoadTargetSettings(project.sessionId).then((latest) => {
+                          setTargetDurationDraft({
+                            total: String((latest?.total ?? targetTotal) || 0.5),
+                            daily: String(latest?.daily ?? targetDaily)
+                          });
+                          setEditingTargetId(project.sessionId);
+                        });
                       }}
                       title="调整目标时长"
                     >
@@ -2046,6 +2015,7 @@ function LearningDashboardView({
             profile={profile}
             stage={stage}
             averageAccuracy={currentProject?.averageAccuracy ?? null}
+            overallProgress={currentProject?.overallProgress ?? null}
             targetDailyHours={currentProject?.targetDailyHours ?? profile.daily_hours ?? 2}
             setView={setView}
             loading={loading}
@@ -2095,6 +2065,7 @@ function DashboardView({
   profile,
   stage,
   averageAccuracy,
+  overallProgress,
   targetDailyHours,
   setView,
   loading,
@@ -2104,6 +2075,7 @@ function DashboardView({
   profile: Profile;
   stage: StageInfo;
   averageAccuracy: number | null;
+  overallProgress: number | null;
   targetDailyHours: number;
   setView: (view: View) => void;
   loading: boolean;
@@ -2165,6 +2137,14 @@ function DashboardView({
               <small>平均正确率</small>
               <strong>{averageAccuracy == null ? '--' : pct(averageAccuracy)}{averageAccuracy != null && <em>%</em>}</strong>
               <p>{averageAccuracy == null ? '完成阶段测试后生成' : '所有阶段测试结果平均值'}</p>
+            </div>
+          </div>
+          <div className="metric">
+            <span className="metric-icon green"><Target size={22} /></span>
+            <div>
+              <small>当前进度</small>
+              <strong>{overallProgress == null ? '--' : pct(overallProgress)}<em>%</em></strong>
+              <p>已掌握知识点占比</p>
             </div>
           </div>
           <div className="metric">
@@ -2467,7 +2447,8 @@ export default function App() {
         targetTotalHours: existing?.targetTotalHours
           ?? knownStages.reduce((sum, item) => sum + (item.estimated_hours || 0), 0),
         targetDailyHours: existing?.targetDailyHours ?? nextProfile.daily_hours,
-        averageAccuracy: existing?.averageAccuracy
+        averageAccuracy: existing?.averageAccuracy,
+        overallProgress: existing?.overallProgress
       };
       return [project, ...prev.filter((item) => item.sessionId !== nextSessionId)].slice(0, 20);
     });
@@ -2505,7 +2486,8 @@ export default function App() {
     nextSessionId: string,
     history: StageInfo[],
     currentStage?: StageInfo | null,
-    averageAccuracy?: number | null
+    averageAccuracy?: number | null,
+    overallProgress?: number
   ) => {
     setLearningProjects((prev) => prev.map((project) => {
       if (project.sessionId !== nextSessionId) return project;
@@ -2517,7 +2499,8 @@ export default function App() {
       return {
         ...project,
         stages: [...byStageNum.values()].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1)),
-        averageAccuracy: averageAccuracy === undefined ? project.averageAccuracy : averageAccuracy
+        averageAccuracy: averageAccuracy === undefined ? project.averageAccuracy : averageAccuracy,
+        overallProgress: overallProgress === undefined ? project.overallProgress : overallProgress
       };
     }));
   };
@@ -2526,7 +2509,13 @@ export default function App() {
     try {
       const dashboard = await apiClient.getDashboard(nextSessionId);
       const history = Array.isArray(dashboard?.stage_history) ? dashboard.stage_history as StageInfo[] : [];
-      mergeDashboardStages(nextSessionId, history, currentStage, dashboard.average_accuracy);
+      mergeDashboardStages(
+        nextSessionId,
+        history,
+        currentStage,
+        dashboard.average_accuracy,
+        typeof dashboard.overall_progress === 'number' ? dashboard.overall_progress : undefined
+      );
     } catch {
       // Session restoration remains usable when the optional dashboard endpoint is unavailable.
     }
@@ -3229,6 +3218,27 @@ export default function App() {
     }
   };
 
+  const loadTargetSettings = async (targetSessionId: string) => {
+    try {
+      const settings = await apiClient.getTargetSettings(targetSessionId);
+      return { total: settings.target_total_hours, daily: settings.target_daily_hours };
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+      return null;
+    }
+  };
+
+  const loadStageDuration = async (stageId: string) => {
+    if (!sessionId) return null;
+    try {
+      const duration = await apiClient.getStageDuration(sessionId, stageId);
+      return Number(duration.estimated_hours);
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+      return null;
+    }
+  };
+
   const updateStageDuration = async (stageId: string, hours: number) => {
     if (!sessionId) throw new Error('当前没有真实学习会话');
     setLoading(true);
@@ -3643,7 +3653,6 @@ export default function App() {
           currentSessionId={sessionId}
           selectedConversationId={selectedConversationId || currentConversationId}
           onSelectProjectStage={selectProjectStage}
-          onUpdateStageDuration={updateStageDuration}
           onStartStage={() => void startStage()}
           readOnly={historicalConversationSelected}
           readOnlyNotice={readOnlyConversationNotice}
@@ -3661,6 +3670,7 @@ export default function App() {
           onSelectProject={(nextSessionId) => void switchLearningProject(nextSessionId, undefined, 'learn')}
           onDeleteProject={deleteLearningProject}
           onUpdateTargetDuration={updateTargetDuration}
+          onLoadTargetSettings={loadTargetSettings}
           projectsLoading={projectsLoading}
           projectsError={projectsError}
           onRetryProjects={() => void refreshRemoteProjects()}

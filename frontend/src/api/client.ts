@@ -222,6 +222,24 @@ export type TargetSettingsResponse = {
   }>;
 };
 
+export type BlockSubtopicsResponse = {
+  block_id: string;
+  block_name: string;
+  subtopics: Array<{
+    subtopic_id: string;
+    subtopic_name: string;
+    sequence_index?: number;
+    prerequisites?: string[];
+  }>;
+};
+
+export type StageDurationResponse = {
+  stage_id: string;
+  session_id: string;
+  stage_num?: number;
+  estimated_hours: number;
+};
+
 export type DashboardResponse = {
   current_accuracy: number | null;
   average_accuracy: number | null;
@@ -255,6 +273,13 @@ export const apiClient = {
   getKnowledgeNetwork: async () => {
     const response = await axios.get<KnowledgeNetworkResponse>(
       `${BASE_URL}/users/local-user/knowledge-network`
+    );
+    return response.data;
+  },
+
+  getBlockSubtopics: async (blockId: string) => {
+    const response = await axios.get<BlockSubtopicsResponse>(
+      `${BASE_URL}/knowledge-blocks/${encodeURIComponent(blockId)}/subtopics`
     );
     return response.data;
   },
@@ -335,10 +360,24 @@ export const apiClient = {
     return response.data;
   },
 
+  getTargetSettings: async (sessionId: string) => {
+    const response = await axios.get<TargetSettingsResponse>(
+      `${BASE_URL}/sessions/${sessionId}/target-settings`
+    );
+    return response.data;
+  },
+
   updateStageDuration: async (sessionId: string, stageId: string, estimatedHours: number) => {
     const response = await axios.patch<ApiStage>(
       `${BASE_URL}/sessions/${sessionId}/stages/${stageId}/duration`,
       { estimated_hours: estimatedHours }
+    );
+    return response.data;
+  },
+
+  getStageDuration: async (sessionId: string, stageId: string) => {
+    const response = await axios.get<StageDurationResponse>(
+      `${BASE_URL}/sessions/${sessionId}/stages/${stageId}/duration`
     );
     return response.data;
   },
