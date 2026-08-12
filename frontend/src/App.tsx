@@ -712,6 +712,7 @@ function ProfilePanel({
   projects,
   currentSessionId,
   overallProgress,
+  dailyProgress,
   selectedConversationId,
   onSelectProjectStage,
   onCreateGoal,
@@ -727,6 +728,7 @@ function ProfilePanel({
   projects: LearningProject[];
   currentSessionId: string | null;
   overallProgress?: number;
+  dailyProgress: number;
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
   onCreateGoal: () => void;
@@ -739,14 +741,11 @@ function ProfilePanel({
   onStartStage: () => void;
 }) {
   const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({});
-  const stageDuration = Math.round((stage.estimated_hours ?? 1) * 3600);
   const timerLabel = timerRunning
     ? '暂停提醒'
     : timerSeconds <= 0
       ? '重新开始'
-      : timerSeconds < stageDuration
-        ? '继续计时'
-        : '开始计时';
+      : '继续计时';
   const toggleGoal = (sessionId: string) => {
     setExpandedGoals((prev) => ({
       ...prev,
@@ -780,7 +779,7 @@ function ProfilePanel({
         <div className="stage-meta">
           <span>
             <Target size={15} />
-            当前进度 {overallProgress == null ? '--' : `${pct(overallProgress)}%`}
+            今日进度 {pct(dailyProgress)}%
           </span>
           <span>
             <Target size={15} />
@@ -1160,6 +1159,7 @@ function ChatView({
   conversationStage,
   timerSeconds,
   timerRunning,
+  dailyProgress,
   onToggleTimer,
   onCreateGoal,
   onOpenLearningPath,
@@ -1189,6 +1189,7 @@ function ChatView({
   conversationStage: StageInfo;
   timerSeconds: number;
   timerRunning: boolean;
+  dailyProgress: number;
   onToggleTimer: () => void;
   onCreateGoal: () => void;
   onOpenLearningPath: () => void;
@@ -1269,6 +1270,7 @@ function ChatView({
           projects={projects}
           currentSessionId={currentSessionId}
           overallProgress={projects.find((project) => project.sessionId === currentSessionId)?.overallProgress}
+          dailyProgress={dailyProgress}
           selectedConversationId={selectedConversationId}
           onSelectProjectStage={onSelectProjectStage}
           onCreateGoal={onCreateGoal}
@@ -2377,6 +2379,7 @@ export default function App() {
   const [highlightedFields, setHighlightedFields] = useState<OnboardingField[]>([]);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [dailyProgress, setDailyProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
@@ -2685,16 +2688,29 @@ export default function App() {
     });
   }, [messages, sessionId, stage, workflow, view]);
 
+  const dailyHours = Math.max(0.5, Number(profile?.daily_hours ?? 2));
+  const dailyTargetSeconds = Math.round(dailyHours * 3600);
+  const dailyProgressKey = sessionId ? `daily-study:${sessionId}` : '';
+
   useEffect(() => {
-    const estimatedSeconds = Math.round((stage?.estimated_hours ?? 1) * 3600);
-    setTimerSeconds(estimatedSeconds);
+    if (!dailyProgressKey) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = JSON.parse(localStorage.getItem(dailyProgressKey) || '{}') as { date?: string; seconds?: number };
+    const seconds = stored.date === today ? Math.max(0, Number(stored.seconds) || 0) : 0;
+    setTimerSeconds(Math.max(0, dailyTargetSeconds - seconds));
+    setDailyProgress(Math.min(1, seconds / dailyTargetSeconds));
     setTimerRunning(false);
-  }, [stage?.stage_id, stage?.estimated_hours]);
+  }, [dailyProgressKey, dailyTargetSeconds]);
 
   useEffect(() => {
     if (!timerRunning) return;
     const intervalId = window.setInterval(() => {
       setTimerSeconds((prev) => {
+        const today = new Date().toISOString().slice(0, 10);
+        const stored = JSON.parse(localStorage.getItem(dailyProgressKey) || '{}') as { date?: string; seconds?: number };
+        const seconds = (stored.date === today ? Number(stored.seconds) || 0 : 0) + 1;
+        localStorage.setItem(dailyProgressKey, JSON.stringify({ date: today, seconds }));
+        setDailyProgress(Math.min(1, seconds / dailyTargetSeconds));
         if (prev <= 1) {
           window.clearInterval(intervalId);
           setTimerRunning(false);
@@ -2705,12 +2721,12 @@ export default function App() {
       });
     }, 1000);
     return () => window.clearInterval(intervalId);
-  }, [timerRunning]);
+  }, [dailyProgressKey, dailyTargetSeconds, timerRunning]);
 
   const toggleStageTimer = () => {
     setError(null);
     if (timerSeconds <= 0) {
-      setTimerSeconds(Math.round((stage?.estimated_hours ?? 1) * 3600));
+      setTimerSeconds(dailyTargetSeconds);
       setTimerRunning(true);
       return;
     }
@@ -3639,6 +3655,7 @@ export default function App() {
           conversationStage={conversationStage}
           timerSeconds={timerSeconds}
           timerRunning={timerRunning}
+          dailyProgress={dailyProgress}
           onToggleTimer={toggleStageTimer}
           onCreateGoal={createLearningGoal}
           onOpenLearningPath={() => void openLearningPath()}
