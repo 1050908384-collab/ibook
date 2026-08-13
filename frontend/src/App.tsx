@@ -1,4 +1,4 @@
-﻿import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
@@ -2899,6 +2899,15 @@ export default function App() {
     setInput('');
     setError(null);
     setMessages((prev) => [...prev, { id: shortId(), role: 'user', content: text }]);
+    if (isUiPreviewMode) {
+      setMessages((prev) => [...prev, {
+        id: shortId(),
+        role: 'assistant',
+        content: '（UI 预览模式：此演示环境不会调用真实后端接口。请将 frontend/.env.local 中 VITE_UI_PREVIEW 设为 false 并重启前端，以使用真实的多 Agent 服务。）',
+        note: '预览模式提示'
+      }]);
+      return;
+    }
     setLoading(true);
     const initialDiagnosis = !sessionId || !profile?.goal;
     const invokedAgents: AgentId[] = initialDiagnosis ? ['agent1'] : ['agent3', 'agent4'];
