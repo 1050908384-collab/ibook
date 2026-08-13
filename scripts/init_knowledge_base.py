@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""从 SQLite knowledge_chunks 表重建 Chroma 向量索引。
+"""从 SQLite knowledge_chunks 表重建 Chroma 向量索引（使用 qwen3-embedding:0.6b 模型）。
 
 数据源：data/sqlite_data/project.db 的 knowledge_chunks 表（JOIN knowledge_docs
 取 title/source/subtopic_id）。每个 chunk 作为一个 document 写入 Chroma

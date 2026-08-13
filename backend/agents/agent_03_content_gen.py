@@ -275,12 +275,19 @@ class ContentGeneratorAgent(BaseAgent):
 
     async def answer_question(self, session_id: str, question: str,
                               block_id: str = "", subtopic_id: str = "", qa_history: list = None,
-                              profile_summary: str = "") -> dict:
+                              profile_summary: str = "", block_ids: List[str] = None,
+                              subtopic_ids: List[str] = None) -> dict:
         """回答用户问题：先分类（technical/daily），再走对应流程。
 
         返回 dict：{"answer": str, "question_type": "technical" | "daily"}
         - 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory + LLM 综合
         - 日常类：历史对话 memory + 画像 + LLM 直接回答
+
+        参数：
+            block_id: 单个板块ID（兼容旧接口）
+            block_ids: 多个板块ID列表（跨板块检索，优先级高于 block_id）
+            subtopic_id: 单个知识点ID（兼容旧接口）
+            subtopic_ids: 多个知识点ID列表（精确过滤，优先级高于 subtopic_id）
         """
         # 问题分类
         question_type = await self.llm_generate_tool.classify_question(question)
@@ -302,9 +309,26 @@ class ContentGeneratorAgent(BaseAgent):
                     answer = f"{answer}\n\n{memory_ctx}"
             return {"answer": answer, "question_type": "technical"}
 
-        # 本阶段相关知识文档检索（用 block_id 过滤）
-        if block_id:
-            related_docs = await self.vector_search_tool.search_by_block(block_id, subtopic_id)
+        # 确定有效的 block_ids（优先使用传入的 block_ids，否则使用单个 block_id）
+        effective_block_ids = block_ids or ([block_id] if block_id else [])
+        effective_block_ids = [b for b in effective_block_ids if b]  # 去空去重
+
+        # 确定有效的 subtopic_ids（优先使用传入的 subtopic_ids，否则使用单个 subtopic_id）
+        effective_subtopic_ids = subtopic_ids or ([subtopic_id] if subtopic_id else [])
+        effective_subtopic_ids = [s for s in effective_subtopic_ids if s]
+
+        # 本阶段相关知识文档检索（用 block_ids + subtopic_ids 过滤）
+        if effective_block_ids or effective_subtopic_ids:
+            # 多板块+多知识点检索：先按范围过滤检索，若无结果则退化为全库检索
+            related_docs = await self.vector_search_tool.search(
+                question,
+                block_ids=effective_block_ids,
+                subtopic_ids=effective_subtopic_ids,
+                top_k=5,
+            )
+            if not related_docs:
+                # 退化为全库检索
+                related_docs = await self.vector_search_tool.search_by_query(question, top_k=3)
         else:
             related_docs = await self.vector_search_tool.search_by_query(question, top_k=3)
 

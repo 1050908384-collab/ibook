@@ -44,7 +44,8 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
     参数：
         input_data: dict
             - query: str              查询关键词/问题
-            - block_id: str           板块ID（可选过滤条件）
+            - block_id: str           板块ID（可选过滤条件，单个）
+            - block_ids: list[str]    多个板块ID（可选过滤条件，优先级高于 block_id）
             - top_k: int              返回数量（默认3，范围1~5）
             - scenario: str           Mock 模式下选择场景：normal|boundary|exception
         config: dict
@@ -80,11 +81,11 @@ def vector_search(input_data: dict, config: dict = None) -> dict:
     subtopic_ids = list(dict.fromkeys(input_data.get("subtopic_ids", []) or ([] if not subtopic_id else [subtopic_id])))
     top_k = min(max(input_data.get("top_k", 3), 1), 12)
 
-    if not query.strip() and not block_id:
+    if not query.strip() and not block_id and not block_ids:
         return {
             "status": "error",
             "data": None,
-            "message": "输入未包含 query 或 block_id 字段，无法检索",
+            "message": "输入未包含 query 或 block_id/block_ids 字段，无法检索",
             "mock_used": use_mock,
         }
 
@@ -119,29 +120,41 @@ def _search_chunks(query: str, block_ids: List[str], subtopic_ids: List[str], to
     """
     Chroma 向量检索：从 knowledge_base 集合做语义检索。
     注：SQLite knowledge_chunks 表作为回退（Chroma 无数据时）。
+
+    block_ids: 多个板块ID列表，支持跨板块检索。
+    subtopic_ids: 多个知识点ID列表，支持精确范围过滤。
     """
+    # 先尝试 Chroma 语义检索（支持 block_ids + subtopic_ids 组合过滤）
+    # Chroma 元数据已包含 block_id 和 subtopic_id，可直接过滤
     chroma_results = _search_chroma(query, block_ids, subtopic_ids, top_k)
     if chroma_results:
         return chroma_results, True
 
+    # Chroma 无结果（或 collection 为空/元数据缺失），回退 SQLite FTS5/BM25
     logger.info("Chroma 无结果，回退 SQLite FTS5/BM25 检索")
     return _search_sqlite_fallback(query, block_ids, subtopic_ids, top_k)
 
 
 def _search_chroma(query: str, block_ids: List[str], subtopic_ids: List[str], top_k: int) -> List[Dict[str, Any]]:
-    """Chroma 向量检索 knowledge_base 集合（使用配置的 Ollama embedding 模型）。"""
+    """Chroma 向量检索 knowledge_base 集合（使用 Ollama embedding 中文模型）。
+
+    - block_ids: 板块ID列表，支持 $in 多板块过滤
+    - subtopic_ids: 知识点ID列表，支持 $in 多知识点过滤（Chroma meta 有则生效）
+    """
     try:
         from chromadb import PersistentClient
 
         chroma_path = _get_chroma_path()
         if not chroma_path.exists():
+            logger.warning("Chroma 路径不存在: %s", chroma_path)
             return []
 
         chroma_client = PersistentClient(path=str(chroma_path))
         # 必须传入与写入时相同的 embedding function，否则 query 和 document
         # 不在同一向量空间。
-        from backend.db.chroma_client import CHROMA_COLLECTION, get_embedding_function
+        from db.chroma_client import CHROMA_COLLECTION, get_embedding_function
         ef = get_embedding_function()
+        logger.info("Chroma EF: %s, model: %s", ef, ef.model_name if ef else "N/A")
         # EF 为 None 时绝不用 None 创建 collection——Chroma 会静默回退英文模型，
         # 导致中文检索 sim 全部失真。直接降级到 SQLite 关键词匹配。
         if ef is None:
@@ -151,30 +164,45 @@ def _search_chroma(query: str, block_ids: List[str], subtopic_ids: List[str], to
             CHROMA_COLLECTION,
             embedding_function=ef,
         )
-        if collection.count() == 0:
+        count = collection.count()
+        logger.info("Chroma collection count: %d", count)
+        if count == 0:
             return []
 
+        # 支持多 block_id + 多 subtopic_id 组合过滤（$and 合并）
         filters = []
         if block_ids:
-            filters.append({"block_id": {"$in": block_ids}})
+            # 单值直接等于，多值用 $in
+            if len(block_ids) == 1:
+                filters.append({"block_id": block_ids[0]})
+            else:
+                filters.append({"block_id": {"$in": block_ids}})
         if subtopic_ids:
-            filters.append({"subtopic_id": {"$in": subtopic_ids}})
+            if len(subtopic_ids) == 1:
+                filters.append({"subtopic_id": subtopic_ids[0]})
+            else:
+                filters.append({"subtopic_id": {"$in": subtopic_ids}})
         where_filter = filters[0] if len(filters) == 1 else ({"$and": filters} if filters else None)
+
+        logger.info("Chroma query: '%s', where: %s, top_k: %d", query[:50], where_filter, top_k)
         results = collection.query(
             query_texts=[query],
             n_results=top_k,
             where=where_filter,
         )
+        logger.info("Chroma results keys: %s", list(results.keys()))
 
         if not results or not results.get("documents") or not results["documents"][0]:
+            logger.warning("Chroma 无检索结果")
             return []
 
+        docs = results["documents"][0]
+        metadatas = results["metadatas"][0] if results.get("metadatas") and results["metadatas"] else [{}] * len(docs)
+        distances = results["distances"][0]
+        logger.info("Chroma 返回 %d 条结果", len(docs))
+
         output = []
-        for doc, metadata, distance in zip(
-            results["documents"][0],
-            results["metadatas"][0] if results.get("metadatas") and results["metadatas"] else [{}] * len(results["documents"][0]),
-            results["distances"][0],
-        ):
+        for doc, metadata, distance in zip(docs, metadatas, distances):
             similarity = round(max(0.0, 1.0 - float(distance)), 4) if distance is not None else 0.5
             output.append({
                 "chunk_id": metadata.get("chunk_id", "") if metadata else "",
@@ -189,12 +217,18 @@ def _search_chroma(query: str, block_ids: List[str], subtopic_ids: List[str], to
         logger.info("chromadb not installed, skip vector search")
         return []
     except Exception as e:
-        logger.warning("Chroma 向量检索失败: %s", e)
+        import traceback
+        logger.error("Chroma 向量检索失败: %s\n%s", e, traceback.format_exc())
         return []
 
 
 def _build_fts_match_query(query: str) -> str:
-    """构造适用于 trigram FTS5 的安全查询，兼容中文连续文本和英文技术词。"""
+    """构造适用于 trigram FTS5 的安全查询，兼容中文连续文本和英文技术词。
+
+    - 英文/数字：按词匹配（长度>=2）
+    - 中文连续段：短段完整匹配，长段按 trigram 滑动窗口切分
+    - 最终用 OR 连接，前面的词先取，最多 24 个（避免 MATCH 过长）
+    """
     terms: list[str] = []
     terms.extend(re.findall(r"[a-zA-Z][a-zA-Z0-9_\-]{1,}", query))
     for segment in re.findall(r"[\u4e00-\u9fff]+", query):
@@ -206,55 +240,151 @@ def _build_fts_match_query(query: str) -> str:
     return " OR ".join(f'"{term}"' for term in unique_terms)
 
 
+def _ensure_fts_index(db_path: Path) -> None:
+    """确保 FTS5 索引存在且与主表行数同步。
+
+    - 索引不存在：创建 + rebuild
+    - 索引存在但行数不一致（主表有新增/删除）：rebuild
+    - 索引存在且行数一致：跳过
+
+    由于查询侧常以 ?mode=ro 只读方式打开，这里单独用 rw 连接做 DDL，
+    避免在只读事务里 CREATE VIRTUAL TABLE 失败。
+    """
+    try:
+        # 先用只读探测是否存在 + 行数是否一致，避免频繁建 rw 连接
+        probe = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            exists = probe.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='knowledge_chunks_fts'"
+            ).fetchone()
+            if exists:
+                # 检查行数是否一致，不一致则需 rebuild
+                main_count = probe.execute("SELECT COUNT(*) FROM knowledge_chunks").fetchone()[0]
+                fts_count = probe.execute("SELECT COUNT(*) FROM knowledge_chunks_fts").fetchone()[0]
+                if main_count == fts_count:
+                    return
+                logger.info("FTS5 行数不一致（主表=%d, FTS=%d），触发 rebuild", main_count, fts_count)
+            else:
+                logger.info("创建 knowledge_chunks FTS5 索引 (trigram)...")
+        finally:
+            probe.close()
+
+        rw = sqlite3.connect(str(db_path))
+        try:
+            if not exists:
+                rw.execute("""
+                    CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunks_fts
+                    USING fts5(content, content=knowledge_chunks, content_rowid=rowid,
+                               tokenize='trigram')
+                """)
+            # 新建或行数不一致时，rebuild 同步全部数据
+            rw.execute("INSERT INTO knowledge_chunks_fts(knowledge_chunks_fts) VALUES('rebuild')")
+            rw.commit()
+            logger.info("FTS5 索引同步完成")
+        finally:
+            rw.close()
+    except sqlite3.OperationalError as e:
+        logger.warning("FTS5 索引初始化失败（忽略，将走 LIKE 回退）: %s", e)
+
+
 def _search_sqlite_fallback(query: str, block_ids: List[str], subtopic_ids: List[str], top_k: int) -> tuple[List[Dict[str, Any]], bool]:
-    """SQLite FTS5/BM25 回退（Chroma 无数据时使用）。"""
+    """SQLite FTS5/BM25 回退（Chroma 无数据或 subtopic_ids 精确过滤时使用）。
+
+    注意：knowledge_chunks_fts 是 external-content FTS5 表，只暴露 content；
+    block_id / subtopic_id / title / source 必须 JOIN knowledge_chunks + knowledge_docs 获取。
+    """
     db_path = _get_db_path()
     if not db_path.exists():
         logger.warning("数据库不存在: %s", db_path)
         return [], False
 
     try:
+        # 在开读连接前确保 FTS5 索引建好（ddl 走独立 rw 连接）
+        _ensure_fts_index(db_path)
+
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
-            match_query = _build_fts_match_query(query)
+            # 构建 block_ids + subtopic_ids 联合过滤范围（基于 c/d 实表列）
             scope_clauses = []
             scope_params: list[str] = []
             if block_ids:
-                scope_clauses.append(f"f.block_id IN ({', '.join('?' for _ in block_ids)})")
+                placeholders = ", ".join("?" for _ in block_ids)
+                scope_clauses.append(f"c.block_id IN ({placeholders})")
                 scope_params.extend(block_ids)
             if subtopic_ids:
-                scope_clauses.append(f"f.subtopic_id IN ({', '.join('?' for _ in subtopic_ids)})")
+                placeholders = ", ".join("?" for _ in subtopic_ids)
+                scope_clauses.append(f"d.subtopic_id IN ({placeholders})")
                 scope_params.extend(subtopic_ids)
             where_scope = " AND ".join(scope_clauses) if scope_clauses else "1 = 1"
 
-            if not match_query:
+            if not query.strip():
                 rows = conn.execute(f"""
                     SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
                     FROM knowledge_chunks c
                     JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                    WHERE {where_scope.replace('f.', 'c.')}
+                    WHERE {where_scope}
                     ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, c.chunk_index
                     LIMIT ?
                 """, scope_params + [top_k]).fetchall()
                 return _rows_to_results(rows, []), True
 
+            match_query = _build_fts_match_query(query)
+            if not match_query:
+                return _search_sqlite_like_fallback(conn, where_scope, scope_params, query, top_k), True
+
+            # FTS5 BM25：通过 rowid 子查询（external-content 模式）
+            # knowledge_chunks_fts(rowid=knowledge_chunks.rowid, content)；
+            # 按 BM25 rank 选出 top_k*2 候选 rowid，再回实表 JOIN + 范围过滤 + 取 top_k。
+            fts_params = [match_query, top_k * 2]
+            if where_scope == "1 = 1":
+                filter_sql = ""
+                filter_params: list = []
+            else:
+                filter_sql = f"AND {where_scope}"
+                filter_params = scope_params
+
             rows = conn.execute(f"""
-                SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title,
-                       bm25(knowledge_chunks_fts) AS score
-                FROM knowledge_chunks_fts f
-                JOIN knowledge_chunks c ON c.chunk_id = f.chunk_id
+                SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
+                FROM knowledge_chunks c
                 LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                WHERE knowledge_chunks_fts MATCH ? AND {where_scope}
-                ORDER BY score ASC
+                WHERE c.rowid IN (
+                    SELECT rowid FROM knowledge_chunks_fts
+                    WHERE knowledge_chunks_fts MATCH ?
+                    ORDER BY rank
+                    LIMIT ?
+                )
+                {filter_sql}
+                ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END
                 LIMIT ?
-            """, [match_query, *scope_params, top_k]).fetchall()
+            """, fts_params + filter_params + [top_k]).fetchall()
+
+            if not rows:
+                logger.info("FTS5 无结果，退化为 LIKE 模糊匹配")
+                return _search_sqlite_like_fallback(conn, where_scope, scope_params, query, top_k), True
         finally:
             conn.close()
 
         return _fts_rows_to_results(rows), True
     except sqlite3.Error as e:
-        logger.warning("SQLite 回退检索失败: %s", e)
-        return [], False
+        logger.warning("SQLite FTS5 检索失败: %s，退化为 LIKE 匹配", e)
+        try:
+            conn2 = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            try:
+                scope_clauses = []
+                scope_params: list[str] = []
+                if block_ids:
+                    scope_clauses.append(f"c.block_id IN ({', '.join('?' for _ in block_ids)})")
+                    scope_params.extend(block_ids)
+                if subtopic_ids:
+                    scope_clauses.append(f"d.subtopic_id IN ({', '.join('?' for _ in subtopic_ids)})")
+                    scope_params.extend(subtopic_ids)
+                where_scope = " AND ".join(scope_clauses) if scope_clauses else "1 = 1"
+                return _search_sqlite_like_fallback(conn2, where_scope, scope_params, query, top_k), True
+            finally:
+                conn2.close()
+        except sqlite3.Error as e2:
+            logger.warning("LIKE 回退也失败: %s", e2)
+            return [], False
 
 
 def _rows_to_results(rows: list[tuple], query_words: list[str]) -> List[Dict[str, Any]]:
@@ -271,16 +401,62 @@ def _rows_to_results(rows: list[tuple], query_words: list[str]) -> List[Dict[str
 
 
 def _fts_rows_to_results(rows: list[tuple]) -> List[Dict[str, Any]]:
-    """转换 BM25 结果；BM25 值越小代表越相关。"""
+    """转换 FTS5 结果行。
+
+    兼容两种 SELECT：
+    - 6 列 (chunk_id, block_id, content, source, created_at, title) — rowid 子查询写法
+    - 7 列 — 旧 JOIN 写法（第 7 列为 bm25_score）
+    相似度按 rank 递减估算（FTS5 rank ASC = 相关度越高）。
+    """
     results = []
     for rank, row in enumerate(rows):
+        bm25 = row[6] if len(row) >= 7 else None
         results.append({
             "chunk_id": row[0], "block_id": row[1],
             "content": row[2][:500] + "..." if len(row[2]) > 500 else row[2],
             "source": row[3] or "", "similarity": round(max(0.1, 1.0 - rank * 0.1), 4),
-            "title": row[5] or "", "bm25_score": row[6],
+            "title": row[5] or "", "bm25_score": bm25,
         })
     return results
+
+
+def _search_sqlite_like_fallback(conn: sqlite3.Connection, where_scope: str,
+                                  scope_params: list, query: str, top_k: int) -> List[Dict[str, Any]]:
+    """LIKE 模糊匹配回退（当 FTS5 不可用/无结果时使用）。"""
+    # 对中文/英文统一处理：bigram + 英文单词
+    like_tokens: list[str] = []
+    like_tokens.extend(re.findall(r"[a-zA-Z][a-zA-Z0-9_\-]{1,}", query))
+    for segment in re.findall(r"[\u4e00-\u9fff]+", query):
+        if len(segment) < 2:
+            like_tokens.append(segment)
+        else:
+            like_tokens.extend(segment[i:i + 2] for i in range(len(segment) - 1))
+
+    if not like_tokens:
+        rows = conn.execute(f"""
+            SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
+            FROM knowledge_chunks c
+            JOIN knowledge_docs d ON c.doc_id = d.doc_id
+            WHERE {where_scope}
+            ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, c.chunk_index
+            LIMIT ?
+        """, scope_params + [top_k]).fetchall()
+        return _rows_to_results(rows, [])
+
+    like_clauses = " OR ".join(["c.content LIKE ?" for _ in like_tokens])
+    params = [f"%{t}%" for t in like_tokens]
+
+    sql = f"""
+        SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
+        FROM knowledge_chunks c
+        LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
+        WHERE {where_scope} AND ({like_clauses})
+        ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, d.created_at DESC
+        LIMIT ?
+    """
+    cur = conn.execute(sql, scope_params + params + [top_k])
+    rows = cur.fetchall()
+    return _rows_to_results(rows, like_tokens)
 
 
 def _get_chroma_path() -> Path:
@@ -426,10 +602,12 @@ class VectorSearchTool:
 
     async def search_by_block(
         self, block_id: str, subtopic_id: str = "", top_k: int = 3,
+        block_ids: List[str] = None,
     ) -> List[Dict[str, Any]]:
         result = vector_search({
             "query": "",
             "block_id": block_id,
+            "block_ids": block_ids or [],
             "subtopic_id": subtopic_id,
             "top_k": top_k,
         }, config=self._default_config)
@@ -437,10 +615,12 @@ class VectorSearchTool:
             return []
         return result["data"].get("results", [])
 
-    async def search_by_query(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
+    async def search_by_query(self, query: str, top_k: int = 3,
+                               block_ids: List[str] = None) -> List[Dict[str, Any]]:
         result = vector_search({
             "query": query,
             "block_id": "",
+            "block_ids": block_ids or [],
             "top_k": top_k,
         }, config=self._default_config)
         if result.get("status") != "success":

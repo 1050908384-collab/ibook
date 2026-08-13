@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Chroma 向量库连接
-# Embedding uses the configured Ollama model for Chinese semantic search.
+# Embedding 使用 Ollama 的 qwen3-embedding:0.6b 模型（中文语义检索）
 from __future__ import annotations
 
 import logging
@@ -105,7 +105,7 @@ class _OllamaEFProxySafe(EmbeddingFunction):
 def get_embedding_function():
     """返回代理安全的 Ollama embedding function。
 
-    使用 settings.OLLMA_BASE_URL + settings.EMBEDDING_MODEL。
+    使用 settings.OLLMA_BASE_URL + settings.EMBEDDING_MODEL（默认 qwen3-embedding:0.6b）。
     若 chromadb / httpx 未安装或构造失败，返回 None 并记录错误日志。
 
     ⚠ 调用方注意：返回 None 时**绝不能**用 None 作为 embedding_function

@@ -1493,12 +1493,17 @@ class DeterministicContentAgent:
         # 按用户问题语义检索本阶段相关文档（不是取阶段所有文档，避免 LLM 被带偏）
         related_docs = []
         try:
+            # 解析本阶段所有 block_ids（包含 subtopic_ids 推导 + stage.block_ids + stage.block_id）
             stage_block_ids = self._stage_block_ids(request.stage)
-            if stage_block_ids:
+            # 合入请求显式传入的单个 block_id（如果有）
+            if request.block_id and request.block_id not in stage_block_ids:
+                stage_block_ids = [*stage_block_ids, request.block_id]
+            stage_subtopic_ids = self._stage_subtopic_ids(request.stage)
+            if stage_block_ids or stage_subtopic_ids:
                 related_docs = await self.vector_search_tool.search(
                     request.question,
                     block_ids=stage_block_ids,
-                    subtopic_ids=self._stage_subtopic_ids(request.stage),
+                    subtopic_ids=stage_subtopic_ids,
                     top_k=5,
                 )
             if not related_docs:
