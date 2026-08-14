@@ -6,9 +6,9 @@ subtopic_status / assessment_attempts / user_qa，不属于 Agent4 的运行职�
 """
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
-from api.dependencies import get_harness
+from api.dependencies import get_harness, require_owned_session
 
 router = APIRouter()
 harness = get_harness()
@@ -132,7 +132,7 @@ def _build_dashboard(session_id: str, db=None) -> Dict[str, Any]:
 
 
 @router.get("/sessions/{session_id}/dashboard")
-async def get_dashboard(session_id: str):
+async def get_dashboard(session_id: str, _user_id: str = Depends(require_owned_session)):
     """获取仪表盘主数据（聚合多表）。"""
     try:
         print(f"[API][GET /sessions/{session_id}/dashboard]", flush=True)

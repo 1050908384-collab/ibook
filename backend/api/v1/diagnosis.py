@@ -5,14 +5,14 @@ v1/diagnosis.py - Agent1/3 前端 API：诊断接口
 对应文档：Agent13_API接口任务说明.md 第 2 节（诊断消息）
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from api.dependencies import get_harness
+from api.dependencies import get_harness, require_owned_session
 from models.contracts import StagePlanningInput
 
-router = APIRouter(prefix="/sessions/{session_id}/diagnosis", tags=["Diagnosis"])
+router = APIRouter(prefix="/sessions/{session_id}/diagnosis", tags=["Diagnosis"], dependencies=[Depends(require_owned_session)])
 harness = get_harness()
 
 

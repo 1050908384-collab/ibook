@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from api.dependencies import get_harness
-from db.sqlite_client import DEFAULT_USER_ID
+from api.dependencies import get_current_user_id, get_harness
 
 router = APIRouter(tags=["User Scope"])
 harness = get_harness()
@@ -38,14 +37,23 @@ class StageDurationUpdate(BaseModel):
     estimated_hours: float = Field(gt=0, le=1000)
 
 
-def _require_local_user(user_id: str) -> None:
-    if user_id != DEFAULT_USER_ID:
+def _require_user(user_id: str, current_user_id: str) -> None:
+    if user_id != current_user_id:
         raise HTTPException(status_code=404, detail="User not found")
 
 
+def _require_owned_session(session_id: str, user_id: str) -> None:
+    try:
+        owner_id = harness.state_manager.db_client.get_session_user_id(session_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
+    if owner_id != user_id:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+
 @router.get("/users/{user_id}/profile")
-async def get_user_profile(user_id: str):
-    _require_local_user(user_id)
+async def get_user_profile(user_id: str, current_user_id: str = Depends(get_current_user_id)):
+    _require_user(user_id, current_user_id)
     profile = harness.state_manager.db_client.get_user_profile(user_id)
     if not profile:
         raise HTTPException(status_code=404, detail="User profile not found")
@@ -53,8 +61,8 @@ async def get_user_profile(user_id: str):
 
 
 @router.patch("/users/{user_id}/profile")
-async def update_user_profile(user_id: str, request: UserProfileUpdate):
-    _require_local_user(user_id)
+async def update_user_profile(user_id: str, request: UserProfileUpdate, current_user_id: str = Depends(get_current_user_id)):
+    _require_user(user_id, current_user_id)
     updates = request.model_dump(exclude_none=True)
     existing = harness.state_manager.db_client.get_user_profile(user_id)
     if not existing:
@@ -65,8 +73,8 @@ async def update_user_profile(user_id: str, request: UserProfileUpdate):
 
 
 @router.get("/users/{user_id}/knowledge-network")
-async def get_knowledge_network(user_id: str):
-    _require_local_user(user_id)
+async def get_knowledge_network(user_id: str, current_user_id: str = Depends(get_current_user_id)):
+    _require_user(user_id, current_user_id)
     rows = harness.state_manager.db_client.list_user_subtopic_statuses(user_id)
     blocks: dict[str, dict] = {}
     for row in rows:
@@ -87,8 +95,8 @@ async def get_knowledge_network(user_id: str):
 
 
 @router.patch("/users/{user_id}/knowledge-network/{subtopic_id}")
-async def update_knowledge_status(user_id: str, subtopic_id: str, request: KnowledgeStatusUpdate):
-    _require_local_user(user_id)
+async def update_knowledge_status(user_id: str, subtopic_id: str, request: KnowledgeStatusUpdate, current_user_id: str = Depends(get_current_user_id)):
+    _require_user(user_id, current_user_id)
     try:
         return harness.state_manager.db_client.set_user_subtopic_status(
             user_id,
@@ -100,7 +108,8 @@ async def update_knowledge_status(user_id: str, subtopic_id: str, request: Knowl
 
 
 @router.get("/sessions/{session_id}/target-settings")
-async def get_target_settings(session_id: str):
+async def get_target_settings(session_id: str, user_id: str = Depends(get_current_user_id)):
+    _require_owned_session(session_id, user_id)
     target = harness.state_manager.db_client.get_target_settings(session_id)
     if not target:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -108,7 +117,8 @@ async def get_target_settings(session_id: str):
 
 
 @router.patch("/sessions/{session_id}/target-settings")
-async def update_target_settings(session_id: str, request: TargetSettingsUpdate):
+async def update_target_settings(session_id: str, request: TargetSettingsUpdate, user_id: str = Depends(get_current_user_id)):
+    _require_owned_session(session_id, user_id)
     try:
         target = harness.state_manager.db_client.update_target_settings(
             session_id, request.model_dump(exclude_none=True)
@@ -120,7 +130,8 @@ async def update_target_settings(session_id: str, request: TargetSettingsUpdate)
 
 
 @router.get("/sessions/{session_id}/stages/{stage_id}/duration")
-async def get_stage_duration(session_id: str, stage_id: str):
+async def get_stage_duration(session_id: str, stage_id: str, user_id: str = Depends(get_current_user_id)):
+    _require_owned_session(session_id, user_id)
     stage = harness.state_manager.db_client.get_stage_duration(session_id, stage_id)
     if not stage:
         raise HTTPException(status_code=404, detail="Stage not found")
@@ -128,7 +139,8 @@ async def get_stage_duration(session_id: str, stage_id: str):
 
 
 @router.patch("/sessions/{session_id}/stages/{stage_id}/duration")
-async def update_stage_duration(session_id: str, stage_id: str, request: StageDurationUpdate):
+async def update_stage_duration(session_id: str, stage_id: str, request: StageDurationUpdate, user_id: str = Depends(get_current_user_id)):
+    _require_owned_session(session_id, user_id)
     try:
         stage = harness.state_manager.db_client.update_stage_duration(
             session_id, stage_id, request.estimated_hours

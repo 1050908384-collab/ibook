@@ -163,9 +163,12 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+    from api.dependencies import get_harness
+
+    resolved_database_url = get_harness().state_manager.db_client.database_url
     print(
         f"[STARTUP] backend listening on http://{settings.APP_HOST}:{settings.APP_PORT} "
-        f"log_level={settings.LOG_LEVEL.upper()} database={settings.DATABASE_URL}",
+        f"log_level={settings.LOG_LEVEL.upper()} database={resolved_database_url}",
         flush=True,
     )
     uvicorn.run(

@@ -3,10 +3,10 @@
 
 由 Agent4/6 队友承担工程实现。路径遵循文档定义的 /api/v1 前缀。
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from api.dependencies import get_assessment_service, get_harness
+from api.dependencies import get_assessment_service, get_harness, require_owned_attempt, require_owned_session
 from services.assessment_service import AssessmentError
 
 router = APIRouter()
@@ -25,7 +25,7 @@ def _raise(error: Exception):
 
 
 @router.post("/sessions/{session_id}/stages/current/assessment-attempts")
-async def create_assessment_attempt(session_id: str):
+async def create_assessment_attempt(session_id: str, _user_id: str = Depends(require_owned_session)):
     """根据当前学习包创建一次测试（冻结题目，返回独立 attempt_id）。"""
     try:
         print(f"[API][POST /assessment-attempts] session_id={session_id}", flush=True)
@@ -35,7 +35,7 @@ async def create_assessment_attempt(session_id: str):
 
 
 @router.get("/assessment-attempts/{attempt_id}")
-async def get_assessment_attempt(attempt_id: str):
+async def get_assessment_attempt(attempt_id: str, _user_id: str = Depends(require_owned_attempt)):
     """刷新后恢复测试进度（未提交不返回答案/解析，提交后返回完整结果）。"""
     try:
         return assessment_service.get_attempt(attempt_id)
@@ -44,7 +44,7 @@ async def get_assessment_attempt(attempt_id: str):
 
 
 @router.put("/assessment-attempts/{attempt_id}/answers/{question_id}")
-async def save_assessment_answer(attempt_id: str, question_id: str, request: SaveAnswerRequest):
+async def save_assessment_answer(attempt_id: str, question_id: str, request: SaveAnswerRequest, _user_id: str = Depends(require_owned_attempt)):
     """保存或覆盖单题答案（提交前可改，只保存一条最终答案）。"""
     try:
         return assessment_service.save_answer(
@@ -58,7 +58,7 @@ async def save_assessment_answer(attempt_id: str, question_id: str, request: Sav
 
 
 @router.post("/assessment-attempts/{attempt_id}/submit")
-async def submit_assessment_attempt(attempt_id: str):
+async def submit_assessment_attempt(attempt_id: str, _user_id: str = Depends(require_owned_attempt)):
     """检查完整性、统一判题并公布结果（提交后不可再改）。"""
     try:
         print(f"[API][POST /assessment-attempts/submit] attempt_id={attempt_id}", flush=True)
@@ -68,7 +68,7 @@ async def submit_assessment_attempt(attempt_id: str):
 
 
 @router.post("/sessions/{session_id}/stages/current/complete")
-async def complete_current_stage_v1(session_id: str):
+async def complete_current_stage_v1(session_id: str, _user_id: str = Depends(require_owned_session)):
     """v1 统一链路的阶段完成接口。
 
     硬前置：当前阶段必须存在 status=submitted 的 assessment_attempt，否则返回 409
