@@ -13,10 +13,12 @@ harness = get_harness()
 class UserProfileUpdate(BaseModel):
     grade: Optional[str] = None
     skill_tags: Optional[list[str]] = None
+    foundation_confirmed: Optional[bool] = None
     learning_style: Optional[str] = None
     hardware: Optional[str] = None
     default_daily_hours: Optional[float] = Field(default=None, gt=0, le=24)
     learning_rhythm: Optional[str] = None
+    mastered_subtopic_ids: Optional[list[str]] = None
 
 
 class KnowledgeStatusUpdate(BaseModel):
@@ -64,10 +66,13 @@ async def get_user_profile(user_id: str, current_user_id: str = Depends(get_curr
 async def update_user_profile(user_id: str, request: UserProfileUpdate, current_user_id: str = Depends(get_current_user_id)):
     _require_user(user_id, current_user_id)
     updates = request.model_dump(exclude_none=True)
-    existing = harness.state_manager.db_client.get_user_profile(user_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="User profile not found")
-    profile = harness.state_manager.db_client.upsert_user_profile(user_id, updates)
+    mastered_subtopic_ids = updates.pop("mastered_subtopic_ids", None)
+    try:
+        profile = harness.state_manager.db_client.upsert_user_profile(user_id, updates)
+        if mastered_subtopic_ids is not None:
+            harness.state_manager.db_client.replace_user_initial_foundation(user_id, mastered_subtopic_ids)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     harness.state_manager.refresh_cached_user_profile(user_id)
     return profile
 

@@ -191,6 +191,25 @@ class KnowledgeGraphUpgradeTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(0.5, second_stage.recommended_daily_hours)
         self.assertEqual(2, second_stage.suggested_study_days)
 
+    async def test_partial_foundation_is_visible_in_profile_tags(self):
+        session_id = "partial-linux-foundation"
+        self.client.create_session(session_id)
+        agent = DeterministicDiagnosticAgent(db_client=self.client)
+        block = agent.knowledge_catalog_tool.get_block("KB-01")
+        selected = next(
+            item for item in block["subtopics"]
+            if item["subtopic_id"] == "KBS-01-01"
+        )
+
+        diagnostic = await agent.run_with_foundation(
+            session_id=session_id,
+            goal="掌握 Linux",
+            mastered_subtopic_ids=[selected["subtopic_id"]],
+        )
+
+        self.assertIn(selected["subtopic_name"], diagnostic.profile.skill_tags)
+        self.assertNotIn(block["block_name"], diagnostic.profile.skill_tags)
+
     async def test_python_path_does_not_require_linux_environment(self):
         session_id = "python-without-linux"
         self.client.create_session(session_id)

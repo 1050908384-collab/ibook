@@ -17,6 +17,7 @@ type OnboardingPageProps = {
   profileCheckError?: string | null;
   onRetryProfileCheck?: () => void;
   foundationNames: string[];
+  foundationConfirmed: boolean;
   onOpenFoundation: () => void;
   foundationLoading?: boolean;
 };
@@ -36,6 +37,7 @@ export default function OnboardingPage({
   profileCheckError = null,
   onRetryProfileCheck,
   foundationNames,
+  foundationConfirmed,
   onOpenFoundation,
   foundationLoading = false
 }: OnboardingPageProps) {
@@ -65,9 +67,9 @@ export default function OnboardingPage({
     <div className="page-shell onboarding-shell">
       <main className="onboarding-page">
         <div className="onboarding-toolbar">
-          <div className="onboarding-steps" aria-label="创建学习目标步骤">
-            <span className="active"><FileText size={15} />填写信息</span>
-            <span className={mode === 'diagnosing' ? 'active' : ''}><Brain size={15} />生成画像</span>
+          <div className="onboarding-steps" aria-label={reuseUserProfile ? '创建学习目标步骤' : '首次画像设置步骤'}>
+            <span className="active"><FileText size={15} />{reuseUserProfile ? '填写目标' : '建立画像'}</span>
+            <span className={mode === 'diagnosing' ? 'active' : ''}><Brain size={15} />{reuseUserProfile ? '生成计划' : '创建目标'}</span>
             <span><CheckCircle2 size={15} />开始学习</span>
           </div>
           {onCancel && (
@@ -83,11 +85,11 @@ export default function OnboardingPage({
             <Sparkles size={22} />
           </div>
           <div>
-            <span>创建学习目标</span>
+            <span>{reuseUserProfile ? '创建学习目标' : '首次使用'}</span>
             <h1>{reuseUserProfile ? '设定这次要完成的学习目标' : '先把你的学习背景交给 Agent'}</h1>
             <p>{reuseUserProfile
               ? '已复用你的用户基础和知识点掌握状态，请填写本次目标、学习时间和学习方式。'
-              : '系统会根据这些结构化信息生成用户画像，并规划当前学习阶段。'}</p>
+              : '这里只建立你的长期用户画像，不设置学习目标。保存后再单独创建第一个学习目标。'}</p>
           </div>
         </section>
 
@@ -101,7 +103,9 @@ export default function OnboardingPage({
           error={error}
           highlightedFields={highlightedFields}
           targetOnly={reuseUserProfile}
+          profileOnly={!reuseUserProfile}
           foundationNames={foundationNames}
+          foundationConfirmed={foundationConfirmed}
           onOpenFoundation={onOpenFoundation}
           foundationLoading={foundationLoading}
         />

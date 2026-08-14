@@ -78,6 +78,22 @@ class UserScopeDataTest(unittest.TestCase):
             legacy_count = session.execute(text("SELECT COUNT(*) FROM user_profiles")).scalar_one()
         self.assertEqual(0, legacy_count)
 
+    def test_foundation_confirmation_persists_even_without_skill_tags(self):
+        self.client.create_session("goal-a")
+        self.client.save_profile("goal-a", {
+            **self._profile("goal-a", "学习 Python"),
+            "skill_tags": [],
+            "foundation_confirmed": True,
+        })
+
+        user = self.client.get_user_profile(DEFAULT_USER_ID)
+        composed = self.client.get_latest_profile("goal-a")
+
+        self.assertTrue(user["foundation_confirmed"])
+        self.assertEqual([], user["skill_tags"])
+        self.assertTrue(composed["foundation_confirmed"])
+        self.assertEqual([], composed["skill_tags"])
+
     def test_subtopic_mastery_is_shared_across_goals(self):
         self.client.create_session("goal-a")
         self.client.create_session("goal-b")
@@ -89,6 +105,28 @@ class UserScopeDataTest(unittest.TestCase):
         self.assertEqual(1, shared["status"])
         self.assertEqual(0.95, shared["mastery_score"])
         self.assertEqual(1, shared["attempt_count"])
+
+    def test_initial_foundation_can_be_replaced_without_erasing_learned_mastery(self):
+        self.client.replace_user_initial_foundation(DEFAULT_USER_ID, ["KBS-01-01"])
+        self.client.set_user_subtopic_status(
+            DEFAULT_USER_ID, "KBS-01-01", status=1, mastery_score=0.85,
+            is_initial_foundation=True, attempt_count=2,
+        )
+        self.client.set_user_subtopic_status(
+            DEFAULT_USER_ID, "KBS-01-02", status=1, mastery_score=0.9,
+            is_initial_foundation=False, attempt_count=2,
+        )
+
+        self.client.replace_user_initial_foundation(DEFAULT_USER_ID, ["KBS-01-02"])
+
+        removed = self.client.get_user_subtopic_status(DEFAULT_USER_ID, "KBS-01-01")
+        retained = self.client.get_user_subtopic_status(DEFAULT_USER_ID, "KBS-01-02")
+        self.assertEqual(1, removed["status"])
+        self.assertEqual(0.85, removed["mastery_score"])
+        self.assertFalse(removed["is_initial_foundation"])
+        self.assertEqual(1, retained["status"])
+        self.assertTrue(retained["is_initial_foundation"])
+        self.assertEqual(2, retained["attempt_count"])
 
     def test_target_and_stage_durations_can_be_updated_independently(self):
         self.client.create_session("goal-a")
@@ -139,6 +177,28 @@ class UserScopeDataTest(unittest.TestCase):
         self.assertEqual(1.5, stages["stage-completed"]["estimated_hours"])
         self.assertEqual(2.0, stages["stage-learning"]["estimated_hours"])
         self.assertEqual(4.0, stages["stage-pending"]["estimated_hours"])
+
+    def test_zero_duration_system_stage_survives_target_refresh(self):
+        self.client.create_session("goal-a")
+        profile = {
+            **self._profile("goal-a", "Python 基础已掌握"),
+            "knowledge_gaps": [],
+        }
+        self.client.save_profile("goal-a", profile)
+        self.client.save_stage("goal-a", {
+            "stage_id": "stage-empty",
+            "stage_num": 1,
+            "block_name": "已完成全部知识点",
+            "estimated_hours": 0.0,
+            "status": "retreat",
+        })
+
+        self.client.save_profile("goal-a", profile)
+        target = self.client.get_target_settings("goal-a")
+        stage = self.client.get_stage_duration("goal-a", "stage-empty")
+
+        self.assertEqual(0.0, target["target_total_hours"])
+        self.assertEqual(0.0, stage["estimated_hours"])
 
     def test_session_state_does_not_persist_combined_profile(self):
         manager = StateManager(self.client)

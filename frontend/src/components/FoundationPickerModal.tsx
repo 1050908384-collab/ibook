@@ -4,9 +4,8 @@ import type { KnowledgeGraphBlock } from '../data/knowledgeGraph';
 
 type FoundationPickerModalProps = {
   open: boolean;
-  goal: string;
   blocks: KnowledgeGraphBlock[];
-  initialSelectedBlockIds: string[];
+  initialSelectedSubtopicIds: string[];
   onClose: () => void;
   onConfirm: (selectedSubtopicIds: string[]) => void;
 };
@@ -18,9 +17,8 @@ function fullBlockIds(blocks: KnowledgeGraphBlock[], selectedSubtopicIds: Set<st
 }
 export default function FoundationPickerModal({
   open,
-  goal,
   blocks,
-  initialSelectedBlockIds,
+  initialSelectedSubtopicIds,
   onClose,
   onConfirm
 }: FoundationPickerModalProps) {
@@ -30,16 +28,15 @@ export default function FoundationPickerModal({
 
   useEffect(() => {
     if (!open) return;
-    const initialBlocks = new Set(initialSelectedBlockIds);
-    const initialSubtopics = new Set(
-      blocks
-        .filter((block) => initialBlocks.has(block.block_id))
-        .flatMap((block) => block.subtopics.map((topic) => topic.subtopic_id))
+    const initialSubtopics = new Set(initialSelectedSubtopicIds);
+    const initialBlocks = new Set(
+      blocks.filter((block) => block.subtopics.some((topic) => initialSubtopics.has(topic.subtopic_id)))
+        .map((block) => block.block_id)
     );
     setStep(1);
     setSelectedBlockIds(initialBlocks);
     setSelectedSubtopicIds(initialSubtopics);
-  }, [open, blocks, initialSelectedBlockIds]);
+  }, [open, blocks, initialSelectedSubtopicIds]);
 
   const selectedBlocks = useMemo(
     () => blocks.filter((block) => selectedBlockIds.has(block.block_id)),
@@ -87,7 +84,7 @@ export default function FoundationPickerModal({
         <header>
           <div>
             <span>确定基础 · 第 {step} 步 / 2</span>
-            <h2 id="foundation-picker-title">{step === 1 ? '选择目标相关板块' : '选择你已经掌握的知识点'}</h2>
+            <h2 id="foundation-picker-title">{step === 1 ? '选择知识板块' : '选择你已经掌握的知识点'}</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="关闭基础选择" title="关闭"><X size={18} /></button>
         </header>
@@ -95,7 +92,7 @@ export default function FoundationPickerModal({
         <div className="foundation-picker-body">
           {step === 1 ? (
             <>
-              <p className="foundation-picker-intro">目标：{goal || '尚未填写学习目标'}。先选择与目标直接相关的知识板块。</p>
+              <p className="foundation-picker-intro">从完整的 15 个知识板块中，先选择你接触或学习过的板块。</p>
               <div className="foundation-block-grid">
                 {blocks.map((block) => {
                   const selected = selectedBlockIds.has(block.block_id);

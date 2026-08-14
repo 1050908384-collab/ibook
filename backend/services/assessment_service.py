@@ -111,6 +111,18 @@ class AssessmentService:
                         "hint": db_question.get("hint"),
                         "is_required": True,
                     })
+            if not questions and stage_meta.get("block_id"):
+                subtopic_ids = []
+                if stage:
+                    subtopic_ids = list(stage.get("subtopic_ids") or [])
+                    if not subtopic_ids and stage.get("subtopic_id"):
+                        subtopic_ids = [stage["subtopic_id"]]
+                questions = [
+                    {**question, "is_required": True}
+                    for question in self.db.list_questions_for_stage(
+                        stage_meta["block_id"], subtopic_ids, limit=2
+                    )
+                ]
         return questions, stage_meta
 
     # ------------------------------------------------------------------

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #SQLite 读写（9张表）
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import bindparam, create_engine, event, text
 from sqlalchemy.orm import sessionmaker
 from config import BACKEND_DIR, settings
 from pathlib import Path
@@ -306,6 +306,7 @@ class SQLiteClient:
             self._ensure_column(conn, "sessions", "target_daily_hours", "FLOAT DEFAULT 2.0")
             self._ensure_column(conn, "sessions", "target_progress", "FLOAT DEFAULT 0.0")
             self._create_user_scope_tables(conn)
+            self._ensure_column(conn, "learner_profiles", "foundation_confirmed", "BOOLEAN NOT NULL DEFAULT 0")
             self._migrate_user_scope_data(conn)
             self._migrate_test_questions_table(conn)
             self._create_assessment_tables(conn)
@@ -373,6 +374,7 @@ class SQLiteClient:
                 user_id VARCHAR(50) PRIMARY KEY,
                 grade VARCHAR(100) DEFAULT '',
                 skill_tags TEXT NOT NULL DEFAULT '[]',
+                foundation_confirmed BOOLEAN NOT NULL DEFAULT 0,
                 learning_style VARCHAR(20) DEFAULT 'mixed',
                 hardware VARCHAR(200) DEFAULT '',
                 default_daily_hours FLOAT DEFAULT 2.0,
@@ -1144,7 +1146,7 @@ class SQLiteClient:
     def get_user_profile(self, user_id: str = DEFAULT_USER_ID) -> dict | None:
         with self.Session() as session:
             row = session.execute(text("""
-                SELECT user_id, grade, skill_tags, learning_style, hardware,
+                SELECT user_id, grade, skill_tags, foundation_confirmed, learning_style, hardware,
                        default_daily_hours, learning_rhythm, confidence_index,
                        confusion_markers, confidence, version, created_at, updated_at
                 FROM learner_profiles
@@ -1153,6 +1155,7 @@ class SQLiteClient:
         if not row:
             return None
         result = dict(row)
+        result["foundation_confirmed"] = bool(result.get("foundation_confirmed"))
         result["skill_tags"] = json.loads(result.get("skill_tags") or "[]")
         result["confusion_markers"] = json.loads(result.get("confusion_markers") or "[]")
         return result
@@ -1163,6 +1166,7 @@ class SQLiteClient:
             "user_id": user_id,
             "grade": profile.get("grade", existing.get("grade", "")),
             "skill_tags": json.dumps(profile.get("skill_tags", existing.get("skill_tags", [])), ensure_ascii=False),
+            "foundation_confirmed": bool(profile.get("foundation_confirmed", existing.get("foundation_confirmed", False))),
             "learning_style": profile.get("learning_style", existing.get("learning_style", "mixed")),
             "hardware": profile.get("hardware", existing.get("hardware", "")),
             "default_daily_hours": profile.get("default_daily_hours", profile.get("daily_hours", existing.get("default_daily_hours", 2.0))),
@@ -1174,17 +1178,18 @@ class SQLiteClient:
         with self.Session() as session:
             session.execute(text("""
                 INSERT INTO learner_profiles (
-                    user_id, grade, skill_tags, learning_style, hardware,
+                    user_id, grade, skill_tags, foundation_confirmed, learning_style, hardware,
                     default_daily_hours, learning_rhythm, confidence_index,
                     confusion_markers, confidence, version
                 ) VALUES (
-                    :user_id, :grade, :skill_tags, :learning_style, :hardware,
+                    :user_id, :grade, :skill_tags, :foundation_confirmed, :learning_style, :hardware,
                     :default_daily_hours, :learning_rhythm, :confidence_index,
                     :confusion_markers, :confidence, 1
                 )
                 ON CONFLICT(user_id) DO UPDATE SET
                     grade = excluded.grade,
                     skill_tags = excluded.skill_tags,
+                    foundation_confirmed = excluded.foundation_confirmed,
                     learning_style = excluded.learning_style,
                     hardware = excluded.hardware,
                     default_daily_hours = excluded.default_daily_hours,
@@ -1243,32 +1248,38 @@ class SQLiteClient:
                     pass  # 全部阶段已完成，无需再分配学时，直接更新目标值
                 if unfinished:
                     current_total = sum(float(stage["estimated_hours"] or 0) for stage in unfinished)
-                    allocated = 0.0
-                    for index, stage in enumerate(unfinished):
-                        if index == len(unfinished) - 1:
-                            stage_hours = round(remaining_hours - allocated, 2)
-                        elif current_total > 0:
-                            stage_hours = round(
-                                remaining_hours * float(stage["estimated_hours"] or 0) / current_total,
-                                2,
-                            )
-                        else:
-                            stage_hours = round(remaining_hours / len(unfinished), 2)
-                        if stage_hours <= 0:
-                            raise ValueError("Each unfinished stage must retain a positive duration")
-                        session.execute(text("""
-                            UPDATE stage_progress SET estimated_hours = :estimated_hours
-                            WHERE session_id = :session_id AND stage_id = :stage_id
-                        """), {
-                            "session_id": session_id,
+                    if remaining_hours == 0 and current_total == 0:
+                        adjusted_stages.extend({
                             "stage_id": stage["stage_id"],
-                            "estimated_hours": stage_hours,
-                        })
-                        adjusted_stages.append({
-                            "stage_id": stage["stage_id"],
-                            "estimated_hours": stage_hours,
-                        })
-                        allocated = round(allocated + stage_hours, 2)
+                            "estimated_hours": 0.0,
+                        } for stage in unfinished)
+                    else:
+                        allocated = 0.0
+                        for index, stage in enumerate(unfinished):
+                            if index == len(unfinished) - 1:
+                                stage_hours = round(remaining_hours - allocated, 2)
+                            elif current_total > 0:
+                                stage_hours = round(
+                                    remaining_hours * float(stage["estimated_hours"] or 0) / current_total,
+                                    2,
+                                )
+                            else:
+                                stage_hours = round(remaining_hours / len(unfinished), 2)
+                            if stage_hours <= 0:
+                                raise ValueError("Each unfinished stage must retain a positive duration")
+                            session.execute(text("""
+                                UPDATE stage_progress SET estimated_hours = :estimated_hours
+                                WHERE session_id = :session_id AND stage_id = :stage_id
+                            """), {
+                                "session_id": session_id,
+                                "stage_id": stage["stage_id"],
+                                "estimated_hours": stage_hours,
+                            })
+                            adjusted_stages.append({
+                                "stage_id": stage["stage_id"],
+                                "estimated_hours": stage_hours,
+                            })
+                            allocated = round(allocated + stage_hours, 2)
 
             if fields:
                 assignments = ", ".join(f"{key} = :{key}" for key in fields)
@@ -1359,6 +1370,58 @@ class SQLiteClient:
             result = dict(row)
             result["options"] = json.loads(result["options"]) if result["options"] else None
             return result
+
+    def list_questions_for_stage(
+        self,
+        block_id: str,
+        subtopic_ids: list[str] | None = None,
+        limit: int = 2,
+    ) -> list[dict]:
+        """Return stage questions, falling back from subtopic matches to the block pool."""
+        if not block_id:
+            return []
+        subtopic_ids = list(dict.fromkeys(item for item in (subtopic_ids or []) if item))
+        params: dict[str, Any] = {"block_id": block_id, "limit": limit}
+        subtopic_filter = ""
+        statement = text("""
+            SELECT question_id, block_id, subtopic_id, difficulty, question_type,
+                   question_text, options, correct_answer, explanation,
+                   expected_output, grading_mode, source, hint
+            FROM test_questions
+            WHERE block_id = :block_id
+            {subtopic_filter}
+            ORDER BY difficulty ASC, question_id ASC
+            LIMIT :limit
+        """.format(subtopic_filter=""))
+        if subtopic_ids:
+            statement = text("""
+                SELECT question_id, block_id, subtopic_id, difficulty, question_type,
+                       question_text, options, correct_answer, explanation,
+                       expected_output, grading_mode, source, hint
+                FROM test_questions
+                WHERE block_id = :block_id AND subtopic_id IN :subtopic_ids
+                ORDER BY difficulty ASC, question_id ASC
+                LIMIT :limit
+            """).bindparams(bindparam("subtopic_ids", expanding=True))
+            params["subtopic_ids"] = subtopic_ids
+        with self.Session() as session:
+            rows = session.execute(statement, params).mappings().all()
+            if not rows and subtopic_ids:
+                rows = session.execute(text("""
+                    SELECT question_id, block_id, subtopic_id, difficulty, question_type,
+                           question_text, options, correct_answer, explanation,
+                           expected_output, grading_mode, source, hint
+                    FROM test_questions
+                    WHERE block_id = :block_id
+                    ORDER BY difficulty ASC, question_id ASC
+                    LIMIT :limit
+                """), {"block_id": block_id, "limit": limit}).mappings().all()
+        results = []
+        for row in rows:
+            item = dict(row)
+            item["options"] = json.loads(item["options"]) if item["options"] else None
+            results.append(item)
+        return results
 
     def update_session_status(self, session_id: str, status: str) -> None:
         with self.Session() as session:
@@ -1619,6 +1682,45 @@ class SQLiteClient:
                 raise ValueError(f"Subtopic not found: {subtopic_id}")
             session.commit()
         return self.get_user_subtopic_status(user_id, subtopic_id) or {}
+
+    def replace_user_initial_foundation(self, user_id: str, mastered_subtopic_ids: list[str]) -> None:
+        """Replace only the mastery records that came from the user's initial foundation."""
+        self.ensure_user_subtopic_status(user_id)
+        selected = set(mastered_subtopic_ids)
+        with self.Session() as session:
+            known_ids = {
+                str(row[0])
+                for row in session.execute(text("SELECT subtopic_id FROM knowledge_subtopics")).all()
+            }
+            unknown_ids = selected - known_ids
+            if unknown_ids:
+                raise ValueError(f"Subtopic not found: {sorted(unknown_ids)[0]}")
+
+            session.execute(text("""
+                UPDATE user_subtopic_status
+                SET status = CASE WHEN attempt_count > 0 THEN status ELSE -1 END,
+                    mastery_score = CASE WHEN attempt_count > 0 THEN mastery_score ELSE 0 END,
+                    is_initial_foundation = 0,
+                    completed_at = CASE WHEN attempt_count > 0 THEN completed_at ELSE NULL END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = :user_id
+                  AND is_initial_foundation = 1
+            """), {"user_id": user_id})
+            if selected:
+                session.execute(text("""
+                    UPDATE user_subtopic_status
+                    SET status = 1,
+                        mastery_score = 1,
+                        is_initial_foundation = 1,
+                        completed_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = :user_id
+                      AND subtopic_id IN :subtopic_ids
+                """).bindparams(bindparam("subtopic_ids", expanding=True)), {
+                    "user_id": user_id,
+                    "subtopic_ids": sorted(selected),
+                })
+            session.commit()
 
     def get_user_subtopic_status(self, user_id: str, subtopic_id: str) -> dict | None:
         self.ensure_user_subtopic_status(user_id)
@@ -2121,6 +2223,7 @@ class SQLiteClient:
             "version": user_profile.get("version", 1),
             "grade": user_profile.get("grade", ""),
             "skill_tags": user_profile.get("skill_tags", []),
+            "foundation_confirmed": bool(user_profile.get("foundation_confirmed", False)),
             "knowledge_gaps": json.loads(row["target_knowledge_gaps"] or "[]"),
             "goal": row["goal"] or "",
             "daily_hours": row["target_daily_hours"] or user_profile.get("default_daily_hours", 2.0),

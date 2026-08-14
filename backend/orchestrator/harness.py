@@ -29,7 +29,7 @@ from models.contracts import (
 )
 from models.profile import PracticeProfile, UserProfile
 from models.review import QualityReviewResult, ReviewError, ReviewRound, TechnicalReviewResult
-from models.stage import LearningPackage, StageInfo
+from models.stage import LearningPackage, Source, StageInfo
 from models.material import TestQuestion
 from orchestrator.state_manager import StateManager
 
@@ -877,6 +877,8 @@ class Harness:
         stage: StageInfo,
         blocks: List[Any],
         trace_id: str,
+        questions: Optional[List[Any]] = None,
+        recommended_videos: Optional[List[dict]] = None,
     ) -> LearningPackage:
         """把已生成/修订的内容块按 block_index 聚合成一个 LearningPackage。"""
         ordered = sorted(blocks, key=lambda b: getattr(b, "block_index", 0))
@@ -895,6 +897,24 @@ class Harness:
                     seen_source_ids.add(src.source_id)
                     all_sources.append(src)
             all_claims.extend(blk.claims or [])
+        videos = list(recommended_videos or [])
+        for video in videos:
+            source_id = f"src_video_{video['resource_id']}"
+            if source_id in seen_source_ids:
+                continue
+            seen_source_ids.add(source_id)
+            all_sources.append(Source(
+                source_id=source_id,
+                source_type="video",
+                title=video["title"],
+                locator=f"learning_resources:{video['resource_id']}",
+                content_ref=video.get("url"),
+                metadata_json={
+                    "block_id": video.get("block_id"),
+                    "subtopic_id": video.get("subtopic_id"),
+                    "review_status": video.get("review_status"),
+                },
+            ))
         return LearningPackage(
             session_id=session_id,
             stage_id=stage.stage_id,
@@ -903,6 +923,8 @@ class Harness:
             tutorial="\n\n".join(p for p in tutorial_parts if p),
             sources=all_sources,
             claims=all_claims,
+            questions=list(questions or []),
+            recommended_videos=videos,
             review_trace_id=trace_id,
         )
 
@@ -1042,11 +1064,14 @@ class Harness:
         }
         self._log(session_id, "pipeline:issue_package", f"blocks_with_issues={len(issue_package)}")
 
+        stage_questions, stage_videos = await self.agent3.get_stage_supplements(stage)
+
         # ---- 落库：首轮聚合出一个 draft 学习包并创建 trace（sources/claims）----
         # trace init 需要 sources/claims，故此处先聚合一次 draft 包用于建 trace；
         # 学习包正式聚合在 Phase D 结束时再做一次（含最终修订块）。
         draft_package = self._aggregate_blocks(
             session_id, stage, [st.block for st in states.values()], trace_id,
+            questions=stage_questions, recommended_videos=stage_videos,
         )
         self._persist_trace_init(trace_id, session_id, stage, draft_package)
         # 首轮审核结果作为第 1 轮 review_round 落库（Agent4 异步审核结果统一留痕）
@@ -1180,6 +1205,7 @@ class Harness:
         # ---- Phase D：聚合块为学习包 ----
         package = self._aggregate_blocks(
             session_id, stage, [st.block for st in states.values()], trace_id,
+            questions=stage_questions, recommended_videos=stage_videos,
         )
         # 块级路径以块为最小单位，不产出整阶段自测题；聚合后与整篇路径一致地补齐题目，
         # 保证学习包可作答（提交答案/掌握判定依赖题目）。

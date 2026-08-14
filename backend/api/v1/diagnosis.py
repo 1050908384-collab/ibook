@@ -41,6 +41,7 @@ class FoundationSubmitRequest(BaseModel):
     mastered_subtopic_ids: list[str] = Field(default_factory=list)
     daily_hours: float = 2.0
     learning_style: str = "mixed"
+    reuse_user_profile: bool = False
 
 
 class FoundationSubmitResponse(BaseModel):
@@ -294,17 +295,36 @@ async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
 
+        user_id = harness.state_manager.db_client.get_session_user_id(session_id)
+        existing_user_profile = harness.state_manager.db_client.get_user_profile(user_id)
+        mastered_subtopic_ids = request.mastered_subtopic_ids
+        if request.reuse_user_profile:
+            if not existing_user_profile or not existing_user_profile.get("foundation_confirmed"):
+                raise HTTPException(status_code=400, detail="User profile is incomplete")
+            mastered_subtopic_ids = [
+                item["subtopic_id"]
+                for item in harness.state_manager.db_client.list_user_subtopic_statuses(user_id)
+                if int(item.get("status") or 0) == 1
+            ]
+
         diagnostic = await harness.agent1.run_with_foundation(
             session_id=session_id,
             goal=request.goal,
-            mastered_subtopic_ids=request.mastered_subtopic_ids,
+            mastered_subtopic_ids=mastered_subtopic_ids,
             daily_hours=request.daily_hours,
             learning_style=request.learning_style,
         )
         profile = diagnostic.profile
+        if request.reuse_user_profile and existing_user_profile:
+            profile = profile.model_copy(update={
+                "user_id": user_id,
+                "grade": existing_user_profile.get("grade", ""),
+                "skill_tags": existing_user_profile.get("skill_tags", []),
+                "foundation_confirmed": True,
+            })
         harness.state_manager.update_profile(session_id, profile)
         harness.state_manager.add_interaction(session_id, "initial_diagnostic", {
-            "user_input": f"目标：{request.goal}；已掌握知识点：{len(request.mastered_subtopic_ids)}个",
+            "user_input": f"目标：{request.goal}；已掌握知识点：{len(mastered_subtopic_ids)}个",
         })
 
         if profile.confidence < 0.7:

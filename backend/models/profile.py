@@ -22,6 +22,7 @@ class UserProfile(BaseModel):
     user_id: str = "local-user"
     grade: str = ""
     skill_tags: List[str] = Field(default_factory=list)
+    foundation_confirmed: bool = False
     knowledge_gaps: List[KnowledgeGap] = Field(default_factory=list)
     goal: str = ""
     daily_hours: float = 2.0

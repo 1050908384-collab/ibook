@@ -267,7 +267,14 @@ class DeterministicDiagnosticAgent:
         # 同时构建 session 级别的已掌握状态映射（供候选筛选使用）
         for subtopic_id in mastered_set:
             try:
-                self.db_client.set_subtopic_status(session_id, subtopic_id, 1, 1.0, 1.0, True)
+                self.db_client.set_subtopic_status(
+                    session_id,
+                    subtopic_id,
+                    status=1,
+                    mastery_score=1.0,
+                    last_accuracy=1.0,
+                    is_initial_foundation=True,
+                )
             except Exception:
                 pass
 
@@ -314,12 +321,25 @@ class DeterministicDiagnosticAgent:
             if all_subtopic_ids and all_subtopic_ids.issubset(mastered_set):
                 mastered_blocks.append(block_id)
 
-        # 将完全掌握的板块名作为 skill_tags
-        skill_tags = []
-        for block_id in mastered_blocks:
-            block = self.knowledge_catalog_tool.get_block(block_id)
-            if block:
-                skill_tags.append(str(block.get("block_name", block_id)))
+        # 完整掌握时记录板块名；部分掌握时记录具体知识点，避免用户已勾选
+        # 但画像仍显示“未识别”。
+        skill_tags: list[str] = []
+        mastered_block_ids = set(mastered_blocks)
+        for block in all_blocks:
+            block_id = str(block.get("block_id", ""))
+            resolved_block = self.knowledge_catalog_tool.get_block(block_id) or block
+            block_name = str(resolved_block.get("block_name", block_id))
+            if block_id in mastered_block_ids:
+                skill_tags.append(block_name)
+                continue
+            for subtopic in resolved_block.get("subtopics", []) or []:
+                subtopic_id = str(subtopic.get("subtopic_id") or subtopic.get("id") or "")
+                if subtopic_id in mastered_set:
+                    skill_tags.append(str(
+                        subtopic.get("subtopic_name")
+                        or subtopic.get("name")
+                        or subtopic_id
+                    ))
 
         # 构建置信度：有目标匹配 + 有已掌握知识点 → 高置信度
         confidence = 0.75
@@ -1236,23 +1256,12 @@ class DeterministicContentAgent:
             videos.extend(await self.learning_resource_tool.get_recommended_videos(stage.block_id, subtopic_id))
         return list({item.get("resource_id"): item for item in videos if item.get("resource_id")}.values())
 
-    async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
-        _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
-        stage = request.stage
-        related_docs = []
+    async def get_stage_supplements(self, stage: StageInfo) -> tuple[list[TestQuestion], list[dict]]:
+        """Load database-backed assessment questions and videos for any package pipeline."""
+        videos = await self._get_stage_videos(stage)
         try:
-            related_docs = await self._search_stage_docs(stage)
-        except Exception:
-            related_docs = []
-        recommended_videos = await self._get_stage_videos(stage)
-        tutorial = self._build_retrieved_material_tutorial(stage, related_docs)
-        practice_note = self._practice_note(request.practice_profile)
-        if practice_note:
-            tutorial += f"\n## 实训提示\n\n{practice_note}\n"
-        extracted_questions = []
-        try:
-            extracted_questions = await self.question_extract_tool.extract_questions(
-                tutorial,
+            extracted = await self.question_extract_tool.extract_questions(
+                "",
                 {
                     "block_id": stage.block_id,
                     "block_name": stage.block_name,
@@ -1261,15 +1270,27 @@ class DeterministicContentAgent:
                 },
             )
         except Exception:
-            extracted_questions = []
-
-        # Assessment questions are sourced exclusively from test_questions.
+            extracted = []
         questions = [
             TestQuestion.model_validate(question)
-            for question in extracted_questions
+            for question in extracted
             if isinstance(question, dict)
         ]
+        return questions, videos
 
+    async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
+        _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
+        stage = request.stage
+        related_docs = []
+        try:
+            related_docs = await self._search_stage_docs(stage)
+        except Exception:
+            related_docs = []
+        questions, recommended_videos = await self.get_stage_supplements(stage)
+        tutorial = self._build_retrieved_material_tutorial(stage, related_docs)
+        practice_note = self._practice_note(request.practice_profile)
+        if practice_note:
+            tutorial += f"\n## 实训提示\n\n{practice_note}\n"
         sources = []
         if related_docs:
             for i, doc in enumerate(related_docs):

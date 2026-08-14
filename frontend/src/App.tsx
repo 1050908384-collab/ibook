@@ -72,7 +72,6 @@ import {
   type AgentStatusMap
 } from './utils/agentFlowState';
 import { filterProjectsForDashboard, formatProjectCreatedDate, sortProjectsForDashboard } from './utils/learningProjects';
-import { foundationBlocksFromTags, foundationNamesFromTags } from './utils/foundation';
 
 type View = 'chat' | 'learn' | 'settings' | 'result';
 
@@ -121,6 +120,7 @@ type KnowledgeGap = {
 type Profile = {
   grade?: string;
   skill_tags?: string[];
+  foundation_confirmed?: boolean;
   knowledge_gaps?: KnowledgeGap[];
   goal?: string;
   daily_hours?: number;
@@ -1034,6 +1034,9 @@ function MaterialDocument({
   const learningResources = learningPackage.learning_resources?.length
     ? learningPackage.learning_resources
     : recommendedVideos;
+  const videoResources = uniqueResources(
+    learningResources.filter((resource) => resource.resource_type === 'video' && Boolean(getResourceUrl(resource)))
+  );
   const documentationResources = uniqueResources(
     learningResources.filter((resource) => resource.resource_type === 'documentation' && Boolean(resource.content_summary || getResourceUrl(resource)))
   );
@@ -1060,6 +1063,25 @@ function MaterialDocument({
         <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
       </div>
       <h2>{selectedTopicName}</h2>
+      <section className="material-resource-section video-resources">
+        <div className="material-section-heading"><Play size={16} /><h3>学习视频</h3></div>
+        {videoResources.length > 0 ? (
+          <div className="material-video-list">
+            {videoResources.map((resource, index) => {
+              const url = getResourceUrl(resource);
+              return (
+                <article key={resource.resource_id || `${resource.title}-${index}`}>
+                  <div>
+                    <strong>{resource.title || `学习视频 ${index + 1}`}</strong>
+                    {(resource.content_summary || resource.description) && <p>{resource.content_summary || resource.description}</p>}
+                    <a href={url} target="_blank" rel="noreferrer"><Play size={13} />打开视频</a>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : <p className="material-empty">暂无匹配视频</p>}
+      </section>
       <section className="material-resource-section text-resources">
         <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
         {hasTextContent ? (
@@ -1962,7 +1984,7 @@ function LearningDashboardView({
                   {editingDuration && (
                     <div className="duration-editor target">
                       <DurationField
-                        label="目标总时长"
+                        label="当前阶段目标总时长"
                         value={targetDurationDraft.total}
                         onChange={(total) => setTargetDurationDraft((draft) => ({ ...draft, total }))}
                         min={0.5}
@@ -2290,7 +2312,8 @@ function SettingsView({
   error,
   onClear,
   onSave,
-  foundationNames
+  foundationNames,
+  onOpenFoundation
 }: {
   profile: Profile;
   loading: boolean;
@@ -2298,25 +2321,22 @@ function SettingsView({
   onClear: () => void;
   onSave: (data: { grade: string; skill_tags: string[]; hardware: string }) => void;
   foundationNames: string[];
+  onOpenFoundation: () => void;
 }) {
-  const [grade, setGrade] = useState(profile.grade || '');
   const [hardware, setHardware] = useState(profile.hardware || '');
 
   useEffect(() => {
-    setGrade(profile.grade || '');
     setHardware(profile.hardware || '');
-  }, [profile.grade, profile.hardware]);
+  }, [profile.hardware]);
 
-  const hasProfileEdits = grade.trim() !== (profile.grade || '').trim()
-    || hardware.trim() !== (profile.hardware || '').trim();
+  const hasProfileEdits = hardware.trim() !== (profile.hardware || '').trim();
 
   return (
     <div className="page-shell">
-      <Topbar title="设置" subtitle="管理所有学习目标共用的用户信息" loading={loading} error={error} />
+      <Topbar title="设置" subtitle="用户信息与设备条件" loading={loading} error={error} />
       <main className="settings-page">
         <div className="settings-intro">
           <h2>用户基础与设备条件</h2>
-          <p>身份背景和设备条件由全部学习目标共用；已有知识基础仅在首次填写画像时确定。</p>
         </div>
         {error && <div className="settings-inline-state error">{error}</div>}
         {(!profile.grade || !profile.skill_tags?.length) && (
@@ -2324,8 +2344,8 @@ function SettingsView({
         )}
         <section className="settings-card">
           <div className="setting-row">
-            <div><strong>身份/学习背景</strong><p>所有目标共用，只能在这里修改</p></div>
-            <input value={grade} onChange={(event) => setGrade(event.target.value)} placeholder="例如：研二、后端开发者" />
+            <div><strong>身份/学习背景</strong></div>
+            <span className="settings-readonly-value">{profile.grade || '未填写'}</span>
           </div>
           <div className="setting-row">
             <div><strong>设备条件</strong><p>影响视频、代码与部署建议</p></div>
@@ -2333,13 +2353,13 @@ function SettingsView({
           </div>
           <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
             <h3 id="settings-knowledge-title">已有知识基础</h3>
-            <div className="settings-foundation-summary is-readonly">
+            <div className="settings-foundation-summary">
               {foundationNames.length > 0 ? (
                 <div className={`foundation-summary-list ${foundationNames.length > 3 ? 'has-overflow' : ''}`} title={foundationNames.join('、')}>
                   {foundationNames.map((name) => <span key={name}>{name}</span>)}
                 </div>
               ) : <span className="foundation-summary-empty">尚未确定基础</span>}
-              <small>首次画像确定后不可修改</small>
+              <button type="button" className="foundation-trigger" onClick={onOpenFoundation}>重新确定基础</button>
             </div>
             <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
           </div>
@@ -2348,11 +2368,11 @@ function SettingsView({
             <button
               className="primary settings-save-button"
               onClick={() => onSave({
-                grade: grade.trim(),
+                grade: profile.grade || '',
                 skill_tags: profile.skill_tags || [],
                 hardware: hardware.trim()
               })}
-              disabled={loading || !grade.trim() || !hasProfileEdits}
+              disabled={loading || !hasProfileEdits}
             >
               {loading ? <><Loader2 className="spin" size={14} />保存中</> : '保存设置'}
             </button>
@@ -2405,6 +2425,7 @@ export default function App() {
   const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | 'settings' | null>(null);
   const [foundationPickerBlocks, setFoundationPickerBlocks] = useState<KnowledgeGraphBlock[]>(knowledgeGraphBlocks);
   const [foundationSubtopicIds, setFoundationSubtopicIds] = useState<string[]>([]);
+  const [foundationConfirmed, setFoundationConfirmed] = useState(false);
   const [foundationPickerLoading, setFoundationPickerLoading] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
@@ -2573,7 +2594,13 @@ export default function App() {
     setProfileCheckError(null);
     try {
       const userProfile = await apiClient.getUserProfile();
-      setReuseUserProfile(true);
+      const profileComplete = Boolean(
+        userProfile.grade?.trim()
+        && userProfile.hardware?.trim()
+        && userProfile.foundation_confirmed
+      );
+      setReuseUserProfile(profileComplete);
+      setFoundationConfirmed(Boolean(userProfile.foundation_confirmed));
       setOnboardingForm((current) => ({
         ...formDataFromProfile(userProfile),
         goal: current.goal,
@@ -2585,6 +2612,7 @@ export default function App() {
         : undefined;
       if (status === 404) {
         setReuseUserProfile(false);
+        setFoundationConfirmed(false);
       } else {
         setProfileCheckError(getErrorMessage(caught));
       }
@@ -2763,6 +2791,7 @@ export default function App() {
           if (!nextProfile) throw new Error('会话画像解析失败');
           setProfile(nextProfile);
           setOnboardingForm(formDataFromProfile(nextProfile));
+          setFoundationConfirmed(Boolean(nextProfile.foundation_confirmed));
           rememberProject(savedSessionId, nextProfile, session.next_stage || activeStage, session.phase);
           rememberTargetSettings(savedSessionId, session.target_settings);
           void loadDashboardStages(savedSessionId, activeStage);
@@ -2824,6 +2853,35 @@ export default function App() {
     setFollowupQuestions([]);
     setHighlightedFields([]);
     setLoading(true);
+
+    if (!reuseUserProfile) {
+      try {
+        const updated = await apiClient.updateUserProfile({
+          grade: onboardingForm.grade.trim(),
+          skill_tags: onboardingForm.skill_tags,
+          foundation_confirmed: foundationConfirmed,
+          hardware: onboardingForm.hardware.trim(),
+          mastered_subtopic_ids: foundationSubtopicIds
+        });
+        setReuseUserProfile(true);
+        setOnboardingForm((current) => ({
+          ...current,
+          grade: updated.grade || current.grade,
+          skill_tags: updated.skill_tags || current.skill_tags,
+          hardware: updated.hardware || current.hardware,
+          goal: '',
+          daily_hours: String(updated.default_daily_hours ?? 2),
+          learning_style: 'mixed'
+        }));
+        setWorkflow('onboarding');
+      } catch (caught) {
+        setError(getErrorMessage(caught));
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     setWorkflow('diagnosing');
     beginAgentRun(['agent1'], true);
 
@@ -2833,7 +2891,8 @@ export default function App() {
         goal: onboardingForm.goal.trim(),
         mastered_subtopic_ids: foundationSubtopicIds,
         daily_hours: Number(onboardingForm.daily_hours),
-        learning_style: onboardingForm.learning_style
+        learning_style: onboardingForm.learning_style,
+        reuse_user_profile: reuseUserProfile
       });
       setSessionId(activeSessionId);
       localStorage.setItem(SESSION_STORAGE_KEY, activeSessionId);
@@ -2851,8 +2910,9 @@ export default function App() {
           if (draftProfile) {
             const enrichedProfile = {
               ...draftProfile,
-              grade: reuseUserProfile ? (profile?.grade || '') : onboardingForm.grade.trim(),
-              hardware: reuseUserProfile ? (profile?.hardware || '') : onboardingForm.hardware.trim()
+              grade: reuseUserProfile ? (draftProfile.grade || onboardingForm.grade.trim()) : onboardingForm.grade.trim(),
+              hardware: reuseUserProfile ? (draftProfile.hardware || onboardingForm.hardware.trim()) : onboardingForm.hardware.trim(),
+              foundation_confirmed: reuseUserProfile || foundationConfirmed
             };
             setProfile(enrichedProfile);
             setOnboardingForm((current) => ({ ...current, ...formDataFromProfile(enrichedProfile) }));
@@ -2866,8 +2926,9 @@ export default function App() {
       if (response.profile) {
         const nextProfile = {
           ...(toProfile(response.profile) || fallbackProfile),
-          grade: reuseUserProfile ? (profile?.grade || '') : onboardingForm.grade.trim(),
-          hardware: reuseUserProfile ? (profile?.hardware || '') : onboardingForm.hardware.trim()
+          grade: reuseUserProfile ? (response.profile.grade || onboardingForm.grade.trim()) : onboardingForm.grade.trim(),
+          hardware: reuseUserProfile ? (response.profile.hardware || onboardingForm.hardware.trim()) : onboardingForm.hardware.trim(),
+          foundation_confirmed: reuseUserProfile || foundationConfirmed
         } as Profile;
         setProfile(nextProfile);
         setOnboardingForm(formDataFromProfile(nextProfile));
@@ -2875,6 +2936,7 @@ export default function App() {
           await apiClient.updateUserProfile({
             grade: nextProfile.grade,
             skill_tags: nextProfile.skill_tags || [],
+            foundation_confirmed: foundationConfirmed,
             learning_style: nextProfile.learning_style,
             hardware: nextProfile.hardware,
             default_daily_hours: nextProfile.daily_hours
@@ -3161,6 +3223,7 @@ export default function App() {
     setReuseUserProfile(false);
     setOnboardingForm(emptyOnboardingForm);
     setFoundationSubtopicIds([]);
+    setFoundationConfirmed(false);
     setFoundationPickerBlocks(knowledgeGraphBlocks);
     setFollowupQuestions([]);
     setHighlightedFields([]);
@@ -3177,14 +3240,15 @@ export default function App() {
     return;
   };
 
-  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string }) => {
+  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string; mastered_subtopic_ids?: string[]; foundation_confirmed?: boolean }) => {
     setLoading(true);
     setError(null);
     try {
       const updated = await apiClient.updateUserProfile(data);
+      const { mastered_subtopic_ids: _masteredSubtopicIds, ...profileData } = data;
       const profileBeforeGoalCreation = newGoalReturnState?.profile;
       const sourceProfile = profile || profileBeforeGoalCreation || fallbackProfile;
-      const nextProfile = { ...sourceProfile, ...data, ...(toProfile(updated) || {}), daily_hours: sourceProfile.daily_hours };
+      const nextProfile = { ...sourceProfile, ...profileData, ...(toProfile(updated) || {}), daily_hours: sourceProfile.daily_hours };
       if (profile) {
         setProfile(nextProfile);
       } else if (newGoalReturnState) {
@@ -3198,7 +3262,7 @@ export default function App() {
       }));
       setLearningProjects((projects) => projects.map((project) => ({
         ...project,
-        profile: project.profile ? { ...project.profile, ...data } : project.profile
+        profile: project.profile ? { ...project.profile, ...profileData } : project.profile
       })));
       if (sessionId) rememberProject(sessionId, nextProfile, stage);
       void refreshRemoteProjects();
@@ -3317,7 +3381,13 @@ export default function App() {
   const createLearningGoal = () => {
     setProjectSwitcherOpen(false);
     const reusableProfile = profile || learningProjects.find((project) => project.profile)?.profile;
-    setReuseUserProfile(Boolean(reusableProfile));
+    const hasReusableProfile = Boolean(
+      reusableProfile?.grade?.trim()
+      && reusableProfile?.hardware?.trim()
+      && reusableProfile?.foundation_confirmed
+    );
+    setReuseUserProfile(hasReusableProfile);
+    setFoundationConfirmed(Boolean(reusableProfile?.foundation_confirmed));
     if (profile) {
       setNewGoalReturnState({
         sessionId,
@@ -3381,6 +3451,7 @@ export default function App() {
     setMaterialPanelOpen(previous.materialPanelOpen);
     setAgentStatuses(previous.agentStatuses);
     setOnboardingForm(formDataFromProfile(previous.profile));
+    setFoundationConfirmed(Boolean(previous.profile.foundation_confirmed));
     setFollowupQuestions([]);
     setHighlightedFields([]);
     setError(null);
@@ -3427,6 +3498,12 @@ export default function App() {
       localStorage.setItem(SESSION_STORAGE_KEY, nextSessionId);
       setProfile(nextProfile);
       setOnboardingForm(formDataFromProfile(nextProfile));
+      setFoundationConfirmed(Boolean(nextProfile.foundation_confirmed));
+      setReuseUserProfile(Boolean(
+        nextProfile.grade?.trim()
+        && nextProfile.hardware?.trim()
+        && nextProfile.foundation_confirmed
+      ));
       setStage(activeStage);
       setLearningPackage(toLearningPackage(session.learning_package));
       setResult(null);
@@ -3458,41 +3535,40 @@ export default function App() {
   const openFoundationPicker = async (context: 'onboarding' | 'settings') => {
     if (context === 'settings') {
       setFoundationPickerBlocks(knowledgeGraphBlocks);
+      try {
+        const network = await apiClient.getKnowledgeNetwork();
+        setFoundationSubtopicIds(network.blocks.flatMap((block) => block.subtopics)
+          .filter((topic) => topic.status === 1 && topic.is_initial_foundation)
+          .map((topic) => topic.subtopic_id));
+      } catch (caught) {
+        setError(`读取用户基础失败：${getErrorMessage(caught)}`);
+        return;
+      }
       setFoundationPickerContext(context);
       return;
     }
-    const goal = onboardingForm.goal.trim();
-    if (!goal) return;
-    setFoundationPickerLoading(true);
-    setError(null);
-    try {
-      const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
-      setSessionId(activeSessionId);
-      localStorage.setItem(SESSION_STORAGE_KEY, activeSessionId);
-      const response = await apiClient.getGoalBlocks(activeSessionId, goal);
-      const blocks = toKnowledgeGraphBlocks(response.blocks || []);
-      setFoundationPickerBlocks(blocks.length ? blocks : knowledgeGraphBlocks);
-      setFoundationPickerContext(context);
-    } catch (caught) {
-      setError(`读取目标知识板块失败：${getErrorMessage(caught)}`);
-    } finally {
-      setFoundationPickerLoading(false);
-    }
+    setFoundationPickerBlocks(knowledgeGraphBlocks);
+    setFoundationPickerContext(context);
   };
 
   const confirmFoundation = (selectedSubtopicIds: string[]) => {
-    const selectedBlocks = foundationPickerBlocks.filter((block) => (
-      block.subtopics.length > 0
-      && block.subtopics.every((topic) => selectedSubtopicIds.includes(topic.subtopic_id))
-    ));
-    const skillTags = selectedBlocks.map((block) => block.block_name);
-    if (foundationPickerContext === 'onboarding') setFoundationSubtopicIds(selectedSubtopicIds);
+    const selectedIds = new Set(selectedSubtopicIds);
+    const skillTags = foundationPickerBlocks.flatMap((block) => {
+      const selectedTopics = block.subtopics.filter((topic) => selectedIds.has(topic.subtopic_id));
+      if (selectedTopics.length === block.subtopics.length) return [block.block_name];
+      return [];
+    });
+    setFoundationSubtopicIds(selectedSubtopicIds);
+    if (foundationPickerContext === 'onboarding') setFoundationConfirmed(true);
     setOnboardingForm((current) => ({ ...current, skill_tags: skillTags }));
-    if (foundationPickerContext === 'settings' && profile) {
+    const settingsSourceProfile = profile || newGoalReturnState?.profile;
+    if (foundationPickerContext === 'settings' && settingsSourceProfile) {
       void saveProfileSettings({
-        grade: profile.grade || '',
+        grade: settingsSourceProfile.grade || '',
         skill_tags: skillTags,
-        hardware: profile.hardware || ''
+        hardware: settingsSourceProfile.hardware || '',
+        mastered_subtopic_ids: selectedSubtopicIds,
+        foundation_confirmed: true
       });
     }
     setFoundationPickerContext(null);
@@ -3558,7 +3634,10 @@ export default function App() {
   };
 
   const editProfile = () => {
-    if (profile) setOnboardingForm(formDataFromProfile(profile));
+    if (profile) {
+      setOnboardingForm(formDataFromProfile(profile));
+      setFoundationConfirmed(Boolean(profile.foundation_confirmed));
+    }
     setError(null);
     setFollowupQuestions([]);
     setHighlightedFields([]);
@@ -3570,25 +3649,13 @@ export default function App() {
   const workspaceProfile = profile || fallbackProfile;
   const workspaceStage = stage || unavailableStage;
   const onboardingFoundationNames = useMemo(
-    () => foundationNamesFromTags(onboardingForm.skill_tags),
+    () => onboardingForm.skill_tags.filter(Boolean),
     [onboardingForm.skill_tags]
   );
   const settingsFoundationNames = useMemo(
-    () => foundationNamesFromTags(settingsProfile?.skill_tags || []),
+    () => (settingsProfile?.skill_tags || []).filter(Boolean),
     [settingsProfile?.skill_tags]
   );
-  const foundationPickerGoal = foundationPickerContext === 'settings'
-    ? workspaceProfile.goal || onboardingForm.goal
-    : onboardingForm.goal;
-  const foundationPickerInitialBlockIds = useMemo(() => {
-    const tags = foundationPickerContext === 'settings'
-      ? workspaceProfile.skill_tags || []
-      : onboardingForm.skill_tags;
-    return foundationPickerBlocks.filter((block) => block.subtopics.length > 0 && block.subtopics.every((topic) => {
-      const matched = foundationBlocksFromTags(tags).find((candidate) => candidate.block_id === block.block_id);
-      return Boolean(matched);
-    })).map((block) => block.block_id);
-  }, [foundationPickerContext, foundationPickerBlocks, onboardingForm.skill_tags, workspaceProfile.skill_tags]);
   const stageSubtopics = useMemo(
     () => resolveStageSubtopics(workspaceProfile, workspaceStage),
     [workspaceProfile, workspaceStage]
@@ -3626,7 +3693,10 @@ export default function App() {
         <OnboardingPage
           formData={onboardingForm}
           onChange={(next) => {
-            if (next.goal !== onboardingForm.goal) setFoundationSubtopicIds([]);
+            if (next.goal !== onboardingForm.goal && !reuseUserProfile) {
+              setFoundationSubtopicIds([]);
+              setFoundationConfirmed(false);
+            }
             setOnboardingForm(next);
           }}
           onSubmit={submitOnboarding}
@@ -3641,6 +3711,7 @@ export default function App() {
           profileCheckError={profileCheckError}
           onRetryProfileCheck={() => void checkUserFoundation()}
           foundationNames={onboardingFoundationNames}
+          foundationConfirmed={foundationConfirmed}
           onOpenFoundation={() => openFoundationPicker('onboarding')}
           foundationLoading={foundationPickerLoading}
         />
@@ -3654,6 +3725,7 @@ export default function App() {
           onEdit={editProfile}
           onStart={startStage}
           onCancel={newGoalReturnState ? cancelCreateLearningGoal : undefined}
+          showUserProfile={!reuseUserProfile}
         />
       )}
       {profile && workflow === 'learning' && view === 'chat' && (
@@ -3707,12 +3779,11 @@ export default function App() {
           error={error}
         />
       )}
-      {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} />}
+      {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} onOpenFoundation={() => void openFoundationPicker('settings')} />}
       <FoundationPickerModal
         open={foundationPickerContext !== null}
-        goal={foundationPickerGoal}
         blocks={foundationPickerBlocks}
-        initialSelectedBlockIds={foundationPickerInitialBlockIds}
+        initialSelectedSubtopicIds={foundationSubtopicIds}
         onClose={() => setFoundationPickerContext(null)}
         onConfirm={confirmFoundation}
       />

@@ -47,22 +47,28 @@ export function buildDiagnosticMessage(formData: OnboardingFormData, targetOnly 
   return lines.join('\n');
 }
 
-export function getFormCompleteness(formData: OnboardingFormData, targetOnly = false) {
-  const checks = targetOnly ? [
+export function getFormCompleteness(formData: OnboardingFormData, targetOnly = false, foundationConfirmed = false, profileOnly = false) {
+  const checks = profileOnly ? [
+    Boolean(formData.grade.trim()),
+    foundationConfirmed,
+    Boolean(formData.hardware.trim()),
+  ] : targetOnly ? [
     Boolean(formData.goal.trim()),
     isValidDailyHours(formData.daily_hours),
     Boolean(formData.learning_style),
   ] : [
     Boolean(formData.grade.trim()),
+    foundationConfirmed,
     Boolean(formData.goal.trim()),
     isValidDailyHours(formData.daily_hours),
     Boolean(formData.learning_style),
+    Boolean(formData.hardware.trim()),
   ];
   return checks.filter(Boolean).length / checks.length;
 }
 
-export function isOnboardingFormComplete(formData: OnboardingFormData, targetOnly = false) {
-  return getFormCompleteness(formData, targetOnly) === 1;
+export function isOnboardingFormComplete(formData: OnboardingFormData, targetOnly = false, foundationConfirmed = false, profileOnly = false) {
+  return getFormCompleteness(formData, targetOnly, foundationConfirmed, profileOnly) === 1;
 }
 
 export function isValidDailyHours(value: string) {

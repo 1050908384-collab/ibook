@@ -46,6 +46,7 @@ export type ApiProfile = {
   goal?: string;
   grade?: string;
   skill_tags?: string[];
+  foundation_confirmed?: boolean;
   daily_hours?: number;
   learning_style?: string;
   hardware?: string;
@@ -271,10 +272,12 @@ export const apiClient = {
   updateUserProfile: async (data: {
     grade?: string;
     skill_tags?: string[];
+    foundation_confirmed?: boolean;
     learning_style?: string;
     hardware?: string;
     default_daily_hours?: number;
     learning_rhythm?: string;
+    mastered_subtopic_ids?: string[];
   }) => {
     const userId = encodeURIComponent(getClientUserId());
     const response = await axios.patch<ApiProfile & { user_id: string; default_daily_hours?: number }>(
@@ -342,7 +345,7 @@ export const apiClient = {
 
   submitFoundation: async (
     sessionId: string,
-    data: { goal: string; mastered_subtopic_ids: string[]; daily_hours: number; learning_style: string }
+    data: { goal: string; mastered_subtopic_ids: string[]; daily_hours: number; learning_style: string; reuse_user_profile?: boolean }
   ) => {
     const response = await axios.post<FoundationResponse>(
       `${BASE_URL}/sessions/${sessionId}/diagnosis/foundation`,

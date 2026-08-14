@@ -23,6 +23,19 @@ test('subsequent goals require goal, duration and learning style', () => {
   assert.equal(isOnboardingFormComplete(targetOnlyForm, false), false);
 });
 
+test('first-time profile requires only stable profile fields and confirmed foundation', () => {
+  const profileOnlyForm = {
+    ...targetOnlyForm,
+    grade: '后端工程师',
+    hardware: 'RTX 4060',
+    goal: '',
+    daily_hours: ''
+  };
+  assert.equal(getFormCompleteness(profileOnlyForm, false, true, true), 1);
+  assert.equal(isOnboardingFormComplete(profileOnlyForm, false, true, true), true);
+  assert.equal(isOnboardingFormComplete(profileOnlyForm, false, false, true), false);
+});
+
 test('target-only diagnosis sends learning style but not stable profile fields', () => {
   const message = buildDiagnosticMessage(targetOnlyForm, true);
   assert.match(message, /学习目标/);
