@@ -42,24 +42,46 @@ from config import settings
 
 
 class RejectOnceTechnicalReviewer:
-    """第 1 轮拒绝（带完整辩论协议字段），第 2 轮通过。用于验证审核→修改→重审循环。"""
+    """第 1 次审核拒绝（带完整辩论协议字段），之后一律通过。
+
+    - 整篇路径（run）：验证学习包/问答的审核→修改→重审循环。
+    - 块级流水线路径（review_block）：仅对第一次审核的块报 1 条 must_fix，
+      迫使该块进入 Phase C 定点修改（version+1）并在复核（第 2 次调用）通过，
+      其余块首轮即通过。用于验证块级「拒绝一次→修订→复核通过」链路。
+    """
 
     def __init__(self):
         self.calls = 0
 
+    def _reject_error(self, content_block_id=None, content_version=None):
+        return ReviewError(
+            error_type="test_rejection",
+            description="缺少关键技术说明",
+            suggestion="补充关键技术说明",
+            canonical_error_id="test_reject_001",
+            must_fix=True,
+            must_fix_reason="测试用：关键技术缺失",
+            change_request={"required": True, "action": "补充关键技术说明"},
+            content_block_id=content_block_id,
+            content_version=content_version,
+        )
+
     async def run(self, request):
+        self.calls += 1
+        if self.calls == 1:
+            return TechnicalReviewResult(passed=False, errors=[self._reject_error()])
+        return TechnicalReviewResult(passed=True)
+
+    async def review_block(self, block, stage, profile=None, round_index=1, trace_id=None):
+        # 块级审核 API：与 run 相同的「拒绝一次后通过」语义，但把错误绑定到当前块，
+        # 使 harness 的块级流水线能定位并修订该块（content_block_id / content_version）。
         self.calls += 1
         if self.calls == 1:
             return TechnicalReviewResult(
                 passed=False,
-                errors=[ReviewError(
-                    error_type="test_rejection",
-                    description="缺少关键技术说明",
-                    suggestion="补充关键技术说明",
-                    canonical_error_id="test_reject_001",
-                    must_fix=True,
-                    must_fix_reason="测试用：关键技术缺失",
-                    change_request={"required": True, "action": "补充关键技术说明"},
+                errors=[self._reject_error(
+                    content_block_id=getattr(block, "content_block_id", None),
+                    content_version=getattr(block, "version", 1),
                 )],
             )
         return TechnicalReviewResult(passed=True)
@@ -86,18 +108,32 @@ class AlwaysPersistReviewer:
     def __init__(self):
         self.calls = 0
 
+    def _stubborn_error(self, content_block_id=None, content_version=None):
+        return ReviewError(
+            error_type="stubborn_error",
+            description="永远不解决的问题",
+            suggestion="无法解决",
+            canonical_error_id="stubborn_001",
+            must_fix=True,
+            must_fix_reason="测试用：死锁兜底",
+            change_request={"required": True, "action": "无法解决"},
+            content_block_id=content_block_id,
+            content_version=content_version,
+        )
+
     async def run(self, request):
+        self.calls += 1
+        return TechnicalReviewResult(passed=False, errors=[self._stubborn_error()])
+
+    async def review_block(self, block, stage, profile=None, round_index=1, trace_id=None):
+        # 块级审核 API：每次调用都对当前块报同一条 must_fix，配合 rebut 永远 persist，
+        # 使块级流水线在达到 MAX_REVIEW_ITERATIONS 后仍有未决 must_fix → needs_human_review。
         self.calls += 1
         return TechnicalReviewResult(
             passed=False,
-            errors=[ReviewError(
-                error_type="stubborn_error",
-                description="永远不解决的问题",
-                suggestion="无法解决",
-                canonical_error_id="stubborn_001",
-                must_fix=True,
-                must_fix_reason="测试用：死锁兜底",
-                change_request={"required": True, "action": "无法解决"},
+            errors=[self._stubborn_error(
+                content_block_id=getattr(block, "content_block_id", None),
+                content_version=getattr(block, "version", 1),
             )],
         )
 
@@ -397,11 +433,16 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         result = await harness.start_stage(session_id)
 
         self.assertTrue(result["review_passed"])
+        # 块级流水线：Phase A 首轮审核记为第 1 轮（有 1 个块被拒），Phase C 修订+复核记为第 2 轮（通过）。
         self.assertEqual(2, result["iterations"])
-        self.assertEqual(2, result["learning_package"]["version"])
+        # 块级路径下 version 是「每个内容块」的概念，聚合包 version 恒为 1；
+        # 通过 tutorial 中的块级「修订说明」验证确实发生了定点修订。
+        self.assertEqual(1, result["learning_package"]["version"])
+        self.assertIn("修订说明", result["learning_package"]["tutorial"])
         self.assertFalse(result["review_history"][0]["passed"])
         self.assertTrue(result["review_history"][1]["passed"])
-        self.assertEqual(2, reviewer.calls)
+        # 至少「拒绝一次 + 修订后复核一次」；其余块首轮即通过，故总调用数 >= 2。
+        self.assertGreaterEqual(reviewer.calls, 2)
         # 辩论协议返回字段（P3）
         self.assertIn("review_trace_id", result)
         self.assertIn("package_status", result)
@@ -469,9 +510,11 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
         result = await harness.start_stage(session_id)
 
-        # 达到最大轮次，未决 must_fix 仍存在
+        # 达到最大轮次，未决 must_fix 仍存在。
+        # 块级流水线：Phase A 首轮审核 + MAX_REVIEW_ITERATIONS 轮 Phase C 修订/复核，
+        # 故 review_history 共 MAX_REVIEW_ITERATIONS + 1 条。
         from config import settings
-        self.assertEqual(settings.MAX_REVIEW_ITERATIONS, result["iterations"])
+        self.assertEqual(settings.MAX_REVIEW_ITERATIONS + 1, result["iterations"])
         # 死锁兜底：needs_human_review=True，package 降级为 provisional
         self.assertTrue(result["needs_human_review"])
         self.assertEqual("provisional", result["package_status"])

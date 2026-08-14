@@ -30,6 +30,7 @@ from models.contracts import (
 from models.profile import PracticeProfile, UserProfile
 from models.review import QualityReviewResult, ReviewError, ReviewRound, TechnicalReviewResult
 from models.stage import LearningPackage, StageInfo
+from models.material import TestQuestion
 from orchestrator.state_manager import StateManager
 
 # 审核辩论协议常量（协议第 7 节）
@@ -905,6 +906,36 @@ class Harness:
             review_trace_id=trace_id,
         )
 
+    async def _populate_stage_questions(
+        self,
+        package: LearningPackage,
+        stage: StageInfo,
+    ) -> None:
+        """为聚合后的学习包补齐自测题（块级流水线路径）。
+
+        整篇路径由 Agent3.run 直接从 test_questions 表提取题目，块级路径以块为最小
+        生成单位、不产出整阶段题目，故聚合后需与整篇路径一致地按 block_id + subtopic_ids
+        提取题目，保证学习包可作答（提交答案→掌握判定→阶段推进依赖此题目）。
+        题库不可用或无匹配题目时优雅降级为空列表，不中断学习流。
+        """
+        try:
+            extracted = await self.agent3.question_extract_tool.extract_questions(
+                package.tutorial,
+                {
+                    "block_id": stage.block_id,
+                    "block_name": stage.block_name,
+                    "subtopic_ids": self.agent3._stage_subtopic_ids(stage),
+                    "question_count": 2,
+                },
+            )
+        except Exception:
+            extracted = []
+        package.questions = [
+            TestQuestion.model_validate(question)
+            for question in extracted
+            if isinstance(question, dict)
+        ]
+
     @staticmethod
     async def _run_capped(sem: asyncio.Semaphore, coro_factory):
         """并发上限原语：持有 sem 期间执行一个协程（生成/修改两阶段共用）。"""
@@ -1150,6 +1181,9 @@ class Harness:
         package = self._aggregate_blocks(
             session_id, stage, [st.block for st in states.values()], trace_id,
         )
+        # 块级路径以块为最小单位，不产出整阶段自测题；聚合后与整篇路径一致地补齐题目，
+        # 保证学习包可作答（提交答案/掌握判定依赖题目）。
+        await self._populate_stage_questions(package, stage)
         # 修订后 claims 状态更新落库（P2）
         self._persist_claims_update(trace_id, package)
         total_unresolved = sum(
