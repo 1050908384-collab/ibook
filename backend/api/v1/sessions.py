@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from api.dependencies import get_current_user_id, get_harness
+from api.v1.learning_resources import backfill_stage_tutorial, build_stage_document_resources
 from api.v1.schemas import PublicLearningPackage, to_public_learning_package
 from tools.learning_resource_tool import LearningResourceTool
 
@@ -66,17 +67,25 @@ class SessionSnapshot(BaseModel):
 
 
 async def _get_snapshot_resources(package: Optional[dict[str, Any]], stage: Optional[dict[str, Any]]) -> Optional[list[dict[str, Any]]]:
-    """Backfill video resources for packages generated before resource persistence."""
+    """Backfill document and video resources for legacy packages."""
     if not package or not stage:
         return None
-    if package.get("learning_resources") or package.get("recommended_videos"):
-        return None
+
+    resources = list(package.get("learning_resources") or [])
+    known_ids = {item.get("resource_id") for item in resources if isinstance(item, dict)}
+    for resource in build_stage_document_resources(stage):
+        if resource.get("resource_id") not in known_ids:
+            resources.append(resource)
+            known_ids.add(resource.get("resource_id"))
+
+    if package.get("recommended_videos"):
+        return resources
 
     block_id = stage.get("block_id")
     if not block_id:
-        return None
+        return resources or None
     videos = await LearningResourceTool().get_recommended_videos(block_id, stage.get("subtopic_id"))
-    return [
+    resources.extend([
         {
             "resource_id": video["resource_id"],
             "resource_type": "video",
@@ -89,7 +98,8 @@ async def _get_snapshot_resources(package: Optional[dict[str, Any]], stage: Opti
             "order": video.get("sequence_index", 1),
         }
         for video in videos
-    ]
+    ])
+    return resources
 
 
 @router.post("", response_model=SessionSnapshot)
@@ -208,7 +218,9 @@ async def get_session_snapshot(session_id: str, user_id: str = Depends(get_curre
             "current_stage": stage,
             "next_stage": session.get("next_stage"),
             "learning_package": to_public_learning_package(
-                learning_package, stage, snapshot_resources
+                backfill_stage_tutorial(learning_package, stage) if learning_package and stage else learning_package,
+                stage,
+                snapshot_resources,
             ),
             "assessment_summary": {
                 "answer_records": session.get("answer_records", []),

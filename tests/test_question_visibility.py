@@ -37,6 +37,31 @@ class QuestionVisibilityTest(unittest.TestCase):
         self.assertNotIn("correct_answer", question)
         self.assertNotIn("explanation", question)
 
+    def test_public_learning_package_merges_article_sources_with_videos(self):
+        package = to_public_learning_package({
+            "recommended_videos": [{"resource_id": "video-1", "title": "Video", "url": "https://example.com/video"}],
+            "sources": [{
+                "source_id": "doc-1",
+                "source_type": "knowledge_doc",
+                "title": "Original article",
+                "content_ref": "https://example.com/article",
+            }],
+        })
+        self.assertEqual(["video", "article"], [item["resource_type"] for item in package["learning_resources"]])
+        self.assertEqual("https://example.com/article", package["learning_resources"][1]["url"])
+
+    def test_resource_backfill_does_not_hide_recommended_videos(self):
+        package = to_public_learning_package(
+            {"recommended_videos": [{"resource_id": "video-1", "title": "Video", "url": "https://example.com/video"}]},
+            learning_resources=[{
+                "resource_id": "doc-1",
+                "resource_type": "documentation",
+                "title": "Document",
+                "url": "Official documentation",
+            }],
+        )
+        self.assertEqual(["documentation", "video"], [item["resource_type"] for item in package["learning_resources"]])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from api.dependencies import get_harness, require_owned_session
+from api.v1.learning_resources import backfill_stage_tutorial, build_stage_document_resources
 from api.v1.schemas import to_public_learning_package, to_public_question
 
 router = APIRouter(prefix="/sessions/{session_id}/stages", tags=["Stages"], dependencies=[Depends(require_owned_session)])
@@ -255,6 +256,13 @@ async def get_current_stage_package(session_id: str):
         
         # 学习资源：使用统一构建函数，从数据库读取已确认视频并补全文档要求字段
         learning_resources = _build_learning_resources(stage_info, package)
+        known_resource_ids = {
+            resource.get("resource_id") for resource in learning_resources if isinstance(resource, dict)
+        }
+        learning_resources.extend(
+            resource for resource in build_stage_document_resources(stage_info)
+            if resource.get("resource_id") not in known_resource_ids
+        )
         
         # 学习包响应（不含正确答案）
         package_response = {
@@ -280,7 +288,11 @@ async def get_current_stage_package(session_id: str):
             "personalization_summary": stage_info.get("personalization_summary"),
         }
         
-        package_response = to_public_learning_package(package, stage_info, learning_resources)
+        package_response = to_public_learning_package(
+            backfill_stage_tutorial(package, stage_info),
+            stage_info,
+            learning_resources,
+        )
 
         return {
             "package": package_response,

@@ -3547,8 +3547,10 @@ body.resizing-workspace-panels * {
 
 .material-document h2 {
   margin: 9px 0 20px;
-  font-size: 24px;
-  line-height: 1.35;
+  color: #252d40;
+  font-size: 21px;
+  font-weight: 650;
+  line-height: 1.4;
 }
 
 .material-document.compact h2 {
@@ -3572,7 +3574,8 @@ body.resizing-workspace-panels * {
 .material-section-heading h3 {
   margin: 0;
   color: #30384b;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .material-video-list {
@@ -3607,15 +3610,16 @@ body.resizing-workspace-panels * {
 }
 
 .material-video-list strong {
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .material-video-list p {
   margin-top: 5px;
   color: #7d8494;
-  font-size: 10px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 .material-video-list a,
@@ -3629,8 +3633,8 @@ body.resizing-workspace-panels * {
   align-items: center;
   gap: 5px;
   margin-top: 8px;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .material-article-list {
@@ -3638,19 +3642,19 @@ body.resizing-workspace-panels * {
   gap: 7px;
 }
 
-.material-article-list > a {
+.material-article-list > article {
   min-height: 58px;
   border: 1px solid #e2e4eb;
   border-radius: 8px;
   background: #fff;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
 }
 
-.material-article-list > a:hover {
+.material-article-list > article:hover {
   border-color: #bdb8ef;
   background: #faf9ff;
 }
@@ -3662,40 +3666,137 @@ body.resizing-workspace-panels * {
 
 .material-article-list strong {
   color: #3d4557;
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .material-article-list small {
   margin-top: 5px;
   color: #8990a0;
-  font-size: 9px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .text-resources .material-markdown {
-  padding-top: 1px;
+  max-width: 70ch;
+  padding-top: 2px;
 }
 
 .material-markdown,
 .material-markdown p,
 .material-markdown li {
-  color: #50596d;
-  font-size: 13px;
-  line-height: 1.8;
+  color: #566174;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.78;
 }
 
 .material-document.compact .material-markdown,
 .material-document.compact .material-markdown p,
 .material-document.compact .material-markdown li {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.75;
 }
 
+.material-markdown h1,
 .material-markdown h2,
-.material-markdown h3 {
+.material-markdown h3,
+.material-markdown h4,
+.material-markdown h5,
+.material-markdown h6 {
   color: #252d40;
-  font-size: 16px;
-  margin-top: 24px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 26px 0 10px;
+}
+
+.material-markdown h1 { font-size: 20px; }
+.material-markdown h2 { font-size: 18px; }
+.material-markdown h3 { font-size: 16px; }
+.material-markdown h4 { font-size: 15px; }
+.material-markdown h5,
+.material-markdown h6 { font-size: 14px; }
+
+.material-markdown > :first-child {
+  margin-top: 0;
+}
+
+.material-markdown p,
+.material-markdown ul,
+.material-markdown ol {
+  margin: 0 0 16px;
+}
+
+.material-markdown ul,
+.material-markdown ol {
+  padding-left: 24px;
+}
+
+.material-markdown li + li {
+  margin-top: 5px;
+}
+
+.material-markdown strong {
+  color: #30394b;
+  font-weight: 600;
+}
+
+.material-markdown blockquote {
+  margin: 18px 0;
+  padding: 2px 0 2px 14px;
+  border-left: 3px solid #c9c5ee;
+  color: #677184;
+}
+
+.material-markdown blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.material-markdown code:not(pre code) {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #f1f2f6;
+  color: #3f4780;
+  font-size: 0.9em;
+}
+
+.material-markdown pre {
+  margin: 18px 0;
+  padding: 15px 16px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #171b2b;
+  color: #e2e6f0;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.material-markdown hr {
+  margin: 28px 0;
+  border: 0;
+  border-top: 1px solid #e3e6ed;
+}
+
+.material-markdown table {
+  width: 100%;
+  margin: 18px 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.material-markdown th,
+.material-markdown td {
+  padding: 9px 10px;
+  border: 1px solid #e0e3ea;
+  text-align: left;
+  vertical-align: top;
+}
+
+.material-markdown th {
+  background: #f6f7f9;
+  color: #30394b;
+  font-weight: 600;
 }
 
 .material-code-section {

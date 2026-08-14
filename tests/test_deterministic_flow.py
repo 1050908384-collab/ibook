@@ -419,6 +419,7 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
             # 阶段已推进
             current = harness.state_manager.get_current_stage(session_id)
             self.assertEqual(planned["next_stage"]["stage_num"], current["stage_num"])
+            self.assertGreater(current["stage_num"], initial["stage_info"]["stage_num"])
         else:
             # 只有一个盲区 + 全部掌握：can_plan_next_stage=False，plan-next 允许失败
             self.assertFalse(completed.get("can_plan_next_stage"))

@@ -20,6 +20,11 @@ export function getClientUserId(): string {
 
 axios.defaults.headers.common['X-User-ID'] = getClientUserId();
 
+axios.interceptors.request.use((config) => {
+  config.headers.set('X-User-ID', getClientUserId());
+  return config;
+});
+
 axios.interceptors.response.use(
   (response) => {
     if (import.meta.env.DEV) {

@@ -860,7 +860,7 @@ function ProfilePanel({
 }
 
 function getResourceUrl(resource: LearningResource) {
-  if (resource.url) return resource.url;
+  if (resource.url?.startsWith('http')) return resource.url;
   if (resource.content_ref?.startsWith('http')) return resource.content_ref;
   if (resource.locator?.startsWith('http')) return resource.locator;
   return '';
@@ -1037,8 +1037,8 @@ function MaterialDocument({
   const videoResources = uniqueResources(
     learningResources.filter((resource) => resource.resource_type === 'video' && Boolean(getResourceUrl(resource)))
   );
-  const documentationResources = uniqueResources(
-    learningResources.filter((resource) => resource.resource_type === 'documentation' && Boolean(resource.content_summary || getResourceUrl(resource)))
+  const articleResources = uniqueResources(
+    learningResources.filter((resource) => ['article', 'documentation'].includes(resource.resource_type || ''))
   );
   const codeResourceItems = uniqueResources(
     learningResources.filter((resource) => resource.resource_type === 'code' && Boolean(resource.content_summary || getResourceUrl(resource)))
@@ -1053,7 +1053,6 @@ function MaterialDocument({
   const hasTextContent = Boolean(
     topicTutorial?.trim()
     || codeExamples.length
-    || documentationResources.length
     || codeResourceItems.length
   );
   return (
@@ -1063,46 +1062,11 @@ function MaterialDocument({
         <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
       </div>
       <h2>{selectedTopicName}</h2>
-      <section className="material-resource-section video-resources">
-        <div className="material-section-heading"><Play size={16} /><h3>学习视频</h3></div>
-        {videoResources.length > 0 ? (
-          <div className="material-video-list">
-            {videoResources.map((resource, index) => {
-              const url = getResourceUrl(resource);
-              return (
-                <article key={resource.resource_id || `${resource.title}-${index}`}>
-                  <div>
-                    <strong>{resource.title || `学习视频 ${index + 1}`}</strong>
-                    {(resource.content_summary || resource.description) && <p>{resource.content_summary || resource.description}</p>}
-                    <a href={url} target="_blank" rel="noreferrer"><Play size={13} />打开视频</a>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : <p className="material-empty">暂无匹配视频</p>}
-      </section>
       <section className="material-resource-section text-resources">
         <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
         {hasTextContent ? (
           <>
             {topicTutorial?.trim() && <div className="material-markdown"><ReactMarkdown>{topicTutorial}</ReactMarkdown></div>}
-            {documentationResources.length > 0 && (
-              <div className="material-article-list">
-                {documentationResources.map((resource, index) => {
-                  const url = getResourceUrl(resource);
-                  return (
-                    <article key={resource.resource_id || `${resource.title}-${index}`}>
-                      <span>
-                        <strong>{resource.title || `学习文本 ${index + 1}`}</strong>
-                        {resource.content_summary && <small>{resource.content_summary}</small>}
-                      </span>
-                      {url && <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />查看原文</a>}
-                    </article>
-                  );
-                })}
-              </div>
-            )}
             {codeExamples.length > 0 && (
               <div className="material-code-section">
                 <h3>代码示例</h3>
@@ -1132,6 +1096,47 @@ function MaterialDocument({
             )}
           </>
         ) : <p className="material-empty">无</p>}
+      </section>
+      <section className="material-resource-section article-resources">
+        <div className="material-section-heading"><ExternalLink size={16} /><h3>文章来源</h3></div>
+        {articleResources.length > 0 ? (
+          <div className="material-article-list">
+            {articleResources.map((resource, index) => {
+              const url = getResourceUrl(resource);
+              const sourceAddress = resource.url || resource.content_ref || resource.locator;
+              return (
+                <article key={resource.resource_id || `${resource.title}-${index}`}>
+                  <span>
+                    <strong>{resource.title || `文章来源 ${index + 1}`}</strong>
+                    {(resource.content_summary || resource.description || sourceAddress) && (
+                      <small>{resource.content_summary || resource.description || sourceAddress}</small>
+                    )}
+                  </span>
+                  {url && <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />查看原文</a>}
+                </article>
+              );
+            })}
+          </div>
+        ) : <p className="material-empty">暂无文章来源</p>}
+      </section>
+      <section className="material-resource-section video-resources">
+        <div className="material-section-heading"><Play size={16} /><h3>学习视频</h3></div>
+        {videoResources.length > 0 ? (
+          <div className="material-video-list">
+            {videoResources.map((resource, index) => {
+              const url = getResourceUrl(resource);
+              return (
+                <article key={resource.resource_id || `${resource.title}-${index}`}>
+                  <div>
+                    <strong>{resource.title || `学习视频 ${index + 1}`}</strong>
+                    {(resource.content_summary || resource.description) && <p>{resource.content_summary || resource.description}</p>}
+                    <a href={url} target="_blank" rel="noreferrer"><Play size={13} />打开视频</a>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : <p className="material-empty">暂无匹配视频</p>}
       </section>
     </article>
   );
@@ -2295,7 +2300,12 @@ function ResultView({
               <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
             </div>
             {!result?.all_mastered && (plannedStage ? (
-              <button className="primary wide" onClick={onStartNext} disabled={loading}><Play size={17} />开始下一阶段</button>
+              <button className="primary wide" onClick={onStartNext} disabled={loading}>
+                <Play size={17} />
+                {(plannedStage.stage_num ?? 1) > (stage.stage_num ?? 1)
+                  ? `开始第 ${plannedStage.stage_num} 阶段`
+                  : '重新学习本阶段'}
+              </button>
             ) : (
               <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
             ))}
@@ -2312,8 +2322,7 @@ function SettingsView({
   error,
   onClear,
   onSave,
-  foundationNames,
-  onOpenFoundation
+  foundationNames
 }: {
   profile: Profile;
   loading: boolean;
@@ -2321,7 +2330,6 @@ function SettingsView({
   onClear: () => void;
   onSave: (data: { grade: string; skill_tags: string[]; hardware: string }) => void;
   foundationNames: string[];
-  onOpenFoundation: () => void;
 }) {
   const [hardware, setHardware] = useState(profile.hardware || '');
 
@@ -2353,13 +2361,12 @@ function SettingsView({
           </div>
           <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
             <h3 id="settings-knowledge-title">已有知识基础</h3>
-            <div className="settings-foundation-summary">
+            <div className="settings-foundation-summary is-readonly">
               {foundationNames.length > 0 ? (
                 <div className={`foundation-summary-list ${foundationNames.length > 3 ? 'has-overflow' : ''}`} title={foundationNames.join('、')}>
                   {foundationNames.map((name) => <span key={name}>{name}</span>)}
                 </div>
               ) : <span className="foundation-summary-empty">尚未确定基础</span>}
-              <button type="button" className="foundation-trigger" onClick={onOpenFoundation}>重新确定基础</button>
             </div>
             <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
           </div>
@@ -2422,7 +2429,7 @@ export default function App() {
   const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string | null>(null);
-  const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | 'settings' | null>(null);
+  const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | null>(null);
   const [foundationPickerBlocks, setFoundationPickerBlocks] = useState<KnowledgeGraphBlock[]>(knowledgeGraphBlocks);
   const [foundationSubtopicIds, setFoundationSubtopicIds] = useState<string[]>([]);
   const [foundationConfirmed, setFoundationConfirmed] = useState(false);
@@ -3079,6 +3086,7 @@ export default function App() {
       setResult(null);
       setNewGoalReturnState(null);
       setAssessmentState({ attemptId: null, questions: [] });
+      void loadDashboardStages(sessionId, generatedStage);
       void refreshRemoteProjects();
     } catch (caught) {
       finishAgentRun(['agent3', 'agent4'], false);
@@ -3240,12 +3248,12 @@ export default function App() {
     return;
   };
 
-  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string; mastered_subtopic_ids?: string[]; foundation_confirmed?: boolean }) => {
+  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string }) => {
     setLoading(true);
     setError(null);
     try {
       const updated = await apiClient.updateUserProfile(data);
-      const { mastered_subtopic_ids: _masteredSubtopicIds, ...profileData } = data;
+      const profileData = data;
       const profileBeforeGoalCreation = newGoalReturnState?.profile;
       const sourceProfile = profile || profileBeforeGoalCreation || fallbackProfile;
       const nextProfile = { ...sourceProfile, ...profileData, ...(toProfile(updated) || {}), daily_hours: sourceProfile.daily_hours };
@@ -3532,23 +3540,9 @@ export default function App() {
     }
   };
 
-  const openFoundationPicker = async (context: 'onboarding' | 'settings') => {
-    if (context === 'settings') {
-      setFoundationPickerBlocks(knowledgeGraphBlocks);
-      try {
-        const network = await apiClient.getKnowledgeNetwork();
-        setFoundationSubtopicIds(network.blocks.flatMap((block) => block.subtopics)
-          .filter((topic) => topic.status === 1 && topic.is_initial_foundation)
-          .map((topic) => topic.subtopic_id));
-      } catch (caught) {
-        setError(`读取用户基础失败：${getErrorMessage(caught)}`);
-        return;
-      }
-      setFoundationPickerContext(context);
-      return;
-    }
+  const openFoundationPicker = () => {
     setFoundationPickerBlocks(knowledgeGraphBlocks);
-    setFoundationPickerContext(context);
+    setFoundationPickerContext('onboarding');
   };
 
   const confirmFoundation = (selectedSubtopicIds: string[]) => {
@@ -3559,18 +3553,8 @@ export default function App() {
       return [];
     });
     setFoundationSubtopicIds(selectedSubtopicIds);
-    if (foundationPickerContext === 'onboarding') setFoundationConfirmed(true);
+    setFoundationConfirmed(true);
     setOnboardingForm((current) => ({ ...current, skill_tags: skillTags }));
-    const settingsSourceProfile = profile || newGoalReturnState?.profile;
-    if (foundationPickerContext === 'settings' && settingsSourceProfile) {
-      void saveProfileSettings({
-        grade: settingsSourceProfile.grade || '',
-        skill_tags: skillTags,
-        hardware: settingsSourceProfile.hardware || '',
-        mastered_subtopic_ids: selectedSubtopicIds,
-        foundation_confirmed: true
-      });
-    }
     setFoundationPickerContext(null);
   };
 
@@ -3712,7 +3696,7 @@ export default function App() {
           onRetryProfileCheck={() => void checkUserFoundation()}
           foundationNames={onboardingFoundationNames}
           foundationConfirmed={foundationConfirmed}
-          onOpenFoundation={() => openFoundationPicker('onboarding')}
+          onOpenFoundation={openFoundationPicker}
           foundationLoading={foundationPickerLoading}
         />
       )}
@@ -3779,7 +3763,7 @@ export default function App() {
           error={error}
         />
       )}
-      {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} onOpenFoundation={() => void openFoundationPicker('settings')} />}
+      {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} />}
       <FoundationPickerModal
         open={foundationPickerContext !== null}
         blocks={foundationPickerBlocks}

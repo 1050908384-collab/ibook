@@ -92,12 +92,16 @@ def to_public_learning_package(
         return None
 
     stage = stage or {}
-    resources = learning_resources if learning_resources is not None else package.get("learning_resources", [])
-    if not resources:
-        # Agent3 persists videos under recommended_videos.  Normalise them at
-        # the public API boundary so a restored session matches a newly
-        # generated package from /stages/current/package.
-        resources = [
+    resources = list(learning_resources if learning_resources is not None else package.get("learning_resources", []))
+    existing_resource_ids = {
+        resource.get("resource_id")
+        for resource in resources
+        if isinstance(resource, dict) and resource.get("resource_id")
+    }
+    # Agent3 persists videos under recommended_videos. Normalise and merge
+    # them at the API boundary so article backfills never hide videos.
+    resources.extend(
+        [
             {
                 "resource_id": video.get("resource_id", f"video_{index}"),
                 "resource_type": "video",
@@ -110,8 +114,43 @@ def to_public_learning_package(
                 "order": video.get("order", video.get("sequence_index", index + 1)),
             }
             for index, video in enumerate(package.get("recommended_videos", []), start=1)
-            if isinstance(video, dict)
+            if isinstance(video, dict) and video.get("resource_id", f"video_{index}") not in existing_resource_ids
         ]
+    )
+    existing_resource_ids = {
+        resource.get("resource_id")
+        for resource in resources
+        if isinstance(resource, dict) and resource.get("resource_id")
+    }
+    for index, source in enumerate(package.get("sources", []), start=1):
+        if not isinstance(source, dict) or source.get("source_type") not in {
+            "knowledge_doc", "best_practice", "manual", "external_note"
+        }:
+            continue
+        resource_id = source.get("source_id") or f"source_{index}"
+        if resource_id in existing_resource_ids:
+            continue
+        metadata = source.get("metadata_json") if isinstance(source.get("metadata_json"), dict) else {}
+        subtopic_id = metadata.get("subtopic_id")
+        if subtopic_id and f"LOCAL-{subtopic_id}" in existing_resource_ids:
+            continue
+        candidates = [source.get("content_ref"), source.get("locator")]
+        locator = next(
+            (value for value in candidates if str(value or "").startswith(("http://", "https://"))),
+            source.get("locator") or source.get("content_ref") or "",
+        )
+        resources.append({
+            "resource_id": resource_id,
+            "resource_type": "article" if str(locator).startswith(("http://", "https://")) else "documentation",
+            "title": source.get("title") or metadata.get("title") or f"文章来源 {index}",
+            "url": locator,
+            "platform": metadata.get("platform", ""),
+            "description": metadata.get("description", ""),
+            "recommendation_level": "primary",
+            "role": "source",
+            "order": len(resources) + 1,
+        })
+        existing_resource_ids.add(resource_id)
     # Fallback stages can intentionally omit a catalog subtopic.  The public
     # contract still requires a displayable string, so use the diagnosed gap
     # or block title instead of passing None into Pydantic validation.
