@@ -405,6 +405,7 @@ class SQLiteClient:
         """))
         if "user_id" in self._get_table_columns(conn, "sessions"):
             conn.execute(text("CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_sessions_user_updated ON sessions(user_id, updated_at DESC)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS idx_user_subtopic_block ON user_subtopic_status(user_id, block_id, status)"))
 
     def _migrate_user_scope_data(self, conn) -> None:
@@ -1365,17 +1366,18 @@ class SQLiteClient:
                            {"status": status, "session_id": session_id})
             session.commit()
 
-    def list_sessions(self) -> list[dict]:
-        """获取所有会话列表（含 profile_summary，供账号级"所有学习画像/所有项目"列表使用）"""
+    def list_sessions(self, user_id: str = DEFAULT_USER_ID) -> list[dict]:
+        """获取指定用户的会话列表，禁止跨用户返回历史目标。"""
         with self.Session() as session:
             rows = session.execute(text("""
-                SELECT s.session_id, s.status, s.current_stage, s.created_at, s.updated_at,
+                SELECT s.session_id, s.user_id, s.status, s.current_stage, s.created_at, s.updated_at,
                        s.target_total_hours, s.target_daily_hours,
                        ss.state_json
                 FROM sessions s
                 LEFT JOIN session_states ss ON s.session_id = ss.session_id
+                WHERE s.user_id = :user_id
                 ORDER BY s.updated_at DESC
-            """)).mappings().all()
+            """), {"user_id": user_id}).mappings().all()
             
             result = []
             for row in rows:

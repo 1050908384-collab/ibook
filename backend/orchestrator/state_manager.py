@@ -15,11 +15,11 @@ class StateManager:
         self.db_client = db_client or SQLiteClient()
         self._cache: Dict[str, SessionData] = {}
 
-    def create_session(self, session_id: str | None = None) -> Dict[str, Any]:
+    def create_session(self, session_id: str | None = None, user_id: str = "local-user") -> Dict[str, Any]:
         session_id = session_id or str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
-        state = SessionData(session_id=session_id, created_at=now, updated_at=now)
-        self.db_client.create_session(session_id)
+        state = SessionData(session_id=session_id, user_id=user_id, created_at=now, updated_at=now)
+        self.db_client.create_session(session_id, user_id)
         self._save(state)
         return state.model_dump(mode="json")
 
@@ -189,9 +189,9 @@ class StateManager:
     def abandon_session(self, session_id: str) -> None:
         self.set_status(session_id, "abandoned")
 
-    def list_sessions(self) -> List[Dict[str, Any]]:
-        """获取所有会话列表"""
-        return self.db_client.list_sessions()
+    def list_sessions(self, user_id: str = "local-user") -> List[Dict[str, Any]]:
+        """获取指定用户的会话列表。"""
+        return self.db_client.list_sessions(user_id)
 
     def update_field(self, session_id: str, field: str, value: Any) -> None:
         """更新 SessionData 的任意字段"""

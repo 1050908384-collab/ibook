@@ -8,6 +8,18 @@ const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
   || `${window.location.protocol}//${window.location.hostname}:8500/api/v1`;
 const BASE_URL = configuredBaseUrl.replace(/\/$/, '');
 
+const CLIENT_USER_ID_KEY = 'aiAgentTrainer:userId';
+
+export function getClientUserId(): string {
+  const existing = localStorage.getItem(CLIENT_USER_ID_KEY)?.trim();
+  if (existing) return existing;
+  const userId = `anon-${crypto.randomUUID()}`;
+  localStorage.setItem(CLIENT_USER_ID_KEY, userId);
+  return userId;
+}
+
+axios.defaults.headers.common['X-User-ID'] = getClientUserId();
+
 axios.interceptors.response.use(
   (response) => {
     if (import.meta.env.DEV) {
@@ -249,8 +261,9 @@ export type DashboardResponse = {
 
 export const apiClient = {
   getUserProfile: async () => {
+    const userId = encodeURIComponent(getClientUserId());
     const response = await axios.get<ApiProfile & { user_id: string; default_daily_hours?: number }>(
-      `${BASE_URL}/users/local-user/profile`
+      `${BASE_URL}/users/${userId}/profile`
     );
     return response.data;
   },
@@ -263,16 +276,18 @@ export const apiClient = {
     default_daily_hours?: number;
     learning_rhythm?: string;
   }) => {
+    const userId = encodeURIComponent(getClientUserId());
     const response = await axios.patch<ApiProfile & { user_id: string; default_daily_hours?: number }>(
-      `${BASE_URL}/users/local-user/profile`,
+      `${BASE_URL}/users/${userId}/profile`,
       data
     );
     return response.data;
   },
 
   getKnowledgeNetwork: async () => {
+    const userId = encodeURIComponent(getClientUserId());
     const response = await axios.get<KnowledgeNetworkResponse>(
-      `${BASE_URL}/users/local-user/knowledge-network`
+      `${BASE_URL}/users/${userId}/knowledge-network`
     );
     return response.data;
   },

@@ -5,14 +5,14 @@ v1/profile.py - Agent1/3 前端 API：用户画像接口
 对应文档：Agent13_API接口任务说明.md 第 2 节（画像相关）
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from api.dependencies import get_harness
+from api.dependencies import get_harness, require_owned_session
 from api.v1.schemas import ProfileResponse, ProfileUpdateResponse
 
-router = APIRouter(prefix="/sessions/{session_id}", tags=["Profile"])
+router = APIRouter(prefix="/sessions/{session_id}", tags=["Profile"], dependencies=[Depends(require_owned_session)])
 harness = get_harness()
 
 

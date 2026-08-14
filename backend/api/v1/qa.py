@@ -1,12 +1,12 @@
 """Learning Q&A endpoints backed by the existing Agent3 -> Agent4 harness flow."""
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from api.dependencies import get_harness
+from api.dependencies import get_harness, require_owned_session
 
-router = APIRouter(prefix="/sessions/{session_id}/qa", tags=["Q&A"])
+router = APIRouter(prefix="/sessions/{session_id}/qa", tags=["Q&A"], dependencies=[Depends(require_owned_session)])
 harness = get_harness()
 
 

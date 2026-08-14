@@ -7,15 +7,24 @@ v1/sessions.py - Agent1/3 前端 API：会话管理接口
 
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
-from api.dependencies import get_harness
+from api.dependencies import get_current_user_id, get_harness
 from api.v1.schemas import PublicLearningPackage, to_public_learning_package
 from tools.learning_resource_tool import LearningResourceTool
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 harness = get_harness()
+
+
+def _require_owned_session(session_id: str, user_id: str) -> None:
+    try:
+        owner_id = harness.state_manager.db_client.get_session_user_id(session_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
+    if owner_id != user_id:
+        raise HTTPException(status_code=404, detail="Session not found")
 
 
 class SessionSummary(BaseModel):
@@ -84,15 +93,15 @@ async def _get_snapshot_resources(package: Optional[dict[str, Any]], stage: Opti
 
 
 @router.post("", response_model=SessionSnapshot)
-async def create_session():
+async def create_session(user_id: str = Depends(get_current_user_id)):
     """
     创建新会话
     
     POST /api/v1/sessions
     """
     try:
-        session = harness.create_session(None)
-        user_profile = harness.state_manager.db_client.get_user_profile("local-user")
+        session = harness.create_session(None, user_id)
+        user_profile = harness.state_manager.db_client.get_user_profile(user_id)
         target_settings = harness.state_manager.db_client.get_target_settings(session["session_id"]) or {}
         return {
             "session_id": session["session_id"],
@@ -109,7 +118,7 @@ async def create_session():
             "available_actions": ["submit_diagnosis"],
             "created_at": session.get("created_at"),
             "updated_at": session.get("updated_at"),
-            "user_id": "local-user",
+            "user_id": user_id,
             "user_profile_exists": bool(user_profile),
             "requires_full_profile": not bool(user_profile),
             "target_settings": target_settings,
@@ -119,7 +128,7 @@ async def create_session():
 
 
 @router.get("", response_model=SessionListResponse)
-async def list_sessions():
+async def list_sessions(user_id: str = Depends(get_current_user_id)):
     """
     获取所有会话列表（左侧对话栏 + 账号级"所有学习画像/所有项目"列表）
     
@@ -135,7 +144,7 @@ async def list_sessions():
     try:
         # 使用 harness 的 state_manager 确保一致性
         sm = harness.state_manager
-        sessions = sm.list_sessions()
+        sessions = sm.list_sessions(user_id)
         items = []
         for s in sessions:
             session_id = s.get("session_id")
@@ -173,13 +182,14 @@ async def list_sessions():
 
 
 @router.get("/{session_id}", response_model=SessionSnapshot)
-async def get_session_snapshot(session_id: str):
+async def get_session_snapshot(session_id: str, user_id: str = Depends(get_current_user_id)):
     """
     获取完整会话快照（页面恢复）
     
     GET /api/v1/sessions/{session_id}
     """
     try:
+        _require_owned_session(session_id, user_id)
         session = harness.get_session(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
@@ -213,9 +223,9 @@ async def get_session_snapshot(session_id: str):
             "available_actions": session.get("available_actions", []),
             "created_at": session.get("created_at"),
             "updated_at": session.get("updated_at"),
-            "user_id": session.get("user_id", "local-user"),
-            "user_profile_exists": bool(harness.state_manager.db_client.get_user_profile(session.get("user_id", "local-user"))),
-            "requires_full_profile": not bool(harness.state_manager.db_client.get_user_profile(session.get("user_id", "local-user"))),
+            "user_id": user_id,
+            "user_profile_exists": bool(harness.state_manager.db_client.get_user_profile(user_id)),
+            "requires_full_profile": not bool(harness.state_manager.db_client.get_user_profile(user_id)),
             "target_settings": harness.state_manager.db_client.get_target_settings(session_id) or {},
         }
         
@@ -234,7 +244,7 @@ async def get_session_snapshot(session_id: str):
 
 
 @router.post("/{session_id}/abandon")
-async def abandon_session(session_id: str):
+async def abandon_session(session_id: str, user_id: str = Depends(get_current_user_id)):
     """
     放弃当前学习
 
@@ -242,6 +252,7 @@ async def abandon_session(session_id: str):
     """
     try:
         # 先检查会话是否存在，给出明确的 404
+        _require_owned_session(session_id, user_id)
         session = harness.get_session(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")

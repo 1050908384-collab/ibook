@@ -1,4 +1,4 @@
-﻿import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import {
   apiClient,
+  getClientUserId,
   isUiPreviewMode,
   type ApiLearningPackage,
   type ApiProfile,
@@ -238,9 +239,11 @@ type AssessmentState = {
   questions: TestQuestion[];
 };
 
-const PROJECTS_STORAGE_KEY = 'learningProjects';
-const CONVERSATIONS_STORAGE_KEY = 'stageConversations';
-const OWNED_SESSION_IDS_STORAGE_KEY = 'ownedSessionIds';
+const USER_SCOPE = getClientUserId();
+const SESSION_STORAGE_KEY = `sessionId:${USER_SCOPE}`;
+const PROJECTS_STORAGE_KEY = `learningProjects:${USER_SCOPE}`;
+const CONVERSATIONS_STORAGE_KEY = `stageConversations:${USER_SCOPE}`;
+const OWNED_SESSION_IDS_STORAGE_KEY = `ownedSessionIds:${USER_SCOPE}`;
 const DEMO_SESSION_ID = 'demo-preview';
 
 function isLocalSessionId(sessionId?: string) {
@@ -2406,7 +2409,7 @@ export default function App() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
   const [reuseUserProfile, setReuseUserProfile] = useState(false);
-  const [checkingUserProfile, setCheckingUserProfile] = useState(() => !isUiPreviewMode && !localStorage.getItem('sessionId'));
+  const [checkingUserProfile, setCheckingUserProfile] = useState(() => !isUiPreviewMode && !localStorage.getItem(SESSION_STORAGE_KEY));
   const [profileCheckError, setProfileCheckError] = useState<string | null>(null);
   const [projectsLoading, setProjectsLoading] = useState(!isUiPreviewMode);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -2664,7 +2667,7 @@ export default function App() {
 
   useEffect(() => {
     if (isUiPreviewMode) return;
-    if (localStorage.getItem('sessionId')) {
+    if (localStorage.getItem(SESSION_STORAGE_KEY)) {
       setCheckingUserProfile(false);
       return;
     }
@@ -2735,10 +2738,10 @@ export default function App() {
 
   useEffect(() => {
     if (isUiPreviewMode) return;
-    const savedSessionId = localStorage.getItem('sessionId');
+    const savedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!savedSessionId) return;
     if (isLocalSessionId(savedSessionId)) {
-      localStorage.removeItem('sessionId');
+      localStorage.removeItem(SESSION_STORAGE_KEY);
       setLearningProjects((projects) => projects.filter((project) => !isLocalSessionId(project.sessionId)));
       setStageConversations((conversations) => conversations.filter((conversation) => !isLocalSessionId(conversation.sessionId)));
       setWorkflow('onboarding');
@@ -2765,7 +2768,7 @@ export default function App() {
           void loadDashboardStages(savedSessionId, activeStage);
           setWorkflow(nextWorkflow);
         } else {
-          localStorage.removeItem('sessionId');
+          localStorage.removeItem(SESSION_STORAGE_KEY);
           setSessionId(null);
           void restoreDiagnosisState(savedSessionId);
           setWorkflow('onboarding');
@@ -2788,7 +2791,7 @@ export default function App() {
         }
       })
       .catch(() => {
-        localStorage.removeItem('sessionId');
+        localStorage.removeItem(SESSION_STORAGE_KEY);
         setSessionId(null);
         setWorkflow('onboarding');
       });
@@ -2833,7 +2836,7 @@ export default function App() {
         learning_style: onboardingForm.learning_style
       });
       setSessionId(activeSessionId);
-      localStorage.setItem('sessionId', activeSessionId);
+      localStorage.setItem(SESSION_STORAGE_KEY, activeSessionId);
 
       if (response.status === 'needs_more_info') {
         const questions = response.followup_questions || [];
@@ -2899,6 +2902,15 @@ export default function App() {
     setInput('');
     setError(null);
     setMessages((prev) => [...prev, { id: shortId(), role: 'user', content: text }]);
+    if (isUiPreviewMode) {
+      setMessages((prev) => [...prev, {
+        id: shortId(),
+        role: 'assistant',
+        content: '（UI 预览模式：此演示环境不会调用真实后端接口。请将 frontend/.env.local 中 VITE_UI_PREVIEW 设为 false 并重启前端，以使用真实的多 Agent 服务。）',
+        note: '预览模式提示'
+      }]);
+      return;
+    }
     setLoading(true);
     const initialDiagnosis = !sessionId || !profile?.goal;
     const invokedAgents: AgentId[] = initialDiagnosis ? ['agent1'] : ['agent3', 'agent4'];
@@ -2909,7 +2921,7 @@ export default function App() {
         const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
         const response = await apiClient.submitDiagnosis(activeSessionId, text);
         setSessionId(activeSessionId);
-        localStorage.setItem('sessionId', activeSessionId);
+        localStorage.setItem(SESSION_STORAGE_KEY, activeSessionId);
         if (response.status === 'needs_more_info') {
           setMessages((prev) => [...prev, {
             id: shortId(),
@@ -3131,7 +3143,7 @@ export default function App() {
 
     await Promise.allSettled([...remoteSessionIds].map((remoteSessionId) => apiClient.abandonSession(remoteSessionId)));
 
-    localStorage.removeItem('sessionId');
+    localStorage.removeItem(SESSION_STORAGE_KEY);
     localStorage.removeItem(PROJECTS_STORAGE_KEY);
     localStorage.removeItem(CONVERSATIONS_STORAGE_KEY);
     localStorage.removeItem(OWNED_SESSION_IDS_STORAGE_KEY);
@@ -3355,7 +3367,7 @@ export default function App() {
     if (!newGoalReturnState) return;
     const previous = newGoalReturnState;
     setSessionId(previous.sessionId);
-    if (previous.sessionId) localStorage.setItem('sessionId', previous.sessionId);
+    if (previous.sessionId) localStorage.setItem(SESSION_STORAGE_KEY, previous.sessionId);
     setProfile(previous.profile);
     setStage(previous.stage);
     setLearningPackage(previous.learningPackage);
@@ -3390,7 +3402,7 @@ export default function App() {
       return;
     }
     if (isLocalSessionId(nextSessionId)) {
-      localStorage.removeItem('sessionId');
+      localStorage.removeItem(SESSION_STORAGE_KEY);
       setLearningProjects((projects) => projects.filter((project) => project.sessionId !== nextSessionId));
       setStageConversations((conversations) => conversations.filter((conversation) => conversation.sessionId !== nextSessionId));
       setSessionId(null);
@@ -3412,7 +3424,7 @@ export default function App() {
       const nextProfile = toProfile(session.profile);
       if (!nextProfile) throw new Error('学习项目画像解析失败');
       setSessionId(nextSessionId);
-      localStorage.setItem('sessionId', nextSessionId);
+      localStorage.setItem(SESSION_STORAGE_KEY, nextSessionId);
       setProfile(nextProfile);
       setOnboardingForm(formDataFromProfile(nextProfile));
       setStage(activeStage);
@@ -3456,7 +3468,7 @@ export default function App() {
     try {
       const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
       setSessionId(activeSessionId);
-      localStorage.setItem('sessionId', activeSessionId);
+      localStorage.setItem(SESSION_STORAGE_KEY, activeSessionId);
       const response = await apiClient.getGoalBlocks(activeSessionId, goal);
       const blocks = toKnowledgeGraphBlocks(response.blocks || []);
       setFoundationPickerBlocks(blocks.length ? blocks : knowledgeGraphBlocks);
@@ -3500,7 +3512,7 @@ export default function App() {
 
       if (targetSessionId !== sessionId) return;
 
-      localStorage.removeItem('sessionId');
+      localStorage.removeItem(SESSION_STORAGE_KEY);
       const nextProject = sortProjectsForDashboard(remainingProjects, null)[0];
       if (nextProject && !isLocalSessionId(nextProject.sessionId)) {
         await switchLearningProject(nextProject.sessionId, undefined, 'learn', true);

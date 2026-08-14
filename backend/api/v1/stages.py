@@ -5,14 +5,14 @@ v1/stages.py - Agent1/3 前端 API：阶段与学习包接口
 对应文档：Agent13_API接口任务说明.md 第 3 节
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from api.dependencies import get_harness
+from api.dependencies import get_harness, require_owned_session
 from api.v1.schemas import to_public_learning_package, to_public_question
 
-router = APIRouter(prefix="/sessions/{session_id}/stages", tags=["Stages"])
+router = APIRouter(prefix="/sessions/{session_id}/stages", tags=["Stages"], dependencies=[Depends(require_owned_session)])
 harness = get_harness()
 
 

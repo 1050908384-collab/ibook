@@ -3,10 +3,13 @@ import sys
 import os
 import logging
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from api.chat import router as chat_router
 from api.session import router as session_router
@@ -99,9 +102,60 @@ app.include_router(v1_stages_router, prefix="/api/v1", tags=["Stages"])
 app.include_router(v1_qa_router, prefix="/api/v1", tags=["Q&A"])
 app.include_router(v1_user_scope_router, prefix="/api/v1", tags=["User Scope"])
 
-@app.get("/")
-def root():
-    return {"message": f"{settings.APP_NAME} is running"}
+# =====================================================================
+# 生产模式前端静态资源托管 (单端口 8500 一键部署)
+# 当执行过 npm run build 生成 frontend/dist 后，后端直接托管前端，
+# 启动后浏览器访问 http://localhost:8500 就是完整 UI，无需再跑 Vite。
+# 支持 React BrowserRouter 的 SPA 回退：任何非 /api/ 路径都回退 index.html
+# =====================================================================
+BACKEND_DIR = Path(__file__).resolve().parent
+FRONTEND_DIST = (BACKEND_DIR.parent / "frontend" / "dist").resolve()
+FRONTEND_INDEX = FRONTEND_DIST / "index.html"
+
+if FRONTEND_DIST.is_dir() and FRONTEND_INDEX.is_file():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="frontend-assets")
+    # favicon / manifest 等根目录静态文件（逐个挂载，避免和 SPA 回退冲突）
+    for child in FRONTEND_DIST.iterdir():
+        if child.is_file() and child.name != "index.html":
+            safe_name = child.name.strip("/")
+            if not safe_name or safe_name == "assets":
+                continue
+            try:
+                app.mount(f"/{safe_name}", StaticFiles(directory=str(FRONTEND_DIST), html=False), name=f"fe-{safe_name}")
+            except Exception:
+                pass
+
+    _index_bytes: bytes | None = None
+    _index_mtime: float = 0.0
+
+    def read_index_html() -> bytes:
+        global _index_bytes, _index_mtime
+        try:
+            mtime = FRONTEND_INDEX.stat().st_mtime
+        except OSError:
+            return b""
+        if _index_bytes is None or mtime != _index_mtime:
+            _index_bytes = FRONTEND_INDEX.read_bytes()
+            _index_mtime = mtime
+        return _index_bytes
+
+    @app.get("/", include_in_schema=False)
+    def root_prod() -> HTMLResponse:
+        return HTMLResponse(read_index_html())
+
+    @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
+    async def spa_fallback(path: str, request: Request) -> HTMLResponse:
+        # /api/* 和 /docs /openapi.json /health 等已知路径不进入 SPA 回退
+        if path.startswith("api/") or path in {"docs", "openapi.json", "health", "redoc"}:
+            return HTMLResponse(status_code=404, content="Not Found")
+        data = read_index_html()
+        if not data:
+            return HTMLResponse(status_code=404, content="Frontend dist not found. Run `npm run build` in frontend/.")
+        return HTMLResponse(data)
+else:
+    @app.get("/")
+    def root():
+        return {"message": f"{settings.APP_NAME} is running", "tip": "Run `npm run build` in frontend/ to host UI here on the same port."}
 
 @app.get("/health")
 def health_check():
@@ -109,9 +163,12 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+    from api.dependencies import get_harness
+
+    resolved_database_url = get_harness().state_manager.db_client.database_url
     print(
         f"[STARTUP] backend listening on http://{settings.APP_HOST}:{settings.APP_PORT} "
-        f"log_level={settings.LOG_LEVEL.upper()} database={settings.DATABASE_URL}",
+        f"log_level={settings.LOG_LEVEL.upper()} database={resolved_database_url}",
         flush=True,
     )
     uvicorn.run(

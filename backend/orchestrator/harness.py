@@ -1616,7 +1616,7 @@ class Harness:
         self.state_manager.abandon_session(session_id)
         self._log(session_id, "session:abandon")
 
-    def create_session(self, session_id: str | None = None) -> dict:
-        session = self.state_manager.create_session(session_id)
+    def create_session(self, session_id: str | None = None, user_id: str = "local-user") -> dict:
+        session = self.state_manager.create_session(session_id, user_id)
         self._log(session["session_id"], "session:create")
         return session

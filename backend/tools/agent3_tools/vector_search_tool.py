@@ -274,11 +274,23 @@ def _ensure_fts_index(db_path: Path) -> None:
             if not exists:
                 rw.execute("""
                     CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunks_fts
-                    USING fts5(content, content=knowledge_chunks, content_rowid=rowid,
-                               tokenize='trigram')
+                    USING fts5(
+                        chunk_id UNINDEXED,
+                        block_id UNINDEXED,
+                        subtopic_id UNINDEXED,
+                        content,
+                        tokenize='trigram'
+                    )
                 """)
-            # 新建或行数不一致时，rebuild 同步全部数据
-            rw.execute("INSERT INTO knowledge_chunks_fts(knowledge_chunks_fts) VALUES('rebuild')")
+            # knowledge_chunks_fts is an independent FTS table.  Keep its
+            # metadata columns so query-time filters and chunk_id joins work.
+            rw.execute("DELETE FROM knowledge_chunks_fts")
+            rw.execute("""
+                INSERT INTO knowledge_chunks_fts(chunk_id, block_id, subtopic_id, content)
+                SELECT c.chunk_id, c.block_id, COALESCE(d.subtopic_id, ''), c.content
+                FROM knowledge_chunks c
+                LEFT JOIN knowledge_docs d ON d.doc_id = c.doc_id
+            """)
             rw.commit()
             logger.info("FTS5 索引同步完成")
         finally:
@@ -304,25 +316,31 @@ def _search_sqlite_fallback(query: str, block_ids: List[str], subtopic_ids: List
 
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
-            # 构建 block_ids + subtopic_ids 联合过滤范围（基于 c/d 实表列）
+            # 构建 block_ids + subtopic_ids 联合过滤范围。
+            # FTS5 表保存了 scope 元数据，既能过滤又能保持 BM25 排序。
             scope_clauses = []
             scope_params: list[str] = []
             if block_ids:
                 placeholders = ", ".join("?" for _ in block_ids)
-                scope_clauses.append(f"c.block_id IN ({placeholders})")
+                scope_clauses.append(f"f.block_id IN ({placeholders})")
                 scope_params.extend(block_ids)
             if subtopic_ids:
                 placeholders = ", ".join("?" for _ in subtopic_ids)
-                scope_clauses.append(f"d.subtopic_id IN ({placeholders})")
+                scope_clauses.append(f"f.subtopic_id IN ({placeholders})")
                 scope_params.extend(subtopic_ids)
             where_scope = " AND ".join(scope_clauses) if scope_clauses else "1 = 1"
+            table_scope = (
+                where_scope
+                .replace("f.block_id", "c.block_id")
+                .replace("f.subtopic_id", "d.subtopic_id")
+            )
 
             if not query.strip():
                 rows = conn.execute(f"""
                     SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
                     FROM knowledge_chunks c
                     JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                    WHERE {where_scope}
+                    WHERE {table_scope}
                     ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, c.chunk_index
                     LIMIT ?
                 """, scope_params + [top_k]).fetchall()
@@ -330,37 +348,24 @@ def _search_sqlite_fallback(query: str, block_ids: List[str], subtopic_ids: List
 
             match_query = _build_fts_match_query(query)
             if not match_query:
-                return _search_sqlite_like_fallback(conn, where_scope, scope_params, query, top_k), True
+                return _search_sqlite_like_fallback(conn, table_scope, scope_params, query, top_k), True
 
-            # FTS5 BM25：通过 rowid 子查询（external-content 模式）
-            # knowledge_chunks_fts(rowid=knowledge_chunks.rowid, content)；
-            # 按 BM25 rank 选出 top_k*2 候选 rowid，再回实表 JOIN + 范围过滤 + 取 top_k。
-            fts_params = [match_query, top_k * 2]
-            if where_scope == "1 = 1":
-                filter_sql = ""
-                filter_params: list = []
-            else:
-                filter_sql = f"AND {where_scope}"
-                filter_params = scope_params
-
+            # The FTS table is independent, so its rowid is not the rowid of
+            # knowledge_chunks.  Join through the stable chunk_id instead.
             rows = conn.execute(f"""
-                SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
-                FROM knowledge_chunks c
+                SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title,
+                       bm25(knowledge_chunks_fts) AS score
+                FROM knowledge_chunks_fts f
+                JOIN knowledge_chunks c ON c.chunk_id = f.chunk_id
                 LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
-                WHERE c.rowid IN (
-                    SELECT rowid FROM knowledge_chunks_fts
-                    WHERE knowledge_chunks_fts MATCH ?
-                    ORDER BY rank
-                    LIMIT ?
-                )
-                {filter_sql}
-                ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END
+                WHERE knowledge_chunks_fts MATCH ? AND {where_scope}
+                ORDER BY score ASC
                 LIMIT ?
-            """, fts_params + filter_params + [top_k]).fetchall()
+            """, [match_query, *scope_params, top_k]).fetchall()
 
             if not rows:
                 logger.info("FTS5 无结果，退化为 LIKE 模糊匹配")
-                return _search_sqlite_like_fallback(conn, where_scope, scope_params, query, top_k), True
+                return _search_sqlite_like_fallback(conn, table_scope, scope_params, query, top_k), True
         finally:
             conn.close()
 
