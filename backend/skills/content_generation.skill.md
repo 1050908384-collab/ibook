@@ -200,3 +200,13 @@ Agent3 在 `generate_answer` 方法中检测到代码纠错意图时：
 ## 8. 版本信息
 - 版本：v3.4，更新日期：2026-08-02
 - 变更记录：v3.4 移除旧的直接标准答案检索；用户答疑以知识文档检索结果作为可选上下文，由本地 LLM 生成回答，并继续走 Agent4 审核与改稿链路。
+
+<!-- RUNTIME_POLICY_START -->
+## Runtime Policy
+
+- Treat each source chunk as the complete factual boundary. Personalize by changing wording, ordering, terminology explanation, and emphasis for the learner.
+- Preserve the source chunk's factual coverage. Do not add new facts, code, examples, exercises, summaries, sections, or cross-topic material.
+- The final non-whitespace character count must be less than or equal to the source chunk's non-whitespace character count.
+- When a review requires a correction, change only the cited part. Do not append a revision note to learner-facing content.
+- Return Markdown body only. Do not describe the rewrite process.
+<!-- RUNTIME_POLICY_END -->

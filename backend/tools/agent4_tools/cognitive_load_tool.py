@@ -169,6 +169,7 @@ def cognitive_load(input_data: dict, config: dict = None) -> dict:
     _ = config or {}
     try:
         content = (input_data or {}).get("content") or ""
+        max_output_length = (input_data or {}).get("max_output_length")
         if not content.strip():
             return {
                 "status": "error",
@@ -185,6 +186,17 @@ def cognitive_load(input_data: dict, config: dict = None) -> dict:
 
         red_line = level > RED_LINE_LEVEL
         issues = _build_issues(density, level, red_line, complexity)
+        if isinstance(max_output_length, int) and max_output_length > 0 and chars["effective"] > max_output_length:
+            issues.append({
+                "issue_type": "verbosity_over_budget",
+                "severity": "major",
+                "location": "full_text",
+                "description": (
+                    f"Output length {chars['effective']} exceeds the approved source budget "
+                    f"of {max_output_length} characters."
+                ),
+                "suggestion": "Remove repetition and unsupported expansion; keep the revised text within the source budget.",
+            })
 
         return {
             "status": "success",
@@ -313,8 +325,11 @@ class CognitiveLoadTool:
     def __init__(self):
         pass
 
-    async def analyze(self, content: str) -> List[Dict[str, Any]]:
-        result = cognitive_load({"content": content})
+    async def analyze(self, content: str, max_output_length: int | None = None) -> List[Dict[str, Any]]:
+        result = cognitive_load({
+            "content": content,
+            "max_output_length": max_output_length,
+        })
         if result.get("status") != "success":
             return []
         issues = result["data"].get("issues", [])

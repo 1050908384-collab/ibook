@@ -68,8 +68,27 @@ SKILL_NAMES = (
 )
 
 
+DAILY_ANSWER_LIMIT = 150
+TECHNICAL_ANSWER_TOKENS = 600
+DAILY_ANSWER_TOKENS = 180
+
+
 def get_skill_context(skill_names: list[str]) -> str:
     return "\n\n".join(skill.content for skill in load_skills(skill_names))
+
+
+def get_runtime_skill_context(skill_names: list[str]) -> str:
+    """Load only the runtime rules declared by a skill, not its examples."""
+    policies = []
+    for skill in load_skills(skill_names):
+        match = re.search(
+            r"<!-- RUNTIME_POLICY_START -->(.*?)<!-- RUNTIME_POLICY_END -->",
+            skill.content,
+            flags=re.DOTALL,
+        )
+        if match:
+            policies.append(match.group(1).strip())
+    return "\n\n".join(policies)
 
 
 def _agent_log(agent_name: str, message: str) -> None:
@@ -2141,8 +2160,53 @@ class HybridContentAgent(DeterministicContentAgent):
     def __init__(self, database_url: str = None):
         super().__init__(database_url=database_url)
         self.llm_client = LLMClient()
-        self.content_skill_context = get_skill_context(["content_generation", "code_style"])
-        self.answer_skill_context = get_skill_context(["question_answering"])
+        self.content_skill_context = get_runtime_skill_context(["content_generation"])
+        self.answer_skill_context = get_runtime_skill_context(["question_answering"])
+
+    @staticmethod
+    def _effective_length(text: str) -> int:
+        """Count visible content consistently for source/output budgets."""
+        return len(re.sub(r"\s+", "", text or ""))
+
+    @classmethod
+    def _fits_budget(cls, text: str, budget: int) -> bool:
+        return bool(text and text.strip()) and budget > 0 and cls._effective_length(text) <= budget
+
+    @staticmethod
+    def _source_max_tokens(source_text: str, floor: int = 160, ceiling: int = 1600) -> int:
+        # Chinese text is typically encoded in substantially fewer tokens than
+        # characters. The post-generation budget check below remains decisive.
+        return max(floor, min(ceiling, max(1, HybridContentAgent._effective_length(source_text) // 2)))
+
+    @staticmethod
+    def _clip_daily_answer(answer: str, limit: int = DAILY_ANSWER_LIMIT) -> str:
+        """Last-resort guard for a daily reply when the model ignores its limit."""
+        text = (answer or "").strip()
+        if len(text) <= limit:
+            return text
+        candidate = text[:limit]
+        boundary = max(candidate.rfind(mark) for mark in ("\n", "。", "！", "？", ".", "!", "?"))
+        if boundary >= limit // 2:
+            return candidate[:boundary + 1].strip()
+        return text[:max(0, limit - 3)].rstrip() + "..."
+
+    async def _compress_to_budget(self, text: str, budget: int) -> str:
+        """Give a good response one concise retry before using a safe fallback."""
+        if self._fits_budget(text, budget):
+            return text.strip()
+        if not text or budget <= 0:
+            return ""
+        prompt = f"""Condense the following content without adding facts. Keep its key explanation and preserve Markdown when present. The result must contain no more than {budget} non-whitespace characters.\n\n{text}"""
+        try:
+            response = await self.llm_client.complete(
+                prompt,
+                system_prompt="You are a precise technical editor. Return only the condensed content.",
+                max_tokens=self._source_max_tokens(text, floor=96, ceiling=900),
+                temperature=0.2,
+            )
+        except Exception:
+            return ""
+        return response.strip() if self._fits_budget(response, budget) else ""
 
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
         output = await super().run(request)
@@ -2154,6 +2218,7 @@ class HybridContentAgent(DeterministicContentAgent):
             f"## 资料：{item.get('title', '')}\n{item.get('content', '')}"
             for item in related_docs
         )
+        source_material = "\n\n".join(str(item.get("content") or "") for item in related_docs)
         # 阶段知识点列表（让 LLM 知道本阶段要覆盖的所有知识点，教程结构对齐 agent1 的知识点级阶段）
         stage_topic_names = self._stage_subtopic_names(stage)
         stage_topic_text = "、".join(stage_topic_names)
@@ -2166,11 +2231,10 @@ class HybridContentAgent(DeterministicContentAgent):
 实训条件：{json.dumps(request.practice_profile.model_dump(mode="json"), ensure_ascii=False)}
 
 要求：
-1. 解释核心概念和适用场景；
-2. 给出清晰的学习步骤；
-3. 提供一个简短示例；
-4. 根据学习者画像和资料库选择内容、示例难度和表达方式；
-5. 实训条件仅用于内容可执行性，不得改变 Agent1 的知识点路径，也不得将本地或云端选择作为教程目标。
+1. 保留原资料中的核心概念、事实与已有结构；
+2. 仅根据学习者画像调整表达难度、术语解释和重点顺序；
+3. 不得新增代码、示例、练习、总结、额外章节或跨知识点内容；
+4. 实训条件仅用于表达适配，不得改变 Agent1 的知识点路径，也不得将本地或云端选择作为教程目标。
 
 本节经检索确认的知识库资料：
 {material_context or '无可用资料，不得补充未验证的技术细节。'}
@@ -2182,10 +2246,18 @@ class HybridContentAgent(DeterministicContentAgent):
             prompt,
             system_prompt="你是严谨、清晰的个性化学习助手。",
             temperature=0.4,
+            max_tokens=self._source_max_tokens(source_material),
         )
+        source_budget = self._effective_length(source_material)
+        if source_budget and not self._fits_budget(tutorial, source_budget):
+            tutorial = await self._compress_to_budget(tutorial, source_budget)
         if self._is_usable_tutorial(tutorial, stage, related_docs):
             output.learning_package.tutorial = tutorial
             _agent_log("Agent3", f"content:llm_done | tutorial_len={len(tutorial)}")
+        elif source_budget:
+            # The raw retrieved material is a grounded, length-safe fallback.
+            output.learning_package.tutorial = source_material.strip()
+            _agent_log("Agent3", "content:llm_over_budget -> source_material_fallback")
         else:
             _agent_log("Agent3", "content:llm_invalid -> retrieved_material_fallback")
         return output
@@ -2199,7 +2271,7 @@ class HybridContentAgent(DeterministicContentAgent):
         block_index: int = 0,
         session_id: str = "",
     ) -> ContentBlock:
-        """块级个性化（Hybrid）：先构造确定性块骨架，再用 LLM 对本块做解释/降维/补例。
+        """块级个性化（Hybrid）：先构造确定性块骨架，再用 LLM 在原文范围内改写表达。
 
         仅改写 personalized_content（表达层），不改动 source_chunk_id / 标题路径 /
         Claim 等溯源字段，保证 Agent4 仍能回查来源块做事实核验。LLM 失败或产出
@@ -2225,10 +2297,11 @@ class HybridContentAgent(DeterministicContentAgent):
 {source_text}
 
 要求：
-1. 仅解释、降维或补充可执行示例，不得添加原文没有的技术断言；
-2. 保持与本块知识点一致，不跨块扩展；
-3. 依据画像调整表达难度和示例；实训条件仅用于示例可执行性；
+1. 仅对原文进行表达降维、术语释义和重点重排，不得新增事实；
+2. 不得新增代码、示例、练习、总结、新章节或跨块内容；
+3. 依据画像调整表达难度与重点；实训条件仅用于表达适配；
 4. 输出 Markdown 正文，不要输出标题层级之外的元信息。
+5. 输出的有效字符数不得超过原始材料的 {self._effective_length(source_text)} 字符。
 
 内容生成规范：
 {self.content_skill_context}
@@ -2238,14 +2311,21 @@ class HybridContentAgent(DeterministicContentAgent):
                 prompt,
                 system_prompt="你是严谨、清晰的个性化学习助手，只在给定资料范围内改写。",
                 temperature=0.4,
+                max_tokens=self._source_max_tokens(source_text),
             )
         except Exception:
             rewritten = ""
-        if rewritten and len(rewritten.strip()) >= 20:
+        budget = self._effective_length(source_text)
+        if rewritten and not self._fits_budget(rewritten, budget):
+            rewritten = await self._compress_to_budget(rewritten, budget)
+        if rewritten and self._fits_budget(rewritten, budget):
             block.personalized_content = rewritten.strip()
             _agent_log("Agent3", f"block:llm_done | cb={block.content_block_id} | len={len(rewritten)}")
         else:
-            _agent_log("Agent3", f"block:llm_invalid -> deterministic_fallback | cb={block.content_block_id}")
+            # Deterministic personalization adds notes, so use source_text here
+            # to keep the user-facing material within the original budget.
+            block.personalized_content = source_text
+            _agent_log("Agent3", f"block:llm_invalid -> source_fallback | cb={block.content_block_id}")
         return block
 
     async def modify_block(
@@ -2258,6 +2338,7 @@ class HybridContentAgent(DeterministicContentAgent):
 
         仅回传修订后的单块（任务 6）；LLM 失败时回退确定性修订。溯源字段不变。
         """
+        original_content = (block.personalized_content or "").strip()
         base = await super().modify_block(block, issues, revision_note)
         if not issues:
             return base
@@ -2282,6 +2363,7 @@ class HybridContentAgent(DeterministicContentAgent):
 1. 逐条落实审核意见，不得引入新的未核验技术事实；
 2. 保持与来源块一致，不跨块扩展；
 3. 输出修订后的完整 Markdown 正文。
+4. 修订后的有效字符数不得超过原正文的 {self._effective_length(original_content)} 字符。
 
 内容生成规范：
 {self.content_skill_context}
@@ -2291,11 +2373,17 @@ class HybridContentAgent(DeterministicContentAgent):
                 prompt,
                 system_prompt="你是严谨的个性化学习助手，按审核意见定点修订，不越界。",
                 temperature=0.3,
+                max_tokens=self._source_max_tokens(original_content),
             )
         except Exception:
             rewritten = ""
-        if rewritten and len(rewritten.strip()) >= 20:
+        budget = self._effective_length(original_content)
+        if rewritten and not self._fits_budget(rewritten, budget):
+            rewritten = await self._compress_to_budget(rewritten, budget)
+        if rewritten and self._fits_budget(rewritten, budget):
             base.personalized_content = rewritten.strip()
+        else:
+            base.personalized_content = original_content
         return base
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
@@ -2441,6 +2529,7 @@ class HybridContentAgent(DeterministicContentAgent):
             prompt,
             system_prompt="你是技术准确、适合教学的学习助手。",
             temperature=0.5,
+            max_tokens=TECHNICAL_ANSWER_TOKENS,
         )
         if self._is_valid_response(answer):
             _agent_log("Agent3", f"answer:llm_done | answer_len={len(answer)}")
@@ -2561,7 +2650,7 @@ class HybridContentAgent(DeterministicContentAgent):
 2. 参考历史对话，理解用户当前的学习状态和情绪
 3. 不要引用技术学习材料，保持轻松自然的对话风格
 4. 语气要亲切自然，像朋友间的对话，避免说教
-5. 回答要简洁，不要过长（一般不超过300字）"""
+5. 回答要简洁，不超过150字，最多3句，不重复安慰或追问。"""
 
         prompt = f"""用户问题：{request.question}
 
@@ -2577,9 +2666,14 @@ class HybridContentAgent(DeterministicContentAgent):
 请生成一个温暖、有针对性的回答。"""
 
         try:
-            response = await self.llm_client.complete(prompt, system_prompt, temperature=0.8)
+            response = await self.llm_client.complete(
+                prompt,
+                system_prompt,
+                temperature=0.5,
+                max_tokens=DAILY_ANSWER_TOKENS,
+            )
             if response and not response.startswith("Error:"):
-                return response
+                return self._clip_daily_answer(response)
         except Exception:
             pass
         # LLM 失败回退到父类的确定性日常回答
@@ -2603,9 +2697,15 @@ class HybridContentAgent(DeterministicContentAgent):
             prompt,
             system_prompt="你是Agent3内容生成专家，负责依据合并审核意见严谨改稿。",
             temperature=0.3,
+            max_tokens=self._source_max_tokens(request.learning_package.tutorial),
         )
+        original_budget = self._effective_length(request.learning_package.tutorial)
+        if tutorial and not self._fits_budget(tutorial, original_budget):
+            tutorial = await self._compress_to_budget(tutorial, original_budget)
         if not self._is_valid_response(tutorial):
-            return await super().revise_learning_package(request)
+            # Keep the reviewed source unchanged instead of using the older
+            # deterministic revision path, which appends a revision note.
+            return ContentGenerationOutput(learning_package=request.learning_package.model_copy(deep=True))
         package = request.learning_package.model_copy(deep=True)
         package.tutorial = tutorial
         package.version += 1
@@ -2641,9 +2741,10 @@ class HybridContentAgent(DeterministicContentAgent):
             prompt,
             system_prompt="你是Agent3答疑专家，负责依据合并审核意见修改回答。",
             temperature=0.3,
+            max_tokens=TECHNICAL_ANSWER_TOKENS,
         )
         if not self._is_valid_response(answer):
-            return await super().revise_answer(request)
+            return AnswerGenerationOutput(answer=request.answer)
         return AnswerGenerationOutput(answer=answer)
 
     def _format_feedback(self, technical_errors: list[ReviewError], quality_errors: list[ReviewError]) -> str:
@@ -2671,11 +2772,6 @@ class HybridContentAgent(DeterministicContentAgent):
             "错误类型及其处理", "Google Python Style Guide", "OWASP",
         )
         if any(marker in text for marker in review_markers):
-            return False
-        # A complete learning package must be substantial enough to cover the
-        # imported stage materials. A short response is usually an unrelated
-        # template, even when it happens to be valid Markdown.
-        if related_docs and len(text) < 3000:
             return False
         return text.startswith("#") or stage.block_name in text
 
