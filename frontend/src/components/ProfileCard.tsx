@@ -43,7 +43,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         <div className="profile-item">
           <Clock size={18} />
           <div className="item-content">
-            <p className="item-label">每日学习时长</p>
+            <p className="item-label">每阶段学习时长</p>
             <p className="item-value">{profile.daily_hours}小时</p>
           </div>
         </div>

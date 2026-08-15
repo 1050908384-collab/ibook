@@ -568,7 +568,7 @@ class DeterministicDiagnosticAgent:
 
     @staticmethod
     def _has_daily_hours(text: str) -> bool:
-        return bool(re.search(r"(?:每天|每日)?.{0,8}?[0-9]+(?:\.[0-9]+)?\s*(?:小时|h|H)", text))
+        return bool(re.search(r"(?:每天|每日|每阶段)?.{0,8}?[0-9]+(?:\.[0-9]+)?\s*(?:小时|h|H)", text))
 
     @staticmethod
     def _has_learning_style(text: str) -> bool:
@@ -945,7 +945,7 @@ class DeterministicDiagnosticAgent:
             "goal": goal,
             "daily_hours": self._extract_daily_hours(self._labeled_value(
                 text,
-                ("我每天可以学习", "每天可以学习", "每日学习时长", "daily study hours", "daily hours"),
+                ("我每天可以学习", "每天可以学习", "每日学习时长", "我每阶段可以学习", "每阶段学习时长", "每阶段可以学习", "daily study hours", "daily hours"),
             ) or text),
             "learning_style": self._extract_learning_style(self._labeled_value(
                 text,
@@ -989,7 +989,7 @@ class DeterministicDiagnosticAgent:
     def _extract_daily_hours(text: str) -> float:
         match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:小时|h|H)", text)
         if not match:
-            match = re.search(r"(?:每天|每日).{0,8}?([0-9]+(?:\.[0-9]+)?)", text)
+            match = re.search(r"(?:每天|每日|每阶段).{0,8}?([0-9]+(?:\.[0-9]+)?)", text)
         if not match:
             return 2.0
         hours = float(match.group(1))

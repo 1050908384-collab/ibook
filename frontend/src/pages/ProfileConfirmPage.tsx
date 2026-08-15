@@ -86,7 +86,7 @@ export default function ProfileConfirmPage({ profile, stage, loading, error, onE
               <div><dt>已有基础</dt><dd>{profile.skill_tags?.length ? profile.skill_tags.join('、') : profile.foundation_confirmed ? '已确认：暂无基础' : '未填写'}</dd></div>
               <div><dt>知识盲区</dt><dd>{gaps.map((gap) => gap.skill).join('、') || '等待推断'}</dd></div>
               <div><dt>学习目标</dt><dd>{profile.goal || '未提供'}</dd></div>
-              <div><dt>每日学习时长</dt><dd>{profile.daily_hours ?? 2} 小时</dd></div>
+              <div><dt>每阶段学习时长</dt><dd>{profile.daily_hours ?? 2} 小时</dd></div>
               <div><dt>学习方式</dt><dd>{displayStyle(profile.learning_style)}</dd></div>
               <div><dt>设备条件</dt><dd>{profile.hardware || '未提供'}</dd></div>
             </dl>

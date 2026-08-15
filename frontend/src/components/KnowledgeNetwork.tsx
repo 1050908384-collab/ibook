@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { Check, CircleAlert, Loader2, LocateFixed, Target } from 'lucide-react';
+import { Check, CircleAlert, Loader2, LocateFixed, Minus, Plus, Target } from 'lucide-react';
 import { apiClient, isUiPreviewMode, type KnowledgeNetworkSubtopicStatus } from '../api/client';
 import { knowledgeGraphBlocks, type KnowledgeGraphSubtopic } from '../data/knowledgeGraph';
 import { buildKnowledgeNetworkLayout, type KnowledgeRouteEdge } from '../utils/knowledgeNetworkLayout';
@@ -68,6 +68,13 @@ export default function KnowledgeNetwork({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<NetworkMode>(defaultMode);
   const [dragging, setDragging] = useState(false);
+  // ---- 知识点图（SVG）专门的放大缩小：范围 70%~160% ----
+  const ZOOM_MIN = 0.7;
+  const ZOOM_MAX = 1.6;
+  const ZOOM_STEP = 0.1;
+  const [zoom, setZoom] = useState(1.0);
+  const zoomIn = () => setZoom((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
+  const zoomOut = () => setZoom((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef({
     active: false,
@@ -221,7 +228,30 @@ export default function KnowledgeNetwork({
           <span className="foundation"><i />首次填写基础</span>
           <span className="target"><i />当前目标</span>
         </div>
-        {showLocateControl && <div className="knowledge-network-actions" aria-label="图谱定位">
+        {showLocateControl && <div className="knowledge-network-actions" aria-label="图谱定位与缩放">
+          <div className="knowledge-network-zoom-controls" role="group" aria-label="知识点图放大缩小">
+            <button
+              type="button"
+              className="knowledge-zoom-button zoom-out"
+              onClick={zoomOut}
+              disabled={zoom <= ZOOM_MIN}
+              aria-label="缩小知识点图"
+              title={`缩小（当前 ${Math.round(zoom * 100)}%）`}
+            >
+              <Minus size={14} />
+            </button>
+            <span className="knowledge-zoom-indicator" aria-live="polite">{Math.round(zoom * 100)}%</span>
+            <button
+              type="button"
+              className="knowledge-zoom-button zoom-in"
+              onClick={zoomIn}
+              disabled={zoom >= ZOOM_MAX}
+              aria-label="放大知识点图"
+              title={`放大（当前 ${Math.round(zoom * 100)}%）`}
+            >
+              <Plus size={14} />
+            </button>
+          </div>
           <button type="button" className="knowledge-locate-button" onClick={() => selectMode('focus')} disabled={!currentId}>
             <LocateFixed size={15} />定位
           </button>
@@ -258,7 +288,7 @@ export default function KnowledgeNetwork({
         <svg
           className="knowledge-route-map"
           viewBox={`0 0 ${layout.width} ${layout.height}`}
-          style={{ width: layout.width, height: layout.height }}
+          style={{ width: layout.width * zoom, height: layout.height * zoom }}
           role="img"
           aria-label="15 个模块、73 个知识点及其前置关系组成的知识航线图"
         >

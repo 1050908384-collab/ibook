@@ -47,7 +47,7 @@ const SettingsPage: React.FC = () => {
           </div>
           
           <div className="setting-item">
-            <label>每日学习时长</label>
+            <label>每阶段学习时长</label>
             <div className="setting-control">
               <Clock size={16} />
               <input

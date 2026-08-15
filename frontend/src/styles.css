@@ -580,6 +580,8 @@ select:focus-visible {
   overflow: hidden;
   background: #f7f8fb;
   position: relative;
+  transition: grid-template-columns 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: grid-template-columns;
 }
 
 .chat-layout.context-collapsed {
@@ -871,12 +873,51 @@ body.resizing-workspace-panels * {
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #c8cedd transparent;
+  transition: padding 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              gap 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              background 0.2s ease;
+  will-change: padding, gap;
 }
 
 .context-panel.collapsed {
   padding: 10px 8px;
   align-items: center;
   overflow: hidden;
+}
+
+/* ---- 对话导航 body 的滑入/滑出动画（替代直接条件渲染的跳变）---- */
+.context-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateX(0);
+  transform-origin: left center;
+  max-height: 10000px;
+  /* 延迟 max-height 以保证先淡出再折叠高度，反向时先展开再淡入 */
+  transition:
+    opacity 0.22s ease 0s,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1) 0s,
+    max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.05s,
+    margin 0.25s ease,
+    padding 0.25s ease,
+    visibility 0s linear 0s;
+  visibility: visible;
+}
+
+.context-panel.collapsed .context-panel-body {
+  opacity: 0;
+  transform: translateX(-18px) scale(0.96);
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+  /* 淡出后再隐藏可交互性，避免 collapsed 状态下还能 tab 到里面的按钮 */
+  visibility: hidden;
+  transition-delay: 0s, 0s, 0.15s, 0s, 0s, 0.35s;
 }
 
 .context-panel-controls {
@@ -1542,6 +1583,13 @@ body.resizing-workspace-panels * {
   padding: 15px 20px;
 }
 
+.modal-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
 .profile-detail-modal header span {
   color: #8b91a0;
   font-size: 10px;
@@ -1562,6 +1610,16 @@ body.resizing-workspace-panels * {
   display: grid;
   place-items: center;
   cursor: pointer;
+}
+
+/* 不要用 header button 覆盖 zoom-button 的尺寸，否则胶囊内按钮被拉高 */
+.profile-detail-modal header .foundation-zoom-controls,
+.profile-detail-modal header .foundation-zoom-controls * {
+  box-sizing: border-box;
+}
+.profile-detail-modal header .foundation-zoom-controls .zoom-button {
+  width: 26px;
+  height: 26px;
 }
 
 .profile-detail-body {
@@ -4923,7 +4981,48 @@ body.resizing-workspace-panels * {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
+  gap: 10px;
   padding: 0;
+}
+
+/* ---------- 知识点图放大/缩小：紧挨着"定位"按钮 ---------- */
+.knowledge-network-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #dfe3ec;
+  border-radius: 999px;
+  background: #fff;
+}
+.knowledge-network-zoom-controls .knowledge-zoom-button {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: #f3f4f8;
+  color: #454d60;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+}
+.knowledge-network-zoom-controls .knowledge-zoom-button:hover:not(:disabled) {
+  background: #e6e9f2;
+  color: #1c202c;
+}
+.knowledge-network-zoom-controls .knowledge-zoom-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.knowledge-network-zoom-controls .knowledge-zoom-indicator {
+  min-width: 42px;
+  text-align: center;
+  font-size: 12px;
+  color: #545c70;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .knowledge-network-actions .knowledge-locate-button {
@@ -5427,12 +5526,94 @@ body.resizing-workspace-panels * {
   padding: 18px 0 20px;
 }
 
-.settings-knowledge-row > h3 {
+.settings-knowledge-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 8px;
+  flex-wrap: nowrap;  /* 标题和缩放控件强制同一行，不会折到第二行导致看不见 */
+  min-width: 0;
+}
+
+.settings-knowledge-heading > h3 {
   margin: 0;
   color: #252c39;
   font-size: 18px;
   line-height: 1.4;
-  padding-bottom: 8px;
+}
+
+/* ---- 已有知识基础：专门的 放大 / 缩小 两个按钮 ---- */
+.foundation-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px;
+  border: 1px solid #e4e7ef;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(32, 38, 60, 0.04);
+}
+
+.zoom-button {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: #f2f4fb;
+  color: #4d5569;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease, opacity 0.15s ease;
+}
+
+.zoom-button:hover:not(:disabled) {
+  background: #e8e4ff;
+  color: #5349d5;
+  transform: translateY(-0.5px);
+}
+
+.zoom-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
+}
+
+.zoom-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoom-indicator {
+  min-width: 42px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #575f73;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 缩放内容表面：根据 --foundation-zoom 变量统一缩放 ---- */
+.settings-foundation-zoom-surface {
+  /* 使用 CSS zoom：同时影响视觉尺寸 + 文档流占用空间，不会覆盖下方元素。
+     Windows 场景（Edge/Chrome）完整支持，视觉与布局都会随缩放变化。 */
+  --fz: var(--foundation-zoom, 1);
+  zoom: var(--fz);
+  /* 不支持 zoom 的浏览器回退到 transform，仅视觉缩放（不占文档流高度） */
+  /* stylelint-disable-next-line */
+  transform: scale(1);
+  transition: zoom 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@supports not (zoom: 1) {
+  .settings-foundation-zoom-surface {
+    zoom: unset;
+    transform-origin: top left;
+    transform: scale(var(--fz));
+    width: calc(100% / var(--fz));
+  }
 }
 
 .settings-knowledge-row .knowledge-network {

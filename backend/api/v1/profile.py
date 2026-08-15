@@ -197,7 +197,7 @@ async def update_profile(
     PATCH /api/v1/sessions/{session_id}/profile
     
     请求体字段：
-    - daily_hours: 每日学习时长
+    - daily_hours: 每阶段学习时长
     - learning_style: 学习风格
     - hardware: 硬件条件
     - goal: 学习目标

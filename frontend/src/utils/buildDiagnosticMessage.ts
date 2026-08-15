@@ -29,7 +29,7 @@ export const learningStyleText: Record<LearningStyle, string> = {
 export function buildDiagnosticMessage(formData: OnboardingFormData, targetOnly = false) {
   const lines = [
     `我的学习目标：${formData.goal.trim()}`,
-    `我每天可以学习：${Number(formData.daily_hours)} 小时`,
+    `我每阶段可以学习：${Number(formData.daily_hours)} 小时`,
     `我的学习方式：${learningStyleText[formData.learning_style]}`,
   ];
 

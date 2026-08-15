@@ -30,7 +30,7 @@ const fieldLabels: Record<OnboardingField, string> = {
   grade: '身份/学习背景',
   skill_tags: '已有知识基础',
   goal: '学习目标',
-  daily_hours: '每日学习时长',
+  daily_hours: '每阶段学习时长',
   learning_style: '学习风格',
   hardware: '设备条件'
 };

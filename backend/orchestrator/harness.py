@@ -400,7 +400,7 @@ class Harness:
         if getattr(profile, "grade", None):
             parts.append(f"水平：{profile.grade}")
         if getattr(profile, "daily_hours", None):
-            parts.append(f"每日学习时长：{profile.daily_hours}小时")
+            parts.append(f"每阶段学习时长：{profile.daily_hours}小时")
         if getattr(profile, "learning_style", None):
             parts.append(f"学习风格：{profile.learning_style}")
         if getattr(profile, "hardware", None):

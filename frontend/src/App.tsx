@@ -1,4 +1,4 @@
-import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
@@ -770,7 +770,7 @@ function ProfilePanel({
           {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
         </button>
       </div>
-      {!collapsed && <>
+      <div className="context-panel-body">
       <section className="context-card stage-card">
         <div className="stage-eyebrow">
           <span>当前学习包</span>
@@ -785,7 +785,7 @@ function ProfilePanel({
         <div className="stage-meta">
           <span>
             <Target size={15} />
-            今日进度 {pct(dailyProgress)}%
+            阶段进度 {pct(dailyProgress)}%
           </span>
           <span>
             <Target size={15} />
@@ -857,7 +857,7 @@ function ProfilePanel({
           );
         })}
       </section>
-      </>}
+      </div>
     </aside>
   );
 }
@@ -1487,6 +1487,22 @@ function ChatView({
     '--material-panel-width': `${materialPanelWidth}px`
   } as CSSProperties;
 
+  // ---- 对话区自动滚动到底部：
+  // 1) 首次点开阶段会话 / 切换历史对话时
+  // 2) 用户发送消息（回车触发）后
+  // 3) AI 流式回复追加内容时
+  const conversationRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = conversationRef.current;
+    if (!el) return;
+    // 使用即时滚动，避免动画时错过底部
+    el.scrollTop = el.scrollHeight;
+  }, [
+    messages,                  // 任何消息内容/长度变化（含 AI 流式追加）
+    selectedConversationId,    // 切换阶段/历史会话
+    loading                    // AI 回复结束后再对齐一次
+  ]);
+
   return (
     <div className="page-shell">
       <Topbar
@@ -1546,7 +1562,7 @@ function ChatView({
               <strong>阶段内答疑</strong>
             </div>
           </header>
-          <div className="conversation">
+          <div className="conversation" ref={conversationRef}>
             <div className="date-separator">
               <span>今天</span>
             </div>
@@ -1589,7 +1605,18 @@ function ChatView({
               <textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="针对当前阶段内容提问..."
+                onKeyDown={(event) => {
+                  // Enter 直接发送；Shift+Enter / Ctrl+Enter 保留换行
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    const target = event.currentTarget;
+                    const formEl = target.closest('form');
+                    if (formEl && input.trim() && !loading) {
+                      formEl.requestSubmit();
+                    }
+                  }
+                }}
+                placeholder="针对当前阶段内容提问...（Enter 发送，Shift+Enter 换行）"
                 rows={2}
               />
               <div className="composer-bottom">
@@ -1971,6 +1998,7 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
   const targetDailyHours = project.targetDailyHours || item?.daily_hours || 2;
   const currentStage = project.stages?.find((stage) => stage.stage_num === project.stageNum)
     || project.stages?.[project.stages.length - 1];
+
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="profile-detail-modal" role="dialog" aria-modal="true" aria-labelledby="profile-detail-title">
@@ -2008,7 +2036,7 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
             <span className="profile-overview-icon"><Clock size={18} /></span>
             <div>
               <span className="profile-overview-label">学习时长</span>
-              <strong>{targetDailyHours} 小时/日</strong>
+              <strong>{targetDailyHours} 小时/阶段</strong>
             </div>
           </section>
           <section className="profile-overview-item profile-overview-metric accuracy">
@@ -2217,7 +2245,7 @@ function LearningDashboardView({
                     <small>{project.stageName || '等待阶段规划'}</small>
                     <div className="goal-duration-summary">
                       <span><Clock size={12} />总计 {targetTotal || 0} 小时</span>
-                      <span>每日 {targetDaily} 小时</span>
+                      <span>每阶段 {targetDaily} 小时</span>
                       <span><CalendarDays size={12} />建立于 {formatProjectCreatedDate(project.createdAt ?? project.updatedAt)}</span>
                     </div>
                   </div>
@@ -2272,7 +2300,7 @@ function LearningDashboardView({
                         max={1000}
                       />
                       <DurationField
-                        label="每日时长"
+                        label="每阶段时长"
                         value={targetDurationDraft.daily}
                         onChange={(daily) => setTargetDurationDraft((draft) => ({ ...draft, daily }))}
                         min={0.5}
@@ -2435,8 +2463,8 @@ function DashboardView({
             <span className="metric-icon green"><Clock size={20} /></span>
             <div>
               <small>学习时长</small>
-              <strong>{targetDailyHours}<em> 小时/日</em></strong>
-              <p>当前目标每日安排</p>
+              <strong>{targetDailyHours}<em> 小时/阶段</em></strong>
+              <p>当前目标每阶段安排</p>
             </div>
           </div>
           <div className="metric">
@@ -2633,7 +2661,9 @@ function SettingsView({
             <input value={hardware} onChange={(event) => setHardware(event.target.value)} placeholder="例如 RTX 4060 / MacBook / 无独显" />
           </div>
           <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
-            <h3 id="settings-knowledge-title">已有知识基础</h3>
+            <div className="settings-knowledge-heading">
+              <h3 id="settings-knowledge-title">已有知识基础</h3>
+            </div>
             <div className="settings-foundation-summary">
               {foundationNames.length > 0 ? (
                 <div className={`foundation-summary-list ${foundationNames.length > 3 ? 'has-overflow' : ''}`} title={foundationNames.join('、')}>
@@ -2642,7 +2672,7 @@ function SettingsView({
               ) : <span className="foundation-summary-empty">尚未确定基础</span>}
               <button type="button" className="foundation-trigger" onClick={onOpenFoundation}>重新确定基础</button>
             </div>
-            <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
+            <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={true} />
           </div>
           <div className="setting-row">
             <div><strong>保存用户基础</strong><p>调用用户级接口，不会修改任一目标的时长</p></div>
