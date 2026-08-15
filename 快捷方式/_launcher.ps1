@@ -92,6 +92,161 @@ if (-not (Test-PortListening 11434)) {
 }
 if (-not (Wait-Http200 "http://127.0.0.1:11434/api/tags" 25 "Ollama")) { throw "Ollama not ready" }
 
+# ---------- 1.5) First-run setup: auto-initialize database if missing ----------
+$DbPath       = Join-Path $ProjectDir "data\sqlite_data\project.db"
+$BackendEnv   = Join-Path $ProjectDir "backend\.env"
+$FrontendEnv  = Join-Path $ProjectDir "frontend\.env.local"
+
+# Auto-copy .env files if missing (git clone won't have them)
+if (-not (Test-Path $BackendEnv)) {
+    $envExample = Join-Path $ProjectDir "backend\.env.example"
+    if (Test-Path $envExample) {
+        Copy-Item $envExample $BackendEnv -Force
+        Write-Host "  Created backend\.env from .env.example" -ForegroundColor Green
+    }
+}
+if (-not (Test-Path $FrontendEnv)) {
+    $envExample = Join-Path $ProjectDir "frontend\.env.example"
+    if (Test-Path $envExample) {
+        Copy-Item $envExample $FrontendEnv -Force
+        Write-Host "  Created frontend\.env.local from .env.example" -ForegroundColor Green
+    }
+}
+
+if (-not (Test-Path $DbPath)) {
+    Write-Host ""
+    Write-Host "  ==================================================" -ForegroundColor Yellow
+    Write-Host "    FIRST RUN: Database not found. Auto-initializing." -ForegroundColor Yellow
+    Write-Host "    This takes 3-10 minutes on first run. Be patient." -ForegroundColor Yellow
+    Write-Host "  ==================================================" -ForegroundColor Yellow
+    Write-Host ""
+
+    # Re-read .env now that we copied it
+    if (Test-Path $BackendEnv) {
+        foreach ($line in Get-Content $BackendEnv) {
+            $t = $line.Trim()
+            if ($t.Length -eq 0 -or $t.StartsWith("#")) { continue }
+            $eq = $t.IndexOf("=")
+            if ($eq -le 0) { continue }
+            $k = $t.Substring(0,$eq).Trim()
+            $v = $t.Substring($eq+1).Trim().Trim('"').Trim("'")
+            if ($k -ieq "APP_PORT") { [int]$BackendPort = $v }
+        }
+    }
+
+    if (-not $PythonExe) {
+        Write-Host "[ERROR] Python is required for database initialization." -ForegroundColor Red
+        Write-Host "        Install Python 3.10+ from https://python.org and retry." -ForegroundColor Yellow
+        throw "Python missing"
+    }
+
+    $ScriptsDir = Join-Path $ProjectDir "scripts"
+    $BackendDir = Join-Path $ProjectDir "backend"
+
+    # Ensure data directories exist
+    $dataDirs = @("data\sqlite_data", "data\chroma_db", "data\graph_data\runtime")
+    foreach ($d in $dataDirs) {
+        $fullPath = Join-Path $ProjectDir $d
+        if (-not (Test-Path $fullPath)) {
+            New-Item -ItemType Directory -Path $fullPath -Force | Out-Null
+        }
+    }
+
+    # Step 0: pip install (skip if already installed)
+    Write-Host "  [0/6] Checking Python dependencies..." -ForegroundColor Cyan
+    $pipCheck = Start-Process -FilePath $PythonExe -ArgumentList "-c", "import fastapi, uvicorn, pydantic, chromadb, fastembed" `
+        -Wait -PassThru -NoNewWindow -RedirectStandardOutput "$env:TEMP\aiat_pipcheck.log" -RedirectStandardError "$env:TEMP\aiat_pipcheck_err.log"
+    if ($pipCheck.ExitCode -ne 0) {
+        Write-Host "  Installing Python dependencies (pip install)..." -ForegroundColor Yellow
+        Write-Host "  (This may take 2-5 minutes on first run)" -ForegroundColor DarkGray
+        $pipProc = Start-Process -FilePath $PythonExe -ArgumentList "-m", "pip", "install", "-r", "`"$ProjectDir\requirements.txt`"" `
+            -WorkingDirectory $ProjectDir -Wait -PassThru -NoNewWindow
+        if ($pipProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] pip install failed (exit $($pipProc.ExitCode))." -ForegroundColor Red
+            Write-Host "        Try: pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple" -ForegroundColor Yellow
+            throw "pip install failed"
+        }
+        Write-Host "  pip install OK." -ForegroundColor Green
+    } else {
+        Write-Host "  Python dependencies already installed." -ForegroundColor DarkGreen
+    }
+
+    # Step 1-6: Run initialization scripts in dependency order
+    $initScripts = @(
+        @{name="init_db";                         desc="Building database schema";           needOllama=$false},
+        @{name="insert_knowledge_data";           desc="Loading knowledge seeds (blocks, subtopics, docs, videos, questions)"; needOllama=$false},
+        @{name="import_local_learning_materials"; desc="Importing .md lesson files into knowledge_docs"; needOllama=$false},
+        @{name="build_knowledge_graph";          desc="Building knowledge graph (nodes, edges, prerequisites)"; needOllama=$false},
+        @{name="init_knowledge_base";             desc="Building Chroma vector index (uses Ollama embedding model)"; needOllama=$true},
+        @{name="init_agent1_semantic_index";     desc="Building Agent1 semantic index (downloads ~90MB FastEmbed model)"; needOllama=$false}
+    )
+
+    for ($i = 0; $i -lt $initScripts.Count; $i++) {
+        $script = $initScripts[$i]
+        $stepNum = $i + 1
+        $scriptPath = Join-Path $ScriptsDir "$($script.name).py"
+
+        if (-not (Test-Path $scriptPath)) {
+            Write-Host "  [SKIP] $($script.name).py not found - skipping." -ForegroundColor DarkGray
+            continue
+        }
+
+        Write-Host ""
+        Write-Host "  [$stepNum/6] $($script.desc)..." -ForegroundColor Cyan
+
+        # For scripts that need Ollama embedding, check model availability first
+        if ($script.needOllama) {
+            try {
+                $tagsResp = Invoke-RestMethod -Uri "http://127.0.0.1:11434/api/tags" -TimeoutSec 5
+                $modelNames = $tagsResp.models | ForEach-Object { $_.name }
+                $embeddingModel = "qwen3-embedding:0.6b"
+                if ($modelNames -notcontains $embeddingModel) {
+                    Write-Host "  Ollama embedding model '$embeddingModel' not found. Pulling now..." -ForegroundColor Yellow
+                    Write-Host "  (This is a one-time ~1GB download)" -ForegroundColor DarkGray
+                    $pullProc = Start-Process -FilePath "ollama" -ArgumentList "pull", $embeddingModel -Wait -PassThru -NoNewWindow
+                    if ($pullProc.ExitCode -ne 0) {
+                        Write-Host "[ERROR] Failed to pull $embeddingModel." -ForegroundColor Red
+                        Write-Host "        Run manually: ollama pull $embeddingModel" -ForegroundColor Yellow
+                        throw "Ollama model pull failed"
+                    }
+                    Write-Host "  Model $embeddingModel pulled OK." -ForegroundColor Green
+                }
+            } catch {
+                Write-Host "  [WARN] Could not check Ollama models - proceeding anyway." -ForegroundColor DarkGray
+            }
+        }
+
+        $outLog = Join-Path $env:TEMP "aiat_$($script.name)_out.log"
+        $errLog = Join-Path $env:TEMP "aiat_$($script.name)_err.log"
+        $proc = Start-Process -FilePath $PythonExe -ArgumentList $scriptPath `
+            -WorkingDirectory $BackendDir -Wait -PassThru -NoNewWindow `
+            -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+
+        if ($proc.ExitCode -ne 0) {
+            Write-Host "[ERROR] $($script.name) failed (exit $($proc.ExitCode))." -ForegroundColor Red
+            Write-Host "  --- last 15 lines of output ---" -ForegroundColor Magenta
+            if (Test-Path $outLog) { Get-Content $outLog | Select-Object -Last 15 }
+            if (Test-Path $errLog) { Get-Content $errLog | Select-Object -Last 15 }
+            Write-Host "  --- end ---" -ForegroundColor Magenta
+            throw "$($script.name) failed"
+        }
+        # Show last line as success indicator
+        if (Test-Path $outLog) {
+            $lastLine = (Get-Content $outLog | Where-Object { $_.Trim() } | Select-Object -Last 1)
+            if ($lastLine) { Write-Host "  -> $lastLine" -ForegroundColor DarkGray }
+        }
+        Write-Host "  $($script.name) OK." -ForegroundColor Green
+    }
+
+    Write-Host ""
+    Write-Host "  ==================================================" -ForegroundColor Green
+    Write-Host "    Database initialized! Starting services..." -ForegroundColor Green
+    Write-Host "  ==================================================" -ForegroundColor Green
+    Write-Host ""
+} else {
+    Write-Host "  Database found at data\sqlite_data\project.db - skipping init." -ForegroundColor DarkGreen
+}
+
 # ---------- 2) Backend (python import check FIRST, then start uvicorn) ----------
 if (-not (Test-PortListening $BackendPort)) {
     if (-not $PythonExe) {
