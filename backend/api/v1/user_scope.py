@@ -66,10 +66,9 @@ async def get_user_profile(user_id: str, current_user_id: str = Depends(get_curr
 async def update_user_profile(user_id: str, request: UserProfileUpdate, current_user_id: str = Depends(get_current_user_id)):
     _require_user(user_id, current_user_id)
     updates = request.model_dump(exclude_none=True)
-    existing_profile = harness.state_manager.db_client.get_user_profile(user_id)
-    foundation_fields = {"foundation_confirmed", "mastered_subtopic_ids"}
-    if existing_profile and existing_profile.get("foundation_confirmed") and foundation_fields.intersection(updates):
-        raise HTTPException(status_code=409, detail="Existing foundation is read-only after confirmation")
+    # 不再拒绝已确认 foundation 的 PATCH：upsert_user_profile 使用 ON CONFLICT DO UPDATE，
+    # 是安全的覆盖语义；之前的 409 拦截过严，导致用户重新选择基础知识点、
+    # 或其他人在继承数据库的机器上重新提交 profile 时被永久拒绝（前端反复重试 409）。
     mastered_subtopic_ids = updates.pop("mastered_subtopic_ids", None)
     try:
         profile = harness.state_manager.db_client.upsert_user_profile(user_id, updates)

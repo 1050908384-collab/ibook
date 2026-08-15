@@ -208,6 +208,15 @@ async def get_session_snapshot(session_id: str, user_id: str = Depends(get_curre
         # 构建完整快照
         stage = session.get("stage_info")
         learning_package = session.get("learning_package")
+
+        # 修复旧会话：从数据库补全 subtopic_ids/subtopic_names 数组
+        # GET /sessions/{session_id} 是页面恢复时调用的第一个接口，
+        # 如果不在这里补全，前端 resolveStageSubtopics 会拿不到分页数据，
+        # 导致所有知识点内容堆在一页里、分页控件消失。
+        if stage:
+            from api.v1.learning_resources import ensure_stage_subtopics
+            stage = ensure_stage_subtopics(stage)
+
         snapshot_resources = await _get_snapshot_resources(learning_package, stage)
         snapshot = {
             "session_id": session["session_id"],

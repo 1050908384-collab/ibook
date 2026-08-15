@@ -1,0 +1,108 @@
+发布个人数据清理流程（方案 1）
+==============================
+
+一、背景
+--------
+项目 data\sqlite_data\project.db 同时保存了两部分数据：
+  * 公共知识库（知识点目录、本地文章、视频清单、题库、语义向量分块等）
+  * 个人运行时数据（你的用户画像、学习会话、进度、对话问答、测试答题、
+    Agent3/4 审核辩论过程等）
+
+直接把整个 project.db 拷给别人，会把你的个人学习记录一起发过去。
+方案 1 是"保留单库 + 发布前清理个人表"——你平时继续用自己的完整 db，
+打包给别人前跑一次清理脚本，清完只删个人表，不动公共知识库。
+
+二、脚本
+--------
+scripts\clean_personal_data.py          Python 主脚本（带备份/统计/VACUUM）
+快捷方式\清理个人数据.bat              双击运行入口
+
+三、发布给别人的完整步骤（重要！顺序不能错）
+----------------------------------------------
+
+步骤 1：确保所有服务已关闭
+  关掉 Ollama、后端(8500)、前端(5173) 所有窗口。
+  project.db 必须处于非占用状态。
+
+步骤 2：复制一份你自己的数据库备份（关键！这是你之后继续使用的）
+  打开文件管理器，把下面这个文件复制到桌面或自己的安全位置：
+    data\sqlite_data\project.db
+  → 命名为 project_我的备份_YYYYMMDD.db（日期换成当天，例如
+    project_我的备份_20260816.db）
+  注意：这是"你的数据保险库"，以后你自己用的时候把它覆盖回去。
+
+步骤 3：运行清理脚本（作用于项目目录里的 project.db）
+  双击：快捷方式\清理个人数据.bat
+  脚本会：
+    - 先自动再做一份时间戳备份（before_clean_*.bak，保险用）
+    - 打印"清理前统计"（看看有多少行个人数据）
+    - DELETE 18 张个人表的全部行
+    - VACUUM 回收磁盘空间
+    - 打印"清理后统计"（个人表都清零或几乎清零，但公共表行数不变）
+
+步骤 4：验证清理结果（可选）
+  从命令行进入 backend 目录运行：
+    python ..\scripts\clean_personal_data.py --dry-run
+  查看"清理后统计"：
+    - learner_profiles / sessions / user_qa / assessment_attempts /
+      review_debate_* / user_subtopic_status 等个人表行数 = 0
+    - knowledge_docs = 141、knowledge_subtopics = 73、
+      knowledge_chunks = 982、test_questions = 233 等公共表 = 不变
+
+步骤 5：打压缩包发给别人
+  把整个 ai_agent-trainer 文件夹打包（.zip / .7z）。
+  注意：data\sqlite_data\ 里此时的 project.db 就是已清理、无个人数据、
+  但公共知识库完整的版本，可以直接发。
+
+步骤 6（必须）：还原你自己的数据
+  发布完后，立刻用步骤 2 你保存的 project_我的备份_YYYYMMDD.db 覆盖
+  data\sqlite_data\project.db。
+  如果你不小心跳过这步，下次启动会看到所有学习记录"消失"了——
+  但不要慌，备份还在，再覆盖一次即可。
+
+四、你之后日常继续开发 / 使用的流程
+------------------------------------
+
+日常使用（开发/学习）与发布完全分开，互不干扰：
+
+* 平时：正常用快捷方式\一键启动.bat。
+        用的是 data\sqlite_data\project.db（你的完整学习记录）。
+        不要双击"清理个人数据.bat"——除非你又要发版本。
+
+* 修改代码：改完直接重启一键启动即可，数据库不受影响。
+
+* 再次发版本给别人：按上面"步骤 1~6"重新走一遍。
+  建议每次发布前都做一个自己的备份，避免"覆盖还原"时拿错文件。
+
+五、清理范围（18 张个人表，公共知识库完全不动）
+------------------------------------------------
+
+删除（按 session_id / user_id / trace_id 归属）：
+  learner_profiles           用户画像（年级/硬件/基础知识点）
+  sessions / session_states  学习会话与完整状态快照
+  user_profiles              每个 session 的画像版本（skill_tags / knowledge_gaps）
+  user_subtopic_status       用户各知识点掌握状态
+  subtopic_status            各 session 下知识点状态
+  stage_progress             阶段进度
+  user_qa                    聊天问答记录
+  user_answers / assessment_attempts / assessment_attempt_questions / assessment_answers
+                             测试答题与正确率记录
+  review_traces / review_debate_rounds / review_debate_issues / review_debate_responses
+                             Agent3/4 审核辩论过程
+  learning_package_claims / learning_package_sources
+                             学习包溯源 claim/source（随 session/trace 生成）
+
+严格保留（一行不动）：
+  knowledge_blocks / knowledge_subtopics / knowledge_docs /
+  knowledge_chunks (+ FTS 6 张虚表) / test_questions /
+  learning_resources / block_resources / subtopic_resources /
+  schema_migrations
+
+六、如果误清了怎么办
+--------------------
+你有两份保险：
+  1. 清理脚本每次运行前自动生成
+     data\sqlite_data\project.before_clean_YYYYMMDD_HHMMSS.bak
+     → 复制并改名 project.db 即可还原
+  2. 你在步骤 2 复制到桌面的 project_我的备份_*.db
+     → 复制并改名 project.db 即可还原

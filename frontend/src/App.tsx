@@ -871,16 +871,23 @@ function getResourceUrl(resource: LearningResource) {
 
 function uniqueResources(resources: LearningResource[]) {
   const seenIds = new Set<string>();
-  const seenUrls = new Set<string>();
+  // ★ 只按 (subtopic_id, URL) 二元组去重，而不是全局 URL 去重。
+  // 之前的全局 URL 去重是错误的：同一个 URL 在多个知识点下的参考列表里出现是正常的，
+  // 比如"拓展阅读"预告后续章节，此时必须允许每个 subtopic 各有一条。
+  const seenSubtopicUrl = new Set<string>();
   return resources.filter((resource) => {
     const key = resource.resource_id || resource.source_id || getResourceUrl(resource) || resource.title;
     const url = getResourceUrl(resource);
+    const subtopicId = resource.subtopic_id || '';
     // 先按 resource_id 去重
     if (key && seenIds.has(key)) return false;
-    // 再按 URL 去重：同一 URL 只保留第一条，防止同一篇文章链接重复出现
-    if (url && seenUrls.has(url)) return false;
+    // 再按 (subtopic_id, URL) 去重：同一个知识点下同一个 URL 只保留一条
+    if (url) {
+      const pair = `${subtopicId}\u0001${url}`;
+      if (seenSubtopicUrl.has(pair)) return false;
+      seenSubtopicUrl.add(pair);
+    }
     if (key) seenIds.add(key);
-    if (url) seenUrls.add(url);
     return true;
   });
 }
@@ -915,38 +922,64 @@ function topicKey(topic?: KnowledgeSubtopic | null) {
   return topic?.subtopic_id || topic?.subtopic_name || '';
 }
 
+// 去掉知识点名称尾部的章节标记（如 "（①）"、"（新增②）"）和开头序号前缀，
+// 使前端 selectedTopicName 与后端 backfill_stage_tutorial 生成的 ## heading 对齐。
+// 后端 _TRAILING_SECTION_MARK 去尾部括号标记，_HEADING_CRUMB 去面包屑前缀，
+// 但 stage.subtopic_names 存的是原始未清洗的名称，不做同样清洗就无法精确匹配。
+function _cleanTopicName(name: string): string {
+  let s = name.trim().replace(/\s+/g, ' ');
+  // 去尾部 （①②③） 等标记
+  s = s.replace(/[\s\u3000]*[（(][^）)]*[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳][^）)]*[）)]\s*$/g, '');
+  // 去尾部纯全角括号包裹
+  if (s.startsWith('（') && s.endsWith('）')) {
+    s = s.slice(1, -1).trim();
+  }
+  // 去开头序号前缀（如 "3 " / "3." / "3、"）
+  s = s.replace(/^[\s\d①②③④⑤⑥⑦⑧⑨⑩一二三四五六七八九十]+[.、．:：)\]\s]*/, '').trim();
+  return s;
+}
+
 function getTopicTutorial(tutorial: string | undefined, topicName: string) {
   if (!tutorial?.trim() || !topicName.trim()) return tutorial;
   const normalizedTopic = topicName.trim().replace(/\s+/g, ' ');
+  const cleanedTopic = _cleanTopicName(normalizedTopic);
   const headingPattern = /^##\s+(.+?)\s*$/gm;
-  const matches: { index: number; heading: string; contentStart: number }[] = [];
+  const matches: { index: number; heading: string; contentStart: number; cleaned: string }[] = [];
   let m: RegExpExecArray | null;
   while ((m = headingPattern.exec(tutorial))) {
     const heading = m[1].trim().replace(/\s+/g, ' ');
-    matches.push({ index: m.index, heading, contentStart: m.index + m[0].length });
+    matches.push({
+      index: m.index,
+      heading,
+      contentStart: m.index + m[0].length,
+      cleaned: _cleanTopicName(heading),
+    });
   }
-  let bestMatch = -1;
-  for (let i = 0; i < matches.length; i++) {
-    const heading = matches[i].heading;
-    if (heading === normalizedTopic) { bestMatch = i; break; }
-    if (heading.includes(normalizedTopic) || normalizedTopic.includes(heading)) {
-      if (bestMatch < 0 || heading.length < matches[bestMatch].heading.length) {
-        bestMatch = i;
-      }
+  if (matches.length === 0) return tutorial;
+
+  // 匹配优先级：1) 原始名称精确相等  2) 清洗后精确相等  3) 清洗后去掉括号后缀相等
+  let exactIndex = matches.findIndex((x) => x.heading === normalizedTopic);
+  if (exactIndex < 0) exactIndex = matches.findIndex((x) => x.cleaned === cleanedTopic);
+  if (exactIndex < 0) {
+    // 进一步去掉括号后缀再比
+    const topicCore = cleanedTopic.replace(/[\s（(【\[].*$/, '').trim();
+    if (topicCore && topicCore !== cleanedTopic) {
+      exactIndex = matches.findIndex((x) => {
+        const core = x.cleaned.replace(/[\s（(【\[].*$/, '').trim();
+        return core === topicCore;
+      });
     }
   }
-  if (bestMatch < 0) return tutorial;
-  const start = matches[bestMatch].contentStart;
-  // 内容结束：下一个同名/更高优先的 ## 之前（下一个 ## heading，如果下一个 heading 就是同名，则跳过它，避免取到空段落）
-  let endIdx = tutorial.length;
-  for (let i = bestMatch + 1; i < matches.length; i++) {
-    endIdx = matches[i].index;
-    break;
-  }
+  if (exactIndex < 0) return tutorial;
+  const start = matches[exactIndex].contentStart;
+  // 结束 = 下一个 ## heading 的起点（无论是什么 heading 都停止）
+  const endIdx = exactIndex + 1 < matches.length
+    ? matches[exactIndex + 1].index
+    : tutorial.length;
   let slice = tutorial.slice(start, endIdx).trim();
-  // 去掉开头可能存在的同名"空 H2"（外层 wrapper 与内层嵌套 heading 同名导致的"内容为空"段落）：
-  // 如果开头就是另一个同名的 ## heading 嵌套，取其实际内容部分
-  const duplicateHeading = new RegExp(`^\\s*##\\s+${escapeRegex(normalizedTopic)}\\s*\\n`, 'm');
+  // 去掉开头可能存在的同名"空 H2"（外层 wrapper 与内层嵌套 heading 同名导致的"内容为空"段落）
+  const dupHeading = matches[exactIndex].heading;
+  const duplicateHeading = new RegExp(`^\\s*##\\s+${escapeRegex(dupHeading)}\\s*\\n`, 'm');
   const dupMatch = duplicateHeading.exec(slice);
   if (dupMatch && dupMatch.index === 0) {
     const afterDup = slice.slice(dupMatch.index + dupMatch[0].length);

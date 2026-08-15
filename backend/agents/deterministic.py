@@ -1400,6 +1400,9 @@ class DeterministicContentAgent:
 
     def _build_retrieved_material_tutorial(self, stage: StageInfo, docs: list[dict]) -> str:
         """Build a usable package directly from the local lessons when LLM output is unavailable."""
+        # 延迟导入，避免与 api.v1.learning_resources 形成循环依赖
+        from api.v1.learning_resources import _nest_document_markdown
+
         names_by_id = dict(zip(stage.subtopic_ids, stage.subtopic_names))
         parts = [
             f"# {stage.block_name}",
@@ -1418,8 +1421,15 @@ class DeterministicContentAgent:
             title = topic_docs[0].get("title") or heading
             if source:
                 parts.append(f"资料来源：[{title}]({source})")
-            parts.append("### 学习内容")
-            parts.extend(item.get("content", "").strip() for item in topic_docs[:3] if item.get("content"))
+            # 用 _nest_document_markdown 处理 content：清理面包屑/（①）标记、
+            # 去掉参考链接行、并把文章内部的 H2→H3、H3→H4，避免与顶层 ## heading
+            # 混淆导致前端 getTopicTutorial 切片错位。
+            nested_contents = [
+                _nest_document_markdown(str(item.get("content") or ""))
+                for item in topic_docs[:3]
+                if item.get("content")
+            ]
+            parts.extend(nested_contents)
         return "\n\n".join(parts)
 
     @staticmethod
@@ -2298,12 +2308,11 @@ class HybridContentAgent(DeterministicContentAgent):
         if self._is_usable_tutorial(tutorial, stage, related_docs):
             output.learning_package.tutorial = tutorial
             _agent_log("Agent3", f"content:llm_done | tutorial_len={len(tutorial)}")
-        elif source_budget:
-            # The raw retrieved material is a grounded, length-safe fallback.
-            output.learning_package.tutorial = source_material.strip()
-            _agent_log("Agent3", "content:llm_over_budget -> source_material_fallback")
         else:
-            _agent_log("Agent3", "content:llm_invalid -> retrieved_material_fallback")
+            # LLM 输出不可用时，保留 super().run() 生成的带 ## 子标题结构化 tutorial。
+            # 不能用 source_material（所有知识点内容的纯拼接，无 ## 分隔）覆盖——
+            # 否则前端 getTopicTutorial 无法按知识点切片，所有页都会显示同一份合并内容。
+            _agent_log("Agent3", "content:llm_invalid -> keep structured tutorial from base agent")
         return output
 
     async def generate_block(

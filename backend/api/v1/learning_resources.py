@@ -225,7 +225,29 @@ def backfill_stage_tutorial(package: dict[str, Any], stage: dict[str, Any]) -> d
 
     tutorial = str(package.get("tutorial") or "")
     if tutorial.strip() and _MISSING_TUTORIAL_TEXT not in tutorial:
-        return package
+        # 额外检查：tutorial 是否包含至少一个 subtopic 对应的 ## heading。
+        # 旧会话可能存储了 source_material（所有知识点内容的纯拼接，无 ## 分隔），
+        # 前端 getTopicTutorial 无法按知识点切片，导致所有页显示同一份合并内容。
+        # 这种 tutorial 不含占位符但结构错误，必须重新生成。
+        subtopic_names_for_check = list(stage.get("subtopic_names") or [])
+        if subtopic_names_for_check:
+            has_subtopic_heading = False
+            for raw_name in subtopic_names_for_check:
+                clean_name = _TRAILING_SECTION_MARK.sub("", str(raw_name)).strip()
+                if clean_name.startswith("（") and clean_name.endswith("）"):
+                    clean_name = clean_name[1:-1].strip()
+                if clean_name and re.search(
+                    r"^##\s+" + re.escape(clean_name) + r"\s*$",
+                    tutorial,
+                    re.MULTILINE,
+                ):
+                    has_subtopic_heading = True
+                    break
+            if has_subtopic_heading:
+                return package
+            # 没有 subtopic 级 ## heading → 继续走 backfill 重新生成
+        else:
+            return package
 
     documents = VectorSearchTool().get_local_lessons(
         stage.get("block_id", ""),
@@ -378,11 +400,69 @@ def build_stage_document_resources(stage: dict[str, Any]) -> list[dict[str, Any]
     documents_by_subtopic: dict[str, dict[str, Any]] = {
         doc.get("subtopic_id"): doc for doc in documents if isinstance(doc, dict) and doc.get("subtopic_id")
     }
+
+    # 预构建：每个 subtopic_id 对应的知识点名称列表，用于检测 ref_title 面包屑是否跨知识点
+    # 例：ref_title 以 "环境变量配置 > " 开头 → 尽管 URL 在当前文档里，实际归属是 "环境变量配置"
+    # 这才是真正解决"第三部分的文章出现在第二部分"的核心
+    stage_subtopic_names: list[tuple[str, str]] = []  # [(subtopic_id, subtopic_name), ...]
+    if isinstance(stage.get("subtopic_names"), list) and isinstance(stage.get("subtopic_ids"), list):
+        stage_subtopic_names = list(zip(
+            [str(x) for x in stage["subtopic_ids"]],
+            [str(x).strip() for x in stage["subtopic_names"]],
+        ))
+    # 再从 knowledge_subtopics 查真实 display_name 补全
+    if block_id:
+        try:
+            import sqlite3 as _sqlite
+            from tools.agent3_tools.vector_search_tool import _get_db_path
+            _db_path = _get_db_path()
+            if _db_path.exists():
+                _conn = _sqlite.connect(f"file:{_db_path}?mode=ro", uri=True)
+                try:
+                    _rows = _conn.execute("""
+                        SELECT subtopic_id, subtopic_name FROM knowledge_subtopics
+                        WHERE block_id = ? ORDER BY sequence_index
+                    """, [block_id]).fetchall()
+                    for _rid, _rname in _rows:
+                        _sname = str(_rname or "").strip()
+                        _sid = str(_rid or "")
+                        if _sid and _sname and not any(s[0] == _sid for s in stage_subtopic_names):
+                            stage_subtopic_names.append((_sid, _sname))
+                finally:
+                    _conn.close()
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _resolve_ref_subtopic_id(ref_title: str, doc_subtopic_id: str) -> str:
+        """根据 ref_title 开头的面包屑判断实际归属知识点。
+
+        例如 "环境变量配置 > 一、环境变量是什么？ > 1.1 通俗理解"
+        的第一级面包屑是 "环境变量配置"，即使该 URL 被写在 subtopic 2（常用Shell命令）
+        的 md 文档里，也必须强制归属到 "环境变量配置" 对应的 subtopic_id，
+        否则前端就会看到「第三部分的文章出现在第二部分」。
+        """
+        title_head = (ref_title or "").split(">", 1)[0].strip()
+        # 去掉序号前缀再比较（如 "3 环境变量配置" → "环境变量配置"）
+        title_head_clean = re.sub(r"^[\s\d①②③④⑤⑥⑦⑧⑨⑩一二三四五六七八九十]+[.、．:：)\]\s]*", "", title_head).strip()
+        if not title_head_clean:
+            return doc_subtopic_id
+        # 先精确匹配
+        for sid, sname in stage_subtopic_names:
+            sname_clean = re.sub(r"^[\s\d①②③④⑤⑥⑦⑧⑨⑩一二三四五六七八九十]+[.、．:：)\]\s]*", "", sname).strip()
+            if sname_clean == title_head_clean:
+                return sid
+        # 再去掉括号后缀比较
+        title_head_core = re.sub(r"[\s（(【\[].*$", "", title_head_clean).strip()
+        if title_head_core and title_head_core != title_head_clean:
+            for sid, sname in stage_subtopic_names:
+                sname_clean = re.sub(r"^[\s\d①②③④⑤⑥⑦⑧⑨⑩一二三四五六七八九十]+[.、．:：)\]\s]*", "", sname).strip()
+                sname_core = re.sub(r"[\s（(【\[].*$", "", sname_clean).strip()
+                if sname_core == title_head_core:
+                    return sid
+        return doc_subtopic_id
+
     result: list[dict[str, Any]] = []
     order_counter = 0
-    # 跨 subtopic 去重：同一个 URL 只在第一次出现的 subtopic 下生成资源，
-    # 避免同一篇文章链接在多个知识点的"文章网址"列表里重复出现。
-    global_seen_urls: set[str] = set()
 
     for subtopic_id in subtopic_ids:
         document = documents_by_subtopic.get(subtopic_id)
@@ -392,6 +472,7 @@ def build_stage_document_resources(stage: dict[str, Any]) -> list[dict[str, Any]
         doc_id = str(document.get("doc_id") or "")
         if doc_id and not doc_id.startswith("LOCAL-"):
             continue
+        doc_subtopic_id = str(document.get("subtopic_id") or subtopic_id or "")
         doc_title = str(document.get("title") or "")
         content = str(document.get("content") or "")
         refs = extract_all_reference_urls(content)
@@ -404,12 +485,20 @@ def build_stage_document_resources(stage: dict[str, Any]) -> list[dict[str, Any]
             "build_stage_document_resources: subtopic=%s doc_id=%s refs_count=%d",
             subtopic_id, doc_id, len(refs),
         )
+        # ★ 注意：绝对不能跨 subtopic 先到先得去重！
+        # 同一个 URL 出现在多个 subtopic 的参考列表里是正常的（如拓展阅读、后续章节预告），
+        # 但必须严格按它所在文档的 subtopic_id 归属（或按 ref_title 面包屑修正）。
+        # 重复问题由 extract_all_reference_urls 的单文档 seen 控制，以及前端 uniqueResources
+        # 按 (subtopic_id, URL) 二元组去重。
         for ref_index, (ref_title, ref_url) in enumerate(refs, start=1):
-            # 跨 subtopic URL 去重：已出现在前面 subtopic 的 URL 不再重复生成
-            if ref_url in global_seen_urls:
-                continue
-            global_seen_urls.add(ref_url)
             order_counter += 1
+            resolved_subtopic_id = _resolve_ref_subtopic_id(ref_title, doc_subtopic_id)
+            if resolved_subtopic_id != doc_subtopic_id:
+                logger.info(
+                    "build_stage_document_resources: ref re-assigned by breadcrumb: "
+                    "doc_subtopic=%s → resolved=%s (title=%s url=%s)",
+                    doc_subtopic_id, resolved_subtopic_id, ref_title[:40], ref_url[:60],
+                )
             result.append({
                 "resource_id": f"{doc_id or 'LOCAL'}-ART-{order_counter:02d}",
                 "resource_type": "article",
@@ -422,12 +511,22 @@ def build_stage_document_resources(stage: dict[str, Any]) -> list[dict[str, Any]
                 "recommendation_level": "primary",
                 "role": "primary",
                 "order": order_counter,
-                # 绝对保证 subtopic_id 被写入（前端 matchesSubtopic 依赖它）
-                "subtopic_id": str(subtopic_id or document.get("subtopic_id") or ""),
+                # 1) 先看文档本身的 subtopic_id；2) 若 ref_title 面包屑显示属别的知识点则修正
+                "subtopic_id": resolved_subtopic_id,
             })
+
+    # 后端再次保险：同一个 (subtopic_id, url) 只保留一条（前端也会做）
+    deduped: list[dict[str, Any]] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    for item in result:
+        pair = (str(item.get("subtopic_id") or ""), str(item.get("url") or item.get("canonical_url") or ""))
+        if pair in seen_pairs:
+            continue
+        seen_pairs.add(pair)
+        deduped.append(item)
     logger.info(
         "build_stage_document_resources: returning %d article resources with subtopics: %s",
-        len(result),
-        sorted({r["subtopic_id"] for r in result}),
+        len(deduped),
+        sorted({r["subtopic_id"] for r in deduped}),
     )
-    return result
+    return deduped
