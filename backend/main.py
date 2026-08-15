@@ -5,12 +5,20 @@ import logging
 import time
 from pathlib import Path
 
+BACKEND_DIR_HERE = Path(__file__).resolve().parent
+PROJECT_ROOT_HERE = BACKEND_DIR_HERE.parent
+SCRIPTS_DIR = PROJECT_ROOT_HERE / "scripts"
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# 让启动时可以直接 import scripts 下的初始化脚本（真正做到一键启动）
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from api.chat import router as chat_router
 from api.session import router as session_router
 from api.stage import router as stage_router
@@ -23,7 +31,7 @@ from api.v1.profile import router as v1_profile_router
 from api.v1.stages import router as v1_stages_router
 from api.v1.qa import router as v1_qa_router
 from api.v1.user_scope import router as v1_user_scope_router
-from config import settings
+from config import DATA_DIR, settings
 
 # Reuse Uvicorn's configured logger so request diagnostics are visible in the
 # same terminal that runs the backend.
@@ -34,6 +42,95 @@ app = FastAPI(
     version="1.0.0",
     description="AI Agent Trainer - 多Agent个性化辅导系统"
 )
+
+
+# =====================================================================
+# 一键启动 · 初始化兜底
+# 当 project.db 是新建空库（克隆后首次启动）时：
+#   1. 从 data/seeds/*.json 导入 块/知识点/题库/视频资源
+#   2. 从 data/知识库原始数据/*.md 导入本地学习资料（+分块）
+#   3. 生成 knowledge_graph.gpickle / nodes.jsonl 等
+# 有任意数据存在则跳过，不影响已有环境启动速度。
+# =====================================================================
+_BOOTSTRAP_DONE = False
+
+
+def _count_rows(db_client, table_name: str) -> int:
+    with db_client.Session() as session:
+        return session.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar() or 0
+
+
+def _resolve_runtime_graph_path() -> Path:
+    raw = Path(settings.GRAPH_PATH)
+    return raw if raw.is_absolute() else (BACKEND_DIR_HERE / raw).resolve()
+
+
+def _run_bootstrap_once() -> None:
+    global _BOOTSTRAP_DONE
+    if _BOOTSTRAP_DONE:
+        return
+    _BOOTSTRAP_DONE = True
+
+    from api.dependencies import get_harness
+    harness = get_harness()
+    db_client = harness.state_manager.db_client
+
+    blocks = _count_rows(db_client, "knowledge_blocks")
+    subtopics = _count_rows(db_client, "knowledge_subtopics")
+    questions = _count_rows(db_client, "test_questions")
+    docs = _count_rows(db_client, "knowledge_docs")
+    chunks = _count_rows(db_client, "knowledge_chunks")
+    graph_path = _resolve_runtime_graph_path()
+
+    need_seeds = blocks == 0 or subtopics == 0 or questions == 0
+    need_lessons = chunks == 0
+    need_graph = not graph_path.is_file()
+
+    if not (need_seeds or need_lessons or need_graph):
+        return
+
+    print("[BOOTSTRAP] 首次启动检测到素材未就绪，开始自动导入（这是正常的，只会跑一次）...", flush=True)
+
+    if need_seeds:
+        print(f"[BOOTSTRAP 1/3] 从 data/seeds/*.json 导入基础素材：blocks={blocks} subtopics={subtopics} questions={questions}", flush=True)
+        try:
+            import insert_knowledge_data  # scripts/insert_knowledge_data.py
+            insert_knowledge_data.main()
+        except Exception as exc:
+            logger.exception("bootstrap seeds import failed")
+            print(f"[WARN] seeds 导入失败（不会阻塞主程序）：{exc}", flush=True)
+
+    if need_lessons:
+        print(f"[BOOTSTRAP 2/3] 从 data/知识库原始数据 导入本地学习资料并分块：docs={docs} chunks={chunks}", flush=True)
+        try:
+            import import_local_learning_materials  # scripts/import_local_learning_materials.py
+            doc_count, chunk_count = import_local_learning_materials.import_lessons()
+            print(f"[OK] 本地资料导入完成：{doc_count} 文档 / {chunk_count} 分块", flush=True)
+        except Exception as exc:
+            logger.exception("bootstrap local lessons import failed")
+            print(f"[WARN] 本地学习资料导入失败（不会阻塞主程序）：{exc}", flush=True)
+
+    if need_graph:
+        print(f"[BOOTSTRAP 3/3] 构建知识图谱 runtime/knowledge_graph.gpickle 及衍生 JSON", flush=True)
+        try:
+            import build_knowledge_graph  # scripts/build_knowledge_graph.py
+            summary = build_knowledge_graph.build_knowledge_graph()
+            print(f"[OK] 知识图谱构建完成：nodes={summary.get('nodes')} edges={summary.get('edges')}", flush=True)
+        except Exception as exc:
+            logger.exception("bootstrap knowledge graph build failed")
+            print(f"[WARN] 知识图谱构建失败（不会阻塞主程序，懒构建仍可触发）：{exc}", flush=True)
+
+    print("[BOOTSTRAP] 初始化结束，继续启动后端服务。", flush=True)
+
+
+@app.on_event("startup")
+async def _on_startup_bootstrap():
+    # 放在 startup 事件里，保证：
+    # 1. 无论是 `python main.py` 还是 `uvicorn main:app` 都会执行
+    # 2. SQLiteClient 建表已完成（get_harness 内部依赖注入才第一次实例化）
+    _run_bootstrap_once()
+
+
 
 @app.middleware("http")
 async def add_utf8_json_charset(request, call_next):
