@@ -5,6 +5,7 @@ v1/stages.py - Agent1/3 前端 API：阶段与学习包接口
 对应文档：Agent13_API接口任务说明.md 第 3 节
 """
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -12,6 +13,10 @@ from typing import Optional
 from api.dependencies import get_harness, require_owned_session
 from api.v1.learning_resources import backfill_stage_tutorial, build_stage_document_resources
 from api.v1.schemas import to_public_learning_package, to_public_question
+
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logger.addHandler(logging.NullHandler())
 
 router = APIRouter(prefix="/sessions/{session_id}/stages", tags=["Stages"], dependencies=[Depends(require_owned_session)])
 harness = get_harness()
@@ -62,17 +67,21 @@ def _build_learning_resources(stage_info: dict, package: dict) -> list[dict]:
     if existing:
         normalized = []
         for idx, res in enumerate(existing):
-            url = res.get("url", res.get("canonical_url", ""))
+            url = res.get("url", res.get("canonical_url")) or ""
             normalized.append({
-                "resource_id": res.get("resource_id", f"res_{idx}"),
-                "resource_type": res.get("resource_type", "video"),
-                "title": res.get("title", ""),
+                "resource_id": res.get("resource_id") or f"res_{idx}",
+                "resource_type": res.get("resource_type") or "video",
+                "title": res.get("title") or "",
                 "url": url,
-                "platform": res.get("platform") or _extract_platform(url),
-                "description": res.get("description", res.get("content_summary", "")),
-                "recommendation_level": res.get("recommendation_level", res.get("role", "supplementary")),
-                "role": res.get("role", "supplementary"),
-                "order": res.get("order", res.get("sequence_index", idx + 1)),
+                "platform": (res.get("platform") or _extract_platform(url)) or "",
+                "description": res.get("description", res.get("content_summary")) or "",
+                "recommendation_level": res.get("recommendation_level", res.get("role")) or "supplementary",
+                "role": res.get("role") or "supplementary",
+                "order": res.get("order", res.get("sequence_index", idx + 1)) or idx + 1,
+                # 重要：dict.get(key, default) 仅在 key 不存在时给默认值；若显式存 None 仍会是 None。
+                # 使用 "x or ''" 模式确保 None → ""，避免下游 Pydantic LearningResource.subtopic_id 的
+                # str 类型校验因 None 失败导致整个接口 500。
+                "subtopic_id": (res.get("subtopic_id") or ""),
             })
         # 按 order 排序
         normalized.sort(key=lambda r: (0 if r["role"] == "primary" else 1, r["order"]))
@@ -114,6 +123,7 @@ def _build_learning_resources(stage_info: dict, package: dict) -> list[dict]:
                         "recommendation_level": v.get("role", "supplementary"),
                         "role": v.get("role", "supplementary"),
                         "order": v.get("sequence_index", 1),
+                        "subtopic_id": v.get("subtopic_id") or "",
                     })
                 # 按 order 排序，primary 优先
                 resources.sort(key=lambda r: (0 if r["role"] == "primary" else 1, r["order"]))
@@ -185,7 +195,11 @@ async def get_current_stage(session_id: str):
         stage = session.get("stage_info")
         if not stage:
             raise HTTPException(status_code=404, detail="No current stage")
-        
+
+        # 修复旧会话：从数据库补全 subtopic_ids/subtopic_names 数组
+        from api.v1.learning_resources import ensure_stage_subtopics
+        stage = ensure_stage_subtopics(stage)
+
         # 确保个性化字段在响应中
         stage_response = {
             "stage_id": stage.get("stage_id"),
@@ -194,6 +208,9 @@ async def get_current_stage(session_id: str):
             "block_name": stage.get("block_name"),
             "subtopic_id": stage.get("subtopic_id"),
             "subtopic_name": stage.get("subtopic_name"),
+            # 返回数组形式的知识点列表，前端按知识点分页过滤学习资源时依赖这两个字段
+            "subtopic_ids": stage.get("subtopic_ids", []),
+            "subtopic_names": stage.get("subtopic_names", []),
             "estimated_hours": stage.get("estimated_hours"),
             "gap_skill": stage.get("gap_skill"),
             "prerequisites": stage.get("prerequisites", []),
@@ -246,30 +263,47 @@ async def get_current_stage_package(session_id: str):
         
         package = session.get("learning_package")
         stage_info = session.get("stage_info", {})
-        
+
         if not package:
             raise HTTPException(status_code=404, detail="No learning package available")
-        
+
+        # 修复旧会话：从数据库补全 subtopic_ids/subtopic_names 数组
+        from api.v1.learning_resources import ensure_stage_subtopics
+        stage_info = ensure_stage_subtopics(stage_info)
+
         # 清理题目中的敏感字段
         questions = package.get("questions", [])
         sanitized_questions = [_sanitize_question(q) for q in questions]
-        
+
         # 学习资源：使用统一构建函数，从数据库读取已确认视频并补全文档要求字段
         learning_resources = _build_learning_resources(stage_info, package)
+        # 先把快照里的旧 article（不带 subtopic_id）过滤掉——它们会导致前端 matchesSubtopic
+        # 按名称不匹配而全部被隐藏，使页面显示"暂无匹配文章链接"。
+        # 真正的文章资源由 build_stage_document_resources 从本地 LOCAL- 文档动态生成。
+        learning_resources = [
+            r for r in learning_resources
+            if not isinstance(r, dict)
+            or str(r.get("resource_type", "")).lower() not in {"article", "documentation"}
+            or str(r.get("subtopic_id") or "").strip() != ""
+        ]
         known_resource_ids = {
             resource.get("resource_id") for resource in learning_resources if isinstance(resource, dict)
         }
+        dynamic_articles = list(build_stage_document_resources(stage_info))
         learning_resources.extend(
-            resource for resource in build_stage_document_resources(stage_info)
+            resource for resource in dynamic_articles
             if resource.get("resource_id") not in known_resource_ids
         )
-        
+
         # 学习包响应（不含正确答案）
         package_response = {
             "stage_id": stage_info.get("stage_id", package.get("stage_id")),
             "stage_num": stage_info.get("stage_num", 1),
             "block_name": stage_info.get("block_name", ""),
             "subtopic_name": stage_info.get("subtopic_name", ""),
+            # 确保 package 也返回 subtopic 数组，前端 LearningPackage 依赖它们
+            "subtopic_ids": list(stage_info.get("subtopic_ids") or []),
+            "subtopic_names": list(stage_info.get("subtopic_names") or []),
             "estimated_hours": stage_info.get("estimated_hours", 0),
             "tutorial": package.get("tutorial"),
             "code_examples": package.get("code_examples", []),
@@ -292,6 +326,17 @@ async def get_current_stage_package(session_id: str):
             backfill_stage_tutorial(package, stage_info),
             stage_info,
             learning_resources,
+        )
+
+        # 诊断日志：确认最终响应包含文章资源
+        final_resources = (package_response or {}).get("learning_resources") or []
+        article_count = sum(1 for r in final_resources if isinstance(r, dict) and r.get("resource_type") == "article")
+        logger.info(
+            "get_current_stage_package: session=%s stage.block_id=%s stage.subtopic_ids=%s "
+            "final_resources=%d article_resources=%d package.subtopic_ids=%s",
+            session_id, stage_info.get("block_id"), stage_info.get("subtopic_ids"),
+            len(final_resources), article_count,
+            (package_response or {}).get("subtopic_ids"),
         )
 
         return {

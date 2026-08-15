@@ -171,7 +171,7 @@ def _llm_extract(user_input: str) -> dict | None:
 
     prompt = _LLM_PROMPT_TEMPLATE.format(user_input=user_input)
     payload = {
-        "model": settings.OLLMA_MODEL,
+        "model": settings.OLLAMA_MODEL,
         "prompt": prompt,
         "system": _LLM_SYSTEM_PROMPT,
         "options": {"num_predict": 1024, "temperature": 0.3},
@@ -180,7 +180,7 @@ def _llm_extract(user_input: str) -> dict | None:
     }
     try:
         with httpx.Client(timeout=30) as client:
-            resp = client.post(f"{settings.OLLMA_BASE_URL}/api/generate", json=payload)
+            resp = client.post(f"{settings.OLLAMA_BASE_URL}/api/generate", json=payload)
             resp.raise_for_status()
             text = resp.json().get("response", "")
         text = _clean_response(text)

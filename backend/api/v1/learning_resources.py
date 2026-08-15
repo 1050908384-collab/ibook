@@ -1,14 +1,200 @@
+import logging
 import re
 from typing import Any
 
 from tools.agent3_tools.vector_search_tool import VectorSearchTool
 
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logger.addHandler(logging.NullHandler())
+
 
 _MISSING_TUTORIAL_TEXT = "本知识点暂未匹配到本地学习资料。"
 
 
+def ensure_stage_subtopics(stage: dict[str, Any]) -> dict[str, Any]:
+    """Ensure stage always has subtopic_ids + subtopic_names arrays (repair legacy sessions).
+
+    Old stages generated before the fix only had single subtopic_id/subtopic_name, which
+    breaks frontend resource filtering and article URL lookups. This function reconstructs
+    the arrays from the knowledge_docs table so article backfill & pagination keep working.
+    """
+    if not isinstance(stage, dict):
+        return stage or {}
+
+    block_id = str(stage.get("block_id") or "")
+    existing_ids = list(stage.get("subtopic_ids") or [])
+    existing_names = list(stage.get("subtopic_names") or [])
+
+    # 已经有完整数组 → 直接返回
+    if existing_ids and existing_names and len(existing_ids) == len(existing_names):
+        return stage
+
+    # 缺 name 或 id，从数据库 knowledge_docs + knowledge_subtopics 表反查
+    if not block_id:
+        return stage
+
+    try:
+        import sqlite3
+        from tools.agent3_tools.vector_search_tool import _get_db_path
+
+        db_path = _get_db_path()
+        if not db_path.exists():
+            return stage
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            # 如果已存在单个 subtopic_id，按它过滤；否则取该 block 的所有 subtopic
+            single_id = str(stage.get("subtopic_id") or "").strip()
+            if existing_ids:
+                placeholders = ", ".join("?" for _ in existing_ids)
+                rows = conn.execute(f"""
+                    SELECT s.subtopic_id, s.subtopic_name
+                    FROM knowledge_subtopics s
+                    WHERE s.block_id = ? AND s.subtopic_id IN ({placeholders})
+                    ORDER BY s.sequence_index
+                """, [block_id, *existing_ids]).fetchall()
+            elif single_id:
+                # 旧会话只有单个 subtopic_id，需要补全该 block 下的全部？
+                # 策略：按 sequence_index 排序，最多取5个，保证旧会话也有文章列表
+                rows = conn.execute("""
+                    SELECT s.subtopic_id, s.subtopic_name
+                    FROM knowledge_subtopics s
+                    WHERE s.block_id = ?
+                    ORDER BY s.sequence_index
+                    LIMIT 5
+                """, [block_id]).fetchall()
+            else:
+                # 完全缺失：取该 block 下的所有 subtopic（最多5个）
+                rows = conn.execute("""
+                    SELECT s.subtopic_id, s.subtopic_name
+                    FROM knowledge_subtopics s
+                    WHERE s.block_id = ?
+                    ORDER BY s.sequence_index
+                    LIMIT 5
+                """, [block_id]).fetchall()
+        finally:
+            conn.close()
+
+        if rows:
+            if not existing_ids:
+                existing_ids = [str(r[0]) for r in rows]
+            if not existing_names:
+                existing_names = [str(r[1] or r[0]) for r in rows]
+            stage = {
+                **stage,
+                "subtopic_ids": existing_ids,
+                "subtopic_names": existing_names,
+            }
+            # 兼容单值字段
+            if not stage.get("subtopic_id") and existing_ids:
+                stage["subtopic_id"] = existing_ids[0]
+            if not stage.get("subtopic_name") and existing_names:
+                stage["subtopic_name"] = existing_names[0]
+            logger.info(
+                "ensure_stage_subtopics repaired legacy stage: block=%s ids=%s names=%s",
+                block_id, existing_ids, existing_names,
+            )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ensure_stage_subtopics failed: %s", exc)
+
+    return stage
+
+# 匹配 .md 文件中的文章参考链接行（① 底稿：《xxx》/网址：http... 等）
+_URL_REF_LINE = re.compile(
+    r"^\s*[\u3000\t >]*"                                   # 前导空白/全角空格/引用符
+    r"(?:[（(]?[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳]+[\s\+]*)*[）)]?"  # 序号标记
+    r"[\s:：]*"
+    r"(?:底稿|参考文章|参考|权威|来源|原文|官网|链接)"      # 标记词
+    r"[\s:：]*"
+    r"(?:《[^》\n]*》)?"                                    # 《标题》
+    r".*"
+    r"(?:网\s*址|URL|链接|来源|原\s*文|官\s*网)"
+    r"[\s:：]*https?://\S+",
+    re.MULTILINE | re.UNICODE,
+)
+
+# 纯链接行（整行只有 URL）
+_BARE_URL_LINE = re.compile(
+    r"^\s*[\u3000\t >]*(?:网\s*址|URL|链接|来源|原\s*文|官\s*网)\s*[:：]\s*https?://\S+\s*$",
+    re.MULTILINE | re.UNICODE,
+)
+
+# 参考标题行（① 底稿：《xxx》/ ② 参考文章：《xxx》 等无 URL 的引用行）
+_REF_TITLE_LINE = re.compile(
+    r"^\s*[\u3000\t >]*"
+    r"(?:[（(]?[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳]+[\s\+]*)*[）)]?"
+    r"[\s:：]*"
+    r"(?:底稿|参考文章|参考|权威|来源|原文|官网|链接)"
+    r"[\s:：]*"
+    r"(?:《[^》\n]*》)?"
+    r"[\s]*$",
+    re.MULTILINE | re.UNICODE,
+)
+
+
+def _strip_reference_urls(content: str) -> str:
+    """Remove article reference URL lines from lesson content.
+
+    These lines (① 底稿：《xxx》/ 网址：https://...) are already exposed as
+    clickable links in the "文章网址" section, so they should not clutter the
+    rendered markdown tutorial.
+    """
+    if not content:
+        return content
+    cleaned = _URL_REF_LINE.sub("", content)
+    cleaned = _BARE_URL_LINE.sub("", cleaned)
+    cleaned = _REF_TITLE_LINE.sub("", cleaned)
+    # 压缩连续空行（删除 URL 行后会留下空行）
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
+
+
+# 匹配标题末尾的章节序号标记，如 "1.2 xxx 到底选哪个？（①）" 中的 "（①）"，
+# 也兼容 "Linux 基本命令入门（新增②）" 这种括号内带前缀 + 圈号的情况。
+_TRAILING_SECTION_MARK = re.compile(
+    r"[\s\u3000]*[（(][^）)]*[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳][^）)]*[）)]\s*$"
+)
+
+# 匹配标题开头的"面包屑路径 + >"，例如：
+#   "环境准备 > 一、先搞清楚 > 1.2 xxx到底选哪个？" → 只保留 "1.2 xxx到底选哪个？"
+_HEADING_CRUMB = re.compile(r"^(\s*#{1,6}\s+)(?:[^#\n>]*[>》]\s*)*(.+)$")
+
+
+def _clean_headings(content: str) -> str:
+    """Remove breadcrumb prefixes and section-number circled marks from markdown headings.
+
+    The imported .md lessons contain nested "breadcrumb" titles like:
+      ## 环境准备 > 一、先搞清楚（看完再动手...）（①） > 1.2 xxx 到底选哪个？（①）
+    We want them rendered as clean headings:
+      ## 1.2 "虚拟机"、"WSL2"、"云服务器"到底选哪个？
+    """
+    lines = content.splitlines()
+    cleaned_lines: list[str] = []
+    in_fence = False
+    for line in lines:
+        if re.match(r"^\s*(```|~~~)", line):
+            in_fence = not in_fence
+            cleaned_lines.append(line)
+            continue
+        if not in_fence and re.match(r"^\s*#{1,6}\s+", line):
+            # 去末尾（①）
+            line = _TRAILING_SECTION_MARK.sub("", line)
+            # 去面包屑前缀
+            m = _HEADING_CRUMB.match(line)
+            if m:
+                line = f"{m.group(1)}{m.group(2).strip()}"
+            # 再去一次末尾标记（嵌套标题可能有多个）
+            line = _TRAILING_SECTION_MARK.sub("", line).rstrip()
+        cleaned_lines.append(line)
+    return "\n".join(cleaned_lines)
+
+
 def _nest_document_markdown(content: str) -> str:
     """Place a full lesson below a topic H2 without changing fenced code."""
+    # 先去掉文章参考链接行（它们已在"文章网址"区单独展示）
+    content = _strip_reference_urls(content)
+    # 清理标题面包屑和（①）标记
+    content = _clean_headings(content)
     lines = content.strip().splitlines()
     if lines and re.match(r"^#\s+", lines[0]):
         lines = lines[1:]
@@ -26,11 +212,17 @@ def _nest_document_markdown(content: str) -> str:
                 level = min(len(heading.group(1)) + 1, 6)
                 line = f"{'#' * level}{heading.group(2)}"
         nested.append(line)
-    return "\n".join(nested).strip()
+    result = "\n".join(nested).strip()
+    # 压缩连续空行
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result
 
 
 def backfill_stage_tutorial(package: dict[str, Any], stage: dict[str, Any]) -> dict[str, Any]:
     """Replace legacy placeholder tutorials with imported full lessons."""
+    # 1. 确保 subtopic_ids/subtopic_names 被补全（旧会话兼容）
+    stage = ensure_stage_subtopics(stage)
+
     tutorial = str(package.get("tutorial") or "")
     if tutorial.strip() and _MISSING_TUTORIAL_TEXT not in tutorial:
         return package
@@ -50,44 +242,192 @@ def backfill_stage_tutorial(package: dict[str, Any], stage: dict[str, Any]) -> d
     if not subtopic_names and stage.get("subtopic_name"):
         subtopic_names = [stage["subtopic_name"]]
 
-    sections: list[str] = [f"# {stage.get('block_name') or package.get('block_name') or '学习资料'}"]
+    # 不再生成 # 块标题（前端已有标题），直接按每个 subtopic 输出 ## 子标题 + 正文
+    sections: list[str] = []
     for index, subtopic_id in enumerate(subtopic_ids):
         document = documents_by_subtopic.get(subtopic_id)
         if not document or not str(document.get("content") or "").strip():
             continue
         topic_name = subtopic_names[index] if index < len(subtopic_names) else document.get("title")
+        # 清理 subtopic 名称尾部的括号序号和全角括号
+        clean_name = str(topic_name or document.get("title") or "知识点")
+        clean_name = _TRAILING_SECTION_MARK.sub("", clean_name).strip()
+        if clean_name.startswith("（") and clean_name.endswith("）"):
+            clean_name = clean_name[1:-1].strip()
         sections.extend([
-            f"## {topic_name or document.get('title') or '知识点'}",
+            f"## {clean_name}",
             _nest_document_markdown(str(document["content"])),
         ])
 
-    if len(sections) == 1:
+    if not sections:
         return package
     return {**package, "tutorial": "\n\n".join(sections)}
 
 
+_SPACE = r"[ \t\u3000>]"
+
+# 匹配每个参考链接行常见格式，例如：
+#   ① 底稿：《xxx》
+#   　　网址：https://...
+#   ② 参考文章：《xxx》
+#   　　网址：https://...
+#   > ① 底稿：《xxx》
+#   > 　　网址：https://...
+#   ① 权威：《xxx》
+#   　　网址：https://...
+#   ①② 参考文章：《xxx》
+#   　　网址：https://...
+#   （①②③）参考文章：《xxx》  网址：https://...
+# 或者
+#   > **参考文章链接**
+#   > ① 底稿：《Python语法》
+#   > 　　网址：https://...
+_REF_ENTRY = re.compile(
+    r"(?:(?<=\n)|(?<=^))"                                    # 行首
+    + _SPACE + r"*"
+    + r"[（(]?[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳]+(?:[\s\+]+[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳]+)*[）)]?"  # 序号标记（支持括号包裹）
+    + r"[\s:：]*"                                             # 可选空白和冒号
+    + r"(?P<label>[^《\n：:]{0,40}?)"                         # 标记词（底稿/参考文章/权威…  限长避免吃到标题）
+    + r"[:：]?\s*"
+    + r"(?:《(?P<title>.*?)》)?\s*"                           # 《xxx》可选（书名号内是文章正式标题）
+    + r"[ \t\u3000]*\n"                                       # 换行
+    + _SPACE + r"*"
+    + r"(?:网\s*址|URL|链接|来源|原\s*文|官\s*网|底\s*稿|参\s*考)"
+    + r"[ \t\u3000]*[:：][ \t\u3000]*"                        # "网址："
+    + r"(?P<url>https?://[^\s《》<>\"'|，,；;）)【】]+)",      # URL
+    re.MULTILINE | re.UNICODE,
+)
+
+# 宽松匹配：整行形如 "任意文本 网址：http..."
+_LOOSE_URL = re.compile(
+    r"(?:^|\n)" + _SPACE + r"*"
+    + r"(?P<title>[^\n：:]{0,100}?)"
+    + r"(?:网\s*址|URL|链接|来源|原\s*文|官\s*网)"
+    + r"[ \t\u3000]*[:：][ \t\u3000]*"
+    + r"(?P<url>https?://[^\s《》<>\"'|，,；;）)【】]+)",
+    re.MULTILINE | re.UNICODE,
+)
+
+
+def extract_all_reference_urls(content: str) -> list[tuple[str, str]]:
+    """Return all (label+title, url) reference links from a local lesson md.
+
+    Each entry's first field is human-readable text combining the label
+    (底稿/参考文章/权威…) and 《xxx》 title; the second field is the
+    normalized URL. Duplicate URLs are de-duplicated (first occurrence wins).
+    """
+    if not content:
+        return []
+    pairs: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    def _add(label: str, title: str, url: str) -> None:
+        clean_url = url.strip().rstrip("。，,；;")
+        if not clean_url or clean_url in seen:
+            return
+        seen.add(clean_url)
+        parts: list[str] = []
+        if label:
+            cleaned_label = label.strip().rstrip("：:").strip()
+            if cleaned_label:
+                parts.append(cleaned_label)
+        cleaned_title = (title or "").strip()
+        if cleaned_title:
+            parts.append(cleaned_title)
+        combined = "：".join(p for p in parts if p) if parts else clean_url
+        pairs.append((combined, clean_url))
+
+    # 1. 标准带序号格式优先（有①②标记 + 标题书名号）
+    for match in _REF_ENTRY.finditer(content):
+        _add(match.group("label") or "", match.group("title") or "", match.group("url"))
+
+    # 2. 宽松形式补齐（捕获其他没有①②标记但写着"网址：http..."的行）
+    for match in _LOOSE_URL.finditer(content):
+        # 宽松模式下 title 可能很脏，取《xxx》片段作为更干净的名字
+        title_match = re.search(r"《(.*?)》", match.group("title") or "")
+        title = title_match.group(1) if title_match else ""
+        label = ""
+        if not title:
+            pre = (match.group("title") or "").strip()
+            if pre and len(pre) <= 20:
+                label = pre
+        _add(label, title, match.group("url"))
+
+    return pairs
+
+
 def build_stage_document_resources(stage: dict[str, Any]) -> list[dict[str, Any]]:
-    """Expose the source records behind a stage, including legacy packages."""
+    """Expose article URL resources for a stage (one resource per reference link)."""
+    stage = ensure_stage_subtopics(stage)
     block_id = stage.get("block_id")
     subtopic_ids = list(stage.get("subtopic_ids") or [])
     if not subtopic_ids and stage.get("subtopic_id"):
         subtopic_ids = [stage["subtopic_id"]]
+    logger.info(
+        "build_stage_document_resources: block_id=%s subtopic_ids=%s subtopic_id=%s",
+        block_id, subtopic_ids, stage.get("subtopic_id"),
+    )
     if not block_id or not subtopic_ids:
+        logger.warning("build_stage_document_resources: missing block_id or subtopic_ids, returning []")
         return []
 
     documents = VectorSearchTool().get_local_lessons(block_id, subtopic_ids)
-    return [
-        {
-            "resource_id": document.get("doc_id") or f"stage_doc_{index}",
-            "resource_type": "article" if str(document.get("source") or "").startswith(("http://", "https://")) else "documentation",
-            "title": document.get("title") or f"文章来源 {index}",
-            "url": document.get("source") or "",
-            "platform": "",
-            "description": document.get("source") or "知识库学习资料",
-            "recommendation_level": "primary",
-            "role": "source",
-            "order": index,
-        }
-        for index, document in enumerate(documents, start=1)
-        if isinstance(document, dict)
-    ]
+    logger.info(
+        "build_stage_document_resources: get_local_lessons returned %d documents", len(documents),
+    )
+    documents_by_subtopic: dict[str, dict[str, Any]] = {
+        doc.get("subtopic_id"): doc for doc in documents if isinstance(doc, dict) and doc.get("subtopic_id")
+    }
+    result: list[dict[str, Any]] = []
+    order_counter = 0
+    # 跨 subtopic 去重：同一个 URL 只在第一次出现的 subtopic 下生成资源，
+    # 避免同一篇文章链接在多个知识点的"文章网址"列表里重复出现。
+    global_seen_urls: set[str] = set()
+
+    for subtopic_id in subtopic_ids:
+        document = documents_by_subtopic.get(subtopic_id)
+        if not isinstance(document, dict):
+            logger.info("build_stage_document_resources: no document for subtopic_id=%s", subtopic_id)
+            continue
+        doc_id = str(document.get("doc_id") or "")
+        if doc_id and not doc_id.startswith("LOCAL-"):
+            continue
+        doc_title = str(document.get("title") or "")
+        content = str(document.get("content") or "")
+        refs = extract_all_reference_urls(content)
+        if not refs:
+            # 退回到数据库的 source 字段（兼容未完整更新 import 的库）
+            fallback = str(document.get("source") or "").strip()
+            if fallback.startswith(("http://", "https://")):
+                refs = [(doc_title or "学习文章", fallback)]
+        logger.info(
+            "build_stage_document_resources: subtopic=%s doc_id=%s refs_count=%d",
+            subtopic_id, doc_id, len(refs),
+        )
+        for ref_index, (ref_title, ref_url) in enumerate(refs, start=1):
+            # 跨 subtopic URL 去重：已出现在前面 subtopic 的 URL 不再重复生成
+            if ref_url in global_seen_urls:
+                continue
+            global_seen_urls.add(ref_url)
+            order_counter += 1
+            result.append({
+                "resource_id": f"{doc_id or 'LOCAL'}-ART-{order_counter:02d}",
+                "resource_type": "article",
+                "title": ref_title or doc_title or f"学习文章 {order_counter}",
+                "url": ref_url,
+                "canonical_url": ref_url,
+                "platform": "",
+                "description": doc_title or "",
+                "content_summary": doc_title or "",
+                "recommendation_level": "primary",
+                "role": "primary",
+                "order": order_counter,
+                # 绝对保证 subtopic_id 被写入（前端 matchesSubtopic 依赖它）
+                "subtopic_id": str(subtopic_id or document.get("subtopic_id") or ""),
+            })
+    logger.info(
+        "build_stage_document_resources: returning %d article resources with subtopics: %s",
+        len(result),
+        sorted({r["subtopic_id"] for r in result}),
+    )
+    return result

@@ -96,6 +96,7 @@ async def _get_snapshot_resources(package: Optional[dict[str, Any]], stage: Opti
             "recommendation_level": video.get("role", "supplementary"),
             "role": video.get("role", "supplementary"),
             "order": video.get("sequence_index", 1),
+            "subtopic_id": video.get("subtopic_id") or "",
         }
         for video in videos
     ])

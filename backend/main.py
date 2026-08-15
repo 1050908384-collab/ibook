@@ -102,6 +102,11 @@ app.include_router(v1_stages_router, prefix="/api/v1", tags=["Stages"])
 app.include_router(v1_qa_router, prefix="/api/v1", tags=["Q&A"])
 app.include_router(v1_user_scope_router, prefix="/api/v1", tags=["User Scope"])
 
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
 # =====================================================================
 # 生产模式前端静态资源托管 (单端口 8500 一键部署)
 # 当执行过 npm run build 生成 frontend/dist 后，后端直接托管前端，
@@ -156,10 +161,6 @@ else:
     @app.get("/")
     def root():
         return {"message": f"{settings.APP_NAME} is running", "tip": "Run `npm run build` in frontend/ to host UI here on the same port."}
-
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn

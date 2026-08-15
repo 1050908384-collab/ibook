@@ -345,7 +345,7 @@ def _llm_judge(content: str, profile: dict, user_type: str, user_level: str) -> 
         f"知识盲区={profile.get('knowledge_gaps','[]')}"
     )
     payload = {
-        "model": settings.OLLMA_MODEL,
+        "model": settings.OLLAMA_MODEL,
         "prompt": _LLM_PROMPT_TEMPLATE.format(
             profile_summary=profile_summary,
             content=content[:2000],
@@ -357,7 +357,7 @@ def _llm_judge(content: str, profile: dict, user_type: str, user_level: str) -> 
     }
     try:
         with httpx.Client(timeout=60) as client:
-            resp = client.post(f"{settings.OLLMA_BASE_URL}/api/generate", json=payload)
+            resp = client.post(f"{settings.OLLAMA_BASE_URL}/api/generate", json=payload)
             resp.raise_for_status()
             text = resp.json().get("response", "")
     except Exception as e:

@@ -60,19 +60,19 @@ class DiagnosticAgent(BaseAgent):
         """生成下一学习阶段计划（原Agent2功能，已合并至Agent1）。"""
         knowledge_gaps = profile.get("knowledge_gaps", [])
         unmastered_gaps = [g for g in knowledge_gaps if g.get("status") != "已掌握"]
-        
+
         if not unmastered_gaps:
             raise ValueError("No unmastered knowledge gap remains")
-        
+
         gap = unmastered_gaps[0]
         skill_name = gap.get("skill", "")
-        
+
         block_info = {}
         try:
             block_info = await self.knowledge_block_query_tool.query_block(skill_name)
         except Exception:
             block_info = {}
-        
+
         generated_stage = {}
         try:
             generated_stage = await self.stage_generator_tool.generate_stage(
@@ -81,18 +81,54 @@ class DiagnosticAgent(BaseAgent):
             )
         except Exception:
             generated_stage = {}
-        
-        # 从 block_info 中提取首个 subtopic（知识点级阶段）
-        subtopic_id = ""
-        subtopic_name = ""
-        subtopics = block_info.get("subtopics", [])
-        if subtopics and isinstance(subtopics, list) and len(subtopics) > 0:
-            first_sub = subtopics[0]
-            if isinstance(first_sub, dict):
-                subtopic_id = first_sub.get("subtopic_id", "") or first_sub.get("id", "")
-                subtopic_name = first_sub.get("subtopic_name", "") or first_sub.get("name", "") or first_sub.get("title", "")
-            elif isinstance(first_sub, str):
-                subtopic_name = first_sub
+
+        # 从 block_info 中提取本阶段目标 subtopic 列表（支持多知识点分页）
+        block_subtopics = block_info.get("subtopics", []) or []
+        # gap 中记录的"目标 subtopic"（用户未掌握、本阶段需要学习的）
+        target_ids = gap.get("target_subtopic_ids", []) or []
+        target_subtopics = gap.get("target_subtopics", []) or []
+
+        subtopic_ids: list[str] = []
+        subtopic_names: list[str] = []
+
+        if target_ids:
+            # 优先按 gap 的 target_subtopic_ids 顺序，从 block_subtopics 匹配名称
+            id_to_name = {
+                str(s.get("subtopic_id", "")): s.get("subtopic_name", "") or s.get("name", "") or s.get("title", "")
+                for s in block_subtopics if isinstance(s, dict)
+            }
+            for sid in target_ids:
+                sid_str = str(sid)
+                if sid_str and sid_str not in subtopic_ids:
+                    subtopic_ids.append(sid_str)
+                    subtopic_names.append(id_to_name.get(sid_str, sid_str))
+        elif target_subtopics:
+            # 回退到 target_subtopics 列表
+            for sub in target_subtopics:
+                if isinstance(sub, dict):
+                    sid = str(sub.get("subtopic_id", "") or sub.get("id", ""))
+                    name = sub.get("subtopic_name", "") or sub.get("name", "") or sub.get("title", "")
+                    if sid and sid not in subtopic_ids:
+                        subtopic_ids.append(sid)
+                        subtopic_names.append(name)
+                elif isinstance(sub, str):
+                    if sub not in subtopic_names:
+                        subtopic_names.append(sub)
+                        subtopic_ids.append("")
+
+        # 如果 target 为空，回退到 block 的全部 subtopics（首个阶段兜底）
+        if not subtopic_ids and not subtopic_names and block_subtopics:
+            for sub in block_subtopics:
+                if isinstance(sub, dict):
+                    sid = str(sub.get("subtopic_id", "") or sub.get("id", ""))
+                    name = sub.get("subtopic_name", "") or sub.get("name", "") or sub.get("title", "")
+                    if sid:
+                        subtopic_ids.append(sid)
+                        subtopic_names.append(name)
+
+        # 单值字段取首个，向后兼容
+        subtopic_id = subtopic_ids[0] if subtopic_ids else ""
+        subtopic_name = subtopic_names[0] if subtopic_names else ""
 
         return {
             "stage_id": generated_stage.get("stage_id", ""),
@@ -101,6 +137,8 @@ class DiagnosticAgent(BaseAgent):
             "block_name": block_info.get("block_name", skill_name),
             "subtopic_id": subtopic_id,
             "subtopic_name": subtopic_name,
+            "subtopic_ids": subtopic_ids,
+            "subtopic_names": subtopic_names,
             "estimated_hours": generated_stage.get("estimated_hours", 2.0),
             "gap_skill": skill_name,
             "prerequisites": block_info.get("prerequisites", []),

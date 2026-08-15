@@ -105,7 +105,7 @@ class _OllamaEFProxySafe(EmbeddingFunction):
 def get_embedding_function():
     """返回代理安全的 Ollama embedding function。
 
-    使用 settings.OLLMA_BASE_URL + settings.EMBEDDING_MODEL（默认 qwen3-embedding:0.6b）。
+    使用 settings.OLLAMA_BASE_URL + settings.EMBEDDING_MODEL（默认 qwen3-embedding:0.6b）。
     若 chromadb / httpx 未安装或构造失败，返回 None 并记录错误日志。
 
     ⚠ 调用方注意：返回 None 时**绝不能**用 None 作为 embedding_function
@@ -116,14 +116,14 @@ def get_embedding_function():
         return None
     try:
         return _OllamaEFProxySafe(
-            url=settings.OLLMA_BASE_URL,
+            url=settings.OLLAMA_BASE_URL,
             model_name=settings.EMBEDDING_MODEL,
         )
     except Exception as e:
         logger.error(
             "创建 Ollama embedding function 失败 (url=%s, model=%s): %s。"
             "Chroma 向量检索将不可用，回退 SQLite 关键词匹配。",
-            settings.OLLMA_BASE_URL, settings.EMBEDDING_MODEL, e,
+            settings.OLLAMA_BASE_URL, settings.EMBEDDING_MODEL, e,
         )
         return None
 

@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 
 class LLMClient:
     def __init__(self):
-        self.ollma_base_url = settings.OLLMA_BASE_URL
-        self.ollma_model = settings.OLLMA_MODEL
+        self.ollama_base_url = settings.OLLAMA_BASE_URL
+        self.ollama_model = settings.OLLAMA_MODEL
         self.client = httpx.AsyncClient(timeout=120)
+        self.last_done_reason: Optional[str] = None
 
     def _clean_response(self, response_text: str) -> str:
-        response_text = response_text.replace("<think>", "").replace("</think>", "")
         response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL)
-        return response_text.strip()
+        return response_text.replace("<think>", "").replace("</think>", "").strip()
 
     async def complete(
         self,
@@ -29,11 +29,12 @@ class LLMClient:
         temperature: float = 0.7,
         json_mode: bool = False,
     ) -> str:
+        self.last_done_reason = None
         try:
-            print(f"=== 发送给Ollama的prompt（前200字符）=== {prompt[:200]}")
+            logger.debug("Sending Ollama prompt: %s", prompt[:200])
             
             payload = {
-                "model": self.ollma_model,
+                "model": self.ollama_model,
                 "prompt": prompt,
                 "system": system_prompt,
                 "options": {
@@ -46,14 +47,17 @@ class LLMClient:
                 payload["format"] = "json"
             
             response = await self.client.post(
-                f"{self.ollma_base_url}/api/generate",
+                f"{self.ollama_base_url}/api/generate",
                 json=payload
             )
             response.raise_for_status()
             result = response.json()
+            self.last_done_reason = result.get("done_reason")
             response_text = result.get("response", "")
             cleaned_response = self._clean_response(response_text)
-            print(f"=== Ollama响应（前500字符）===\n{cleaned_response[:500]}\n=== 响应结束 ===")
+            if self.last_done_reason == "length":
+                logger.warning("Ollama stopped generation because num_predict was exhausted")
+            logger.debug("Ollama response: %s", cleaned_response[:500])
             return cleaned_response
         except httpx.RequestError as e:
             logger.error(f"Ollama request failed: {e}")
@@ -63,9 +67,10 @@ class LLMClient:
             return f"Error: {str(e)}"
 
     async def chat(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
+        self.last_done_reason = None
         try:
             payload = {
-                "model": self.ollma_model,
+                "model": self.ollama_model,
                 "messages": messages,
                 "options": {
                     "num_predict": max_tokens,
@@ -75,14 +80,15 @@ class LLMClient:
             }
             
             response = await self.client.post(
-                f"{self.ollma_base_url}/api/chat",
+                f"{self.ollama_base_url}/api/chat",
                 json=payload
             )
             response.raise_for_status()
             result = response.json()
+            self.last_done_reason = result.get("done_reason")
             response_text = result.get("message", {}).get("content", "")
             cleaned_response = self._clean_response(response_text)
-            print(f"=== Ollama Chat响应（前500字符）===\n{cleaned_response[:500]}\n=== 响应结束 ===")
+            logger.debug("Ollama chat response: %s", cleaned_response[:500])
             return cleaned_response
         except httpx.RequestError as e:
             logger.error(f"Ollama chat request failed: {e}")

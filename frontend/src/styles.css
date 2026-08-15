@@ -3496,7 +3496,9 @@ body.resizing-workspace-panels * {
 .current-material-scroll {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .current-material-panel > footer {
@@ -3521,14 +3523,19 @@ body.resizing-workspace-panels * {
 }
 
 .material-document {
-  width: min(780px, 100%);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
   padding: 30px 36px 70px;
+  overflow-wrap: break-word;
 }
 
 .material-document.compact {
   width: 100%;
+  min-width: 0;
   padding: 20px 18px 36px;
+  overflow-wrap: break-word;
 }
 
 .material-document-meta {
@@ -3559,6 +3566,7 @@ body.resizing-workspace-panels * {
 }
 
 .material-resource-section {
+  min-width: 0;
   padding: 18px 0;
   border-top: 1px solid #e8eaf0;
 }
@@ -3679,12 +3687,13 @@ body.resizing-workspace-panels * {
 }
 
 .text-resources .material-markdown {
-  max-width: 70ch;
+  width: 100%;
+  min-width: 0;
   padding-top: 2px;
 }
 
 .material-reading-pages {
-  max-width: 70ch;
+  width: 100%;
 }
 
 .material-reading-page {
@@ -3728,25 +3737,86 @@ body.resizing-workspace-panels * {
 }
 
 .material-page-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
   color: #777f90;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
+.material-page-indicator > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #dfe2ea;
+  border-radius: 6px;
+  background: #fff;
+  color: #5c6780;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 80ms ease;
+}
+
+.material-page-indicator > button:hover {
+  border-color: #bdb8ef;
+  color: #5148b9;
+  background: #faf9ff;
+}
+
+.material-page-indicator > button.is-active {
+  border-color: #5148b9;
+  background: linear-gradient(135deg, #6c63ff 0%, #5148b9 100%);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(81, 72, 185, 0.22);
+}
+
+.material-page-controls.compact {
+  margin-top: 0;
+  padding: 8px 16px 6px;
+  border-top: none;
+  border-bottom: 1px solid #ececf2;
+  background: linear-gradient(180deg, #fafafd 0%, #ffffff 100%);
+  gap: 8px;
+}
+
+.material-page-button.compact {
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.material-page-indicator.compact > button {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 11px;
+  border-radius: 5px;
+}
+
 .material-markdown,
 .material-markdown p,
 .material-markdown li {
-  color: #566174;
+  color: #3d4658;
   font-size: 15px;
   font-weight: 400;
-  line-height: 1.78;
+  line-height: 1.85;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .material-document.compact .material-markdown,
 .material-document.compact .material-markdown p,
 .material-document.compact .material-markdown li {
   font-size: 14px;
-  line-height: 1.75;
+  line-height: 1.8;
 }
 
 .material-markdown h1,
@@ -3755,18 +3825,27 @@ body.resizing-workspace-panels * {
 .material-markdown h4,
 .material-markdown h5,
 .material-markdown h6 {
-  color: #4b5872;
-  font-weight: 600;
-  line-height: 1.45;
-  margin: 26px 0 10px;
+  color: #1e2230;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 28px 0 14px;
+  letter-spacing: -0.01em;
 }
 
-.material-markdown h1 { font-size: 20px; }
-.material-markdown h2 { font-size: 18px; }
-.material-markdown h3 { font-size: 16px; }
-.material-markdown h4 { font-size: 15px; }
+.material-markdown h1 {
+  font-size: 22px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e3e6ed;
+}
+.material-markdown h2 {
+  font-size: 19px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eaecf2;
+}
+.material-markdown h3 { font-size: 17px; }
+.material-markdown h4 { font-size: 15.5px; }
 .material-markdown h5,
-.material-markdown h6 { font-size: 14px; }
+.material-markdown h6 { font-size: 14px; color: #566174; }
 
 .material-markdown > :first-child {
   margin-top: 0;
@@ -3830,23 +3909,43 @@ body.resizing-workspace-panels * {
 
 .material-markdown table {
   width: 100%;
+  max-width: 100%;
   margin: 18px 0;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 13.5px;
+  border-radius: 6px;
+  overflow: hidden;
+  overflow-x: auto;
+  display: table;
+  table-layout: fixed;
+}
+
+.material-markdown thead,
+.material-markdown tbody {
+  display: table-row-group;
+}
+.material-markdown tr {
+  display: table-row;
 }
 
 .material-markdown th,
 .material-markdown td {
-  padding: 9px 10px;
+  padding: 10px 12px;
   border: 1px solid #e0e3ea;
   text-align: left;
   vertical-align: top;
+  word-break: break-word;
 }
 
 .material-markdown th {
-  background: #f6f7f9;
-  color: #30394b;
-  font-weight: 600;
+  background: #f2f3f7;
+  color: #2a3144;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.material-markdown tr:nth-child(even) td {
+  background: #fafbfd;
 }
 
 .material-code-section {
@@ -3882,6 +3981,46 @@ body.resizing-workspace-panels * {
   padding: 14px;
   overflow-x: auto;
   font: 11px/1.7 "JetBrains Mono", Consolas, monospace;
+}
+
+/* ReactMarkdown 代码块（.material-markdown 内的 pre>code） */
+.material-code-block {
+  margin: 18px 0;
+  border-radius: 8px;
+  background: #171b2b;
+  overflow: visible;
+  position: relative;
+  min-width: 0;
+}
+
+.material-code-block > code {
+  display: block;
+  padding: 16px 18px;
+  overflow-x: auto;
+  background: transparent;
+  color: #e2e6f0;
+  font: 13px/1.7 "JetBrains Mono", "Fira Code", Consolas, monospace;
+  white-space: pre;
+}
+
+.material-code-lang {
+  padding: 6px 14px;
+  background: #202537;
+  color: #8b92a8;
+  font-size: 11px;
+  font-family: "JetBrains Mono", Consolas, monospace;
+  border-bottom: 1px solid #2c3245;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.material-inline-code {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f2f6;
+  color: #4a3fb5;
+  font-size: 0.88em;
+  font-family: "JetBrains Mono", Consolas, monospace;
 }
 
 .project-switcher-modal {

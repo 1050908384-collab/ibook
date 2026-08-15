@@ -69,8 +69,10 @@ SKILL_NAMES = (
 
 
 DAILY_ANSWER_LIMIT = 150
-TECHNICAL_ANSWER_TOKENS = 600
-DAILY_ANSWER_TOKENS = 180
+# deepseek-r1 spends part of num_predict on internal reasoning. These are
+# generation budgets, not user-facing length targets.
+TECHNICAL_ANSWER_TOKENS = 1536
+DAILY_ANSWER_TOKENS = 768
 
 
 def get_skill_context(skill_names: list[str]) -> str:
@@ -1705,6 +1707,13 @@ class DeterministicContentAgent:
         q = (question or "").strip()
         q_lower = q.lower()
 
+        stage_learning_markers = (
+            "学习难点", "阶段难点", "本阶段难点", "这个阶段的难点", "这一阶段的难点",
+            "学习重点", "阶段重点", "易错点", "容易错", "掌握情况", "薄弱点",
+        )
+        if any(marker in q for marker in stage_learning_markers):
+            return "technical"
+
         # 情绪词可以和技术问题同时出现，例如“CUDA 报错让我很焦虑”。
         # 只要有明确技术诉求，仍应进入知识检索和 Agent4 审核。
         tech_keywords = [
@@ -2180,15 +2189,50 @@ class HybridContentAgent(DeterministicContentAgent):
 
     @staticmethod
     def _clip_daily_answer(answer: str, limit: int = DAILY_ANSWER_LIMIT) -> str:
-        """Last-resort guard for a daily reply when the model ignores its limit."""
+        """Keep a concise daily reply without cutting through a sentence."""
         text = (answer or "").strip()
         if len(text) <= limit:
             return text
         candidate = text[:limit]
         boundary = max(candidate.rfind(mark) for mark in ("\n", "。", "！", "？", ".", "!", "?"))
-        if boundary >= limit // 2:
+        if boundary >= 0:
             return candidate[:boundary + 1].strip()
-        return text[:max(0, limit - 3)].rstrip() + "..."
+        # A hard character cut would expose a visibly incomplete sentence.
+        # Let the prompt limit control this exceptional no-punctuation case.
+        return text
+
+    async def _complete_answer_with_retry(
+        self,
+        prompt: str,
+        system_prompt: str,
+        *,
+        temperature: float,
+        max_tokens: int,
+    ) -> str:
+        """Never pass an Ollama length-truncated answer to the user."""
+        response = await self.llm_client.complete(
+            prompt,
+            system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        if getattr(self.llm_client, "last_done_reason", None) != "length":
+            return response
+
+        retry_prompt = (
+            f"{prompt}\n\nThe previous attempt was cut off. Return a complete, "
+            "concise answer only. Finish every sentence and omit optional detail."
+        )
+        response = await self.llm_client.complete(
+            retry_prompt,
+            system_prompt,
+            temperature=min(temperature, 0.3),
+            max_tokens=max(max_tokens, 1024),
+        )
+        if getattr(self.llm_client, "last_done_reason", None) == "length":
+            _agent_log("Agent3", "answer:llm_truncated_twice -> deterministic_fallback")
+            return ""
+        return response
 
     async def _compress_to_budget(self, text: str, budget: int) -> str:
         """Give a good response one concise retry before using a safe fallback."""
@@ -2525,9 +2569,9 @@ class HybridContentAgent(DeterministicContentAgent):
         if memory_context:
             prompt += f"\n\n{memory_context}"
         prompt += f"\n\n答疑规范：\n{self.answer_skill_context}"
-        answer = await self.llm_client.complete(
+        answer = await self._complete_answer_with_retry(
             prompt,
-            system_prompt="你是技术准确、适合教学的学习助手。",
+            "你是技术准确、适合教学的学习助手。",
             temperature=0.5,
             max_tokens=TECHNICAL_ANSWER_TOKENS,
         )
@@ -2545,6 +2589,13 @@ class HybridContentAgent(DeterministicContentAgent):
         # 误入知识库检索和 Agent4 技术审核。
         if rule_type == "daily":
             return "daily"
+        # Questions about the learner's current-stage difficulty are technical
+        # learning-content queries even if a general classifier calls them daily.
+        if any(marker in question for marker in (
+            "学习难点", "阶段难点", "本阶段难点", "这个阶段的难点", "这一阶段的难点",
+            "学习重点", "阶段重点", "易错点", "容易错", "掌握情况", "薄弱点",
+        )):
+            return "technical"
         system_prompt = """你是一个问题分类器。请判断用户的问题属于"技术类"还是"日常类"。
 
 分类标准：
@@ -2623,12 +2674,13 @@ class HybridContentAgent(DeterministicContentAgent):
 
 请基于以上信息，清晰地告诉用户当前阶段的学习内容是什么。用简洁明了的语言列出核心知识点和学习目标。"""
 
-            answer = await self.llm_client.complete(
+            answer = await self._complete_answer_with_retry(
                 prompt,
-                system_prompt="你是一个专业的学习助手，能够清晰地介绍当前学习阶段的内容。",
+                "你是一个专业的学习助手，能够清晰地介绍当前学习阶段的内容。",
                 temperature=0.3,
+                max_tokens=TECHNICAL_ANSWER_TOKENS,
             )
-            return answer
+            return answer or self._generate_daily_answer(request)
 
         # 普通日常类问题：情感支持/学习咨询
         history_text = ""
@@ -2666,7 +2718,7 @@ class HybridContentAgent(DeterministicContentAgent):
 请生成一个温暖、有针对性的回答。"""
 
         try:
-            response = await self.llm_client.complete(
+            response = await self._complete_answer_with_retry(
                 prompt,
                 system_prompt,
                 temperature=0.5,
@@ -2737,9 +2789,9 @@ class HybridContentAgent(DeterministicContentAgent):
 {feedback}
 
 要求：逐条修复问题，保持技术准确和教学清晰，返回完整修改后回答。"""
-        answer = await self.llm_client.complete(
+        answer = await self._complete_answer_with_retry(
             prompt,
-            system_prompt="你是Agent3答疑专家，负责依据合并审核意见修改回答。",
+            "你是Agent3答疑专家，负责依据合并审核意见修改回答。",
             temperature=0.3,
             max_tokens=TECHNICAL_ANSWER_TOKENS,
         )

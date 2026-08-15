@@ -161,6 +161,9 @@ async def confirm_profile(
                     "phase": "stage_ready",
                     "next_step": "开始学习",
                     "stage_generated": False,
+                    # 返回当前阶段信息（含 subtopic_ids/subtopic_names），
+                    # 前端 confirmProfile 后可直接用于学习包分页过滤
+                    "stage_info": session.get("stage_info"),
                     "message": "画像已确认",
                 }
         else:

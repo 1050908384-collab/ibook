@@ -42,6 +42,14 @@ class Agent3QuestionClassificationTest(unittest.IsolatedAsyncioTestCase):
                     DeterministicContentAgent._classify_question_by_keywords(question),
                 )
 
+    def test_stage_difficulty_query_is_technical(self):
+        self.assertEqual(
+            "technical",
+            DeterministicContentAgent._classify_question_by_keywords(
+                "我这一个阶段的学习难点是什么"
+            ),
+        )
+
     async def test_hybrid_daily_rule_skips_llm_classifier(self):
         agent = HybridContentAgent()
         agent.llm_client.complete = AsyncMock(return_value='{"type":"technical"}')
@@ -59,6 +67,15 @@ class Agent3QuestionClassificationTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual("technical", result)
         agent.llm_client.complete.assert_awaited_once()
+
+    async def test_hybrid_stage_difficulty_skips_llm_classifier(self):
+        agent = HybridContentAgent()
+        agent.llm_client.complete = AsyncMock(return_value='{"type":"daily"}')
+
+        result = await agent._classify_question_by_llm("我这一个阶段的学习难点是什么")
+
+        self.assertEqual("technical", result)
+        agent.llm_client.complete.assert_not_awaited()
 
 
 if __name__ == "__main__":

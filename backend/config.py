@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
@@ -15,8 +16,16 @@ class Settings(BaseSettings):
     # production deployments instead of relying on a wildcard with cookies.
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 
-    OLLMA_BASE_URL: str = "http://localhost:11434"
-    OLLMA_MODEL: str = "deepseek-r1:7b"
+    # Accept the historic misspelled names so existing local .env files keep
+    # working, while new deployments use the documented OLLAMA_* names.
+    OLLAMA_BASE_URL: str = Field(
+        default="http://localhost:11434",
+        validation_alias=AliasChoices("OLLAMA_BASE_URL", "OLLMA_BASE_URL"),
+    )
+    OLLAMA_MODEL: str = Field(
+        default="deepseek-r1:7b",
+        validation_alias=AliasChoices("OLLAMA_MODEL", "OLLMA_MODEL"),
+    )
     # Chroma 向量库使用的 Ollama embedding 模型（中文语义检索）
     EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"
 

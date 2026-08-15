@@ -1,6 +1,5 @@
-import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Award,
@@ -172,9 +171,12 @@ type LearningResource = {
   locator?: string;
   content_summary?: string;
   metadata_json?: Record<string, unknown>;
+  subtopic_id?: string;
 };
 type LearningPackage = {
   subtopic_name?: string;
+  subtopic_ids?: string[];
+  subtopic_names?: string[];
   tutorial?: string;
   code_examples?: Array<{ title?: string; code?: string; language?: string }>;
   questions?: TestQuestion[];
@@ -861,18 +863,24 @@ function ProfilePanel({
 }
 
 function getResourceUrl(resource: LearningResource) {
-  if (resource.url?.startsWith('http')) return resource.url;
+  if (resource.url) return resource.url;
   if (resource.content_ref?.startsWith('http')) return resource.content_ref;
   if (resource.locator?.startsWith('http')) return resource.locator;
   return '';
 }
 
 function uniqueResources(resources: LearningResource[]) {
-  const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenUrls = new Set<string>();
   return resources.filter((resource) => {
     const key = resource.resource_id || resource.source_id || getResourceUrl(resource) || resource.title;
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
+    const url = getResourceUrl(resource);
+    // 先按 resource_id 去重
+    if (key && seenIds.has(key)) return false;
+    // 再按 URL 去重：同一 URL 只保留第一条，防止同一篇文章链接重复出现
+    if (url && seenUrls.has(url)) return false;
+    if (key) seenIds.add(key);
+    if (url) seenUrls.add(url);
     return true;
   });
 }
@@ -911,35 +919,45 @@ function getTopicTutorial(tutorial: string | undefined, topicName: string) {
   if (!tutorial?.trim() || !topicName.trim()) return tutorial;
   const normalizedTopic = topicName.trim().replace(/\s+/g, ' ');
   const headingPattern = /^##\s+(.+?)\s*$/gm;
-  let match: RegExpExecArray | null;
-  while ((match = headingPattern.exec(tutorial))) {
-    const heading = match[1].trim().replace(/\s+/g, ' ');
-    if (heading !== normalizedTopic && !heading.includes(normalizedTopic) && !normalizedTopic.includes(heading)) continue;
-    const contentStart = match.index + match[0].length;
-    const remainder = tutorial.slice(contentStart);
-    const nextHeading = remainder.search(/^##\s+/m);
-    return remainder.slice(0, nextHeading < 0 ? remainder.length : nextHeading).trim();
+  const matches: { index: number; heading: string; contentStart: number }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = headingPattern.exec(tutorial))) {
+    const heading = m[1].trim().replace(/\s+/g, ' ');
+    matches.push({ index: m.index, heading, contentStart: m.index + m[0].length });
   }
-  return tutorial;
+  let bestMatch = -1;
+  for (let i = 0; i < matches.length; i++) {
+    const heading = matches[i].heading;
+    if (heading === normalizedTopic) { bestMatch = i; break; }
+    if (heading.includes(normalizedTopic) || normalizedTopic.includes(heading)) {
+      if (bestMatch < 0 || heading.length < matches[bestMatch].heading.length) {
+        bestMatch = i;
+      }
+    }
+  }
+  if (bestMatch < 0) return tutorial;
+  const start = matches[bestMatch].contentStart;
+  // 内容结束：下一个同名/更高优先的 ## 之前（下一个 ## heading，如果下一个 heading 就是同名，则跳过它，避免取到空段落）
+  let endIdx = tutorial.length;
+  for (let i = bestMatch + 1; i < matches.length; i++) {
+    endIdx = matches[i].index;
+    break;
+  }
+  let slice = tutorial.slice(start, endIdx).trim();
+  // 去掉开头可能存在的同名"空 H2"（外层 wrapper 与内层嵌套 heading 同名导致的"内容为空"段落）：
+  // 如果开头就是另一个同名的 ## heading 嵌套，取其实际内容部分
+  const duplicateHeading = new RegExp(`^\\s*##\\s+${escapeRegex(normalizedTopic)}\\s*\\n`, 'm');
+  const dupMatch = duplicateHeading.exec(slice);
+  if (dupMatch && dupMatch.index === 0) {
+    const afterDup = slice.slice(dupMatch.index + dupMatch[0].length);
+    const nextHeading = afterDup.search(/^##\s+/m);
+    slice = (nextHeading < 0 ? afterDup : afterDup.slice(0, nextHeading)).trim();
+  }
+  return slice || tutorial;
 }
 
-function splitTutorialPages(tutorial?: string) {
-  const content = tutorial?.trim();
-  if (!content) return [];
-  const headingPattern = /^#{2,3}\s+.+$/gm;
-  const headings = Array.from(content.matchAll(headingPattern));
-  if (headings.length === 0) return [content];
-
-  const pages: string[] = [];
-  const preface = content.slice(0, headings[0].index ?? 0).trim();
-  headings.forEach((heading, index) => {
-    const start = heading.index ?? 0;
-    const end = index + 1 < headings.length ? (headings[index + 1].index ?? content.length) : content.length;
-    const section = content.slice(start, end).trim();
-    if (section) pages.push(section);
-  });
-  if (preface && pages.length > 0) pages[0] = `${preface}\n\n${pages[0]}`;
-  return pages.length > 0 ? pages : [content];
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function resolveSessionStage(session: {
@@ -1035,6 +1053,26 @@ function qaItemsToMessages(items?: Array<{
   });
 }
 
+function matchesSubtopic(resource: LearningResource, subtopic?: KnowledgeSubtopic): boolean {
+  if (!subtopic) return true;
+  const subtopicId = subtopic.subtopic_id;
+  const subtopicName = subtopic.subtopic_name?.trim().toLowerCase();
+  if (!subtopicId && !subtopicName) return true;
+  const resourceSubtopicId = (resource as any).subtopic_id as string | undefined;
+  // 1. 资源有 subtopic_id 时，按精确匹配
+  if (resourceSubtopicId) {
+    if (subtopicId && resourceSubtopicId === subtopicId) return true;
+    // 资源属于其他知识点，不显示在当前页
+    return false;
+  }
+  // 2. 资源 subtopic_id 为空字符串（经过 None→"" 规范化后的旧资源）
+  //    不再走名称模糊匹配 — 否则同一篇文章会匹配到错误的知识点页面，
+  //    导致"最后一个知识点的文章出现在倒数第二个知识点里"。
+  //    仅当未选择具体知识点时（subtopicId 为空）才显示。
+  if (subtopicId) return false;
+  return true;
+}
+
 function MaterialDocument({
   stage,
   learningPackage,
@@ -1046,9 +1084,6 @@ function MaterialDocument({
   selectedSubtopic?: KnowledgeSubtopic;
   compact?: boolean;
 }) {
-  const [tutorialPage, setTutorialPage] = useState(0);
-  const readingPagesRef = useRef<HTMLDivElement>(null);
-  const previousTutorialPage = useRef(0);
   const codeExamples = learningPackage.code_examples || [];
   const recommendedVideos = (learningPackage.recommended_videos || []).map((video) => ({
     ...video,
@@ -1057,14 +1092,34 @@ function MaterialDocument({
   const learningResources = learningPackage.learning_resources?.length
     ? learningPackage.learning_resources
     : recommendedVideos;
+  const scopedResources = learningResources.filter((res) => matchesSubtopic(res, selectedSubtopic));
   const videoResources = uniqueResources(
-    learningResources.filter((resource) => resource.resource_type === 'video' && Boolean(getResourceUrl(resource)))
+    scopedResources.filter((resource) => resource.resource_type === 'video' && Boolean(getResourceUrl(resource)))
   );
   const articleResources = uniqueResources(
-    learningResources.filter((resource) => ['article', 'documentation'].includes(resource.resource_type || ''))
+    scopedResources.filter((resource) =>
+      (resource.resource_type === 'article' || resource.resource_type === 'documentation') &&
+      Boolean(resource.content_summary || getResourceUrl(resource))
+    )
   );
+  // 诊断日志：追踪文章资源过滤过程
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log('[MaterialDocument] article diagnosis:', {
+      stage_block_id: stage.block_id,
+      stage_subtopic_ids: stage.subtopic_ids,
+      stage_subtopic_names: stage.subtopic_names,
+      pkg_subtopic_ids: learningPackage.subtopic_ids,
+      pkg_subtopic_names: learningPackage.subtopic_names,
+      selectedSubtopic,
+      total_resources: learningResources.length,
+      scoped_count: scopedResources.length,
+      article_count: articleResources.length,
+      resource_types: learningResources.map(r => `${r.resource_type}:${(r as any).subtopic_id || ''}`),
+    });
+  }
   const codeResourceItems = uniqueResources(
-    learningResources.filter((resource) => resource.resource_type === 'code' && Boolean(resource.content_summary || getResourceUrl(resource)))
+    scopedResources.filter((resource) => resource.resource_type === 'code' && Boolean(resource.content_summary || getResourceUrl(resource)))
   );
   const selectedTopicName = selectedSubtopic?.subtopic_name
     || stage.subtopic_name
@@ -1073,62 +1128,70 @@ function MaterialDocument({
     || learningPackage.block_name
     || '未命名学习材料';
   const topicTutorial = getTopicTutorial(learningPackage.tutorial, selectedTopicName);
-  const tutorialPages = useMemo(() => splitTutorialPages(topicTutorial), [topicTutorial]);
-  useEffect(() => {
-    setTutorialPage(0);
-  }, [selectedTopicName, learningPackage.tutorial]);
-  useEffect(() => {
-    if (previousTutorialPage.current !== tutorialPage && readingPagesRef.current) {
-      readingPagesRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }
-    previousTutorialPage.current = tutorialPage;
-  }, [tutorialPage]);
-  const currentTutorialPage = tutorialPages[tutorialPage] || '';
   const hasTextContent = Boolean(
     topicTutorial?.trim()
     || codeExamples.length
+    || articleResources.length
     || codeResourceItems.length
   );
   return (
     <article className={`material-document ${compact ? 'compact' : ''}`}>
       <div className="material-document-meta">
-        <span>知识点 {Math.max(1, selectedSubtopic?.sequence_index ?? 1)}</span>
+        <span>阶段 {stage.stage_num ?? 1}</span>
+        <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
       </div>
       <h2>{selectedTopicName}</h2>
+      <section className="material-resource-section article-urls">
+        <div className="material-section-heading"><ExternalLink size={16} /><h3>文章网址</h3></div>
+        {articleResources.length > 0 ? (
+          <div className="material-article-list">
+            {articleResources.map((resource, index) => {
+              const url = getResourceUrl(resource);
+              return (
+                <article key={resource.resource_id || `${resource.title}-${index}`}>
+                  <span>
+                    <strong>{resource.title || `学习文章 ${index + 1}`}</strong>
+                    {resource.content_summary && <small>{resource.content_summary}</small>}
+                  </span>
+                  {url ? (
+                    <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />查看原文</a>
+                  ) : (
+                    <em className="material-empty-hint">暂无外部链接</em>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ) : <p className="material-empty">暂无匹配文章链接</p>}
+      </section>
       <section className="material-resource-section text-resources">
-        <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
+        <div className="material-section-heading"><BookOpen size={16} /><h3>文章内容</h3></div>
         {hasTextContent ? (
           <>
-            {tutorialPages.length > 0 && (
-              <div className="material-reading-pages" ref={readingPagesRef}>
-                <div className="material-markdown material-reading-page">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentTutorialPage}</ReactMarkdown>
-                </div>
-                {tutorialPages.length > 1 && (
-                  <nav className="material-page-controls" aria-label="学习文本翻页">
-                    <button
-                      type="button"
-                      className="material-page-button"
-                      onClick={() => setTutorialPage((page) => Math.max(0, page - 1))}
-                      disabled={tutorialPage === 0}
-                      title="上一页"
-                    >
-                      <ChevronLeft size={16} />
-                      <span>上一页</span>
-                    </button>
-                    <span className="material-page-indicator">第 {tutorialPage + 1} / {tutorialPages.length} 页</span>
-                    <button
-                      type="button"
-                      className="material-page-button"
-                      onClick={() => setTutorialPage((page) => Math.min(tutorialPages.length - 1, page + 1))}
-                      disabled={tutorialPage === tutorialPages.length - 1}
-                      title="下一页"
-                    >
-                      <span>下一页</span>
-                      <ChevronRight size={16} />
-                    </button>
-                  </nav>
-                )}
+            {topicTutorial?.trim() && (
+              <div className="material-markdown">
+                <ReactMarkdown
+                  components={{
+                    pre({ children }) {
+                      return <div className="material-code-block">{children}</div>;
+                    },
+                    code({ className, children, ...props }) {
+                      const isInline = !className;
+                      if (isInline) {
+                        return <code className="material-inline-code" {...props}>{children}</code>;
+                      }
+                      const lang = (className || '').replace(/^language-/, '') || 'code';
+                      return (
+                        <>
+                          <div className="material-code-lang">{lang}</div>
+                          <code className={className} {...props}>{children}</code>
+                        </>
+                      );
+                    },
+                  }}
+                >
+                  {topicTutorial}
+                </ReactMarkdown>
               </div>
             )}
             {codeExamples.length > 0 && (
@@ -1159,29 +1222,7 @@ function MaterialDocument({
               </div>
             )}
           </>
-        ) : <p className="material-empty">无</p>}
-      </section>
-      <section className="material-resource-section article-resources">
-        <div className="material-section-heading"><ExternalLink size={16} /><h3>文章来源</h3></div>
-        {articleResources.length > 0 ? (
-          <div className="material-article-list">
-            {articleResources.map((resource, index) => {
-              const url = getResourceUrl(resource);
-              const sourceAddress = resource.url || resource.content_ref || resource.locator;
-              return (
-                <article key={resource.resource_id || `${resource.title}-${index}`}>
-                  <span>
-                    <strong>{resource.title || `文章来源 ${index + 1}`}</strong>
-                    {(resource.content_summary || resource.description || sourceAddress) && (
-                      <small>{resource.content_summary || resource.description || sourceAddress}</small>
-                    )}
-                  </span>
-                  {url && <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />查看原文</a>}
-                </article>
-              );
-            })}
-          </div>
-        ) : <p className="material-empty">暂无文章来源</p>}
+        ) : <p className="material-empty">暂无文章内容</p>}
       </section>
       <section className="material-resource-section video-resources">
         <div className="material-section-heading"><Play size={16} /><h3>学习视频</h3></div>
@@ -1210,6 +1251,8 @@ function CurrentMaterialPanel({
   stage,
   learningPackage,
   selectedSubtopic,
+  subtopics = [],
+  onSelectSubtopic,
   onTest,
   stageResultReady,
   onOpenResult
@@ -1217,21 +1260,85 @@ function CurrentMaterialPanel({
   stage: StageInfo;
   learningPackage: LearningPackage | null;
   selectedSubtopic?: KnowledgeSubtopic;
+  subtopics?: KnowledgeSubtopic[];
+  onSelectSubtopic?: (subtopicId: string) => void;
   onTest: () => void;
   stageResultReady: boolean;
   onOpenResult: () => void;
 }) {
   const content = learningPackage || fallbackPackage;
+  const pages: KnowledgeSubtopic[] = subtopics.length > 0
+    ? subtopics
+    : selectedSubtopic
+      ? [selectedSubtopic]
+      : [{
+          subtopic_id: stage.subtopic_id,
+          subtopic_name: stage.subtopic_name || stage.block_name || content.block_name || '当前知识点',
+          sequence_index: 0
+        }];
+  const resolvedIndex = Math.max(0, pages.findIndex((t) => topicKey(t) === topicKey(selectedSubtopic)));
+  const currentIndex = resolvedIndex < 0 ? 0 : resolvedIndex;
+  const current = pages[currentIndex] || selectedSubtopic;
+  const goPrev = () => {
+    if (currentIndex > 0) {
+      const prev = pages[currentIndex - 1];
+      onSelectSubtopic?.(topicKey(prev));
+    }
+  };
+  const goNext = () => {
+    if (currentIndex < pages.length - 1) {
+      const next = pages[currentIndex + 1];
+      onSelectSubtopic?.(topicKey(next));
+    }
+  };
   return (
     <aside className="current-material-panel">
       <header>
         <div>
-          <span>当前阶段学习包</span>
+          <span>当前阶段学习包 · 共 {pages.length} 个知识点</span>
           <strong>{stage.block_name || content.block_name}</strong>
         </div>
       </header>
+      {pages.length > 1 && (
+        <div className="material-page-controls compact">
+          <button
+            className="material-page-button compact"
+            onClick={goPrev}
+            disabled={currentIndex === 0}
+            aria-label="上一个知识点"
+            title="上一个知识点"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <div className="material-page-indicator compact" role="tablist" aria-label="知识点分页">
+            {pages.map((topic, i) => (
+              <button
+                key={topicKey(topic) || `panel-${i}`}
+                type="button"
+                role="tab"
+                aria-selected={i === currentIndex}
+                aria-label={`第 ${i + 1} 页：${topic.subtopic_name}`}
+                title={topic.subtopic_name}
+                onClick={() => onSelectSubtopic?.(topicKey(topic))}
+                className={i === currentIndex ? 'is-active' : ''}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <button
+            className="material-page-button compact"
+            onClick={goNext}
+            disabled={currentIndex >= pages.length - 1}
+            aria-label="下一个知识点"
+            title="下一个知识点"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
       <div className="current-material-scroll">
-        <MaterialDocument stage={stage} learningPackage={content} selectedSubtopic={selectedSubtopic} compact />
+        <MaterialDocument stage={stage} learningPackage={content} selectedSubtopic={current} compact />
       </div>
       <footer>
         <button onClick={stageResultReady ? onOpenResult : onTest}>
@@ -1261,6 +1368,7 @@ function ChatView({
   learningPackage,
   stageSubtopics,
   selectedSubtopicId,
+  onSelectSubtopic,
   onTest,
   stageResultReady,
   onOpenResult,
@@ -1291,6 +1399,7 @@ function ChatView({
   learningPackage: LearningPackage | null;
   stageSubtopics: KnowledgeSubtopic[];
   selectedSubtopicId: string | null;
+  onSelectSubtopic?: (subtopicId: string) => void;
   onTest: () => void;
   stageResultReady: boolean;
   onOpenResult: () => void;
@@ -1381,6 +1490,8 @@ function ChatView({
           stage={stage}
           learningPackage={learningPackage}
           selectedSubtopic={stageSubtopics.find((topic) => topicKey(topic) === selectedSubtopicId) || stageSubtopics[0]}
+          subtopics={stageSubtopics}
+          onSelectSubtopic={onSelectSubtopic}
           onTest={onTest}
           stageResultReady={stageResultReady}
           onOpenResult={onOpenResult}
@@ -1468,7 +1579,8 @@ function LearnView({
   onStart,
   onTest,
   loading,
-  error
+  error,
+  subtopics = []
 }: {
   stage: StageInfo;
   learningPackage: LearningPackage | null;
@@ -1476,16 +1588,20 @@ function LearnView({
   onTest: () => void;
   loading: boolean;
   error: string | null;
+  subtopics?: KnowledgeSubtopic[];
 }) {
-  const [copied, setCopied] = useState<number | null>(null);
   const content = learningPackage || fallbackPackage;
-  const codeExamples = content.code_examples || [];
-
-  const copyCode = async (code: string, index: number) => {
-    await navigator.clipboard?.writeText(code);
-    setCopied(index);
-    window.setTimeout(() => setCopied(null), 1200);
-  };
+  const pages: KnowledgeSubtopic[] = subtopics.length > 0
+    ? subtopics
+    : [{
+        subtopic_id: stage.subtopic_id,
+        subtopic_name: stage.subtopic_name || stage.block_name || content.block_name || '当前知识点',
+        sequence_index: 0
+      }];
+  const [pageIndex, setPageIndex] = useState(0);
+  const safeIndex = Math.max(0, Math.min(pageIndex, pages.length - 1));
+  const currentSubtopic = pages[safeIndex];
+  const progressPct = pages.length > 1 ? ((safeIndex + 1) / pages.length) * 100 : (content.tutorial ? 66 : 18);
 
   return (
     <div className="page-shell">
@@ -1495,7 +1611,7 @@ function LearnView({
           <div>
             <span className="lesson-kicker">阶段 {stage.stage_num ?? 1} · {statusText[stage.status || 'learning']}</span>
             <h2>{stage.block_name || content.block_name}</h2>
-            <p>阅读学习包、运行代码示例，并在右侧状态里随时跟踪审核与掌握度变化。</p>
+            <p>本阶段共 <b>{pages.length}</b> 个知识点，请逐页完成学习后再进入测试。</p>
           </div>
           <div className="lesson-actions">
             <button className="ghost" onClick={onStart}>
@@ -1510,7 +1626,7 @@ function LearnView({
         </div>
 
         <div className="reading-progress">
-          <span style={{ width: content.tutorial ? '66%' : '18%' }} />
+          <span style={{ width: `${progressPct}%` }} />
         </div>
 
         <div className="lesson-meta">
@@ -1520,7 +1636,7 @@ function LearnView({
           </span>
           <span>
             <Target size={15} />
-            {stage.gap_skill || '当前知识点'}
+            第 {safeIndex + 1} / {pages.length} 页 · {currentSubtopic?.subtopic_name || stage.gap_skill || '当前知识点'}
           </span>
           <span className="verified">
             <Check size={14} />
@@ -1528,49 +1644,68 @@ function LearnView({
           </span>
         </div>
 
+        {pages.length > 1 && (
+          <div className="material-page-controls lesson-page-controls">
+            <button
+              className="material-page-button"
+              onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+              disabled={safeIndex === 0}
+            >
+              <ChevronLeft size={16} /> 上一页
+            </button>
+            <div className="material-page-indicator" role="tablist" aria-label="知识点分页">
+              {pages.map((topic, i) => (
+                <button
+                  key={topicKey(topic) || i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === safeIndex}
+                  aria-label={`第 ${i + 1} 页：${topic.subtopic_name}`}
+                  title={topic.subtopic_name}
+                  onClick={() => setPageIndex(i)}
+                  className={i === safeIndex ? 'is-active' : ''}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              className="material-page-button"
+              onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
+              disabled={safeIndex >= pages.length - 1}
+            >
+              下一页 <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+
         <article className="lesson-article">
           <aside className="lesson-toc">
-            <span>本节目录</span>
-            <a href="#tutorial">教程</a>
-            <a href="#code">代码示例</a>
+            <span>知识点分页</span>
+            {pages.map((topic, i) => (
+              <button
+                type="button"
+                key={topicKey(topic) || i}
+                className={i === safeIndex ? 'is-active' : ''}
+                onClick={() => setPageIndex(i)}
+                title={topic.subtopic_name}
+              >
+                {i + 1}. {topic.subtopic_name?.slice(0, 14)}{(topic.subtopic_name?.length || 0) > 14 ? '…' : ''}
+              </button>
+            ))}
             <a href="#quiz">阶段测试</a>
           </aside>
           <div className="lesson-content">
-            <section id="tutorial">
-              <span className="section-index">01</span>
-              <h3>学习材料</h3>
-              <div className="markdown-body">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content.tutorial || '点击「开始学习阶段」生成当前阶段学习包。'}</ReactMarkdown>
-              </div>
-            </section>
-
-            <section id="code">
-              <span className="section-index">02</span>
-              <h3>代码示例</h3>
-              {codeExamples.length === 0 && <p>当前学习包暂未返回代码示例。</p>}
-              {codeExamples.map((example, index) => (
-                <div className="code-block" key={`${example.title}-${index}`}>
-                  <div className="code-head">
-                    <span>
-                      <Code2 size={14} />
-                      {example.title || `代码示例 ${index + 1}`}
-                    </span>
-                    <button onClick={() => copyCode(example.code || '', index)}>
-                      {copied === index ? <Check size={15} /> : <Copy size={15} />}
-                      {copied === index ? '已复制' : '复制'}
-                    </button>
-                  </div>
-                  <pre>
-                    <code>{example.code}</code>
-                  </pre>
-                </div>
-              ))}
-            </section>
+            <MaterialDocument
+              stage={stage}
+              learningPackage={content}
+              selectedSubtopic={currentSubtopic}
+            />
 
             <section id="quiz">
               <span className="section-index">03</span>
               <h3>阶段检查</h3>
-              <p>完成测试后，系统会计算正确率，并调用阶段决策链路更新画像和下一阶段策略。</p>
+              <p>完成当前阶段全部知识点的学习后，可进入测试。系统会根据正确率更新画像和下一阶段策略。</p>
               <button className="complete-reading" onClick={onTest}>
                 <FileQuestion size={17} />
                 开始阶段测试
@@ -1578,6 +1713,41 @@ function LearnView({
             </section>
           </div>
         </article>
+
+        {pages.length > 1 && (
+          <div className="material-page-controls lesson-page-controls bottom">
+            <button
+              className="material-page-button"
+              onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+              disabled={safeIndex === 0}
+            >
+              <ChevronLeft size={16} /> 上一页
+            </button>
+            <div className="material-page-indicator" role="tablist" aria-label="知识点分页">
+              {pages.map((topic, i) => (
+                <button
+                  key={topicKey(topic) || `b-${i}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === safeIndex}
+                  aria-label={`第 ${i + 1} 页：${topic.subtopic_name}`}
+                  title={topic.subtopic_name}
+                  onClick={() => setPageIndex(i)}
+                  className={i === safeIndex ? 'is-active' : ''}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+            <button
+              className="material-page-button"
+              onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
+              disabled={safeIndex >= pages.length - 1}
+            >
+              下一页 <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -2338,7 +2508,7 @@ function ResultView({
               <div><span>已掌握知识点</span><p>{mastered.map((gap) => gap.skill).join('、') || '本阶段暂无新增完全掌握项'}</p></div>
               <div><span>仍需加强</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
             </div>
-            <div className="feedback-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{result?.stage_summary || '本阶段记录已完成。建议根据测试结果巩固薄弱知识点，再继续后续学习。'}</ReactMarkdown></div>
+            <div className="feedback-markdown"><ReactMarkdown>{result?.stage_summary || '本阶段记录已完成。建议根据测试结果巩固薄弱知识点，再继续后续学习。'}</ReactMarkdown></div>
           </section>
           <section className="white-card">
             <div className="section-title">
@@ -2364,12 +2534,7 @@ function ResultView({
               <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
             </div>
             {!result?.all_mastered && (plannedStage ? (
-              <button className="primary wide" onClick={onStartNext} disabled={loading}>
-                <Play size={17} />
-                {(plannedStage.stage_num ?? 1) > (stage.stage_num ?? 1)
-                  ? `开始第 ${plannedStage.stage_num} 阶段`
-                  : '重新学习本阶段'}
-              </button>
+              <button className="primary wide" onClick={onStartNext} disabled={loading}><Play size={17} />开始下一阶段</button>
             ) : (
               <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
             ))}
@@ -2386,7 +2551,8 @@ function SettingsView({
   error,
   onClear,
   onSave,
-  foundationNames
+  foundationNames,
+  onOpenFoundation
 }: {
   profile: Profile;
   loading: boolean;
@@ -2394,6 +2560,7 @@ function SettingsView({
   onClear: () => void;
   onSave: (data: { grade: string; skill_tags: string[]; hardware: string }) => void;
   foundationNames: string[];
+  onOpenFoundation: () => void;
 }) {
   const [hardware, setHardware] = useState(profile.hardware || '');
 
@@ -2425,12 +2592,13 @@ function SettingsView({
           </div>
           <div className="setting-row settings-knowledge-row" aria-labelledby="settings-knowledge-title">
             <h3 id="settings-knowledge-title">已有知识基础</h3>
-            <div className="settings-foundation-summary is-readonly">
+            <div className="settings-foundation-summary">
               {foundationNames.length > 0 ? (
                 <div className={`foundation-summary-list ${foundationNames.length > 3 ? 'has-overflow' : ''}`} title={foundationNames.join('、')}>
                   {foundationNames.map((name) => <span key={name}>{name}</span>)}
                 </div>
               ) : <span className="foundation-summary-empty">尚未确定基础</span>}
+              <button type="button" className="foundation-trigger" onClick={onOpenFoundation}>重新确定基础</button>
             </div>
             <KnowledgeNetwork compact defaultMode="overview" showNodeDetails={false} showLocateControl={false} />
           </div>
@@ -2493,7 +2661,7 @@ export default function App() {
   const [materialPanelOpen, setMaterialPanelOpen] = useState(false);
   const [learningPathOpen, setLearningPathOpen] = useState(false);
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string | null>(null);
-  const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | null>(null);
+  const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | 'settings' | null>(null);
   const [foundationPickerBlocks, setFoundationPickerBlocks] = useState<KnowledgeGraphBlock[]>(knowledgeGraphBlocks);
   const [foundationSubtopicIds, setFoundationSubtopicIds] = useState<string[]>([]);
   const [foundationConfirmed, setFoundationConfirmed] = useState(false);
@@ -3119,12 +3287,31 @@ export default function App() {
       if (workflow === 'profile_ready') {
         const confirmation = await apiClient.confirmProfile(sessionId);
         generatedStage = toStageInfo(confirmation.stage_info) || generatedStage;
+        // eslint-disable-next-line no-console
+        console.log('[startStage] confirmProfile stage_info:', {
+          subtopic_ids: generatedStage?.subtopic_ids,
+          subtopic_names: generatedStage?.subtopic_names,
+          block_id: generatedStage?.block_id,
+        });
       }
       await apiClient.startStage(sessionId);
       const [packageResponse, stageResponse] = await Promise.all([
         apiClient.getStagePackage(sessionId),
         apiClient.getCurrentStage(sessionId)
       ]);
+      // eslint-disable-next-line no-console
+      console.log('[startStage] API responses:', {
+        'stage.subtopic_ids': stageResponse.stage?.subtopic_ids,
+        'stage.subtopic_names': stageResponse.stage?.subtopic_names,
+        'stage.block_id': stageResponse.stage?.block_id,
+        'package.subtopic_ids': packageResponse.package?.subtopic_ids,
+        'package.subtopic_names': packageResponse.package?.subtopic_names,
+        'package.learning_resources_count': packageResponse.package?.learning_resources?.length,
+        'package.article_resources': (packageResponse.package?.learning_resources || [])
+          .filter((r: any) => r.resource_type === 'article').length,
+        'package.resource_details': (packageResponse.package?.learning_resources || [])
+          .map((r: any) => `${r.resource_type}:${r.subtopic_id || ''}:${r.url?.slice(0, 40) || ''}`),
+      });
       setLearningPackage(toLearningPackage(packageResponse.package));
       generatedStage = toStageInfo(stageResponse.stage) || generatedStage;
       if (!generatedStage) throw new Error('后端未返回当前阶段，无法启动学习包');
@@ -3150,7 +3337,6 @@ export default function App() {
       setResult(null);
       setNewGoalReturnState(null);
       setAssessmentState({ attemptId: null, questions: [] });
-      void loadDashboardStages(sessionId, generatedStage);
       void refreshRemoteProjects();
     } catch (caught) {
       finishAgentRun(['agent3', 'agent4'], false);
@@ -3312,12 +3498,12 @@ export default function App() {
     return;
   };
 
-  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string }) => {
+  const saveProfileSettings = async (data: { grade: string; skill_tags: string[]; hardware: string; mastered_subtopic_ids?: string[]; foundation_confirmed?: boolean }) => {
     setLoading(true);
     setError(null);
     try {
       const updated = await apiClient.updateUserProfile(data);
-      const profileData = data;
+      const { mastered_subtopic_ids: _masteredSubtopicIds, ...profileData } = data;
       const profileBeforeGoalCreation = newGoalReturnState?.profile;
       const sourceProfile = profile || profileBeforeGoalCreation || fallbackProfile;
       const nextProfile = { ...sourceProfile, ...profileData, ...(toProfile(updated) || {}), daily_hours: sourceProfile.daily_hours };
@@ -3604,9 +3790,23 @@ export default function App() {
     }
   };
 
-  const openFoundationPicker = () => {
+  const openFoundationPicker = async (context: 'onboarding' | 'settings') => {
+    if (context === 'settings') {
+      setFoundationPickerBlocks(knowledgeGraphBlocks);
+      try {
+        const network = await apiClient.getKnowledgeNetwork();
+        setFoundationSubtopicIds(network.blocks.flatMap((block) => block.subtopics)
+          .filter((topic) => topic.status === 1 && topic.is_initial_foundation)
+          .map((topic) => topic.subtopic_id));
+      } catch (caught) {
+        setError(`读取用户基础失败：${getErrorMessage(caught)}`);
+        return;
+      }
+      setFoundationPickerContext(context);
+      return;
+    }
     setFoundationPickerBlocks(knowledgeGraphBlocks);
-    setFoundationPickerContext('onboarding');
+    setFoundationPickerContext(context);
   };
 
   const confirmFoundation = (selectedSubtopicIds: string[]) => {
@@ -3617,8 +3817,18 @@ export default function App() {
       return [];
     });
     setFoundationSubtopicIds(selectedSubtopicIds);
-    setFoundationConfirmed(true);
+    if (foundationPickerContext === 'onboarding') setFoundationConfirmed(true);
     setOnboardingForm((current) => ({ ...current, skill_tags: skillTags }));
+    const settingsSourceProfile = profile || newGoalReturnState?.profile;
+    if (foundationPickerContext === 'settings' && settingsSourceProfile) {
+      void saveProfileSettings({
+        grade: settingsSourceProfile.grade || '',
+        skill_tags: skillTags,
+        hardware: settingsSourceProfile.hardware || '',
+        mastered_subtopic_ids: selectedSubtopicIds,
+        foundation_confirmed: true
+      });
+    }
     setFoundationPickerContext(null);
   };
 
@@ -3769,7 +3979,7 @@ export default function App() {
           onRetryProfileCheck={() => void checkUserFoundation()}
           foundationNames={onboardingFoundationNames}
           foundationConfirmed={foundationConfirmed}
-          onOpenFoundation={openFoundationPicker}
+          onOpenFoundation={() => openFoundationPicker('onboarding')}
           foundationLoading={foundationPickerLoading}
         />
       )}
@@ -3804,6 +4014,7 @@ export default function App() {
           learningPackage={learningPackage}
           stageSubtopics={stageSubtopics}
           selectedSubtopicId={activeSubtopicId}
+          onSelectSubtopic={setSelectedSubtopicId}
           onTest={openTestModal}
           stageResultReady={Boolean(result)}
           onOpenResult={() => setView('result')}
@@ -3836,7 +4047,7 @@ export default function App() {
           error={error}
         />
       )}
-      {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} />}
+      {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} onOpenFoundation={() => void openFoundationPicker('settings')} />}
       <FoundationPickerModal
         open={foundationPickerContext !== null}
         blocks={foundationPickerBlocks}

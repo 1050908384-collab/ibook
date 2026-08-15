@@ -43,7 +43,7 @@ class Agent3OutputBudgetTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_daily_answer_has_hard_character_limit(self):
         agent = HybridContentAgent()
-        agent.llm_client.complete = AsyncMock(return_value="A" * 300)
+        agent.llm_client.complete = AsyncMock(return_value=("A。" * 200))
         request = AnswerGenerationInput(
             session_id="budget-session",
             question="I feel tired today.",
