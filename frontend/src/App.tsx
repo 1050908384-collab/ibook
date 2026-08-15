@@ -1,4 +1,4 @@
-import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
@@ -922,6 +922,25 @@ function getTopicTutorial(tutorial: string | undefined, topicName: string) {
   return tutorial;
 }
 
+function splitTutorialPages(tutorial?: string) {
+  const content = tutorial?.trim();
+  if (!content) return [];
+  const headingPattern = /^#{2,3}\s+.+$/gm;
+  const headings = Array.from(content.matchAll(headingPattern));
+  if (headings.length === 0) return [content];
+
+  const pages: string[] = [];
+  const preface = content.slice(0, headings[0].index ?? 0).trim();
+  headings.forEach((heading, index) => {
+    const start = heading.index ?? 0;
+    const end = index + 1 < headings.length ? (headings[index + 1].index ?? content.length) : content.length;
+    const section = content.slice(start, end).trim();
+    if (section) pages.push(section);
+  });
+  if (preface && pages.length > 0) pages[0] = `${preface}\n\n${pages[0]}`;
+  return pages.length > 0 ? pages : [content];
+}
+
 function resolveSessionStage(session: {
   current_stage?: StageInfo | null;
   stage_info?: StageInfo | null;
@@ -1026,6 +1045,9 @@ function MaterialDocument({
   selectedSubtopic?: KnowledgeSubtopic;
   compact?: boolean;
 }) {
+  const [tutorialPage, setTutorialPage] = useState(0);
+  const readingPagesRef = useRef<HTMLDivElement>(null);
+  const previousTutorialPage = useRef(0);
   const codeExamples = learningPackage.code_examples || [];
   const recommendedVideos = (learningPackage.recommended_videos || []).map((video) => ({
     ...video,
@@ -1050,6 +1072,17 @@ function MaterialDocument({
     || learningPackage.block_name
     || '未命名学习材料';
   const topicTutorial = getTopicTutorial(learningPackage.tutorial, selectedTopicName);
+  const tutorialPages = useMemo(() => splitTutorialPages(topicTutorial), [topicTutorial]);
+  useEffect(() => {
+    setTutorialPage(0);
+  }, [selectedTopicName, learningPackage.tutorial]);
+  useEffect(() => {
+    if (previousTutorialPage.current !== tutorialPage && readingPagesRef.current) {
+      readingPagesRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+    previousTutorialPage.current = tutorialPage;
+  }, [tutorialPage]);
+  const currentTutorialPage = tutorialPages[tutorialPage] || '';
   const hasTextContent = Boolean(
     topicTutorial?.trim()
     || codeExamples.length
@@ -1058,15 +1091,45 @@ function MaterialDocument({
   return (
     <article className={`material-document ${compact ? 'compact' : ''}`}>
       <div className="material-document-meta">
-        <span>阶段 {stage.stage_num ?? 1}</span>
-        <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
+        <span>知识点 {Math.max(1, selectedSubtopic?.sequence_index ?? 1)}</span>
       </div>
       <h2>{selectedTopicName}</h2>
       <section className="material-resource-section text-resources">
         <div className="material-section-heading"><BookOpen size={16} /><h3>学习文本</h3></div>
         {hasTextContent ? (
           <>
-            {topicTutorial?.trim() && <div className="material-markdown"><ReactMarkdown>{topicTutorial}</ReactMarkdown></div>}
+            {tutorialPages.length > 0 && (
+              <div className="material-reading-pages" ref={readingPagesRef}>
+                <div className="material-markdown material-reading-page">
+                  <ReactMarkdown>{currentTutorialPage}</ReactMarkdown>
+                </div>
+                {tutorialPages.length > 1 && (
+                  <nav className="material-page-controls" aria-label="学习文本翻页">
+                    <button
+                      type="button"
+                      className="material-page-button"
+                      onClick={() => setTutorialPage((page) => Math.max(0, page - 1))}
+                      disabled={tutorialPage === 0}
+                      title="上一页"
+                    >
+                      <ChevronLeft size={16} />
+                      <span>上一页</span>
+                    </button>
+                    <span className="material-page-indicator">第 {tutorialPage + 1} / {tutorialPages.length} 页</span>
+                    <button
+                      type="button"
+                      className="material-page-button"
+                      onClick={() => setTutorialPage((page) => Math.min(tutorialPages.length - 1, page + 1))}
+                      disabled={tutorialPage === tutorialPages.length - 1}
+                      title="下一页"
+                    >
+                      <span>下一页</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </nav>
+                )}
+              </div>
+            )}
             {codeExamples.length > 0 && (
               <div className="material-code-section">
                 <h3>代码示例</h3>

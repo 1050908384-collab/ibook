@@ -3547,9 +3547,9 @@ body.resizing-workspace-panels * {
 
 .material-document h2 {
   margin: 9px 0 20px;
-  color: #252d40;
+  color: #46516a;
   font-size: 21px;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.4;
 }
 
@@ -3683,6 +3683,56 @@ body.resizing-workspace-panels * {
   padding-top: 2px;
 }
 
+.material-reading-pages {
+  max-width: 70ch;
+}
+
+.material-reading-page {
+  min-height: 220px;
+}
+
+.material-page-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7ee;
+}
+
+.material-page-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #dfe2ea;
+  border-radius: 6px;
+  background: #fff;
+  color: #5148b9;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.material-page-button:hover:not(:disabled) {
+  border-color: #bdb8ef;
+  background: #faf9ff;
+}
+
+.material-page-button:disabled {
+  color: #b2b6c0;
+  background: #f7f8fa;
+  cursor: not-allowed;
+}
+
+.material-page-indicator {
+  color: #777f90;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
 .material-markdown,
 .material-markdown p,
 .material-markdown li {
@@ -3705,7 +3755,7 @@ body.resizing-workspace-panels * {
 .material-markdown h4,
 .material-markdown h5,
 .material-markdown h6 {
-  color: #252d40;
+  color: #4b5872;
   font-weight: 600;
   line-height: 1.45;
   margin: 26px 0 10px;
@@ -3738,7 +3788,7 @@ body.resizing-workspace-panels * {
 }
 
 .material-markdown strong {
-  color: #30394b;
+  color: #56627a;
   font-weight: 600;
 }
 
@@ -4237,7 +4287,7 @@ body.resizing-workspace-panels * {
 
 .dashboard-profile-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -4251,7 +4301,8 @@ body.resizing-workspace-panels * {
 }
 
 .metric {
-  padding: 16px;
+  min-height: 116px;
+  padding: 18px;
   display: flex;
   gap: 12px;
   align-items: flex-start;
@@ -4288,17 +4339,17 @@ body.resizing-workspace-panels * {
 .metric small {
   display: block;
   color: #8c93a3;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .metric strong {
   display: block;
-  font-size: 24px;
-  margin: 3px 0;
+  font-size: 28px;
+  margin: 5px 0;
 }
 
 .metric strong em {
-  font-size: 11px;
+  font-size: 14px;
   font-style: normal;
   color: #8d94a5;
   margin-left: 2px;
@@ -4307,7 +4358,8 @@ body.resizing-workspace-panels * {
 .metric p {
   margin: 0;
   color: #8b92a3;
-  font-size: 10px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .dashboard-profile-tags > div {
@@ -4334,7 +4386,7 @@ body.resizing-workspace-panels * {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -4346,7 +4398,7 @@ body.resizing-workspace-panels * {
 
 .dashboard-profile-tag-list em {
   color: #989eac;
-  font-size: 11px;
+  font-size: 13px;
   font-style: normal;
 }
 
@@ -5200,6 +5252,10 @@ body.resizing-workspace-panels * {
   max-width: 1180px;
 }
 
+.settings-intro {
+  display: none;
+}
+
 .settings-intro h2 {
   font-size: 21px;
   margin: 0 0 5px;
@@ -5235,10 +5291,9 @@ body.resizing-workspace-panels * {
 .settings-knowledge-row > h3 {
   margin: 0;
   color: #252c39;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.4;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eceef3;
+  padding-bottom: 8px;
 }
 
 .settings-knowledge-row .knowledge-network {
@@ -5276,6 +5331,11 @@ body.resizing-workspace-panels * {
   padding: 0 20px;
 }
 
+.settings-card .primary,
+.settings-card .danger {
+  font-size: 14px;
+}
+
 .setting-row {
   min-height: 78px;
   display: flex;
@@ -5291,12 +5351,12 @@ body.resizing-workspace-panels * {
 
 .setting-row strong {
   display: block;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .setting-row p {
   color: #9298a7;
-  font-size: 11px;
+  font-size: 13px;
   margin: 4px 0 0;
 }
 
@@ -5309,7 +5369,7 @@ body.resizing-workspace-panels * {
   color: #353d4d;
   padding: 9px 14px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   outline: none;
 }
 
@@ -5321,7 +5381,7 @@ body.resizing-workspace-panels * {
 .settings-readonly-value {
   width: min(360px, 48%);
   color: #353d4d;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   text-align: left;
 }
@@ -5337,7 +5397,7 @@ body.resizing-workspace-panels * {
   background: #fff;
   border-radius: 8px;
   padding: 8px 30px 8px 10px;
-  font-size: 12px;
+  font-size: 14px;
   color: #4e5567;
 }
 
@@ -5624,7 +5684,7 @@ body.resizing-workspace-panels * {
 .settings-foundation-summary.is-readonly small {
   flex: 0 0 auto;
   color: #7b8291;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .foundation-summary-heading label {
@@ -5699,14 +5759,14 @@ body.resizing-workspace-panels * {
   background: #efedff;
   color: #5147bd;
   padding: 5px 7px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .foundation-summary-empty,
 .foundation-summary-content small {
   color: #9198a8;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .foundation-summary-content small {
