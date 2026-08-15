@@ -3693,7 +3693,16 @@ export default function App() {
     setView('chat');
   };
 
-  const settingsProfile = profile || newGoalReturnState?.profile || null;
+  const settingsProfile = useMemo(() => {
+    const source = profile || newGoalReturnState?.profile;
+    if (!source) return null;
+    // Restored session profiles may omit the user-scoped hardware field.
+    // Keep the settings view backed by the durable onboarding profile.
+    return {
+      ...source,
+      hardware: source.hardware || onboardingForm.hardware
+    };
+  }, [profile, newGoalReturnState?.profile, onboardingForm.hardware]);
   const workspaceProfile = profile || fallbackProfile;
   const workspaceStage = stage || unavailableStage;
   const onboardingFoundationNames = useMemo(
