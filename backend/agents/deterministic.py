@@ -1287,7 +1287,8 @@ class DeterministicContentAgent:
                     "block_id": stage.block_id,
                     "block_name": stage.block_name,
                     "subtopic_ids": self._stage_subtopic_ids(stage),
-                    "question_count": 2,
+                    # 每个 subtopic 抽 2 题；这里作为总量下限
+                    "question_count": 8,
                 },
             )
         except Exception:

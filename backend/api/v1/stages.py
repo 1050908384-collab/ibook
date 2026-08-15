@@ -271,6 +271,40 @@ async def get_current_stage_package(session_id: str):
         from api.v1.learning_resources import ensure_stage_subtopics
         stage_info = ensure_stage_subtopics(stage_info)
 
+        # ---- 旧快照题量不足时动态重抽并更新 session ----
+        stids = list(stage_info.get("subtopic_ids") or [])
+        if not stids and stage_info.get("subtopic_id"):
+            stids = [stage_info["subtopic_id"]]
+        raw_questions = package.get("questions", []) or []
+        # 判定标准：
+        #   - 有多个 subtopic (>=2) 但题目只有 <=2 → 旧快照
+        #   - 题目数 < subtopic 数（每个 subtopic 连 1 题都保证不了）
+        need_refresh = False
+        if stids and len(raw_questions) <= max(2, len(stids) - 1):
+            need_refresh = True
+        # 题目来自其他 block 也需要重抽
+        block_id = stage_info.get("block_id")
+        if not need_refresh and block_id and raw_questions:
+            first_q_block = (raw_questions[0].get("block_id") if isinstance(raw_questions[0], dict) else None)
+            if first_q_block and first_q_block != block_id:
+                need_refresh = True
+        if need_refresh and block_id:
+            try:
+                refreshed = harness.state_manager.db_client.list_questions_for_stage(
+                    block_id, subtopic_ids=stids, limit=max(8, len(stids) * 2)
+                )
+                if refreshed:
+                    # 转成 package.questions 存储的 dict 形式（包含 options JSON 处理）
+                    package["questions"] = refreshed
+                    # 回写到 session state（learning_package）
+                    harness.state_manager.update_learning_package(session_id, package)
+                    logger.info(
+                        "get_current_stage_package refreshed stale questions: session=%s old=%d new=%d stids=%s",
+                        session_id, len(raw_questions), len(refreshed), stids,
+                    )
+            except Exception as exc:
+                logger.warning("get_current_stage_package refresh failed, use snapshot: %s", exc)
+
         # 清理题目中的敏感字段
         questions = package.get("questions", [])
         sanitized_questions = [_sanitize_question(q) for q in questions]

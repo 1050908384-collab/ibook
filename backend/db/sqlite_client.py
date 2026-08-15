@@ -1356,6 +1356,8 @@ class SQLiteClient:
             """), {"session_id": session_id}).first()
             return json.loads(row[0]) if row else None
 
+    _TRUE_FALSE_TYPES = {"true_false", "判断", "判断题", "yes_no"}
+
     def get_question(self, question_id: str) -> dict | None:
         with self.Session() as session:
             row = session.execute(text("""
@@ -1368,7 +1370,16 @@ class SQLiteClient:
             if not row:
                 return None
             result = dict(row)
-            result["options"] = json.loads(result["options"]) if result["options"] else None
+            if result.get("options"):
+                try:
+                    result["options"] = json.loads(result["options"])
+                except (TypeError, ValueError):
+                    result["options"] = None
+            else:
+                result["options"] = None
+            qt = (result.get("question_type") or "").strip().lower() if result.get("question_type") else ""
+            if not result["options"] and qt in self._TRUE_FALSE_TYPES:
+                result["options"] = ["正确", "错误"]
             return result
 
     def list_questions_for_stage(
@@ -1376,52 +1387,85 @@ class SQLiteClient:
         block_id: str,
         subtopic_ids: list[str] | None = None,
         limit: int = 2,
+        questions_per_subtopic: int = 2,
     ) -> list[dict]:
-        """Return stage questions, falling back from subtopic matches to the block pool."""
+        """Return stage questions strictly from each subtopic's own pool.
+
+        Policy (as requested by user):
+        - For every given ``subtopic_id``, sample up to
+          ``questions_per_subtopic`` questions **that actually belong to
+          that subtopic**. Default: each knowledge point gets ≤2 questions.
+        - If a subtopic has 0 questions, skip it (don't "steal" from other
+          subtopics or the block-level pool).
+        - If a subtopic has exactly 1 question, return exactly 1 question.
+        - When ``subtopic_ids`` is empty or not provided, fall back to the
+          legacy block-level global ``limit`` (only used by legacy callers
+          that pass no subtopic dimension).
+        """
         if not block_id:
             return []
         subtopic_ids = list(dict.fromkeys(item for item in (subtopic_ids or []) if item))
-        params: dict[str, Any] = {"block_id": block_id, "limit": limit}
-        subtopic_filter = ""
-        statement = text("""
-            SELECT question_id, block_id, subtopic_id, difficulty, question_type,
-                   question_text, options, correct_answer, explanation,
-                   expected_output, grading_mode, source, hint
-            FROM test_questions
-            WHERE block_id = :block_id
-            {subtopic_filter}
-            ORDER BY difficulty ASC, question_id ASC
-            LIMIT :limit
-        """.format(subtopic_filter=""))
-        if subtopic_ids:
-            statement = text("""
-                SELECT question_id, block_id, subtopic_id, difficulty, question_type,
-                       question_text, options, correct_answer, explanation,
-                       expected_output, grading_mode, source, hint
-                FROM test_questions
-                WHERE block_id = :block_id AND subtopic_id IN :subtopic_ids
-                ORDER BY difficulty ASC, question_id ASC
-                LIMIT :limit
-            """).bindparams(bindparam("subtopic_ids", expanding=True))
-            params["subtopic_ids"] = subtopic_ids
+        base_cols = (
+            "question_id, block_id, subtopic_id, difficulty, question_type, "
+            "question_text, options, correct_answer, explanation, "
+            "expected_output, grading_mode, source, hint"
+        )
+        picked_ids: set[str] = set()
+        combined_rows: list[Any] = []
+
+        def _itemize(rows) -> list[dict]:
+            out: list[dict] = []
+            for row in rows:
+                item = dict(row)
+                if item.get("options"):
+                    try:
+                        item["options"] = json.loads(item["options"])
+                    except (TypeError, ValueError):
+                        item["options"] = None
+                else:
+                    item["options"] = None
+                qt = (item.get("question_type") or "").strip().lower() if item.get("question_type") else ""
+                if not item["options"] and qt in self._TRUE_FALSE_TYPES:
+                    item["options"] = ["正确", "错误"]
+                out.append(item)
+            return out
+
         with self.Session() as session:
-            rows = session.execute(statement, params).mappings().all()
-            if not rows and subtopic_ids:
-                rows = session.execute(text("""
-                    SELECT question_id, block_id, subtopic_id, difficulty, question_type,
-                           question_text, options, correct_answer, explanation,
-                           expected_output, grading_mode, source, hint
+            if subtopic_ids:
+                # 严格按 subtopic 抽：每个 subtopic 最多 questions_per_subtopic 题，
+                # 0 题跳过，1 题就出 1 题。绝不从其他 subtopic / block 池凑题。
+                per_subtopic_sql = text(f"""
+                    SELECT {base_cols}
                     FROM test_questions
-                    WHERE block_id = :block_id
+                    WHERE block_id = :block_id AND subtopic_id = :subtopic_id
                     ORDER BY difficulty ASC, question_id ASC
-                    LIMIT :limit
-                """), {"block_id": block_id, "limit": limit}).mappings().all()
-        results = []
-        for row in rows:
-            item = dict(row)
-            item["options"] = json.loads(item["options"]) if item["options"] else None
-            results.append(item)
-        return results
+                    LIMIT :qps
+                """)
+                for stid in subtopic_ids:
+                    sub_rows = session.execute(
+                        per_subtopic_sql,
+                        {"block_id": block_id, "subtopic_id": stid, "qps": questions_per_subtopic},
+                    ).mappings().all()
+                    for r in sub_rows:
+                        if r["question_id"] in picked_ids:
+                            continue
+                        picked_ids.add(r["question_id"])
+                        combined_rows.append(r)
+            else:
+                # 未指定 subtopic → 保留旧的全局 limit 行为
+                global_rows = session.execute(
+                    text(f"""
+                        SELECT {base_cols}
+                        FROM test_questions
+                        WHERE block_id = :block_id
+                        ORDER BY difficulty ASC, question_id ASC
+                        LIMIT :limit
+                    """),
+                    {"block_id": block_id, "limit": limit},
+                ).mappings().all()
+                combined_rows = list(global_rows)
+
+        return _itemize(combined_rows)
 
     def update_session_status(self, session_id: str, status: str) -> None:
         with self.Session() as session:

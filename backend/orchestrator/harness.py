@@ -947,7 +947,9 @@ class Harness:
                     "block_id": stage.block_id,
                     "block_name": stage.block_name,
                     "subtopic_ids": self.agent3._stage_subtopic_ids(stage),
-                    "question_count": 2,
+                    # 阶段内有多个 subtopic 时，题库抽取内部会按每个 subtopic 抽 2 题
+                    # 再整体补齐；这里的 question_count 作为总量下限避免题量不足。
+                    "question_count": 8,
                 },
             )
         except Exception:
@@ -1586,29 +1588,68 @@ class Harness:
         """
         多级答案匹配策略（P2 模糊匹配）。
         1. 精确匹配（标准化后相等）
-        2. 选择题：单字母选项匹配
-        3. 包含匹配（正确答案含用户答案或反之）
-        4. 数值近似（误差 < 5%）
+        2. 判断题：A/B/√/× 等多种形式与 正确/错误 文本归一
+        3. 选择题：单字母选项匹配
+        4. 包含匹配（正确答案含用户答案或反之）
+        5. 数值近似（误差 < 5%）
         """
+        TRUE_FALSE_TYPES = {
+            'true_false', '判断', '判断题', 'yes_no', 'truefalse', 'tf', '对错', '正误'
+        }
         user_norm = Harness._normalize_answer(user_answer)
         correct_norm = Harness._normalize_answer(correct_answer)
+        qt_norm = (question_type or '').strip().lower()
 
         # 1. 精确匹配
         if user_norm == correct_norm:
             return True
 
-        # 2. 选择题选项字母匹配
-        if question_type in ('选择', '选择题', '单选', 'multiple_choice'):
+        # 2. 判断题：前端点击 A="正确" / B="错误" 选项键提交；correct_answer 可能存
+        #    "正确"/"错误"/"T"/"F"/"true"/"false"/"是"/"否"/"√"/"×" 等多种文本。
+        #    先做归一化再比较。
+        def _tf_map(text: str) -> str | None:
+            t = text.strip().lower() if isinstance(text, str) else ''
+            t_plain = t  # 保留原始去标点前版本用于判断
+            # 去标点版本（_normalize_answer 已做过，但这里更安全再做一次）
+            import re as _re
+            t_clean = _re.sub(r'[^\w.\u4e00-\u9fff/]', '', t)
+            true_aliases = {
+                '正确', '对', '对的', '是', '是的', '正确的',
+                't', 'true', 'yes', 'y', '1',
+                'a',  # 前端选项 A 对应 ["正确","错误"] 中的第一个
+                '√', '✔', '✓',
+            }
+            false_aliases = {
+                '错误', '错', '不对', '否', '不是', '假的', '错误的', '不正确',
+                'f', 'false', 'no', 'n', '0',
+                'b',  # 前端选项 B 对应第二个选项
+                '×', '✗', '✘', 'x',
+            }
+            if t_clean in true_aliases or t_plain in true_aliases:
+                return '正确'
+            if t_clean in false_aliases or t_plain in false_aliases:
+                return '错误'
+            return None
+
+        if qt_norm in {Harness._normalize_answer(t) for t in TRUE_FALSE_TYPES} or \
+           (not qt_norm and (_tf_map(user_norm) or _tf_map(correct_norm))):
+            user_tf = _tf_map(user_answer)
+            correct_tf = _tf_map(correct_answer)
+            if user_tf and correct_tf and user_tf == correct_tf:
+                return True
+
+        # 3. 选择题选项字母匹配
+        if question_type in ('选择', '选择题', '单选', 'multiple_choice', 'single_choice', '多选', 'multi_choice'):
             if len(user_norm) == 1 and user_norm.isalpha() and \
                correct_norm.startswith(user_norm):
                 return True
 
-        # 3. 包含匹配（双向，至少2字符防止单字母误判）
+        # 4. 包含匹配（双向，至少2字符防止单字母误判）
         if len(user_norm) >= 3 and len(correct_norm) >= 3:
             if user_norm in correct_norm or correct_norm in user_norm:
                 return True
 
-        # 4. 数值近似
+        # 5. 数值近似
         try:
             user_num = float(user_norm.replace(',', '').replace('，', ''))
             correct_num = float(correct_norm.replace(',', '').replace('，', ''))

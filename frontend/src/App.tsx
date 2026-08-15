@@ -1797,8 +1797,17 @@ function TestModal({
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const current = questions[index];
-  const done = questions.length > 0 && questions.every((question) => answers[question.question_id]);
+  const TRUE_FALSE_TYPES = new Set(['true_false', '判断', '判断题', 'yes_no']);
+  // 对每个 question 做最终兜底：判断题型若 options 为空，补 [正确/错误]，避免退化成 textarea。
+  const hydratedQuestions: TestQuestion[] = questions.map((q) => {
+    if (q.options && q.options.length > 0) return q;
+    const qt = (q.question_type || '').trim().toLowerCase();
+    if (TRUE_FALSE_TYPES.has(qt)) return { ...q, options: ['正确', '错误'] };
+    return q;
+  });
+  const safeQuestions = hydratedQuestions.length > 0 ? hydratedQuestions : questions;
+  const current = safeQuestions[index];
+  const done = safeQuestions.length > 0 && safeQuestions.every((question) => answers[question.question_id]);
 
   if (!current) return null;
 
@@ -1808,19 +1817,19 @@ function TestModal({
         <header>
           <div>
             <span>阶段测试</span>
-            <strong>{index + 1} / {questions.length}</strong>
+            <strong>{index + 1} / {safeQuestions.length}</strong>
           </div>
           <button onClick={onClose} aria-label="关闭测试">×</button>
         </header>
         <div className="test-body">
           <aside>
             <span>答题进度</span>
-            <strong>{Object.keys(answers).length} / {questions.length}</strong>
+            <strong>{Object.keys(answers).length} / {safeQuestions.length}</strong>
             <div className="test-progress">
-              <i style={{ width: `${questions.length ? (Object.keys(answers).length / questions.length) * 100 : 0}%` }} />
+              <i style={{ width: `${safeQuestions.length ? (Object.keys(answers).length / safeQuestions.length) * 100 : 0}%` }} />
             </div>
             <div className="question-grid">
-              {questions.map((question, questionIndex) => (
+              {safeQuestions.map((question, questionIndex) => (
                 <button
                   type="button"
                   key={question.question_id}
@@ -1868,7 +1877,7 @@ function TestModal({
             {current.hint && <p className="question-hint">提示：{current.hint}</p>}
             <div className="test-nav">
               <button type="button" className="ghost" disabled={index === 0} onClick={() => setIndex(index - 1)}>上一题</button>
-              {index < questions.length - 1 ? (
+              {index < safeQuestions.length - 1 ? (
                 <button type="button" className="primary" onClick={() => setIndex(index + 1)}>
                   下一题
                   <ChevronRight size={15} />

@@ -14,9 +14,14 @@
 7. 正确率只能从已提交的完整 attempt 计算，不能从零散答题记录计算。
 """
 from typing import Any, Dict, List, Optional
+import logging
 
 from db.sqlite_client import SQLiteClient
 from orchestrator.harness import Harness
+
+logger_assessment = logging.getLogger(__name__)
+if not logger_assessment.handlers:
+    logger_assessment.addHandler(logging.NullHandler())
 
 
 class AssessmentError(ValueError):
@@ -87,6 +92,40 @@ class AssessmentService:
                     "block_id": stage.get("block_id"),
                     "subtopic_id": stage.get("subtopic_id"),
                 }
+
+            # 收集 subtopic 数组用于旧快照题量判定
+            subtopic_ids: List[str] = []
+            if stage:
+                subtopic_ids = list(stage.get("subtopic_ids") or [])
+                if not subtopic_ids and stage.get("subtopic_id"):
+                    subtopic_ids = [stage["subtopic_id"]]
+            block_id = stage_meta.get("block_id")
+
+            # ---- 旧快照题量不足时动态重抽（与 /current/package 同标准）----
+            stale = False
+            if package and isinstance(package.get("questions"), list):
+                pkg_q = package["questions"]
+                if subtopic_ids and len(pkg_q) <= max(2, len(subtopic_ids) - 1):
+                    stale = True
+                if not stale and block_id and pkg_q:
+                    first_block = pkg_q[0].get("block_id") if isinstance(pkg_q[0], dict) else None
+                    if first_block and first_block != block_id:
+                        stale = True
+            if stale and block_id:
+                try:
+                    refreshed = self.db.list_questions_for_stage(
+                        block_id, subtopic_ids=subtopic_ids, limit=max(8, len(subtopic_ids) * 2)
+                    )
+                    if refreshed:
+                        package["questions"] = refreshed
+                        self.state_manager.update_learning_package(session_id, package)
+                        logger_assessment.info(
+                            "AssessmentService refreshed stale questions: session=%s old=%d new=%d",
+                            session_id, len(pkg_q), len(refreshed),
+                        )
+                except Exception as exc:
+                    logger_assessment.warning("AssessmentService refresh questions failed: %s", exc)
+
             if package and package.get("questions"):
                 for q in package["questions"]:
                     question_id = q.get("question_id")
@@ -112,15 +151,10 @@ class AssessmentService:
                         "is_required": True,
                     })
             if not questions and stage_meta.get("block_id"):
-                subtopic_ids = []
-                if stage:
-                    subtopic_ids = list(stage.get("subtopic_ids") or [])
-                    if not subtopic_ids and stage.get("subtopic_id"):
-                        subtopic_ids = [stage["subtopic_id"]]
                 questions = [
                     {**question, "is_required": True}
                     for question in self.db.list_questions_for_stage(
-                        stage_meta["block_id"], subtopic_ids, limit=2
+                        stage_meta["block_id"], subtopic_ids, limit=max(8, len(subtopic_ids) * 2)
                     )
                 ]
         return questions, stage_meta
