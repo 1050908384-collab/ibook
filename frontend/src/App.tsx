@@ -1,5 +1,6 @@
 import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Award,
@@ -1101,7 +1102,7 @@ function MaterialDocument({
             {tutorialPages.length > 0 && (
               <div className="material-reading-pages" ref={readingPagesRef}>
                 <div className="material-markdown material-reading-page">
-                  <ReactMarkdown>{currentTutorialPage}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentTutorialPage}</ReactMarkdown>
                 </div>
                 {tutorialPages.length > 1 && (
                   <nav className="material-page-controls" aria-label="学习文本翻页">
@@ -1539,7 +1540,7 @@ function LearnView({
               <span className="section-index">01</span>
               <h3>学习材料</h3>
               <div className="markdown-body">
-                <ReactMarkdown>{content.tutorial || '点击「开始学习阶段」生成当前阶段学习包。'}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content.tutorial || '点击「开始学习阶段」生成当前阶段学习包。'}</ReactMarkdown>
               </div>
             </section>
 
@@ -2337,7 +2338,7 @@ function ResultView({
               <div><span>已掌握知识点</span><p>{mastered.map((gap) => gap.skill).join('、') || '本阶段暂无新增完全掌握项'}</p></div>
               <div><span>仍需加强</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
             </div>
-            <div className="feedback-markdown"><ReactMarkdown>{result?.stage_summary || '本阶段记录已完成。建议根据测试结果巩固薄弱知识点，再继续后续学习。'}</ReactMarkdown></div>
+            <div className="feedback-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{result?.stage_summary || '本阶段记录已完成。建议根据测试结果巩固薄弱知识点，再继续后续学习。'}</ReactMarkdown></div>
           </section>
           <section className="white-card">
             <div className="section-title">

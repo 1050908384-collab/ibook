@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { FileText, Code, Copy, Check } from 'lucide-react';
 
 interface ResourceViewerProps {
@@ -24,7 +25,7 @@ const ResourceViewer: React.FC<ResourceViewerProps> = ({ tutorial, codeExamples 
           <h3>教程</h3>
         </div>
         <div className="markdown-content">
-          <ReactMarkdown>{tutorial}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{tutorial}</ReactMarkdown>
         </div>
       </div>
       
