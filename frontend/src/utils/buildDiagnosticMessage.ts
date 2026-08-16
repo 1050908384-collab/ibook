@@ -1,4 +1,4 @@
-export type LearningStyle = 'theory' | 'practice' | 'mixed';
+export type LearningStyle = '' | 'theory' | 'practice' | 'mixed';
 
 export type OnboardingFormData = {
   grade: string;
@@ -16,11 +16,12 @@ export const emptyOnboardingForm: OnboardingFormData = {
   skill_tags: [],
   goal: '',
   daily_hours: '',
-  learning_style: 'mixed',
+  learning_style: '',
   hardware: ''
 };
 
 export const learningStyleText: Record<LearningStyle, string> = {
+  '': '',
   theory: '理论型',
   practice: '实操型',
   mixed: '混合型'
@@ -90,7 +91,7 @@ export function formDataFromProfile(profile: {
     skill_tags: profile.skill_tags || [],
     goal: profile.goal || '',
     daily_hours: profile.daily_hours ? String(profile.daily_hours) : '',
-    learning_style: style === 'theory' || style === 'practice' || style === 'mixed' ? style : 'mixed',
+    learning_style: style === 'theory' || style === 'practice' || style === 'mixed' ? style : '',
     hardware: profile.hardware || ''
   };
 }

@@ -89,6 +89,10 @@ class Agent1MappingQualityTest(unittest.IsolatedAsyncioTestCase):
         self.assertLess(result.profile.confidence, 0.7)
         self.assertFalse(result.profile.knowledge_gaps[0].block_id)
 
+    def test_unsupported_goal_has_no_teaching_blocks(self):
+        agent = DeterministicDiagnosticAgent()
+        self.assertEqual([], agent.get_goal_blocks("robotics"))
+
     async def test_lora_profile_keeps_target_and_defers_hard_closure_to_planning(self):
         agent = DeterministicDiagnosticAgent()
         result = await agent.run(DiagnosticInput(

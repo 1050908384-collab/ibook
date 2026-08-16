@@ -326,13 +326,26 @@ def insert_block_resources(db: SQLiteClient, mappings_data: list):
     print("[OK] block_resources: 已插入 {} 条记录".format(len(mappings_data)))
 
 
+def sync_video_catalog(db: SQLiteClient) -> None:
+    """Replace only the video catalogue and its mappings.
+
+    This is intentionally separate from ``main`` so an existing user database
+    can be upgraded with newly shipped videos without re-seeding all curriculum
+    records.
+    """
+    resources_data, subtopic_resources_data, block_resources_data = load_video_catalog(VIDEO_CATALOG_PATH)
+    clear_video_catalog(db)
+    insert_learning_resources(db, resources_data)
+    insert_subtopic_resources(db, subtopic_resources_data)
+    insert_block_resources(db, block_resources_data)
+
+
 def main():
     print("[INFO] 正在加载知识种子数据...")
     blocks_data = load_required_list(BLOCKS_FILE_PATH)
     docs_data = load_required_list(DOCS_FILE_PATH)
     subtopics_data = load_required_list(SUBTOPICS_FILE_PATH)
     questions_data = load_required_list(QUESTIONS_FILE_PATH)
-    resources_data, subtopic_resources_data, block_resources_data = load_video_catalog(VIDEO_CATALOG_PATH)
 
     print("[INFO] 正在初始化数据库连接...")
     db = SQLiteClient()
@@ -352,14 +365,7 @@ def main():
     insert_test_questions(db, questions_data)
 
     print("[INFO] 5. 插入学习资源数据 (learning_resources)...")
-    clear_video_catalog(db)
-    insert_learning_resources(db, resources_data)
-
-    print("[INFO] 6. 插入资源与子知识点关联 (subtopic_resources)...")
-    insert_subtopic_resources(db, subtopic_resources_data)
-
-    print("[INFO] 7. 插入资源与知识板块关联 (block_resources)...")
-    insert_block_resources(db, block_resources_data)
+    sync_video_catalog(db)
 
     db.close()
     print("[DONE] 知识库数据导入完成！")

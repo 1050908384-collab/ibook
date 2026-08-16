@@ -1,6 +1,10 @@
 import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+import { normalizeMarkdownMath } from './utils/markdown';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   AlertTriangle,
@@ -1459,9 +1463,10 @@ function MaterialDocument({
           <>
             {topicTutorial?.trim() && (
               <div className="material-markdown">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
                     pre({ children }) {
                       return <div className="material-code-block">{children}</div>;
                     },
@@ -1480,7 +1485,7 @@ function MaterialDocument({
                     },
                   }}
                 >
-                  {topicTutorial}
+                  {normalizeMarkdownMath(topicTutorial)}
                 </ReactMarkdown>
               </div>
             )}
@@ -1853,7 +1858,11 @@ function ChatView({
                     {message.role === 'assistant' ? 'AI 实训导师' : '你'}
                     <span>{message.note || '已记录'}</span>
                   </div>
-                  <div className="message-bubble">{message.content}</div>
+                  <div className="message-bubble message-markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                      {normalizeMarkdownMath(message.content)}
+                    </ReactMarkdown>
+                  </div>
                   {message.role === 'assistant' && (
                     <div className="review-badge">
                       <Check size={13} />
@@ -2698,9 +2707,22 @@ function DashboardView({
   embedded?: boolean;
 }) {
   const gaps = profile.knowledge_gaps || [];
-  const mastered = gaps.filter((gap) => gap.status === '已掌握').length;
+  const totalKnowledgeSubtopics = knowledgeGraphBlocks.reduce((total, block) => total + block.subtopics.length, 0);
+  const [masteredSubtopics, setMasteredSubtopics] = useState<number | null>(null);
   const foundations = (profile.skill_tags || []).filter(Boolean);
   const gapNames = gaps.map((gap) => gap.skill).filter(Boolean);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.getKnowledgeNetwork()
+      .then((network) => {
+        if (active) setMasteredSubtopics(network.mastered_subtopics);
+      })
+      .catch(() => {
+        if (active) setMasteredSubtopics(null);
+      });
+    return () => { active = false; };
+  }, []);
 
   const content = (
     <>
@@ -2764,7 +2786,7 @@ function DashboardView({
           </div>
           <div className="metric">
             <span className="metric-icon orange"><Award size={22} /></span>
-            <div><small>掌握知识点</small><strong>{mastered}<em>/{gaps.length || 4}</em></strong><p>来自知识盲区状态</p></div>
+            <div><small>掌握知识点</small><strong>{masteredSubtopics ?? '--'}<em>/{totalKnowledgeSubtopics}</em></strong><p>来自知识网络状态</p></div>
           </div>
         </div>
 
@@ -3016,6 +3038,7 @@ export default function App() {
   const [workflow, setWorkflow] = useState<WorkflowState>('onboarding');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [storedUserProfile, setStoredUserProfile] = useState<Profile | null>(null);
   const [stage, setStage] = useState<StageInfo | null>(null);
   const [learningPackage, setLearningPackage] = useState<LearningPackage | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -3058,7 +3081,7 @@ export default function App() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newGoalReturnState, setNewGoalReturnState] = useState<WorkspaceSnapshot | null>(null);
   const [reuseUserProfile, setReuseUserProfile] = useState(false);
-  const [checkingUserProfile, setCheckingUserProfile] = useState(() => !isUiPreviewMode && !localStorage.getItem(SESSION_STORAGE_KEY));
+  const [checkingUserProfile, setCheckingUserProfile] = useState(() => !isUiPreviewMode);
   const [profileCheckError, setProfileCheckError] = useState<string | null>(null);
   const [projectsLoading, setProjectsLoading] = useState(!isUiPreviewMode);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -3223,6 +3246,14 @@ export default function App() {
     setProfileCheckError(null);
     try {
       const userProfile = await apiClient.getUserProfile();
+      setStoredUserProfile({
+        grade: userProfile.grade,
+        skill_tags: userProfile.skill_tags,
+        foundation_confirmed: userProfile.foundation_confirmed,
+        hardware: userProfile.hardware,
+        learning_style: userProfile.learning_style,
+        learning_rhythm: userProfile.learning_rhythm
+      });
       const profileComplete = Boolean(
         userProfile.grade?.trim()
         && userProfile.hardware?.trim()
@@ -3233,7 +3264,8 @@ export default function App() {
       setOnboardingForm((current) => ({
         ...formDataFromProfile(userProfile),
         goal: current.goal,
-        daily_hours: current.daily_hours || String(userProfile.default_daily_hours ?? 2)
+        daily_hours: current.daily_hours,
+        learning_style: current.learning_style
       }));
     } catch (caught) {
       const status = typeof caught === 'object' && caught && 'response' in caught
@@ -3324,10 +3356,8 @@ export default function App() {
 
   useEffect(() => {
     if (isUiPreviewMode) return;
-    if (localStorage.getItem(SESSION_STORAGE_KEY)) {
-      setCheckingUserProfile(false);
-      return;
-    }
+    // A stale or active session must not decide whether the stable user
+    // profile is complete. Only the durable user profile controls the form.
     void checkUserFoundation();
   }, []);
 
@@ -3471,6 +3501,14 @@ export default function App() {
           hardware: onboardingForm.hardware.trim(),
           mastered_subtopic_ids: foundationSubtopicIds
         });
+        setStoredUserProfile({
+          grade: updated.grade,
+          skill_tags: updated.skill_tags,
+          foundation_confirmed: updated.foundation_confirmed,
+          hardware: updated.hardware,
+          learning_style: updated.learning_style,
+          learning_rhythm: updated.learning_rhythm
+        });
         setReuseUserProfile(true);
         setOnboardingForm((current) => ({
           ...current,
@@ -3478,8 +3516,8 @@ export default function App() {
           skill_tags: updated.skill_tags || current.skill_tags,
           hardware: updated.hardware || current.hardware,
           goal: '',
-          daily_hours: String(updated.default_daily_hours ?? 2),
-          learning_style: 'mixed'
+          daily_hours: '',
+          learning_style: ''
         }));
         setWorkflow('onboarding');
       } catch (caught) {
@@ -3494,7 +3532,14 @@ export default function App() {
     beginAgentRun(['agent1'], true);
 
     try {
+      // Persist a newly created session before its first protected request.
+      // This keeps a failed first submission retryable and prevents requests
+      // from racing ahead of local session initialization.
       const activeSessionId = sessionId || (await apiClient.createSession()).session_id;
+      if (!sessionId) {
+        setSessionId(activeSessionId);
+        localStorage.setItem(SESSION_STORAGE_KEY, activeSessionId);
+      }
       const response = await apiClient.submitFoundation(activeSessionId, {
         goal: onboardingForm.goal.trim(),
         mastered_subtopic_ids: foundationSubtopicIds,
@@ -3910,8 +3955,16 @@ export default function App() {
       const updated = await apiClient.updateUserProfile(data);
       const { mastered_subtopic_ids: _masteredSubtopicIds, ...profileData } = data;
       const profileBeforeGoalCreation = newGoalReturnState?.profile;
-      const sourceProfile = profile || profileBeforeGoalCreation || fallbackProfile;
+      const sourceProfile = profile || profileBeforeGoalCreation || storedUserProfile || fallbackProfile;
       const nextProfile = { ...sourceProfile, ...profileData, ...(toProfile(updated) || {}), daily_hours: sourceProfile.daily_hours };
+      setStoredUserProfile({
+        grade: nextProfile.grade,
+        skill_tags: nextProfile.skill_tags,
+        foundation_confirmed: nextProfile.foundation_confirmed,
+        hardware: nextProfile.hardware,
+        learning_style: nextProfile.learning_style,
+        learning_rhythm: nextProfile.learning_rhythm
+      });
       if (profile) {
         setProfile(nextProfile);
       } else if (newGoalReturnState) {
@@ -4049,16 +4102,45 @@ export default function App() {
     }
   };
 
-  const createLearningGoal = () => {
+  const createLearningGoal = async () => {
     setProjectSwitcherOpen(false);
-    const reusableProfile = profile || learningProjects.find((project) => project.profile)?.profile;
-    const hasReusableProfile = Boolean(
-      reusableProfile?.grade?.trim()
-      && reusableProfile?.hardware?.trim()
-      && reusableProfile?.foundation_confirmed
+    setCheckingUserProfile(true);
+    const loadedProfile = profile || learningProjects.find((project) => project.profile)?.profile;
+    let reusableProfileForm = loadedProfile ? formDataFromProfile(loadedProfile) : emptyOnboardingForm;
+    let hasReusableProfile = Boolean(
+      loadedProfile?.grade?.trim()
+      && loadedProfile?.hardware?.trim()
+      && loadedProfile?.foundation_confirmed
     );
+    let reusableFoundationConfirmed = Boolean(loadedProfile?.foundation_confirmed);
+    try {
+      const storedProfile = await apiClient.getUserProfile();
+      setStoredUserProfile({
+        grade: storedProfile.grade,
+        skill_tags: storedProfile.skill_tags,
+        foundation_confirmed: storedProfile.foundation_confirmed,
+        hardware: storedProfile.hardware,
+        learning_style: storedProfile.learning_style,
+        learning_rhythm: storedProfile.learning_rhythm
+      });
+      const storedProfileComplete = Boolean(
+        storedProfile.grade?.trim()
+        && storedProfile.hardware?.trim()
+        && storedProfile.foundation_confirmed
+      );
+      if (storedProfileComplete) {
+        hasReusableProfile = true;
+        reusableFoundationConfirmed = true;
+        reusableProfileForm = formDataFromProfile(storedProfile);
+      }
+    } catch (caught) {
+      // Keep an already loaded project usable if the optional refresh fails.
+      setError(getErrorMessage(caught));
+    } finally {
+      setCheckingUserProfile(false);
+    }
     setReuseUserProfile(hasReusableProfile);
-    setFoundationConfirmed(Boolean(reusableProfile?.foundation_confirmed));
+    setFoundationConfirmed(reusableFoundationConfirmed);
     if (profile) {
       setNewGoalReturnState({
         sessionId,
@@ -4086,11 +4168,11 @@ export default function App() {
     setMessages(initialMessages);
     setSelectedConversationId('');
     setInput('');
-    setOnboardingForm(reusableProfile ? {
-      ...formDataFromProfile(reusableProfile),
+    setOnboardingForm(hasReusableProfile ? {
+      ...reusableProfileForm,
       goal: '',
-      daily_hours: String(reusableProfile.daily_hours ?? 2),
-      learning_style: 'mixed'
+      daily_hours: '',
+      learning_style: ''
     } : emptyOnboardingForm);
     setFollowupQuestions([]);
     setHighlightedFields([]);
@@ -4274,7 +4356,7 @@ export default function App() {
     setFoundationSubtopicIds(selectedSubtopicIds);
     if (foundationPickerContext === 'onboarding') setFoundationConfirmed(true);
     setOnboardingForm((current) => ({ ...current, skill_tags: skillTags }));
-    const settingsSourceProfile = profile || newGoalReturnState?.profile;
+    const settingsSourceProfile = storedUserProfile || profile || newGoalReturnState?.profile;
     if (foundationPickerContext === 'settings' && settingsSourceProfile) {
       void saveProfileSettings({
         grade: settingsSourceProfile.grade || '',
@@ -4434,7 +4516,9 @@ export default function App() {
   };
 
   const settingsProfile = useMemo(() => {
-    const source = profile || newGoalReturnState?.profile;
+    // Settings is user-scoped. A target profile may omit hardware, so it must
+    // never override the durable user profile with an empty value.
+    const source = storedUserProfile || profile || newGoalReturnState?.profile;
     if (!source) return null;
     // Restored session profiles may omit the user-scoped hardware field.
     // Keep the settings view backed by the durable onboarding profile.
@@ -4442,7 +4526,7 @@ export default function App() {
       ...source,
       hardware: source.hardware || onboardingForm.hardware
     };
-  }, [profile, newGoalReturnState?.profile, onboardingForm.hardware]);
+  }, [profile, newGoalReturnState?.profile, storedUserProfile, onboardingForm.hardware]);
   const workspaceProfile = profile || fallbackProfile;
   const workspaceStage = stage || unavailableStage;
   const onboardingFoundationNames = useMemo(

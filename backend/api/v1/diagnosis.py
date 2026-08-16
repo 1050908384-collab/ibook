@@ -51,6 +51,9 @@ class FoundationSubmitResponse(BaseModel):
     followup_questions: list[str] = Field(default_factory=list)
 
 
+UNSUPPORTED_GOAL_MESSAGE = "该学习目标不在当前 15 个知识板块的教学范围内，请修改为大模型微调（LoRA/QLoRA）、推理部署（vLLM）及其相关基础方向。"
+
+
 class DiagnosisMessageRequest(BaseModel):
     content: str
     message_type: str = "user"
@@ -294,6 +297,9 @@ async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
         session = harness.get_session(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
+
+        if not harness.agent1.get_goal_blocks(request.goal):
+            raise HTTPException(status_code=422, detail=UNSUPPORTED_GOAL_MESSAGE)
 
         user_id = harness.state_manager.db_client.get_session_user_id(session_id)
         existing_user_profile = harness.state_manager.db_client.get_user_profile(user_id)

@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send, BookOpen, FileQuestion, CheckCircle, XCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { apiClient } from '../api/client';
+import { normalizeMarkdownMath } from '../utils/markdown';
 
 interface Message {
   id: string;
@@ -99,7 +103,11 @@ const ChatPage: React.FC = () => {
         <div className="chat-messages">
           {messages.map(msg => (
             <div key={msg.id} className={`message ${msg.isUser ? 'user' : 'bot'}`}>
-              <div className="message-content">{msg.content}</div>
+              <div className="message-content message-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                  {normalizeMarkdownMath(msg.content)}
+                </ReactMarkdown>
+              </div>
               {!msg.isUser && (msg.techPass !== undefined) && (
                 <div className="message-verification">
                   {msg.techPass && <CheckCircle className="pass" />}
@@ -154,7 +162,8 @@ const ChatPage: React.FC = () => {
             <h3>学习资料</h3>
             <div className="package-content material-markdown">
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
                   pre({ children }) {
                     return <div className="material-code-block">{children}</div>;
@@ -168,7 +177,7 @@ const ChatPage: React.FC = () => {
                   },
                 }}
               >
-                {learningPackage.tutorial}
+                {normalizeMarkdownMath(learningPackage.tutorial)}
               </ReactMarkdown>
             </div>
           </div>

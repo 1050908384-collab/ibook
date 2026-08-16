@@ -1,7 +1,11 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { FileText, Code, Copy, Check } from 'lucide-react';
+import { normalizeMarkdownMath } from '../utils/markdown';
 
 interface ResourceViewerProps {
   tutorial: string;
@@ -25,7 +29,7 @@ const ResourceViewer: React.FC<ResourceViewerProps> = ({ tutorial, codeExamples 
           <h3>教程</h3>
         </div>
         <div className="markdown-content">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{tutorial}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{normalizeMarkdownMath(tutorial)}</ReactMarkdown>
         </div>
       </div>
       

@@ -227,7 +227,7 @@ class DeterministicDiagnosticAgent:
     def get_goal_blocks(self, goal: str) -> list[dict[str, Any]]:
         """根据学习目标返回其下所有知识板块（含知识点列表）。
 
-        优先按目标语义匹配相关板块；若无匹配则返回全量目录。
+        仅返回与目标语义匹配的板块；无匹配时返回空列表。
         每个板块都附带 subtopics 列表，供前端展开选择。
         """
         target_text = (goal or "").strip()
@@ -246,18 +246,7 @@ class DeterministicDiagnosticAgent:
                     "subtopics": resolved.get("subtopics", []),
                 })
             return blocks
-        # 无匹配 → 返回全量目录
-        return [
-            {
-                "block_id": block.get("block_id", ""),
-                "block_name": block.get("block_name", ""),
-                "description": block.get("description", ""),
-                "difficulty": block.get("difficulty", ""),
-                "estimated_hours": block.get("estimated_hours", 0),
-                "subtopics": block.get("subtopics", []),
-            }
-            for block in self.knowledge_catalog_tool.list_blocks()
-        ]
+        return []
 
     async def run_with_foundation(
         self,

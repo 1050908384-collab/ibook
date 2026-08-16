@@ -58,7 +58,18 @@ async def get_user_profile(user_id: str, current_user_id: str = Depends(get_curr
     _require_user(user_id, current_user_id)
     profile = harness.state_manager.db_client.get_user_profile(user_id)
     if not profile:
-        raise HTTPException(status_code=404, detail="User profile not found")
+        # A missing profile is the normal first-use state, not an error.  The
+        # onboarding client uses this response to decide which form to show.
+        return {
+            "user_id": user_id,
+            "grade": "",
+            "skill_tags": [],
+            "foundation_confirmed": False,
+            "learning_style": "",
+            "hardware": "",
+            "default_daily_hours": None,
+            "learning_rhythm": "",
+        }
     return profile
 
 

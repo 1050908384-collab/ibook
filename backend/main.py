@@ -60,6 +60,24 @@ def _count_rows(db_client, table_name: str) -> int:
         return session.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar() or 0
 
 
+def _count_video_catalog_rows(db_client, mapping_table: str | None = None) -> int:
+    """Count video resources or video mappings in the runtime database."""
+    with db_client.Session() as session:
+        if mapping_table:
+            statement = text(
+                f"""
+                SELECT COUNT(*)
+                FROM {mapping_table} AS mapping
+                JOIN learning_resources AS resource
+                  ON resource.resource_id = mapping.resource_id
+                WHERE resource.resource_type = 'video'
+                """
+            )
+        else:
+            statement = text("SELECT COUNT(*) FROM learning_resources WHERE resource_type = 'video'")
+        return session.execute(statement).scalar() or 0
+
+
 def _resolve_runtime_graph_path() -> Path:
     raw = Path(settings.GRAPH_PATH)
     return raw if raw.is_absolute() else (BACKEND_DIR_HERE / raw).resolve()
@@ -80,13 +98,19 @@ def _run_bootstrap_once() -> None:
     questions = _count_rows(db_client, "test_questions")
     docs = _count_rows(db_client, "knowledge_docs")
     chunks = _count_rows(db_client, "knowledge_chunks")
+    videos = _count_video_catalog_rows(db_client)
+    block_video_mappings = _count_video_catalog_rows(db_client, "block_resources")
+    subtopic_video_mappings = _count_video_catalog_rows(db_client, "subtopic_resources")
     graph_path = _resolve_runtime_graph_path()
 
     need_seeds = blocks == 0 or subtopics == 0 or questions == 0
+    # Earlier installations can have curriculum and article data but predate
+    # the video catalogue.  Treat that as an incomplete bootstrap state.
+    need_video_catalog = videos == 0 or block_video_mappings == 0 or subtopic_video_mappings == 0
     need_lessons = chunks == 0
     need_graph = not graph_path.is_file()
 
-    if not (need_seeds or need_lessons or need_graph):
+    if not (need_seeds or need_video_catalog or need_lessons or need_graph):
         return
 
     print("[BOOTSTRAP] 首次启动检测到素材未就绪，开始自动导入（这是正常的，只会跑一次）...", flush=True)
@@ -99,6 +123,20 @@ def _run_bootstrap_once() -> None:
         except Exception as exc:
             logger.exception("bootstrap seeds import failed")
             print(f"[WARN] seeds 导入失败（不会阻塞主程序）：{exc}", flush=True)
+
+    elif need_video_catalog:
+        print(
+            "[BOOTSTRAP] 检测到视频资源目录不完整，开始同步视频资源"
+            f"：videos={videos} block_mappings={block_video_mappings} "
+            f"subtopic_mappings={subtopic_video_mappings}",
+            flush=True,
+        )
+        try:
+            import insert_knowledge_data  # scripts/insert_knowledge_data.py
+            insert_knowledge_data.sync_video_catalog(db_client)
+        except Exception as exc:
+            logger.exception("bootstrap video catalog import failed")
+            print(f"[WARN] 视频资源同步失败（不会阻塞主程序）：{exc}", flush=True)
 
     if need_lessons:
         print(f"[BOOTSTRAP 2/3] 从 data/知识库原始数据 导入本地学习资料并分块：docs={docs} chunks={chunks}", flush=True)

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react';
 import { Check, CircleAlert, Loader2, LocateFixed, Minus, Plus, Target } from 'lucide-react';
 import { apiClient, isUiPreviewMode, type KnowledgeNetworkSubtopicStatus } from '../api/client';
 import { knowledgeGraphBlocks, type KnowledgeGraphSubtopic } from '../data/knowledgeGraph';
@@ -68,8 +68,8 @@ export default function KnowledgeNetwork({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<NetworkMode>(defaultMode);
   const [dragging, setDragging] = useState(false);
-  // ---- 知识点图（SVG）专门的放大缩小：范围 70%~160% ----
-  const ZOOM_MIN = 0.7;
+  // ---- 知识点图（SVG）专门的放大缩小：范围 50%~160% ----
+  const ZOOM_MIN = 0.5;
   const ZOOM_MAX = 1.6;
   const ZOOM_STEP = 0.1;
   const [zoom, setZoom] = useState(1.0);
@@ -218,6 +218,13 @@ export default function KnowledgeNetwork({
     setDragging(false);
   };
 
+  const zoomWithWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (event.deltaY === 0) return;
+    const direction = event.deltaY < 0 ? 1 : -1;
+    setZoom((value) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(value + direction * ZOOM_STEP).toFixed(2))));
+  };
+
   return (
     <section className={`knowledge-network ${mode}${compact ? ' compact' : ''}`} aria-label="知识网络">
       <div className="knowledge-network-toolbar">
@@ -252,8 +259,14 @@ export default function KnowledgeNetwork({
               <Plus size={14} />
             </button>
           </div>
-          <button type="button" className="knowledge-locate-button" onClick={() => selectMode('focus')} disabled={!currentId}>
-            <LocateFixed size={15} />定位
+          <button
+            type="button"
+            className="knowledge-locate-button"
+            onClick={() => selectMode(mode === 'focus' ? 'overview' : 'focus')}
+            disabled={!currentId}
+            aria-pressed={mode === 'focus'}
+          >
+            <LocateFixed size={15} />{mode === 'focus' ? '取消定位' : '定位'}
           </button>
         </div>}
       </div>
@@ -284,6 +297,7 @@ export default function KnowledgeNetwork({
         onPointerMove={moveWhileDragging}
         onPointerUp={stopDragging}
         onPointerCancel={stopDragging}
+        onWheel={zoomWithWheel}
       >
         <svg
           className="knowledge-route-map"
@@ -314,10 +328,14 @@ export default function KnowledgeNetwork({
           <g className="knowledge-route-edges" aria-hidden="true">
             {layout.edges.map((edge) => {
               const relevant = focusIds.has(edge.source_id) && focusIds.has(edge.target_id);
+              // An edge reflects progress toward its destination, without changing node state rules.
+              const edgeStatus = getDisplayStatus(
+                allSubtopics.find((item) => item.subtopic.subtopic_id === edge.target_id)!.subtopic
+              );
               return (
                 <path
                   key={`${edge.source_id}-${edge.target_id}`}
-                  className={`${edge.kind}${mode === 'focus' && !relevant ? ' is-muted' : ''}`}
+                  className={`${edge.kind} ${edgeStatus}${mode === 'focus' && !relevant ? ' is-muted' : ''}`}
                   d={edgePath(edge, positionById)}
                 />
               );
@@ -359,7 +377,7 @@ export default function KnowledgeNetwork({
                   <title>{tooltip}</title>
                   {current && <circle className="knowledge-current-pulse" cx={position.x} cy={position.y} r="25" />}
                   {current && <circle className="knowledge-current-ring" cx={position.x} cy={position.y} r="16" />}
-                  {initial && <circle className="knowledge-foundation-ring" cx={position.x} cy={position.y} r="12" />}
+                  {initial && displayStatus !== 'mastered' && <circle className="knowledge-foundation-ring" cx={position.x} cy={position.y} r="12" />}
                   {target && <circle className="knowledge-target-ring" cx={position.x} cy={position.y} r="9.5" />}
                   <circle className="knowledge-station" cx={position.x} cy={position.y} r={current ? 9 : 6} />
                   {displayStatus === 'mastered' && <Check x={position.x - 4} y={position.y - 4} size={8} strokeWidth={3} />}

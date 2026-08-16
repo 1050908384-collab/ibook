@@ -23,6 +23,17 @@ test('subsequent goals require goal, duration and learning style', () => {
   assert.equal(isOnboardingFormComplete(targetOnlyForm, false), false);
 });
 
+test('a new goal starts empty and cannot appear partially complete', () => {
+  const blankTargetForm = {
+    ...targetOnlyForm,
+    goal: '',
+    daily_hours: '',
+    learning_style: ''
+  };
+  assert.equal(getFormCompleteness(blankTargetForm, true), 0);
+  assert.equal(isOnboardingFormComplete(blankTargetForm, true), false);
+});
+
 test('first-time profile requires only stable profile fields and confirmed foundation', () => {
   const profileOnlyForm = {
     ...targetOnlyForm,

@@ -763,6 +763,67 @@ body.resizing-workspace-panels * {
   box-shadow: 0 8px 20px rgba(98, 88, 232, 0.13);
 }
 
+.message-markdown {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.message-markdown > :first-child {
+  margin-top: 0;
+}
+
+.message-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.message-markdown p,
+.message-markdown ul,
+.message-markdown ol {
+  margin: 0 0 10px;
+}
+
+.message-markdown ul,
+.message-markdown ol {
+  padding-left: 20px;
+}
+
+.message-markdown pre {
+  max-width: 100%;
+  margin: 10px 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #171b2b;
+  color: #e2e6f0;
+}
+
+.message-markdown code:not(pre code) {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #eceef4;
+  color: #3f4780;
+}
+
+.message-row.user .message-markdown code:not(pre code) {
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+}
+
+.message-markdown .katex-display,
+.material-markdown .katex-display,
+.markdown-content .katex-display {
+  max-width: 100%;
+  margin: 16px 0;
+  padding: 10px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.message-row.user .katex,
+.message-row.user .katex * {
+  color: inherit;
+}
+
 .review-badge {
   display: inline-flex;
   align-items: center;
@@ -5418,8 +5479,15 @@ body.resizing-workspace-panels * {
   cursor: default;
 }
 
+.knowledge-network-actions .knowledge-locate-button[aria-pressed="true"] {
+  border-color: #b89c45;
+  background: #fff9e8;
+  color: #715b1f;
+}
+
 .knowledge-network-viewport {
   height: min(620px, 64dvh);
+  overflow: hidden;
   overscroll-behavior: contain;
   background: #f7f8fa;
   cursor: grab;
@@ -5480,17 +5548,31 @@ body.resizing-workspace-panels * {
 
 .knowledge-route-edges path {
   fill: none;
-  stroke: #9ea8b4;
+  stroke: #aeb5c0;
   stroke-linecap: round;
   stroke-width: 1.35;
-  opacity: 0.58;
+  opacity: 0.5;
   transition: opacity 180ms ease, stroke 180ms ease;
 }
 
+.knowledge-route-edges path.mastered {
+  stroke: #4da77d;
+  opacity: 0.72;
+}
+
+.knowledge-route-edges path.learning {
+  stroke: #d3a33a;
+  opacity: 0.68;
+}
+
 .knowledge-route-edges path.block-fallback {
-  stroke: #b6a978;
   stroke-dasharray: 3 5;
-  opacity: 0.38;
+  opacity: 0.34;
+}
+
+.knowledge-route-edges path.block-fallback.mastered,
+.knowledge-route-edges path.block-fallback.learning {
+  opacity: 0.48;
 }
 
 .knowledge-route-node {
@@ -5630,8 +5712,7 @@ body.resizing-workspace-panels * {
 }
 
 .knowledge-network.focus .knowledge-route-edges path:not(.is-muted) {
-  stroke: #757e8c;
-  opacity: 0.75;
+  opacity: 0.82;
 }
 
 .knowledge-network.compact .knowledge-network-viewport {
