@@ -289,3 +289,31 @@ async def abandon_session(session_id: str, user_id: str = Depends(get_current_us
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{session_id}")
+async def delete_session(session_id: str, user_id: str = Depends(get_current_user_id)):
+    """物理删除一个 session（不可逆）：删除 DB 中该 session 的全部快照、画像、
+    阶段进度、测试记录、审核链路、问答与状态缓存。
+
+    DELETE /api/v1/sessions/{session_id}
+    """
+    try:
+        # 所有权校验：防止跨用户删除（db_client.delete_session 也会再验一次）
+        _require_owned_session(session_id, user_id)
+        deletes = harness.state_manager.delete_session(session_id, user_id)
+        return {
+            "session_id": session_id,
+            "deleted": True,
+            "details": deletes,
+        }
+    except HTTPException:
+        raise
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

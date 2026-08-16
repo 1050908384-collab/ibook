@@ -538,7 +538,8 @@ class Harness:
         ))
 
         # 更新当前阶段的结果状态（只改当前 stage，不推进编号）
-        stage.status = "completed" if accuracy >= 0.8 else "retreat"
+        # 通过阈值：正确率 ≥ 70% 即视为本阶段通过（用户要求）
+        stage.status = "completed" if accuracy >= 0.7 else "retreat"
         stage.accuracy = accuracy
         stage.strategy_used = decision.strategy
 
@@ -549,8 +550,8 @@ class Harness:
             self.state_manager.db_client.set_subtopic_status(
                 session_id=session_id,
                 subtopic_id=subtopic_id,
-                status=1 if accuracy >= 0.8 else 0,
-                mastery_score=1.0 if accuracy >= 0.8 else max(0.4, round(accuracy, 3)),
+                status=1 if accuracy >= 0.7 else 0,
+                mastery_score=1.0 if accuracy >= 0.7 else max(0.4, round(accuracy, 3)),
                 last_accuracy=accuracy,
                 increment_attempt=True,
             )
@@ -586,7 +587,7 @@ class Harness:
         session_status = session_state.get("status") if session_state else "active"
         can_plan_next_stage = not all_mastered and session_status == "active"
 
-        result_status = "completed" if all_mastered else ("repeat" if accuracy < 0.8 else "continue")
+        result_status = "completed" if all_mastered else ("repeat" if accuracy < 0.7 else "continue")
         # 阶段结果的 phase / available_actions（Agent46_API接口任务说明.md 第 3 节）：
         # - 结业（all_mastered）：phase=completed，无后续动作
         # - 未结业：phase=stage_result，开放 plan_next_stage（前端据此展示“生成下一阶段”）
@@ -619,8 +620,8 @@ class Harness:
         - 不立刻把 next_stage 覆盖到当前 stage_info（留待 start_stage 或前端确认后切换）
 
         stage_num 选择规则：
-        - accuracy >= 0.8（已掌握本阶段）：stage_num = current_stage + 1
-        - accuracy < 0.8（retreat/repeat）：stage_num = current_stage（重试当前阶段）
+        - accuracy >= 0.7（已掌握本阶段，正确率 ≥ 70%）：stage_num = current_stage + 1
+        - accuracy < 0.7（retreat/repeat）：stage_num = current_stage（重试当前阶段）
         """
         profile = UserProfile.model_validate(self._require_profile(session_id))
         current_stage_info = StageInfo.model_validate(self._require_stage(session_id))
@@ -631,12 +632,12 @@ class Harness:
         )
 
         accuracy = current_stage_info.accuracy or 0.0
-        if accuracy >= 0.8:
+        if accuracy >= 0.7:
             next_stage_num = current_stage_info.stage_num + 1
             default_notes = f"本阶段（{current_stage_info.stage_num}）已达标，推进到下一阶段"
         else:
             next_stage_num = current_stage_info.stage_num
-            default_notes = f"本阶段（{current_stage_info.stage_num}）正确率不足 80%，重试当前阶段"
+            default_notes = f"本阶段（{current_stage_info.stage_num}）正确率不足 70%，重试当前阶段"
 
         user_notes = adjustment_notes.strip() if adjustment_notes and adjustment_notes.strip() else None
         planning_notes = (

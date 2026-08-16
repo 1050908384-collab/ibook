@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from api.dependencies import get_harness, require_owned_session
+from api.dependencies import get_current_user_id, get_harness, require_owned_session
 from api.v1.learning_resources import backfill_stage_tutorial, build_stage_document_resources
 from api.v1.schemas import to_public_learning_package, to_public_question
 
@@ -47,97 +47,107 @@ def _sanitize_question(question: dict) -> dict:
 def _build_learning_resources(stage_info: dict, package: dict) -> list[dict]:
     """
     构建学习资源列表（文档要求字段）。
-    
-    数据源优先级：
-    1. package 中已有的 learning_resources（来自 Agent3 生成）
-    2. 通过 LearningResourceTool 从数据库读取已确认视频资源
-    3. 兜底：基于 tutorial/code_examples 生成默认资源
-    
-    返回字段（文档要求）：
-    resource_id, resource_type, title, url, platform, description,
-    recommendation_level, role, order
+
+    数据源（全部合并，不再二选一，避免视频被丢弃）：
+    1. package.learning_resources（Agent3 生成的 article/video 混合）
+    2. package.recommended_videos（Agent3 独立持久化的视频字段）
+    3. 通过 LearningResourceTool 从数据库读取已确认视频资源（1/2 缺失时补齐）
+    4. 兜底：基于 tutorial/code_examples 生成默认资源
+
+    返回字段：resource_id, resource_type, title, url, platform, description,
+              recommendation_level, role, order, subtopic_id
     """
-    # 防御性处理：None 输入转为空 dict
     stage_info = stage_info or {}
     package = package or {}
 
-    # 1. 优先用 package 已有资源（Agent3 生成），补全字段
-    existing_raw = package.get("learning_resources") or []
-    existing = [r for r in existing_raw if isinstance(r, dict)]  # 跳过 None/非 dict 项
-    if existing:
-        normalized = []
-        for idx, res in enumerate(existing):
-            url = res.get("url", res.get("canonical_url")) or ""
-            normalized.append({
-                "resource_id": res.get("resource_id") or f"res_{idx}",
-                "resource_type": res.get("resource_type") or "video",
-                "title": res.get("title") or "",
-                "url": url,
-                "platform": (res.get("platform") or _extract_platform(url)) or "",
-                "description": res.get("description", res.get("content_summary")) or "",
-                "recommendation_level": res.get("recommendation_level", res.get("role")) or "supplementary",
-                "role": res.get("role") or "supplementary",
-                "order": res.get("order", res.get("sequence_index", idx + 1)) or idx + 1,
-                # 重要：dict.get(key, default) 仅在 key 不存在时给默认值；若显式存 None 仍会是 None。
-                # 使用 "x or ''" 模式确保 None → ""，避免下游 Pydantic LearningResource.subtopic_id 的
-                # str 类型校验因 None 失败导致整个接口 500。
-                "subtopic_id": (res.get("subtopic_id") or ""),
-            })
-        # 按 order 排序
-        normalized.sort(key=lambda r: (0 if r["role"] == "primary" else 1, r["order"]))
-        return normalized
+    results: list[dict] = []
+    seen_resource_ids: set[str] = set()
+    seen_urls: set[str] = set()
 
-    # 2. 从数据库读取已确认的视频资源
+    def _append(resource: dict) -> None:
+        rid = str(resource.get("resource_id") or "").strip()
+        url = str(resource.get("url") or "").strip()
+        if rid and rid in seen_resource_ids:
+            return
+        if url and url in seen_urls:
+            return
+        if rid:
+            seen_resource_ids.add(rid)
+        if url:
+            seen_urls.add(url)
+        results.append(resource)
+
+    def _normalize(res: dict, fallback_idx: int, fallback_type: str = "video") -> dict:
+        url = (res.get("url") or res.get("canonical_url") or "").strip()
+        rid = (res.get("resource_id") or f"res_{fallback_idx}").strip() or f"res_{fallback_idx}"
+        rtype = (res.get("resource_type") or fallback_type or "video").strip() or "video"
+        order = res.get("order") or res.get("sequence_index") or fallback_idx + 1
+        return {
+            "resource_id": rid,
+            "resource_type": rtype,
+            "title": (res.get("title") or "").strip(),
+            "url": url,
+            "platform": (res.get("platform") or _extract_platform(url) or "").strip(),
+            "description": (res.get("description") or res.get("content_summary") or "").strip(),
+            "recommendation_level": (res.get("recommendation_level") or res.get("role") or "supplementary").strip() or "supplementary",
+            "role": (res.get("role") or "supplementary").strip() or "supplementary",
+            "order": order if isinstance(order, int) else fallback_idx + 1,
+            "subtopic_id": (res.get("subtopic_id") or "").strip(),
+        }
+
+    # 1. package.learning_resources（可能已有 article + video 混合）
+    existing_raw = package.get("learning_resources") or []
+    for idx, res in enumerate(r for r in existing_raw if isinstance(r, dict)):
+        normalized = _normalize(res, idx, fallback_type=res.get("resource_type") or "article")
+        _append(normalized)
+
+    # 2. 合并 package.recommended_videos（历史快照里视频独立存放，learning_resources 只有文章）
+    videos_raw = package.get("recommended_videos") or []
+    for idx, v in enumerate(r for r in videos_raw if isinstance(r, dict)):
+        normalized = _normalize(v, 10000 + idx, fallback_type="video")
+        normalized["resource_type"] = "video"
+        _append(normalized)
+
+    # 3. 若仍无视频，则从数据库补齐（支持多 subtopic，每个 subtopic 都查一遍）
+    has_video = any(r.get("resource_type") == "video" and r.get("url") for r in results)
     block_id = stage_info.get("block_id") if stage_info else None
-    subtopic_id = stage_info.get("subtopic_id") if stage_info else None
-    if block_id:
+    subtopic_ids = list(stage_info.get("subtopic_ids") or [])
+    if not subtopic_ids and stage_info.get("subtopic_id"):
+        subtopic_ids = [stage_info.get("subtopic_id")]
+    subtopic_id_for_query = subtopic_ids[0] if subtopic_ids else None
+
+    if (not has_video) and block_id:
         try:
             import asyncio
             from tools.learning_resource_tool import LearningResourceTool
             tool = LearningResourceTool()
-            # 同步调用 async 方法
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    # 已在事件循环中，创建 task
                     import concurrent.futures
                     with concurrent.futures.ThreadPoolExecutor() as pool:
                         videos = pool.submit(
-                            asyncio.run, tool.get_recommended_videos(block_id, subtopic_id)
+                            asyncio.run, tool.get_recommended_videos(block_id, subtopic_id_for_query)
                         ).result()
                 else:
-                    videos = loop.run_until_complete(tool.get_recommended_videos(block_id, subtopic_id))
+                    videos = loop.run_until_complete(tool.get_recommended_videos(block_id, subtopic_id_for_query))
             except RuntimeError:
-                videos = asyncio.run(tool.get_recommended_videos(block_id, subtopic_id))
+                videos = asyncio.run(tool.get_recommended_videos(block_id, subtopic_id_for_query))
 
-            if videos:
-                resources = []
-                for v in videos:
-                    resources.append({
-                        "resource_id": v.get("resource_id", ""),
-                        "resource_type": "video",  # 目前库中只有 video
-                        "title": v.get("title", ""),
-                        "url": v.get("url", v.get("canonical_url", "")),
-                        "platform": _extract_platform(v.get("url", "")),
-                        "description": v.get("content_summary", v.get("description", "")),
-                        "recommendation_level": v.get("role", "supplementary"),
-                        "role": v.get("role", "supplementary"),
-                        "order": v.get("sequence_index", 1),
-                        "subtopic_id": v.get("subtopic_id") or "",
-                    })
-                # 按 order 排序，primary 优先
-                resources.sort(key=lambda r: (0 if r["role"] == "primary" else 1, r["order"]))
-                return resources
+            for idx, v in enumerate(r for r in videos if isinstance(r, dict)):
+                normalized = _normalize(v, 20000 + idx, fallback_type="video")
+                normalized["resource_type"] = "video"
+                _append(normalized)
         except Exception:
-            pass  # 数据库读取失败，走兜底
+            pass
 
-    # 3. 兜底：基于 tutorial 生成默认资源
-    block_name = stage_info.get("block_name", "") if stage_info else ""
-    subtopic_name = stage_info.get("subtopic_name", "") if stage_info else ""
-    stage_id = stage_info.get("stage_id", "") if stage_info else ""
-    tutorial = package.get("tutorial", "") if package else ""
-    return [
-        {
+    # 4. 兜底：完全没有任何资源
+    if not results:
+        block_name = stage_info.get("block_name", "") if stage_info else ""
+        subtopic_name = stage_info.get("subtopic_name", "") if stage_info else ""
+        stage_id = stage_info.get("stage_id", "") if stage_info else ""
+        tutorial = package.get("tutorial", "") if package else ""
+        results.append({
             "resource_id": f"res_tutorial_{stage_id}",
             "resource_type": "article",
             "title": f"{subtopic_name or block_name} 教程",
@@ -147,8 +157,9 @@ def _build_learning_resources(stage_info: dict, package: dict) -> list[dict]:
             "recommendation_level": "primary",
             "role": "primary",
             "order": 1,
-        },
-        {
+            "subtopic_id": (stage_info.get("subtopic_id") or "").strip(),
+        })
+        results.append({
             "resource_id": f"res_code_{stage_id}",
             "resource_type": "code",
             "title": f"{subtopic_name or block_name} 代码示例",
@@ -158,8 +169,11 @@ def _build_learning_resources(stage_info: dict, package: dict) -> list[dict]:
             "recommendation_level": "supplementary",
             "role": "supplementary",
             "order": 2,
-        },
-    ]
+            "subtopic_id": (stage_info.get("subtopic_id") or "").strip(),
+        })
+
+    results.sort(key=lambda r: (0 if r.get("role") == "primary" else 1, r.get("order") or 0))
+    return results
 
 
 def _extract_platform(url) -> str:
@@ -582,5 +596,39 @@ async def plan_next_stage(
         raise
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/last")
+async def delete_last_stage(session_id: str, user_id: str = Depends(get_current_user_id)):
+    """删除最后一个学习阶段（物理删除，不可恢复）。
+
+    DELETE /api/v1/sessions/{session_id}/stages/last
+
+    - 删除 stage_progress 里 stage_num 最大的一条，并级联清理该 stage_id 关联的
+      审核链路（review_traces / claims / sources / debate）、assessment_attempts 及其子表、
+      session_states 里的阶段缓存字段。
+    - 如果该 session 删除后已无任何 stage_progress 记录，则整个 session（含画像、
+      session_states、sessions 行）也会被物理删除，学习目标随之消失。
+    - 返回 details，前端据此刷新左栏列表。user_id 来自 X-User-ID，与 require_owned_session
+      的所有权校验一致，并下传到 db_client 做二次校验。
+    """
+    try:
+        details = harness.state_manager.delete_last_stage(session_id, user_id)
+        return {
+            "session_id": session_id,
+            "deleted": True,
+            "session_deleted": bool(details.get("session_deleted")),
+            "details": details,
+        }
+    except HTTPException:
+        raise
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

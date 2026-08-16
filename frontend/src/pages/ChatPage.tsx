@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send, BookOpen, FileQuestion, CheckCircle, XCircle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { apiClient } from '../api/client';
 
 interface Message {
@@ -150,8 +152,24 @@ const ChatPage: React.FC = () => {
         {learningPackage && (
           <div className="learning-package">
             <h3>学习资料</h3>
-            <div className="package-content">
-              <pre>{learningPackage.tutorial}</pre>
+            <div className="package-content material-markdown">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  pre({ children }) {
+                    return <div className="material-code-block">{children}</div>;
+                  },
+                  code({ className, children, ...props }) {
+                    const isInline = !className;
+                    if (isInline) {
+                      return <code className="material-inline-code" {...props}>{children}</code>;
+                    }
+                    return <code className={className} {...props}>{children}</code>;
+                  },
+                }}
+              >
+                {learningPackage.tutorial}
+              </ReactMarkdown>
             </div>
           </div>
         )}

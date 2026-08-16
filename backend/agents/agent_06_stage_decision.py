@@ -240,7 +240,7 @@ class StageDecisionAgent(BaseAgent):
             decision = tool_decision or "completed"
         elif next_strategy == "backtrack":
             decision = "repeat"
-        elif accuracy >= 0.8:
+        elif accuracy >= 0.7:
             decision = "continue"
         else:
             decision = "repeat"

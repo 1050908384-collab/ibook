@@ -108,26 +108,34 @@ def _extract_questions(
                 if stids:
                     # 严格按 subtopic 抽：每个 subtopic 最多 QPS 题，
                     # 0 题跳过，1 题就出 1 题。绝不从其他 subtopic / block 池凑题。
-                    per_sql = _BASE + "WHERE block_id = ? AND subtopic_id = ? " + _QTYPE_ORDER + "LIMIT ?"
+                    # 随机化：先取该 subtopic 全部题（不 LIMIT），再 Python 端 random.sample。
+                    per_sql = _BASE + "WHERE block_id = ? AND subtopic_id = ? " + _QTYPE_ORDER
                     for stid in stids:
-                        for r in conn.execute(per_sql, (block_id, stid, QPS)).fetchall():
+                        pool = list(conn.execute(per_sql, (block_id, stid)).fetchall())
+                        take = min(len(pool), QPS)
+                        sampled = random.sample(pool, take) if take > 0 else []
+                        for r in sampled:
                             qid = r[0]
                             if qid in picked_ids:
                                 continue
                             picked_ids.add(qid)
                             rows.append(r)
                 else:
-                    # 无 subtopic → 全局 LIMIT（旧行为）
-                    sql = _BASE + "WHERE block_id = ? " + _QTYPE_ORDER + "LIMIT ?"
-                    rows = list(conn.execute(sql, (block_id, count)).fetchall())
+                    # 无 subtopic → 全局池随机抽 count 题
+                    sql = _BASE + "WHERE block_id = ? " + _QTYPE_ORDER
+                    pool = list(conn.execute(sql, (block_id,)).fetchall())
+                    take = min(len(pool), count)
+                    rows = random.sample(pool, take) if take > 0 else []
             else:
                 sql = (
                     "SELECT q.question_id, q.block_id, q.subtopic_id, q.question_type, q.question_text, q.options, "
                     "q.correct_answer, q.difficulty, q.explanation, q.expected_output, q.grading_mode, q.source, q.hint "
                     "FROM test_questions q JOIN knowledge_blocks b ON q.block_id = b.block_id "
-                    "WHERE b.block_name = ? " + _QTYPE_ORDER + "LIMIT ?"
+                    "WHERE b.block_name = ? " + _QTYPE_ORDER
                 )
-                rows = list(conn.execute(sql, (block_name, count)).fetchall())
+                pool = list(conn.execute(sql, (block_name,)).fetchall())
+                take = min(len(pool), count)
+                rows = random.sample(pool, take) if take > 0 else []
         finally:
             conn.close()
 

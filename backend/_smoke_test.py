@@ -1,8 +1,9 @@
 """Rapid smoke test: simulate /current + /current/package response to verify code changes."""
-import sys
-sys.path.insert(0, r"d:\我的项目\揭榜挂帅\ai_agent-trainer\backend")
 import os
-os.chdir(r"d:\我的项目\揭榜挂帅\ai_agent-trainer\backend")
+import sys
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, BACKEND_DIR)
+os.chdir(BACKEND_DIR)
 
 # Simulate a LEGACY session (only has single subtopic_id, no arrays)
 legacy_stage_info = {

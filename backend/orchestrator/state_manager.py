@@ -189,6 +189,20 @@ class StateManager:
     def abandon_session(self, session_id: str) -> None:
         self.set_status(session_id, "abandoned")
 
+    def delete_session(self, session_id: str, user_id: str | None = "local-user") -> Dict[str, int]:
+        """物理删除 session：清除 DB 所有关联快照 + 内存缓存（不可逆）。"""
+        deletes = self.db_client.delete_session(session_id, user_id)
+        # 同步清掉内存缓存，避免后续请求还读到旧数据
+        self._cache.pop(session_id, None)
+        return deletes
+
+    def delete_last_stage(self, session_id: str, user_id: str | None = "local-user") -> Dict[str, object]:
+        """删除 session 的最后一个学习阶段；若该 session 已无阶段，自动删整个 session。"""
+        details = self.db_client.delete_last_stage(session_id, user_id)
+        # 同步丢内存缓存，下一次请求会从 DB 重新加载最新状态
+        self._cache.pop(session_id, None)
+        return details
+
     def list_sessions(self, user_id: str = "local-user") -> List[Dict[str, Any]]:
         """获取指定用户的会话列表。"""
         return self.db_client.list_sessions(user_id)

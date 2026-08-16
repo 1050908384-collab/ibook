@@ -1,7 +1,9 @@
 import { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
+  AlertTriangle,
   Award,
   BookOpen,
   Bot,
@@ -55,6 +57,7 @@ import {
 import { findKnowledgeGraphBlock, knowledgeGraphBlocks, type KnowledgeGraphBlock } from './data/knowledgeGraph';
 import FoundationPickerModal from './components/FoundationPickerModal';
 import KnowledgeNetwork from './components/KnowledgeNetwork';
+import { useGenerationProgress, type GenStagePreview } from './components/GenerationProgress';
 import OnboardingPage from './pages/OnboardingPage';
 import ProfileConfirmPage from './pages/ProfileConfirmPage';
 import {
@@ -190,6 +193,7 @@ type LearningPackage = {
 type StageResult = {
   status?: string;
   accuracy?: number;
+  bypass_assessment?: boolean;
   stage_summary?: string;
   next_strategy?: string;
   final_report?: Record<string, unknown>;
@@ -515,6 +519,24 @@ function getErrorMessage(error: unknown) {
   return '后端暂时不可用，已切换为本地演示数据。';
 }
 
+/**
+ * 从 axios 错误中抽取结构化后端业务错误码。
+ * FastAPI HTTPException(detail={code, message}) 会包装成
+ * `response.data = {detail: {code, message}}`；老接口或参数校验失败时
+ * `response.data.detail` 为字符串。两者都要兼容。
+ */
+function getApiErrorCode(error: unknown): string | null {
+  if (typeof error !== 'object' || !error || !('response' in error)) return null;
+  const err = error as { response?: { data?: { detail?: unknown } } };
+  const detail = err?.response?.data?.detail;
+  if (!detail) return null;
+  if (typeof detail === 'object' && detail && 'code' in detail) {
+    const code = (detail as { code?: unknown }).code;
+    return typeof code === 'string' ? code : null;
+  }
+  return null;
+}
+
 function formatTimer(totalSeconds: number) {
   const safeSeconds = Math.max(0, totalSeconds);
   const hours = Math.floor(safeSeconds / 3600);
@@ -728,7 +750,8 @@ function ProfilePanel({
   timerSeconds,
   timerRunning,
   onToggleTimer,
-  onStartStage
+  onStartStage,
+  onDeleteLastStage
 }: {
   stage: StageInfo;
   projects: LearningProject[];
@@ -745,8 +768,10 @@ function ProfilePanel({
   timerRunning: boolean;
   onToggleTimer: () => void;
   onStartStage: () => void;
+  onDeleteLastStage: (sessionId: string) => Promise<void>;
 }) {
   const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({});
+  const [pendingDeleteStage, setPendingDeleteStage] = useState<{ sessionId: string; stageNum: number; goal: string; blockName: string } | null>(null);
   const timerLabel = timerRunning
     ? '暂停提醒'
     : timerSeconds <= 0
@@ -759,6 +784,7 @@ function ProfilePanel({
     }));
   };
   return (
+    <>
     <aside className={`context-panel ${collapsed ? 'collapsed' : ''}`}>
       <div className="context-panel-controls">
         {!collapsed && <span>对话导航</span>}
@@ -813,7 +839,7 @@ function ProfilePanel({
         <div className="goal-stage-nav-heading">
           <span>学习目标</span>
         </div>
-        {[...projects].sort((a, b) => b.updatedAt - a.updatedAt).map((project) => {
+        {sortProjectsForDashboard(projects, currentSessionId).map((project) => {
           const expanded = expandedGoals[project.sessionId] ?? project.sessionId === currentSessionId;
           const stages = [...(project.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
           return (
@@ -824,21 +850,43 @@ function ProfilePanel({
               </button>
               {expanded && (
                 <div className="goal-stage-list">
-                  {stages.map((item) => {
+                  {stages.map((item, index) => {
                     const stageNum = item.stage_num ?? 1;
                     const conversationId = `${project.sessionId}:${stageNum}`;
                     const current = project.sessionId === currentSessionId && stageNum === (stage.stage_num ?? 1);
+                    const isLastStage = index === stages.length - 1;
                     return (
-                      <button
-                        className={`${selectedConversationId === conversationId ? 'active' : ''} ${current ? 'current' : ''}`}
+                      <div
+                        className={`goal-stage-item ${selectedConversationId === conversationId ? 'active' : ''} ${current ? 'current' : ''}`}
                         key={conversationId}
-                        onClick={() => onSelectProjectStage(project.sessionId, stageNum)}
                       >
-                        <span>
-                          第 {stageNum} 阶段 · {item.block_name || '阶段对话'}
-                        </span>
-                        {current && <i aria-label="当前阶段" />}
-                      </button>
+                        <button
+                          className="goal-stage-button"
+                          onClick={() => onSelectProjectStage(project.sessionId, stageNum)}
+                        >
+                          <span>
+                            第 {stageNum} 阶段 · {item.block_name || '阶段对话'}
+                          </span>
+                          {current && <i aria-label="当前阶段" />}
+                        </button>
+                        {isLastStage && (
+                          <button
+                            className="goal-stage-delete-button"
+                            type="button"
+                            aria-label={`删除第 ${stageNum} 阶段`}
+                            title="删除最后一个学习阶段"
+                            disabled={loading}
+                            onClick={() => setPendingDeleteStage({
+                              sessionId: project.sessionId,
+                              stageNum,
+                              goal: project.goal,
+                              blockName: item.block_name || '阶段对话',
+                            })}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                   {stages.length === 0 && project.sessionId === currentSessionId ? (
@@ -859,6 +907,46 @@ function ProfilePanel({
       </section>
       </div>
     </aside>
+    {pendingDeleteStage && (
+      <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
+        <div className="stage-delete-modal">
+          <div className="stage-delete-modal-header">
+            <Trash2 size={18} />
+            <span>删除学习阶段</span>
+          </div>
+          <p className="stage-delete-modal-body">
+            确定删除「{pendingDeleteStage.goal}」的
+            <strong>第 {pendingDeleteStage.stageNum} 阶段 · {pendingDeleteStage.blockName}</strong> 吗？
+          </p>
+          <p className="stage-delete-modal-hint">
+            仅可删除最后一个学习阶段。若阶段全部删完，该学习目标也会一并移除，且不可恢复。
+          </p>
+          <div className="stage-delete-modal-actions">
+            <button
+              type="button"
+              className="stage-delete-modal-cancel"
+              onClick={() => setPendingDeleteStage(null)}
+              disabled={loading}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="stage-delete-modal-confirm"
+              onClick={() => {
+                const target = pendingDeleteStage;
+                setPendingDeleteStage(null);
+                void onDeleteLastStage(target.sessionId);
+              }}
+              disabled={loading}
+            >
+              {loading ? '删除中…' : '确认删除'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -867,6 +955,179 @@ function getResourceUrl(resource: LearningResource) {
   if (resource.content_ref?.startsWith('http')) return resource.content_ref;
   if (resource.locator?.startsWith('http')) return resource.locator;
   return '';
+}
+
+// =====================================================================
+// 视频嵌入解析与组件：B 站 BV / YouTube / mp4 直链 / 其他平台回退
+// =====================================================================
+type VideoKind = 'bilibili' | 'youtube' | 'native' | 'link-only';
+type ParsedVideo =
+  | { kind: 'bilibili'; embedUrl: string; bvid: string; page?: string; external: string }
+  | { kind: 'youtube'; embedUrl: string; videoId: string; external: string }
+  | { kind: 'native'; embedUrl: string; external: string }
+  | { kind: 'link-only'; external: string };
+
+function parseVideoUrl(rawUrl: string): ParsedVideo {
+  if (!rawUrl) return { kind: 'link-only', external: '' };
+  let url: URL | null = null;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return { kind: 'link-only', external: rawUrl };
+  }
+  const host = url.hostname.replace(/^www\./, '');
+
+  // --- B 站 ---
+  if (host === 'bilibili.com' || host === 'm.bilibili.com') {
+    const bvMatch = url.pathname.match(/\/video\/(BV[a-zA-Z0-9]+)/);
+    const bvid = bvMatch ? bvMatch[1] : '';
+    if (bvid) {
+      const p = url.searchParams.get('p') || undefined;
+      const pageParam = p ? `&page=${encodeURIComponent(p)}` : '';
+      return {
+        kind: 'bilibili',
+        bvid,
+        page: p,
+        embedUrl: `https://player.bilibili.com/player.html?bvid=${bvid}${pageParam}&high_quality=1&danmaku=0&autoplay=0`,
+        external: rawUrl,
+      };
+    }
+  }
+  if (host === 'b23.tv') {
+    // b23.tv 短链：无法离线拿到 BV，只能回退链接；但仍尝试用 iframe 嵌入可能失败，所以直接 link-only 走外链
+    return { kind: 'link-only', external: rawUrl };
+  }
+
+  // --- YouTube ---
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+    const v = url.searchParams.get('v');
+    if (v) {
+      return {
+        kind: 'youtube',
+        videoId: v,
+        embedUrl: `https://www.youtube.com/embed/${v}?rel=0&modestbranding=1`,
+        external: rawUrl,
+      };
+    }
+    const shortMatch = url.pathname.match(/^\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{6,})/);
+    if (shortMatch) {
+      return {
+        kind: 'youtube',
+        videoId: shortMatch[1],
+        embedUrl: `https://www.youtube.com/embed/${shortMatch[1]}?rel=0&modestbranding=1`,
+        external: rawUrl,
+      };
+    }
+  }
+  if (host === 'youtu.be') {
+    const id = url.pathname.replace(/^\//, '').split('/')[0];
+    if (id) {
+      return {
+        kind: 'youtube',
+        videoId: id,
+        embedUrl: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`,
+        external: rawUrl,
+      };
+    }
+  }
+
+  // --- 原生 mp4 / webm / ogg ---
+  if (/\.(mp4|webm|ogg|m4v|mov)(\?|#|$)/i.test(url.pathname + url.search)) {
+    return { kind: 'native', embedUrl: rawUrl, external: rawUrl };
+  }
+
+  return { kind: 'link-only', external: rawUrl };
+}
+
+function useVideoPoster(parsed: ParsedVideo): string | undefined {
+  // B 站没有稳定的离线可算封面 API，返回 undefined，让前端显示占位图标
+  if (parsed.kind === 'youtube') {
+    // 取 YouTube 标准中质量封面（存在性最好）
+    return `https://i.ytimg.com/vi/${parsed.videoId}/hqdefault.jpg`;
+  }
+  return undefined;
+}
+
+function EmbeddedVideoCard({
+  resource,
+  index,
+  getUrl,
+}: {
+  resource: LearningResource;
+  index: number;
+  getUrl: (r: LearningResource) => string;
+}) {
+  const external = getUrl(resource);
+  const parsed = parseVideoUrl(external);
+  const poster = useVideoPoster(parsed);
+  const [activated, setActivated] = useState(false);
+
+  const title = resource.title || `学习视频 ${index + 1}`;
+  const summary = resource.content_summary || resource.description || '';
+
+  return (
+    <article className="material-video-card">
+      <div
+        className={`material-video-stage ${activated ? 'is-playing' : ''}`}
+        onClick={() => !activated && parsed.kind !== 'link-only' && setActivated(true)}
+      >
+        {!activated && (
+          <div className={`material-video-cover ${parsed.kind === 'link-only' ? 'is-link-only' : ''}`}>
+            {parsed.kind !== 'link-only' && poster ? (
+              <img src={poster} alt={title} loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+            ) : (
+              <div className="material-video-cover-fallback">
+                {parsed.kind === 'bilibili' && <span className="material-video-badge bilibili">B站</span>}
+                {parsed.kind === 'youtube' && <span className="material-video-badge youtube">YouTube</span>}
+                {parsed.kind === 'native' && <span className="material-video-badge native">MP4</span>}
+                {parsed.kind === 'link-only' && <span className="material-video-badge linkonly">外链</span>}
+                <Play size={34} strokeWidth={2.4} />
+              </div>
+            )}
+            {parsed.kind !== 'link-only' && (
+              <button type="button" className="material-video-play" aria-label={`播放 ${title}`}>
+                <Play size={22} fill="currentColor" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {activated && parsed.kind === 'bilibili' && (
+          <iframe
+            src={parsed.embedUrl}
+            title={title}
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        )}
+        {activated && parsed.kind === 'youtube' && (
+          <iframe
+            src={parsed.embedUrl}
+            title={title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        )}
+        {activated && parsed.kind === 'native' && (
+          <video controls preload="metadata" src={parsed.embedUrl} playsInline poster={poster} />
+        )}
+      </div>
+
+      <div className="material-video-meta">
+        <div className="material-video-title-row">
+          <strong>{title}</strong>
+          <a href={external || parsed.external || '#'} target="_blank" rel="noreferrer" className="material-video-external" title="新标签打开">
+            <ExternalLink size={13} /> 打开
+          </a>
+        </div>
+        {summary && <p>{summary}</p>}
+      </div>
+    </article>
+  );
 }
 
 function uniqueResources(resources: LearningResource[]) {
@@ -1026,11 +1287,26 @@ function toLearningPackage(pkg?: ApiLearningPackage | LearningPackage | null): L
       resource_type: video.resource_type || 'video'
     }))
     : [];
+  // 合并（双保险）：后端 schemas.py / stages.py 理论上已经合并过，
+  // 但为了兼容旧快照或其它端点，前端这里再合并一次，按 resource_id / url 去重。
+  const seenIds = new Set<string>();
+  const seenUrls = new Set<string>();
+  const merged: LearningResource[] = [];
+  for (const r of [...declaredResources, ...recommendedVideos]) {
+    if (!r) continue;
+    const id = String((r as any).resource_id || '').trim();
+    const url = String((r as any).url || getResourceUrl(r as any) || '').trim();
+    if (id && seenIds.has(id)) continue;
+    if (url && seenUrls.has(url)) continue;
+    if (id) seenIds.add(id);
+    if (url) seenUrls.add(url);
+    merged.push(r as LearningResource);
+  }
   return {
     ...pkg,
     tutorial: pkg.tutorial ?? undefined,
     code_examples: Array.isArray(pkg.code_examples) ? pkg.code_examples as LearningPackage['code_examples'] : undefined,
-    learning_resources: (declaredResources.length ? declaredResources : recommendedVideos) as LearningResource[],
+    learning_resources: merged,
     questions: Array.isArray(pkg.questions) ? pkg.questions as TestQuestion[] : undefined
   };
 }
@@ -1089,20 +1365,23 @@ function qaItemsToMessages(items?: Array<{
 function matchesSubtopic(resource: LearningResource, subtopic?: KnowledgeSubtopic): boolean {
   if (!subtopic) return true;
   const subtopicId = subtopic.subtopic_id;
-  const subtopicName = subtopic.subtopic_name?.trim().toLowerCase();
+  const subtopicName = subtopic.subtopic_name?.trim();
   if (!subtopicId && !subtopicName) return true;
-  const resourceSubtopicId = (resource as any).subtopic_id as string | undefined;
-  // 1. 资源有 subtopic_id 时，按精确匹配
+  const resourceSubtopicId = String((resource as any).subtopic_id ?? '').trim();
+
+  // 1. 资源有精确 subtopic_id 时优先按 id 匹配
   if (resourceSubtopicId) {
     if (subtopicId && resourceSubtopicId === subtopicId) return true;
-    // 资源属于其他知识点，不显示在当前页
-    return false;
+    if (subtopicId && resourceSubtopicId !== subtopicId) return false;
+    // 当前 selectedSubtopic.subtopic_id 为空（stage.subtopic_ids 没同步/缺字段），
+    // 但资源有精确 subtopic_id。此时前端无法通过 id 判断是否归属当前知识点，
+    // 不能直接 return false（否则会把该阶段所有文章都隐藏）。
+    return true;
   }
-  // 2. 资源 subtopic_id 为空字符串（经过 None→"" 规范化后的旧资源）
-  //    不再走名称模糊匹配 — 否则同一篇文章会匹配到错误的知识点页面，
-  //    导致"最后一个知识点的文章出现在倒数第二个知识点里"。
-  //    仅当未选择具体知识点时（subtopicId 为空）才显示。
-  if (subtopicId) return false;
+  // 2. 资源 subtopic_id 为空 / ""：语义是"block 级通用资源/兜底资源"，
+  //    不是"归属错误的资源"。在 block 级层面推荐给整个 block 下所有知识点是合理的
+  //    （例如 Python 阶段的一个"Python 全 3 小时入门"视频，语法/安装/集合小节都能看），
+  //    所以不再视为"串台"，总是显示。
   return true;
 }
 
@@ -1174,29 +1453,6 @@ function MaterialDocument({
         <span><Clock size={13} /> {stage.estimated_hours ?? 1} 小时</span>
       </div>
       <h2>{selectedTopicName}</h2>
-      <section className="material-resource-section article-urls">
-        <div className="material-section-heading"><ExternalLink size={16} /><h3>文章网址</h3></div>
-        {articleResources.length > 0 ? (
-          <div className="material-article-list">
-            {articleResources.map((resource, index) => {
-              const url = getResourceUrl(resource);
-              return (
-                <article key={resource.resource_id || `${resource.title}-${index}`}>
-                  <span>
-                    <strong>{resource.title || `学习文章 ${index + 1}`}</strong>
-                    {resource.content_summary && <small>{resource.content_summary}</small>}
-                  </span>
-                  {url ? (
-                    <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />查看原文</a>
-                  ) : (
-                    <em className="material-empty-hint">暂无外部链接</em>
-                  )}
-                </article>
-              );
-            })}
-          </div>
-        ) : <p className="material-empty">暂无匹配文章链接</p>}
-      </section>
       <section className="material-resource-section text-resources">
         <div className="material-section-heading"><BookOpen size={16} /><h3>文章内容</h3></div>
         {hasTextContent ? (
@@ -1204,6 +1460,7 @@ function MaterialDocument({
             {topicTutorial?.trim() && (
               <div className="material-markdown">
                 <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
                   components={{
                     pre({ children }) {
                       return <div className="material-code-block">{children}</div>;
@@ -1257,22 +1514,41 @@ function MaterialDocument({
           </>
         ) : <p className="material-empty">暂无文章内容</p>}
       </section>
+      <section className="material-resource-section article-urls">
+        <div className="material-section-heading"><ExternalLink size={16} /><h3>拓展网址</h3></div>
+        {articleResources.length > 0 ? (
+          <div className="material-article-list">
+            {articleResources.map((resource, index) => {
+              const url = getResourceUrl(resource);
+              return (
+                <article key={resource.resource_id || `${resource.title}-${index}`}>
+                  <span>
+                    <strong>{resource.title || `拓展文章 ${index + 1}`}</strong>
+                    {resource.content_summary && <small>{resource.content_summary}</small>}
+                  </span>
+                  {url ? (
+                    <a href={url} target="_blank" rel="noreferrer"><ExternalLink size={14} />查看原文</a>
+                  ) : (
+                    <em className="material-empty-hint">暂无外部链接</em>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ) : <p className="material-empty">暂无匹配拓展链接</p>}
+      </section>
       <section className="material-resource-section video-resources">
         <div className="material-section-heading"><Play size={16} /><h3>学习视频</h3></div>
         {videoResources.length > 0 ? (
           <div className="material-video-list">
-            {videoResources.map((resource, index) => {
-              const url = getResourceUrl(resource);
-              return (
-                <article key={resource.resource_id || `${resource.title}-${index}`}>
-                  <div>
-                    <strong>{resource.title || `学习视频 ${index + 1}`}</strong>
-                    {(resource.content_summary || resource.description) && <p>{resource.content_summary || resource.description}</p>}
-                    <a href={url} target="_blank" rel="noreferrer"><Play size={13} />打开视频</a>
-                  </div>
-                </article>
-              );
-            })}
+            {videoResources.map((resource, index) => (
+              <EmbeddedVideoCard
+                key={resource.resource_id || `${resource.title}-${index}`}
+                resource={resource}
+                index={index}
+                getUrl={getResourceUrl}
+              />
+            ))}
           </div>
         ) : <p className="material-empty">暂无匹配视频</p>}
       </section>
@@ -1410,6 +1686,7 @@ function ChatView({
   selectedConversationId,
   onSelectProjectStage,
   onStartStage,
+  onDeleteLastStage,
   readOnly,
   readOnlyNotice,
   loading,
@@ -1441,6 +1718,7 @@ function ChatView({
   selectedConversationId: string;
   onSelectProjectStage: (sessionId: string, stageNum: number) => void;
   onStartStage: () => void;
+  onDeleteLastStage: (sessionId: string) => Promise<void>;
   readOnly: boolean;
   readOnlyNotice: string;
   loading: boolean;
@@ -1533,6 +1811,7 @@ function ChatView({
           timerRunning={timerRunning}
           onToggleTimer={onToggleTimer}
           onStartStage={onStartStage}
+          onDeleteLastStage={onDeleteLastStage}
         />
 
         <CurrentMaterialPanel
@@ -2536,49 +2815,81 @@ function ResultView({
   loading: boolean;
   error: string | null;
 }) {
-  const accuracy = result?.accuracy ?? 0.87;
+  const bypass = Boolean(result?.bypass_assessment);
+  const hasAssessment = !bypass && typeof result?.accuracy === 'number';
+  const accuracy = result?.accuracy;
   const gaps = profile.knowledge_gaps || [];
   const mastered = gaps.filter((gap) => gap.status === '已掌握' || (gap.progress ?? 0) >= 1);
   const needsWork = gaps.filter((gap) => gap.status !== '已掌握' && (gap.progress ?? 0) < 1);
   const canPlanNext = result?.can_plan_next_stage ?? result?.available_actions?.includes('plan_next_stage') ?? false;
+  const heroTitle = bypass
+    ? '本阶段无测试题目，已直接完成'
+    : (accuracy ?? 0) >= 0.7
+      ? '很好，可以进入下一阶段'
+      : '建议先巩固当前阶段';
+  const heroSubtitle = bypass
+    ? '系统已结合本阶段学习记录生成画像更新和后续建议。'
+    : '系统已结合本阶段学习记录和测试结果生成反馈，并更新为画像 v{version}。'.replace('{version}', String(profile.version ?? 1));
   return (
     <div className="page-shell">
       <Topbar
         title="阶段结果"
-        subtitle="阶段完成后展示画像更新和下一阶段策略"
+        subtitle={bypass ? '阶段完成（无测试题目）' : '阶段完成后展示画像更新和下一阶段策略'}
         loading={loading}
         error={error}
         onReturnToChat={onReturnToChat}
       />
       <main className="result-page">
         <section className="result-hero">
-          <div className="score-ring">
-            <span><strong>{pct(accuracy)}</strong><small>正确率</small></span>
-          </div>
+          {hasAssessment ? (
+            <div className="score-ring">
+              <span><strong>{pct(accuracy!)}</strong><small>正确率</small></span>
+            </div>
+          ) : (
+            <div className="score-ring no-score" aria-hidden>
+              <AlertTriangle size={28} />
+              <small>无测试题目</small>
+            </div>
+          )}
           <div>
             <span className="success-label"><Check size={14} /> 阶段完成</span>
-            <h2>{accuracy >= 0.8 ? '很好，可以进入下一阶段' : '建议先巩固当前阶段'}</h2>
-            <p>系统已结合本阶段学习记录和测试结果生成反馈，并更新为画像 v{profile.version ?? 1}。</p>
+            <h2>{heroTitle}</h2>
+            <p>{heroSubtitle}</p>
           </div>
-          <div className="strategy">
-            <span>下一阶段策略</span>
-            <strong>{result?.next_strategy || (accuracy >= 0.8 ? 'advance' : 'reinforce')}</strong>
-            <small>Agent6 综合决策</small>
-          </div>
+          {bypass ? (
+            <div className="strategy no-strategy">
+              <span>阶段状态</span>
+              <strong>直接完成</strong>
+              <small>当前知识点未收录测试题</small>
+            </div>
+          ) : (
+            <div className="strategy">
+              <span>下一阶段策略</span>
+              <strong>{result?.next_strategy || ((accuracy ?? 0) >= 0.7 ? 'advance' : 'reinforce')}</strong>
+              <small>Agent6 综合决策</small>
+            </div>
+          )}
         </section>
         <div className="feedback-summary-grid">
           <section className="white-card feedback-overview">
             <div className="section-title"><div><span>反馈总结</span><h3>本阶段学习情况</h3></div><b>{statusText[stage.status || 'completed'] || stage.status}</b></div>
             <div className="feedback-facts">
               <div><span>学习主题</span><strong>{stage.block_name || '当前阶段'}</strong></div>
-              <div><span>测试结果</span><strong>{pct(accuracy)}% 正确率</strong></div>
-              <div><span>策略建议</span><strong>{result?.next_strategy || (accuracy >= 0.8 ? 'advance' : 'reinforce')}</strong></div>
+              {hasAssessment && (
+                <div><span>测试结果</span><strong>{pct(accuracy!)}% 正确率</strong></div>
+              )}
+              {!bypass && (
+                <div><span>策略建议</span><strong>{result?.next_strategy || ((accuracy ?? 0) >= 0.7 ? 'advance' : 'reinforce')}</strong></div>
+              )}
+              {bypass && (
+                <div><span>测试情况</span><strong>本阶段无测试题目</strong></div>
+              )}
             </div>
             <div className="feedback-knowledge-columns">
               <div><span>已掌握知识点</span><p>{mastered.map((gap) => gap.skill).join('、') || '本阶段暂无新增完全掌握项'}</p></div>
               <div><span>仍需加强</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
             </div>
-            <div className="feedback-markdown"><ReactMarkdown>{result?.stage_summary || '本阶段记录已完成。建议根据测试结果巩固薄弱知识点，再继续后续学习。'}</ReactMarkdown></div>
+            <div className="feedback-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{result?.stage_summary || '本阶段记录已完成。建议根据薄弱知识点继续学习。'}</ReactMarkdown></div>
           </section>
           <section className="white-card">
             <div className="section-title">
@@ -2699,6 +3010,7 @@ function SettingsView({
 }
 
 export default function App() {
+  const genProgress = useGenerationProgress();
   const [view, setView] = useState<View>('chat');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [workflow, setWorkflow] = useState<WorkflowState>('onboarding');
@@ -2717,6 +3029,11 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
+  const [noQuestionsDialog, setNoQuestionsDialog] = useState<{
+    open: boolean;
+    goal: string;
+    blockName: string;
+  }>({ open: false, goal: '', blockName: '' });
   const [result, setResult] = useState<StageResult | null>(null);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
@@ -2745,6 +3062,7 @@ export default function App() {
   const [profileCheckError, setProfileCheckError] = useState<string | null>(null);
   const [projectsLoading, setProjectsLoading] = useState(!isUiPreviewMode);
   const [projectsError, setProjectsError] = useState<string | null>(null);
+  const initialAutoRestoreRef = useRef({ tried: false });
 
   const beginAgentRun = (agentIds: AgentId[], reset = false) => {
     setAgentStatuses((current) => startAgents(current, agentIds, reset));
@@ -3030,6 +3348,32 @@ export default function App() {
     });
   }, [messages, sessionId, stage, workflow, view]);
 
+  useEffect(() => {
+    if (isUiPreviewMode) return;
+    if (initialAutoRestoreRef.current.tried) return;
+    if (projectsLoading) return;
+    // 已经有 sessionId（可能是已保存或已切换）就不再自动导航。
+    if (sessionId) {
+      initialAutoRestoreRef.current.tried = true;
+      return;
+    }
+    // localStorage 中有 savedSessionId：等后续 effect 负责恢复即可。
+    if (localStorage.getItem(SESSION_STORAGE_KEY)) {
+      initialAutoRestoreRef.current.tried = true;
+      return;
+    }
+    // projects 都加载完了，但没有可用会话——才触发"自动进入最新学习目标最后阶段"
+    if (!learningProjects.length) {
+      initialAutoRestoreRef.current.tried = true;
+      return;
+    }
+    initialAutoRestoreRef.current.tried = true;
+    const sorted = sortProjectsForDashboard(learningProjects, null);
+    const latest = sorted[0];
+    if (!latest || isLocalSessionId(latest.sessionId)) return;
+    void switchLearningProject(latest.sessionId, undefined, 'chat', true, true);
+  }, [projectsLoading, learningProjects, sessionId]);
+
   const dailyHours = Math.max(0.5, Number(profile?.daily_hours ?? 2));
   const dailyTargetSeconds = Math.round(dailyHours * 3600);
   const dailyProgressKey = sessionId ? `daily-study:${sessionId}` : '';
@@ -3086,55 +3430,8 @@ export default function App() {
       setWorkflow('onboarding');
       return;
     }
-    setSessionId(savedSessionId);
-    apiClient.getSession(savedSessionId)
-      .then((session) => {
-        const activeStage = resolveSessionStage(session);
-        const hasLearningPackage = Boolean(session?.learning_package);
-        const nextWorkflow = isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready';
-        setAgentStatuses(restoreAgentStatuses({
-          hasProfile: Boolean(session?.profile),
-          hasLearningPackage,
-          phase: session.phase
-        }));
-        if (session?.profile) {
-          const nextProfile = toProfile(session.profile);
-          if (!nextProfile) throw new Error('会话画像解析失败');
-          setProfile(nextProfile);
-          setOnboardingForm(formDataFromProfile(nextProfile));
-          setFoundationConfirmed(Boolean(nextProfile.foundation_confirmed));
-          rememberProject(savedSessionId, nextProfile, session.next_stage || activeStage, session.phase);
-          rememberTargetSettings(savedSessionId, session.target_settings);
-          void loadDashboardStages(savedSessionId, activeStage);
-          setWorkflow(nextWorkflow);
-        } else {
-          localStorage.removeItem(SESSION_STORAGE_KEY);
-          setSessionId(null);
-          void restoreDiagnosisState(savedSessionId);
-          setWorkflow('onboarding');
-        }
-        if (activeStage) setStage(activeStage);
-        if (session?.next_stage) setPlannedStage(session.next_stage);
-        if (activeStage) setSelectedConversationId(`${savedSessionId}:${activeStage.stage_num ?? 1}`);
-        if (hasLearningPackage) {
-          setLearningPackage(toLearningPackage(session.learning_package));
-          setView('chat');
-          const conversationStage = activeStage || session.next_stage;
-          if (conversationStage) {
-            void restoreQaConversation(
-              savedSessionId,
-              conversationStage,
-              session?.profile ? toProfile(session.profile) : profile,
-              true
-            );
-          }
-        }
-      })
-      .catch(() => {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
-        setSessionId(null);
-        setWorkflow('onboarding');
-      });
+    // 统一走 switchLearningProject，确保：view=chat，进入到该项目最后阶段（最大 stage_num）
+    void switchLearningProject(savedSessionId, undefined, 'chat', true, true);
   }, []);
 
   const currentQuestions = useMemo(() => {
@@ -3350,90 +3647,124 @@ export default function App() {
 
   const startStage = async () => {
     setError(null);
+    if (!sessionId) {
+      setError('尚未创建后端会话');
+      return;
+    }
+    if (loading) return;
     setLoading(true);
     setWorkflow('starting_stage');
-    beginAgentRun(['agent3', 'agent4']);
-    try {
-      if (!sessionId) throw new Error('尚未创建后端会话');
-      let generatedStage = plannedStage || stage;
-      if (workflow === 'profile_ready') {
-        const confirmation = await apiClient.confirmProfile(sessionId);
-        generatedStage = toStageInfo(confirmation.stage_info) || generatedStage;
-        // eslint-disable-next-line no-console
-        console.log('[startStage] confirmProfile stage_info:', {
-          subtopic_ids: generatedStage?.subtopic_ids,
-          subtopic_names: generatedStage?.subtopic_names,
-          block_id: generatedStage?.block_id,
-        });
-      }
-      await apiClient.startStage(sessionId);
-      const [packageResponse, stageResponse] = await Promise.all([
-        apiClient.getStagePackage(sessionId),
-        apiClient.getCurrentStage(sessionId)
-      ]);
-      // eslint-disable-next-line no-console
-      console.log('[startStage] API responses:', {
-        'stage.subtopic_ids': stageResponse.stage?.subtopic_ids,
-        'stage.subtopic_names': stageResponse.stage?.subtopic_names,
-        'stage.block_id': stageResponse.stage?.block_id,
-        'package.subtopic_ids': packageResponse.package?.subtopic_ids,
-        'package.subtopic_names': packageResponse.package?.subtopic_names,
-        'package.learning_resources_count': packageResponse.package?.learning_resources?.length,
-        'package.article_resources': (packageResponse.package?.learning_resources || [])
-          .filter((r: any) => r.resource_type === 'article').length,
-        'package.resource_details': (packageResponse.package?.learning_resources || [])
-          .map((r: any) => `${r.resource_type}:${r.subtopic_id || ''}:${r.url?.slice(0, 40) || ''}`),
-      });
-      setLearningPackage(toLearningPackage(packageResponse.package));
-      generatedStage = toStageInfo(stageResponse.stage) || generatedStage;
-      if (!generatedStage) throw new Error('后端未返回当前阶段，无法启动学习包');
-      setStage(generatedStage);
-      const generatedConversationId = `${sessionId}:${generatedStage.stage_num ?? 1}`;
-      const existingConversation = stageConversations.find((item) => item.id === generatedConversationId);
-      setMessages(existingConversation?.messages || createStageConversationMessages(generatedStage, profile));
-      setSelectedConversationId(generatedConversationId);
-      if (profile) rememberProject(sessionId, profile, generatedStage);
-      rememberStageConversation(sessionId, generatedStage, profile);
-      finishAgentRun(['agent3'], Boolean(packageResponse.package));
-      finishAgentRun(['agent4'], Boolean(packageResponse.package?.review_summary));
-      setMessages((prev) => [...prev, {
-        id: shortId(),
-        role: 'assistant',
-        content: `学习包已生成，审核结果：${packageResponse.package?.review_summary?.status || '已完成'}。`,
-        note: '学习包'
-      }]);
-      setWorkflow('learning');
-      setView('chat');
-      setMaterialPanelOpen(true);
-      setPlannedStage(null);
-      setResult(null);
-      setNewGoalReturnState(null);
-      setAssessmentState({ attemptId: null, questions: [] });
-      void refreshRemoteProjects();
-    } catch (caught) {
-      finishAgentRun(['agent3', 'agent4'], false);
-      setError(getErrorMessage(caught));
-      setWorkflow('profile_ready');
-    } finally {
-      setLoading(false);
+
+    const isFirst = workflow === 'profile_ready';
+    beginAgentRun(['agent1', 'agent3', 'agent4']);
+
+    // 用户可能画像确认后，当前 stage 已经有了（来自 submitFoundation 的返回），
+    // 可以作为阶段①的 immediate 预览，弹窗一打开就看到，不用再等。
+    let initialStage: GenStagePreview | ApiStage | null = null;
+    if (isFirst) {
+      initialStage = plannedStage || stage || null;
     }
+
+    await genProgress.run({
+      sessionId,
+      action: isFirst ? 'first' : 'next',
+      initialStage,
+      onStageReady: (readyStage) => {
+        // 阶段①完成：把规划好的知识点先写入本地 stage，让用户在阶段②期间能看到
+        const mapped: StageInfo = {
+          stage_num: readyStage.stage_num,
+          block_name: readyStage.block_name,
+          subtopic_ids: readyStage.subtopic_ids,
+          subtopic_names: readyStage.subtopic_names,
+          subtopic_name: readyStage.subtopic_name,
+          estimated_hours: readyStage.estimated_hours,
+          prerequisites: readyStage.prerequisites,
+          gap_skill: readyStage.gap_skill,
+        };
+        setStage(mapped);
+        if (!isFirst) setPlannedStage(mapped);
+        finishAgentRun(['agent1'], true);
+      },
+      onPackageReady: async ({ packageResponse, stageResponse }) => {
+        // eslint-disable-next-line no-console
+        console.log('[startStage] API responses:', {
+          'stage.subtopic_ids': stageResponse.stage?.subtopic_ids,
+          'stage.subtopic_names': stageResponse.stage?.subtopic_names,
+          'stage.block_id': stageResponse.stage?.block_id,
+          'package.subtopic_ids': packageResponse.package?.subtopic_ids,
+          'package.subtopic_names': packageResponse.package?.subtopic_names,
+          'package.learning_resources_count': packageResponse.package?.learning_resources?.length,
+          'package.article_resources': (packageResponse.package?.learning_resources || [])
+            .filter((r: any) => r.resource_type === 'article').length,
+          'package.resource_details': (packageResponse.package?.learning_resources || [])
+            .map((r: any) => `${r.resource_type}:${r.subtopic_id || ''}:${r.url?.slice(0, 40) || ''}`),
+        });
+        setLearningPackage(toLearningPackage(packageResponse.package));
+        const generatedStage = toStageInfo(stageResponse.stage);
+        if (!generatedStage) throw new Error('后端未返回当前阶段，无法启动学习包');
+        setStage(generatedStage);
+        const generatedConversationId = `${sessionId}:${generatedStage.stage_num ?? 1}`;
+        const existingConversation = stageConversations.find((item) => item.id === generatedConversationId);
+        setMessages(existingConversation?.messages || createStageConversationMessages(generatedStage, profile));
+        setSelectedConversationId(generatedConversationId);
+        const latestProfile = generatedStage ? profile : profile;
+        if (latestProfile && generatedStage) rememberProject(sessionId, latestProfile, generatedStage);
+        rememberStageConversation(sessionId, generatedStage, latestProfile);
+        finishAgentRun(['agent3'], Boolean(packageResponse.package));
+        finishAgentRun(['agent4'], Boolean(packageResponse.package?.review_summary));
+        setMessages((prev) => [...prev, {
+          id: shortId(),
+          role: 'assistant',
+          content: `学习包已生成，审核结果：${packageResponse.package?.review_summary?.status || '已完成'}。`,
+          note: '学习包'
+        }]);
+        setWorkflow('learning');
+        setView('chat');
+        setMaterialPanelOpen(true);
+        setPlannedStage(null);
+        setResult(null);
+        setNewGoalReturnState(null);
+        setAssessmentState({ attemptId: null, questions: [] });
+        void refreshRemoteProjects();
+      },
+      onError: (caught) => {
+        finishAgentRun(['agent1', 'agent3', 'agent4'], false);
+        const msg = getErrorMessage(caught);
+        setError(msg);
+        setWorkflow(isFirst ? 'profile_ready' : workflow);
+      },
+      onFinally: () => {
+        setLoading(false);
+      },
+      onSuccessClose: () => {
+        // 成功后自动关闭弹窗（给用户看了 900ms 的 success 勾）
+        genProgress.close();
+      },
+    });
   };
 
-  const completeStage = async (answers: Record<string, string>) => {
+  const completeStageWithPayload = async (
+    options: { bypassAssessment?: boolean },
+    answers?: Record<string, string>
+  ) => {
     setLoading(true);
     setError(null);
     beginAgentRun(['agent6']);
     try {
       if (sessionId) {
-        const attemptId = assessmentState.attemptId || (await apiClient.createAssessmentAttempt(sessionId)).attempt_id;
-        const attempt = await apiClient.getAssessmentAttempt(attemptId);
-        if (attempt.status !== 'submitted') {
-          for (const [question_id, user_answer] of Object.entries(answers)) {
-            await apiClient.saveAssessmentAnswer(attemptId, question_id, { user_answer, time_spent: 0 });
+        if (!options.bypassAssessment) {
+          const attemptId = assessmentState.attemptId || (await apiClient.createAssessmentAttempt(sessionId)).attempt_id;
+          const attempt = await apiClient.getAssessmentAttempt(attemptId);
+          if (attempt.status !== 'submitted') {
+            if (answers) {
+              for (const [question_id, user_answer] of Object.entries(answers)) {
+                await apiClient.saveAssessmentAnswer(attemptId, question_id, { user_answer, time_spent: 0 });
+              }
+            }
+            await apiClient.submitAssessmentAttempt(attemptId);
           }
-          await apiClient.submitAssessmentAttempt(attemptId);
         }
-        const response = await apiClient.completeStage(sessionId);
+        const response = await apiClient.completeStage(sessionId, options);
         setResult(response);
         if (response.updated_profile) setProfile(toProfile(response.updated_profile));
         const completedStage = response.state?.stage_info || stage;
@@ -3456,6 +3787,8 @@ export default function App() {
       setLoading(false);
     }
   };
+
+  const completeStage = async (answers: Record<string, string>) => completeStageWithPayload({}, answers);
 
   const planNextStage = async () => {
     if (!sessionId || loading) return;
@@ -3702,7 +4035,15 @@ export default function App() {
       setTestOpen(true);
     } catch (caught) {
       setAssessmentState({ attemptId: null, questions: [] });
-      setError(getErrorMessage(caught));
+      // 结构化错误码：无测试题时不报错，改为弹窗询问"直接结束当前阶段"
+      const code = getApiErrorCode(caught);
+      if (code === 'NO_QUESTIONS_AVAILABLE') {
+        const goal = profile?.goal || '当前学习目标';
+        const blockName = stage?.block_name || '当前阶段';
+        setNoQuestionsDialog({ open: true, goal, blockName });
+      } else {
+        setError(getErrorMessage(caught));
+      }
     } finally {
       setLoading(false);
     }
@@ -3794,7 +4135,8 @@ export default function App() {
     nextSessionId: string,
     requestedStageNum?: number,
     destination: View = 'chat',
-    ignoreBusy = false
+    ignoreBusy = false,
+    preferLastStage = false
   ) => {
     if (!ignoreBusy && (nextSessionId === sessionId || loading)) {
       if (nextSessionId === sessionId && requestedStageNum) {
@@ -3824,6 +4166,43 @@ export default function App() {
       const hasLearningPackage = Boolean(session.learning_package);
       const nextProfile = toProfile(session.profile);
       if (!nextProfile) throw new Error('学习项目画像解析失败');
+
+      // 如果 preferLastStage=true，则尝试读取 dashboard，用 stage_history 的最大 stage_num 作为目标阶段。
+      let desiredStageNum = requestedStageNum;
+      let fallbackStage = activeStage;
+      if (preferLastStage && desiredStageNum === undefined) {
+        try {
+          const dashboard = await apiClient.getDashboard(nextSessionId);
+          const history = Array.isArray(dashboard?.stage_history) ? dashboard.stage_history as StageInfo[] : [];
+          const stageNumList = history.map((item) => item.stage_num ?? 0).filter((n) => n > 0);
+          if (activeStage?.stage_num) stageNumList.push(activeStage.stage_num);
+          if ((session.next_stage as { stage_num?: number } | null)?.stage_num) {
+            stageNumList.push((session.next_stage as { stage_num: number }).stage_num);
+          }
+          if (stageNumList.length > 0) {
+            const maxStage = Math.max(...stageNumList);
+            desiredStageNum = maxStage;
+            // 尝试从 history / next_stage / activeStage 里找到匹配的阶段 info 给 fallbackStage。
+            const candidates: StageInfo[] = [];
+            if (activeStage) candidates.push(activeStage);
+            if (session.next_stage) candidates.push(session.next_stage as StageInfo);
+            candidates.push(...history);
+            const matched = candidates.find((c) => (c.stage_num ?? 0) === maxStage);
+            if (matched) fallbackStage = matched;
+            // 缓存 dashboard 阶段信息到 learningProjects
+            mergeDashboardStages(
+              nextSessionId,
+              history,
+              activeStage,
+              dashboard.average_accuracy,
+              typeof dashboard.overall_progress === 'number' ? dashboard.overall_progress : undefined
+            );
+          }
+        } catch {
+          // dashboard 失败就回退到 activeStage，不阻断切换
+        }
+      }
+
       setSessionId(nextSessionId);
       localStorage.setItem(SESSION_STORAGE_KEY, nextSessionId);
       setProfile(nextProfile);
@@ -3834,14 +4213,14 @@ export default function App() {
         && nextProfile.hardware?.trim()
         && nextProfile.foundation_confirmed
       ));
-      setStage(activeStage);
+      setStage(fallbackStage || null);
       setLearningPackage(toLearningPackage(session.learning_package));
       setResult(null);
       setPlannedStage(session.next_stage || null);
-      const currentStageNum = activeStage?.stage_num ?? 1;
-      const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${currentStageNum}`);
+      const displayStageNum = desiredStageNum ?? (fallbackStage?.stage_num ?? 1);
+      const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${displayStageNum}`);
       setMessages(restoredConversation?.messages || initialMessages);
-      setSelectedConversationId(`${nextSessionId}:${requestedStageNum ?? currentStageNum}`);
+      setSelectedConversationId(`${nextSessionId}:${displayStageNum}`);
       setAgentStatuses(restoreAgentStatuses({
         hasProfile: true,
         hasLearningPackage,
@@ -3849,10 +4228,14 @@ export default function App() {
       }));
       setWorkflow(isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready');
       setView(destination);
-      rememberProject(nextSessionId, nextProfile, session.next_stage || activeStage, session.phase);
+      rememberProject(nextSessionId, nextProfile, session.next_stage || fallbackStage || activeStage, session.phase);
       rememberTargetSettings(nextSessionId, session.target_settings);
-      void loadDashboardStages(nextSessionId, activeStage);
-      if (activeStage) void restoreQaConversation(nextSessionId, activeStage, nextProfile, true);
+      if (!preferLastStage) void loadDashboardStages(nextSessionId, fallbackStage || activeStage);
+      if (fallbackStage) {
+        void restoreQaConversation(nextSessionId, fallbackStage, nextProfile, true);
+      } else if (activeStage) {
+        void restoreQaConversation(nextSessionId, activeStage, nextProfile, true);
+      }
       setMaterialPanelOpen(false);
       setProjectSwitcherOpen(false);
     } catch (caught) {
@@ -3909,7 +4292,8 @@ export default function App() {
     setError(null);
     try {
       if (!isLocalSessionId(targetSessionId)) {
-        await apiClient.abandonSession(targetSessionId);
+        // 物理删除：DELETE /sessions/{session_id}，级联清理 DB 所有关联快照
+        await apiClient.deleteSession(targetSessionId);
       }
       forgetOwnedSessionId(targetSessionId);
       const remainingProjects = learningProjects.filter((project) => project.sessionId !== targetSessionId);
@@ -3947,6 +4331,80 @@ export default function App() {
 
   const selectProjectStage = (nextSessionId: string, stageNum: number) => {
     void switchLearningProject(nextSessionId, stageNum);
+  };
+
+  const deleteLastLearningStage = async (targetSessionId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiClient.deleteLastStage(targetSessionId);
+
+      // 级联删除了整个学习目标：走与 deleteLearningProject 一致的收尾流程
+      if (result?.session_deleted) {
+        forgetOwnedSessionId(targetSessionId);
+        const remainingProjects = learningProjects.filter((project) => project.sessionId !== targetSessionId);
+        setLearningProjects(remainingProjects);
+        setStageConversations((conversations) => conversations.filter((item) => item.sessionId !== targetSessionId));
+
+        if (targetSessionId !== sessionId) {
+          void refreshRemoteProjects();
+          return;
+        }
+
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        const nextProject = sortProjectsForDashboard(remainingProjects, null)[0];
+        if (nextProject && !isLocalSessionId(nextProject.sessionId)) {
+          await switchLearningProject(nextProject.sessionId, undefined, 'chat', true);
+          return;
+        }
+
+        setSessionId(null);
+        setProfile(null);
+        setStage(null);
+        setLearningPackage(null);
+        setPlannedStage(null);
+        setResult(null);
+        setAssessmentState({ attemptId: null, questions: [] });
+        setMessages(initialMessages);
+        setSelectedConversationId('');
+        setAgentStatuses(createAgentStatusMap());
+        setWorkflow('onboarding');
+        setView('chat');
+        return;
+      }
+
+      // session 仍在：本地立即移除最后一个阶段，刷新列表
+      setLearningProjects((projects) => projects.map((project) => {
+        if (project.sessionId !== targetSessionId) return project;
+        const sortedStages = [...(project.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
+        return { ...project, stages: sortedStages.slice(0, -1) };
+      }));
+
+      // 若删的是当前会话，回退到删除后的最新阶段
+      if (targetSessionId === sessionId) {
+        try {
+          const latestSession = await apiClient.getSession(targetSessionId);
+          const activeStage = resolveSessionStage(latestSession);
+          setStage(activeStage);
+          setLearningPackage(toLearningPackage(latestSession.learning_package));
+          setResult(null);
+          setPlannedStage(latestSession.next_stage || null);
+          const currentStageNum = activeStage?.stage_num ?? 1;
+          const restoredConversation = stageConversations.find((item) => item.id === `${targetSessionId}:${currentStageNum}`);
+          if (restoredConversation) {
+            setMessages(restoredConversation.messages);
+          }
+          setSelectedConversationId(`${targetSessionId}:${currentStageNum}`);
+        } catch (caught) {
+          console.warn('[deleteLastStage] failed to refresh current session snapshot', caught);
+        }
+      }
+    } catch (caught) {
+      setError(`删除学习阶段失败：${getErrorMessage(caught)}`);
+      throw caught;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openLearningPath = async () => {
@@ -4095,6 +4553,7 @@ export default function App() {
           selectedConversationId={selectedConversationId || currentConversationId}
           onSelectProjectStage={selectProjectStage}
           onStartStage={() => void startStage()}
+          onDeleteLastStage={deleteLastLearningStage}
           readOnly={historicalConversationSelected}
           readOnlyNotice={readOnlyConversationNotice}
           loading={loading}
@@ -4133,7 +4592,7 @@ export default function App() {
           stage={workspaceStage}
           plannedStage={plannedStage}
           result={result}
-          onPlanNext={planNextStage}
+          onPlanNext={startStage}
           onStartNext={startStage}
           onReturnToChat={() => {
             setView('chat');
@@ -4144,6 +4603,44 @@ export default function App() {
         />
       )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
+      {noQuestionsDialog.open && (
+        <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
+          <div className="stage-delete-modal">
+            <div className="stage-delete-modal-header">
+              <AlertTriangle size={18} />
+              <span>暂无测试题目</span>
+            </div>
+            <p className="stage-delete-modal-body">
+              「{noQuestionsDialog.goal}」的
+              <strong>{noQuestionsDialog.blockName}</strong> 暂无匹配的测试题目。
+            </p>
+            <p className="stage-delete-modal-hint">
+              是否直接结束当前阶段并进入阶段总结？若有可规划的下一阶段，总结页会提供生成入口。
+            </p>
+            <div className="stage-delete-modal-actions">
+              <button
+                type="button"
+                className="stage-delete-modal-cancel"
+                onClick={() => setNoQuestionsDialog((d) => ({ ...d, open: false }))}
+                disabled={loading}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="stage-delete-modal-confirm"
+                onClick={() => {
+                  setNoQuestionsDialog((d) => ({ ...d, open: false }));
+                  void completeStageWithPayload({ bypassAssessment: true });
+                }}
+                disabled={loading}
+              >
+                {loading ? '处理中…' : '直接结束阶段'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {learningPathOpen && profile && stage && (
         <LearningPathModal
           profile={profile}

@@ -27,6 +27,13 @@ if not logger_assessment.handlers:
 class AssessmentError(ValueError):
     """测试服务业务错误（映射为 4xx）。"""
 
+    def __init__(self, message: str, code: str = "ASSESSMENT_ERROR"):
+        super().__init__(message)
+        self.code = code
+
+
+NO_QUESTIONS_AVAILABLE_CODE = "NO_QUESTIONS_AVAILABLE"
+
 
 class AssessmentService:
     def __init__(self, db_client: SQLiteClient, state_manager=None):
@@ -53,7 +60,10 @@ class AssessmentService:
     def create_attempt(self, session_id: str) -> Dict[str, Any]:
         frozen_questions, stage_meta = self._collect_current_package_questions(session_id)
         if not frozen_questions:
-            raise AssessmentError("当前学习包没有可测试的题目，无法创建测试")
+            raise AssessmentError(
+                "当前阶段没有可测试的题目，无法创建测试",
+                code=NO_QUESTIONS_AVAILABLE_CODE,
+            )
 
         # 幂等复用：同一 session+stage 未正式交卷前只保留一份 in_progress attempt。
         # 前端双击“开始测试”或刷新重试时返回原 attempt（resumed=True），不重复建卷。

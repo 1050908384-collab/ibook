@@ -3475,14 +3475,14 @@ class DeterministicStageDecisionAgent:
         # strategy 为 finish（结业）时，decision 映射为 completed
         # 注意：此处不再用全局 accuracy 强制把 current_gap 置为“已掌握”
         # （与上方 L1064-1068 的逐知识点判定保持一致，避免把薄弱知识点误标为已掌握；
-        #  continue/repeat 的推进决策仍由下方 accuracy>=0.8 分支负责，不依赖 gap 状态覆盖）
+        #  continue/repeat 的推进决策仍由下方 accuracy>=0.7 分支负责，不依赖 gap 状态覆盖）
         all_mastered = all(gap.status == "已掌握" for gap in profile.knowledge_gaps)
         if strategy == "finish" or all_mastered or should_terminate:
             # 尊重策略工具的终止裁决；工具 decision 缺省时兜底为 completed
             decision = tool_decision or "completed"
         elif strategy == "backtrack":
             decision = "repeat"
-        elif request.accuracy >= 0.8:
+        elif request.accuracy >= 0.7:
             decision = "continue"
         else:
             decision = "repeat"

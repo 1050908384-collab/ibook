@@ -327,6 +327,16 @@ export const apiClient = {
     return response.data;
   },
 
+  deleteSession: async (sessionId: string) => {
+    const response = await axios.delete(`${BASE_URL}/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  deleteLastStage: async (sessionId: string) => {
+    const response = await axios.delete(`${BASE_URL}/sessions/${sessionId}/stages/last`);
+    return response.data as { session_id: string; deleted: boolean; session_deleted: boolean; details: Record<string, unknown> };
+  },
+
   submitDiagnosis: async (sessionId: string, content: string) => {
     const response = await axios.post<DiagnosisResponse>(
       `${BASE_URL}/sessions/${sessionId}/diagnosis/messages`,
@@ -459,9 +469,27 @@ export const apiClient = {
     return response.data;
   },
 
-  completeStage: async (sessionId: string) => {
-    const response = await axios.post(`${BASE_URL}/sessions/${sessionId}/stages/current/complete`);
-    return response.data;
+  completeStage: async (sessionId: string, options?: { bypassAssessment?: boolean }) => {
+    const params = new URLSearchParams();
+    if (options?.bypassAssessment) {
+      params.set('bypass_assessment', 'true');
+    }
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await axios.post(`${BASE_URL}/sessions/${sessionId}/stages/current/complete${qs}`);
+    return response.data as {
+      accuracy?: number;
+      bypass_assessment?: boolean;
+      phase?: string;
+      updated_profile?: ApiProfile | null;
+      state?: { stage_info?: ApiStage | null };
+      stage_summary?: string;
+      next_strategy?: string;
+      can_plan_next_stage?: boolean;
+      all_mastered?: boolean;
+      session_status?: string;
+      final_report?: Record<string, unknown>;
+      available_actions?: string[];
+    };
   },
 
   planNextStage: async (sessionId: string, adjustmentNotes = '') => {

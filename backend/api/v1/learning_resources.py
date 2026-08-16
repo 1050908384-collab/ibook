@@ -330,6 +330,15 @@ _LOOSE_URL = re.compile(
     re.MULTILINE | re.UNICODE,
 )
 
+# Markdown 超链接：[显示文字](https://...)
+#   例：① 权威：《HuggingFace课程》  网址：[HF LLM Chapter 0-1](https://huggingface.co/...)
+# 必须用 #3 兜底，因为 _REF_ENTRY / _LOOSE_URL 的 URL 捕获要求
+# "http..." 直接出现在 "网址：" 之后，而 markdown 写法会被方括号挡住。
+_MD_LINK = re.compile(
+    r"\[(?P<label>[^\]\n]{1,180})\]\((?P<url>https?://[^\s)《》<>\"'|，,；;]+)\)",
+    re.MULTILINE | re.UNICODE,
+)
+
 
 def extract_all_reference_urls(content: str) -> list[tuple[str, str]]:
     """Return all (label+title, url) reference links from a local lesson md.
@@ -359,13 +368,12 @@ def extract_all_reference_urls(content: str) -> list[tuple[str, str]]:
         combined = "：".join(p for p in parts if p) if parts else clean_url
         pairs.append((combined, clean_url))
 
-    # 1. 标准带序号格式优先（有①②标记 + 标题书名号）
+    # 1. 标准带序号格式优先（有①②标记 + 标题书名号 + 网址：）
     for match in _REF_ENTRY.finditer(content):
         _add(match.group("label") or "", match.group("title") or "", match.group("url"))
 
-    # 2. 宽松形式补齐（捕获其他没有①②标记但写着"网址：http..."的行）
+    # 2. 宽松形式补齐（捕获没有①②标记但写着"网址：http..."的行）
     for match in _LOOSE_URL.finditer(content):
-        # 宽松模式下 title 可能很脏，取《xxx》片段作为更干净的名字
         title_match = re.search(r"《(.*?)》", match.group("title") or "")
         title = title_match.group(1) if title_match else ""
         label = ""
@@ -373,6 +381,32 @@ def extract_all_reference_urls(content: str) -> list[tuple[str, str]]:
             pre = (match.group("title") or "").strip()
             if pre and len(pre) <= 20:
                 label = pre
+        _add(label, title, match.group("url"))
+
+    # 3. Markdown 超链接兜底（[标题/说明文字](https://...)）
+    #    这是 HuggingFace/官方文档风格 md 常用的写法。
+    #    从 #1 / #2 没抓到过的 URL 里，解析 label 并加上。
+    for match in _MD_LINK.finditer(content):
+        raw_label = (match.group("label") or "").strip()
+        if not raw_label:
+            continue
+        # 丢弃明显是"锚点"或代码风格伪链接（如 [SOURCE]:... 这种引用式定义出现在别处时一般无括号 URL，
+        # 但保险起见过滤纯数字/符号占位）
+        if re.fullmatch(r"[\W_]+", raw_label):
+            continue
+        # 提取书名号片段作为标题，余下作为 label
+        title = ""
+        tmatch = re.search(r"《(.*?)》", raw_label)
+        if tmatch:
+            title = tmatch.group(1).strip()
+        # 去除行首的 ①②③... 序号前缀与常见的中文标签词分隔符号
+        prefix_clean = re.sub(
+            r"^[\s\u3000]*[（(]?[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳\d]+[）)]?[\s\.、．:：\-]*",
+            "",
+            raw_label,
+        )
+        # 如果已经书名号提取了 title，label 就是剩下的文字
+        label = prefix_clean.replace(f"《{title}》", "").strip(" ：:，,、\t\u3000") if title else prefix_clean
         _add(label, title, match.group("url"))
 
     return pairs

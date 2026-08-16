@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from config import BACKEND_DIR, settings
 from pathlib import Path
 import json
+import random
 import uuid
 
 DEFAULT_USER_ID = "local-user"
@@ -1434,36 +1435,39 @@ class SQLiteClient:
             if subtopic_ids:
                 # 严格按 subtopic 抽：每个 subtopic 最多 questions_per_subtopic 题，
                 # 0 题跳过，1 题就出 1 题。绝不从其他 subtopic / block 池凑题。
+                # 随机化：先取该 subtopic 全部题，再 Python 端 random.sample，
+                # 保证每次出题顺序与题目都不同（用户要求测试题目必须随机）。
                 per_subtopic_sql = text(f"""
                     SELECT {base_cols}
                     FROM test_questions
                     WHERE block_id = :block_id AND subtopic_id = :subtopic_id
                     ORDER BY difficulty ASC, question_id ASC
-                    LIMIT :qps
                 """)
                 for stid in subtopic_ids:
-                    sub_rows = session.execute(
+                    pool = session.execute(
                         per_subtopic_sql,
-                        {"block_id": block_id, "subtopic_id": stid, "qps": questions_per_subtopic},
+                        {"block_id": block_id, "subtopic_id": stid},
                     ).mappings().all()
-                    for r in sub_rows:
+                    take = min(len(pool), questions_per_subtopic)
+                    sampled = random.sample(list(pool), take) if take > 0 else []
+                    for r in sampled:
                         if r["question_id"] in picked_ids:
                             continue
                         picked_ids.add(r["question_id"])
                         combined_rows.append(r)
             else:
-                # 未指定 subtopic → 保留旧的全局 limit 行为
-                global_rows = session.execute(
+                # 未指定 subtopic → 保留旧的全局 limit 行为（同样随机化）
+                global_pool = session.execute(
                     text(f"""
                         SELECT {base_cols}
                         FROM test_questions
                         WHERE block_id = :block_id
                         ORDER BY difficulty ASC, question_id ASC
-                        LIMIT :limit
                     """),
-                    {"block_id": block_id, "limit": limit},
+                    {"block_id": block_id},
                 ).mappings().all()
-                combined_rows = list(global_rows)
+                take = min(len(global_pool), limit)
+                combined_rows = random.sample(list(global_pool), take) if take > 0 else []
 
         return _itemize(combined_rows)
 
@@ -1472,6 +1476,293 @@ class SQLiteClient:
             session.execute(text("UPDATE sessions SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE session_id = :session_id"),
                            {"status": status, "session_id": session_id})
             session.commit()
+
+    def delete_session(self, session_id: str, user_id: str | None = DEFAULT_USER_ID) -> dict:
+        """物理删除一个 session 及其所有关联快照/历史（不可逆）。
+
+        按「从子到父」的顺序清理所有带 session_id 外键的表，避免 SQLite
+        外键约束报错。对无直接 session_id 外键、但通过 attempt_id / trace_id
+        链接的子表，先通过 session 维度查出对应的 attempt_id / trace_id，再批量
+        删除它们的明细。最终返回各表删除的行数明细。
+        """
+        if not session_id:
+            raise ValueError("session_id is required")
+        deletes: dict[str, int] = {}
+
+        with self.Session() as session:
+            # 临时关闭 FK 检查：历史 DB 的 learning_package_claims 表上残留了
+            # 指向已废弃表 learning_package_sources_legacy 的外键约束，一旦启用
+            # foreign_keys=ON，任何 DELETE FROM learning_package_claims 都会触发
+            # "no such table: main.learning_package_sources_legacy" 报错。我们在
+            # 单个事务内手动按子→父顺序清理，所以可以安全关闭 FK 检查。
+            session.execute(text("PRAGMA foreign_keys = OFF"))
+
+            # 先做所有权校验（若传了 user_id）：不允许跨用户删
+            if user_id:
+                owner = session.execute(
+                    text("SELECT user_id FROM sessions WHERE session_id = :sid"),
+                    {"sid": session_id},
+                ).scalar()
+                if owner is None:
+                    session.execute(text("PRAGMA foreign_keys = ON"))
+                    raise LookupError(f"Session not found: {session_id}")
+                if str(owner) != str(user_id):
+                    session.execute(text("PRAGMA foreign_keys = ON"))
+                    raise PermissionError(f"Session {session_id} does not belong to user {user_id}")
+
+            # --- 子表 1/2：通过 attempt_id / trace_id 级联的明细 ---
+            attempt_ids = [
+                r[0] for r in session.execute(
+                    text("SELECT attempt_id FROM assessment_attempts WHERE session_id = :sid"),
+                    {"sid": session_id},
+                ).fetchall()
+            ]
+            trace_ids = [
+                r[0] for r in session.execute(
+                    text("SELECT trace_id FROM review_traces WHERE session_id = :sid"),
+                    {"sid": session_id},
+                ).fetchall()
+            ]
+
+            def _del(sql: str, params: dict) -> int:
+                return session.execute(text(sql), params).rowcount or 0
+
+            if attempt_ids:
+                placeholders = ",".join(f":aid{i}" for i in range(len(attempt_ids)))
+                attempt_params: dict = {f"aid{i}": aid for i, aid in enumerate(attempt_ids)}
+                deletes["assessment_answers"] = _del(
+                    f"DELETE FROM assessment_answers WHERE attempt_id IN ({placeholders})", attempt_params
+                )
+                deletes["assessment_attempt_questions"] = _del(
+                    f"DELETE FROM assessment_attempt_questions WHERE attempt_id IN ({placeholders})", attempt_params
+                )
+            if trace_ids:
+                placeholders = ",".join(f":tid{i}" for i in range(len(trace_ids)))
+                trace_params: dict = {f"tid{i}": tid for i, tid in enumerate(trace_ids)}
+                # debate responses 关联 round_id / issue_id → 先于 rounds/issues 删除
+                # 安全上限：单 session trace_id 不可能超 500，超过就跳过（避免超大 SQL）
+                if len(trace_ids) <= 500:
+                    deletes["review_debate_responses"] = _del(
+                        f"DELETE FROM review_debate_responses WHERE round_id IN (SELECT round_id FROM review_debate_rounds WHERE trace_id IN ({placeholders}))",
+                        trace_params,
+                    ) + _del(
+                        f"DELETE FROM review_debate_responses WHERE issue_id IN (SELECT issue_id FROM review_debate_issues WHERE trace_id IN ({placeholders}))",
+                        trace_params,
+                    )
+                else:
+                    deletes["review_debate_responses"] = 0
+                deletes["review_debate_rounds"] = _del(
+                    f"DELETE FROM review_debate_rounds WHERE trace_id IN ({placeholders})", trace_params
+                )
+                deletes["learning_package_claims"] = _del(
+                    f"DELETE FROM learning_package_claims WHERE trace_id IN ({placeholders})", trace_params
+                )
+                deletes["learning_package_sources"] = _del(
+                    f"DELETE FROM learning_package_sources WHERE trace_id IN ({placeholders})", trace_params
+                )
+                deletes["review_debate_issues"] = _del(
+                    f"DELETE FROM review_debate_issues WHERE trace_id IN ({placeholders})", trace_params
+                )
+                deletes["review_traces"] = _del(
+                    f"DELETE FROM review_traces WHERE trace_id IN ({placeholders})", trace_params
+                )
+            if attempt_ids:
+                placeholders = ",".join(f":aid{i}" for i in range(len(attempt_ids)))
+                attempt_params = {f"aid{i}": aid for i, aid in enumerate(attempt_ids)}
+                deletes["assessment_attempts"] = _del(
+                    f"DELETE FROM assessment_attempts WHERE attempt_id IN ({placeholders})", attempt_params
+                )
+
+            # --- 子表 2/2：直接带 session_id 外键的表 ---
+            direct_session_tables = [
+                # 按依赖排序：无被依赖者优先
+                "user_answers", "user_qa",
+                "subtopic_status",
+                "user_profiles",
+                "stage_progress",
+                "session_states",
+            ]
+            for table in direct_session_tables:
+                deletes[table] = _del(
+                    f"DELETE FROM {table} WHERE session_id = :sid", {"sid": session_id}
+                )
+
+            # --- 父表：sessions ---
+            deletes["sessions"] = _del("DELETE FROM sessions WHERE session_id = :sid", {"sid": session_id})
+            session.execute(text("PRAGMA foreign_keys = ON"))
+            session.commit()
+
+        deletes["total"] = sum(v for v in deletes.values() if isinstance(v, int))
+        return deletes
+
+    def delete_last_stage(self, session_id: str, user_id: str | None = DEFAULT_USER_ID) -> dict:
+        """物理删除一个学习目标（session）的最后一个学习阶段，并清理所有关联快照。
+
+        - 删 stage_progress 里 stage_num 最大的那条记录（只允许删最后一个，避免阶段中间出现空洞）。
+        - 级联清理该 stage_id 关联的：review_traces（及其子表：claims/sources/debate）、
+          assessment_attempts（及 attempt_questions / answers）。
+        - 同时清理 session_states.state_json 里的 stage_info / learning_package / next_stage / result 等
+          阶段相关缓存，并把 sessions.current_stage 回退到删除后的最大 stage_num（没有则 0）。
+        - 如果 session 在删除完后 stage_progress 已经没有任何阶段，则调用 delete_session
+          把整个学习目标连同 sessions / session_states / user_profiles 全部清掉。
+        """
+        if not session_id:
+            raise ValueError("session_id is required")
+
+        with self.Session() as session:
+            # 临时关 FK：避开 learning_package_claims → learning_package_sources_legacy 残留约束
+            session.execute(text("PRAGMA foreign_keys = OFF"))
+
+            # 所有权校验
+            if user_id:
+                owner = session.execute(
+                    text("SELECT user_id FROM sessions WHERE session_id = :sid"),
+                    {"sid": session_id},
+                ).scalar()
+                if owner is None:
+                    session.execute(text("PRAGMA foreign_keys = ON"))
+                    raise LookupError(f"Session not found: {session_id}")
+                if str(owner) != str(user_id):
+                    session.execute(text("PRAGMA foreign_keys = ON"))
+                    raise PermissionError(f"Session {session_id} does not belong to user {user_id}")
+
+            # 1. 找到最后一个 stage_progress
+            last_stage = session.execute(
+                text("""
+                    SELECT stage_id, stage_num, block_id, subtopic_id, status
+                    FROM stage_progress
+                    WHERE session_id = :sid
+                    ORDER BY stage_num DESC
+                    LIMIT 1
+                """), {"sid": session_id},
+            ).first()
+            if last_stage is None:
+                session.execute(text("PRAGMA foreign_keys = ON"))
+                raise LookupError(f"No stage to delete for session {session_id}")
+
+            stage_id, stage_num, block_id, subtopic_id, status = last_stage
+            trace_ids = [
+                r[0] for r in session.execute(
+                    text("SELECT trace_id FROM review_traces WHERE session_id = :sid AND (stage_id = :stage_id OR stage_id IS NULL)"),
+                    {"sid": session_id, "stage_id": stage_id},
+                ).fetchall()
+            ]
+            attempt_ids = [
+                r[0] for r in session.execute(
+                    text("SELECT attempt_id FROM assessment_attempts WHERE session_id = :sid AND (stage_id = :stage_id OR stage_id IS NULL)"),
+                    {"sid": session_id, "stage_id": stage_id},
+                ).fetchall()
+            ]
+
+            def _del(sql: str, params: dict) -> int:
+                return session.execute(text(sql), params).rowcount or 0
+
+            details: dict[str, int] = {"stage_id": stage_id, "stage_num": stage_num}
+
+            # 2. 删 assessment 链条
+            if attempt_ids:
+                placeholders = ",".join(f":aid{i}" for i in range(len(attempt_ids)))
+                attempt_params = {f"aid{i}": aid for i, aid in enumerate(attempt_ids)}
+                details["assessment_answers"] = _del(
+                    f"DELETE FROM assessment_answers WHERE attempt_id IN ({placeholders})", attempt_params
+                )
+                details["assessment_attempt_questions"] = _del(
+                    f"DELETE FROM assessment_attempt_questions WHERE attempt_id IN ({placeholders})", attempt_params
+                )
+                details["assessment_attempts"] = _del(
+                    f"DELETE FROM assessment_attempts WHERE attempt_id IN ({placeholders})", attempt_params
+                )
+            else:
+                details["assessment_attempts"] = 0
+
+            # 3. 删 review_traces 链条（同 delete_session 的子→父顺序）
+            if trace_ids:
+                placeholders = ",".join(f":tid{i}" for i in range(len(trace_ids)))
+                trace_params = {f"tid{i}": tid for i, tid in enumerate(trace_ids)}
+                if len(trace_ids) <= 500:
+                    details["review_debate_responses"] = _del(
+                        f"DELETE FROM review_debate_responses WHERE round_id IN (SELECT round_id FROM review_debate_rounds WHERE trace_id IN ({placeholders}))",
+                        trace_params,
+                    ) + _del(
+                        f"DELETE FROM review_debate_responses WHERE issue_id IN (SELECT issue_id FROM review_debate_issues WHERE trace_id IN ({placeholders}))",
+                        trace_params,
+                    )
+                else:
+                    details["review_debate_responses"] = 0
+                details["review_debate_rounds"] = _del(
+                    f"DELETE FROM review_debate_rounds WHERE trace_id IN ({placeholders})", trace_params
+                )
+                details["learning_package_claims"] = _del(
+                    f"DELETE FROM learning_package_claims WHERE trace_id IN ({placeholders})", trace_params
+                )
+                details["learning_package_sources"] = _del(
+                    f"DELETE FROM learning_package_sources WHERE trace_id IN ({placeholders})", trace_params
+                )
+                details["review_debate_issues"] = _del(
+                    f"DELETE FROM review_debate_issues WHERE trace_id IN ({placeholders})", trace_params
+                )
+                details["review_traces"] = _del(
+                    f"DELETE FROM review_traces WHERE trace_id IN ({placeholders})", trace_params
+                )
+            else:
+                details["review_traces"] = 0
+
+            # 4. 删 stage_progress
+            details["stage_progress"] = _del(
+                "DELETE FROM stage_progress WHERE session_id = :sid AND stage_id = :stage_id",
+                {"sid": session_id, "stage_id": stage_id},
+            )
+
+            # 5. 清理 session_states.state_json 里阶段相关字段，并调整 sessions.current_stage
+            state_row = session.execute(
+                text("SELECT state_json FROM session_states WHERE session_id = :sid"),
+                {"sid": session_id},
+            ).first()
+            state_json = state_row[0] if state_row else None
+            import json as _json
+            if state_json:
+                try:
+                    state = _json.loads(state_json)
+                except (TypeError, ValueError):
+                    state = {}
+                # 清掉阶段相关字段；保留 profile / user_id 等画像信息
+                for key in ("stage_info", "learning_package", "next_stage",
+                            "planning_notes", "result", "assessment_state"):
+                    state.pop(key, None)
+                # phase 回退到 stage_ready，让用户从下一个阶段重新开始
+                state["phase"] = "stage_ready"
+                state["available_actions"] = ["start_stage", "plan_next_stage"]
+                session.execute(
+                    text("UPDATE session_states SET state_json = :payload, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
+                    {"payload": _json.dumps(state, ensure_ascii=False), "sid": session_id},
+                )
+
+            # 6. 计算剩余阶段数；若为 0 则整 session 删掉，否则 current_stage 回退
+            remaining = session.execute(
+                text("SELECT MAX(stage_num) FROM stage_progress WHERE session_id = :sid"),
+                {"sid": session_id},
+            ).scalar()
+            if remaining is None:
+                # 没阶段了 → 整 session 删
+                session.execute(text("PRAGMA foreign_keys = ON"))
+                session.commit()
+                # 在新的事务里用 delete_session 物理删整个 session
+                cascade = self.delete_session(session_id, user_id)
+                details["session_deleted"] = True
+                details["cascade"] = cascade
+                return details
+
+            session.execute(
+                text("UPDATE sessions SET current_stage = :stage, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
+                {"stage": remaining, "sid": session_id},
+            )
+
+            session.execute(text("PRAGMA foreign_keys = ON"))
+            session.commit()
+
+        details["remaining_stage_num"] = remaining
+        details["session_deleted"] = False
+        return details
 
     def list_sessions(self, user_id: str = DEFAULT_USER_ID) -> list[dict]:
         """获取指定用户的会话列表，禁止跨用户返回历史目标。"""
@@ -1483,7 +1774,7 @@ class SQLiteClient:
                 FROM sessions s
                 LEFT JOIN session_states ss ON s.session_id = ss.session_id
                 WHERE s.user_id = :user_id
-                ORDER BY s.updated_at DESC
+                ORDER BY s.created_at DESC, s.updated_at DESC
             """), {"user_id": user_id}).mappings().all()
             
             result = []

@@ -8,13 +8,14 @@ export type ProjectTimelineItem = {
 
 export function sortProjectsForDashboard<T extends ProjectTimelineItem>(
   projects: T[],
-  currentSessionId: string | null
+  _currentSessionId: string | null
 ) {
   return [...projects].sort((a, b) => {
-    const aIsCurrent = a.sessionId === currentSessionId;
-    const bIsCurrent = b.sessionId === currentSessionId;
-    if (aIsCurrent !== bIsCurrent) return aIsCurrent ? -1 : 1;
-    const createdDifference = (b.createdAt ?? b.updatedAt) - (a.createdAt ?? a.updatedAt);
+    // 固定排序：最新创建的永远排最上面，不随当前会话切换跳动。
+    // createdAt 缺失时回退到 updatedAt，最后仍有 updatedAt 作为 tie-breaker。
+    const createdA = a.createdAt ?? a.updatedAt;
+    const createdB = b.createdAt ?? b.updatedAt;
+    const createdDifference = createdB - createdA;
     return createdDifference || b.updatedAt - a.updatedAt;
   });
 }

@@ -9,7 +9,7 @@ Agent3 问答检索效果测试脚本（交互式）
   4. 输入 q 退出
 
 运行方式：
-  cd d:\vscodetest\ai_agent-trainer
+  cd <项目根目录>
   python scripts\test_agent3_qa.py
 """
 import os
