@@ -54,9 +54,28 @@ pip install -r requirements.txt
 ### 配置环境变量
 
 ```bash
-cp .env.example .env
-# 编辑 .env 文件
+copy backend\\.env.example backend\\.env
+# 或手动复制 backend/.env.example 为 backend/.env
 ```
+
+`backend/.env` 是后端实际读取的环境变量文件；不要把 API Key 写进 `backend/config.py`，也不要直接修改模板文件。
+
+DeepSeek 最小必填配置：
+
+```env
+LLM_PROVIDER=deepseek
+DEEPSEEK_API_KEY=your-deepseek-api-key
+DEEPSEEK_API_BASE=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+队友克隆仓库后的使用方式：
+
+1. 复制 `backend/.env.example` 为 `backend/.env`
+2. 填入自己的 `DEEPSEEK_API_KEY`
+3. 启动或重启后端服务
+
+不要提交 `backend/.env`；仓库中只保留 `.env.example` 作为模板。
 
 Agent3 的技术问答需要 Ollama embedding 模型。首次部署先下载并配置：
 
