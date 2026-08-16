@@ -90,6 +90,28 @@ class Harness:
         if not text:
             return ""
 
+        if text.startswith("Error: DeepSeek API authentication failed"):
+            return "当前 DeepSeek 配置无效：API Key 认证失败（HTTP 401）。请检查 backend/.env 中的 DEEPSEEK_API_KEY。"
+        if text.startswith("Error: DeepSeek API access denied"):
+            return "当前 DeepSeek 请求被拒绝（HTTP 403）。请检查账号权限、接口地址或服务开通状态。"
+        if text.startswith("Error: DeepSeek API endpoint or model is invalid"):
+            return "当前 DeepSeek 配置无效：接口地址或模型名不可用（HTTP 404）。请检查 DEEPSEEK_API_BASE 和 DEEPSEEK_MODEL。"
+        if text.startswith("Error: DeepSeek API rate limit exceeded"):
+            return "当前 DeepSeek 请求过于频繁（HTTP 429），请稍后重试。"
+        if text.startswith("Error: DeepSeek API request failed"):
+            return "当前 DeepSeek 请求失败，请检查网络连通性或接口配置。"
+
+        # The deterministic emergency path used to concatenate retrieval
+        # excerpts, history, and profile context. Those are prompt inputs,
+        # never a learner-facing answer.
+        internal_context_markers = (
+            "可以先参考这些与问题相关的知识片段",
+            "最近对话记录：",
+            "学习画像：",
+        )
+        if all(marker in text for marker in internal_context_markers):
+            return "当前回答服务暂时不可用，请稍后重试。"
+
         # Some local models copy the JSON example embedded in a skill file.
         # Prefer the final fenced JSON answer when it is present.
         for block in reversed(re.findall(r"```(?:json)?\s*(\{.*?\})\s*```", text, flags=re.DOTALL | re.IGNORECASE)):

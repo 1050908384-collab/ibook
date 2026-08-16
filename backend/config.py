@@ -29,8 +29,15 @@ class Settings(BaseSettings):
     # Chroma 向量库使用的 Ollama embedding 模型（中文语义检索）
     EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"
 
+    # DeepSeek uses an OpenAI-compatible Chat Completions API.  Keep the key
+    # in backend/.env (or the process environment), never in source control.
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_BASE: str = "https://api.deepseek.com"
+    DEEPSEEK_MODEL: str = "deepseek-v4-flash"
+    # Use the configured cloud model by default. Ollama remains an automatic
+    # fallback only when explicitly enabled for a deployment.
+    LLM_PROVIDER: str = "deepseek"
+    LLM_FALLBACK_PROVIDER: str = ""
 
     DATABASE_URL: str = "sqlite:///../data/sqlite_data/project.db"
     CHROMA_PATH: str = "../data/chroma_db"

@@ -2230,6 +2230,12 @@ class HybridContentAgent(DeterministicContentAgent):
             max_tokens=max(max_tokens, 1024),
         )
         if getattr(self.llm_client, "last_done_reason", None) == "length":
+            # A local reasoning model can use most of its token budget before
+            # finishing. Keep a non-empty second response instead of replacing
+            # a usable partial answer with the emergency fallback.
+            if response.strip():
+                _agent_log("Agent3", "answer:llm_truncated_twice -> keep_partial_answer")
+                return response.strip()
             _agent_log("Agent3", "answer:llm_truncated_twice -> deterministic_fallback")
             return ""
         return response
@@ -2574,6 +2580,9 @@ class HybridContentAgent(DeterministicContentAgent):
             temperature=0.5,
             max_tokens=TECHNICAL_ANSWER_TOKENS,
         )
+        if answer.startswith("Error: DeepSeek"):
+            _agent_log("Agent3", "answer:llm_error -> surface_deepseek_error")
+            return AnswerGenerationOutput(answer=answer, question_type="technical")
         if self._is_valid_response(answer):
             _agent_log("Agent3", f"answer:llm_done | answer_len={len(answer)}")
             return AnswerGenerationOutput(answer=answer, question_type="technical")
@@ -2723,6 +2732,8 @@ class HybridContentAgent(DeterministicContentAgent):
                 temperature=0.5,
                 max_tokens=DAILY_ANSWER_TOKENS,
             )
+            if response.startswith("Error: DeepSeek"):
+                return response
             if response and not response.startswith("Error:"):
                 return self._clip_daily_answer(response)
         except Exception:

@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 param()
 $ErrorActionPreference = "Stop"
 $ProgressPreference    = "SilentlyContinue"
@@ -77,22 +77,7 @@ function Start-CmdWindow([string]$Title, [string]$WorkingDir, [string]$CommandLi
     Start-Process -FilePath "cmd.exe" -ArgumentList ("/k",$inner) -WorkingDirectory $WorkingDir
 }
 
-# ---------- 1) Ollama ----------
-if (-not (Test-PortListening 11434)) {
-    $ollama = Get-Command ollama -ErrorAction SilentlyContinue
-    if (-not $ollama) {
-        Write-Host "[ERROR] ollama.exe not found in PATH." -ForegroundColor Red
-        Write-Host "        Install from https://ollama.com/download and try again."
-        throw "Ollama missing"
-    }
-    Write-Host "  Ollama not on :11434 - launching service window." -ForegroundColor Yellow
-    Start-CmdWindow "[1/3] Ollama Serve" $ProjectDir "ollama serve"
-} else {
-    Write-Host "  Ollama already on :11434. Reusing." -ForegroundColor DarkGreen
-}
-if (-not (Wait-Http200 "http://127.0.0.1:11434/api/tags" 25 "Ollama")) { throw "Ollama not ready" }
-
-# ---------- 1.5) First-run setup: auto-initialize database if missing ----------
+# ---------- 1.5) 声明路径 + 自动复制缺失的 .env 文件 ----------
 $DbPath       = Join-Path $ProjectDir "data\sqlite_data\project.db"
 $BackendEnv   = Join-Path $ProjectDir "backend\.env"
 $FrontendEnv  = Join-Path $ProjectDir "frontend\.env.local"
@@ -111,6 +96,73 @@ if (-not (Test-Path $FrontendEnv)) {
         Copy-Item $envExample $FrontendEnv -Force
         Write-Host "  Created frontend\.env.local from .env.example" -ForegroundColor Green
     }
+}
+
+# ---------- 1) Ollama (按需启用：只有当 DeepSeek 未配置或需要首次构建嵌入索引时才要求) ----------
+# 先保证上面的 env-copy 跑完，再读取 backend/.env 中的 DeepSeek 配置，判断是否可以完全跳过 Ollama
+$RequireOllama = $false
+$DeepSeekConfigured = $false
+$DbExists = Test-Path $DbPath
+if (Test-Path $BackendEnv) {
+    $dsKey   = ""
+    $dsProv  = ""
+    $dsFb    = ""
+    foreach ($line in Get-Content $BackendEnv) {
+        $t = $line.Trim()
+        if ($t.Length -eq 0 -or $t.StartsWith("#")) { continue }
+        $eq = $t.IndexOf("=")
+        if ($eq -le 0) { continue }
+        $k = $t.Substring(0,$eq).Trim()
+        $v = $t.Substring($eq+1).Trim().Trim('"').Trim("'")
+        if ($k -ieq "APP_PORT")            { [int]$BackendPort = $v }   # 也在这里刷新端口号（env 刚复制完的情况下）
+        if ($k -ieq "DEEPSEEK_API_KEY")      { $dsKey  = $v }
+        if ($k -ieq "LLM_PROVIDER")          { $dsProv = $v }
+        if ($k -ieq "LLM_FALLBACK_PROVIDER") { $dsFb   = $v }
+    }
+    # 判定 DeepSeek 是否真正配置完成（LLM_PROVIDER=deepseek 且 key 非占位符/非空）
+    $placeholderPattern = '^(your-|your_|sk-your|xxx|xxxx|placeholder)'
+    $keyNormalized = "$dsKey".Trim().ToLower()
+    $providerOk = ($dsProv -ieq "deepseek") -or [string]::IsNullOrWhiteSpace($dsProv)  # 默认值即 deepseek
+    $keyOk = -not [string]::IsNullOrWhiteSpace($dsKey) -and ($keyNormalized -notmatch $placeholderPattern)
+    $fallbackNeedsOllama = ($dsFb -ieq "ollama")
+    $DeepSeekConfigured = $providerOk -and $keyOk
+    if ($DeepSeekConfigured) {
+        Write-Host "  DeepSeek 云端模型已检测到配置（LLM_PROVIDER=$dsProv）。" -ForegroundColor DarkGreen
+    } else {
+        Write-Host "  DeepSeek 云端模型未正确配置：将依赖本地 Ollama。" -ForegroundColor Yellow
+        $RequireOllama = $true
+    }
+    if ($fallbackNeedsOllama) {
+        Write-Host "  LLM_FALLBACK_PROVIDER=ollama 已设置：保留 Ollama 作为回退。" -ForegroundColor Yellow
+        $RequireOllama = $true
+    }
+} else {
+    Write-Host "  backend\.env 暂不存在（复制失败），默认依赖本地 Ollama。" -ForegroundColor Yellow
+    $RequireOllama = $true
+}
+# 首次初始化且 DB 不存在时，init_knowledge_base.py 需要 Ollama 构建 Chroma 嵌入索引（EMBEDDING_MODEL）
+if (-not $DbExists) {
+    Write-Host "  数据库不存在，首次启动将构建向量嵌入索引（需 Ollama embedding）。" -ForegroundColor Yellow
+    $RequireOllama = $true
+}
+
+if ($RequireOllama) {
+    if (-not (Test-PortListening 11434)) {
+        $ollama = Get-Command ollama -ErrorAction SilentlyContinue
+        if (-not $ollama) {
+            Write-Host "[ERROR] ollama.exe not found in PATH, but this run requires Ollama." -ForegroundColor Red
+            Write-Host "        Install from https://ollama.com/download and try again."
+            Write-Host "        或者：正确配置 backend/.env 中的 DEEPSEEK_API_KEY + LLM_PROVIDER=deepseek。" -ForegroundColor Yellow
+            throw "Ollama missing"
+        }
+        Write-Host "  Ollama not on :11434 - launching service window." -ForegroundColor Yellow
+        Start-CmdWindow "[1/3] Ollama Serve" $ProjectDir "ollama serve"
+    } else {
+        Write-Host "  Ollama already on :11434. Reusing." -ForegroundColor DarkGreen
+    }
+    if (-not (Wait-Http200 "http://127.0.0.1:11434/api/tags" 25 "Ollama")) { throw "Ollama not ready" }
+} else {
+    Write-Host "  本次运行无需本地 Ollama（跳过 :11434 检查）。" -ForegroundColor DarkGreen
 }
 
 if (-not (Test-Path $DbPath)) {

@@ -198,18 +198,47 @@ def main() -> int:
         print("\n执行 VACUUM 回收磁盘空间...")
         conn.close()
         conn = sqlite3.connect(str(db_path))
+        # 显式关闭 WAL 模式并检查点，避免留下 -wal / -journal 临时文件锁定 db
+        try:
+            conn.execute("PRAGMA journal_mode = DELETE")
+        except Exception:
+            pass
         conn.execute("VACUUM")
         conn.commit()
         conn.close()
-        conn = sqlite3.connect(str(db_path))
 
         size_before = args.db.stat().st_size if args.no_backup or args.dry_run else None
         size_after = db_path.stat().st_size
         print(f"数据库文件大小: {size_after / 1024 / 1024:.2f} MB")
 
-        _report(conn, "清理后统计")
+        # 清理后统计单独打开，用完立刻关闭，避免 Windows 留下文件句柄
+        report_conn = sqlite3.connect(str(db_path))
+        try:
+            _report(report_conn, "清理后统计")
+        finally:
+            report_conn.close()
     finally:
-        conn.close()
+        # 无论异常路径如何，确保主连接已经关闭
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    # 给 Windows 一点时间彻底释放文件句柄
+    import time as _time
+    _time.sleep(0.3)
+
+    # 尝试验证是否还有 -wal / -journal 临时文件残留（有就说明还有进程占句柄）
+    wal = db_path.with_suffix(db_path.suffix + "-wal")
+    journal = db_path.with_suffix(db_path.suffix + "-journal")
+    shm = db_path.with_suffix(db_path.suffix + "-shm")
+    leftover = [p for p in (wal, journal, shm) if p.exists()]
+    if leftover:
+        print("\n[WARNING] 检测到 SQLite 临时文件残留，说明还有进程正在占用数据库：")
+        for p in leftover:
+            print(f"    - {p.name}")
+        print("    如果需要手动删除 project.db，请先关闭所有后端进程和清理脚本窗口。")
+        print("    任务管理器 → 详细信息 → 结束 python.exe / uvicorn.exe 后再试。")
 
     print("\n[DONE] 个人数据已清理，公共知识库完整保留。")
     print("       可安全打包发送给他人。")

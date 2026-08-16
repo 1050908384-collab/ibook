@@ -320,7 +320,7 @@ def _clamp(v: float) -> float:
 
 
 # ------------------------------------------------------------------
-# 真实模式：LLM 评估（同步 httpx，镜像 llm/client.py 的 Ollama 调用）
+# 真实模式：LLM 评估（同步 httpx，调用 DeepSeek Chat Completions 接口）
 # ------------------------------------------------------------------
 _LLM_SYSTEM_PROMPT = """你是一位专业的教学质量评估专家。根据用户画像评估学习内容的难度是否匹配用户水平。
 只返回 JSON，字段：content_difficulty(初级/中级/高级)、difficulty_match(0-1浮点)、reason(简述)、issues(数组，每项含issue_type/severity/description/suggestion，无问题返回[])。"""
@@ -344,22 +344,52 @@ def _llm_judge(content: str, profile: dict, user_type: str, user_level: str) -> 
         f"技能={profile.get('skill_tags','[]')}, "
         f"知识盲区={profile.get('knowledge_gaps','[]')}"
     )
+    # 与 llm/client.py 保持一致的占位符判定逻辑，避免未替换模板 key 时发请求
+    placeholder_tokens = {
+        "", "your-api-key-here", "your-deepseek-api-key",
+        "your_api_key_here", "your_deepseek_api_key",
+        "sk-yourkey", "sk-your-key", "placeholder", "xxx", "xxxx",
+    }
+    normalized_key = (settings.DEEPSEEK_API_KEY or "").strip().strip('"').strip("'").lower()
+    key_ok = (
+        bool(settings.DEEPSEEK_API_KEY)
+        and normalized_key not in placeholder_tokens
+        and not normalized_key.startswith("your-")
+        and not normalized_key.startswith("your_")
+    )
+    if settings.LLM_PROVIDER.lower() != "deepseek" or not key_ok:
+        return None, False, True
+    api_base = settings.DEEPSEEK_API_BASE.rstrip("/")
+    endpoint = (
+        f"{api_base}/chat/completions"
+        if api_base.endswith("/v1")
+        else f"{api_base}/v1/chat/completions"
+    )
     payload = {
-        "model": settings.OLLAMA_MODEL,
-        "prompt": _LLM_PROMPT_TEMPLATE.format(
-            profile_summary=profile_summary,
-            content=content[:2000],
-        ),
-        "system": _LLM_SYSTEM_PROMPT,
-        "options": {"num_predict": 1024, "temperature": 0.3},
-        "stream": False,
-        "format": "json",
+        "model": settings.DEEPSEEK_MODEL,
+        "messages": [
+            {"role": "system", "content": _LLM_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": _LLM_PROMPT_TEMPLATE.format(
+                    profile_summary=profile_summary,
+                    content=content[:2000],
+                ),
+            },
+        ],
+        "max_tokens": 1024,
+        "temperature": 0.3,
+        "response_format": {"type": "json_object"},
     }
     try:
         with httpx.Client(timeout=60) as client:
-            resp = client.post(f"{settings.OLLAMA_BASE_URL}/api/generate", json=payload)
+            resp = client.post(
+                endpoint,
+                json=payload,
+                headers={"Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}"},
+            )
             resp.raise_for_status()
-            text = resp.json().get("response", "")
+            text = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
     except Exception as e:
         logger.warning("LLM 调用失败，降级启发式: %s", e)
         return None, False, True
