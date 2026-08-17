@@ -3040,6 +3040,7 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [storedUserProfile, setStoredUserProfile] = useState<Profile | null>(null);
   const [stage, setStage] = useState<StageInfo | null>(null);
+  const [activeStageNum, setActiveStageNum] = useState<number | null>(null);
   const [learningPackage, setLearningPackage] = useState<LearningPackage | null>(null);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
@@ -3289,7 +3290,7 @@ export default function App() {
     replaceCurrentMessages = false
   ) => {
     try {
-      const history = await apiClient.getQaHistory(nextSessionId);
+      const history = await apiClient.getQaHistory(nextSessionId, nextStage.stage_num);
       const qaMessages = qaItemsToMessages(history.items);
       const id = `${nextSessionId}:${nextStage.stage_num ?? 1}`;
       const restoredMessages = qaMessages.length
@@ -3341,6 +3342,7 @@ export default function App() {
       setSessionId(DEMO_SESSION_ID);
       setProfile(fallbackProfile);
       setStage(fallbackStage);
+      setActiveStageNum(fallbackStage.stage_num ?? 1);
       setLearningPackage(fallbackPackage);
       setMessages(demoMessages);
       setSelectedConversationId(`${DEMO_SESSION_ID}:${fallbackStage.stage_num ?? 1}`);
@@ -3364,6 +3366,10 @@ export default function App() {
   useEffect(() => {
     if (!sessionId || !stage || workflow !== 'learning' || view !== 'chat') return;
     const stageNum = stage.stage_num ?? 1;
+    // A historical stage is rendered with its own messages while the active
+    // session still belongs to a later stage. Do not let a render during that
+    // switch overwrite the historical stage's persisted browser cache.
+    if (activeStageNum !== null && stageNum !== activeStageNum) return;
     const id = `${sessionId}:${stageNum}`;
     setSelectedConversationId((selected) => selected || id);
     setStageConversations((prev) => {
@@ -3376,7 +3382,7 @@ export default function App() {
       };
       return [conversation, ...prev.filter((item) => item.id !== id)].slice(0, 100);
     });
-  }, [messages, sessionId, stage, workflow, view]);
+  }, [activeStageNum, messages, sessionId, stage, workflow, view]);
 
   useEffect(() => {
     if (isUiPreviewMode) return;
@@ -3614,9 +3620,25 @@ export default function App() {
     event.preventDefault();
     const text = input.trim();
     if (!text || loading) return;
+    const selectedStage = stageConversations.find(
+      (item) => item.id === selectedConversationId
+    )?.stage;
+    const questionStageNum = selectedStage?.stage_num ?? activeStageNum ?? stage?.stage_num;
+    const appendStageMessage = (message: Message) => {
+      if (questionStageNum !== activeStageNum && sessionId && questionStageNum) {
+        const conversationId = `${sessionId}:${questionStageNum}`;
+        setStageConversations((prev) => prev.map((item) => (
+          item.id === conversationId
+            ? { ...item, messages: [...item.messages, message], updatedAt: Date.now() }
+            : item
+        )));
+        return;
+      }
+      setMessages((prev) => [...prev, message]);
+    };
     setInput('');
     setError(null);
-    setMessages((prev) => [...prev, { id: shortId(), role: 'user', content: text }]);
+    appendStageMessage({ id: shortId(), role: 'user', content: text });
     if (isUiPreviewMode) {
       setMessages((prev) => [...prev, {
         id: shortId(),
@@ -3658,13 +3680,13 @@ export default function App() {
         }
       } else {
         if (!sessionId) throw new Error('尚未创建后端会话');
-        const response = await apiClient.askQuestion(sessionId, text);
-        setMessages((prev) => [...prev, {
+        const response = await apiClient.askQuestion(sessionId, text, questionStageNum ?? undefined);
+        appendStageMessage({
           id: shortId(),
           role: 'assistant',
           content: response.answer || '已收到问题，但后端没有返回回答内容。',
           note: response.review_summary?.technical_passed && response.review_summary?.quality_passed ? '审核通过' : '待复核'
-        }]);
+        });
         finishAgentRun(['agent3'], Boolean(response.answer));
         finishAgentRun(['agent4'], Boolean(response.review_summary));
       }
@@ -3673,12 +3695,12 @@ export default function App() {
       finishAgentRun(invokedAgents, false);
       setError(getErrorMessage(caught));
       if (!initialDiagnosis) {
-        setMessages((prev) => [...prev, {
+        appendStageMessage({
           id: shortId(),
           role: 'assistant',
           content: '本次答疑请求未完成，请检查后端服务后重试。',
           note: '请求失败'
-        }]);
+        });
         return;
       }
       setSessionId(null);
@@ -3748,6 +3770,7 @@ export default function App() {
         const generatedStage = toStageInfo(stageResponse.stage);
         if (!generatedStage) throw new Error('后端未返回当前阶段，无法启动学习包');
         setStage(generatedStage);
+        setActiveStageNum(generatedStage.stage_num ?? 1);
         const generatedConversationId = `${sessionId}:${generatedStage.stage_num ?? 1}`;
         const existingConversation = stageConversations.find((item) => item.id === generatedConversationId);
         setMessages(existingConversation?.messages || createStageConversationMessages(generatedStage, profile));
@@ -3813,7 +3836,10 @@ export default function App() {
         setResult(response);
         if (response.updated_profile) setProfile(toProfile(response.updated_profile));
         const completedStage = response.state?.stage_info || stage;
-        if (completedStage) setStage(completedStage);
+        if (completedStage) {
+          setStage(completedStage);
+          setActiveStageNum(completedStage.stage_num ?? activeStageNum);
+        }
         setPlannedStage(null);
         setAssessmentState({ attemptId: null, questions: [] });
         rememberProject(sessionId, toProfile(response.updated_profile) || profile || fallbackProfile, completedStage, response.phase);
@@ -4221,10 +4247,14 @@ export default function App() {
     preferLastStage = false
   ) => {
     if (!ignoreBusy && (nextSessionId === sessionId || loading)) {
-      if (nextSessionId === sessionId && requestedStageNum) {
+      const requestedConversationId = requestedStageNum === undefined
+        ? ''
+        : `${nextSessionId}:${requestedStageNum}`;
+      if (nextSessionId === sessionId && requestedConversationId && selectedConversationId === requestedConversationId) {
         setSelectedConversationId(`${nextSessionId}:${requestedStageNum}`);
+        return;
       }
-      return;
+      if (loading) return;
     }
     if (isLocalSessionId(nextSessionId)) {
       localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -4295,11 +4325,23 @@ export default function App() {
         && nextProfile.hardware?.trim()
         && nextProfile.foundation_confirmed
       ));
-      setStage(fallbackStage || null);
-      setLearningPackage(toLearningPackage(session.learning_package));
+      const activeStageNum = activeStage?.stage_num ?? null;
+      let displayStage = fallbackStage || activeStage;
+      let displayPackage = toLearningPackage(session.learning_package);
+      const displayStageNum = desiredStageNum ?? (displayStage?.stage_num ?? 1);
+      if (displayStageNum !== activeStageNum) {
+        const [stageResponse, packageResponse] = await Promise.all([
+          apiClient.getCurrentStage(nextSessionId, displayStageNum),
+          apiClient.getStagePackage(nextSessionId, displayStageNum)
+        ]);
+        displayStage = toStageInfo(stageResponse.stage);
+        displayPackage = toLearningPackage(packageResponse.package);
+      }
+      setActiveStageNum(activeStageNum);
+      setStage(displayStage || null);
+      setLearningPackage(displayPackage);
       setResult(null);
       setPlannedStage(session.next_stage || null);
-      const displayStageNum = desiredStageNum ?? (fallbackStage?.stage_num ?? 1);
       const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${displayStageNum}`);
       setMessages(restoredConversation?.messages || initialMessages);
       setSelectedConversationId(`${nextSessionId}:${displayStageNum}`);
@@ -4313,8 +4355,8 @@ export default function App() {
       rememberProject(nextSessionId, nextProfile, session.next_stage || fallbackStage || activeStage, session.phase);
       rememberTargetSettings(nextSessionId, session.target_settings);
       if (!preferLastStage) void loadDashboardStages(nextSessionId, fallbackStage || activeStage);
-      if (fallbackStage) {
-        void restoreQaConversation(nextSessionId, fallbackStage, nextProfile, true);
+      if (displayStage) {
+        void restoreQaConversation(nextSessionId, displayStage, nextProfile, true);
       } else if (activeStage) {
         void restoreQaConversation(nextSessionId, activeStage, nextProfile, true);
       }
@@ -4468,6 +4510,7 @@ export default function App() {
           const latestSession = await apiClient.getSession(targetSessionId);
           const activeStage = resolveSessionStage(latestSession);
           setStage(activeStage);
+          setActiveStageNum(activeStage?.stage_num ?? null);
           setLearningPackage(toLearningPackage(latestSession.learning_package));
           setResult(null);
           setPlannedStage(latestSession.next_stage || null);
@@ -4544,7 +4587,7 @@ export default function App() {
   const activeSubtopicId = stageSubtopics.some((topic) => topicKey(topic) === selectedSubtopicId)
     ? selectedSubtopicId
     : topicKey(stageSubtopics[0]) || null;
-  const currentConversationId = sessionId && stage ? `${sessionId}:${stage.stage_num ?? 1}` : '';
+  const currentConversationId = sessionId && activeStageNum ? `${sessionId}:${activeStageNum}` : '';
   const selectedConversation = stageConversations.find((item) => item.id === selectedConversationId);
   const conversationStage = selectedConversation?.stage || workspaceStage;
   const conversationProject = learningProjects.find((project) => (
@@ -4638,8 +4681,8 @@ export default function App() {
           onSelectProjectStage={selectProjectStage}
           onStartStage={() => void startStage()}
           onDeleteLastStage={deleteLastLearningStage}
-          readOnly={historicalConversationSelected}
-          readOnlyNotice={readOnlyConversationNotice}
+          readOnly={false}
+          readOnlyNotice=""
           loading={loading}
           error={error}
         />

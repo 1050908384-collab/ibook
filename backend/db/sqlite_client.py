@@ -312,7 +312,9 @@ class SQLiteClient:
             self._migrate_test_questions_table(conn)
             self._create_assessment_tables(conn)
             self._migrate_review_protocol_tables(conn)
+            self._migrate_review_protocol_foreign_keys(conn)
             self._migrate_learning_package_source_types(conn)
+            self._repair_legacy_session_references(conn)
             self._create_knowledge_chunks_fts(conn)
             conn.commit()
 
@@ -531,6 +533,85 @@ class SQLiteClient:
             value_sql = ", ".join(f":{column}" for column in columns)
             conn.execute(text(f"INSERT INTO {table} ({column_sql}) VALUES ({value_sql})"), rows)
         conn.execute(text("PRAGMA foreign_keys = ON"))
+
+    def _migrate_review_protocol_foreign_keys(self, conn) -> None:
+        """Rebuild only legacy review tables whose composite source FK is stale.
+
+        SQLite cannot alter foreign-key definitions in place.  Older databases
+        referenced a temporary ``learning_package_sources_legacy`` table, so
+        preserve all review rows while recreating the small review-table group
+        with the current schema.
+        """
+        if not self._table_exists(conn, "learning_package_claims"):
+            return
+
+        foreign_keys = conn.execute(
+            text("PRAGMA foreign_key_list(learning_package_claims)")
+        ).fetchall()
+        grouped: dict[int, list[tuple]] = {}
+        for row in foreign_keys:
+            grouped.setdefault(row[0], []).append(tuple(row))
+        has_current_source_fk = any(
+            rows[0][2] == "learning_package_sources"
+            and [item[3] for item in sorted(rows, key=lambda item: item[1])] == ["trace_id", "source_ref"]
+            and [item[4] for item in sorted(rows, key=lambda item: item[1])] == ["trace_id", "source_id"]
+            for rows in grouped.values()
+        )
+        if has_current_source_fk:
+            return
+
+        tables = [
+            "learning_package_sources",
+            "learning_package_claims",
+            "review_debate_issues",
+            "review_debate_rounds",
+            "review_debate_responses",
+        ]
+        snapshots: dict[str, tuple[list[str], list[dict]]] = {}
+        for table in tables:
+            if not self._table_exists(conn, table):
+                continue
+            columns = [row[1] for row in conn.execute(text(f"PRAGMA table_info({table})")).fetchall()]
+            rows = [dict(row._mapping) for row in conn.execute(text(f"SELECT * FROM {table}")).fetchall()]
+            snapshots[table] = (columns, rows)
+
+        # PRAGMA foreign_keys can only change outside an active transaction.
+        conn.commit()
+        conn.execute(text("PRAGMA foreign_keys = OFF"))
+        try:
+            for table in reversed(tables):
+                conn.execute(text(f"DROP TABLE IF EXISTS {table}"))
+            self._create_review_protocol_tables(conn)
+            for table in tables:
+                columns, rows = snapshots.get(table, ([], []))
+                if not rows:
+                    continue
+                column_sql = ", ".join(columns)
+                value_sql = ", ".join(f":{column}" for column in columns)
+                conn.execute(text(f"INSERT INTO {table} ({column_sql}) VALUES ({value_sql})"), rows)
+            conn.commit()
+        finally:
+            conn.execute(text("PRAGMA foreign_keys = ON"))
+
+    def _repair_legacy_session_references(self, conn) -> None:
+        """Retain legacy learning records by recreating their missing sessions."""
+        tables = ["user_profiles", "stage_progress", "user_qa", "user_answers", "session_states"]
+        for table in tables:
+            if not self._table_exists(conn, table):
+                continue
+            has_session_id = any(
+                row[1] == "session_id"
+                for row in conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+            )
+            if not has_session_id:
+                continue
+            conn.execute(text(f"""
+                INSERT OR IGNORE INTO sessions (session_id, user_id)
+                SELECT DISTINCT legacy.session_id, :user_id
+                FROM {table} AS legacy
+                LEFT JOIN sessions AS current ON current.session_id = legacy.session_id
+                WHERE legacy.session_id IS NOT NULL AND current.session_id IS NULL
+            """), {"user_id": DEFAULT_USER_ID})
 
 
     @staticmethod
@@ -2213,6 +2294,17 @@ class SQLiteClient:
                 "quality_pass": quality_pass
             })
             session.commit()
+
+    def list_qa_records_for_stage(self, session_id: str, stage: int) -> list[dict]:
+        """Return a stage-local dialogue history for legacy session recovery."""
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT question, answer, tech_pass, quality_pass, created_at
+                FROM user_qa
+                WHERE session_id = :session_id AND stage = :stage
+                ORDER BY created_at ASC, qa_id ASC
+            """), {"session_id": session_id, "stage": stage}).mappings().all()
+        return [dict(row) for row in rows]
 
     def save_answer_record(self, session_id: str, question_id: str, user_answer: str, is_correct: bool, time_spent: int, stage: int = 1) -> None:
         with self.Session() as session:

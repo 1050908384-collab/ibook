@@ -415,8 +415,9 @@ export const apiClient = {
     return response.data;
   },
 
-  getCurrentStage: async (sessionId: string) => {
-    const response = await axios.get(`${BASE_URL}/sessions/${sessionId}/stages/current`);
+  getCurrentStage: async (sessionId: string, stageNum?: number) => {
+    const suffix = stageNum === undefined ? '' : `?stage_num=${encodeURIComponent(stageNum)}`;
+    const response = await axios.get(`${BASE_URL}/sessions/${sessionId}/stages/current${suffix}`);
     return response.data;
   },
 
@@ -425,18 +426,23 @@ export const apiClient = {
     return response.data;
   },
 
-  getStagePackage: async (sessionId: string) => {
-    const response = await axios.get(`${BASE_URL}/sessions/${sessionId}/stages/current/package`);
+  getStagePackage: async (sessionId: string, stageNum?: number) => {
+    const suffix = stageNum === undefined ? '' : `?stage_num=${encodeURIComponent(stageNum)}`;
+    const response = await axios.get(`${BASE_URL}/sessions/${sessionId}/stages/current/package${suffix}`);
     return response.data;
   },
 
-  askQuestion: async (sessionId: string, question: string) => {
-    const response = await axios.post(`${BASE_URL}/sessions/${sessionId}/qa`, { question });
+  askQuestion: async (sessionId: string, question: string, stageNum?: number) => {
+    const response = await axios.post(`${BASE_URL}/sessions/${sessionId}/qa`, {
+      question,
+      stage_num: stageNum
+    });
     return response.data;
   },
 
-  getQaHistory: async (sessionId: string) => {
-    const response = await axios.get<QaHistoryResponse>(`${BASE_URL}/sessions/${sessionId}/qa`);
+  getQaHistory: async (sessionId: string, stageNum?: number) => {
+    const suffix = stageNum === undefined ? '' : `?stage_num=${encodeURIComponent(stageNum)}`;
+    const response = await axios.get<QaHistoryResponse>(`${BASE_URL}/sessions/${sessionId}/qa${suffix}`);
     return response.data;
   },
 

@@ -76,6 +76,23 @@ function Start-CmdWindow([string]$Title, [string]$WorkingDir, [string]$CommandLi
     $arg = 'cmd /c "' + $inner + '"'
     Start-Process -FilePath "cmd.exe" -ArgumentList ("/k",$inner) -WorkingDirectory $WorkingDir
 }
+function Stop-ProjectFrontendProcesses([string]$FrontendPath) {
+    # npm ci removes node_modules before reinstalling.  A stale Vite process
+    # can keep esbuild.exe locked on Windows, so stop only Node processes whose
+    # command line explicitly belongs to this project's frontend directory.
+    try {
+        $escapedPath = [regex]::Escape($FrontendPath)
+        $processes = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+            Where-Object { $_.CommandLine -match $escapedPath }
+        foreach ($process in $processes) {
+            Write-Host "  Stopping stale project frontend process (PID $($process.ProcessId))..." -ForegroundColor Yellow
+            Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+        if ($processes) { Start-Sleep -Milliseconds 800 }
+    } catch {
+        Write-Host "  [WARN] Could not inspect stale frontend processes: $($_.Exception.Message)" -ForegroundColor DarkGray
+    }
+}
 
 # ---------- 1.5) 声明路径 + 自动复制缺失的 .env 文件 ----------
 $DbPath       = Join-Path $ProjectDir "data\sqlite_data\project.db"
@@ -299,6 +316,72 @@ if (-not (Test-Path $DbPath)) {
     Write-Host "  Database found at data\sqlite_data\project.db - skipping init." -ForegroundColor DarkGreen
 }
 
+# ---------- 1.6) Back up/migrate and verify the existing runtime database ----------
+# The runtime SQLite database is intentionally excluded from Git.  A teammate
+# can therefore retain an older database after pulling new code.  Detect a
+# missing video catalogue here instead of letting the UI silently show no
+# videos after the application has already started.
+if (-not $PythonExe) {
+    Write-Host "[ERROR] Python is required to verify the runtime database." -ForegroundColor Red
+    throw "Python missing"
+}
+$DatabaseUpgradeScript = Join-Path $ProjectDir "scripts\upgrade_runtime_database.py"
+$DatabaseVerifyScript = Join-Path $ProjectDir "scripts\verify_runtime_database.py"
+$CatalogVerifyScript = Join-Path $ProjectDir "scripts\verify_catalog_runtime.py"
+foreach ($verifyScript in @($DatabaseUpgradeScript, $DatabaseVerifyScript, $CatalogVerifyScript)) {
+    if (-not (Test-Path $verifyScript)) {
+        Write-Host "[ERROR] Missing database verification script:" -ForegroundColor Red
+        Write-Host "        $verifyScript"
+        throw "database verification script missing"
+    }
+}
+Write-Host "  Checking whether the runtime database needs an upgrade..." -ForegroundColor Yellow
+Push-Location $ProjectDir
+try {
+    & $PythonExe $DatabaseUpgradeScript
+    $upgradeRc = $LASTEXITCODE
+} finally { Pop-Location }
+if ($upgradeRc -ne 0) {
+    Write-Host "[ERROR] Runtime database upgrade failed. The backup (if created) is under data\sqlite_data\backups." -ForegroundColor Red
+    throw "runtime database upgrade failed"
+}
+Write-Host "  Verifying SQLite integrity, foreign keys, and core learning data..." -ForegroundColor Yellow
+$databaseOut = Join-Path $env:TEMP "aiat_database_verify_out.log"
+$databaseErr = Join-Path $env:TEMP "aiat_database_verify_err.log"
+Push-Location $ProjectDir
+try {
+    & $PythonExe $DatabaseVerifyScript 1> $databaseOut 2> $databaseErr
+    $databaseRc = $LASTEXITCODE
+} finally { Pop-Location }
+if ($databaseRc -ne 0) {
+    Write-Host "[ERROR] Runtime database health verification failed." -ForegroundColor Red
+    Write-Host "        Do not delete the database. Review the output below and restore a backup if needed." -ForegroundColor Yellow
+    if (Test-Path $databaseOut) { Get-Content $databaseOut | Select-Object -Last 20 }
+    if (Test-Path $databaseErr) { Get-Content $databaseErr | Select-Object -Last 20 }
+    throw "runtime database verification failed"
+}
+Write-Host "  Runtime database verified." -ForegroundColor Green
+Write-Host "  Verifying knowledge graph and video catalogue..." -ForegroundColor Yellow
+$catalogOut = Join-Path $env:TEMP "aiat_catalog_verify_out.log"
+$catalogErr = Join-Path $env:TEMP "aiat_catalog_verify_err.log"
+Push-Location $ProjectDir
+try {
+    & $PythonExe $CatalogVerifyScript 1> $catalogOut 2> $catalogErr
+    $catalogRc = $LASTEXITCODE
+} finally { Pop-Location }
+if ($catalogRc -ne 0) {
+    Write-Host "[ERROR] Knowledge graph or video catalogue verification failed." -ForegroundColor Red
+    Write-Host "        The existing data\sqlite_data\project.db may be old or incomplete." -ForegroundColor Yellow
+    Write-Host "        Stop here, then run: python scripts\insert_knowledge_data.py" -ForegroundColor Yellow
+    Write-Host "        Back up data\sqlite_data\project.db first if it contains learning records."
+    Write-Host "  --- verification output ---" -ForegroundColor Magenta
+    if (Test-Path $catalogOut) { Get-Content $catalogOut | Select-Object -Last 20 }
+    if (Test-Path $catalogErr) { Get-Content $catalogErr | Select-Object -Last 20 }
+    Write-Host "  --- end ---" -ForegroundColor Magenta
+    throw "catalogue verification failed"
+}
+Write-Host "  Knowledge graph and video catalogue verified." -ForegroundColor Green
+
 # ---------- 2) Backend (python import check FIRST, then start uvicorn) ----------
 if (-not (Test-PortListening $BackendPort)) {
     if (-not $PythonExe) {
@@ -322,10 +405,11 @@ sys.exit(0)
     [System.IO.File]::WriteAllText($probePy, $probeContent, [System.Text.UTF8Encoding]::new($false))
     $tmpOut = $importLog + ".out"
     $tmpErr = $importLog + ".err"
-    $proc = Start-Process -FilePath $PythonExe -ArgumentList $probePy `
-        -WorkingDirectory $backendDir `
-        -Wait -PassThru -NoNewWindow `
-        -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+    Push-Location $backendDir
+    try {
+        & $PythonExe $probePy 1> $tmpOut 2> $tmpErr
+        $importExitCode = $LASTEXITCODE
+    } finally { Pop-Location }
     $sb = New-Object System.Text.StringBuilder
     if (Test-Path $tmpOut) { [void]$sb.AppendLine((Get-Content -Raw $tmpOut)) }
     if (Test-Path $tmpErr) { [void]$sb.AppendLine((Get-Content -Raw $tmpErr)) }
@@ -333,8 +417,8 @@ sys.exit(0)
     Remove-Item $tmpOut -ErrorAction SilentlyContinue
     Remove-Item $tmpErr -ErrorAction SilentlyContinue
     Remove-Item $probePy -ErrorAction SilentlyContinue
-    if ($proc.ExitCode -ne 0) {
-        Write-Host "[ERROR] Backend import FAILED (python exit $($proc.ExitCode))." -ForegroundColor Red
+    if ($importExitCode -ne 0) {
+        Write-Host "[ERROR] Backend import FAILED (python exit $importExitCode)." -ForegroundColor Red
         Write-Host "        Usually a missing pip dependency or a syntax error."
         Write-Host "        --- diagnostic log ---" -ForegroundColor Magenta
         if (Test-Path $importLog) { Get-Content $importLog }
@@ -367,6 +451,7 @@ if (-not (Test-PortListening $FrontendPort)) {
     $ViteCmd     = Join-Path $FrontendDir "node_modules\.bin\vite.cmd"
     $PackageLock = Join-Path $FrontendDir "package-lock.json"
     $DepsStamp   = Join-Path $FrontendDir "node_modules\.aiat-package-lock.sha256"
+    $NpmCacheDir = Join-Path $FrontendDir ".npm-cache"
     if (-not (Test-Path $PackageLock)) {
         Write-Host "[ERROR] frontend\package-lock.json is missing." -ForegroundColor Red
         Write-Host "        This launcher requires the committed lock file for reproducible installs."
@@ -390,9 +475,10 @@ if (-not (Test-PortListening $FrontendPort)) {
         Write-Host "  Launcher will run 'npm ci --no-audit --no-fund' under frontend now."
         Write-Host "  This can take 1-5 minutes and requires network access."
         Write-Host ""
+        Stop-ProjectFrontendProcesses $FrontendDir
         Push-Location $FrontendDir
         try {
-            & $npm.Source ci --no-audit --no-fund
+            & $npm.Source ci --no-audit --no-fund --cache $NpmCacheDir
             $rc = $LASTEXITCODE
         } finally { Pop-Location }
         if ($rc -ne 0) {

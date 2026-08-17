@@ -83,7 +83,13 @@ class StateManager:
 
     def update_stage(self, session_id: str, stage: StageInfo | dict) -> None:
         state = self.require_session(session_id)
-        state.stage_info = StageInfo.model_validate(stage)
+        next_stage = StageInfo.model_validate(stage)
+        if state.stage_info and state.stage_info.stage_id != next_stage.stage_id:
+            self._save_current_stage_snapshot(state)
+            # A new stage starts with an independent dialogue context. The
+            # completed stage's history remains in its snapshot.
+            state.qa_history = []
+        state.stage_info = next_stage
         state.current_stage = state.stage_info.stage_num
         self.db_client.save_stage(session_id, state.stage_info.model_dump(mode="json"))
         self._save(state)
@@ -95,11 +101,53 @@ class StateManager:
     def update_learning_package(self, session_id: str, package: LearningPackage | dict) -> None:
         state = self.require_session(session_id)
         state.learning_package = LearningPackage.model_validate(package)
+        self._save_current_stage_snapshot(state)
         self._save(state)
 
     def get_learning_package(self, session_id: str) -> Optional[Dict[str, Any]]:
         state = self._get(session_id)
         return state.learning_package.model_dump(mode="json") if state and state.learning_package else None
+
+    def get_stage_snapshot(self, session_id: str, stage_num: int) -> Optional[Dict[str, Any]]:
+        state = self._get(session_id)
+        if not state:
+            return None
+        if state.stage_info and state.stage_info.stage_num == stage_num:
+            return {
+                "stage_info": state.stage_info.model_dump(mode="json"),
+                "learning_package": state.learning_package.model_dump(mode="json") if state.learning_package else None,
+                # ``qa_history`` in state_json is a runtime cache. Older
+                # sessions can retain records from a previous stage there,
+                # so the stage-aware table is the source of truth for the
+                # user-visible conversation.
+                "qa_history": self.db_client.list_qa_records_for_stage(session_id, stage_num),
+            }
+        snapshot = state.stage_snapshots.get(str(stage_num))
+        if snapshot:
+            snapshot = dict(snapshot)
+            snapshot["qa_history"] = self.db_client.list_qa_records_for_stage(session_id, stage_num)
+            return snapshot
+
+        # Sessions created before stage snapshots were introduced only retain
+        # their completed stages in stage_progress. Keep those stages
+        # navigable instead of making the entire stage switch fail.
+        legacy_stage = next(
+            (item for item in self.db_client.list_stage_progress(session_id)
+             if item.get("stage_num") == stage_num),
+            None,
+        )
+        if not legacy_stage:
+            return None
+        legacy_stage = dict(legacy_stage)
+        legacy_stage.setdefault("block_ids", [legacy_stage.get("block_id")] if legacy_stage.get("block_id") else [])
+        legacy_stage.setdefault("subtopic_ids", [legacy_stage.get("subtopic_id")] if legacy_stage.get("subtopic_id") else [])
+        legacy_stage.setdefault("subtopic_names", [])
+        legacy_stage.setdefault("gap_skill", legacy_stage.get("block_name") or "")
+        return {
+            "stage_info": legacy_stage,
+            "learning_package": None,
+            "qa_history": self.db_client.list_qa_records_for_stage(session_id, stage_num),
+        }
 
     def update_next_stage(self, session_id: str, next_stage: StageInfo | dict) -> None:
         state = self.require_session(session_id)
@@ -127,11 +175,30 @@ class StateManager:
         state = self._get(session_id)
         return state.next_stage_planning_notes if state else None
 
-    def add_qa_record(self, session_id: str, question: str, answer: str, tech_pass: bool = True, quality_pass: bool = True) -> None:
+    def add_qa_record(
+        self,
+        session_id: str,
+        question: str,
+        answer: str,
+        tech_pass: bool = True,
+        quality_pass: bool = True,
+        stage_num: Optional[int] = None,
+    ) -> None:
         state = self.require_session(session_id)
-        record = {"question": question, "answer": answer, "tech_pass": tech_pass, "quality_pass": quality_pass}
-        state.qa_history.append(record)
-        self.db_client.save_qa_record(session_id, question, answer, tech_pass, quality_pass, state.current_stage)
+        target_stage_num = stage_num if stage_num is not None else state.current_stage
+        record = {
+            "stage": target_stage_num,
+            "question": question,
+            "answer": answer,
+            "tech_pass": tech_pass,
+            "quality_pass": quality_pass,
+        }
+        self.db_client.save_qa_record(session_id, question, answer, tech_pass, quality_pass, target_stage_num)
+        # Runtime state only represents the active stage. Historical-stage
+        # messages remain isolated in user_qa and are read by stage number.
+        if target_stage_num == state.current_stage:
+            state.qa_history.append(record)
+            self._save_current_stage_snapshot(state)
         self._save(state)
 
     def get_qa_history(self, session_id: str) -> List[Dict[str, Any]]:
@@ -283,3 +350,14 @@ class StateManager:
         # it out of session JSON avoids duplicating user hardware per target.
         payload.pop("practice_profile", None)
         self.db_client.save_session_state(state.session_id, payload)
+
+    @staticmethod
+    def _save_current_stage_snapshot(state: SessionData) -> None:
+        """Copy the active stage's user-visible state before it is replaced."""
+        if not state.stage_info:
+            return
+        state.stage_snapshots[str(state.stage_info.stage_num)] = {
+            "stage_info": state.stage_info.model_dump(mode="json"),
+            "learning_package": state.learning_package.model_dump(mode="json") if state.learning_package else None,
+            "qa_history": list(state.qa_history),
+        }

@@ -40,6 +40,9 @@ class SessionData(BaseModel):
     profile_modified: bool = False
     stage_info: Optional[StageInfo] = None
     learning_package: Optional[LearningPackage] = None
+    # Durable per-stage snapshots keep completed stages readable after the
+    # runtime fields move on to a later stage.
+    stage_snapshots: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     next_stage: Optional[StageInfo] = None
     next_stage_planning_notes: Optional[str] = None
     qa_history: List[Dict[str, Any]] = Field(default_factory=list)

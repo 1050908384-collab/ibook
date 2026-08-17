@@ -112,6 +112,20 @@ class Harness:
         if all(marker in text for marker in internal_context_markers):
             return "当前回答服务暂时不可用，请稍后重试。"
 
+        # Agent3 may occasionally expose the revision workflow before the
+        # actual answer, for example: "已根据审核意见修复……以下是修改后的完整回答：".
+        # That is internal orchestration metadata, not learner-facing content.
+        revision_answer_markers = re.findall(
+            r"(?:以下是|下面是)?(?:修改后|修复后|最终)?(?:的)?(?:完整)?回答\s*[：:]",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if revision_answer_markers:
+            marker = revision_answer_markers[-1]
+            candidate = text.rsplit(marker, 1)[-1].strip()
+            if candidate:
+                text = candidate
+
         # Some local models copy the JSON example embedded in a skill file.
         # Prefer the final fenced JSON answer when it is present.
         for block in reversed(re.findall(r"```(?:json)?\s*(\{.*?\})\s*```", text, flags=re.DOTALL | re.IGNORECASE)):
@@ -308,8 +322,15 @@ class Harness:
             "unresolved_must_fix_count": review_trace.get("unresolved_must_fix_count", 0),
         }
 
-    async def handle_question(self, session_id: str, question: str) -> Dict[str, Any]:
-        stage = StageInfo.model_validate(self._require_stage(session_id))
+    async def handle_question(
+        self, session_id: str, question: str, stage_num: int | None = None
+    ) -> Dict[str, Any]:
+        current_stage = StageInfo.model_validate(self._require_stage(session_id))
+        requested_stage_num = stage_num if stage_num is not None else current_stage.stage_num
+        snapshot = self.state_manager.get_stage_snapshot(session_id, requested_stage_num)
+        if not snapshot:
+            raise ValueError(f"Stage not found: {requested_stage_num}")
+        stage = StageInfo.model_validate(snapshot["stage_info"])
         profile = UserProfile.model_validate(self._require_profile(session_id))
         practice_profile = PracticeProfile.model_validate(
             self.state_manager.get_practice_profile(session_id)
@@ -321,7 +342,7 @@ class Harness:
         # 当前阶段 block_id，用于技术类回答时检索本阶段相关的知识文档
         block_id = stage.block_id if stage else None
         # 历史问答记录（过滤非 dict 项，防止 Pydantic 验证失败）
-        raw_qa = self.state_manager.get_qa_history(session_id) or []
+        raw_qa = snapshot.get("qa_history", [])
         qa_history = [item for item in raw_qa if isinstance(item, dict)]
         # 用户画像摘要文本
         profile_summary = self._build_profile_summary(profile)
@@ -397,10 +418,12 @@ class Harness:
             answer,
             latest_review.technical.passed,
             latest_review.quality.passed,
+            stage_num=stage.stage_num,
         )
         self.state_manager.add_interaction(session_id, "question_asked", {
             "question": question,
             "question_type": question_type,
+            "stage_num": stage.stage_num,
         })
         return {
             "answer": answer,

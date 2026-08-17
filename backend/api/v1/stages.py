@@ -195,7 +195,7 @@ def _extract_platform(url) -> str:
 
 
 @router.get("/current")
-async def get_current_stage(session_id: str):
+async def get_current_stage(session_id: str, stage_num: Optional[int] = None):
     """
     获取当前阶段详情（不返回题目）
     
@@ -206,7 +206,9 @@ async def get_current_stage(session_id: str):
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        stage = session.get("stage_info")
+        requested_stage_num = stage_num if stage_num is not None else (session.get("stage_info") or {}).get("stage_num")
+        snapshot = harness.state_manager.get_stage_snapshot(session_id, requested_stage_num)
+        stage = snapshot.get("stage_info") if snapshot else None
         if not stage:
             raise HTTPException(status_code=404, detail="No current stage")
 
@@ -253,7 +255,7 @@ async def get_current_stage(session_id: str):
 
 
 @router.get("/current/package")
-async def get_current_stage_package(session_id: str):
+async def get_current_stage_package(session_id: str, stage_num: Optional[int] = None):
     """
     获取当前阶段学习包（含题目）
     
@@ -269,17 +271,37 @@ async def get_current_stage_package(session_id: str):
             raise HTTPException(status_code=404, detail="Session not found")
         
         # 如果学习包还未生成，返回提示
-        if session.get("phase") == "stage_ready":
+        current_stage_num = (session.get("stage_info") or {}).get("stage_num")
+        requested_stage_num = stage_num if stage_num is not None else current_stage_num
+        is_current_stage = requested_stage_num == current_stage_num
+        if is_current_stage and session.get("phase") == "stage_ready":
             raise HTTPException(
                 status_code=409, 
                 detail="当前阶段尚未开始，请调用 POST /api/v1/sessions/{session_id}/stages/current/start 开始学习"
             )
         
-        package = session.get("learning_package")
-        stage_info = session.get("stage_info", {})
+        snapshot = harness.state_manager.get_stage_snapshot(session_id, requested_stage_num)
+        if not snapshot:
+            raise HTTPException(status_code=404, detail="Stage not found")
+        package = snapshot.get("learning_package")
+        stage_info = snapshot.get("stage_info") or {}
 
         if not package:
-            raise HTTPException(status_code=404, detail="No learning package available")
+            if is_current_stage:
+                raise HTTPException(status_code=404, detail="No learning package available")
+            # Compatibility fallback for stages completed before snapshots
+            # existed. The original generated tutorial was not persisted by
+            # the legacy schema, but the stage remains usable with its durable
+            # local resources and metadata.
+            package = {
+                "session_id": session_id,
+                "stage_id": stage_info.get("stage_id", ""),
+                "block_id": stage_info.get("block_id", ""),
+                "block_name": stage_info.get("block_name", ""),
+                "tutorial": "该阶段创建于阶段快照启用之前。以下保留该阶段对应的学习资料和知识点。",
+                "code_examples": [],
+                "questions": [],
+            }
 
         # 修复旧会话：从数据库补全 subtopic_ids/subtopic_names 数组
         from api.v1.learning_resources import ensure_stage_subtopics
@@ -302,7 +324,7 @@ async def get_current_stage_package(session_id: str):
             first_q_block = (raw_questions[0].get("block_id") if isinstance(raw_questions[0], dict) else None)
             if first_q_block and first_q_block != block_id:
                 need_refresh = True
-        if need_refresh and block_id:
+        if need_refresh and block_id and is_current_stage:
             try:
                 refreshed = harness.state_manager.db_client.list_questions_for_stage(
                     block_id, subtopic_ids=stids, limit=max(8, len(stids) * 2)

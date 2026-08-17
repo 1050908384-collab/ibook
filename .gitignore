@@ -17,6 +17,7 @@ venv/
 data/chroma_db/
 data/fastembed_models/
 data/sqlite_data/*.db
+data/sqlite_data/backups/
 data/graph_data/*.gpickle
 data/test_data/
 
