@@ -64,6 +64,23 @@ async def get_stage_result(
         snapshot = harness.state_manager.get_stage_snapshot(session_id, stage_num) or {}
         stage = snapshot.get("stage_info") or {}
         attempt = assessment_service.get_submitted_attempt(session_id, stage.get("stage_id"))
+        if not attempt:
+            attempt = assessment_service.get_submitted_attempt_for_stage_num(session_id, stage_num)
+        # Historical attempts created before Agent6 summaries were persisted
+        # still need to open as a completed-stage summary, never as a new test.
+        if not summary and attempt:
+            accuracy = attempt.get("accuracy")
+            summary = {
+                "status": "completed",
+                "stage_num": stage_num,
+                "stage_id": attempt.get("stage_id") or stage.get("stage_id"),
+                "accuracy": accuracy,
+                "stage_summary": (
+                    "该阶段测试已完成，已根据保存的测试记录恢复阶段总结。"
+                    f"本次正确率为 {round(float(accuracy or 0) * 100)}%。"
+                ),
+                "next_strategy": stage.get("strategy_used") or "review",
+            }
         if not summary and not attempt:
             raise HTTPException(status_code=404, detail="Stage result not found")
         return {

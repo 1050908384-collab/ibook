@@ -465,6 +465,26 @@ if (-not (Test-PortListening $FrontendPort)) {
     }
     $NeedFrontendInstall = (-not (Test-Path $ViteCmd)) -or ($installedHash -ne $lockHash)
 
+    # A lock-file stamp proves only that npm ci completed once. A later
+    # interrupted install or manual edit can leave a missing transitive package
+    # (for example rehype-katex's HTML parser) while vite.cmd still exists.
+    # npm ls validates the full installed dependency tree before we reuse it.
+    if (-not $NeedFrontendInstall) {
+        $npmTreeLog = Join-Path $env:TEMP "aiat_npm_tree_check.log"
+        Remove-Item $npmTreeLog -ErrorAction SilentlyContinue
+        Write-Host "  Verifying frontend dependency tree..." -ForegroundColor Yellow
+        Push-Location $FrontendDir
+        try {
+            & $npm.Source ls --all --omit=optional 1> $npmTreeLog 2>&1
+            $npmTreeRc = $LASTEXITCODE
+        } finally { Pop-Location }
+        if ($npmTreeRc -ne 0) {
+            $NeedFrontendInstall = $true
+            Write-Host "  NOTICE: Frontend dependency tree is incomplete; rebuilding from package-lock.json." -ForegroundColor Yellow
+            if (Test-Path $npmTreeLog) { Get-Content $npmTreeLog | Select-Object -Last 12 }
+        }
+    }
+
     if ($NeedFrontendInstall) {
         Write-Host ""
         if (-not (Test-Path $ViteCmd)) {
@@ -503,12 +523,24 @@ if (-not (Test-PortListening $FrontendPort)) {
     Write-Host "  Starting Vite dev server on :$FrontendPort ..." -ForegroundColor Yellow
     # Double-quoting the npm.cmd path keeps it safe when %PATH% has spaces;
     # the rest of the line is the npm "run" subcommand and flags to Vite.
-    $cmdLine = """$($npm.Source)"" run dev -- --host 127.0.0.1 --port $FrontendPort"
+    # Keep the configured port stable. Without --strictPort Vite silently
+    # falls back to 5174/5175 when 5173 is occupied, while this launcher still
+    # checks 5173 and misleadingly reports a timeout.
+    $FrontendLog = Join-Path $env:TEMP "aiat_frontend_vite.log"
+    Remove-Item $FrontendLog -ErrorAction SilentlyContinue
+    $cmdLine = """$($npm.Source)"" run dev -- --host 127.0.0.1 --port $FrontendPort --strictPort 1> ""$FrontendLog"" 2>&1"
     Start-CmdWindow "[3/3] Frontend :$FrontendPort" $FrontendDir $cmdLine
 } else {
     Write-Host "  Frontend already on :$FrontendPort. Reusing." -ForegroundColor DarkGreen
 }
-if (-not (Wait-Http200 "http://127.0.0.1:$FrontendPort/" 45 "Frontend")) { throw "Frontend not ready" }
+if (-not (Wait-Http200 "http://127.0.0.1:$FrontendPort/" 45 "Frontend")) {
+    if ($FrontendLog -and (Test-Path $FrontendLog)) {
+        Write-Host "  --- Vite startup log ---" -ForegroundColor Magenta
+        Get-Content $FrontendLog | Select-Object -Last 40
+        Write-Host "  --- end ---" -ForegroundColor Magenta
+    }
+    throw "Frontend not ready"
+}
 
 # ---------- 4) Browser in --app (desktop-PWA) mode. ----------
 $BrowserExe = $null

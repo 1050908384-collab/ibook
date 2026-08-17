@@ -318,6 +318,18 @@ class AssessmentService:
         row = self.db.get_submitted_attempt_accuracy(session_id, stage_id=stage_id)
         return self.get_attempt(row["attempt_id"]) if row else None
 
+    def get_submitted_attempt_for_stage_num(self, session_id: str, stage_num: int) -> Optional[Dict[str, Any]]:
+        """Compatibility lookup for historical stages whose snapshot lost its stage_id."""
+        attempts = self.db.list_assessment_attempts(session_id)
+        submitted = [
+            item for item in attempts
+            if item.get("stage_num") == stage_num and item.get("status") == "submitted"
+        ]
+        if not submitted:
+            return None
+        latest = max(submitted, key=lambda item: item.get("submitted_at") or item.get("created_at") or "")
+        return self.get_attempt(latest["attempt_id"])
+
     # ------------------------------------------------------------------
     # 内部工具
     # ------------------------------------------------------------------

@@ -4393,12 +4393,19 @@ export default function App() {
       let displayPackage = toLearningPackage(session.learning_package);
       const displayStageNum = desiredStageNum ?? (displayStage?.stage_num ?? 1);
       if (displayStageNum !== activeStageNum) {
-        const [stageResponse, packageResponse] = await Promise.all([
+        const [stageResponse, packageResponse] = await Promise.allSettled([
           apiClient.getCurrentStage(nextSessionId, displayStageNum),
           apiClient.getStagePackage(nextSessionId, displayStageNum)
         ]);
-        displayStage = toStageInfo(stageResponse.stage);
-        displayPackage = toLearningPackage(packageResponse.package);
+        // An old stage can lack one runtime snapshot. Keep the dashboard's
+        // stage metadata and any available package instead of abandoning the
+        // whole learning target.
+        if (stageResponse.status === 'fulfilled') {
+          displayStage = toStageInfo(stageResponse.value.stage) || displayStage;
+        }
+        if (packageResponse.status === 'fulfilled') {
+          displayPackage = toLearningPackage(packageResponse.value.package) || displayPackage;
+        }
       }
       setActiveStageNum(activeStageNum);
       setStage(displayStage || null);
