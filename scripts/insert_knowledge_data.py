@@ -194,6 +194,13 @@ def remove_retired_subtopics(db: SQLiteClient, active_subtopic_ids: set[str]) ->
     with db.Session() as session:
         rows = session.execute(text("SELECT subtopic_id FROM knowledge_subtopics")).mappings().all()
         retired_ids = [row["subtopic_id"] for row in rows if row["subtopic_id"] not in active_subtopic_ids]
+        if retired_ids:
+            # Old installations can contain assessment snapshots and other
+            # historical tables that reference retired IDs. The authoritative
+            # active catalogue has already been upserted above; retaining
+            # these legacy nodes is safer than deleting a learner's history.
+            print("[WARN] Retaining {} legacy subtopics for historical records.".format(len(retired_ids)))
+            return
         removed = 0
         for subtopic_id in retired_ids:
             replacement_id = RETIRED_SUBTOPIC_REPLACEMENTS.get(subtopic_id)
@@ -217,6 +224,34 @@ def remove_retired_subtopics(db: SQLiteClient, active_subtopic_ids: set[str]) ->
                     updated_at = MAX(subtopic_status.updated_at, excluded.updated_at)
             """), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
             session.execute(text("DELETE FROM subtopic_status WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
+            # user_subtopic_status is keyed by user_id rather than session_id,
+            # so it needs the same merge treatment before the legacy node can
+            # be removed without violating its foreign key.
+            user_status_exists = session.execute(text(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'user_subtopic_status'"
+            )).scalar()
+            if user_status_exists:
+                session.execute(text("""
+                    INSERT INTO user_subtopic_status (
+                        user_id, subtopic_id, block_id, status, mastery_score,
+                        is_initial_foundation, attempt_count, last_accuracy,
+                        updated_at, started_at, completed_at
+                    )
+                    SELECT user_id, :replacement_id, block_id, status, mastery_score,
+                           is_initial_foundation, attempt_count, last_accuracy,
+                           updated_at, started_at, completed_at
+                    FROM user_subtopic_status WHERE subtopic_id = :subtopic_id
+                    ON CONFLICT(user_id, subtopic_id) DO UPDATE SET
+                        status = MAX(user_subtopic_status.status, excluded.status),
+                        mastery_score = MAX(user_subtopic_status.mastery_score, excluded.mastery_score),
+                        attempt_count = user_subtopic_status.attempt_count + excluded.attempt_count,
+                        last_accuracy = COALESCE(excluded.last_accuracy, user_subtopic_status.last_accuracy),
+                        updated_at = MAX(user_subtopic_status.updated_at, excluded.updated_at)
+                """), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
+                session.execute(
+                    text("DELETE FROM user_subtopic_status WHERE subtopic_id = :subtopic_id"),
+                    {"subtopic_id": subtopic_id},
+                )
             session.execute(text("DELETE FROM subtopic_resources WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
 
             # Assessment snapshots and later schema additions can also point

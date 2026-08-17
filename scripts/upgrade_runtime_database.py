@@ -38,7 +38,10 @@ def needs_upgrade(conn: sqlite3.Connection) -> bool:
         return True
     actual_blocks = {row[0] for row in conn.execute("SELECT block_id FROM knowledge_blocks")}
     actual_subtopics = {row[0] for row in conn.execute("SELECT subtopic_id FROM knowledge_subtopics")}
-    if actual_blocks != expected_blocks or actual_subtopics != expected_subtopics:
+    # Extra legacy nodes are harmless once all current IDs are present. Do not
+    # force a destructive re-upgrade merely because an old learner record
+    # still references a retired topic.
+    if not expected_blocks.issubset(actual_blocks) or not expected_subtopics.issubset(actual_subtopics):
         return True
 
     if table_exists(conn, "learning_package_claims"):
