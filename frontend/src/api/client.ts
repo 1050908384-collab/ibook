@@ -513,9 +513,10 @@ export const apiClient = {
     };
   },
 
-  planNextStage: async (sessionId: string, adjustmentNotes = '') => {
+  planNextStage: async (sessionId: string, adjustmentNotes = '', forceAdvance = false) => {
     const response = await axios.post<PlanNextStageResponse>(`${BASE_URL}/sessions/${sessionId}/stages/next/plan`, {
-      adjustment_notes: adjustmentNotes
+      adjustment_notes: adjustmentNotes,
+      force_advance: forceAdvance
     });
     return response.data;
   },

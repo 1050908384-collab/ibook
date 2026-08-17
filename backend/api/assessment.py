@@ -242,7 +242,7 @@ async def complete_current_stage_v1(
 
     # 3) 前置 OK，走既有阶段完成链路
     try:
-        result = await harness.complete_stage(session_id)
+        result = await harness.complete_stage(session_id, bypass_assessment=bypass_assessment)
         # 无测试题直接完成时：修正 accuracy/策略判断，避免 Agent6 把 accuracy=0 当成"测试失败"
         if bypass_assessment:
             # accuracy 字段直接置为 null 表示无测试数据，前端据此隐藏正确率

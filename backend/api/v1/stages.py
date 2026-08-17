@@ -37,6 +37,7 @@ class CompleteStageRequest(BaseModel):
 
 class PlanNextStageRequest(BaseModel):
     adjustment_notes: Optional[str] = None
+    force_advance: bool = False
 
 
 def _sanitize_question(question: dict) -> dict:
@@ -509,6 +510,7 @@ async def submit_stage_answer(
 async def complete_current_stage(
     session_id: str,
     request: CompleteStageRequest = None,
+    bypass_assessment: bool = False,
 ):
     """
     完成当前阶段
@@ -533,7 +535,7 @@ async def complete_current_stage(
             msg = detail_map.get(phase, "当前状态不允许完成阶段")
             raise HTTPException(status_code=409, detail=msg)
 
-        result = await harness.complete_stage(session_id)
+        result = await harness.complete_stage(session_id, bypass_assessment=bypass_assessment)
 
         # 更新 session 状态
         phase = result.get("phase", "stage_result")
@@ -550,6 +552,7 @@ async def complete_current_stage(
             "status": result.get("status", "completed"),
             "phase": phase,
             "accuracy": result.get("accuracy"),
+            "bypass_assessment": result.get("bypass_assessment", False),
             "stage_summary": result.get("stage_summary"),
             "next_strategy": result.get("next_strategy"),
             "can_plan_next_stage": result.get("can_plan_next_stage", False),
@@ -593,7 +596,11 @@ async def plan_next_stage(
             msg = detail_map.get(phase, "请先完成当前阶段（POST /complete）后再规划下一阶段")
             raise HTTPException(status_code=409, detail=msg)
 
-        result = await harness.plan_next_stage(session_id, request.adjustment_notes)
+        result = await harness.plan_next_stage(
+            session_id,
+            request.adjustment_notes,
+            force_advance=request.force_advance,
+        )
         
         # 更新 session 状态
         phase = result.get("phase", "next_stage_ready")

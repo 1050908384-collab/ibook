@@ -574,7 +574,7 @@ select:focus-visible {
 
 .chat-layout {
   display: grid;
-  grid-template-columns: 260px minmax(440px, min(var(--material-panel-width, 600px), calc(100% - 570px))) 10px minmax(300px, 1fr);
+  grid-template-columns: var(--context-panel-width, 260px) 10px minmax(440px, min(var(--material-panel-width, 600px), calc(100% - var(--context-panel-width, 260px) - 320px))) 10px minmax(300px, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -585,10 +585,16 @@ select:focus-visible {
 }
 
 .chat-layout.context-collapsed {
-  grid-template-columns: 48px minmax(440px, min(var(--material-panel-width, 600px), calc(100% - 358px))) 10px minmax(300px, 1fr);
+  grid-template-columns: 48px 0 minmax(440px, min(var(--material-panel-width, 600px), calc(100% - 368px))) 10px minmax(300px, 1fr);
 }
 
-.workspace-resize-handle {
+.chat-layout.context-collapsed .context-resize-handle {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.workspace-resize-handle,
+.context-resize-handle {
   position: relative;
   z-index: 5;
   width: 10px;
@@ -600,7 +606,8 @@ select:focus-visible {
   touch-action: none;
 }
 
-.workspace-resize-handle::after {
+.workspace-resize-handle::after,
+.context-resize-handle::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -616,7 +623,10 @@ select:focus-visible {
 
 .workspace-resize-handle:hover::after,
 .workspace-resize-handle:focus-visible::after,
-body.resizing-workspace-panels .workspace-resize-handle::after {
+.context-resize-handle:hover::after,
+.context-resize-handle:focus-visible::after,
+body.resizing-workspace-panels .workspace-resize-handle::after,
+body.resizing-workspace-panels .context-resize-handle::after {
   background: #766ee0;
   opacity: 1;
 }
@@ -4957,6 +4967,33 @@ body.resizing-workspace-panels * {
   grid-column: 1 / -1;
 }
 
+.low-score-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.low-score-actions .ghost,
+.low-score-actions .primary {
+  min-height: 44px;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.low-score-actions .ghost {
+  color: #6156c9;
+  border-color: #d8d4f4;
+  background: #fbfaff;
+}
+
+.low-score-actions .ghost:hover {
+  color: #4f45b3;
+  border-color: #bbb4e9;
+  background: #f5f3ff;
+}
+
 .feedback-facts,
 .updated-profile-facts {
   display: grid;
@@ -6792,6 +6829,10 @@ body.resizing-workspace-panels * {
 
 /* 响应式：窄屏 */
 @media (max-width: 520px) {
+  .low-score-actions {
+    grid-template-columns: 1fr;
+  }
+
   .generation-progress-card {
     width: 94vw;
     border-radius: 14px;
@@ -7334,11 +7375,11 @@ body.resizing-workspace-panels * {
 
 @media (max-width: 1280px) {
   .chat-layout {
-    grid-template-columns: 230px minmax(400px, min(var(--material-panel-width, 540px), calc(100% - 520px))) 10px minmax(280px, 1fr);
+    grid-template-columns: var(--context-panel-width, 230px) 10px minmax(400px, min(var(--material-panel-width, 540px), calc(100% - var(--context-panel-width, 230px) - 300px))) 10px minmax(280px, 1fr);
   }
 
   .chat-layout.context-collapsed {
-    grid-template-columns: 48px minmax(400px, min(var(--material-panel-width, 540px), calc(100% - 338px))) 10px minmax(280px, 1fr);
+    grid-template-columns: 48px 0 minmax(400px, min(var(--material-panel-width, 540px), calc(100% - 348px))) 10px minmax(280px, 1fr);
   }
 }
 
@@ -7349,11 +7390,11 @@ body.resizing-workspace-panels * {
   }
 
   .chat-layout {
-    grid-template-columns: 210px minmax(360px, 1fr) 10px minmax(290px, 1fr);
+    grid-template-columns: var(--context-panel-width, 210px) 10px minmax(360px, 1fr) 10px minmax(290px, 1fr);
   }
 
   .chat-layout.context-collapsed {
-    grid-template-columns: 48px minmax(360px, 1fr) 10px minmax(290px, 1fr);
+    grid-template-columns: 48px 0 minmax(360px, 1fr) 10px minmax(290px, 1fr);
   }
 
   .context-panel {
@@ -7480,7 +7521,8 @@ body.resizing-workspace-panels * {
     border-top: 0;
   }
 
-  .workspace-resize-handle {
+  .workspace-resize-handle,
+  .context-resize-handle {
     display: none;
   }
 

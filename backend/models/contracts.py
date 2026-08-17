@@ -60,6 +60,7 @@ class StagePlanningInput(BaseModel):
     profile: UserProfile
     stage_num: int
     adjustment_notes: Optional[str] = None
+    excluded_subtopic_ids: List[str] = Field(default_factory=list)
 
 
 class StagePlanningOutput(BaseModel):

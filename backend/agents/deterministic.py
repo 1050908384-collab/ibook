@@ -657,6 +657,15 @@ class DeterministicDiagnosticAgent:
                     int(item.get("sequence_index") or 0), item["subtopic_id"],
                 ))
         
+        # A learner may explicitly continue after a low score. Keep the current
+        # subtopic unfinished, but do not create a new numbered stage for it.
+        excluded_subtopic_ids = set(request.excluded_subtopic_ids)
+        if excluded_subtopic_ids:
+            candidates = [
+                item for item in candidates
+                if item.get("subtopic_id") not in excluded_subtopic_ids
+            ]
+
         # Fall back to a block-level stage when the catalog has no candidate.
         if not candidates:
             return await self._generate_fallback_stage(request, gap, preferred_block)

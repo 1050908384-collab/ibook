@@ -1748,12 +1748,38 @@ function ChatView({
   error: string | null;
 }) {
   const [contextPanelCollapsed, setContextPanelCollapsed] = useState(false);
+  const [contextPanelWidth, setContextPanelWidth] = useState(260);
   const [materialPanelWidth, setMaterialPanelWidth] = useState(600);
 
   const clampMaterialWidth = (width: number, layoutWidth: number) => {
-    const contextWidth = contextPanelCollapsed ? 48 : 260;
-    const maxMaterialWidth = Math.max(440, layoutWidth - contextWidth - 300 - 10);
+    const contextWidth = contextPanelCollapsed ? 48 : contextPanelWidth;
+    const maxMaterialWidth = Math.max(440, layoutWidth - contextWidth - 300 - 20);
     return Math.round(Math.max(440, Math.min(maxMaterialWidth, width)));
+  };
+
+  const clampContextWidth = (width: number, layoutWidth: number) => {
+    const maxContextWidth = Math.max(200, Math.min(420, layoutWidth - 440 - 300 - 20));
+    return Math.round(Math.max(200, Math.min(maxContextWidth, width)));
+  };
+
+  const resizeContextPanel = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    const layout = event.currentTarget.parentElement;
+    if (!layout) return;
+    const startX = event.clientX;
+    const startWidth = contextPanelWidth;
+    const layoutWidth = layout.getBoundingClientRect().width;
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      setContextPanelWidth(clampContextWidth(startWidth + moveEvent.clientX - startX, layoutWidth));
+    };
+    const handlePointerUp = () => {
+      document.body.classList.remove('resizing-workspace-panels');
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+    document.body.classList.add('resizing-workspace-panels');
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp, { once: true });
   };
 
   const resizePanels = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -1784,7 +1810,16 @@ function ChatView({
     setMaterialPanelWidth((width) => clampMaterialWidth(width + delta, layoutWidth));
   };
 
+  const resizeContextPanelByKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    const layoutWidth = event.currentTarget.parentElement?.getBoundingClientRect().width ?? window.innerWidth;
+    const delta = event.key === 'ArrowRight' ? 24 : -24;
+    setContextPanelWidth((width) => clampContextWidth(width + delta, layoutWidth));
+  };
+
   const layoutStyle = {
+    '--context-panel-width': `${contextPanelWidth}px`,
     '--material-panel-width': `${materialPanelWidth}px`
   } as CSSProperties;
 
@@ -1835,6 +1870,14 @@ function ChatView({
           onToggleTimer={onToggleTimer}
           onStartStage={onStartStage}
           onDeleteLastStage={onDeleteLastStage}
+        />
+
+        <button
+          className="context-resize-handle"
+          onPointerDown={resizeContextPanel}
+          onKeyDown={resizeContextPanelByKeyboard}
+          aria-label="拖动调整对话导航栏宽度"
+          title="拖动调整对话导航栏宽度"
         />
 
         <CurrentMaterialPanel
@@ -2877,6 +2920,8 @@ function ResultView({
   result,
   onPlanNext,
   onStartNext,
+  onRestartCurrent,
+  onContinueNext,
   onReturnToChat,
   onOpenAssessmentReview,
   hasAssessmentReview,
@@ -2890,6 +2935,8 @@ function ResultView({
   result: StageResult | null;
   onPlanNext: () => void;
   onStartNext: () => void;
+  onRestartCurrent: () => void;
+  onContinueNext: () => void;
   onReturnToChat: () => void;
   onOpenAssessmentReview: () => void;
   hasAssessmentReview: boolean;
@@ -2903,6 +2950,7 @@ function ResultView({
   const mastered = gaps.filter((gap) => gap.status === '已掌握' || (gap.progress ?? 0) >= 1);
   const needsWork = gaps.filter((gap) => gap.status !== '已掌握' && (gap.progress ?? 0) < 1);
   const canPlanNext = result?.can_plan_next_stage ?? result?.available_actions?.includes('plan_next_stage') ?? false;
+  const needsReinforcement = hasAssessment && (accuracy ?? 0) < 0.7;
   // A later stage may already be underway, not merely waiting in next_stage.
   // In either case this summary must never offer to generate a duplicate.
   const availableNextStage = plannedStage || existingNextStage;
@@ -3004,7 +3052,16 @@ function ResultView({
               <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
               <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
             </div>
-            {!result?.all_mastered && (plannedStage ? (
+            {!result?.all_mastered && needsReinforcement ? (
+              <div className="low-score-actions">
+                <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}>
+                  <Play size={17} />正确率低，建议重新开始学习该阶段
+                </button>
+                <button className="primary wide" onClick={onContinueNext} disabled={loading || !canPlanNext}>
+                  <Sparkles size={17} />继续进行下一个阶段
+                </button>
+              </div>
+            ) : !result?.all_mastered && (plannedStage ? (
               <button className="primary wide" onClick={onStartNext} disabled={loading}><Play size={17} />开始下一阶段</button>
             ) : !existingNextStage ? (
               <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
@@ -3973,13 +4030,13 @@ export default function App() {
 
   const completeStage = async (answers: Record<string, string>) => completeStageWithPayload({}, answers);
 
-  const planNextStage = async () => {
+  const planNextStage = async (forceAdvance = false) => {
     if (!sessionId || loading) return;
     setLoading(true);
     setError(null);
     beginAgentRun(['agent1']);
     try {
-      const response = await apiClient.planNextStage(sessionId);
+      const response = await apiClient.planNextStage(sessionId, '', forceAdvance);
       const canStartNextStage =
         response.phase === 'next_stage_ready' ||
         response.available_actions?.includes('start_stage');
@@ -4864,8 +4921,10 @@ export default function App() {
             ?.filter((item) => (item.stage_num ?? 1) > (workspaceStage.stage_num ?? 1))
             .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1))[0] || null}
           result={result}
-          onPlanNext={startStage}
+          onPlanNext={planNextStage}
           onStartNext={startStage}
+          onRestartCurrent={startStage}
+          onContinueNext={() => planNextStage(true)}
           onReturnToChat={() => {
             setView('chat');
             setMaterialPanelOpen(true);

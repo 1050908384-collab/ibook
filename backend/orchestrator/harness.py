@@ -555,7 +555,7 @@ class Harness:
             self._log(session_id, "complete_stage:records_fallback", f"reason={exc}")
         return [], 0.0
 
-    async def complete_stage(self, session_id: str) -> Dict[str, Any]:
+    async def complete_stage(self, session_id: str, bypass_assessment: bool = False) -> Dict[str, Any]:
         """
         complete_stage 新职责（P3 按需阶段规划）：
         1. 只负责调用 Agent6 决策
@@ -568,7 +568,10 @@ class Harness:
         """
         profile = UserProfile.model_validate(self._require_profile(session_id))
         stage = StageInfo.model_validate(self._require_stage(session_id))
-        accuracy = self._resolve_stage_accuracy(session_id, stage)
+        # A stage without a matching assessment is explicitly completed by
+        # the learner. Treat it as passed so planning advances to the next
+        # knowledge point instead of reopening the same stage.
+        accuracy = 1.0 if bypass_assessment else self._resolve_stage_accuracy(session_id, stage)
         assessment_records, time_spent_hours = self._resolve_stage_records(session_id, stage)
         self._log(session_id, "complete_stage:start", f"stage={stage.stage_num}, accuracy={accuracy:.2f}")
         decision = await self.agent6.run(StageDecisionInput(
@@ -648,6 +651,7 @@ class Harness:
             "stage_id": stage.stage_id,
             "stage_num": stage.stage_num,
             "accuracy": accuracy,
+            "bypass_assessment": bypass_assessment,
             "updated_profile": synced_profile.model_dump(mode="json"),
             "stage_summary": decision.stage_summary,
             "next_strategy": decision.strategy,
@@ -663,7 +667,12 @@ class Harness:
         self.state_manager.save_stage_result(session_id, stage.stage_num, result)
         return result
 
-    async def plan_next_stage(self, session_id: str, adjustment_notes: str | None = None) -> Dict[str, Any]:
+    async def plan_next_stage(
+        self,
+        session_id: str,
+        adjustment_notes: str | None = None,
+        force_advance: bool = False,
+    ) -> Dict[str, Any]:
         """
         按需生成下一阶段（plan-next 接口）：
         - 基于 complete_stage 后最新的画像，调用 Agent1 的规划链路
@@ -683,7 +692,7 @@ class Harness:
         )
 
         accuracy = current_stage_info.accuracy or 0.0
-        if accuracy >= 0.7:
+        if force_advance or accuracy >= 0.7:
             next_stage_num = current_stage_info.stage_num + 1
             default_notes = f"本阶段（{current_stage_info.stage_num}）已达标，推进到下一阶段"
         else:
@@ -700,6 +709,11 @@ class Harness:
             profile=profile,
             stage_num=next_stage_num,
             adjustment_notes=user_notes,
+            excluded_subtopic_ids=(
+                [current_stage_info.subtopic_id]
+                if force_advance and current_stage_info.subtopic_id
+                else []
+            ),
         ))
         next_stage = planned.stage
         self.state_manager.update_next_stage(session_id, next_stage)
