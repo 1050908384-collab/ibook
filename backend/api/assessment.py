@@ -52,6 +52,32 @@ async def get_assessment_attempt(attempt_id: str, _user_id: str = Depends(requir
         _raise(e)
 
 
+@router.get("/sessions/{session_id}/stages/{stage_num}/result")
+async def get_stage_result(
+    session_id: str,
+    stage_num: int,
+    _user_id: str = Depends(require_owned_session),
+):
+    """Read a persisted Agent6 summary and the submitted assessment review."""
+    try:
+        summary = harness.state_manager.get_stage_result(session_id, stage_num)
+        snapshot = harness.state_manager.get_stage_snapshot(session_id, stage_num) or {}
+        stage = snapshot.get("stage_info") or {}
+        attempt = assessment_service.get_submitted_attempt(session_id, stage.get("stage_id"))
+        if not summary and not attempt:
+            raise HTTPException(status_code=404, detail="Stage result not found")
+        return {
+            "session_id": session_id,
+            "stage_num": stage_num,
+            "stage_result": summary,
+            "assessment_attempt": attempt,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        _raise(e)
+
+
 @router.put("/assessment-attempts/{attempt_id}/answers/{question_id}")
 async def save_assessment_answer(attempt_id: str, question_id: str, request: SaveAnswerRequest, _user_id: str = Depends(require_owned_attempt)):
     """保存或覆盖单题答案（提交前可改，只保存一条最终答案）。"""

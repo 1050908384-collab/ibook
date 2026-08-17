@@ -149,6 +149,26 @@ class StateManager:
             "qa_history": self.db_client.list_qa_records_for_stage(session_id, stage_num),
         }
 
+    def save_stage_result(self, session_id: str, stage_num: int, result: Dict[str, Any]) -> None:
+        """Persist the Agent6 outcome with the immutable stage snapshot."""
+        state = self.require_session(session_id)
+        snapshot = dict(state.stage_snapshots.get(str(stage_num)) or {})
+        if not snapshot and state.stage_info and state.stage_info.stage_num == stage_num:
+            self._save_current_stage_snapshot(state)
+            snapshot = dict(state.stage_snapshots.get(str(stage_num)) or {})
+        snapshot["stage_result"] = result
+        state.stage_snapshots[str(stage_num)] = snapshot
+        self._save(state)
+
+    def get_stage_result(self, session_id: str, stage_num: int) -> Optional[Dict[str, Any]]:
+        """Return a previously persisted Agent6 outcome for one stage."""
+        state = self._get(session_id)
+        if not state:
+            return None
+        snapshot = state.stage_snapshots.get(str(stage_num)) or {}
+        result = snapshot.get("stage_result")
+        return dict(result) if isinstance(result, dict) else None
+
     def update_next_stage(self, session_id: str, next_stage: StageInfo | dict) -> None:
         state = self.require_session(session_id)
         state.next_stage = StageInfo.model_validate(next_stage)

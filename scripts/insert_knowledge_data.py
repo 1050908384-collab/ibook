@@ -69,13 +69,20 @@ def insert_knowledge_blocks(db: SQLiteClient, blocks_data: list):
     for block in blocks_data:
         with db.Session() as session:
             session.execute(text("""
-                INSERT OR REPLACE INTO knowledge_blocks (
+                INSERT INTO knowledge_blocks (
                     block_id, block_name, description, estimated_hours,
                     difficulty, prerequisites, corresponding_gaps
                 ) VALUES (
                     :block_id, :block_name, :description, :estimated_hours,
                     :difficulty, :prerequisites, :corresponding_gaps
                 )
+                ON CONFLICT(block_id) DO UPDATE SET
+                    block_name=excluded.block_name,
+                    description=excluded.description,
+                    estimated_hours=excluded.estimated_hours,
+                    difficulty=excluded.difficulty,
+                    prerequisites=excluded.prerequisites,
+                    corresponding_gaps=excluded.corresponding_gaps
             """), {
                 "block_id": block["block_id"],
                 "block_name": block["block_name"],
@@ -117,11 +124,19 @@ def insert_knowledge_docs(db: SQLiteClient, docs_data: list):
     for doc in docs_data:
         with db.Session() as session:
             session.execute(text("""
-                INSERT OR REPLACE INTO knowledge_docs (
+                INSERT INTO knowledge_docs (
                     doc_id, block_id, subtopic_id, title, content, doc_type, source, difficulty
                 ) VALUES (
                     :doc_id, :block_id, :subtopic_id, :title, :content, :doc_type, :source, :difficulty
                 )
+                ON CONFLICT(doc_id) DO UPDATE SET
+                    block_id=excluded.block_id,
+                    subtopic_id=excluded.subtopic_id,
+                    title=excluded.title,
+                    content=excluded.content,
+                    doc_type=excluded.doc_type,
+                    source=excluded.source,
+                    difficulty=excluded.difficulty
             """), {
                 "doc_id": doc["doc_id"],
                 "block_id": doc["block_id"],
@@ -144,13 +159,21 @@ def insert_knowledge_subtopics(db: SQLiteClient, subtopics_data: list):
     for subtopic in subtopics_data:
         with db.Session() as session:
             session.execute(text("""
-                INSERT OR REPLACE INTO knowledge_subtopics (
+                INSERT INTO knowledge_subtopics (
                     subtopic_id, block_id, subtopic_name, estimated_hours,
                     sequence_index, difficulty, prerequisites, content_summary
                 ) VALUES (
                     :subtopic_id, :block_id, :subtopic_name, :estimated_hours,
                     :sequence_index, :difficulty, :prerequisites, :content_summary
                 )
+                ON CONFLICT(subtopic_id) DO UPDATE SET
+                    block_id=excluded.block_id,
+                    subtopic_name=excluded.subtopic_name,
+                    estimated_hours=excluded.estimated_hours,
+                    sequence_index=excluded.sequence_index,
+                    difficulty=excluded.difficulty,
+                    prerequisites=excluded.prerequisites,
+                    content_summary=excluded.content_summary
             """), {
                 "subtopic_id": subtopic["subtopic_id"],
                 "block_id": subtopic["block_id"],
@@ -206,7 +229,7 @@ def insert_test_questions(db: SQLiteClient, questions_data: list):
     for question in questions_data:
         with db.Session() as session:
             session.execute(text("""
-                INSERT OR REPLACE INTO test_questions (
+                INSERT INTO test_questions (
                     question_id, block_id, subtopic_id, difficulty, question_type,
                     question_text, options, correct_answer, explanation,
                     expected_output, grading_mode, source, hint
@@ -215,6 +238,19 @@ def insert_test_questions(db: SQLiteClient, questions_data: list):
                     :question_text, :options, :correct_answer, :explanation,
                     :expected_output, :grading_mode, :source, :hint
                 )
+                ON CONFLICT(question_id) DO UPDATE SET
+                    block_id=excluded.block_id,
+                    subtopic_id=excluded.subtopic_id,
+                    difficulty=excluded.difficulty,
+                    question_type=excluded.question_type,
+                    question_text=excluded.question_text,
+                    options=excluded.options,
+                    correct_answer=excluded.correct_answer,
+                    explanation=excluded.explanation,
+                    expected_output=excluded.expected_output,
+                    grading_mode=excluded.grading_mode,
+                    source=excluded.source,
+                    hint=excluded.hint
             """), {
                 "question_id": question["question_id"],
                 "block_id": question["block_id"],

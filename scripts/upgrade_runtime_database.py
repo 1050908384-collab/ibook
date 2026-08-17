@@ -1,7 +1,8 @@
-"""Back up and migrate an existing runtime SQLite database without reseeding it."""
+"""Back up and migrate an existing runtime SQLite database without user-data loss."""
 from __future__ import annotations
 
 import shutil
+import json
 import sqlite3
 import sys
 from datetime import datetime
@@ -12,6 +13,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 BACKEND_DIR = ROOT_DIR / "backend"
 DB_PATH = ROOT_DIR / "data" / "sqlite_data" / "project.db"
 SESSION_TABLES = ("user_profiles", "stage_progress", "user_qa", "user_answers", "session_states")
+SEEDS_DIR = ROOT_DIR / "data" / "seeds"
 
 
 def table_exists(conn: sqlite3.Connection, table: str) -> bool:
@@ -21,6 +23,24 @@ def table_exists(conn: sqlite3.Connection, table: str) -> bool:
 
 
 def needs_upgrade(conn: sqlite3.Connection) -> bool:
+    # A runtime database is deliberately excluded from Git.  Teammates can
+    # therefore carry forward a database made by an older curriculum version.
+    # Compare identities, not just non-zero row counts, before serving it.
+    expected_blocks = {
+        item["block_id"]
+        for item in json.loads((SEEDS_DIR / "knowledge_blocks.json").read_text(encoding="utf-8"))
+    }
+    expected_subtopics = {
+        item["subtopic_id"]
+        for item in json.loads((SEEDS_DIR / "knowledge_subtopics.json").read_text(encoding="utf-8"))
+    }
+    if not table_exists(conn, "knowledge_blocks") or not table_exists(conn, "knowledge_subtopics"):
+        return True
+    actual_blocks = {row[0] for row in conn.execute("SELECT block_id FROM knowledge_blocks")}
+    actual_subtopics = {row[0] for row in conn.execute("SELECT subtopic_id FROM knowledge_subtopics")}
+    if actual_blocks != expected_blocks or actual_subtopics != expected_subtopics:
+        return True
+
     if table_exists(conn, "learning_package_claims"):
         foreign_keys = conn.execute("PRAGMA foreign_key_list(learning_package_claims)").fetchall()
         grouped: dict[int, list[tuple]] = {}
@@ -70,6 +90,12 @@ def main() -> int:
 
     client = SQLiteClient()
     client.close()
+    sys.path.insert(0, str(ROOT_DIR / "scripts"))
+    import insert_knowledge_data
+
+    # This updates only authoritative catalogue rows. User sessions, progress,
+    # answers, and Q&A history live in separate tables and are retained.
+    insert_knowledge_data.main()
     print("[OK] runtime database migration completed.")
     return 0
 

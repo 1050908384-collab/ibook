@@ -313,6 +313,11 @@ class AssessmentService:
             return False
         return self.db.get_submitted_attempt_accuracy(session_id, stage_id=stage_id) is not None
 
+    def get_submitted_attempt(self, session_id: str, stage_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Return the submitted attempt, including answer review data, for a stage."""
+        row = self.db.get_submitted_attempt_accuracy(session_id, stage_id=stage_id)
+        return self.get_attempt(row["attempt_id"]) if row else None
+
     # ------------------------------------------------------------------
     # 内部工具
     # ------------------------------------------------------------------

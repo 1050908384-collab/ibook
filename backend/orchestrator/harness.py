@@ -642,9 +642,11 @@ class Harness:
         else:
             phase = "stage_result"
             available_actions = ["plan_next_stage"] if can_plan_next_stage else []
-        return {
+        result = {
             "status": result_status,
             "session_id": session_id,
+            "stage_id": stage.stage_id,
+            "stage_num": stage.stage_num,
             "accuracy": accuracy,
             "updated_profile": synced_profile.model_dump(mode="json"),
             "stage_summary": decision.stage_summary,
@@ -656,6 +658,10 @@ class Harness:
             "phase": phase,
             "available_actions": available_actions,
         }
+        # The result view must remain available after a refresh or after a
+        # later stage becomes active, so do not leave this only in the HTTP response.
+        self.state_manager.save_stage_result(session_id, stage.stage_num, result)
+        return result
 
     async def plan_next_stage(self, session_id: str, adjustment_notes: str | None = None) -> Dict[str, Any]:
         """

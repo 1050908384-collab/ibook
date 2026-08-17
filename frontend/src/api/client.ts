@@ -147,6 +147,13 @@ export type AssessmentAttempt = {
   accuracy?: number;
 };
 
+export type StageResultResponse = {
+  session_id: string;
+  stage_num: number;
+  stage_result?: Record<string, unknown> | null;
+  assessment_attempt?: AssessmentAttempt | null;
+};
+
 export type PlanNextStageResponse = {
   phase?: string;
   available_actions?: string[];
@@ -455,6 +462,13 @@ export const apiClient = {
 
   getAssessmentAttempt: async (attemptId: string) => {
     const response = await axios.get<AssessmentAttempt>(`${BASE_URL}/assessment-attempts/${attemptId}`);
+    return response.data;
+  },
+
+  getStageResult: async (sessionId: string, stageNum: number) => {
+    const response = await axios.get<StageResultResponse>(
+      `${BASE_URL}/sessions/${sessionId}/stages/${encodeURIComponent(stageNum)}/result`
+    );
     return response.data;
   },
 

@@ -55,6 +55,7 @@ import {
   type ApiLearningPackage,
   type ApiProfile,
   type ApiStage,
+  type AssessmentAttempt,
   type GoalBlock,
   type SessionListItem
 } from './api/client';
@@ -247,6 +248,10 @@ type WorkspaceSnapshot = {
 
 type AssessmentState = {
   attemptId: string | null;
+  questions: TestQuestion[];
+};
+
+type AssessmentReview = AssessmentAttempt & {
   questions: TestQuestion[];
 };
 
@@ -2208,6 +2213,41 @@ function TestModal({
   );
 }
 
+function AssessmentReviewModal({ review, onClose }: { review: AssessmentReview; onClose: () => void }) {
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="assessment-review-modal" role="dialog" aria-modal="true" aria-labelledby="assessment-review-title">
+        <header>
+          <div>
+            <span>阶段测试回顾</span>
+            <h2 id="assessment-review-title">{review.correct_count ?? 0} / {review.total_questions} 题正确</h2>
+          </div>
+          <button onClick={onClose} aria-label="关闭测试题目" title="关闭"><X size={18} /></button>
+        </header>
+        <div className="assessment-review-score">
+          <strong>{pct(review.accuracy ?? 0)}%</strong><span>本阶段正确率</span>
+        </div>
+        <div className="assessment-review-list">
+          {review.questions.map((question, index) => (
+            <article className={`assessment-review-item ${question.is_correct ? 'is-correct' : 'is-incorrect'}`} key={question.question_id}>
+              <div className="assessment-review-item-head">
+                <span>第 {index + 1} 题 · {question.question_type || '测试题'}</span>
+                <strong>{question.is_correct ? '回答正确' : '需要复习'}</strong>
+              </div>
+              <h3>{question.question_text}</h3>
+              <div className="assessment-review-answers">
+                <div><span>你的答案</span><b>{question.user_answer || '未作答'}</b></div>
+                <div><span>正确答案</span><b>{question.correct_answer || '未提供'}</b></div>
+              </div>
+              {question.explanation && <p><span>解析</span>{question.explanation}</p>}
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function ProjectSwitcherModal({
   projects,
   currentSessionId,
@@ -2824,6 +2864,8 @@ function ResultView({
   onPlanNext,
   onStartNext,
   onReturnToChat,
+  onOpenAssessmentReview,
+  hasAssessmentReview,
   loading,
   error
 }: {
@@ -2834,6 +2876,8 @@ function ResultView({
   onPlanNext: () => void;
   onStartNext: () => void;
   onReturnToChat: () => void;
+  onOpenAssessmentReview: () => void;
+  hasAssessmentReview: boolean;
   loading: boolean;
   error: string | null;
 }) {
@@ -2864,7 +2908,7 @@ function ResultView({
       <main className="result-page">
         <section className="result-hero">
           {hasAssessment ? (
-            <div className="score-ring">
+            <div className="score-ring" style={{ '--score': `${Math.round((accuracy ?? 0) * 100)}%` } as CSSProperties}>
               <span><strong>{pct(accuracy!)}</strong><small>正确率</small></span>
             </div>
           ) : (
@@ -2912,6 +2956,12 @@ function ResultView({
               <div><span>仍需加强</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
             </div>
             <div className="feedback-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{result?.stage_summary || '本阶段记录已完成。建议根据薄弱知识点继续学习。'}</ReactMarkdown></div>
+            {hasAssessmentReview && (
+              <button className="assessment-review-button" onClick={onOpenAssessmentReview}>
+                <FileQuestion size={16} />
+                查看测试题目
+              </button>
+            )}
           </section>
           <section className="white-card">
             <div className="section-title">
@@ -3061,6 +3111,7 @@ export default function App() {
   const [result, setResult] = useState<StageResult | null>(null);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
+  const [assessmentReview, setAssessmentReview] = useState<AssessmentReview | null>(null);
   const [agentStatuses, setAgentStatuses] = useState<AgentStatusMap>(createAgentStatusMap);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
     return readLearningProjects().filter((item) => item.sessionId !== DEMO_SESSION_ID);
