@@ -353,7 +353,10 @@ sys.exit(0)
 }
 if (-not (Wait-Http200 "http://127.0.0.1:$BackendPort/health" 40 "Backend")) { throw "Backend not ready" }
 
-# ---------- 3) Frontend (auto `npm install` when vite.cmd missing) ----------
+# ---------- 3) Frontend dependencies + Vite ----------
+# A Vite executable alone does not prove that all dependencies are current.
+# Record the package-lock hash after a successful install so a teammate who
+# pulls a new dependency gets a deterministic `npm ci` on the next launch.
 if (-not (Test-PortListening $FrontendPort)) {
     $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
     if (-not $npm) {
@@ -362,35 +365,54 @@ if (-not (Test-PortListening $FrontendPort)) {
     }
     $FrontendDir = Join-Path $ProjectDir "frontend"
     $ViteCmd     = Join-Path $FrontendDir "node_modules\.bin\vite.cmd"
-    if (-not (Test-Path (Join-Path $FrontendDir "node_modules"))) {
-        New-Item -ItemType Directory -Path (Join-Path $FrontendDir "node_modules") -Force | Out-Null
+    $PackageLock = Join-Path $FrontendDir "package-lock.json"
+    $DepsStamp   = Join-Path $FrontendDir "node_modules\.aiat-package-lock.sha256"
+    if (-not (Test-Path $PackageLock)) {
+        Write-Host "[ERROR] frontend\package-lock.json is missing." -ForegroundColor Red
+        Write-Host "        This launcher requires the committed lock file for reproducible installs."
+        throw "package-lock.json missing"
     }
-    if (-not (Test-Path $ViteCmd)) {
+
+    $lockHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $PackageLock).Hash
+    $installedHash = ""
+    if (Test-Path $DepsStamp) {
+        $installedHash = (Get-Content -Raw -LiteralPath $DepsStamp).Trim()
+    }
+    $NeedFrontendInstall = (-not (Test-Path $ViteCmd)) -or ($installedHash -ne $lockHash)
+
+    if ($NeedFrontendInstall) {
         Write-Host ""
-        Write-Host "  NOTICE: node_modules\.bin\vite.cmd missing." -ForegroundColor Yellow
-        Write-Host "  Launcher will run 'npm install --no-audit --no-fund' under frontend now."
-        Write-Host "  First run may take 1-5 minutes. Be online."
+        if (-not (Test-Path $ViteCmd)) {
+            Write-Host "  NOTICE: Frontend dependencies are not installed." -ForegroundColor Yellow
+        } else {
+            Write-Host "  NOTICE: frontend\package-lock.json changed; updating frontend dependencies." -ForegroundColor Yellow
+        }
+        Write-Host "  Launcher will run 'npm ci --no-audit --no-fund' under frontend now."
+        Write-Host "  This can take 1-5 minutes and requires network access."
         Write-Host ""
         Push-Location $FrontendDir
         try {
-            & $npm.Source install --no-audit --no-fund
+            & $npm.Source ci --no-audit --no-fund
             $rc = $LASTEXITCODE
         } finally { Pop-Location }
         if ($rc -ne 0) {
-            Write-Host "[ERROR] npm install returned non-zero ($rc)." -ForegroundColor Red
+            Write-Host "[ERROR] npm ci returned non-zero ($rc)." -ForegroundColor Red
             Write-Host "        Common fixes:"
             Write-Host "          * npm config set registry https://registry.npmmirror.com"
-            Write-Host "          * Delete frontend\node_modules and frontend\package-lock.json; then retry"
+            Write-Host "          * Delete frontend\node_modules; then retry"
             Write-Host "          * Make sure you can reach the configured npm registry."
-            throw "npm install failed"
+            throw "npm ci failed"
         }
         if (-not (Test-Path $ViteCmd)) {
-            Write-Host "[ERROR] npm install succeeded but vite.cmd still missing:" -ForegroundColor Red
+            Write-Host "[ERROR] npm ci succeeded but vite.cmd is still missing:" -ForegroundColor Red
             Write-Host "        $ViteCmd"
             Write-Host "        Check frontend\package.json -> devDependencies contains 'vite'."
-            throw "vite.cmd still missing after install"
+            throw "vite.cmd still missing after npm ci"
         }
-        Write-Host "  npm install completed. Frontend deps ready." -ForegroundColor Green
+        [System.IO.File]::WriteAllText($DepsStamp, $lockHash + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+        Write-Host "  npm ci completed. Frontend dependencies match package-lock.json." -ForegroundColor Green
+    } else {
+        Write-Host "  Frontend dependencies already match package-lock.json." -ForegroundColor DarkGreen
     }
     Write-Host "  Starting Vite dev server on :$FrontendPort ..." -ForegroundColor Yellow
     # Double-quoting the npm.cmd path keeps it safe when %PATH% has spaces;
