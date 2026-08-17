@@ -5826,7 +5826,7 @@ body.resizing-workspace-panels * {
   width: 92px;
   height: 92px;
   border-radius: 50%;
-  background: conic-gradient(#82e5c0 0 87%, rgba(255, 255, 255, 0.14) 87%);
+  background: conic-gradient(#82e5c0 0 var(--score, 0%), rgba(255, 255, 255, 0.14) var(--score, 0%) 100%);
   display: grid;
   place-items: center;
 }
@@ -5850,6 +5850,125 @@ body.resizing-workspace-panels * {
   color: #bab6de;
   font-size: 9px;
   margin-top: 4px;
+}
+
+.assessment-review-button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d9d4fb;
+  border-radius: 8px;
+  background: #f7f5ff;
+  color: #5148ad;
+  font-weight: 700;
+}
+
+.assessment-review-button:hover {
+  border-color: #8f86dc;
+  background: #efedff;
+}
+
+.assessment-review-modal {
+  width: min(800px, calc(100vw - 32px));
+  max-height: min(780px, calc(100dvh - 32px));
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(28, 32, 53, 0.2);
+}
+
+.assessment-review-modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid #eceef3;
+}
+
+.assessment-review-modal header span,
+.assessment-review-item-head span,
+.assessment-review-answers span,
+.assessment-review-item p span {
+  display: block;
+  color: #7e8798;
+  font-size: 12px;
+}
+
+.assessment-review-modal h2 {
+  margin: 5px 0 0;
+  font-size: 20px;
+}
+
+.assessment-review-modal > header button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: #f4f5f8;
+  color: #4c5566;
+}
+
+.assessment-review-score {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 18px 24px;
+  padding: 14px 16px;
+  border-left: 4px solid #5148ad;
+  background: #f7f6ff;
+}
+
+.assessment-review-score strong { color: #393278; font-size: 26px; }
+.assessment-review-score span { color: #6d7190; font-size: 13px; }
+
+.assessment-review-list {
+  display: grid;
+  gap: 12px;
+  padding: 0 24px 24px;
+}
+
+.assessment-review-item {
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.assessment-review-item.is-correct { border-left: 4px solid #2ca878; }
+.assessment-review-item.is-incorrect { border-left: 4px solid #d46b4b; }
+
+.assessment-review-item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.assessment-review-item-head strong { color: #3d4558; font-size: 12px; }
+.assessment-review-item h3 { margin: 10px 0 14px; color: #252c3b; font-size: 15px; line-height: 1.55; }
+
+.assessment-review-answers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.assessment-review-answers > div { padding: 10px; border-radius: 6px; background: #f7f8fb; }
+.assessment-review-answers b { display: block; margin-top: 4px; color: #374052; font-size: 13px; word-break: break-word; }
+.assessment-review-item p { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid #edf0f4; color: #555e70; font-size: 13px; line-height: 1.65; }
+.assessment-review-item p span { margin-bottom: 4px; font-weight: 700; }
+
+@media (max-width: 640px) {
+  .assessment-review-modal > header { padding: 18px; }
+  .assessment-review-score { margin: 14px 18px; }
+  .assessment-review-list { padding: 0 18px 18px; }
+  .assessment-review-answers { grid-template-columns: 1fr; }
 }
 
 .success-label {

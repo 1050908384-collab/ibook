@@ -142,6 +142,7 @@ export type AssessmentAttempt = {
   status: string;
   total_questions: number;
   answered_count: number;
+  correct_count?: number;
   questions: Array<Record<string, unknown>>;
   resumed?: boolean;
   accuracy?: number;

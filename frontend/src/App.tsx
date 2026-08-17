@@ -251,8 +251,15 @@ type AssessmentState = {
   questions: TestQuestion[];
 };
 
-type AssessmentReview = AssessmentAttempt & {
-  questions: TestQuestion[];
+type AssessmentReviewQuestion = TestQuestion & {
+  user_answer?: string;
+  correct_answer?: string;
+  explanation?: string;
+  is_correct?: boolean;
+};
+
+type AssessmentReview = Omit<AssessmentAttempt, 'questions'> & {
+  questions: AssessmentReviewQuestion[];
 };
 
 const USER_SCOPE = getClientUserId();
@@ -1661,8 +1668,8 @@ function CurrentMaterialPanel({
       </div>
       <footer>
         <button onClick={stageResultReady ? onOpenResult : onTest}>
-          {stageResultReady ? <ChevronRight size={16} /> : <FileQuestion size={16} />}
-          {stageResultReady ? '去进行下一阶段' : '开始阶段测试'}
+          <FileQuestion size={16} />
+          {stageResultReady ? '查看该阶段总结' : '开始阶段测试'}
         </button>
       </footer>
     </aside>
@@ -3112,6 +3119,7 @@ export default function App() {
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
   const [assessmentReview, setAssessmentReview] = useState<AssessmentReview | null>(null);
+  const [assessmentReviewOpen, setAssessmentReviewOpen] = useState(false);
   const [agentStatuses, setAgentStatuses] = useState<AgentStatusMap>(createAgentStatusMap);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
     return readLearningProjects().filter((item) => item.sessionId !== DEMO_SESSION_ID);
@@ -3871,6 +3879,7 @@ export default function App() {
     beginAgentRun(['agent6']);
     try {
       if (sessionId) {
+        let submittedAttempt: AssessmentReview | null = null;
         if (!options.bypassAssessment) {
           const attemptId = assessmentState.attemptId || (await apiClient.createAssessmentAttempt(sessionId)).attempt_id;
           const attempt = await apiClient.getAssessmentAttempt(attemptId);
@@ -3880,8 +3889,9 @@ export default function App() {
                 await apiClient.saveAssessmentAnswer(attemptId, question_id, { user_answer, time_spent: 0 });
               }
             }
-            await apiClient.submitAssessmentAttempt(attemptId);
+            submittedAttempt = await apiClient.submitAssessmentAttempt(attemptId) as AssessmentReview;
           }
+          if (!submittedAttempt) submittedAttempt = attempt as AssessmentReview;
         }
         const response = await apiClient.completeStage(sessionId, options);
         setResult(response);
@@ -3893,6 +3903,7 @@ export default function App() {
         }
         setPlannedStage(null);
         setAssessmentState({ attemptId: null, questions: [] });
+        setAssessmentReview(submittedAttempt);
         rememberProject(sessionId, toProfile(response.updated_profile) || profile || fallbackProfile, completedStage, response.phase);
         void loadDashboardStages(sessionId, completedStage);
         void refreshRemoteProjects();
@@ -4155,6 +4166,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
+      setAssessmentReview(null);
       const attempt = await apiClient.createAssessmentAttempt(sessionId);
       const attemptDetail = await apiClient.getAssessmentAttempt(attempt.attempt_id);
       setAssessmentState({
@@ -4392,6 +4404,14 @@ export default function App() {
       setStage(displayStage || null);
       setLearningPackage(displayPackage);
       setResult(null);
+      setAssessmentReview(null);
+      try {
+        const persisted = await apiClient.getStageResult(nextSessionId, displayStageNum);
+        if (persisted.stage_result) setResult(persisted.stage_result as StageResult);
+        if (persisted.assessment_attempt) setAssessmentReview(persisted.assessment_attempt as AssessmentReview);
+      } catch {
+        // A stage still in progress does not have a persisted result yet.
+      }
       setPlannedStage(session.next_stage || null);
       const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${displayStageNum}`);
       setMessages(restoredConversation?.messages || initialMessages);
@@ -4776,11 +4796,14 @@ export default function App() {
             setView('chat');
             setMaterialPanelOpen(true);
           }}
+          onOpenAssessmentReview={() => setAssessmentReviewOpen(true)}
+          hasAssessmentReview={Boolean(assessmentReview?.questions?.length)}
           loading={loading}
           error={error}
         />
       )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
+      {assessmentReview && assessmentReviewOpen && <AssessmentReviewModal review={assessmentReview} onClose={() => setAssessmentReviewOpen(false)} />}
       {noQuestionsDialog.open && (
         <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
           <div className="stage-delete-modal">

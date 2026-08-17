@@ -218,6 +218,36 @@ def remove_retired_subtopics(db: SQLiteClient, active_subtopic_ids: set[str]) ->
             """), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
             session.execute(text("DELETE FROM subtopic_status WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
             session.execute(text("DELETE FROM subtopic_resources WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
+
+            # Assessment snapshots and later schema additions can also point
+            # directly at a subtopic. Migrate every declared FK instead of
+            # maintaining a fragile, incomplete table-name list.
+            table_names = [
+                row[0]
+                for row in session.execute(
+                    text("SELECT name FROM sqlite_master WHERE type = 'table'")
+                ).fetchall()
+            ]
+            skipped_tables = {
+                "knowledge_subtopics",
+                "subtopic_status",
+                "subtopic_resources",
+                "user_subtopic_status",
+            }
+            for table_name in table_names:
+                if table_name in skipped_tables:
+                    continue
+                safe_table = '"' + table_name.replace('"', '""') + '"'
+                foreign_keys = session.execute(text(f"PRAGMA foreign_key_list({safe_table})")).fetchall()
+                for foreign_key in foreign_keys:
+                    _, _, target_table, from_column, to_column, *_ = foreign_key
+                    if target_table != "knowledge_subtopics" or to_column != "subtopic_id":
+                        continue
+                    safe_column = '"' + from_column.replace('"', '""') + '"'
+                    session.execute(text(
+                        f"UPDATE {safe_table} SET {safe_column} = :replacement_id "
+                        f"WHERE {safe_column} = :subtopic_id"
+                    ), {"replacement_id": replacement_id, "subtopic_id": subtopic_id})
             session.execute(text("DELETE FROM knowledge_subtopics WHERE subtopic_id = :subtopic_id"), {"subtopic_id": subtopic_id})
             removed += 1
         session.commit()
