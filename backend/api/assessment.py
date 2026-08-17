@@ -8,10 +8,12 @@ from pydantic import BaseModel, Field
 
 from api.dependencies import get_assessment_service, get_harness, require_owned_attempt, require_owned_session
 from services.assessment_service import AssessmentError
+from tools.agent6_tools.stage_summary_generator_tool import StageSummaryGeneratorTool
 
 router = APIRouter()
 assessment_service = get_assessment_service()
 harness = get_harness()
+stage_summary_generator = StageSummaryGeneratorTool()
 
 
 class SaveAnswerRequest(BaseModel):
@@ -31,6 +33,39 @@ def _raise(error: Exception):
         status_code = 400
         raise HTTPException(status_code=status_code, detail=detail)
     raise HTTPException(status_code=500, detail=str(error))
+
+
+async def _rebuild_agent6_summary(
+    session_id: str,
+    stage: dict,
+    attempt: dict,
+) -> str:
+    """Recreate a legacy Agent6 report from immutable submitted answers."""
+    profile = harness.state_manager.get_profile(session_id) or {}
+    question_records = [
+        {
+            "question_id": question.get("question_id"),
+            "skill": question.get("subtopic_id") or stage.get("subtopic_id") or stage.get("block_name"),
+            "question_type": question.get("question_type"),
+            "is_correct": bool(question.get("is_correct")),
+            "time_spent": question.get("time_spent", 0),
+        }
+        for question in attempt.get("questions", [])
+    ]
+    return await stage_summary_generator.generate_summary(
+        stage_name=stage.get("block_name") or "当前学习阶段",
+        accuracy=float(attempt.get("accuracy") or 0),
+        knowledge_gaps=profile.get("knowledge_gaps", []),
+        confusion_tags=[],
+        question_records=question_records,
+        emotion_score=None,
+        pace_adjustment=profile.get("learning_rhythm", "medium"),
+        time_spent_hours=0,
+        expected_time_hours=float(stage.get("estimated_hours") or 0),
+        next_strategy=stage.get("strategy_used") or "reinforce",
+        total_knowledge_points=len(stage.get("subtopic_ids") or []) or 1,
+        total_answers=int(attempt.get("answered_count") or len(question_records)),
+    )
 
 
 @router.post("/sessions/{session_id}/stages/current/assessment-attempts")
@@ -75,12 +110,37 @@ async def get_stage_result(
                 "stage_num": stage_num,
                 "stage_id": attempt.get("stage_id") or stage.get("stage_id"),
                 "accuracy": accuracy,
+                "stage_summary": await _rebuild_agent6_summary(session_id, stage, attempt),
+                "next_strategy": stage.get("strategy_used") or "review",
+                "summary_source": "agent6_rebuilt_from_saved_assessment",
+                "can_plan_next_stage": True,
+                "available_actions": ["plan_next_stage"],
+            }
+            harness.state_manager.save_stage_result(session_id, stage_num, summary)
+        # Some earlier no-question stages were marked completed by Agent6 but
+        # their textual result was only returned to the browser, never stored.
+        # Recreate a durable archive summary from the completed stage itself.
+        if not summary and stage.get("status") in {"completed", "retreat"}:
+            bypass = stage.get("strategy_used") == "advance_due_to_no_questions"
+            topic = stage.get("block_name") or "当前学习主题"
+            subtopic = stage.get("subtopic_name") or stage.get("gap_skill") or topic
+            summary = {
+                "status": "completed" if stage.get("status") == "completed" else "repeat",
+                "stage_num": stage_num,
+                "stage_id": stage.get("stage_id"),
+                "accuracy": None if bypass else stage.get("accuracy"),
+                "bypass_assessment": bypass,
                 "stage_summary": (
-                    "该阶段测试已完成，已根据保存的测试记录恢复阶段总结。"
-                    f"本次正确率为 {round(float(accuracy or 0) * 100)}%。"
+                    f"# 阶段学习总结\n\n"
+                    f"你已完成“{topic}”阶段，当前学习重点为“{subtopic}”。\n\n"
+                    + ("本阶段没有匹配的测试题目，系统已按无题完成流程归档。"
+                       if bypass else "本阶段已完成，建议结合学习资料继续巩固薄弱知识点。")
                 ),
                 "next_strategy": stage.get("strategy_used") or "review",
+                "can_plan_next_stage": True,
+                "available_actions": ["plan_next_stage"],
             }
+            harness.state_manager.save_stage_result(session_id, stage_num, summary)
         if not summary and not attempt:
             raise HTTPException(status_code=404, detail="Stage result not found")
         return {

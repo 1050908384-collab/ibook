@@ -156,6 +156,11 @@ class StateManager:
         if not snapshot and state.stage_info and state.stage_info.stage_num == stage_num:
             self._save_current_stage_snapshot(state)
             snapshot = dict(state.stage_snapshots.get(str(stage_num)) or {})
+        if not snapshot:
+            # Older sessions have completed stages only in stage_progress.
+            # Preserve that stage metadata when adding a recovered Agent6
+            # result, otherwise the new result would hide the old stage.
+            snapshot = dict(self.get_stage_snapshot(session_id, stage_num) or {})
         snapshot["stage_result"] = result
         state.stage_snapshots[str(stage_num)] = snapshot
         self._save(state)

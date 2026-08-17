@@ -1343,6 +1343,12 @@ function sessionSummaryToProject(item: SessionListItem): LearningProject | null 
     goal: item.goal || item.title || '未命名学习目标',
     stageName: item.current_stage_name || '等待阶段规划',
     stageNum: item.current_stage_num || 1,
+    // The session-list endpoint is intentionally compact, but it still has
+    // enough current-stage metadata to render the project navigation before
+    // a browser-local cache or dashboard request is available.
+    stages: item.current_stage_name && item.current_stage_num
+      ? [{ stage_num: item.current_stage_num, block_name: item.current_stage_name }]
+      : [],
     phase: item.phase,
     createdAt: item.created_at ? Date.parse(item.created_at) || undefined : undefined,
     updatedAt: item.updated_at ? Date.parse(item.updated_at) || Date.now() : Date.now(),
@@ -2867,6 +2873,7 @@ function ResultView({
   profile,
   stage,
   plannedStage,
+  existingNextStage,
   result,
   onPlanNext,
   onStartNext,
@@ -2879,6 +2886,7 @@ function ResultView({
   profile: Profile;
   stage: StageInfo;
   plannedStage: StageInfo | null;
+  existingNextStage: StageInfo | null;
   result: StageResult | null;
   onPlanNext: () => void;
   onStartNext: () => void;
@@ -2895,6 +2903,9 @@ function ResultView({
   const mastered = gaps.filter((gap) => gap.status === '已掌握' || (gap.progress ?? 0) >= 1);
   const needsWork = gaps.filter((gap) => gap.status !== '已掌握' && (gap.progress ?? 0) < 1);
   const canPlanNext = result?.can_plan_next_stage ?? result?.available_actions?.includes('plan_next_stage') ?? false;
+  // A later stage may already be underway, not merely waiting in next_stage.
+  // In either case this summary must never offer to generate a duplicate.
+  const availableNextStage = plannedStage || existingNextStage;
   const heroTitle = bypass
     ? '本阶段无测试题目，已直接完成'
     : (accuracy ?? 0) >= 0.7
@@ -2983,21 +2994,21 @@ function ResultView({
           </section>
           <section className="white-card next-stage">
             <div className="stage-eyebrow">
-              <span>{result?.all_mastered ? '学习目标' : plannedStage ? '下一阶段已就绪' : '下一阶段建议'}</span>
-              <b>{result?.all_mastered ? '已完成' : `阶段 ${plannedStage?.stage_num ?? (stage.stage_num ?? 1) + 1}`}</b>
+              <span>{result?.all_mastered ? '学习目标' : availableNextStage ? '下一阶段已就绪' : '下一阶段建议'}</span>
+              <b>{result?.all_mastered ? '已完成' : `阶段 ${availableNextStage?.stage_num ?? (stage.stage_num ?? 1) + 1}`}</b>
             </div>
-            <h3>{result?.all_mastered ? profile.goal : plannedStage?.block_name || '根据新画像按需生成'}</h3>
-            <p>{result?.all_mastered ? '全部目标知识点已掌握，本轮学习计划已经完成。' : plannedStage?.gap_skill ? `下一阶段将继续处理「${plannedStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。'}</p>
+            <h3>{result?.all_mastered ? profile.goal : availableNextStage?.block_name || '根据新画像按需生成'}</h3>
+            <p>{result?.all_mastered ? '全部目标知识点已掌握，本轮学习计划已经完成。' : availableNextStage?.gap_skill ? `下一阶段将继续处理「${availableNextStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。'}</p>
             <div className="next-facts">
-              <div><span>预计时长</span><strong>{plannedStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div>
+              <div><span>预计时长</span><strong>{availableNextStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div>
               <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
               <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
             </div>
             {!result?.all_mastered && (plannedStage ? (
               <button className="primary wide" onClick={onStartNext} disabled={loading}><Play size={17} />开始下一阶段</button>
-            ) : (
+            ) : !existingNextStage ? (
               <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
-            ))}
+            ) : null)}
           </section>
         </div>
       </main>
@@ -3270,21 +3281,60 @@ export default function App() {
     setProjectsError(null);
     try {
       const response = await apiClient.listSessions();
-      const remoteProjects = (response.sessions || [])
+      const sessionItems = (response.sessions || [])
         .filter((item) => item.status !== 'abandoned')
+      // The compact session list only exposes the current stage. Hydrate the
+      // durable history before rendering the navigation so completed stages
+      // never disappear just because an old browser cache is incomplete.
+      const dashboardResults = await Promise.allSettled(
+        sessionItems.map((item) => apiClient.getDashboard(item.session_id))
+      );
+      const remoteProjects = sessionItems
         .map(sessionSummaryToProject)
-        .filter((item): item is LearningProject => Boolean(item));
+        .filter((item): item is LearningProject => Boolean(item))
+        .map((project, index) => {
+          const dashboardResult = dashboardResults[index];
+          if (dashboardResult?.status !== 'fulfilled') return project;
+          const dashboard = dashboardResult.value;
+          const history = Array.isArray(dashboard.stage_history)
+            ? dashboard.stage_history as StageInfo[]
+            : [];
+          const current = dashboard.current_stage_summary as StageInfo | undefined;
+          const stagesByNumber = new Map<number, StageInfo>();
+          [...history, ...(current ? [current] : []), ...(project.stages || [])].forEach((item) => {
+            const stageNum = item.stage_num ?? 1;
+            stagesByNumber.set(stageNum, { ...stagesByNumber.get(stageNum), ...item });
+          });
+          const stages = [...stagesByNumber.values()]
+            .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1));
+          return {
+            ...project,
+            stages,
+            averageAccuracy: typeof dashboard.average_accuracy === 'number'
+              ? dashboard.average_accuracy
+              : project.averageAccuracy,
+            overallProgress: typeof dashboard.overall_progress === 'number'
+              ? dashboard.overall_progress
+              : project.overallProgress,
+          };
+        });
       setLearningProjects((prev) => {
         const localOnly = prev.filter((item) => isLocalSessionId(item.sessionId));
         const mergedRemote = remoteProjects.map((remote) => {
           const cached = prev.find((item) => item.sessionId === remote.sessionId);
           if (!cached) return remote;
+          const remoteStages = remote.stages || [];
+          const remoteStageNumbers = new Set(remoteStages.map((stage) => stage.stage_num ?? 1));
+          const cachedOnlyStages = (cached.stages || []).filter(
+            (stage) => !remoteStageNumbers.has(stage.stage_num ?? 1)
+          );
           return {
             ...cached,
             ...remote,
-            // The list API is compact. Retain local history and a just-planned
-            // stage until a full session snapshot has replaced it.
-            stages: cached.stages,
+            // Server history is authoritative. Cached stages only fill a gap
+            // while a newly-created stage has not reached the dashboard yet.
+            stages: [...remoteStages, ...cachedOnlyStages]
+              .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1)),
             stageName: remote.stageName !== '等待阶段规划' ? remote.stageName : cached.stageName,
             stageNum: remote.stageName !== '等待阶段规划' ? remote.stageNum : cached.stageNum,
           };
@@ -4417,7 +4467,20 @@ export default function App() {
         if (persisted.stage_result) setResult(persisted.stage_result as StageResult);
         if (persisted.assessment_attempt) setAssessmentReview(persisted.assessment_attempt as AssessmentReview);
       } catch {
-        // A stage still in progress does not have a persisted result yet.
+        // Keep completed legacy stages accessible while an older backend
+        // process has not yet loaded the persisted-result endpoint changes.
+        if (displayStage && ['completed', 'retreat'].includes(displayStage.status || '')) {
+          const bypass = displayStage.strategy_used === 'advance_due_to_no_questions';
+          setResult({
+            status: displayStage.status,
+            accuracy: bypass ? undefined : displayStage.accuracy,
+            bypass_assessment: bypass,
+            stage_summary: `# 阶段学习总结\n\n你已完成“${displayStage.block_name || '当前学习主题'}”阶段。${bypass ? '本阶段没有匹配的测试题目，系统已按无题完成流程归档。' : '测试与学习记录已归档，可根据总结继续巩固。'}`,
+            next_strategy: displayStage.strategy_used || 'review',
+            can_plan_next_stage: true,
+            available_actions: ['plan_next_stage'],
+          });
+        }
       }
       setPlannedStage(session.next_stage || null);
       const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${displayStageNum}`);
@@ -4796,6 +4859,10 @@ export default function App() {
           profile={workspaceProfile}
           stage={workspaceStage}
           plannedStage={plannedStage}
+          existingNextStage={learningProjects
+            .find((project) => project.sessionId === sessionId)?.stages
+            ?.filter((item) => (item.stage_num ?? 1) > (workspaceStage.stage_num ?? 1))
+            .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1))[0] || null}
           result={result}
           onPlanNext={startStage}
           onStartNext={startStage}
