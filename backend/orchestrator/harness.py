@@ -48,6 +48,10 @@ class BlockState:
     - open_issues 为空 ⇒ 该块已 done；
     - block.version 即版本追踪（modify_block 自增），无需另存；
     - rounds_sent 记录该块被交还 Agent3 的次数（每块二级防死循环）。
+    - last_issue_fp 记录上一轮「修改+复核后」的 open_issues 指纹，用于收敛检测：
+      若某块连续两轮复核后的问题集完全一致（同一批注定改不动的问题原地打转），
+      即判定该块无法收敛，冻结它、不再对它继续 modify+recheck，省掉注定失败的轮次。
+    - frozen 为 True ⇒ 该块已被收敛检测冻结，直接留待人工，不再进入修改队列。
     """
     cid: str
     block: Any
@@ -55,6 +59,26 @@ class BlockState:
     last_review: TechnicalReviewResult
     rounds_sent: int = 0
     recheck_task: Optional[asyncio.Task] = None
+    last_issue_fp: Optional[frozenset] = None
+    frozen: bool = False
+
+
+def _issue_fingerprint(issues: List[ReviewError]) -> frozenset:
+    """把一组 issue 归一化为稳定指纹（用于收敛检测「同一批问题原地打转」）。
+
+    以「问题种类」为身份，而非 canonical_error_id：后者的 seed 含 description，
+    而认知负荷/难度这类质量问题的描述常嵌入随正文变化的数值（如负荷分数、字数），
+    导致同一类改不动的问题每轮 canonical_error_id 都在漂移、永远判不出收敛。
+    故收敛检测只关心「这一类问题（可细到绑定的 claim）是否还在」：
+      key = error_type（+ claim_id，若有）
+    同一批 error_type 集合连续两轮不变，即认定该块无法靠修订继续收敛。
+    """
+    keys = set()
+    for e in issues or []:
+        et = getattr(e, "error_type", "") or ""
+        claim_id = getattr(e, "claim_id", None) or ""
+        keys.add(f"{et}|{claim_id}" if claim_id else et)
+    return frozenset(keys)
 
 
 
@@ -1043,10 +1067,15 @@ class Harness:
 
         覆盖语义即「关闭/重开/新增」：不再返回的问题=关闭，仍返回的=保留，新出现的=新增。
         作为独立 task 派发，故不阻塞其它块的修改（REQ-C）。异常兜底为 critical 留在 open_issues。
+
+        省 token：复核只跑确定性工具（use_llm_semantic=False），不再每块每轮花一次
+        LLM 语义审核；LLM 语义审核已在 Phase A 首轮全量执行，复核只需判定修订是否
+        消解了首轮暴露的规则/事实/质量问题。
         """
         try:
             rr = await self.agent4.review_block(
                 block=st.block, stage=stage, profile=profile, round_index=round_index,
+                use_llm_semantic=False,
             )
         except Exception as exc:
             rr = TechnicalReviewResult(
@@ -1075,6 +1104,13 @@ class Harness:
           （块1复核不阻塞块2修改）；
         - 全部块无 open 问题才 passed；Agent4 交还问题清单最多 MAX_REVIEW_ITERATIONS 次；
         - 无可用原始 chunk 时安全降级为原整篇链路。
+
+        省 token / 省耗时（避免 Agent3↔Agent4 无谓来回扯皮）：
+        - 收敛检测：某块「修改+复核后」问题集与上一轮完全一致（同一批注定改不动的
+          问题原地打转，如认知负荷/难度红线）即冻结该块、留待人工，不再对它继续
+          modify+recheck，砍掉注定失败的重复轮次；
+        - 复核只跑确定性工具（use_llm_semantic=False），不再每块每轮花一次 LLM 语义审核，
+          LLM 语义审核仅在 Phase A 首轮全量执行，核心审核能力不缩水。
         """
         history: list[ReviewRound] = []
         trace_id = f"tr_{uuid.uuid4().hex[:16]}"
@@ -1113,6 +1149,8 @@ class Harness:
                 block=blk,
                 open_issues=list(review.errors),
                 last_review=review,
+                # 首轮问题集作为收敛检测基线：后续某轮复核后指纹与之相同即视为原地打转。
+                last_issue_fp=_issue_fingerprint(review.errors),
             )
 
         first_round_errors = [e for st in states.values() for e in st.open_issues]
@@ -1160,11 +1198,20 @@ class Harness:
             )
             pending = [
                 cid for cid in revision_queue
-                if states[cid].rounds_sent < settings.MAX_REVIEW_ITERATIONS
+                if not states[cid].frozen
+                and states[cid].rounds_sent < settings.MAX_REVIEW_ITERATIONS
             ]
             if not pending:
-                final_status = "passed"
-                package_status = "approved"
+                # 无待修改块：要么全部通过，要么剩余的都已被收敛检测冻结（留待人工）。
+                any_frozen_open = any(
+                    st.frozen and st.open_issues for st in states.values()
+                )
+                if any_frozen_open:
+                    final_status = "needs_human_review"
+                    package_status = "provisional"
+                else:
+                    final_status = "passed"
+                    package_status = "approved"
                 break
 
             modify_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
@@ -1234,9 +1281,29 @@ class Harness:
             if recheck_tasks:
                 await asyncio.gather(*recheck_tasks)
 
-            # Agent4 完成本轮复核后，再构造下一轮完整问题列表；只含仍未通过的块。
+            # 收敛检测：本轮「修改+复核后」若某块问题集与上一轮完全一致（同一批注定
+            # 改不动的问题原地打转，如认知负荷/难度红线无法靠追加式修订消解），则冻结该块，
+            # 停止对它继续 modify+recheck，省掉注定失败的后续轮次（省 token 与耗时）。
+            frozen_this_round = 0
+            for cid in pending:
+                st = states[cid]
+                new_fp = _issue_fingerprint(st.open_issues)
+                if st.open_issues and new_fp == st.last_issue_fp:
+                    st.frozen = True
+                    frozen_this_round += 1
+                st.last_issue_fp = new_fp
+            if frozen_this_round:
+                self._log(
+                    session_id, "pipeline:converge_freeze",
+                    f"round={round_num}, frozen_blocks={frozen_this_round}",
+                )
+
+            # Agent4 完成本轮复核后，再构造下一轮完整问题列表；只含仍未通过的块，
+            # 且排除已冻结块（冻结块留待人工，不再交还 Agent3 空转）。
             issue_package = {
-                cid: st.open_issues for cid, st in states.items() if st.open_issues
+                cid: st.open_issues
+                for cid, st in states.items()
+                if st.open_issues and not st.frozen
             }
 
             # 落库：把本轮所有块的辩论产物合并成一条 review_debate_round（P2）
@@ -1263,6 +1330,14 @@ class Harness:
                 # 全部块复核后无 open 问题 → 完成（任务 5）
                 final_status = "passed"
                 package_status = "approved"
+                break
+            # 仍有 open 的块若全部已被收敛检测冻结，继续循环也只是空转，直接判需人工。
+            active_open = any(
+                st.open_issues and not st.frozen for st in states.values()
+            )
+            if not active_open:
+                final_status = "needs_human_review"
+                package_status = "provisional"
                 break
             # 交还次数封顶（任务 6：≤ MAX_REVIEW_ITERATIONS）仍有残留 open → 需人工
             if round_num == settings.MAX_REVIEW_ITERATIONS:

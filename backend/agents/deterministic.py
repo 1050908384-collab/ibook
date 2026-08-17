@@ -2950,7 +2950,9 @@ class DeterministicTechnicalReviewAgent:
         profile: Any = None,
         round_index: int = 1,
         trace_id: Optional[str] = None,
+        use_llm_semantic: bool = True,
     ) -> TechnicalReviewResult:
+        # Deterministic 审核本就不调 LLM，use_llm_semantic 仅为与 Hybrid 保持同签名。
         return await _review_block_impl(
             self, block, stage, profile, round_index, trace_id, use_llm=False,
         )
@@ -3095,10 +3097,16 @@ class HybridTechnicalReviewAgent:
         profile: Any = None,
         round_index: int = 1,
         trace_id: Optional[str] = None,
+        use_llm_semantic: bool = True,
     ) -> TechnicalReviewResult:
-        """块级审核（Hybrid）：确定性块级事实/质量核验 + LLM 语义补充（范围限定当前块）。"""
+        """块级审核（Hybrid）：确定性块级事实/质量核验 + LLM 语义补充（范围限定当前块）。
+
+        ``use_llm_semantic`` 用于省 token：修改后复核（recheck）只需确定性工具
+        （规则/难度/认知负荷/事实核验）判定修订是否消解了原问题，无需每块每轮再花
+        一次 LLM 语义审核；首轮 Phase A 仍全量执行 LLM 语义审核，能力不缩水。
+        """
         return await _review_block_impl(
-            self, block, stage, profile, round_index, trace_id, use_llm=True,
+            self, block, stage, profile, round_index, trace_id, use_llm=use_llm_semantic,
         )
 
     def _build_prompt(self, request: ReviewInput) -> str:

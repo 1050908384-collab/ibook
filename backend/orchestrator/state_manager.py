@@ -51,11 +51,22 @@ class StateManager:
     def update_practice_profile(self, session_id: str, profile: PracticeProfile | dict) -> None:
         state = self.require_session(session_id)
         practice_profile = PracticeProfile.model_validate(profile)
+        # When only the free-text hardware is supplied, auto-complete the
+        # structured GPU fields (model/VRAM/architecture) from the lookup so a
+        # bare model like "RTX 4090" still fills in "24GB / Ada Lovelace".
+        if practice_profile.hardware and not practice_profile.gpu_model and practice_profile.vram_gb is None:
+            practice_profile = PracticeProfile.from_hardware_text(practice_profile.hardware)
         # Hardware belongs to the user-level profile. PracticeProfile is only
         # the Agent3 execution view and must not become another source of truth.
         self.db_client.upsert_user_profile(
             self.db_client.get_session_user_id(session_id),
-            {"hardware": practice_profile.hardware},
+            {
+                "hardware": practice_profile.hardware,
+                "device_type": practice_profile.device_type,
+                "gpu_model": practice_profile.gpu_model,
+                "vram_gb": practice_profile.vram_gb,
+                "gpu_architecture": practice_profile.gpu_architecture,
+            },
         )
         state.practice_profile = practice_profile
         self._save(state)
@@ -65,9 +76,7 @@ class StateManager:
         user_profile = self.db_client.get_user_profile(
             self.db_client.get_session_user_id(session_id)
         ) or {}
-        state.practice_profile = PracticeProfile(
-            hardware=user_profile.get("hardware", "")
-        )
+        state.practice_profile = self._practice_profile_from_user(user_profile)
         return state.practice_profile.model_dump(mode="json")
 
     def refresh_practice_profile(self, session_id: str) -> None:
@@ -76,10 +85,29 @@ class StateManager:
         user_profile = self.db_client.get_user_profile(
             self.db_client.get_session_user_id(session_id)
         ) or {}
-        state.practice_profile = PracticeProfile(
-            hardware=user_profile.get("hardware", "")
-        )
+        state.practice_profile = self._practice_profile_from_user(user_profile)
         self._save(state)
+
+    @staticmethod
+    def _practice_profile_from_user(user_profile: Dict[str, Any]) -> PracticeProfile:
+        """Rebuild the Agent3 DTO from the user profile row.
+
+        Older rows only carry the free-text ``hardware``; auto-complete the
+        structured GPU fields from it so historic sessions gain VRAM/architecture
+        without a data backfill.
+        """
+        hardware = user_profile.get("hardware", "") or ""
+        gpu_model = user_profile.get("gpu_model", "") or ""
+        vram_gb = user_profile.get("vram_gb")
+        if hardware and not gpu_model and vram_gb is None:
+            return PracticeProfile.from_hardware_text(hardware)
+        return PracticeProfile(
+            hardware=hardware,
+            device_type=user_profile.get("device_type", "") or "",
+            gpu_model=gpu_model,
+            vram_gb=vram_gb,
+            gpu_architecture=user_profile.get("gpu_architecture", "") or "",
+        )
 
     def update_stage(self, session_id: str, stage: StageInfo | dict) -> None:
         state = self.require_session(session_id)
@@ -315,9 +343,7 @@ class StateManager:
             if profile:
                 state.profile = UserProfile.model_validate(profile)
             user_profile = self.db_client.get_user_profile(user_id) or {}
-            state.practice_profile = PracticeProfile(
-                hardware=user_profile.get("hardware", "")
-            )
+            state.practice_profile = self._practice_profile_from_user(user_profile)
 
     def refresh_cached_target(self, session_id: str) -> None:
         state = self._cache.get(session_id)
@@ -358,9 +384,7 @@ class StateManager:
         if composed_profile:
             state.profile = UserProfile.model_validate(composed_profile)
         user_profile = self.db_client.get_user_profile(state.user_id) or {}
-        state.practice_profile = PracticeProfile(
-            hardware=user_profile.get("hardware", "")
-        )
+        state.practice_profile = self._practice_profile_from_user(user_profile)
         self._cache[session_id] = state
         return state
 

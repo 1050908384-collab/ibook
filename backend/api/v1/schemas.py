@@ -73,6 +73,10 @@ class ProfileResponse(BaseModel):
     daily_hours: float = 2.0
     learning_style: str = "mixed"
     hardware: str = ""
+    device_type: str = ""
+    gpu_model: str = ""
+    vram_gb: Optional[int] = None
+    gpu_architecture: str = ""
     knowledge_gaps: list[dict[str, Any]] = Field(default_factory=list)
     learning_rhythm: str = "medium"
     confidence_index: float = 0.5

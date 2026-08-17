@@ -308,6 +308,11 @@ class SQLiteClient:
             self._ensure_column(conn, "sessions", "target_progress", "FLOAT DEFAULT 0.0")
             self._create_user_scope_tables(conn)
             self._ensure_column(conn, "learner_profiles", "foundation_confirmed", "BOOLEAN NOT NULL DEFAULT 0")
+            # 结构化设备配置：型号→显存/架构自动补全后落库（配合 device_spec 查表）。
+            self._ensure_column(conn, "learner_profiles", "device_type", "VARCHAR(20) DEFAULT ''")
+            self._ensure_column(conn, "learner_profiles", "gpu_model", "VARCHAR(100) DEFAULT ''")
+            self._ensure_column(conn, "learner_profiles", "vram_gb", "INTEGER")
+            self._ensure_column(conn, "learner_profiles", "gpu_architecture", "VARCHAR(50) DEFAULT ''")
             self._migrate_user_scope_data(conn)
             self._migrate_test_questions_table(conn)
             self._create_assessment_tables(conn)
@@ -380,6 +385,10 @@ class SQLiteClient:
                 foundation_confirmed BOOLEAN NOT NULL DEFAULT 0,
                 learning_style VARCHAR(20) DEFAULT 'mixed',
                 hardware VARCHAR(200) DEFAULT '',
+                device_type VARCHAR(20) DEFAULT '',
+                gpu_model VARCHAR(100) DEFAULT '',
+                vram_gb INTEGER,
+                gpu_architecture VARCHAR(50) DEFAULT '',
                 default_daily_hours FLOAT DEFAULT 2.0,
                 learning_rhythm VARCHAR(20) DEFAULT 'medium',
                 confidence_index FLOAT DEFAULT 0.5,
@@ -1229,6 +1238,7 @@ class SQLiteClient:
         with self.Session() as session:
             row = session.execute(text("""
                 SELECT user_id, grade, skill_tags, foundation_confirmed, learning_style, hardware,
+                       device_type, gpu_model, vram_gb, gpu_architecture,
                        default_daily_hours, learning_rhythm, confidence_index,
                        confusion_markers, confidence, version, created_at, updated_at
                 FROM learner_profiles
@@ -1251,6 +1261,10 @@ class SQLiteClient:
             "foundation_confirmed": bool(profile.get("foundation_confirmed", existing.get("foundation_confirmed", False))),
             "learning_style": profile.get("learning_style", existing.get("learning_style", "mixed")),
             "hardware": profile.get("hardware", existing.get("hardware", "")),
+            "device_type": profile.get("device_type", existing.get("device_type", "")),
+            "gpu_model": profile.get("gpu_model", existing.get("gpu_model", "")),
+            "vram_gb": profile.get("vram_gb", existing.get("vram_gb")),
+            "gpu_architecture": profile.get("gpu_architecture", existing.get("gpu_architecture", "")),
             "default_daily_hours": profile.get("default_daily_hours", profile.get("daily_hours", existing.get("default_daily_hours", 2.0))),
             "learning_rhythm": profile.get("learning_rhythm", existing.get("learning_rhythm", "medium")),
             "confidence_index": profile.get("confidence_index", existing.get("confidence_index", 0.5)),
@@ -1261,10 +1275,12 @@ class SQLiteClient:
             session.execute(text("""
                 INSERT INTO learner_profiles (
                     user_id, grade, skill_tags, foundation_confirmed, learning_style, hardware,
+                    device_type, gpu_model, vram_gb, gpu_architecture,
                     default_daily_hours, learning_rhythm, confidence_index,
                     confusion_markers, confidence, version
                 ) VALUES (
                     :user_id, :grade, :skill_tags, :foundation_confirmed, :learning_style, :hardware,
+                    :device_type, :gpu_model, :vram_gb, :gpu_architecture,
                     :default_daily_hours, :learning_rhythm, :confidence_index,
                     :confusion_markers, :confidence, 1
                 )
@@ -1274,6 +1290,10 @@ class SQLiteClient:
                     foundation_confirmed = excluded.foundation_confirmed,
                     learning_style = excluded.learning_style,
                     hardware = excluded.hardware,
+                    device_type = excluded.device_type,
+                    gpu_model = excluded.gpu_model,
+                    vram_gb = excluded.vram_gb,
+                    gpu_architecture = excluded.gpu_architecture,
                     default_daily_hours = excluded.default_daily_hours,
                     learning_rhythm = excluded.learning_rhythm,
                     confidence_index = excluded.confidence_index,

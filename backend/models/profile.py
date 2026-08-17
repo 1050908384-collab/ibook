@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import re
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+from models.device_spec import resolve_device
 
 
 class KnowledgeGap(BaseModel):
@@ -35,8 +37,19 @@ class UserProfile(BaseModel):
 
 
 class PracticeProfile(BaseModel):
-    """Execution context supplied by orchestration to Agent3 only."""
+    """Execution context supplied by orchestration to Agent3 only.
+
+    ``hardware`` keeps the user-facing free-text device string for backward
+    compatibility. The structured ``gpu_model`` / ``vram_gb`` /
+    ``gpu_architecture`` / ``device_type`` fields are auto-derived from that
+    text (and auto-completed from a device-model lookup) so Agent3 can reason
+    about VRAM without re-parsing the string every time.
+    """
     hardware: str = ""
+    device_type: str = ""
+    gpu_model: str = ""
+    vram_gb: Optional[int] = None
+    gpu_architecture: str = ""
 
     @classmethod
     def from_user_input(cls, text: str) -> "PracticeProfile":
@@ -46,7 +59,7 @@ class PracticeProfile(BaseModel):
             re.IGNORECASE,
         )
         if labeled_match:
-            return cls(hardware=labeled_match.group(1).strip())
+            return cls.from_hardware_text(labeled_match.group(1).strip())
 
         # Initial free-text diagnostics commonly describe a GPU without a
         # label, for example "I have an RTX 4090 with 24GB VRAM".
@@ -55,4 +68,25 @@ class PracticeProfile(BaseModel):
             text,
             re.IGNORECASE,
         )
-        return cls(hardware=gpu_match.group(0).strip() if gpu_match else "")
+        if gpu_match:
+            return cls.from_hardware_text(gpu_match.group(0).strip())
+        return cls()
+
+    @classmethod
+    def from_hardware_text(cls, hardware: str) -> "PracticeProfile":
+        """Build a profile from a device string, auto-completing GPU specs.
+
+        Given just a model (e.g. "RTX 4090") this fills in VRAM/architecture
+        from the device-spec lookup; an explicitly stated VRAM always wins.
+        """
+        hardware = (hardware or "").strip()
+        if not hardware:
+            return cls()
+        spec = resolve_device(hardware)
+        return cls(
+            hardware=hardware,
+            device_type=spec.device_type,
+            gpu_model=spec.gpu_model,
+            vram_gb=spec.vram_gb,
+            gpu_architecture=spec.gpu_architecture,
+        )

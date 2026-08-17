@@ -369,6 +369,30 @@ async def run(checker: Checker) -> None:
         f"modify_rounds={modify_rounds}, history_len={len(history)}",
     )
 
+    # -------- P8：收敛检测提前退出（省 token / 省耗时） --------
+    # 本用例构造的块含认知负荷/难度红线，靠追加式修订无法消解——是「注定改不动」的场景。
+    # 引入收敛检测前会走满 MAX_REVIEW_ITERATIONS(=3) 轮才 needs_human_review；引入后，
+    # 某块连续两轮问题种类不变即冻结、提前退出，修改轮数应 < MAX（这里期望 1~2 轮）。
+    checker.check(
+        modify_rounds < settings.MAX_REVIEW_ITERATIONS,
+        "P8 收敛检测在「注定改不动」时提前退出（修改轮数 < MAX，砍掉注定失败的重复轮次）",
+        f"modify_rounds={modify_rounds} < MAX={settings.MAX_REVIEW_ITERATIONS}",
+    )
+
+    # -------- P9：复核阶段总审核次数受控（不再每块每轮重复满额复核） --------
+    # rev_end 总数 = Phase A 首轮每块 1 次 + 每个修改轮每块 1 次复核。
+    # 提前退出后，复核阶段的 rev_end 应显著少于「走满 MAX 轮」的理论上限
+    # （blocks × MAX）。以块数 × 修改轮数为实测复核量，验证其 ≤ 块数 × modify_rounds
+    # 且严格小于块数 × MAX（证明省掉了后续轮次的整批复核调用）。
+    n_blocks = len(gen_starts)
+    recheck_count = len([e for e in rev_ends if e["t"] > first_mod_t])
+    checker.check(
+        recheck_count <= n_blocks * modify_rounds
+        and recheck_count < n_blocks * settings.MAX_REVIEW_ITERATIONS,
+        "P9 复核调用量随提前退出下降（< 块数 × MAX，避免每块每轮重复满额复核）",
+        f"recheck_count={recheck_count}, blocks={n_blocks}, modify_rounds={modify_rounds}",
+    )
+
     harness.state_manager.db_client.close()
 
 
