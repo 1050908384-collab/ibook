@@ -137,10 +137,15 @@ class Harness:
             return "当前回答服务暂时不可用，请稍后重试。"
 
         # Agent3 may occasionally expose the revision workflow before the
-        # actual answer, for example: "已根据审核意见修复……以下是修改后的完整回答：".
-        # That is internal orchestration metadata, not learner-facing content.
+        # actual answer, e.g. "已根据审核意见修复……以下是修改后的完整回答：" or
+        # "修改后内容如下：" / "修订后答复：". That is internal orchestration
+        # metadata, not learner-facing content, so strip the leading marker.
+        # 覆盖常见变体：前导词(以下是/下面是) + 修饰(修改后/修复后/修订后/最终/更新后) +
+        # 载体(回答/内容/答复/版本，可缺省) + 结尾(如下/：)。
         revision_answer_markers = re.findall(
-            r"(?:以下是|下面是)?(?:修改后|修复后|最终)?(?:的)?(?:完整)?回答\s*[：:]",
+            r"(?:以下是|下面是)?(?:的)?"
+            r"(?:修改后|修复后|修订后|更新后|最终)(?:的)?(?:完整)?"
+            r"(?:回答|内容|答复|版本)?\s*(?:如下|请见)?\s*[：:]",
             text,
             flags=re.IGNORECASE,
         )
@@ -172,10 +177,6 @@ class Harness:
                 return answer.strip()
 
         return text
-
-    @staticmethod
-    def _is_greeting(question: str) -> bool:
-        return bool(re.fullmatch(r"(?:你好|您好|嗨|哈喽|hello|hi)[！!。．，,？?\\s]*", question.strip(), flags=re.IGNORECASE))
 
     @staticmethod
     def _is_greeting(question: str) -> bool:
@@ -428,6 +429,16 @@ class Harness:
                 latest_review.technical,
                 iterations=len(review_history),
             )
+            # 库外/超纲问题：直接输出 Agent3 内容，向前端呈现为非失败的独立状态，
+            # 避免把「知识库未覆盖」误报成审核未通过。
+            if self._is_out_of_scope_review(latest_review.technical):
+                review_summary = {
+                    **review_summary,
+                    "status": "out_of_scope",
+                    "technical_passed": True,
+                    "needs_human_review": False,
+                    "reason": "question_out_of_knowledge_base",
+                }
             self._log(
                 session_id,
                 "handle_question:done",
@@ -1588,6 +1599,29 @@ class Harness:
 
         return accepted_issues, unresolved_must_fix_count
 
+    @staticmethod
+    def _is_out_of_scope_review(technical_result: TechnicalReviewResult) -> bool:
+        """判断本轮技术审核是否为「库外/超纲」——即唯一阻塞项来自 out_of_scope。
+
+        触发条件（同时满足）：
+          - 至少存在一个 error_type == out_of_scope 的错误（知识库未覆盖该主题）；
+          - 不存在其他会强制改写的阻塞错误（must_fix=True 或 severity=critical）。
+        满足时上层直接输出 Agent3 内容，不再逼迫改写（库外问题无从溯源，改写无益）。
+        """
+        errors = getattr(technical_result, "errors", None) or []
+        if not errors:
+            return False
+        has_out_of_scope = False
+        for err in errors:
+            et = (getattr(err, "error_type", None) or "").lower()
+            if et == "out_of_scope":
+                has_out_of_scope = True
+                continue
+            # 其余任何 must_fix / critical 错误都属于真实需改写项，不可短路
+            if getattr(err, "must_fix", False) or getattr(err, "severity", None) == "critical":
+                return False
+        return has_out_of_scope
+
     async def _review_answer(
         self,
         session_id: str,
@@ -1618,6 +1652,11 @@ class Harness:
             self._record_review_round(session_id, "answer", round_result)
             if round_result.passed:
                 print(f"=== 回答第{iteration}轮审核通过 ===")
+                break
+            # 库外/超纲：问题不在知识库覆盖范围内。此时无从溯源，改写也无益，
+            # 直接输出 Agent3 内容而非逼迫反复改写。判据：本轮技术错误全部为 out_of_scope。
+            if self._is_out_of_scope_review(round_result.technical):
+                print(f"=== 回答第{iteration}轮判定为库外问题（out_of_scope），直接输出 Agent3 内容 ===")
                 break
             if iteration == settings.MAX_REVIEW_ITERATIONS:
                 print("=== 回答达到最大审核轮次，返回未通过状态 ===")

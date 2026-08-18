@@ -341,6 +341,60 @@ def derive_must_fix(
     return False, None
 
 
+# ---------------------------------------------------------------------------
+# 主张级缓存 + 按类型路由（辩论方案 第 2、4 点）
+# ---------------------------------------------------------------------------
+# 缓存策略（用户确认）：仅沉淀两个「确定档」——pass / hallucination——的裁决结果，
+# 供跨会话复用（同一个幻觉不辩论第二次）。review_needed / 灰区 需 LLM 仲裁的档
+# 不入缓存，避免把不稳定的中间裁决固化。
+_CACHEABLE_LEVELS = {"pass", "hallucination"}
+
+# 路由类型（用户确认）：按 claim_type + 溯源标记决定核验策略。
+#   kb_fact      → 知识库事实：有 source_chunk_id / source_ref，走 KB 相似度核验
+#   profile_fact → 用户画像事实：引用学习者自身设备/配置等，无 KB chunk，
+#                  豁免全库幻觉判定，只保留「声称有来源却缺来源」的形式校验
+#   personalized → 个性化推理讲解：无 KB 来源、非关键技术，豁免全库检索
+_ROUTE_KB_FACT = "kb_fact"
+_ROUTE_PROFILE_FACT = "profile_fact"
+_ROUTE_PERSONALIZED = "personalized"
+
+# 用户画像/自身配置类主张的判别词（无 KB chunk 时用于区分「个人事实」与「客观技术事实」）
+_PROFILE_HINT_TERMS = (
+    "我的", "你的", "您的", "本机", "本地", "当前设备", "我们的设备",
+    "我的显卡", "我的显存", "我的设备", "我的配置", "你的显卡", "你的设备",
+    "your gpu", "your device", "my gpu", "my device", "my setup", "local machine",
+)
+
+
+def _claim_fingerprint(text: str, chunk_id: str = "") -> str:
+    """主张文本指纹：normalize(text) + chunk_id 的 sha1[:16]。
+
+    归一化去除空白/大小写差异，使「同一主张的等价改写」尽量落到同一指纹。
+    chunk_id 参与指纹：换了来源块即视为新主张，天然 miss（与 verified_claims 主键一致）。
+    """
+    normalized = re.sub(r"\s+", "", (text or "").strip().lower())
+    raw = f"{normalized}||{chunk_id or ''}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _classify_claim_route(claim: Dict[str, Any], source_chunk_id: Optional[str]) -> str:
+    """按 claim_type + 溯源标记判定核验路由（见上方常量说明）。
+
+    - 有明确 KB 来源（source_chunk_id 或 source_ref）→ kb_fact
+    - 无 KB 来源但文本引用「我的/本机/设备配置」等 → profile_fact
+    - 其余无来源、非关键技术的陈述 → personalized
+    - 无来源但被标为关键技术的客观事实 → 仍按 kb_fact 走全库检索（缺来源会被判缺依据）
+    """
+    if source_chunk_id or claim.get("source_ref"):
+        return _ROUTE_KB_FACT
+    text = (claim.get("text") or "").lower()
+    if any(term.lower() in text for term in _PROFILE_HINT_TERMS):
+        return _ROUTE_PROFILE_FACT
+    if claim.get("is_key_technical"):
+        # 关键技术客观事实必须有依据：无来源时仍送全库检索，交由 must_fix 规则处理缺来源。
+        return _ROUTE_KB_FACT
+    return _ROUTE_PERSONALIZED
+
 
 class TechnicalReviewAgent(BaseAgent):
     def __init__(self):
@@ -365,6 +419,47 @@ class TechnicalReviewAgent(BaseAgent):
             self.cognitive_load_tool,
             self.style_match_tool,
         ])
+        # 主张级缓存客户端：懒加载 SQLiteClient，失败时降级为 None（缓存不可用不阻断核验）。
+        self._db_client = None
+
+    @property
+    def db_client(self):
+        """懒加载 SQLiteClient，供主张级缓存读写；任何创建失败都不抛出，返回 None 走无缓存路径。"""
+        if self._db_client is None:
+            try:
+                from db.sqlite_client import SQLiteClient
+                self._db_client = SQLiteClient()
+            except Exception:
+                self._db_client = None
+        return self._db_client
+
+    def _cache_lookup_claim(self, claim_fp: str, chunk_id: str) -> Optional[Dict[str, Any]]:
+        """查主张级缓存；命中返回行 dict，miss / 缓存不可用返回 None（不抛出）。"""
+        client = self.db_client
+        if client is None or not claim_fp:
+            return None
+        try:
+            return client.get_verified_claim(claim_fp, chunk_id or "")
+        except Exception:
+            return None
+
+    def _cache_store_claim(self, claim_fp: str, chunk_id: str, level: str, data: Dict[str, Any]) -> None:
+        """把确定档（pass/hallucination）裁决沉淀到主张级缓存；非确定档或缓存不可用则跳过。"""
+        if level not in _CACHEABLE_LEVELS:
+            return
+        client = self.db_client
+        if client is None or not claim_fp:
+            return
+        try:
+            client.save_verified_claim(claim_fp, chunk_id or "", {
+                "level": level,
+                "confidence": data.get("confidence", 0.0),
+                "verify_method": data.get("verify_method", "lexical"),
+                "claim_text": data.get("claim_text"),
+                "evidence": data.get("evidence"),
+            })
+        except Exception:
+            pass
 
     def _profile_to_dict(self, profile: Any) -> Dict[str, Any]:
         if hasattr(profile, "model_dump"):
@@ -684,6 +779,13 @@ class TechnicalReviewAgent(BaseAgent):
 
         仅对 is_key_technical=true 的 Claim 送检（非关键陈述不因相似度低而误报），
         无 claims 时返回空列表，由调用方回退到整篇送检。
+
+        分级审核 + 缓存（辩论方案 第 2、4 点）：
+          1. 按 claim_type + 溯源标记路由：profile_fact / personalized 豁免全库幻觉判定；
+             仅 kb_fact 走 KB 相似度核验。
+          2. kb_fact 先查主张级缓存（claim 文本指纹 + chunk_id）：命中 pass → 直接放行不送检；
+             命中 hallucination → 复用裁决直接产出幻觉 issue；miss → 送检后把 pass/hallucination
+             写回缓存（review_needed 灰区不入缓存）。
         """
         claim_errors: List[Dict[str, Any]] = []
         for c in claims or []:
@@ -696,6 +798,27 @@ class TechnicalReviewAgent(BaseAgent):
             if not text.strip():
                 continue
             source_chunk_id = c.get("source_chunk_id") or (c.get("metadata_json") or {}).get("source_chunk_id")
+
+            # --- 按类型路由：非知识库事实豁免全库幻觉判定 ---
+            route = _classify_claim_route(c, source_chunk_id)
+            if route in (_ROUTE_PROFILE_FACT, _ROUTE_PERSONALIZED):
+                # 用户画像事实 / 个性化推理：无 KB chunk，不做相似度幻觉判定，避免误报。
+                # 关键技术缺来源的「缺依据」由下游 derive_must_fix 统一处理，此处不产 issue。
+                continue
+
+            # --- 主张级缓存：同一主张不辩论第二次 ---
+            claim_fp = _claim_fingerprint(text, source_chunk_id or "")
+            cached = self._cache_lookup_claim(claim_fp, source_chunk_id or "")
+            if cached is not None:
+                cached_level = cached.get("level")
+                if cached_level == "pass":
+                    # 命中「已核验通过」：直接放行，跳过整轮送检。
+                    continue
+                if cached_level == "hallucination":
+                    # 命中「已核验幻觉」：复用裁决，重建幻觉 issue（不重新送检）。
+                    claim_errors.append(self._build_cached_hallucination(c, cached, source_chunk_id))
+                    continue
+
             try:
                 # 有精确来源块时按块核验（绑定确切 chunk），否则退回全库相似度检索。
                 if source_chunk_id:
@@ -704,6 +827,16 @@ class TechnicalReviewAgent(BaseAgent):
                     errs = await self.knowledge_verify_tool.verify_knowledge(text)
             except Exception:
                 continue
+
+            # 送检结论落缓存：空列表=pass；否则取首条错误的档位/置信度（pass/hallucination 入缓存）。
+            level, confidence, verify_method, evidence = self._summarize_verify_result(errs, source_chunk_id)
+            self._cache_store_claim(claim_fp, source_chunk_id or "", level, {
+                "confidence": confidence,
+                "verify_method": verify_method,
+                "claim_text": text[:500],
+                "evidence": evidence,
+            })
+
             for e in errs:
                 # 把幻觉 issue 锚定到该 Claim：claim_id 供 _match_claim 直接命中，
                 # location=section_ref 供按位置回退匹配，两者任一都能建立归属。
@@ -715,6 +848,52 @@ class TechnicalReviewAgent(BaseAgent):
                     e["content_chunk_id"] = source_chunk_id
                 claim_errors.append(e)
         return claim_errors
+
+    @staticmethod
+    def _summarize_verify_result(
+        errs: List[Dict[str, Any]],
+        source_chunk_id: Optional[str],
+    ) -> tuple:
+        """把 verify_* 返回的 errs 归纳为 (level, confidence, verify_method, evidence)。
+
+        - 空列表 → pass（相似度 >= 0.80）
+        - error_type=hallucination → hallucination（相似度 < 0.65）
+        - error_type=review_needed → review_needed（0.65~0.80 灰区，不入缓存）
+        verify_method 依来源块存在与否记 chunk/lexical（当前适配器用词面相似度）。
+        """
+        verify_method = "chunk" if source_chunk_id else "lexical"
+        if not errs:
+            return "pass", 1.0, verify_method, None
+        first = errs[0]
+        etype = first.get("error_type")
+        confidence = first.get("confidence", 0.0)
+        level = "hallucination" if etype == "hallucination" else "review_needed"
+        return level, confidence, verify_method, first.get("evidence")
+
+    @staticmethod
+    def _build_cached_hallucination(
+        claim: Dict[str, Any],
+        cached: Dict[str, Any],
+        source_chunk_id: Optional[str],
+    ) -> Dict[str, Any]:
+        """用缓存的幻觉裁决重建一条 hallucination issue（跳过重新送检）。"""
+        confidence = cached.get("confidence", 0.0)
+        e: Dict[str, Any] = {
+            "error_type": "hallucination",
+            "severity": "critical",
+            "location": claim.get("section_ref") or "技术陈述",
+            "description": f"[缓存命中] 已核验主张相似度 {confidence:.2f}，判定为潜在幻觉。",
+            "evidence": cached.get("evidence"),
+            "suggestion": "删除无法验证的技术声明或补充可靠来源。",
+            "type": "hallucination",
+            "message": f"[缓存命中] 相似度 {confidence:.2f}，潜在幻觉。",
+            "confidence": confidence,
+            "claim_id": claim.get("claim_id"),
+            "from_cache": True,
+        }
+        if source_chunk_id:
+            e["content_chunk_id"] = source_chunk_id
+        return e
 
     def _enrich_debate_fields(
         self,

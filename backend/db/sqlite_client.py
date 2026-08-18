@@ -866,6 +866,23 @@ class SQLiteClient:
                 UNIQUE (round_id, issue_id, actor, response_type)
             )
         """))
+        # 跨会话已核验主张缓存：key=(claim 文本指纹 + 来源块)。命中即跳过整轮辩论/核验，
+        # 沉淀「已核验通过」的 claim↔source。claim 文本或来源块变化 → 指纹变 → 自然 miss。
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS verified_claims (
+                claim_fp VARCHAR(64) NOT NULL,
+                chunk_id VARCHAR(50) NOT NULL DEFAULT '',
+                level VARCHAR(30) NOT NULL,
+                confidence FLOAT DEFAULT 0.0,
+                verify_method VARCHAR(20) DEFAULT 'lexical',
+                claim_text TEXT,
+                evidence TEXT,
+                hit_count INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (claim_fp, chunk_id)
+            )
+        """))
 
     def _create_review_protocol_indexes(self, conn) -> None:
         index_statements = [
@@ -878,6 +895,7 @@ class SQLiteClient:
             "CREATE INDEX IF NOT EXISTS idx_review_debate_issues_claim ON review_debate_issues(trace_id, claim_id)",
             "CREATE INDEX IF NOT EXISTS idx_review_debate_rounds_trace ON review_debate_rounds(trace_id, round_num)",
             "CREATE INDEX IF NOT EXISTS idx_review_debate_responses_issue ON review_debate_responses(issue_id, actor)",
+            "CREATE INDEX IF NOT EXISTS idx_verified_claims_level ON verified_claims(level)",
         ]
         for statement in index_statements:
             conn.execute(text(statement))
@@ -3056,3 +3074,97 @@ class SQLiteClient:
                 "resolved_in_round_num": resolved_in_round_num,
             })
             session.commit()
+
+    # ------------------------------------------------------------------
+    # 跨会话已核验主张缓存（verified_claims）
+    # ------------------------------------------------------------------
+    # key = (claim 文本指纹 claim_fp + 来源块 chunk_id)。命中即跳过整轮辩论/核验，
+    # 并沉淀「已核验通过」的 claim↔source 对，供后续生成优先复用。
+    def save_verified_claim(self, claim_fp: str, chunk_id: str, data: dict) -> None:
+        """写入/更新一条已核验主张缓存。
+
+        data 期望字段：level, confidence, verify_method, claim_text, evidence。
+        命中同一 (claim_fp, chunk_id) 时累加 hit_count 并刷新裁决结果。
+        evidence 若为 dict/list 会序列化为 JSON 字符串存储。
+        """
+        if not claim_fp:
+            return
+        evidence = data.get("evidence")
+        if isinstance(evidence, (dict, list)):
+            evidence = json.dumps(evidence, ensure_ascii=False)
+        with self.Session() as session:
+            session.execute(text("""
+                INSERT INTO verified_claims
+                    (claim_fp, chunk_id, level, confidence, verify_method,
+                     claim_text, evidence, hit_count, created_at, updated_at)
+                VALUES
+                    (:claim_fp, :chunk_id, :level, :confidence, :verify_method,
+                     :claim_text, :evidence, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT(claim_fp, chunk_id) DO UPDATE SET
+                    level = excluded.level,
+                    confidence = excluded.confidence,
+                    verify_method = excluded.verify_method,
+                    claim_text = excluded.claim_text,
+                    evidence = excluded.evidence,
+                    hit_count = verified_claims.hit_count + 1,
+                    updated_at = CURRENT_TIMESTAMP
+            """), {
+                "claim_fp": claim_fp,
+                "chunk_id": chunk_id or "",
+                "level": data.get("level", "review_needed"),
+                "confidence": float(data.get("confidence", 0.0) or 0.0),
+                "verify_method": data.get("verify_method", "lexical"),
+                "claim_text": data.get("claim_text"),
+                "evidence": evidence,
+            })
+            session.commit()
+
+    def get_verified_claim(self, claim_fp: str, chunk_id: str = "") -> dict | None:
+        """按 (claim_fp, chunk_id) 精确命中已核验主张缓存；miss 返回 None。"""
+        if not claim_fp:
+            return None
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT claim_fp, chunk_id, level, confidence, verify_method,
+                       claim_text, evidence, hit_count
+                FROM verified_claims
+                WHERE claim_fp = :claim_fp AND chunk_id = :chunk_id
+            """), {
+                "claim_fp": claim_fp,
+                "chunk_id": chunk_id or "",
+            }).fetchone()
+            return dict(row._mapping) if row else None
+
+    def get_verified_claims_batch(self, keys: list[tuple[str, str]]) -> dict[tuple, dict]:
+        """批量查询缓存，返回 {(claim_fp, chunk_id): row_dict}。仅返回命中项。
+
+        keys 为 (claim_fp, chunk_id) 元组列表；用于一批 claim 一次性探缓存，减少往返。
+        """
+        if not keys:
+            return {}
+        # 去重并过滤空指纹
+        uniq = list({(fp, cid or "") for fp, cid in keys if fp})
+        if not uniq:
+            return {}
+        hits: dict[tuple, dict] = {}
+        with self.Session() as session:
+            # SQLite 参数上限保守取 400 组一批
+            for start in range(0, len(uniq), 400):
+                batch = uniq[start:start + 400]
+                conds = " OR ".join(
+                    f"(claim_fp = :fp{i} AND chunk_id = :cid{i})" for i in range(len(batch))
+                )
+                params: dict = {}
+                for i, (fp, cid) in enumerate(batch):
+                    params[f"fp{i}"] = fp
+                    params[f"cid{i}"] = cid
+                rows = session.execute(text(f"""
+                    SELECT claim_fp, chunk_id, level, confidence, verify_method,
+                           claim_text, evidence, hit_count
+                    FROM verified_claims
+                    WHERE {conds}
+                """), params).fetchall()
+                for row in rows:
+                    d = dict(row._mapping)
+                    hits[(d["claim_fp"], d["chunk_id"])] = d
+        return hits

@@ -72,9 +72,11 @@ class RejectOnceTechnicalReviewer:
             return TechnicalReviewResult(passed=False, errors=[self._reject_error()])
         return TechnicalReviewResult(passed=True)
 
-    async def review_block(self, block, stage, profile=None, round_index=1, trace_id=None):
+    async def review_block(self, block, stage, profile=None, round_index=1,
+                           trace_id=None, use_llm_semantic=True):
         # 块级审核 API：与 run 相同的「拒绝一次后通过」语义，但把错误绑定到当前块，
         # 使 harness 的块级流水线能定位并修订该块（content_block_id / content_version）。
+        # use_llm_semantic：复核阶段流水线会传 False（只跑确定性工具），此处接受但不改变语义。
         self.calls += 1
         if self.calls == 1:
             return TechnicalReviewResult(
@@ -125,9 +127,11 @@ class AlwaysPersistReviewer:
         self.calls += 1
         return TechnicalReviewResult(passed=False, errors=[self._stubborn_error()])
 
-    async def review_block(self, block, stage, profile=None, round_index=1, trace_id=None):
+    async def review_block(self, block, stage, profile=None, round_index=1,
+                           trace_id=None, use_llm_semantic=True):
         # 块级审核 API：每次调用都对当前块报同一条 must_fix，配合 rebut 永远 persist，
         # 使块级流水线在达到 MAX_REVIEW_ITERATIONS 后仍有未决 must_fix → needs_human_review。
+        # use_llm_semantic：复核阶段流水线会传 False；此处接受但仍坚持报错，保证死锁场景成立。
         self.calls += 1
         return TechnicalReviewResult(
             passed=False,
@@ -511,11 +515,14 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
         result = await harness.start_stage(session_id)
 
-        # 达到最大轮次，未决 must_fix 仍存在。
-        # 块级流水线：Phase A 首轮审核 + MAX_REVIEW_ITERATIONS 轮 Phase C 修订/复核，
-        # 故 review_history 共 MAX_REVIEW_ITERATIONS + 1 条。
+        # 收敛冻结停止机制：58 个块每轮报同一条 must_fix，复核后 _issue_fingerprint
+        # 与首轮一致 → 全部块在第 1 轮 Phase C 被冻结；当所有未决问题都来自冻结块时，
+        # 流水线「立即」判 needs_human_review，不再跑满 MAX_REVIEW_ITERATIONS。
+        # 故 review_history = Phase A(1) + 提前退出前的 1 轮 Phase C = 2，且不超过 MAX+1。
         from config import settings
-        self.assertEqual(settings.MAX_REVIEW_ITERATIONS + 1, result["iterations"])
+        self.assertGreaterEqual(result["iterations"], 2)
+        self.assertLessEqual(result["iterations"], settings.MAX_REVIEW_ITERATIONS + 1)
+        self.assertEqual(len(result["review_history"]), result["iterations"])
         # 死锁兜底：needs_human_review=True，package 降级为 provisional
         self.assertTrue(result["needs_human_review"])
         self.assertEqual("provisional", result["package_status"])

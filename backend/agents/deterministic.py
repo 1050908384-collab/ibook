@@ -75,6 +75,41 @@ TECHNICAL_ANSWER_TOKENS = 1536
 DAILY_ANSWER_TOKENS = 768
 
 
+def _build_sourced_claim(
+    *,
+    claim_id: str,
+    text: str,
+    section_ref: str,
+    source_id: Optional[str],
+    chunk_id: str,
+    claim_type: str = "concept",
+    confidence: float = 0.8,
+) -> Claim:
+    """构造一条「强制溯源」的 Claim（辩论方案 第 1 点）。
+
+    规则：
+      - 有来源块（chunk_id 非空）→ source_ref 指向该来源，is_key_technical=True，
+        进入 Agent4 的 KB 事实核验（可被核验/辩论）。
+      - 无来源块 → 该客观陈述无引用，直接标 is_key_technical=False 且 source_ref=None，
+        并在 metadata_json 记 sourcing="unsupported"。此类「无依据」主张不作为可核验关键
+        Claim 进入辩论（_select_key_claims 只挑 is_key_technical=True），从源头减少幻觉。
+    """
+    has_source = bool(chunk_id and source_id)
+    metadata = {"source_chunk_id": chunk_id}
+    if not has_source:
+        metadata["sourcing"] = "unsupported"
+    return Claim(
+        claim_id=claim_id,
+        text=(text or "").strip()[:500],
+        source_ref=source_id if has_source else None,
+        section_ref=section_ref,
+        claim_type=claim_type,
+        is_key_technical=has_source,
+        confidence=confidence if has_source else min(confidence, 0.3),
+        metadata_json=metadata,
+    )
+
+
 def get_skill_context(skill_names: list[str]) -> str:
     return "\n\n".join(skill.content for skill in load_skills(skill_names))
 
@@ -1371,14 +1406,19 @@ class DeterministicContentAgent:
             None,
         )
 
+        # 强制溯源（辩论方案 第 1 点）：有知识库来源才作为可核验关键 Claim，
+        # 否则标 unsupported（无依据），不进入辩论。
+        _tech_chunk_id = ""
+        if technical_source is not None:
+            _tech_chunk_id = technical_source.content_ref or technical_source.source_id or ""
         claims = [
-            Claim(
+            _build_sourced_claim(
                 claim_id="clm_001",
                 text=f"{stage.block_name}的核心概念和学习步骤",
-                source_ref=technical_source.source_id if technical_source else None,
                 section_ref="tutorial:sec_0",
+                source_id=technical_source.source_id if technical_source else None,
+                chunk_id=_tech_chunk_id,
                 claim_type="concept",
-                is_key_technical=technical_source is not None,
                 confidence=0.8,
             )
         ]
@@ -2095,17 +2135,18 @@ class DeterministicContentAgent:
             },
         )
 
-        # 每块一条关键技术 Claim，claim_id 绑定 content_block_id，便于 Agent4 逐块核验
+        # 每块一条关键技术 Claim，claim_id 绑定 content_block_id，便于 Agent4 逐块核验。
+        # 强制溯源（辩论方案 第 1 点）：有来源块才作为可核验关键 Claim；无来源块的客观陈述
+        # 标为 unsupported（无依据），不进入辩论，从源头减少幻觉。
         claim_id = f"clm_{content_block_id}"
-        claim = Claim(
+        claim = _build_sourced_claim(
             claim_id=claim_id,
-            text=(source_text or f"{stage.block_name}的核心概念").strip()[:500],
-            source_ref=source.source_id if chunk_id else None,
+            text=source_text or f"{stage.block_name}的核心概念",
             section_ref=f"block:{content_block_id}",
+            source_id=source.source_id,
+            chunk_id=chunk_id,
             claim_type="concept",
-            is_key_technical=bool(chunk_id),
             confidence=0.8,
-            metadata_json={"source_chunk_id": chunk_id},
         )
 
         return ContentBlock(

@@ -44,6 +44,11 @@ if not logger.handlers:
 THRESHOLD_CRITICAL = 0.65  # < 此值判为潜在幻觉
 THRESHOLD_PASS = 0.80      # >= 此值判为有依据
 
+# 「库外/超纲」判定阈值：相似度极低且几乎零命中时，说明知识库根本没有覆盖该主题，
+# 与「库内但表述错误」的幻觉本质不同——不应逼 Agent3 反复改写，而应放行 Agent3 内容。
+# 见问答链路库外诊断（tests/check_qa_out_of_kb_diagnostic.py）：库外提问相似度普遍 <= 0.02。
+THRESHOLD_OUT_OF_SCOPE = 0.10
+
 MOCK_FILE = DATA_DIR / "test_data" / "mock_knowledge_verify_tool.json"
 
 # knowledge_chunks 进程内缓存（按 db 路径 + mtime 失效），见 _load_chunks
@@ -161,9 +166,14 @@ def knowledge_verify(input_data: dict, config: dict = None) -> dict:
 
         scored.sort(key=lambda x: x["similarity"], reverse=True)
         matched = scored[:top_k]
-        confidence = matched[0]["similarity"] if matched else 0.0
+        lexical_confidence = matched[0]["similarity"] if matched else 0.0
 
-        level = _classify(confidence)
+        # 三级漏斗：明确档直接采信词面；灰区 [0.65,0.80) 用向量语义复判，
+        # 仍模糊才标记 need_llm_arbitration 交上层做一次 LLM 蕴含仲裁。
+        block_hint = matched[0]["block_id"] if matched else ""
+        fused = _fuse_with_semantic(lexical_confidence, statement, block_hint)
+        level = fused["level"]
+        confidence = fused["confidence"]
         return {
             "status": "success",
             "data": {
@@ -171,6 +181,9 @@ def knowledge_verify(input_data: dict, config: dict = None) -> dict:
                 "confidence": round(confidence, 4),
                 "has_basis": confidence >= THRESHOLD_CRITICAL,
                 "level": level,
+                "verify_method": fused["verify_method"],
+                "need_llm_arbitration": fused["need_llm_arbitration"],
+                "lexical_confidence": round(lexical_confidence, 4),
                 "thresholds": {"critical": THRESHOLD_CRITICAL, "pass": THRESHOLD_PASS},
                 "matched_chunks": matched,
                 "checked_chunks": len(chunks),
@@ -362,6 +375,80 @@ def _classify(confidence: float) -> str:
     if confidence < THRESHOLD_PASS:
         return "review_needed"
     return "pass"
+
+
+# ------------------------------------------------------------------
+# 三级漏斗第二级：向量语义复判（仅在词面法落入灰区时启用）
+# ------------------------------------------------------------------
+# 词面重叠（_similarity）无法识别「同义改写」（如"冻结基座权重" vs "锁定预训练参数"），
+# 也可能被「只差一个否定词」误判为高相似。因此对落入灰区 [0.65,0.80) 的陈述，用
+# qwen3-embedding 语义向量再判一次：语义足够高 → 提升为 pass；语义也低 → 下沉为潜在
+# 幻觉；仍处于中间地带 → 标记 need_llm_arbitration，交上层做一次 LLM 蕴含仲裁。
+# 明确档（>=0.80 / <0.65）不进入本级，零额外开销。
+SEMANTIC_PASS = 0.80       # 语义相似度 >= 此值：视为有依据
+SEMANTIC_CRITICAL = 0.55   # 语义相似度 < 此值：视为潜在幻觉
+
+
+def _semantic_similarity(statement: str, block_id: str = "", top_k: int = 3) -> float | None:
+    """用 Chroma(qwen3-embedding) 计算陈述与知识库的最高语义相似度。
+
+    返回 0~1；Chroma 不可用/无结果/未安装时返回 None（由调用方回退到词面结论，
+    绝不因向量层缺失而改判）。复用 vector_search_tool 的检索管线，保持同一向量空间。
+    """
+    statement = (statement or "").strip()
+    if not statement:
+        return None
+    try:
+        # 延迟导入：向量检索是可选增强，缺 chromadb 时不影响词面主链路。
+        from tools.agent3_tools.vector_search_tool import _search_chroma
+    except Exception:
+        return None
+    try:
+        block_ids = [block_id] if block_id else []
+        results = _search_chroma(statement, block_ids, [], top_k)
+    except Exception:
+        return None
+    if not results:
+        return None
+    return max((r.get("similarity") or 0.0) for r in results)
+
+
+def _fuse_with_semantic(lexical_confidence: str, statement: str, block_id: str = "") -> Dict[str, Any]:
+    """三级漏斗核心：给词面置信度做语义复判，产出最终 level 与判定方式。
+
+    返回 {"level", "confidence", "verify_method", "need_llm_arbitration"}。
+    - 明确档（>=0.80 / <0.65）直接采信词面，verify_method="lexical"，不查向量。
+    - 灰区 [0.65,0.80)：查向量语义；语义高→pass、语义低→潜在幻觉、语义中间→need_llm。
+    """
+    lex = float(lexical_confidence)
+    lex_level = _classify(lex)
+    if lex_level != "review_needed":
+        # 明确档：词面已足够，不额外花向量/LLM。
+        return {
+            "level": lex_level,
+            "confidence": round(lex, 4),
+            "verify_method": "lexical",
+            "need_llm_arbitration": False,
+        }
+
+    sem = _semantic_similarity(statement, block_id)
+    if sem is None:
+        # 向量层不可用：保持灰区结论，交由上层决定是否 LLM 仲裁。
+        return {
+            "level": "review_needed",
+            "confidence": round(lex, 4),
+            "verify_method": "lexical",
+            "need_llm_arbitration": True,
+        }
+    if sem >= SEMANTIC_PASS:
+        return {"level": "pass", "confidence": round(sem, 4),
+                "verify_method": "semantic", "need_llm_arbitration": False}
+    if sem < SEMANTIC_CRITICAL:
+        return {"level": "potential_hallucination", "confidence": round(sem, 4),
+                "verify_method": "semantic", "need_llm_arbitration": False}
+    # 语义仍处中间地带：词面/向量都不敢下结论 → 交 LLM 蕴含仲裁（第三级）。
+    return {"level": "review_needed", "confidence": round(sem, 4),
+            "verify_method": "semantic", "need_llm_arbitration": True}
 
 
 def _build_message(level: str, confidence: float, n_chunks: int, db_available: bool) -> str:
@@ -868,6 +955,28 @@ class KnowledgeVerifyTool:
         in_chunk_position = _format_in_chunk_position(top) if top else None
 
         if confidence < THRESHOLD_CRITICAL:
+            # 库外/超纲：相似度极低且无有效命中 → 知识库未覆盖该主题（而非表述错误的幻觉）。
+            # 标记为 out_of_scope（非 critical、must_fix=False），上层据此直接放行 Agent3 内容，
+            # 不再逼迫反复改写。区分依据：几乎零命中（top 相似度 < THRESHOLD_OUT_OF_SCOPE）。
+            top_similarity = float(top.get("similarity", 0.0)) if top else 0.0
+            if confidence < THRESHOLD_OUT_OF_SCOPE and top_similarity < THRESHOLD_OUT_OF_SCOPE:
+                return [{
+                    "error_type": "out_of_scope",
+                    "severity": "info",
+                    "must_fix": False,
+                    "location": "技术陈述",
+                    "description": (
+                        f"知识库相似度 {confidence:.2f} 远低于阈值且无有效命中，"
+                        f"该主题不在当前知识库覆盖范围内。"
+                    ),
+                    "evidence": evidence,
+                    "suggestion": "该问题超出知识库覆盖范围，直接输出 Agent3 内容，不做幻觉改写。",
+                    "type": "out_of_scope",
+                    "message": f"知识库相似度 {confidence:.2f}，主题超出覆盖范围。",
+                    "confidence": confidence,
+                    "content_chunk_id": content_chunk_id,
+                    "in_chunk_position": in_chunk_position,
+                }]
             return [{
                 "error_type": "hallucination",
                 "severity": "critical",
@@ -877,6 +986,7 @@ class KnowledgeVerifyTool:
                 "suggestion": "删除无法验证的技术声明或补充可靠来源。",
                 "type": "hallucination",
                 "message": f"知识库相似度 {confidence:.2f}，存在潜在幻觉风险。",
+                "confidence": confidence,
                 "content_chunk_id": content_chunk_id,
                 "in_chunk_position": in_chunk_position,
             }]
@@ -890,6 +1000,7 @@ class KnowledgeVerifyTool:
                 "suggestion": "补充知识库依据或人工复核后放行。",
                 "type": "review_needed",
                 "message": f"知识库相似度 {confidence:.2f}，存疑需复核。",
+                "confidence": confidence,
                 "content_chunk_id": content_chunk_id,
                 "in_chunk_position": in_chunk_position,
             }]
@@ -933,6 +1044,7 @@ class KnowledgeVerifyTool:
                 "suggestion": "修正为来源块支持的表述或补充可靠来源。",
                 "type": "hallucination",
                 "message": f"来源块相似度 {confidence:.2f}，存在潜在幻觉风险。",
+                "confidence": confidence,
                 "content_chunk_id": chunk.get("chunk_id"),
                 "in_chunk_position": in_chunk_position,
             }]
@@ -946,6 +1058,7 @@ class KnowledgeVerifyTool:
                 "suggestion": "补充来源块依据或人工复核后放行。",
                 "type": "review_needed",
                 "message": f"来源块相似度 {confidence:.2f}，存疑需复核。",
+                "confidence": confidence,
                 "content_chunk_id": chunk.get("chunk_id"),
                 "in_chunk_position": in_chunk_position,
             }]
