@@ -6094,7 +6094,18 @@ body.resizing-workspace-panels * {
 }
 
 .settings-page {
+  max-width: none;
+}
+
+.settings-page > .settings-card {
   max-width: 1180px;
+  margin: 0 auto;
+}
+
+.settings-page > .settings-inline-state {
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .settings-intro {

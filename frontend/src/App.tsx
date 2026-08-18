@@ -1611,6 +1611,37 @@ function CurrentMaterialPanel({
   const resolvedIndex = Math.max(0, pages.findIndex((t) => topicKey(t) === topicKey(selectedSubtopic)));
   const currentIndex = resolvedIndex < 0 ? 0 : resolvedIndex;
   const current = pages[currentIndex] || selectedSubtopic;
+
+  // 记忆每个知识点文章的滚动位置：
+  // - 切换到从未阅读过的知识点 -> 从顶部开始
+  // - 切换到已阅读过的知识点 -> 恢复到上次的滚动位置
+  const materialScrollRef = useRef<HTMLDivElement>(null);
+  const scrollPositions = useRef<Map<string, number>>(new Map());
+  const currentTopicKey = topicKey(current);
+
+  // 滚动时持续记录当前位置（供切回该知识点时恢复）
+  useEffect(() => {
+    const el = materialScrollRef.current;
+    if (!el || !currentTopicKey) return;
+    const handleScroll = () => {
+      scrollPositions.current.set(currentTopicKey, el.scrollTop);
+    };
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [currentTopicKey]);
+
+  // 切换知识点时：有记忆位置则恢复，否则回到顶部
+  useEffect(() => {
+    const el = materialScrollRef.current;
+    if (!el) return;
+    const saved = currentTopicKey ? scrollPositions.current.get(currentTopicKey) : undefined;
+    // 用 requestAnimationFrame 等待新文章内容渲染完成后再设置滚动位置，
+    // 避免新内容高度还没布局好就被截断
+    requestAnimationFrame(() => {
+      el.scrollTop = saved ?? 0;
+    });
+  }, [currentTopicKey]);
+
   const goPrev = () => {
     if (currentIndex > 0) {
       const prev = pages[currentIndex - 1];
@@ -1669,7 +1700,7 @@ function CurrentMaterialPanel({
           </button>
         </div>
       )}
-      <div className="current-material-scroll">
+      <div className="current-material-scroll" ref={materialScrollRef}>
         <MaterialDocument stage={stage} learningPackage={content} selectedSubtopic={current} compact />
       </div>
       <footer>
