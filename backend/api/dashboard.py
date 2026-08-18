@@ -26,6 +26,15 @@ def _build_dashboard(session_id: str, db=None) -> Dict[str, Any]:
 
     profile = db.get_latest_profile(session_id)
     stages = db.list_stage_progress(session_id)
+    # 同一 stage_num 可能因低分重试产生多条 stage_progress 记录；它们是
+    # 审计/恢复数据，不应在学习导航中被渲染成多个阶段。保留该编号最后
+    # 写入的一条作为当前可见阶段记录。
+    visible_by_num: Dict[int, Dict[str, Any]] = {}
+    for item in stages:
+        num = int(item.get("stage_num") or 0)
+        if num > 0:
+            visible_by_num[num] = item
+    stages = [visible_by_num[num] for num in sorted(visible_by_num)]
     mastered_count, total_count = db.get_subtopic_mastery_counts(session_id)
     block_progress = db.get_block_progress(session_id)
     attempts = db.list_assessment_attempts(session_id)

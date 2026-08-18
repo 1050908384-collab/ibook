@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { Check, Loader2, Sparkles, X } from 'lucide-react';
-import type { ApiStage } from '../api/client';
+import type { ApiStage, GenerationEvent } from '../api/client';
 import { apiClient } from '../api/client';
 
 // ============== Types ==============
@@ -17,6 +17,19 @@ export type GenStagePreview = {
   gap_skill?: string;
 };
 
+type ReviewProgress = {
+  iterations?: number;
+  max_iterations?: number;
+  status?: string;
+  needs_human_review?: boolean;
+  timeline?: Array<{
+    round: number;
+    technical_passed: boolean;
+    quality_passed: boolean;
+    issue_count: number;
+  }>;
+};
+
 type GenState = {
   open: boolean;
   phase: GenPhase;
@@ -29,6 +42,8 @@ type GenState = {
   errorMsg: string | null;
   /** 进度条 0-100，细动画反馈 */
   progress: number;
+  review: ReviewProgress | null;
+  events: GenerationEvent[];
 };
 
 type RunParams = {
@@ -41,7 +56,7 @@ type RunParams = {
    */
   initialStage?: ApiStage | GenStagePreview | null;
   onStageReady?: (stage: GenStagePreview) => void | Promise<void>;
-  onPackageReady?: (payload: { packageResponse: any; stageResponse: any }) => void | Promise<void>;
+  onPackageReady?: (payload: { packageResponse: any; stageResponse: any; startResponse: any }) => void | Promise<void>;
   onError?: (error: unknown) => void;
   onFinally?: () => void;
   /** 下一步按钮点击后的 callback：关闭前允许外部刷新 dashboard / 切视图 */
@@ -74,6 +89,47 @@ function normalizeStage(src: ApiStage | GenStagePreview | null | undefined): Gen
   };
 }
 
+function describeGenerationEvent(event: GenerationEvent) {
+  const labels: Record<string, { actor: string; text: string }> = {
+    'start_stage:apply_planned_next_stage': { actor: '系统', text: '已切换到已规划的下一阶段' },
+    'start_stage:start': { actor: '系统', text: '开始创建本阶段学习包' },
+    'pipeline:phaseA_start': { actor: '协同调度', text: 'Agent3 与 Agent4 开始并行处理知识块' },
+    'pipeline:phaseA_done': { actor: '协同调度', text: '首轮生成与审核已汇总' },
+    'pipeline:issue_package': { actor: '协同调度', text: '审核问题包已交给 Agent3' },
+    'pipeline:phaseC_round': { actor: '协同调度', text: '本轮修订与复核已完成' },
+    'pipeline:converge_freeze': { actor: '协同调度', text: '已完成当前轮次审核汇总' },
+    'pipeline:done': { actor: '系统', text: '学习包已完成生成与审核' },
+    'agent3:block_generate_start': { actor: 'Agent3', text: '开始生成个性化内容块' },
+    'agent3:block_generate_done': { actor: 'Agent3', text: '已完成内容块生成，提交 Agent4 审核' },
+    'agent4:first_review_start': { actor: 'Agent4', text: '开始技术正确性与教学质量审核' },
+    'agent4:first_review_done': { actor: 'Agent4', text: '已完成首轮审核' },
+    'agent4:first_review_failed': { actor: 'Agent4', text: '本块审核异常，已记录为待处理问题' },
+    'agent3:review_reply_start': { actor: 'Agent3', text: '正在回应审核意见' },
+    'agent3:review_reply_done': { actor: 'Agent3', text: '已提交审核意见回应' },
+    'agent4:verdict_start': { actor: 'Agent4', text: '正在裁决 Agent3 的回应' },
+    'agent4:verdict_done': { actor: 'Agent4', text: '已完成审核裁决' },
+    'agent3:revision_start': { actor: 'Agent3', text: '正在按裁决修订内容' },
+    'agent3:revision_done': { actor: 'Agent3', text: '已完成修订，提交复核' },
+    'agent4:recheck_start': { actor: 'Agent4', text: '正在复核修订结果' },
+    'agent4:recheck_done': { actor: 'Agent4', text: '已完成修订复核' },
+  };
+  const mapped = labels[event.event];
+  // Runtime logs may contain internal counts (issues/replies/decisions). Keep
+  // those in the backend trace for auditability, but do not expose them in
+  // the learner-facing modal or competition recording.
+  const publicDetail = (event.detail || '')
+    .replace(/(?:^|[, ]+)issues=\d+/gi, '')
+    .replace(/(?:^|[, ]+)replies=\d+/gi, '')
+    .replace(/(?:^|[, ]+)decisions=\d+/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[, ]+|[, ]+$/g, '')
+    .trim();
+  const detail = publicDetail ? ` (${publicDetail})` : '';
+  return mapped
+    ? { ...mapped, detail }
+    : { actor: '协同调度', text: event.event, detail };
+}
+
 // ============== Context ==============
 const GenProgressContext = createContext<GenProgressContextValue | null>(null);
 
@@ -86,7 +142,9 @@ export function GenerationProgressProvider({ children }: { children: React.React
     message: '',
     errorMsg: null,
     progress: 0,
-  });
+  review: null,
+  events: [],
+});
 
   const close = useCallback(() => {
     setState((s) => {
@@ -120,6 +178,8 @@ export function GenerationProgressProvider({ children }: { children: React.React
       message: action === 'first' ? '正在规划学习阶段，请稍等…' : '正在生成下一阶段，请稍等…',
       errorMsg: null,
       progress: 15,
+      review: null,
+      events: [],
     });
 
     let stagePreview: GenStagePreview | null = normalizeStage(initialStage) || null;
@@ -169,7 +229,47 @@ export function GenerationProgressProvider({ children }: { children: React.React
       if (onStageReady) await Promise.resolve(onStageReady(stagePreview!));
 
       // ========= 阶段 ②：生成学习包 =========
-      await apiClient.startStage(sessionId);
+      let eventCursor = 0;
+      let stopPolling = false;
+      const appendEvents = (events: GenerationEvent[]) => {
+        if (!events.length) return;
+        setState((current) => {
+          const known = new Set(current.events.map((item) => item.id));
+          const merged = [...current.events, ...events.filter((item) => !known.has(item.id))].slice(-30);
+          return { ...current, events: merged };
+        });
+      };
+      const pollEvents = async () => {
+        while (!stopPolling) {
+          try {
+            const eventResponse = await apiClient.getGenerationEvents(sessionId, eventCursor);
+            eventCursor = Math.max(eventCursor, eventResponse.latest_id || 0);
+            appendEvents(eventResponse.events || []);
+          } catch {
+            // The generation request remains authoritative; a transient polling
+            // failure must never interrupt learning-package generation.
+          }
+          if (!stopPolling) await new Promise((resolve) => window.setTimeout(resolve, 700));
+        }
+      };
+
+      const startRequest = apiClient.startStage(sessionId);
+      const pollingTask = pollEvents();
+      let startResponse: any;
+      try {
+        startResponse = await startRequest;
+      } finally {
+        stopPolling = true;
+        await pollingTask;
+      }
+      // Fetch any final events emitted between the last polling cycle and the
+      // completed start response, then preserve them in the success modal.
+      try {
+        const eventResponse = await apiClient.getGenerationEvents(sessionId, eventCursor);
+        appendEvents(eventResponse.events || []);
+      } catch {
+        // Completion already succeeded; the live log is supplementary evidence.
+      }
       const [packageResponse, stageResponse] = await Promise.all([
         apiClient.getStagePackage(sessionId),
         apiClient.getCurrentStage(sessionId),
@@ -181,16 +281,18 @@ export function GenerationProgressProvider({ children }: { children: React.React
         message: '生成完成，即将进入学习…',
         progress: 100,
         stage: normalizeStage(stageResponse?.stage) || s.stage,
+        review: startResponse?.review_summary
+          ? { ...startResponse.review_summary, timeline: startResponse.review_timeline || [] }
+          : null,
       }));
 
       if (onPackageReady) {
-        await Promise.resolve(onPackageReady({ packageResponse, stageResponse }));
+        await Promise.resolve(onPackageReady({ packageResponse, stageResponse, startResponse }));
       }
 
-      // 给用户 900ms 看一眼成功勾状态，再允许外部关或自动关
-      window.setTimeout(() => {
-        if (onSuccessClose) onSuccessClose();
-      }, 900);
+      // 审核时间线是本块多 Agent 协同的可见证据，成功后由用户主动进入学习。
+      // 保留回调字段以兼容现有调用方，但不再自动关闭弹窗。
+      void onSuccessClose;
     } catch (caught) {
       const msg =
         (caught instanceof Error ? caught.message : '')
@@ -299,6 +401,7 @@ function GenerationProgressModal({
           </button>
         </header>
 
+        <div className="gen-progress-scroll">
         {/* ===== 两步指示器 ===== */}
         <ol className="gen-progress-stepper">
           <li className={`gen-step is-${status.stage}`}>
@@ -317,7 +420,9 @@ function GenerationProgressModal({
             </span>
             <span className="gen-step-label">
               <strong>生成学习包</strong>
-              <em>教程、示例与资源整理</em>
+              <em>{state.review?.iterations
+                ? `Agent4 实际完成第 ${state.review.iterations} 轮审核`
+                : '教程、示例与资源整理'}</em>
             </span>
           </li>
         </ol>
@@ -366,11 +471,69 @@ function GenerationProgressModal({
           />
         </div>
 
+        {state.events.length > 0 && (
+          <section className="gen-live-events" aria-label="多智能体实时协同日志" aria-live="polite">
+            <div className="gen-live-events-title">
+              <strong>多智能体实时协同</strong>
+              <span>仅保留最近 {state.events.length} 条</span>
+            </div>
+            <div className="gen-live-events-list">
+              {state.events.map((event) => {
+                const described = describeGenerationEvent(event);
+                const actorClass = described.actor === 'Agent3'
+                  ? 'agent3'
+                  : described.actor === 'Agent4'
+                    ? 'agent4'
+                    : 'system';
+                return (
+                  <div className={`gen-live-event ${actorClass}`} key={event.id}>
+                    <span>{described.actor}</span>
+                    <p>{described.text}<small>{described.detail}</small></p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {state.phase === 'error' && state.errorMsg && (
           <div className="gen-progress-error" role="alert">
             {state.errorMsg}
           </div>
         )}
+
+        {state.phase === 'success' && state.review?.iterations && (
+          <section className="gen-review-timeline" aria-label="本块学习包的协同审核过程">
+            <div className="gen-review-timeline-title">
+              <strong>Agent3-Agent4 协同审核</strong>
+              <span>本块学习包</span>
+            </div>
+            <div className="gen-review-timeline-events">
+              <div className="gen-review-event agent3">
+                <span>Agent3</span>
+                <p>已生成个性化教程、代码示例与测试题。</p>
+              </div>
+              {(state.review.timeline || []).map((round) => (
+                <div className="gen-review-round" key={round.round}>
+                  <div className="gen-review-event agent4">
+                    <span>Agent4 第 {round.round} 轮审核</span>
+                    <p>已完成技术正确性与教学质量审核{round.issue_count ? '，发现优化项并进入下一轮复审。' : '，本轮通过。'}</p>
+                  </div>
+                  {round.issue_count > 0 && (
+                    <div className="gen-review-event agent3 revision">
+                      <span>Agent3 修订</span>
+                      <p>已根据审核意见修订学习包，提交下一轮复审。</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="gen-progress-review-result">
+              已完成 {state.review.iterations} 轮技术与教学协同审核，学习包已进入可用状态。
+            </p>
+          </section>
+        )}
+        </div>
 
         {/* ===== 底部按钮 ===== */}
         <footer className="gen-progress-footer">

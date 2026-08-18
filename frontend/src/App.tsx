@@ -104,6 +104,12 @@ type Message = {
   role: 'user' | 'assistant';
   content: string;
   note?: string;
+  reviewSummary?: {
+    technical_passed?: boolean;
+    quality_passed?: boolean;
+    iterations?: number;
+    status?: string;
+  };
 };
 type KnowledgeSubtopic = {
   subtopic_id?: string;
@@ -264,6 +270,7 @@ type AssessmentReview = Omit<AssessmentAttempt, 'questions'> & {
 
 const USER_SCOPE = getClientUserId();
 const SESSION_STORAGE_KEY = `sessionId:${USER_SCOPE}`;
+const LAST_LEARNING_LOCATION_KEY = `lastLearningLocation:${USER_SCOPE}`;
 const PROJECTS_STORAGE_KEY = `learningProjects:${USER_SCOPE}`;
 const CONVERSATIONS_STORAGE_KEY = `stageConversations:${USER_SCOPE}`;
 const OWNED_SESSION_IDS_STORAGE_KEY = `ownedSessionIds:${USER_SCOPE}`;
@@ -294,6 +301,12 @@ function forgetOwnedSessionId(sessionId: string) {
   const sessionIds = readOwnedSessionIds();
   sessionIds.delete(sessionId);
   localStorage.setItem(OWNED_SESSION_IDS_STORAGE_KEY, JSON.stringify([...sessionIds]));
+}
+
+function isMissingSessionError(error: unknown) {
+  if (!error || typeof error !== 'object' || !('response' in error)) return false;
+  const response = (error as { response?: { status?: number; data?: unknown } }).response;
+  return response?.status === 404;
 }
 
 function readLearningProjects(): LearningProject[] {
@@ -474,32 +487,32 @@ const sidebarAgents = [
   {
     id: 'agent1',
     number: '1',
-    title: '画像诊断',
-    desc: '生成用户画像 / 规划学习阶段',
+    title: '学情诊断与规划',
+    desc: '画像诊断 / 阶段规划',
     icon: Brain,
     tone: 'blue'
   },
   {
     id: 'agent3',
     number: '3',
-    title: '内容生成',
-    desc: '生成学习资料',
+    title: '个性化内容生成',
+    desc: '生成教程、代码与测试题',
     icon: BookOpen,
     tone: 'violet'
   },
   {
     id: 'agent4',
     number: '4',
-    title: '双重审核',
-    desc: '技术审核与质量评审',
+    title: '技术与教学双审',
+    desc: '技术正确性 / 学习适配度',
     icon: Check,
     tone: 'orange'
   },
   {
     id: 'agent6',
     number: '6',
-    title: '阶段决策',
-    desc: '更新用户画像',
+    title: '学情决策与推进',
+    desc: '更新画像 / 确定后续策略',
     icon: Gauge,
     tone: 'green'
   }
@@ -511,6 +524,23 @@ function pct(value = 0) {
 
 function shortId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+/** 将原始文章中的（①）或（①+②）引用转为带原文来源标题的悬停标记。 */
+function addCitationTooltips(markdown: string, resources: LearningResource[]) {
+  const markerToIndex: Record<string, number> = {
+    '①': 0, '②': 1, '③': 2, '④': 3, '⑤': 4,
+    '⑥': 5, '⑦': 6, '⑧': 7, '⑨': 8, '⑩': 9,
+  };
+  return markdown.replace(/（([①②③④⑤⑥⑦⑧⑨⑩](?:\s*\+\s*[①②③④⑤⑥⑦⑧⑨⑩])*)）/g, (full, markers: string) => {
+    const renderedMarkers = markers.split(/(\s*\+\s*)/).map((part) => {
+      const index = markerToIndex[part];
+      if (index === undefined) return part;
+      const title = resources[index]?.title;
+      return title ? `[${part}](#source-${index + 1} "来源：${title.replace(/"/g, "'")}")` : part;
+    }).join('');
+    return `（${renderedMarkers}）`;
+  });
 }
 
 function createStageConversationMessages(nextStage: StageInfo, nextProfile?: Profile | null): Message[] {
@@ -626,7 +656,11 @@ function Sidebar({
           {sidebarAgents.map((agent) => {
             const Icon = agent.icon;
             const state = agentStatuses[agent.id];
-            const statusLabel = state === 'running'
+            const statusLabel = agent.id === 'agent4' && state === 'running'
+              ? '审核中：技术正确性审核'
+              : agent.id === 'agent4' && state === 'completed'
+                ? '已完成：技术正确性、教学质量均已审核'
+              : state === 'running'
               ? '正在运行'
               : state === 'completed'
                 ? '已完成'
@@ -775,7 +809,7 @@ function ProfilePanel({
   overallProgress?: number;
   dailyProgress: number;
   selectedConversationId: string;
-  onSelectProjectStage: (sessionId: string, stageNum: number) => void;
+  onSelectProjectStage: (sessionId: string, stageNum: number, stageId?: string) => void;
   onCreateGoal: () => void;
   loading: boolean;
   collapsed: boolean;
@@ -857,7 +891,9 @@ function ProfilePanel({
         </div>
         {sortProjectsForDashboard(projects, currentSessionId).map((project) => {
           const expanded = expandedGoals[project.sessionId] ?? project.sessionId === currentSessionId;
-          const stages = [...(project.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
+          const stagesByNumber = new Map<number, StageInfo>();
+          for (const item of project.stages || []) stagesByNumber.set(item.stage_num ?? 1, item);
+          const stages = [...stagesByNumber.values()].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
           return (
             <div className={`goal-nav-group ${project.sessionId === currentSessionId ? 'current' : ''}`} key={project.sessionId}>
               <button className="goal-nav-title" onClick={() => toggleGoal(project.sessionId)} aria-expanded={expanded}>
@@ -869,7 +905,9 @@ function ProfilePanel({
                   {stages.map((item, index) => {
                     const stageNum = item.stage_num ?? 1;
                     const conversationId = `${project.sessionId}:${stageNum}`;
-                    const current = project.sessionId === currentSessionId && stageNum === (stage.stage_num ?? 1);
+                    const current = project.sessionId === currentSessionId && (
+                      (item.stage_id && stage.stage_id) ? item.stage_id === stage.stage_id : stageNum === (stage.stage_num ?? 1)
+                    );
                     const isLastStage = index === stages.length - 1;
                     return (
                       <div
@@ -878,7 +916,7 @@ function ProfilePanel({
                       >
                         <button
                           className="goal-stage-button"
-                          onClick={() => onSelectProjectStage(project.sessionId, stageNum)}
+                          onClick={() => onSelectProjectStage(project.sessionId, stageNum, item.stage_id)}
                         >
                           <span>
                             第 {stageNum} 阶段 · {item.block_name || '阶段对话'}
@@ -1485,6 +1523,12 @@ function MaterialDocument({
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}
                     components={{
+                    a({ href, title, children, ...props }) {
+                      if (href?.startsWith('#source-')) {
+                        return <span className="material-citation" title={title || undefined}>{children}</span>;
+                      }
+                      return <a href={href} title={title} {...props}>{children}</a>;
+                    },
                     pre({ children }) {
                       return <div className="material-code-block">{children}</div>;
                     },
@@ -1503,7 +1547,7 @@ function MaterialDocument({
                     },
                   }}
                 >
-                  {normalizeMarkdownMath(topicTutorial)}
+                  {normalizeMarkdownMath(addCitationTooltips(topicTutorial, articleResources))}
                 </ReactMarkdown>
               </div>
             )}
@@ -1955,10 +1999,12 @@ function ChatView({
                       {normalizeMarkdownMath(message.content)}
                     </ReactMarkdown>
                   </div>
-                  {message.role === 'assistant' && (
-                    <div className="review-badge">
+                  {message.role === 'assistant' && message.reviewSummary && (
+                    <div className={`review-badge ${message.reviewSummary.status === 'skipped' ? 'skipped' : ''}`}>
                       <Check size={13} />
-                      技术审核 / 质量评审
+                      {message.reviewSummary.status === 'skipped'
+                        ? '日常问题，无需技术审核'
+                        : `Agent4 审核：技术${message.reviewSummary.technical_passed ? '通过' : '待复核'} · 教学${message.reviewSummary.quality_passed ? '通过' : '待复核'}${message.reviewSummary.iterations ? ` · ${message.reviewSummary.iterations} 轮` : ''}`}
                     </div>
                   )}
                 </div>
@@ -2660,7 +2706,7 @@ function LearningDashboardView({
                     <small>{project.stageName || '等待阶段规划'}</small>
                     <div className="goal-duration-summary">
                       <span><Clock size={12} />总计 {targetTotal || 0} 小时</span>
-                      <span>每阶段 {targetDaily} 小时</span>
+                      <span>每阶段学习时长 {targetDaily} 小时</span>
                       <span><CalendarDays size={12} />建立于 {formatProjectCreatedDate(project.createdAt ?? project.updatedAt)}</span>
                     </div>
                   </div>
@@ -2715,7 +2761,7 @@ function LearningDashboardView({
                         max={1000}
                       />
                       <DurationField
-                        label="每阶段时长"
+                        label="每阶段学习时长"
                         value={targetDurationDraft.daily}
                         onChange={(daily) => setTargetDurationDraft((draft) => ({ ...draft, daily }))}
                         min={0.5}
@@ -2892,7 +2938,7 @@ function DashboardView({
             <div>
               <small>学习时长</small>
               <strong>{targetDailyHours}<em> 小时/阶段</em></strong>
-              <p>当前目标每阶段安排</p>
+              <p>当前目标的每阶段学习时长</p>
             </div>
           </div>
           <div className="metric">
@@ -2965,7 +3011,7 @@ function ResultView({
   existingNextStage: StageInfo | null;
   result: StageResult | null;
   onPlanNext: () => void;
-  onStartNext: () => void;
+  onStartNext: (nextStage?: StageInfo | null) => void;
   onRestartCurrent: () => void;
   onContinueNext: () => void;
   onReturnToChat: () => void;
@@ -3088,12 +3134,18 @@ function ResultView({
                 <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}>
                   <Play size={17} />正确率低，建议重新开始学习该阶段
                 </button>
-                <button className="primary wide" onClick={onContinueNext} disabled={loading || !canPlanNext}>
-                  <Sparkles size={17} />继续进行下一个阶段
-                </button>
+                {availableNextStage ? (
+                  <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}>
+                    <Play size={17} />开始下一阶段
+                  </button>
+                ) : (
+                  <button className="primary wide" onClick={onContinueNext} disabled={loading || !canPlanNext}>
+                    <Sparkles size={17} />继续进行下一个阶段
+                  </button>
+                )}
               </div>
             ) : !result?.all_mastered && (plannedStage ? (
-              <button className="primary wide" onClick={onStartNext} disabled={loading}><Play size={17} />开始下一阶段</button>
+              <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={17} />开始下一阶段</button>
             ) : !existingNextStage ? (
               <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
             ) : null)}
@@ -3121,13 +3173,16 @@ function SettingsView({
   foundationNames: string[];
   onOpenFoundation: () => void;
 }) {
+  const [grade, setGrade] = useState(profile.grade || '');
   const [hardware, setHardware] = useState(profile.hardware || '');
 
   useEffect(() => {
     setHardware(profile.hardware || '');
-  }, [profile.hardware]);
+    setGrade(profile.grade || '');
+  }, [profile.hardware, profile.grade]);
 
-  const hasProfileEdits = hardware.trim() !== (profile.hardware || '').trim();
+  const hasProfileEdits = hardware.trim() !== (profile.hardware || '').trim()
+    || grade.trim() !== (profile.grade || '').trim();
 
   return (
     <div className="page-shell">
@@ -3142,8 +3197,8 @@ function SettingsView({
         )}
         <section className="settings-card">
           <div className="setting-row">
-            <div><strong>身份/学习背景</strong></div>
-            <span className="settings-readonly-value">{profile.grade || '未填写'}</span>
+            <div><strong>身份/学习背景</strong><p>用于生成符合你基础的学习内容</p></div>
+            <input value={grade} onChange={(event) => setGrade(event.target.value)} placeholder="例如 在校大学生 / 有基础的开发者" />
           </div>
           <div className="setting-row">
             <div><strong>设备条件</strong><p>影响视频、代码与部署建议</p></div>
@@ -3168,7 +3223,7 @@ function SettingsView({
             <button
               className="primary settings-save-button"
               onClick={() => onSave({
-                grade: profile.grade || '',
+                grade: grade.trim(),
                 skill_tags: profile.skill_tags || [],
                 hardware: hardware.trim()
               })}
@@ -3263,7 +3318,10 @@ export default function App() {
     rememberOwnedSessionId(nextSessionId);
     setLearningProjects((prev) => {
       const existing = prev.find((item) => item.sessionId === nextSessionId);
-      const knownStages = [...(existing?.stages || [])];
+      // 导航是“学习阶段”视图，不是重试审计视图；同一编号只保留一条。
+      const byStageNum = new Map<number, StageInfo>();
+      for (const item of existing?.stages || []) byStageNum.set(item.stage_num ?? 1, item);
+      const knownStages = [...byStageNum.values()];
       if (nextStage) {
         const stageNum = nextStage.stage_num ?? 1;
         const index = knownStages.findIndex((item) => (item.stage_num ?? 1) === stageNum);
@@ -3294,7 +3352,7 @@ export default function App() {
 
   const rememberStageConversation = (nextSessionId: string, nextStage: StageInfo, nextProfile?: Profile | null) => {
     const stageNum = nextStage.stage_num ?? 1;
-    const id = `${nextSessionId}:${stageNum}`;
+    const id = `${nextSessionId}:${nextStage.stage_id || stageNum}`;
     setStageConversations((prev) => {
       if (prev.some((item) => item.id === id)) return prev;
       return [{
@@ -3329,14 +3387,18 @@ export default function App() {
   ) => {
     setLearningProjects((prev) => prev.map((project) => {
       if (project.sessionId !== nextSessionId) return project;
-      const byStageNum = new Map<number, StageInfo>();
-      [...(project.stages || []), ...history, ...(currentStage ? [currentStage] : [])].forEach((item) => {
+      const byStageKey = new Map<number, StageInfo>();
+      const sourceStages = (history.length || currentStage)
+        ? [...history, ...(currentStage ? [currentStage] : [])]
+        : (project.stages || []);
+      sourceStages.forEach((item) => {
         const stageNum = item.stage_num ?? 1;
-        byStageNum.set(stageNum, { ...(byStageNum.get(stageNum) || {}), ...item, stage_num: stageNum });
+        const key = stageNum;
+        byStageKey.set(key, { ...(byStageKey.get(key) || {}), ...item, stage_num: stageNum });
       });
       return {
         ...project,
-        stages: [...byStageNum.values()].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1)),
+        stages: [...byStageKey.values()].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1)),
         averageAccuracy: averageAccuracy === undefined ? project.averageAccuracy : averageAccuracy,
         overallProgress: overallProgress === undefined ? project.overallProgress : overallProgress
       };
@@ -3388,12 +3450,13 @@ export default function App() {
             ? dashboard.stage_history as StageInfo[]
             : [];
           const current = dashboard.current_stage_summary as StageInfo | undefined;
-          const stagesByNumber = new Map<number, StageInfo>();
+          const stagesByKey = new Map<number, StageInfo>();
           [...history, ...(current ? [current] : []), ...(project.stages || [])].forEach((item) => {
             const stageNum = item.stage_num ?? 1;
-            stagesByNumber.set(stageNum, { ...stagesByNumber.get(stageNum), ...item });
+            const key = stageNum;
+            stagesByKey.set(key, { ...stagesByKey.get(key), ...item });
           });
-          const stages = [...stagesByNumber.values()]
+          const stages = [...stagesByKey.values()]
             .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1));
           return {
             ...project,
@@ -3412,16 +3475,12 @@ export default function App() {
           const cached = prev.find((item) => item.sessionId === remote.sessionId);
           if (!cached) return remote;
           const remoteStages = remote.stages || [];
-          const remoteStageNumbers = new Set(remoteStages.map((stage) => stage.stage_num ?? 1));
-          const cachedOnlyStages = (cached.stages || []).filter(
-            (stage) => !remoteStageNumbers.has(stage.stage_num ?? 1)
-          );
           return {
             ...cached,
             ...remote,
-            // Server history is authoritative. Cached stages only fill a gap
-            // while a newly-created stage has not reached the dashboard yet.
-            stages: [...remoteStages, ...cachedOnlyStages]
+            // Dashboard history is authoritative after hydration. Do not
+            // re-add stale retry snapshots from browser localStorage.
+            stages: [...remoteStages]
               .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1)),
             stageName: remote.stageName !== '等待阶段规划' ? remote.stageName : cached.stageName,
             stageNum: remote.stageName !== '等待阶段规划' ? remote.stageNum : cached.stageNum,
@@ -3533,6 +3592,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(CONVERSATIONS_STORAGE_KEY, JSON.stringify(stageConversations));
   }, [stageConversations]);
+
+  useEffect(() => {
+    if (!sessionId || workflow !== 'learning') return;
+    localStorage.setItem(LAST_LEARNING_LOCATION_KEY, JSON.stringify({
+      sessionId,
+      view,
+      stageNum: activeStageNum ?? stage?.stage_num ?? null,
+      subtopicId: selectedSubtopicId,
+      materialPanelOpen,
+    }));
+  }, [activeStageNum, materialPanelOpen, selectedSubtopicId, sessionId, stage?.stage_num, view, workflow]);
 
   useEffect(() => {
     if (isUiPreviewMode) {
@@ -3663,8 +3733,25 @@ export default function App() {
       setWorkflow('onboarding');
       return;
     }
-    // 统一走 switchLearningProject，确保：view=chat，进入到该项目最后阶段（最大 stage_num）
-    void switchLearningProject(savedSessionId, undefined, 'chat', true, true);
+    // 恢复用户最后离开的项目、页面和知识点，而不是改变项目列表排序。
+    let lastLocation: { sessionId?: string; view?: View; stageNum?: number; subtopicId?: string | null; materialPanelOpen?: boolean } = {};
+    try {
+      lastLocation = JSON.parse(localStorage.getItem(LAST_LEARNING_LOCATION_KEY) || '{}');
+    } catch {
+      lastLocation = {};
+    }
+    const restoreSameSession = lastLocation.sessionId === savedSessionId;
+    void switchLearningProject(
+      savedSessionId,
+      restoreSameSession ? lastLocation.stageNum : undefined,
+      restoreSameSession ? (lastLocation.view || 'chat') : 'chat',
+      true,
+      true,
+    ).then(() => {
+      if (!restoreSameSession) return;
+      setSelectedSubtopicId(lastLocation.subtopicId || null);
+      setMaterialPanelOpen(Boolean(lastLocation.materialPanelOpen));
+    });
   }, []);
 
   const currentQuestions = useMemo(() => {
@@ -3882,7 +3969,8 @@ export default function App() {
           id: shortId(),
           role: 'assistant',
           content: response.answer || '已收到问题，但后端没有返回回答内容。',
-          note: response.review_summary?.technical_passed && response.review_summary?.quality_passed ? '审核通过' : '待复核'
+          note: response.review_summary?.technical_passed && response.review_summary?.quality_passed ? '审核通过' : '待复核',
+          reviewSummary: response.review_summary,
         });
         finishAgentRun(['agent3'], Boolean(response.answer));
         finishAgentRun(['agent4'], Boolean(response.review_summary));
@@ -3909,7 +3997,7 @@ export default function App() {
     }
   };
 
-  const startStage = async () => {
+  const startStage = async (stageToStart?: StageInfo | null) => {
     setError(null);
     if (!sessionId) {
       setError('尚未创建后端会话');
@@ -3924,9 +4012,11 @@ export default function App() {
 
     // 用户可能画像确认后，当前 stage 已经有了（来自 submitFoundation 的返回），
     // 可以作为阶段①的 immediate 预览，弹窗一打开就看到，不用再等。
-    let initialStage: GenStagePreview | ApiStage | null = null;
+    // 下一阶段已由 plan-next 生成时必须直接使用它。否则低分用户的
+    // force_advance 计划会被启动流程中的普通 plan-next 覆盖为当前阶段复习。
+    let initialStage: GenStagePreview | ApiStage | null = stageToStart || plannedStage || null;
     if (isFirst) {
-      initialStage = plannedStage || stage || null;
+      initialStage = initialStage || stage || null;
     }
 
     await genProgress.run({
@@ -3949,7 +4039,7 @@ export default function App() {
         if (!isFirst) setPlannedStage(mapped);
         finishAgentRun(['agent1'], true);
       },
-      onPackageReady: async ({ packageResponse, stageResponse }) => {
+      onPackageReady: async ({ packageResponse, stageResponse, startResponse }) => {
         // eslint-disable-next-line no-console
         console.log('[startStage] API responses:', {
           'stage.subtopic_ids': stageResponse.stage?.subtopic_ids,
@@ -3963,7 +4053,11 @@ export default function App() {
           'package.resource_details': (packageResponse.package?.learning_resources || [])
             .map((r: any) => `${r.resource_type}:${r.subtopic_id || ''}:${r.url?.slice(0, 40) || ''}`),
         });
-        setLearningPackage(toLearningPackage(packageResponse.package));
+        const packageWithReview = {
+          ...packageResponse.package,
+          review_summary: startResponse?.review_summary || packageResponse.package?.review_summary,
+        };
+        setLearningPackage(toLearningPackage(packageWithReview));
         const generatedStage = toStageInfo(stageResponse.stage);
         if (!generatedStage) throw new Error('后端未返回当前阶段，无法启动学习包');
         setStage(generatedStage);
@@ -3980,7 +4074,9 @@ export default function App() {
         setMessages((prev) => [...prev, {
           id: shortId(),
           role: 'assistant',
-          content: `学习包已生成，审核结果：${packageResponse.package?.review_summary?.status || '已完成'}。`,
+          content: startResponse?.review_summary?.iterations
+            ? `学习包已生成，Agent4 已完成 ${startResponse.review_summary.iterations} 轮技术与教学审核。`
+            : '学习包已生成，Agent4 已完成技术与教学审核。',
           note: '学习包'
         }]);
         setWorkflow('learning');
@@ -4000,10 +4096,6 @@ export default function App() {
       },
       onFinally: () => {
         setLoading(false);
-      },
-      onSuccessClose: () => {
-        // 成功后自动关闭弹窗（给用户看了 900ms 的 success 勾）
-        genProgress.close();
       },
     });
   };
@@ -4445,7 +4537,8 @@ export default function App() {
     requestedStageNum?: number,
     destination: View = 'chat',
     ignoreBusy = false,
-    preferLastStage = false
+    preferLastStage = false,
+    requestedStageId?: string
   ) => {
     if (!ignoreBusy && (nextSessionId === sessionId || loading)) {
       const requestedConversationId = requestedStageNum === undefined
@@ -4530,10 +4623,10 @@ export default function App() {
       let displayStage = fallbackStage || activeStage;
       let displayPackage = toLearningPackage(session.learning_package);
       const displayStageNum = desiredStageNum ?? (displayStage?.stage_num ?? 1);
-      if (displayStageNum !== activeStageNum) {
+      if (displayStageNum !== activeStageNum || (requestedStageId && requestedStageId !== activeStage?.stage_id)) {
         const [stageResponse, packageResponse] = await Promise.allSettled([
-          apiClient.getCurrentStage(nextSessionId, displayStageNum),
-          apiClient.getStagePackage(nextSessionId, displayStageNum)
+          apiClient.getCurrentStage(nextSessionId, displayStageNum, requestedStageId),
+          apiClient.getStagePackage(nextSessionId, displayStageNum, requestedStageId)
         ]);
         // An old stage can lack one runtime snapshot. Keep the dashboard's
         // stage metadata and any available package instead of abandoning the
@@ -4551,7 +4644,7 @@ export default function App() {
       setResult(null);
       setAssessmentReview(null);
       try {
-        const persisted = await apiClient.getStageResult(nextSessionId, displayStageNum);
+        const persisted = await apiClient.getStageResult(nextSessionId, displayStageNum, displayStage?.stage_id);
         if (persisted.stage_result) setResult(persisted.stage_result as StageResult);
         if (persisted.assessment_attempt) setAssessmentReview(persisted.assessment_attempt as AssessmentReview);
       } catch {
@@ -4571,9 +4664,10 @@ export default function App() {
         }
       }
       setPlannedStage(session.next_stage || null);
-      const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${displayStageNum}`);
+      const conversationKey = displayStage?.stage_id || displayStageNum;
+      const restoredConversation = stageConversations.find((item) => item.id === `${nextSessionId}:${conversationKey}`);
       setMessages(restoredConversation?.messages || initialMessages);
-      setSelectedConversationId(`${nextSessionId}:${displayStageNum}`);
+      setSelectedConversationId(`${nextSessionId}:${conversationKey}`);
       setAgentStatuses(restoreAgentStatuses({
         hasProfile: true,
         hasLearningPackage,
@@ -4592,6 +4686,34 @@ export default function App() {
       setMaterialPanelOpen(false);
       setProjectSwitcherOpen(false);
     } catch (caught) {
+      if (isMissingSessionError(caught)) {
+        // A cleared or replaced database can leave an old browser session ID
+        // behind. Treat it as first use instead of surfacing a confusing 404.
+        if (localStorage.getItem(SESSION_STORAGE_KEY) === nextSessionId) {
+          localStorage.removeItem(SESSION_STORAGE_KEY);
+        }
+        forgetOwnedSessionId(nextSessionId);
+        setLearningProjects((projects) => projects.filter((project) => project.sessionId !== nextSessionId));
+        setStageConversations((conversations) => conversations.filter((conversation) => conversation.sessionId !== nextSessionId));
+        if (sessionId === nextSessionId || !sessionId) {
+          setSessionId(null);
+          setProfile(null);
+          setStage(null);
+          setLearningPackage(null);
+          setPlannedStage(null);
+          setResult(null);
+          setAssessmentReview(null);
+          setAssessmentState({ attemptId: null, questions: [] });
+          setMessages(initialMessages);
+          setSelectedConversationId('');
+          setActiveStageNum(null);
+          setAgentStatuses(createAgentStatusMap());
+          setWorkflow('onboarding');
+          setView('chat');
+        }
+        setProjectSwitcherOpen(false);
+        return;
+      }
       setError(`无法切换项目：${getErrorMessage(caught)}`);
     } finally {
       setLoading(false);
@@ -4682,8 +4804,8 @@ export default function App() {
     }
   };
 
-  const selectProjectStage = (nextSessionId: string, stageNum: number) => {
-    void switchLearningProject(nextSessionId, stageNum);
+  const selectProjectStage = (nextSessionId: string, stageNum: number, stageId?: string) => {
+    void switchLearningProject(nextSessionId, stageNum, 'chat', false, false, stageId);
   };
 
   const deleteLastLearningStage = async (targetSessionId: string) => {
@@ -4736,19 +4858,15 @@ export default function App() {
       // 若删的是当前会话，回退到删除后的最新阶段
       if (targetSessionId === sessionId) {
         try {
-          const latestSession = await apiClient.getSession(targetSessionId);
-          const activeStage = resolveSessionStage(latestSession);
-          setStage(activeStage);
-          setActiveStageNum(activeStage?.stage_num ?? null);
-          setLearningPackage(toLearningPackage(latestSession.learning_package));
-          setResult(null);
-          setPlannedStage(latestSession.next_stage || null);
-          const currentStageNum = activeStage?.stage_num ?? 1;
-          const restoredConversation = stageConversations.find((item) => item.id === `${targetSessionId}:${currentStageNum}`);
-          if (restoredConversation) {
-            setMessages(restoredConversation.messages);
-          }
-          setSelectedConversationId(`${targetSessionId}:${currentStageNum}`);
+          const remainingStageNum = Number(result.details?.remaining_stage_num);
+          // Reuse the normal stage switcher so package, conversation and result
+          // state are restored from the preceding stage snapshot together.
+          await switchLearningProject(
+            targetSessionId,
+            Number.isFinite(remainingStageNum) && remainingStageNum > 0 ? remainingStageNum : undefined,
+            'chat',
+            true,
+          );
         } catch (caught) {
           console.warn('[deleteLastStage] failed to refresh current session snapshot', caught);
         }
@@ -4953,8 +5071,8 @@ export default function App() {
             .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1))[0] || null}
           result={result}
           onPlanNext={planNextStage}
-          onStartNext={startStage}
-          onRestartCurrent={startStage}
+          onStartNext={(nextStage) => void startStage(nextStage)}
+          onRestartCurrent={() => void startStage()}
           onContinueNext={() => planNextStage(true)}
           onReturnToChat={() => {
             setView('chat');

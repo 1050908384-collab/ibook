@@ -50,7 +50,7 @@ test('first-time profile requires only stable profile fields and confirmed found
 test('target-only diagnosis sends learning style but not stable profile fields', () => {
   const message = buildDiagnosticMessage(targetOnlyForm, true);
   assert.match(message, /学习目标/);
-  assert.match(message, /每天可以学习/);
+  assert.match(message, /每个学习阶段可以安排/);
   assert.match(message, /学习方式：混合型/);
   assert.doesNotMatch(message, /身份背景|已有基础|设备条件/);
 });

@@ -963,7 +963,11 @@ body.resizing-workspace-panels * {
   flex-direction: column;
   gap: 12px;
   min-height: 0;
-  overflow: hidden;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #c8cedd transparent;
   opacity: 1;
   transform: translateX(0);
   transform-origin: left center;
@@ -1057,7 +1061,12 @@ body.resizing-workspace-panels * {
   gap: 3px;
   min-height: 0;
   padding: 4px 0;
+  flex: 1 1 auto;
 }
+
+.context-panel-body::-webkit-scrollbar { width: 7px; }
+.context-panel-body::-webkit-scrollbar-thumb { background: #c8cedd; border-radius: 6px; }
+.context-panel-body::-webkit-scrollbar-track { background: transparent; }
 
 .goal-stage-nav-heading {
   display: flex;
@@ -1105,6 +1114,7 @@ body.resizing-workspace-panels * {
   display: grid;
   gap: 1px;
   padding: 1px 0 5px 29px;
+  overflow: visible;
 }
 
 .goal-stage-list > .goal-stage-item {
@@ -2550,7 +2560,11 @@ body.resizing-workspace-panels * {
   border: 0;
   padding: 17px;
   overflow: hidden;
-  position: relative;
+  flex: 0 0 auto;
+  z-index: 2;
+  position: sticky;
+  top: 0;
+  box-shadow: 0 6px 16px rgba(24, 20, 68, 0.14);
 }
 
 .stage-card::after {
@@ -6467,6 +6481,7 @@ body.resizing-workspace-panels * {
 /* -------------- 弹窗容器 -------------- */
 .generation-progress-card {
   width: min(580px, 92vw);
+  height: min(760px, calc(100dvh - 40px));
   background: #fff;
   border-radius: 18px;
   box-shadow: 0 28px 80px rgba(13, 17, 32, 0.3);
@@ -6475,6 +6490,25 @@ body.resizing-workspace-panels * {
   display: flex;
   flex-direction: column;
   max-height: calc(100dvh - 60px);
+}
+
+/* Header and actions stay anchored; only the generation evidence scrolls. */
+.gen-progress-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c8ccda transparent;
+}
+
+.gen-progress-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+
+.gen-progress-scroll::-webkit-scrollbar-thumb {
+  background: #c8ccda;
+  border-radius: 8px;
 }
 
 @keyframes genCardIn {
@@ -6682,15 +6716,13 @@ body.resizing-workspace-panels * {
 .gen-stage-preview.is-visible {
   opacity: 1;
   transform: translateY(0);
-  max-height: 280px;
+  max-height: none;
   padding-top: 14px;
   padding-bottom: 14px;
   margin-top: 6px;
   margin-bottom: 4px;
   border-width: 1px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #cfd3df transparent;
+  overflow: visible;
 }
 
 .gen-stage-preview-head {
@@ -6799,11 +6831,163 @@ body.resizing-workspace-panels * {
   margin: 8px 22px 0;
 }
 
+.gen-progress-review-result {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #dbe8df;
+  border-radius: 6px;
+  background: #f4fbf6;
+  color: #23734b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.gen-review-timeline {
+  margin: 14px 22px 0;
+  padding: 13px 14px;
+  border: 1px solid #e4e7f0;
+  border-radius: 10px;
+  background: #fbfcff;
+  display: grid;
+  gap: 10px;
+}
+
+.gen-review-timeline-events {
+  display: grid;
+  gap: 7px;
+  max-height: 176px;
+  overflow-y: auto;
+  padding-right: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: #cfd3df transparent;
+}
+
+.gen-review-timeline-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.gen-review-timeline-title span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.gen-review-round { display: grid; gap: 7px; }
+
+.gen-review-event {
+  border-left: 2px solid #d9ddea;
+  padding: 2px 0 2px 10px;
+}
+
+.gen-review-event.agent3 { border-color: #a79cf5; }
+.gen-review-event.agent4 { border-color: #e99c5d; }
+.gen-review-event.revision { margin-left: 12px; border-color: #67b98a; }
+
+.gen-review-event span {
+  color: #3f4656;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gen-review-event p {
+  margin: 3px 0 0;
+  color: #697184;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.gen-review-timeline .gen-progress-review-result { margin: 2px 0 0; }
+
+.review-badge.skipped { color: #7b8290; background: #f4f5f7; border-color: #e7e9ef; }
+
+.material-citation {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 1px;
+  color: var(--violet-dark);
+  font-size: 0.9em;
+  font-weight: 800;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
 .gen-progress-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--violet) 0%, #8a80ff 100%);
   border-radius: 3px;
   transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* -------------- 真实协同事件流 -------------- */
+.gen-live-events {
+  margin: 14px 22px 0;
+  border: 1px solid #e4e7f0;
+  border-radius: 8px;
+  background: #fbfcff;
+  overflow: hidden;
+}
+
+.gen-live-events-title {
+  min-height: 34px;
+  padding: 8px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #eaecf3;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.gen-live-events-title span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.gen-live-events-list {
+  max-height: 164px;
+  overflow-y: auto;
+  padding: 5px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #cfd3df transparent;
+}
+
+.gen-live-event {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 8px;
+  padding: 6px 11px;
+  animation: fadeInUp 0.2s ease both;
+}
+
+.gen-live-event > span {
+  align-self: start;
+  color: #697184;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.gen-live-event.agent3 > span { color: #665bc7; }
+.gen-live-event.agent4 > span { color: #b56b2c; }
+
+.gen-live-event p {
+  min-width: 0;
+  margin: 0;
+  color: #4d5567;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.gen-live-event small {
+  margin-left: 4px;
+  color: #8a91a1;
+  font-size: 11px;
 }
 
 /* -------------- 错误提示 -------------- */

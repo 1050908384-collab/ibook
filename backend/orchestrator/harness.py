@@ -2,6 +2,7 @@
 import asyncio
 import json
 import re
+import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -102,10 +103,36 @@ class Harness:
         self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
         # Agent5已合并至Agent4，质量审核功能已集成
         self.agent6 = DeterministicStageDecisionAgent()
+        # Short-lived event buffer for the generation modal. These records are
+        # operational evidence only and never become learner-facing content.
+        self._generation_events: Dict[str, List[Dict[str, Any]]] = {}
+        self._generation_event_seq: Dict[str, int] = {}
+
+    def _reset_generation_events(self, session_id: str) -> None:
+        self._generation_events[session_id] = []
+        self._generation_event_seq[session_id] = 0
+
+    def get_generation_events(self, session_id: str, after: int = 0) -> Dict[str, Any]:
+        events = self._generation_events.get(session_id, [])
+        return {
+            "events": [item for item in events if item["id"] > after],
+            "latest_id": self._generation_event_seq.get(session_id, 0),
+        }
 
     def _log(self, session_id: str, event: str, detail: str = "") -> None:
         suffix = f" | {detail}" if detail else ""
         print(f"[Harness][session={session_id}] {event}{suffix}", flush=True)
+        event_id = self._generation_event_seq.get(session_id, 0) + 1
+        self._generation_event_seq[session_id] = event_id
+        events = self._generation_events.setdefault(session_id, [])
+        events.append({
+            "id": event_id,
+            "timestamp": int(time.time() * 1000),
+            "event": event,
+            "detail": detail,
+        })
+        if len(events) > 120:
+            del events[:-120]
 
     @staticmethod
     def _extract_user_facing_answer(raw_answer: str) -> str:
@@ -124,6 +151,12 @@ class Harness:
             return "当前 DeepSeek 请求过于频繁（HTTP 429），请稍后重试。"
         if text.startswith("Error: DeepSeek API request failed"):
             return "当前 DeepSeek 请求失败，请检查网络连通性或接口配置。"
+        if text.startswith("Error: DeepSeek API transport failure"):
+            return "当前 DeepSeek 云端连接不稳定，系统已自动重试仍未成功。请稍后重新提问。"
+        if text.startswith("Error: DeepSeek returned empty content"):
+            return "当前 DeepSeek 未返回可展示的最终回答，系统已自动重试。请稍后重新提问。"
+        if text.startswith("Error: DeepSeek API response format invalid"):
+            return "当前 DeepSeek 返回格式异常，系统已自动重试。请稍后重新提问。"
 
         # The deterministic emergency path used to concatenate retrieval
         # excerpts, history, and profile context. Those are prompt inputs,
@@ -267,6 +300,7 @@ class Harness:
         }
 
     async def start_stage(self, session_id: str) -> Dict[str, Any]:
+        self._reset_generation_events(session_id)
         # 若已通过 plan-next 规划过 next_stage，则在真正启动阶段前把 next_stage 切换为当前 stage_info
         planned = self.state_manager.get_next_stage(session_id)
         if planned:
@@ -375,6 +409,23 @@ class Harness:
         if is_greeting:
             raw_answer = self._greeting_answer(stage.block_name)
             question_type = "daily"  # 问候属于日常类，不走 Agent4
+        elif self._is_profile_fact_question(question):
+            # 画像事实查询不应交给知识库检索或通用闲聊模型猜测；直接读取
+            # 实践画像中的结构化设备字段，保证“我的设备型号是什么”这类问题稳定可答。
+            model = (getattr(practice_profile, "gpu_model", "") or "").strip()
+            hardware = (getattr(practice_profile, "hardware", "") or "").strip()
+            device_type = (getattr(practice_profile, "device_type", "") or "").strip()
+            vram = getattr(practice_profile, "vram_gb", None)
+            if model:
+                detail = f"（{vram}GB 显存）" if vram else ""
+                raw_answer = f"你的设备型号是 {model}{detail}。"
+            elif hardware:
+                raw_answer = f"你当前画像中记录的设备条件是：{hardware}。"
+            elif device_type:
+                raw_answer = f"你当前画像中记录的设备类型是：{device_type}。"
+            else:
+                raw_answer = "你的用户画像中暂未记录设备型号，可以在设置中补充。"
+            question_type = "profile_fact"
         else:
             generated = await self.agent3.generate_answer(AnswerGenerationInput(
                 session_id=session_id,
@@ -390,7 +441,7 @@ class Harness:
             question_type = getattr(generated, "question_type", "technical")
 
         # === 根据问题类型决定是否调用 Agent4 审核 ===
-        if question_type == "daily":
+        if question_type in {"daily", "profile_fact"}:
             # 日常类：跳过 Agent4 审核，直接使用 Agent3 的回答
             self._log(session_id, "handle_question:daily_skip_review", f"question_type={question_type}")
             answer = self._extract_user_facing_answer(raw_answer)
@@ -408,7 +459,7 @@ class Harness:
                 "quality_passed": True,
                 "iterations": 0,
                 "needs_human_review": False,
-                "reason": "daily_question_skipped_agent4",
+                "reason": "profile_fact_skipped_agent4" if question_type == "profile_fact" else "daily_question_skipped_agent4",
             }
         else:
             # 技术类：走原 Agent4 审核流程
@@ -492,6 +543,15 @@ class Harness:
             if gap_skills:
                 parts.append(f"知识盲区：{', '.join(gap_skills[:3])}")
         return "；".join(parts) if parts else ""
+
+    @staticmethod
+    def _is_profile_fact_question(question: str) -> bool:
+        """识别只需读取用户画像的事实问题，避免被误判为知识库问答。"""
+        text = (question or "").strip().lower()
+        return bool(text) and any(keyword in text for keyword in (
+            "我的设备", "设备型号", "我的显卡", "我的硬件", "我的gpu",
+            "what device", "what gpu", "my hardware", "device model",
+        ))
 
     def _build_answer_review_summary(
         self,
@@ -751,6 +811,12 @@ class Harness:
             ),
         ))
         next_stage = planned.stage
+        # A below-threshold result is a retry of the same stage instance, not
+        # a second stage with the same number. Reuse the immutable stage_id so
+        # stage_progress and snapshots update in place and cannot hide an
+        # earlier knowledge point (for example installation -> syntax).
+        if next_stage_num == current_stage_info.stage_num and not force_advance:
+            next_stage.stage_id = current_stage_info.stage_id
         self.state_manager.update_next_stage(session_id, next_stage)
         self.state_manager.update_planning_notes(session_id, planning_notes)
 
@@ -942,6 +1008,8 @@ class Harness:
         两个 Semaphore 有意分离：审核等待或执行时不占用 Agent3 的生成槽，
         因此 Agent3 可继续生产后续块，Agent4 独立消费已完成的块。
         """
+        chunk_label = str(source_chunk.get("chunk_id") or source_chunk.get("source_chunk_id") or block_index + 1)
+        self._log(session_id, "agent3:block_generate_start", f"block={block_index + 1}, chunk={chunk_label}")
         block = await self._run_capped(
             generation_sem,
             lambda: self.agent3.generate_block(
@@ -953,13 +1021,16 @@ class Harness:
                 session_id=session_id,
             ),
         )
+        self._log(session_id, "agent3:block_generate_done", f"block={block_index + 1}")
         try:
+            self._log(session_id, "agent4:first_review_start", f"block={block_index + 1}, round={round_index}")
             review = await self._run_capped(
                 review_sem,
                 lambda: self.agent4.review_block(
                     block=block, stage=stage, profile=profile, round_index=round_index,
                 ),
             )
+            self._log(session_id, "agent4:first_review_done", f"block={block_index + 1}, issues={len(review.errors)}")
         except Exception as exc:
             review = TechnicalReviewResult(
                 passed=False,
@@ -970,6 +1041,7 @@ class Harness:
                     content_block_id=getattr(block, "content_block_id", None),
                 )],
             )
+            self._log(session_id, "agent4:first_review_failed", f"block={block_index + 1}")
         return block, review
 
     def _aggregate_blocks(
@@ -1069,6 +1141,7 @@ class Harness:
 
     async def _recheck_block(
         self,
+        session_id: str,
         st: "BlockState",
         stage: StageInfo,
         profile: UserProfile,
@@ -1084,6 +1157,7 @@ class Harness:
         消解了首轮暴露的规则/事实/质量问题。
         """
         try:
+            self._log(session_id, "agent4:recheck_start", f"round={round_index}")
             rr = await self.agent4.review_block(
                 block=st.block, stage=stage, profile=profile, round_index=round_index,
                 use_llm_semantic=False,
@@ -1099,6 +1173,7 @@ class Harness:
             )
         st.last_review = rr
         st.open_issues = list(rr.errors)
+        self._log(session_id, "agent4:recheck_done", f"round={round_index}, issues={len(rr.errors)}")
 
     async def _review_learning_package_pipeline(
         self,
@@ -1243,12 +1318,16 @@ class Harness:
 
                 # Agent3 答辩（块作为最小上下文）
                 try:
+                    self._log(session_id, "agent3:review_reply_start", f"round={round_num}")
                     author_replies = await self.agent3.reply_to_review(session_id, issues, block_dict)
+                    self._log(session_id, "agent3:review_reply_done", f"round={round_num}, replies={len(author_replies)}")
                 except Exception:
                     author_replies = []
                 # Agent4 复核裁决
                 try:
+                    self._log(session_id, "agent4:verdict_start", f"round={round_num}")
                     verdicts = await self.agent4.rebut(session_id, issues, author_replies)
+                    self._log(session_id, "agent4:verdict_done", f"round={round_num}, decisions={len(verdicts)}")
                 except Exception:
                     verdicts = {}
                 accepted_issues, unresolved_must_fix_count = self._adjudicate_issues(
@@ -1266,15 +1345,17 @@ class Harness:
                 if accepted_issues:
                     # 定点修改本块（version+1、revision_note），修改槽只在此期间持有
                     try:
+                        self._log(session_id, "agent3:revision_start", f"round={round_num}")
                         revised = await self.agent3.modify_block(st.block, accepted_issues)
                         st.block = revised
+                        self._log(session_id, "agent3:revision_done", f"round={round_num}")
                     except Exception as exc:
                         # 修改失败：保留原 open_issues，不派复核，交由后续轮次/人工
                         self._log(session_id, "pipeline:modify_failed", f"cid={cid}, err={exc}")
                         return unresolved_must_fix_count
                     # 立即派发独立复核 task（不占修改槽 → 块1复核不阻塞块2修改）
                     st.recheck_task = asyncio.create_task(
-                        self._recheck_block(st, stage, profile, round_num + 1)
+                        self._recheck_block(session_id, st, stage, profile, round_num + 1)
                     )
                 else:
                     # 无接受的修改：该块视为已解决，清空残留 open 问题

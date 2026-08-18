@@ -183,7 +183,7 @@ python scripts/check_review_schema.py
 
 为提升 Agent3 产出可追溯性与 Agent4 审核可执行性，审核链路从“单向报错”升级为“结构化争议处理”：
 
-- **流程**：Agent4 出具带来源的 issue（含 `canonical_error_id`、`source_refs`、`must_fix`） → Agent3 逐条回复 `accepted / rejected / partially_accepted` → Agent4 复核 → Orchestrator 终审；最多 2 轮
+- **流程**：Agent4 出具带来源的 issue（含 `canonical_error_id`、`source_refs`、`must_fix`） → Agent3 逐条回复 `accepted / rejected / partially_accepted` → Agent4 复核 → Orchestrator 终审；最多 3 轮（由 `MAX_REVIEW_ITERATIONS` 配置）
 - **数据落库**：6 张表（`review_traces` / `learning_package_sources` / `learning_package_claims` / `review_debate_issues` / `review_debate_rounds` / `review_debate_responses`），均以 `trace_id` 维度组织；`source_id` / `claim_id` / `canonical_error_id` 在单个 trace 内唯一
 - **超轮次策略**：达到最大轮次仍有未决 must_fix 时，`final_status=needs_human_review`、`package_status=provisional`，学习包降级可用但不进入正式知识沉淀
 - **完整协议**：见 [`docs/Agent34审核辩论协议.md`](docs/Agent34审核辩论协议.md)；表结构说明见 [`数据库框架.md`](数据库框架.md) 第九节

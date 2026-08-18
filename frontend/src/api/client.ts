@@ -163,6 +163,18 @@ export type PlanNextStageResponse = {
   can_plan_next_stage?: boolean;
 };
 
+export type GenerationEvent = {
+  id: number;
+  timestamp: number;
+  event: string;
+  detail?: string;
+};
+
+export type GenerationEventsResponse = {
+  events: GenerationEvent[];
+  latest_id: number;
+};
+
 export type SessionListItem = {
   session_id: string;
   title?: string;
@@ -423,8 +435,11 @@ export const apiClient = {
     return response.data;
   },
 
-  getCurrentStage: async (sessionId: string, stageNum?: number) => {
-    const suffix = stageNum === undefined ? '' : `?stage_num=${encodeURIComponent(stageNum)}`;
+  getCurrentStage: async (sessionId: string, stageNum?: number, stageId?: string) => {
+    const params = new URLSearchParams();
+    if (stageNum !== undefined) params.set('stage_num', String(stageNum));
+    if (stageId) params.set('stage_id', stageId);
+    const suffix = params.toString() ? `?${params.toString()}` : '';
     const response = await axios.get(`${BASE_URL}/sessions/${sessionId}/stages/current${suffix}`);
     return response.data;
   },
@@ -434,8 +449,18 @@ export const apiClient = {
     return response.data;
   },
 
-  getStagePackage: async (sessionId: string, stageNum?: number) => {
-    const suffix = stageNum === undefined ? '' : `?stage_num=${encodeURIComponent(stageNum)}`;
+  getGenerationEvents: async (sessionId: string, after = 0) => {
+    const response = await axios.get<GenerationEventsResponse>(
+      `${BASE_URL}/sessions/${sessionId}/stages/current/generation-events?after=${encodeURIComponent(after)}`
+    );
+    return response.data;
+  },
+
+  getStagePackage: async (sessionId: string, stageNum?: number, stageId?: string) => {
+    const params = new URLSearchParams();
+    if (stageNum !== undefined) params.set('stage_num', String(stageNum));
+    if (stageId) params.set('stage_id', stageId);
+    const suffix = params.toString() ? `?${params.toString()}` : '';
     const response = await axios.get(`${BASE_URL}/sessions/${sessionId}/stages/current/package${suffix}`);
     return response.data;
   },
@@ -466,9 +491,10 @@ export const apiClient = {
     return response.data;
   },
 
-  getStageResult: async (sessionId: string, stageNum: number) => {
+  getStageResult: async (sessionId: string, stageNum: number, stageId?: string) => {
+    const suffix = stageId ? `?stage_id=${encodeURIComponent(stageId)}` : '';
     const response = await axios.get<StageResultResponse>(
-      `${BASE_URL}/sessions/${sessionId}/stages/${encodeURIComponent(stageNum)}/result`
+      `${BASE_URL}/sessions/${sessionId}/stages/${encodeURIComponent(stageNum)}/result${suffix}`
     );
     return response.data;
   },

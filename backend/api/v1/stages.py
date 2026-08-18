@@ -13,6 +13,7 @@ from typing import Optional
 from api.dependencies import get_current_user_id, get_harness, require_owned_session
 from api.v1.learning_resources import backfill_stage_tutorial, build_stage_document_resources
 from api.v1.schemas import to_public_learning_package, to_public_question
+from config import settings
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -196,7 +197,7 @@ def _extract_platform(url) -> str:
 
 
 @router.get("/current")
-async def get_current_stage(session_id: str, stage_num: Optional[int] = None):
+async def get_current_stage(session_id: str, stage_num: Optional[int] = None, stage_id: Optional[str] = None):
     """
     获取当前阶段详情（不返回题目）
     
@@ -208,7 +209,7 @@ async def get_current_stage(session_id: str, stage_num: Optional[int] = None):
             raise HTTPException(status_code=404, detail="Session not found")
         
         requested_stage_num = stage_num if stage_num is not None else (session.get("stage_info") or {}).get("stage_num")
-        snapshot = harness.state_manager.get_stage_snapshot(session_id, requested_stage_num)
+        snapshot = harness.state_manager.get_stage_snapshot_by_id(session_id, stage_id) if stage_id else harness.state_manager.get_stage_snapshot(session_id, requested_stage_num)
         stage = snapshot.get("stage_info") if snapshot else None
         if not stage:
             raise HTTPException(status_code=404, detail="No current stage")
@@ -256,7 +257,7 @@ async def get_current_stage(session_id: str, stage_num: Optional[int] = None):
 
 
 @router.get("/current/package")
-async def get_current_stage_package(session_id: str, stage_num: Optional[int] = None):
+async def get_current_stage_package(session_id: str, stage_num: Optional[int] = None, stage_id: Optional[str] = None):
     """
     获取当前阶段学习包（含题目）
     
@@ -275,13 +276,16 @@ async def get_current_stage_package(session_id: str, stage_num: Optional[int] = 
         current_stage_num = (session.get("stage_info") or {}).get("stage_num")
         requested_stage_num = stage_num if stage_num is not None else current_stage_num
         is_current_stage = requested_stage_num == current_stage_num
-        if is_current_stage and session.get("phase") == "stage_ready":
+        if is_current_stage and not stage_id and session.get("phase") == "stage_ready":
             raise HTTPException(
                 status_code=409, 
                 detail="当前阶段尚未开始，请调用 POST /api/v1/sessions/{session_id}/stages/current/start 开始学习"
             )
         
-        snapshot = harness.state_manager.get_stage_snapshot(session_id, requested_stage_num)
+        snapshot = harness.state_manager.get_stage_snapshot_by_id(session_id, stage_id) if stage_id else harness.state_manager.get_stage_snapshot(session_id, requested_stage_num)
+        if stage_id and snapshot:
+            requested_stage_num = (snapshot.get("stage_info") or {}).get("stage_num", requested_stage_num)
+            is_current_stage = (session.get("stage_info") or {}).get("stage_id") == stage_id
         if not snapshot:
             raise HTTPException(status_code=404, detail="Stage not found")
         package = snapshot.get("learning_package")
@@ -422,6 +426,19 @@ async def get_current_stage_package(session_id: str, stage_num: Optional[int] = 
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/current/generation-events")
+async def get_generation_events(session_id: str, after: int = 0):
+    """Return the short-lived, sanitized orchestration event stream for the generation modal."""
+    try:
+        if not harness.get_session(session_id):
+            raise HTTPException(status_code=404, detail="Session not found")
+        return harness.get_generation_events(session_id, after=max(0, after))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/current/start")
 async def start_current_stage(session_id: str):
     """
@@ -456,6 +473,26 @@ async def start_current_stage(session_id: str):
             "phase": "learning",
             "package_id": result.get("package_id"),
             "available_actions": ["ask_question", "start_assessment"],
+            "review_summary": {
+                "status": result.get("package_status", "approved"),
+                "reviewed_by": "Agent4",
+                "iterations": result.get("iterations", 0),
+                "max_iterations": settings.MAX_REVIEW_ITERATIONS,
+                "review_trace_id": result.get("review_trace_id"),
+                "needs_human_review": result.get("needs_human_review", False),
+                "unresolved_issue_count": result.get("unresolved_issue_count", 0),
+            },
+            # 仅返回适合界面展示的审核过程摘要；原始答辩证据仍保留在数据库中。
+            "review_timeline": [
+                {
+                    "round": item.get("iteration", index),
+                    "technical_passed": bool((item.get("technical") or {}).get("passed")),
+                    "quality_passed": bool((item.get("quality") or {}).get("passed")),
+                    "issue_count": len((item.get("technical") or {}).get("errors") or [])
+                    + len((item.get("quality") or {}).get("errors") or []),
+                }
+                for index, item in enumerate(result.get("review_history", []), start=1)
+            ],
             # 个性化字段
             "stage_info": {
                 "recommended_daily_hours": stage.get("recommended_daily_hours"),

@@ -13,6 +13,7 @@ import asyncio
 import os
 import sqlite3
 import sys
+import uuid
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -138,8 +139,9 @@ async def verify_harness_db_write() -> bool:
 
     # 直接调用 _review_learning_package，绕过 start_stage 的前置依赖
     agent3 = DeterministicContentAgent()
+    verify_session_id = f"verify_session_3_{uuid.uuid4().hex[:8]}"
     stage = StageInfo(
-        stage_id="verify_stage_3",
+        stage_id=f"verify_stage_3_{uuid.uuid4().hex[:8]}",
         stage_num=1,
         block_id="LoRA",
         block_name="LoRA微调基础",
@@ -147,11 +149,11 @@ async def verify_harness_db_write() -> bool:
         gap_skill="lora_rank",
         status="pending",
     )
-    gen = await agent3.run(ContentGenerationInput(session_id="verify_session_3", stage=stage))
+    gen = await agent3.run(ContentGenerationInput(session_id=verify_session_id, stage=stage))
     pkg = gen.learning_package
 
     profile = UserProfile(
-        session_id="verify_session_3",
+        session_id=verify_session_id,
         goal="掌握LoRA微调",
         confidence=0.5,
         knowledge_gaps=[],
@@ -159,10 +161,10 @@ async def verify_harness_db_write() -> bool:
 
     # 确保 session 存在（DB 层 + state_manager 层 + stage_progress 外键）
     db = harness.state_manager.db_client
-    db.create_session("verify_session_3")
+    db.create_session(verify_session_id)
     # state_manager.require_session 检查 session_states 表
-    db.save_session_state("verify_session_3", {
-        "session_id": "verify_session_3",
+    db.save_session_state(verify_session_id, {
+        "session_id": verify_session_id,
         "current_stage": 1,
         "status": "active",
     })
@@ -172,10 +174,10 @@ async def verify_harness_db_write() -> bool:
         s.execute(sa_text(
             "INSERT OR IGNORE INTO stage_progress (stage_id, session_id, stage_num, block_id, block_name, status) "
             "VALUES (:sid, :sess, 1, 'LoRA', 'LoRA微调基础', 'pending')"
-        ), {"sid": stage.stage_id, "sess": "verify_session_3"})
+        ), {"sid": stage.stage_id, "sess": verify_session_id})
         s.commit()
 
-    _, _ = await harness._review_learning_package("verify_session_3", pkg, stage, profile)
+    _, _ = await harness._review_learning_package(verify_session_id, pkg, stage, profile)
 
     # 检查 6 张表（取最新 trace）
     conn = sqlite3.connect(str(DB_PATH))
@@ -183,7 +185,8 @@ async def verify_harness_db_write() -> bool:
         # 取最新 trace
         trace_row = conn.execute(
             "SELECT trace_id, final_status, package_status FROM review_traces "
-            "WHERE session_id = 'verify_session_3' ORDER BY created_at DESC LIMIT 1"
+            "WHERE session_id = ? ORDER BY created_at DESC LIMIT 1",
+            (verify_session_id,),
         ).fetchone()
         if not trace_row:
             print("  FAIL: review_traces 无记录")
