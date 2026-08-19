@@ -1582,7 +1582,7 @@ function MaterialDocument({
         ) : <p className="material-empty">暂无文章内容</p>}
       </section>
       <section className="material-resource-section article-urls">
-        <div className="material-section-heading"><ExternalLink size={16} /><h3>拓展网址</h3></div>
+        <div className="material-section-heading"><ExternalLink size={16} /><h3>参考网址</h3></div>
         {articleResources.length > 0 ? (
           <div className="material-article-list">
             {articleResources.map((resource, index) => {
