@@ -1215,22 +1215,23 @@ class SQLiteClient:
         ]
         total_hours = round(sum(float(row.get("estimated_hours") or 0) for row in selected), 2)
         # The active path may start with prerequisite stages outside the
-        # learner's final target block. A target total must never shrink below
-        # time already completed on that path.
+        # learner's final target block. This is an automatic metric refresh,
+        # not a learner-requested reschedule: retain the planned stage hours
+        # and only raise the displayed total when the current plan is longer.
         with self.Session() as session:
-            completed_stage_hours = session.execute(text("""
+            planned_stage_hours = session.execute(text("""
                 SELECT COALESCE(SUM(estimated_hours), 0)
                 FROM stage_progress
-                WHERE session_id = :session_id AND status = 'completed'
+                WHERE session_id = :session_id
             """), {"session_id": session_id}).scalar_one()
-        total_hours = max(total_hours, round(float(completed_stage_hours or 0), 2))
+        total_hours = max(total_hours, round(float(planned_stage_hours or 0), 2))
         progress = round(
             sum(float(row.get("mastery_score") or 0) for row in selected) / len(selected), 4
         ) if selected else 0.0
         return self.update_target_settings(session_id, {
             "target_total_hours": total_hours,
             "target_progress": progress,
-        })
+        }, redistribute_stage_hours=False)
 
     def session_exists(self, session_id: str) -> bool:
         with self.Session() as session:
@@ -1332,7 +1333,13 @@ class SQLiteClient:
             """), {"session_id": session_id}).mappings().first()
         return dict(row) if row else None
 
-    def update_target_settings(self, session_id: str, updates: dict) -> dict:
+    def update_target_settings(
+        self,
+        session_id: str,
+        updates: dict,
+        *,
+        redistribute_stage_hours: bool = True,
+    ) -> dict:
         allowed = {"goal", "target_total_hours", "target_daily_hours", "target_progress"}
         fields = {key: value for key, value in updates.items() if key in allowed and value is not None}
         adjusted_stages: list[dict] = []
@@ -1357,49 +1364,44 @@ class SQLiteClient:
                     if stage["status"] == "completed"
                 ), 2)
                 requested_total = round(float(fields["target_total_hours"]), 2)
-                if requested_total < completed_hours:
+                if requested_total > 0 and requested_total < completed_hours:
                     raise ValueError(
                         f"Target hours cannot be less than completed stage hours ({completed_hours})"
                     )
 
                 unfinished = [stage for stage in stages if stage["status"] != "completed"]
-                remaining_hours = round(requested_total - completed_hours, 2)
-                if stages and not unfinished:
-                    pass  # 全部阶段已完成，无需再分配学时，直接更新目标值
-                if unfinished:
+                if redistribute_stage_hours and requested_total > 0 and unfinished:
+                    minimum_total = round(completed_hours + len(unfinished) * 0.5, 2)
+                    if requested_total < minimum_total:
+                        raise ValueError(
+                            f"Target hours must be at least {minimum_total} to keep unfinished stages positive"
+                        )
+                    remaining_hours = round(requested_total - completed_hours, 2)
                     current_total = sum(float(stage["estimated_hours"] or 0) for stage in unfinished)
-                    if remaining_hours == 0 and current_total == 0:
-                        adjusted_stages.extend({
+                    allocated = 0.0
+                    for index, stage in enumerate(unfinished):
+                        if index == len(unfinished) - 1:
+                            stage_hours = round(remaining_hours - allocated, 2)
+                        elif current_total > 0:
+                            stage_hours = round(
+                                remaining_hours * float(stage["estimated_hours"] or 0) / current_total,
+                                2,
+                            )
+                        else:
+                            stage_hours = round(remaining_hours / len(unfinished), 2)
+                        session.execute(text("""
+                            UPDATE stage_progress SET estimated_hours = :estimated_hours
+                            WHERE session_id = :session_id AND stage_id = :stage_id
+                        """), {
+                            "session_id": session_id,
                             "stage_id": stage["stage_id"],
-                            "estimated_hours": 0.0,
-                        } for stage in unfinished)
-                    else:
-                        allocated = 0.0
-                        for index, stage in enumerate(unfinished):
-                            if index == len(unfinished) - 1:
-                                stage_hours = round(remaining_hours - allocated, 2)
-                            elif current_total > 0:
-                                stage_hours = round(
-                                    remaining_hours * float(stage["estimated_hours"] or 0) / current_total,
-                                    2,
-                                )
-                            else:
-                                stage_hours = round(remaining_hours / len(unfinished), 2)
-                            if stage_hours <= 0:
-                                raise ValueError("Each unfinished stage must retain a positive duration")
-                            session.execute(text("""
-                                UPDATE stage_progress SET estimated_hours = :estimated_hours
-                                WHERE session_id = :session_id AND stage_id = :stage_id
-                            """), {
-                                "session_id": session_id,
-                                "stage_id": stage["stage_id"],
-                                "estimated_hours": stage_hours,
-                            })
-                            adjusted_stages.append({
-                                "stage_id": stage["stage_id"],
-                                "estimated_hours": stage_hours,
-                            })
-                            allocated = round(allocated + stage_hours, 2)
+                            "estimated_hours": stage_hours,
+                        })
+                        adjusted_stages.append({
+                            "stage_id": stage["stage_id"],
+                            "estimated_hours": stage_hours,
+                        })
+                        allocated = round(allocated + stage_hours, 2)
 
             if fields:
                 assignments = ", ".join(f"{key} = :{key}" for key in fields)
@@ -1745,32 +1747,19 @@ class SQLiteClient:
                     session.execute(text("PRAGMA foreign_keys = ON"))
                     raise PermissionError(f"Session {session_id} does not belong to user {user_id}")
 
-            # 1. 找到最后一个 stage_progress
-            # Prefer the runtime's immutable current stage_id. Falling back
-            # to max(stage_num) is ambiguous when a retry shares the same
-            # number with its predecessor.
-            current_stage_id = session.execute(text("""
-                SELECT json_extract(state_json, '$.stage_info.stage_id')
-                FROM session_states WHERE session_id = :sid
-            """), {"sid": session_id}).scalar()
+            # 1. 找到最后一个 stage_progress。
+            # “删除最后阶段”必须按持久化的最大阶段号执行。运行时的
+            # stage_info 可能仍指向上一阶段（例如下一阶段仅完成规划、尚未
+            # 开始时），不能据此选择删除对象。
             last_stage = session.execute(
                 text("""
                     SELECT stage_id, stage_num, block_id, subtopic_id, status
                     FROM stage_progress
                     WHERE session_id = :sid
-                      AND (:current_stage_id IS NULL OR stage_id = :current_stage_id)
-                    ORDER BY stage_num DESC
+                    ORDER BY stage_num DESC, rowid DESC
                     LIMIT 1
-                """), {"sid": session_id, "current_stage_id": current_stage_id},
+                """), {"sid": session_id},
             ).first()
-            if last_stage is None:
-                last_stage = session.execute(
-                    text("""
-                        SELECT stage_id, stage_num, block_id, subtopic_id, status
-                        FROM stage_progress WHERE session_id = :sid
-                        ORDER BY stage_num DESC, rowid DESC LIMIT 1
-                    """), {"sid": session_id},
-                ).first()
             if last_stage is None:
                 session.execute(text("PRAGMA foreign_keys = ON"))
                 raise LookupError(f"No stage to delete for session {session_id}")
@@ -1894,6 +1883,9 @@ class SQLiteClient:
                 restored_stage = previous_snapshot.get("stage_info")
                 restored_package = previous_snapshot.get("learning_package")
                 restored_result = previous_snapshot.get("stage_result")
+                is_assessed_stage = bool(
+                    previous_stage and previous_stage.get("status") in {"completed", "retreat"}
+                )
 
                 if not restored_stage and previous_stage:
                     restored_stage = {
@@ -1920,7 +1912,7 @@ class SQLiteClient:
                 if restored_package:
                     state["learning_package"] = restored_package
                     state["qa_history"] = previous_snapshot.get("qa_history") or []
-                    if restored_result:
+                    if restored_result or is_assessed_stage:
                         state["phase"] = "stage_result"
                         state["available_actions"] = ["plan_next_stage"]
                     else:
@@ -1929,8 +1921,12 @@ class SQLiteClient:
                 else:
                     state.pop("learning_package", None)
                     state["qa_history"] = []
-                    state["phase"] = "stage_ready"
-                    state["available_actions"] = ["start_stage"]
+                    if is_assessed_stage:
+                        state["phase"] = "stage_result"
+                        state["available_actions"] = ["plan_next_stage"]
+                    else:
+                        state["phase"] = "stage_ready"
+                        state["available_actions"] = ["start_stage"]
                 session.execute(
                     text("UPDATE session_states SET state_json = :payload, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
                     {"payload": _json.dumps(state, ensure_ascii=False), "sid": session_id},

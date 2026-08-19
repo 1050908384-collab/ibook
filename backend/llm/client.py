@@ -17,10 +17,18 @@ class LLMClient:
         self.deepseek_model = settings.DEEPSEEK_MODEL
         self.ollama_base_url = settings.OLLAMA_BASE_URL.rstrip("/")
         self.ollama_model = settings.OLLAMA_MODEL
-        self.client = httpx.AsyncClient(timeout=httpx.Timeout(
+        self.ollama_fallback_models = settings.OLLAMA_FALLBACK_MODELS
+        timeout = httpx.Timeout(
             settings.DEEPSEEK_TIMEOUT_SECONDS,
             connect=min(20.0, settings.DEEPSEEK_TIMEOUT_SECONDS),
-        ))
+        )
+        self.client = httpx.AsyncClient(timeout=timeout)
+        proxy_url = settings.DEEPSEEK_PROXY_URL.strip() or None
+        self.deepseek_client = httpx.AsyncClient(
+            timeout=timeout,
+            proxy=proxy_url,
+            trust_env=False,
+        )
         self.last_done_reason: Optional[str] = None
 
     @property
@@ -60,6 +68,14 @@ class LLMClient:
 
     def _can_fallback_to_ollama(self) -> bool:
         return settings.LLM_FALLBACK_PROVIDER.lower() == "ollama"
+
+    def _ordered_ollama_models(self) -> list[str]:
+        configured = [
+            model.strip()
+            for model in self.ollama_fallback_models.split(",")
+            if model.strip()
+        ]
+        return configured or [self.ollama_model]
 
     def _clean_response(self, response_text: str) -> str:
         response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL)
@@ -113,7 +129,7 @@ class LLMClient:
 
         for attempt in range(1, attempts + 1):
             try:
-                response = await self.client.post(
+                response = await self.deepseek_client.post(
                     self._chat_completions_url,
                     json=retry_payload,
                     headers=self._headers(),
@@ -214,57 +230,62 @@ class LLMClient:
         temperature: float,
         json_mode: bool,
     ) -> str:
-        """Use the project's local Ollama model when no cloud API key is configured."""
-        try:
-            messages = []
-            if system_prompt:
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
-            payload = {
-                "model": self.ollama_model,
-                "messages": messages,
-                "stream": False,
-                "think": False,
-                "options": {"temperature": temperature, "num_predict": max_tokens},
-            }
-            if json_mode:
-                payload["format"] = "json"
+        """Use ordered local Ollama models when cloud generation is unavailable."""
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        return await self._complete_with_ollama_messages(
+            messages, max_tokens, temperature, json_mode,
+        )
 
-            response = await self.client.post(f"{self.ollama_base_url}/api/chat", json=payload)
-            response.raise_for_status()
-            result = response.json()
-            self.last_done_reason = result.get("done_reason")
-            return self._clean_response((result.get("message") or {}).get("content", ""))
-        except httpx.RequestError as error:
-            logger.error("Ollama request failed: %s", error)
-            return f"Error: {str(error)}"
-        except Exception as error:
-            logger.error("Ollama completion failed: %s", error)
-            return f"Error: {str(error)}"
+    async def _complete_with_ollama_messages(
+        self,
+        messages: list[dict[str, Any]],
+        max_tokens: int,
+        temperature: float,
+        json_mode: bool = False,
+    ) -> str:
+        """Try local models in configured order; an empty final answer is unusable."""
+        last_error = ""
+        for model in self._ordered_ollama_models():
+            try:
+                payload: dict[str, Any] = {
+                    "model": model,
+                    "messages": messages,
+                    "stream": False,
+                    "think": False,
+                    "options": {"temperature": temperature, "num_predict": max_tokens},
+                }
+                if json_mode:
+                    payload["format"] = "json"
+                response = await self.client.post(f"{self.ollama_base_url}/api/chat", json=payload)
+                response.raise_for_status()
+                result = response.json()
+                self.last_done_reason = result.get("done_reason")
+                message = result.get("message") or {}
+                content = self._clean_response(str(message.get("content") or ""))
+                if content:
+                    logger.info("Ollama response accepted from model=%s", model)
+                    return content
+                thinking = str(message.get("thinking") or "")
+                last_error = (
+                    f"Ollama model {model} returned no final content "
+                    f"(done_reason={self.last_done_reason or 'unknown'}, thinking_chars={len(thinking)})"
+                )
+                logger.warning("%s; trying next local model", last_error)
+            except httpx.RequestError as error:
+                last_error = f"Ollama model {model} request failed: {error}"
+                logger.warning("%s; trying next local model", last_error)
+            except Exception as error:
+                last_error = f"Ollama model {model} completion failed: {error}"
+                logger.warning("%s; trying next local model", last_error)
+        return f"Error: {last_error or 'no configured Ollama model produced a usable answer'}"
 
     async def chat(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
         self.last_done_reason = None
         if not self._has_deepseek_credentials():
-            try:
-                response = await self.client.post(
-                    f"{self.ollama_base_url}/api/chat",
-                    json={
-                        "model": self.ollama_model,
-                        "messages": messages,
-                        "stream": False,
-                        "options": {"temperature": temperature, "num_predict": max_tokens},
-                    },
-                )
-                response.raise_for_status()
-                result = response.json()
-                self.last_done_reason = result.get("done_reason")
-                return self._clean_response((result.get("message") or {}).get("content", ""))
-            except httpx.RequestError as error:
-                logger.error("Ollama chat request failed: %s", error)
-                return f"Error: {str(error)}"
-            except Exception as error:
-                logger.error("Ollama chat failed: %s", error)
-                return f"Error: {str(error)}"
+            return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
         try:
             payload = {
                 "model": self.deepseek_model,
@@ -273,7 +294,7 @@ class LLMClient:
                 "temperature": temperature,
             }
 
-            response = await self.client.post(
+            response = await self.deepseek_client.post(
                 self._chat_completions_url,
                 json=payload,
                 headers=self._headers(),
@@ -290,46 +311,12 @@ class LLMClient:
             logger.error("DeepSeek chat returned HTTP %s: %s", e.response.status_code, self._extract_error_message(e.response))
             if not self._can_fallback_to_ollama():
                 return self._format_deepseek_status_error(e)
-            try:
-                response = await self.client.post(
-                    f"{self.ollama_base_url}/api/chat",
-                    json={
-                        "model": self.ollama_model,
-                        "messages": messages,
-                        "stream": False,
-                        "think": False,
-                        "options": {"temperature": temperature, "num_predict": max_tokens},
-                    },
-                )
-                response.raise_for_status()
-                result = response.json()
-                self.last_done_reason = result.get("done_reason")
-                return self._clean_response((result.get("message") or {}).get("content", ""))
-            except Exception as fallback_error:
-                logger.error("Ollama chat fallback failed after DeepSeek HTTP error: %s", fallback_error)
-                return self._format_deepseek_status_error(e)
+            return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
         except httpx.RequestError as e:
             logger.error("DeepSeek chat request failed: %s", e)
             if not self._can_fallback_to_ollama():
                 return f"Error: {str(e)}"
-            try:
-                response = await self.client.post(
-                    f"{self.ollama_base_url}/api/chat",
-                    json={
-                        "model": self.ollama_model,
-                        "messages": messages,
-                        "stream": False,
-                        "think": False,
-                        "options": {"temperature": temperature, "num_predict": max_tokens},
-                    },
-                )
-                response.raise_for_status()
-                result = response.json()
-                self.last_done_reason = result.get("done_reason")
-                return self._clean_response((result.get("message") or {}).get("content", ""))
-            except Exception as fallback_error:
-                logger.error("Ollama chat fallback failed: %s", fallback_error)
-                return f"Error: {str(e)}"
+            return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
         except Exception as e:
             logger.error(f"LLM chat error: {e}")
             return f"Error: {str(e)}"

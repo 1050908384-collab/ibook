@@ -67,11 +67,24 @@ class StagePlanningOutput(BaseModel):
     stage: StageInfo
 
 
+class LearningEvidence(BaseModel):
+    """Learner facts that must cause observable teaching decisions."""
+
+    completed_stages: List[dict] = Field(default_factory=list)
+    mastered_subtopic_ids: List[str] = Field(default_factory=list)
+    unstable_prerequisites: List[dict] = Field(default_factory=list)
+    weak_topics: List[dict] = Field(default_factory=list)
+    recent_questions: List[str] = Field(default_factory=list)
+    completed_topic_names: List[str] = Field(default_factory=list)
+    preflight_review: Optional[dict] = None
+
+
 class ContentGenerationInput(BaseModel):
     session_id: str
     stage: StageInfo
     learning_profile: UserProfile | None = None
     practice_profile: PracticeProfile = Field(default_factory=PracticeProfile)
+    learning_evidence: LearningEvidence = Field(default_factory=LearningEvidence)
 
 
 class ContentGenerationOutput(BaseModel):

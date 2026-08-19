@@ -624,6 +624,25 @@ async def plan_next_stage(
         
         # 检查状态：必须先 complete 得到评估结果后才能 plan-next
         phase = session.get("phase", "")
+        # Sessions created before snapshot persistence could be restored as
+        # "learning" after deleting a planned final stage, even though the
+        # preceding stage has already been assessed. Reconcile that durable
+        # stage status before rejecting a valid next-stage request.
+        if phase == "learning":
+            stage_info = session.get("stage_info") or {}
+            stage_id = stage_info.get("stage_id")
+            if stage_id:
+                persisted_stage = next(
+                    (
+                        item for item in harness.state_manager.db_client.list_stage_progress(session_id)
+                        if item.get("stage_id") == stage_id
+                    ),
+                    None,
+                )
+                if persisted_stage and persisted_stage.get("status") in {"completed", "retreat"}:
+                    phase = "stage_result"
+                    harness.state_manager.update_field(session_id, "phase", phase)
+                    harness.state_manager.update_field(session_id, "available_actions", ["plan_next_stage"])
         if phase not in ("stage_result", "next_stage_ready"):
             detail_map = {
                 "diagnosing": "当前处于诊断阶段，请先完成诊断并确认画像、开始并完成当前阶段",
@@ -661,7 +680,7 @@ async def plan_next_stage(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

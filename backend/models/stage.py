@@ -91,6 +91,13 @@ class ContentBlock(BaseModel):
     source_line_end: Optional[int] = None
     source_note: str = ""                                   # 人类可读来源说明
     personalized_content: str = ""                          # 个性化后的正文
+    # 教学层元数据：前端仍渲染 personalized_content，以下字段供 Agent4 审核、
+    # 审核追溯和后续展示“为何为该用户这样组织内容”。均有默认值以兼容旧会话。
+    personalization_action: str = "keep"
+    personalization_reason: str = ""
+    evidence_refs: List[str] = Field(default_factory=list)
+    fact_source_chunk_ids: List[str] = Field(default_factory=list)
+    teaching_tasks: List[dict] = Field(default_factory=list)
     claims: List[Claim] = Field(default_factory=list)
     sources: List[Source] = Field(default_factory=list)
     version: int = 1
@@ -112,3 +119,7 @@ class LearningPackage(BaseModel):
     sources: List[Source] = Field(default_factory=list)
     claims: List[Claim] = Field(default_factory=list)
     recommended_videos: List[dict] = Field(default_factory=list)
+    # 块级流水线的结构化产物；旧整篇路径保持为空，前端继续使用 tutorial 渲染。
+    content_blocks: List[ContentBlock] = Field(default_factory=list)
+    learning_evidence_summary: dict = Field(default_factory=dict)
+    preflight_review: Optional[dict] = None

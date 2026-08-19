@@ -47,6 +47,7 @@ from tools.agent3_tools.video_search_tool import VideoSearchTool
 from tools.agent4_tools.cognitive_load_tool import CognitiveLoadTool
 from tools.agent4_tools.difficulty_analyzer_tool import DifficultyAnalyzerTool
 from tools.agent4_tools.style_match_tool import StyleMatchTool
+from tools.agent4_tools.personalization_check_tool import PersonalizationCheckTool
 from tools.agent6_tools.profile_update_tool import ProfileUpdateTool
 from tools.agent6_tools.stage_summary_generator_tool import StageSummaryGeneratorTool
 from tools.agent6_tools.strategy_selector_tool import StrategySelectorTool
@@ -1342,7 +1343,10 @@ class DeterministicContentAgent:
         except Exception:
             related_docs = []
         questions, recommended_videos = await self.get_stage_supplements(stage)
-        tutorial = self._build_retrieved_material_tutorial(stage, related_docs)
+        tutorial = self._prepend_preflight_review(
+            self._build_retrieved_material_tutorial(stage, related_docs),
+            request.learning_evidence,
+        )
         practice_note = self._practice_note(request.practice_profile)
         if practice_note:
             tutorial += f"\n## 实训提示\n\n{practice_note}\n"
@@ -1433,9 +1437,30 @@ class DeterministicContentAgent:
             sources=sources,
             claims=claims,
             recommended_videos=recommended_videos,
+            learning_evidence_summary={
+                "unstable_prerequisite_count": len(request.learning_evidence.unstable_prerequisites),
+                "weak_topic_count": len(request.learning_evidence.weak_topics),
+                "recent_question_count": len(request.learning_evidence.recent_questions),
+            },
+            preflight_review=request.learning_evidence.preflight_review,
         )
         _agent_log("Agent3", f"content:done | materials={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
+
+    @staticmethod
+    def _prepend_preflight_review(tutorial: str, learning_evidence: Any) -> str:
+        evidence = (
+            learning_evidence.model_dump(mode="json")
+            if hasattr(learning_evidence, "model_dump") else (learning_evidence or {})
+        )
+        review = evidence.get("preflight_review") or {}
+        markdown = str(review.get("markdown") or "").strip()
+        if not markdown or "## 开始前快速回顾" in tutorial:
+            return tutorial
+        first_break = tutorial.find("\n")
+        if first_break < 0:
+            return f"{tutorial}\n\n{markdown}"
+        return f"{tutorial[:first_break]}\n\n{markdown}\n\n{tutorial[first_break + 1:]}"
 
     def _build_retrieved_material_tutorial(self, stage: StageInfo, docs: list[dict]) -> str:
         """Build a usable package directly from the local lessons when LLM output is unavailable."""
@@ -2087,6 +2112,57 @@ class DeterministicContentAgent:
             parts.append(f"实训提示：{practice_note}")
         return "\n\n".join(parts).strip()
 
+    @staticmethod
+    def _build_teaching_layer(
+        stage: StageInfo,
+        source_text: str,
+        profile: Optional[UserProfile],
+        practice: Optional[PracticeProfile],
+        learning_evidence: Any = None,
+        block_index: int = 0,
+    ) -> tuple[str, str, List[Dict[str, Any]], List[str]]:
+        """Build deterministic teaching metadata without changing source facts."""
+        learning_style = (getattr(profile, "learning_style", "") or "mixed").strip()
+        goal = (getattr(profile, "goal", "") or stage.gap_skill or stage.block_name).strip()
+        hardware = (getattr(practice, "hardware", "") or "").strip()
+        is_practice = any(token in learning_style.lower() for token in ("实践", "实操", "动手", "示例", "practice"))
+        is_mixed = learning_style.lower() in {"mixed", "混合", "混合型"}
+        evidence = (
+            learning_evidence.model_dump(mode="json")
+            if hasattr(learning_evidence, "model_dump") else (learning_evidence or {})
+        )
+        unstable = list(evidence.get("unstable_prerequisites") or [])
+        weak_topics = list(evidence.get("weak_topics") or [])
+        evidence_refs: List[str] = []
+        if unstable and block_index == 0:
+            action = "remediate"
+            evidence_refs = [f"prerequisite:{item.get('subtopic_id', '')}" for item in unstable]
+            names = "、".join(str(item.get("subtopic_name") or "前置知识") for item in unstable[:3])
+            task = {
+                "task_type": "preflight_review",
+                "title": "开始前快速回顾",
+                "markdown": f"先用一个最小示例回顾 {names}；确认能解释关键写法后再继续本块。",
+                "source_chunk_id": "",
+            }
+            reason_parts = [f"前置知识需要补救：{names}"]
+        else:
+            action = "explain_and_practice" if (is_practice or is_mixed) else "explain"
+            if weak_topics:
+                evidence_refs = [f"low_accuracy:stage_{item.get('stage_num', '')}" for item in weak_topics]
+            reason_parts = [f"学习目标：{goal}", f"学习方式：{learning_style}"]
+            task = {
+                "task_type": "apply" if (is_practice or is_mixed) else "reflection",
+                "title": f"{stage.block_name}本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "",
+            }
+        if hardware:
+            reason_parts.append(f"实训条件：{hardware}")
+        if weak_topics:
+            reason_parts.append("历史阶段存在低正确率，需要通过本块检查巩固")
+        tasks = [task] if action in {"remediate", "explain_and_practice"} else []
+        return action, "；".join(reason_parts), tasks, evidence_refs
+
     async def generate_block(
         self,
         stage: StageInfo,
@@ -2095,6 +2171,7 @@ class DeterministicContentAgent:
         practice: Optional[PracticeProfile] = None,
         block_index: int = 0,
         session_id: str = "",
+        learning_evidence: Any = None,
     ) -> ContentBlock:
         """对单个原始 knowledge_chunk 生成一个个性化内容块（ContentBlock）。
 
@@ -2115,6 +2192,16 @@ class DeterministicContentAgent:
         content_block_id = re.sub(r"_+", "_", content_block_id).strip("_")
 
         personalized = self._personalize_chunk_text(stage, source_text, profile, practice)
+        action, reason, teaching_tasks, evidence_refs = self._build_teaching_layer(
+            stage, source_text, profile, practice, learning_evidence, block_index,
+        )
+        for task in teaching_tasks:
+            task["source_chunk_id"] = chunk_id
+        if teaching_tasks:
+            personalized = "\n\n".join([
+                personalized,
+                f"**本块学习检查**：{teaching_tasks[0]['markdown']}",
+            ]).strip()
         source_note = self._chunk_source_note(source_chunk, title)
 
         # 来源：回指原始块，Agent4 据 content_ref/metadata 的 source_chunk_id 回查核验
@@ -2165,6 +2252,11 @@ class DeterministicContentAgent:
             source_line_end=source_chunk.get("source_line_end"),
             source_note=source_note,
             personalized_content=personalized,
+            personalization_action=action,
+            personalization_reason=reason,
+            evidence_refs=evidence_refs,
+            fact_source_chunk_ids=[chunk_id] if chunk_id else [],
+            teaching_tasks=teaching_tasks,
             claims=[claim],
             sources=[source],
             version=1,
@@ -2194,13 +2286,6 @@ class DeterministicContentAgent:
             cid = issue.get("claim_id")
             if cid:
                 touched_claim_ids.add(cid)
-
-        if applied_notes:
-            updated.personalized_content = (
-                (updated.personalized_content or "").rstrip()
-                + "\n\n## 修订说明\n\n"
-                + "\n".join(f"- {n}" for n in applied_notes)
-            )
 
         for claim in updated.claims:
             if claim.claim_id in touched_claim_ids and claim.status == "active":
@@ -2328,13 +2413,14 @@ class HybridContentAgent(DeterministicContentAgent):
 教程需要覆盖上述所有知识点，按顺序组织章节。
 
 学习者画像：{json.dumps(learning_profile, ensure_ascii=False)}
+学习证据：{json.dumps(request.learning_evidence.model_dump(mode="json"), ensure_ascii=False)}
 实训条件：{json.dumps(request.practice_profile.model_dump(mode="json"), ensure_ascii=False)}
 
 要求：
-1. 保留原资料中的核心概念、事实与已有结构；
-2. 仅根据学习者画像调整表达难度、术语解释和重点顺序；
-3. 不得新增代码、示例、练习、总结、额外章节或跨知识点内容；
-4. 实训条件仅用于表达适配，不得改变 Agent1 的知识点路径，也不得将本地或云端选择作为教程目标。
+1. 保留原资料中的核心概念与可追溯技术事实；不得编造技术事实、命令或参数；
+2. 可根据学习者画像缩减、重排、解释或突出资料内容；
+3. 可增加不引入新技术事实的学习检查、操作验证或反思任务；
+4. 实训条件只用于调整讲解重点和任务颗粒度，不得改变 Agent1 的知识点路径。
 
 本节经检索确认的知识库资料：
 {material_context or '无可用资料，不得补充未验证的技术细节。'}
@@ -2348,7 +2434,7 @@ class HybridContentAgent(DeterministicContentAgent):
             temperature=0.4,
             max_tokens=self._source_max_tokens(source_material),
         )
-        source_budget = self._effective_length(source_material)
+        source_budget = int(self._effective_length(source_material) * 1.5)
         if source_budget and not self._fits_budget(tutorial, source_budget):
             tutorial = await self._compress_to_budget(tutorial, source_budget)
         if self._is_usable_tutorial(tutorial, stage, related_docs):
@@ -2359,6 +2445,9 @@ class HybridContentAgent(DeterministicContentAgent):
             # 不能用 source_material（所有知识点内容的纯拼接，无 ## 分隔）覆盖——
             # 否则前端 getTopicTutorial 无法按知识点切片，所有页都会显示同一份合并内容。
             _agent_log("Agent3", "content:llm_invalid -> keep structured tutorial from base agent")
+        output.learning_package.tutorial = self._prepend_preflight_review(
+            output.learning_package.tutorial, request.learning_evidence,
+        )
         return output
 
     async def generate_block(
@@ -2369,6 +2458,7 @@ class HybridContentAgent(DeterministicContentAgent):
         practice: Optional[PracticeProfile] = None,
         block_index: int = 0,
         session_id: str = "",
+        learning_evidence: Any = None,
     ) -> ContentBlock:
         """块级个性化（Hybrid）：先构造确定性块骨架，再用 LLM 在原文范围内改写表达。
 
@@ -2377,7 +2467,7 @@ class HybridContentAgent(DeterministicContentAgent):
         不可用时保留确定性个性化正文兜底。
         """
         block = await super().generate_block(
-            stage, source_chunk, profile, practice, block_index, session_id,
+            stage, source_chunk, profile, practice, block_index, session_id, learning_evidence,
         )
         source_text = (source_chunk.get("content") or "").strip()
         if not source_text:
@@ -2386,21 +2476,26 @@ class HybridContentAgent(DeterministicContentAgent):
         learning_profile = profile.model_dump(mode="json") if profile is not None else {}
         practice_profile = practice.model_dump(mode="json") if practice is not None else {}
         heading_path = source_chunk.get("heading_path") or block.block_name
-        prompt = f"""请对以下原始学习资料「块」进行个性化改写，使其贴合学习者画像与实训条件。
+        teaching_task = (block.teaching_tasks or [{}])[0]
+        prompt = f"""请对以下原始学习资料「块」生成个性化教学正文，使其贴合学习者画像与实训条件。
 
 所属知识点/标题路径：{heading_path}
 学习者画像：{json.dumps(learning_profile, ensure_ascii=False)}
 实训条件：{json.dumps(practice_profile, ensure_ascii=False)}
+本次教学动作：{block.personalization_action}
+个性化依据：{block.personalization_reason}
+学习证据引用：{json.dumps(block.evidence_refs, ensure_ascii=False)}
 
 原始资料（本块，禁止引入原文之外未经核验的技术事实）：
 {source_text}
 
 要求：
-1. 仅对原文进行表达降维、术语释义和重点重排，不得新增事实；
-2. 不得新增代码、示例、练习、总结、新章节或跨块内容；
-3. 依据画像调整表达难度与重点；实训条件仅用于表达适配；
-4. 输出 Markdown 正文，不要输出标题层级之外的元信息。
-5. 输出的有效字符数不得超过原始材料的 {self._effective_length(source_text)} 字符。
+1. 技术事实、命令、参数只能来自原始资料；不得编造或跨块引用事实；
+2. 可以缩减、重排或解释原文；可补充一个不引入新技术事实的学习检查或操作验证任务；
+3. 依据画像调整难度、重点与步骤颗粒度；实训条件只用于选择讲解重点；
+4. 若教学动作是 explain_and_practice 或 remediate，正文必须包含“**本块学习检查**”，任务内容为：{teaching_task.get('markdown', '')}
+5. 输出 Markdown 正文，不要输出 JSON 或生成过程说明。
+6. 输出的有效字符数不得超过原始材料的 {int(self._effective_length(source_text) * 1.5)} 字符。
 
 内容生成规范：
 {self.content_skill_context}
@@ -2414,17 +2509,22 @@ class HybridContentAgent(DeterministicContentAgent):
             )
         except Exception:
             rewritten = ""
-        budget = self._effective_length(source_text)
+        budget = int(self._effective_length(source_text) * 1.5)
         if rewritten and not self._fits_budget(rewritten, budget):
             rewritten = await self._compress_to_budget(rewritten, budget)
-        if rewritten and self._fits_budget(rewritten, budget):
+        if self._is_valid_response(rewritten) and self._fits_budget(rewritten, budget):
             block.personalized_content = rewritten.strip()
+            if block.personalization_action in {"explain_and_practice", "remediate"} and "本块学习检查" not in block.personalized_content:
+                task_markdown = teaching_task.get("markdown", "")
+                if task_markdown:
+                    candidate = f"{block.personalized_content}\n\n**本块学习检查**：{task_markdown}"
+                    if self._fits_budget(candidate, budget):
+                        block.personalized_content = candidate
             _agent_log("Agent3", f"block:llm_done | cb={block.content_block_id} | len={len(rewritten)}")
         else:
-            # Deterministic personalization adds notes, so use source_text here
-            # to keep the user-facing material within the original budget.
-            block.personalized_content = source_text
-            _agent_log("Agent3", f"block:llm_invalid -> source_fallback | cb={block.content_block_id}")
+            # 保留确定性教学层，而非退回裸原文；这样模型暂时不可用时仍可体现
+            # 当前画像的教学任务，并保留原始事实主体供 Agent4 核验。
+            _agent_log("Agent3", f"block:llm_invalid -> deterministic_fallback | cb={block.content_block_id}")
         return block
 
     async def modify_block(
@@ -2462,7 +2562,7 @@ class HybridContentAgent(DeterministicContentAgent):
 1. 逐条落实审核意见，不得引入新的未核验技术事实；
 2. 保持与来源块一致，不跨块扩展；
 3. 输出修订后的完整 Markdown 正文。
-4. 修订后的有效字符数不得超过原正文的 {self._effective_length(original_content)} 字符。
+4. 修订后的有效字符数不得超过原正文的 {int(self._effective_length(original_content) * 1.25)} 字符。
 
 内容生成规范：
 {self.content_skill_context}
@@ -2476,10 +2576,10 @@ class HybridContentAgent(DeterministicContentAgent):
             )
         except Exception:
             rewritten = ""
-        budget = self._effective_length(original_content)
+        budget = int(self._effective_length(original_content) * 1.25)
         if rewritten and not self._fits_budget(rewritten, budget):
             rewritten = await self._compress_to_budget(rewritten, budget)
-        if rewritten and self._fits_budget(rewritten, budget):
+        if self._is_valid_response(rewritten) and self._fits_budget(rewritten, budget):
             base.personalized_content = rewritten.strip()
         else:
             base.personalized_content = original_content
@@ -2895,6 +2995,7 @@ class DeterministicTechnicalReviewAgent:
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.personalization_check_tool = PersonalizationCheckTool()
         self.learning_resource_tool = LearningResourceTool()
         # 委托 Agent4 协议字段补全（对接需求清单 2.1）
         self._protocol_agent = TechnicalReviewAgent()
@@ -2937,14 +3038,15 @@ class DeterministicTechnicalReviewAgent:
         except Exception:
             pass
 
-        # 步骤3-4：质量审核（难度/认知负荷/风格匹配 — 原Agent5功能）
+        # 步骤3-4：教学适配审核。它们用于改进个性化，不阻断已完成事实核验的发布。
+        personalization_errors = []
         if request.target_type == "learning_package":
             profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
             try:
                 tool_errors = await self.difficulty_analyzer_tool.analyze(request.content, profile=profile)
                 tool_errors.extend(await self.cognitive_load_tool.analyze(request.content))
                 tool_errors.extend(await self.style_match_tool.check(request.content, profile=profile))
-                errors.extend(normalize_review_errors(tool_errors))
+                personalization_errors.extend(normalize_review_errors(tool_errors))
             except Exception:
                 pass
             # 步骤5：推荐视频资源审核（technical_review.skill.md 规则5）— 异常兜底，
@@ -2968,8 +3070,22 @@ class DeterministicTechnicalReviewAgent:
             raw_errors=list(video_resource_errors) + raw_hallucinations,
         )
 
-        # 步骤6：综合裁决（有critical错误或errors非空则不通过）
-        return TechnicalReviewResult(passed=not errors, errors=errors)
+        # 步骤6：综合裁决。errors 仅保留技术、事实和资源问题；教学建议单独返回。
+        personalization_errors = self._protocol_agent._enrich_debate_fields(
+            personalization_errors,
+            sources=request.sources,
+            claims=request.claims,
+            round_index=request.round_index,
+        )
+        for issue in personalization_errors:
+            issue.must_fix = False
+            issue.must_fix_reason = "个性化教学建议不阻断事实已核验的内容发布"
+            issue.change_request = {"required": False, "action": "improve_personalization"}
+        return TechnicalReviewResult(
+            passed=not errors,
+            errors=errors,
+            personalization_errors=personalization_errors,
+        )
 
     async def rebut(
         self,
@@ -3011,6 +3127,7 @@ class HybridTechnicalReviewAgent:
         self.difficulty_analyzer_tool = DifficultyAnalyzerTool()
         self.cognitive_load_tool = CognitiveLoadTool()
         self.style_match_tool = StyleMatchTool()
+        self.personalization_check_tool = PersonalizationCheckTool()
         self.learning_resource_tool = LearningResourceTool()
         self.skill_context = get_skill_context([
             "technical_review",
@@ -3079,10 +3196,10 @@ class HybridTechnicalReviewAgent:
         else:
             video_errors = []
 
-        quality_tool_errors_normalized = normalize_review_errors(quality_tool_errors)
+        personalization_errors = normalize_review_errors(quality_tool_errors)
 
         if video_errors:
-            quality_tool_errors_normalized.extend(video_errors)
+            hallucination_errors.extend(video_errors)
 
         prompt = self._build_prompt(request)
         response = await self.llm_client.complete(
@@ -3100,10 +3217,8 @@ class HybridTechnicalReviewAgent:
             result.errors = hallucination_errors + result.errors
             result.passed = False
             print(f"=== 事实检查(幻觉)发现错误：{len(hallucination_errors)}个 ===")
-        if quality_tool_errors_normalized:
-            result.errors = quality_tool_errors_normalized + result.errors
-            result.passed = False
-            print(f"=== 质量审核发现错误：{len(quality_tool_errors_normalized)}个 ===")
+        if personalization_errors:
+            print(f"=== 个性化教学建议：{len(personalization_errors)}个（不阻断发布） ===")
 
         # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
         # 强制为每个 error 补全 canonical_error_id/error_id/source_refs/change_request/
@@ -3115,6 +3230,16 @@ class HybridTechnicalReviewAgent:
             round_index=request.round_index,
             raw_errors=list(video_resource_errors) + raw_hallucinations,
         )
+        result.personalization_errors = self._protocol_agent._enrich_debate_fields(
+            personalization_errors,
+            sources=request.sources,
+            claims=request.claims,
+            round_index=request.round_index,
+        )
+        for issue in result.personalization_errors:
+            issue.must_fix = False
+            issue.must_fix_reason = "个性化教学建议不阻断事实已核验的内容发布"
+            issue.change_request = {"required": False, "action": "improve_personalization"}
 
         print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
         return result
@@ -3311,12 +3436,13 @@ async def _review_block_impl(
         )
         return TechnicalReviewResult(passed=False, errors=[err])
 
-    errors: List[ReviewError] = []
+    fact_errors: List[ReviewError] = []
+    personalization_errors: List[ReviewError] = []
     raw_facts: List[Dict[str, Any]] = []
 
     # 步骤1：硬性规则检查（限定本块正文）
     try:
-        errors.extend(normalize_review_errors(await agent.rule_check_tool.check_rules(content)))
+        fact_errors.extend(normalize_review_errors(await agent.rule_check_tool.check_rules(content)))
     except Exception:
         pass
 
@@ -3327,12 +3453,12 @@ async def _review_block_impl(
         if key_claims:
             claim_facts = await agent._protocol_agent._verify_claims_hallucination(key_claims)
             raw_facts = claim_facts
-            errors.extend(normalize_review_errors(claim_facts))
+            fact_errors.extend(normalize_review_errors(claim_facts))
         elif source_chunk_id:
             # 无显式关键 Claim，但有来源块：对本块正文按来源块核验（仍绑定确切块，不整篇送检）
             chunk_facts = await agent.knowledge_verify_tool.verify_against_chunk(content, source_chunk_id)
             raw_facts = chunk_facts
-            errors.extend(normalize_review_errors(chunk_facts))
+            fact_errors.extend(normalize_review_errors(chunk_facts))
         # 既无关键 Claim 又无来源块时，不做全库整篇送检（块级不制造全文级误报）
     except Exception:
         pass
@@ -3344,7 +3470,8 @@ async def _review_block_impl(
         quality.extend(await agent.difficulty_analyzer_tool.analyze(content, profile=profile_json))
         quality.extend(await agent.cognitive_load_tool.analyze(content))
         quality.extend(await agent.style_match_tool.check(content, profile=profile_json))
-        errors.extend(normalize_review_errors(quality))
+        quality.extend(await agent.personalization_check_tool.check(bd, profile=profile_json))
+        personalization_errors.extend(normalize_review_errors(quality))
     except Exception:
         pass
 
@@ -3352,22 +3479,34 @@ async def _review_block_impl(
     if use_llm:
         try:
             llm_errors = await _llm_review_block(agent, block=bd, stage=stage)
-            errors.extend(normalize_review_errors(llm_errors))
+            fact_errors.extend(normalize_review_errors(llm_errors))
         except Exception:
             pass
 
     # 步骤5：审核辩论协议字段补全（复用现有 enrich，raw_facts 携带 claim_id/块溯源）
-    errors = agent._protocol_agent._enrich_debate_fields(
-        errors,
+    fact_errors = agent._protocol_agent._enrich_debate_fields(
+        fact_errors,
         sources=sources,
         claims=block_claims,
         round_index=round_index,
         raw_errors=raw_facts,
     )
+    personalization_errors = agent._protocol_agent._enrich_debate_fields(
+        personalization_errors,
+        sources=sources,
+        claims=block_claims,
+        round_index=round_index,
+    )
+    # 难度、负荷、风格等是教学层改进建议，不应被派生规则升级为 must_fix，
+    # 否则已完成来源核验的内容会因“与画像还不够匹配”被阻断或回退原文。
+    for error in personalization_errors:
+        error.must_fix = False
+        error.must_fix_reason = "个性化教学建议不阻断事实已核验的内容发布"
+        error.change_request = {"required": False, "action": "improve_personalization"}
 
     # 步骤6：块级溯源强制回填——每条 issue 必须携带块标识与版本（任务 4 强约束）。
     # in_chunk_position / claim_id 由 enrich/事实核验尽力填充；此处兜底补齐块级字段。
-    for e in errors:
+    for e in [*fact_errors, *personalization_errors]:
         if getattr(e, "content_block_id", None) is None:
             e.content_block_id = content_block_id
         if getattr(e, "content_version", None) is None:
@@ -3377,13 +3516,21 @@ async def _review_block_impl(
 
     _agent_log(
         "Agent4",
-        f"review_block:done | cb={content_block_id} | errors={len(errors)}",
+        f"review_block:done | cb={content_block_id} | fact_errors={len(fact_errors)} | personalization_errors={len(personalization_errors)}",
     )
-    return TechnicalReviewResult(passed=not errors, errors=errors)
+    return TechnicalReviewResult(
+        passed=not fact_errors,
+        errors=fact_errors,
+        personalization_errors=personalization_errors,
+        review_details={
+            "personalization_action": bd.get("personalization_action", "keep"),
+            "personalization_reason": bd.get("personalization_reason", ""),
+        },
+    )
 
 
 async def _llm_review_block(agent: Any, block: Dict[str, Any], stage: StageInfo) -> List[Dict[str, Any]]:
-    """Hybrid 块级 LLM 审核：只针对当前块正文找技术/表达问题，输出结构化 issue 列表。
+    """Hybrid 块级 LLM 审核：只针对当前块正文找技术与安全问题，输出结构化 issue 列表。
 
     返回 raw dict issue 列表（error_type/severity/description/evidence/suggestion/in_chunk_position），
     由调用方 normalize + enrich 补齐协议字段。LLM 失败或解析失败返回 []。
@@ -3391,7 +3538,7 @@ async def _llm_review_block(agent: Any, block: Dict[str, Any], stage: StageInfo)
     content = (block.get("personalized_content") or "").strip()
     heading_path = block.get("heading_path") or block.get("block_name") or ""
     source_chunk_id = block.get("source_chunk_id") or ""
-    prompt = f"""请只审核下面这一个「内容块」的技术正确性与表达质量，不要扩展到其它内容。
+    prompt = f"""请只审核下面这一个「内容块」的技术正确性与安全性，不要扩展到其它内容。
 
 所属知识点/标题路径：{heading_path}
 来源块：{source_chunk_id or '未知'}
@@ -3403,7 +3550,7 @@ async def _llm_review_block(agent: Any, block: Dict[str, Any], stage: StageInfo)
 {agent.skill_context}
 
 要求：以 JSON 返回 {{"issues": [{{"error_type": "...", "severity": "critical|major|minor", "description": "...", "evidence": "...", "suggestion": "...", "in_chunk_position": "..."}}]}}。
-若本块无问题返回 {{"issues": []}}。只针对本块，不要臆造原文之外的事实。"""
+若本块无问题返回 {{"issues": []}}。不要报告学习风格、认知负荷、篇幅或表达偏好问题，它们由个性化审核通道处理。只针对本块，不要臆造原文之外的事实。"""
     response = await agent.llm_client.complete(
         prompt,
         system_prompt="你是Agent4块级审核专家，只审核给定内容块，不越界，不因表达流畅默认正确。",

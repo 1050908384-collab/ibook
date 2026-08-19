@@ -26,6 +26,9 @@ class Settings(BaseSettings):
         default="deepseek-r1:7b",
         validation_alias=AliasChoices("OLLAMA_MODEL", "OLLMA_MODEL"),
     )
+    # Ordered local generation fallbacks. An empty value keeps the historic
+    # single-model behavior through OLLAMA_MODEL.
+    OLLAMA_FALLBACK_MODELS: str = ""
     # Chroma 向量库使用的 Ollama embedding 模型（中文语义检索）
     EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"
 
@@ -34,6 +37,7 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_BASE: str = "https://api.deepseek.com"
     DEEPSEEK_MODEL: str = "deepseek-v4-flash"
+    DEEPSEEK_PROXY_URL: str = ""
     # 云端推理偶发长时间排队或先输出 reasoning_content；答疑需要比默认 HTTP
     # 超时更长的读取窗口，并由客户端对可恢复错误做有限重试。
     DEEPSEEK_TIMEOUT_SECONDS: float = 180.0

@@ -204,9 +204,13 @@ Agent3 在 `generate_answer` 方法中检测到代码纠错意图时：
 <!-- RUNTIME_POLICY_START -->
 ## Runtime Policy
 
-- Treat each source chunk as the complete factual boundary. Personalize by changing wording, ordering, terminology explanation, and emphasis for the learner.
-- Preserve the source chunk's factual coverage. Do not add new facts, code, examples, exercises, summaries, sections, or cross-topic material.
-- The final non-whitespace character count must be less than or equal to the source chunk's non-whitespace character count.
+- Treat each source chunk as the complete factual boundary. Personalize by selecting, compressing, reordering, explaining, and emphasizing source-supported material for the learner.
+- Preserve factual traceability. Do not add unsupported technical facts, commands, parameters, or cross-topic claims.
+- Agent3 must return a structured teaching layer with `personalization_action`, `personalization_reason`, `fact_source_chunk_ids`, and `teaching_tasks`, alongside the learner-facing Markdown body.
+- Treat `LearningEvidence` as binding teaching input: unstable prerequisites require a short `remediate` action; low-accuracy history requires a visible consolidation check; stable completed content may be compressed but not silently removed.
+- Do not remove a source block solely to shorten the tutorial. A removal or compression must record its evidence-based reason, and must not remove a stage's essential operation, common pitfall, or end-of-section check.
+- A teaching task may be added when it introduces no new technical fact and identifies its source chunk. Suitable tasks include source-supported verification, observation, reflection, and error-recording steps.
+- The final non-whitespace character count may be up to 150% of the source chunk when the added content is an allowed teaching task or source-supported explanation.
 - When a review requires a correction, change only the cited part. Do not append a revision note to learner-facing content.
 - Return Markdown body only. Do not describe the rewrite process.
 <!-- RUNTIME_POLICY_END -->

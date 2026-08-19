@@ -145,7 +145,7 @@ async def update_target_settings(session_id: str, request: TargetSettingsUpdate,
         harness.state_manager.refresh_cached_target(session_id)
         return target
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/sessions/{session_id}/stages/{stage_id}/duration")

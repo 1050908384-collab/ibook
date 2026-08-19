@@ -3002,6 +3002,7 @@ function ResultView({
   onReturnToChat,
   onOpenAssessmentReview,
   hasAssessmentReview,
+  isCurrentStage,
   loading,
   error
 }: {
@@ -3017,6 +3018,7 @@ function ResultView({
   onReturnToChat: () => void;
   onOpenAssessmentReview: () => void;
   hasAssessmentReview: boolean;
+  isCurrentStage: boolean;
   loading: boolean;
   error: string | null;
 }) {
@@ -3119,17 +3121,17 @@ function ResultView({
           </section>
           <section className="white-card next-stage">
             <div className="stage-eyebrow">
-              <span>{result?.all_mastered ? '学习目标' : availableNextStage ? '下一阶段已就绪' : '下一阶段建议'}</span>
-              <b>{result?.all_mastered ? '已完成' : `阶段 ${availableNextStage?.stage_num ?? (stage.stage_num ?? 1) + 1}`}</b>
+              <span>{isCurrentStage ? (result?.all_mastered ? '学习目标' : availableNextStage ? '下一阶段已就绪' : '下一阶段建议') : '历史阶段'}</span>
+              <b>{isCurrentStage ? (result?.all_mastered ? '已完成' : `阶段 ${availableNextStage?.stage_num ?? (stage.stage_num ?? 1) + 1}`) : '仅供查看'}</b>
             </div>
-            <h3>{result?.all_mastered ? profile.goal : availableNextStage?.block_name || '根据新画像按需生成'}</h3>
-            <p>{result?.all_mastered ? '全部目标知识点已掌握，本轮学习计划已经完成。' : availableNextStage?.gap_skill ? `下一阶段将继续处理「${availableNextStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。'}</p>
+            <h3>{isCurrentStage ? (result?.all_mastered ? profile.goal : availableNextStage?.block_name || '根据新画像按需生成') : '该阶段总结已归档'}</h3>
+            <p>{isCurrentStage ? (result?.all_mastered ? '全部目标知识点已掌握，本轮学习计划已经完成。' : availableNextStage?.gap_skill ? `下一阶段将继续处理「${availableNextStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。') : '历史阶段仅用于回顾学习内容、测试结果和画像变化。'}</p>
             <div className="next-facts">
               <div><span>预计时长</span><strong>{availableNextStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div>
               <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
               <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
             </div>
-            {!result?.all_mastered && needsReinforcement ? (
+            {isCurrentStage && !result?.all_mastered && needsReinforcement ? (
               <div className="low-score-actions">
                 <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}>
                   <Play size={17} />正确率低，建议重新开始学习该阶段
@@ -3144,7 +3146,7 @@ function ResultView({
                   </button>
                 )}
               </div>
-            ) : !result?.all_mastered && (plannedStage ? (
+            ) : isCurrentStage && !result?.all_mastered && (plannedStage ? (
               <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={17} />开始下一阶段</button>
             ) : !existingNextStage ? (
               <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
@@ -3152,6 +3154,30 @@ function ResultView({
           </section>
         </div>
       </main>
+    </div>
+  );
+}
+
+function GoalCompletionModal({
+  goal,
+  stageName,
+  onClose,
+}: {
+  goal: string;
+  stageName: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="goal-completion-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="goal-completion-modal" role="dialog" aria-modal="true" aria-labelledby="goal-completion-title">
+        <button type="button" className="goal-completion-close" onClick={onClose} aria-label="关闭完成提示"><X size={18} /></button>
+        <div className="goal-completion-icon"><Award size={30} /></div>
+        <span className="goal-completion-kicker">LEARNING GOAL COMPLETE</span>
+        <h2 id="goal-completion-title">学习目标已完成</h2>
+        <p>你已完成「{goal || '当前学习目标'}」的全部计划知识点。</p>
+        <div className="goal-completion-stage"><Check size={16} /><span>刚刚完成：{stageName || '最后一个学习阶段'}</span></div>
+        <button type="button" className="goal-completion-action" onClick={onClose}>查看学习总结</button>
+      </section>
     </div>
   );
 }
@@ -3269,6 +3295,7 @@ export default function App() {
     goal: string;
     blockName: string;
   }>({ open: false, goal: '', blockName: '' });
+  const [goalCompletionDialog, setGoalCompletionDialog] = useState({ open: false, goal: '', stageName: '' });
   const [result, setResult] = useState<StageResult | null>(null);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
@@ -4139,6 +4166,13 @@ export default function App() {
         void refreshRemoteProjects();
         setTestOpen(false);
         setView('result');
+        if (response.all_mastered) {
+          setGoalCompletionDialog({
+            open: true,
+            goal: response.updated_profile?.goal || profile?.goal || '',
+            stageName: completedStage?.block_name || stage?.block_name || '',
+          });
+        }
         finishAgentRun(['agent6'], true);
       } else {
         throw new Error('尚未创建后端会话');
@@ -4851,8 +4885,13 @@ export default function App() {
       // session 仍在：本地立即移除最后一个阶段，刷新列表
       setLearningProjects((projects) => projects.map((project) => {
         if (project.sessionId !== targetSessionId) return project;
-        const sortedStages = [...(project.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
-        return { ...project, stages: sortedStages.slice(0, -1) };
+        const deletedStageId = result.details?.stage_id;
+        const deletedStageNum = Number(result.details?.stage_num);
+        const stages = (project.stages || []).filter((item) => {
+          if (deletedStageId && item.stage_id) return item.stage_id !== deletedStageId;
+          return !Number.isFinite(deletedStageNum) || (item.stage_num ?? 0) !== deletedStageNum;
+        });
+        return { ...project, stages };
       }));
 
       // 若删的是当前会话，回退到删除后的最新阶段
@@ -5080,12 +5119,20 @@ export default function App() {
           }}
           onOpenAssessmentReview={() => setAssessmentReviewOpen(true)}
           hasAssessmentReview={Boolean(assessmentReview?.questions?.length)}
+          isCurrentStage={Boolean(activeStageNum && (workspaceStage.stage_num ?? 0) === activeStageNum)}
           loading={loading}
           error={error}
         />
       )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
       {assessmentReview && assessmentReviewOpen && <AssessmentReviewModal review={assessmentReview} onClose={() => setAssessmentReviewOpen(false)} />}
+      {goalCompletionDialog.open && (
+        <GoalCompletionModal
+          goal={goalCompletionDialog.goal}
+          stageName={goalCompletionDialog.stageName}
+          onClose={() => setGoalCompletionDialog((dialog) => ({ ...dialog, open: false }))}
+        />
+      )}
       {noQuestionsDialog.open && (
         <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
           <div className="stage-delete-modal">

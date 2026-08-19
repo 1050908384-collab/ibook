@@ -1322,6 +1322,104 @@ body.resizing-workspace-panels * {
   cursor: not-allowed;
 }
 
+.goal-completion-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1250;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(18, 24, 42, 0.58);
+  backdrop-filter: blur(5px);
+  animation: stage-delete-fade 0.16s ease;
+}
+
+.goal-completion-modal {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 32px 34px 28px;
+  border: 1px solid #d9e8df;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 26px 76px rgba(15, 23, 42, 0.28);
+  text-align: center;
+  animation: stage-delete-pop 0.2s ease;
+}
+
+.goal-completion-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: #f3f5f8;
+  color: #667085;
+  cursor: pointer;
+}
+
+.goal-completion-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: #eaf7ef;
+  color: #23835c;
+}
+
+.goal-completion-kicker {
+  color: #23835c;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.goal-completion-modal h2 {
+  margin: 7px 0 8px;
+  color: #253044;
+  font-size: 22px;
+}
+
+.goal-completion-modal > p {
+  margin: 0;
+  color: #697386;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.goal-completion-stage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0;
+  padding: 11px 12px;
+  border: 1px solid #dcefe3;
+  border-radius: 6px;
+  background: #f5fbf7;
+  color: #287353;
+  font-size: 12px;
+  text-align: left;
+}
+
+.goal-completion-action {
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  background: #23835c;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.goal-completion-action:hover { background: #1c704d; }
+
 @keyframes stage-delete-fade {
   from { opacity: 0; }
   to { opacity: 1; }

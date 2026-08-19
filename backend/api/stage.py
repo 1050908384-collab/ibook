@@ -37,7 +37,7 @@ async def start_stage(request: StartStageRequest):
             "state": harness.get_runtime_state(request.session_id),
         }
     except Exception as e:
-        status_code = 404 if isinstance(e, ValueError) else 500
+        status_code = 400 if isinstance(e, ValueError) else 500
         raise HTTPException(status_code=status_code, detail=str(e))
 
 
@@ -53,7 +53,7 @@ async def submit_answer(request: SubmitAnswerRequest):
             "state": harness.get_runtime_state(request.session_id),
         }
     except Exception as e:
-        status_code = 404 if isinstance(e, ValueError) else 500
+        status_code = 400 if isinstance(e, ValueError) else 500
         raise HTTPException(status_code=status_code, detail=str(e))
 
 

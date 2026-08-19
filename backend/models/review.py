@@ -28,6 +28,9 @@ class ReviewResult(BaseModel):
     reviewer: Literal["technical", "quality"]
     passed: bool
     errors: List[ReviewError] = Field(default_factory=list)
+    # 个性化/教学审核与事实审核分开返回。errors 只保留会阻断发布的
+    # 技术与安全问题，避免教学建议把已溯源的内容块打回原文。
+    personalization_errors: List[ReviewError] = Field(default_factory=list)
     review_details: Optional[Any] = None
 
 

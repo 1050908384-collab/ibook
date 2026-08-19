@@ -134,6 +134,8 @@ async def run(checker: Checker) -> None:
     checker.check("LoRA 微调 > 原理" in package.tutorial and "QLoRA > 量化" in package.tutorial,
                   "tutorial 含两个块的标题路径（按块聚合）")
     checker.check(len(package.claims) == 2, "聚合 2 条 Claim（每块一条）", f"claims={len(package.claims)}")
+    checker.check(len(package.content_blocks) == 2,
+                  "学习包保留 2 个结构化个性化内容块", f"blocks={len(package.content_blocks)}")
     checker.check(all(isinstance(h, ReviewRound) for h in history) and len(history) >= 1,
                   "review_history 为 ReviewRound 列表", f"rounds={len(history)}")
 
@@ -141,10 +143,10 @@ async def run(checker: Checker) -> None:
     print(f"  _last_review_trace = {trace}")
     checker.check(trace.get("final_status") in {"passed", "needs_human_review"},
                   "final_status 合法（passed / needs_human_review）", str(trace.get("final_status")))
-    # deterministic 下 cognitive_load(critical, must_fix) 无法通过纯追加修订消解，
-    # 预期走满 MAX_REVIEW_ITERATIONS 后 needs_human_review（不崩溃即达标）。
-    checker.check(trace.get("final_status") == "needs_human_review",
-                  "未决 must_fix 时终止为 needs_human_review（不死循环）",
+    # 已溯源块的难度、认知负荷和风格建议属于个性化审核，不能替代事实审核
+    # 阻断发布；不存在事实问题时流水线应直接通过。
+    checker.check(trace.get("final_status") == "passed",
+                  "仅有个性化审核建议时学习包正常通过",
                   f"unresolved={trace.get('unresolved_must_fix_count')}")
 
     # ---- 审核 trace 落库验证（问题B 修复）：块级流水线也应写入 review_traces / rounds ----
@@ -164,10 +166,10 @@ async def run(checker: Checker) -> None:
             {"t": tid},
         ).scalar()
     checker.check(trace_row is not None, "review_traces 已落库（块级流水线补齐持久化）", f"trace_id={tid}")
-    checker.check(bool(trace_row) and trace_row[0] == "needs_human_review",
+    checker.check(bool(trace_row) and trace_row[0] == "passed",
                   "review_traces.final_status 已落库为最终状态",
                   str(trace_row[0]) if trace_row else "None")
-    checker.check((round_cnt or 0) >= 1, "review_debate_round 至少落库 1 轮", f"rounds={round_cnt}")
+    checker.check((round_cnt or 0) == 0, "无事实问题时不创建无效辩论轮次", f"rounds={round_cnt}")
     checker.check((claim_cnt or 0) >= 1, "learning_package_claims 已落库", f"claims={claim_cnt}")
 
     harness.state_manager.db_client.close()

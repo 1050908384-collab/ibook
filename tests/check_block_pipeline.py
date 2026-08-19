@@ -242,6 +242,10 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
             "version": block.version,
             "status": block.status,
             "personalized_content_preview": (block.personalized_content or "")[:120],
+            "personalization_action": block.personalization_action,
+            "personalization_reason": block.personalization_reason,
+            "fact_source_chunk_ids": block.fact_source_chunk_ids,
+            "teaching_tasks": block.teaching_tasks,
             "claims": [c.model_dump(mode="json") for c in block.claims],
         })
     b0 = blocks[0]
@@ -258,6 +262,13 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
         "Claim 绑定 source_chunk_id（供 Agent4 块级核验）",
         str((b0.claims[0].metadata_json or {}) if b0.claims else {}),
     )
+    checker.check(
+        b0.personalization_action == "explain_and_practice"
+        and b0.fact_source_chunk_ids == ["CHK-LORA-0"]
+        and bool(b0.teaching_tasks),
+        "块携带结构化教学层元数据（动作、事实来源、学习任务）",
+        str({"action": b0.personalization_action, "tasks": len(b0.teaching_tasks)}),
+    )
 
     # ------------------------------------------------------------------
     # 步骤 2：Agent4 逐块审核（任务 4 + 任务 2 Claim 优先核验）
@@ -271,6 +282,7 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
         pretty(f"块 {block.content_block_id} 审核结果", {
             "passed": result.passed,
             "issues": issues,
+            "personalization_issues": [e.model_dump(mode="json") for e in result.personalization_errors],
         })
         for iss in issues:
             ok, detail = _issue_has_block_fields(iss)
@@ -288,6 +300,34 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
         len(fact_issues) == 0,
         "真实核验：与来源块一致的正文未被误报为幻觉（任务1/2）",
         f"幻觉 issue 数={len(fact_issues)}",
+    )
+    checker.check(
+        all(review.passed for review in reviews),
+        "教学审核建议不阻断已溯源内容块发布",
+        f"fact_errors={sum(len(review.errors) for review in reviews)}",
+    )
+
+    # 个性化工具只审核教学层元数据，不将其误判为技术事实问题。
+    incomplete_block = b0.model_copy(deep=True)
+    incomplete_block.personalization_action = ""
+    incomplete_block.personalization_reason = ""
+    incomplete_block.fact_source_chunk_ids = []
+    incomplete_block.teaching_tasks = []
+    incomplete_result = await agent4.review_block(
+        incomplete_block, stage, profile=profile, round_index=1,
+    )
+    personalization_types = {
+        issue.error_type for issue in incomplete_result.personalization_errors
+    }
+    checker.check(
+        {"personalization_action_missing", "personalization_reason_missing", "teaching_source_missing", "practice_task_missing"}.issubset(personalization_types),
+        "个性化检查工具识别缺失的教学层元数据",
+        str(sorted(personalization_types)),
+    )
+    checker.check(
+        incomplete_result.passed and not incomplete_result.errors,
+        "个性化元数据问题不被误判为技术幻觉",
+        f"fact_errors={len(incomplete_result.errors)}",
     )
 
     # ------------------------------------------------------------------

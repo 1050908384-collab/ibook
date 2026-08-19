@@ -350,6 +350,27 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         session = harness.state_manager.get_session(session_id)
         self.assertEqual("active", session["status"])
 
+    async def test_force_advance_marks_current_stage_subtopics_mastered(self):
+        """用户明确继续下一阶段时，当前阶段不能在后续规划中再次出现。"""
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        initial = await harness.process_initial_input(session_id, "I want to learn LoRA")
+        current_subtopic_ids = initial["stage_info"]["subtopic_ids"]
+
+        started = await harness.start_stage(session_id)
+        question_id = started["learning_package"]["questions"][0]["question_id"]
+        await harness.submit_answer(session_id, question_id, "wrong")
+        completed = await harness.complete_stage(session_id)
+        self.assertEqual("repeat", completed["status"])
+
+        planned = await harness.plan_next_stage(session_id, force_advance=True)
+        self.assertEqual(initial["stage_info"]["stage_num"] + 1, planned["next_stage"]["stage_num"])
+        self.assertFalse(set(current_subtopic_ids) & set(planned["next_stage"].get("subtopic_ids") or []))
+        for subtopic_id in current_subtopic_ids:
+            progress = harness.state_manager.db_client.get_subtopic_status(session_id, subtopic_id)
+            self.assertEqual(1, progress["status"])
+            self.assertEqual(1.0, progress["mastery_score"])
+
     async def test_pass_but_not_all_mastered_keeps_session_active(self):
         """
         覆盖率验证：当 accuracy>=80% 但仍有其它知识盲区时，

@@ -33,6 +33,7 @@ from models.review import QualityReviewResult, ReviewError, ReviewRound, Technic
 from models.stage import LearningPackage, Source, StageInfo
 from models.material import TestQuestion
 from orchestrator.state_manager import StateManager
+from services.learning_evidence_service import LearningEvidenceService
 
 # 审核辩论协议常量（协议第 7 节）
 MAX_DEBATE_ROUNDS = 2  # 内层答辩复核轮次上限
@@ -320,11 +321,13 @@ class Harness:
                 session_id, stage, profile, practice_profile,
             )
         else:
+            learning_evidence = LearningEvidenceService(self.state_manager.db_client).build(session_id, stage)
             generated = await self.agent3.run(ContentGenerationInput(
                 session_id=session_id,
                 stage=stage,
                 learning_profile=profile,
                 practice_profile=practice_profile,
+                learning_evidence=learning_evidence,
             ))
             learning_package, review_history = await self._review_learning_package(
                 session_id,
@@ -788,7 +791,29 @@ class Harness:
         accuracy = current_stage_info.accuracy or 0.0
         if force_advance or accuracy >= 0.7:
             next_stage_num = current_stage_info.stage_num + 1
-            default_notes = f"本阶段（{current_stage_info.stage_num}）已达标，推进到下一阶段"
+            if force_advance and accuracy < 0.7:
+                stage_subtopic_ids = list(current_stage_info.subtopic_ids or [])
+                if not stage_subtopic_ids and current_stage_info.subtopic_id:
+                    stage_subtopic_ids = [current_stage_info.subtopic_id]
+                for subtopic_id in stage_subtopic_ids:
+                    self.state_manager.db_client.set_subtopic_status(
+                        session_id=session_id,
+                        subtopic_id=subtopic_id,
+                        status=1,
+                        mastery_score=1.0,
+                        last_accuracy=accuracy,
+                        increment_attempt=False,
+                    )
+                current_stage_info.status = "completed"
+                self.state_manager.update_stage(session_id, current_stage_info)
+                profile = await self._sync_profile_from_subtopic_status(profile)
+                self.state_manager.update_profile(session_id, profile)
+                default_notes = (
+                    f"用户确认跳过本阶段巩固，已将阶段（{current_stage_info.stage_num}）"
+                    "的知识点标记为已掌握并推进"
+                )
+            else:
+                default_notes = f"本阶段（{current_stage_info.stage_num}）已达标，推进到下一阶段"
         else:
             next_stage_num = current_stage_info.stage_num
             default_notes = f"本阶段（{current_stage_info.stage_num}）正确率不足 70%，重试当前阶段"
@@ -996,6 +1021,7 @@ class Harness:
         stage: StageInfo,
         profile: UserProfile,
         practice_profile: PracticeProfile,
+        learning_evidence: Any,
         source_chunk: Dict[str, Any],
         block_index: int,
         round_index: int,
@@ -1018,6 +1044,7 @@ class Harness:
                 practice=practice_profile,
                 block_index=block_index,
                 session_id=session_id,
+                learning_evidence=learning_evidence,
             ),
         )
         self._log(session_id, "agent3:block_generate_done", f"block={block_index + 1}")
@@ -1051,10 +1078,18 @@ class Harness:
         trace_id: str,
         questions: Optional[List[Any]] = None,
         recommended_videos: Optional[List[dict]] = None,
+        learning_evidence: Any = None,
     ) -> LearningPackage:
         """把已生成/修订的内容块按 block_index 聚合成一个 LearningPackage。"""
         ordered = sorted(blocks, key=lambda b: getattr(b, "block_index", 0))
         tutorial_parts: List[str] = [f"# {stage.block_name}"]
+        evidence_data = (
+            learning_evidence.model_dump(mode="json")
+            if hasattr(learning_evidence, "model_dump") else (learning_evidence or {})
+        )
+        preflight_review = evidence_data.get("preflight_review")
+        if preflight_review and preflight_review.get("markdown"):
+            tutorial_parts.append(str(preflight_review["markdown"]))
         all_sources: List[Any] = []
         all_claims: List[Any] = []
         seen_source_ids: set = set()
@@ -1098,6 +1133,13 @@ class Harness:
             questions=list(questions or []),
             recommended_videos=videos,
             review_trace_id=trace_id,
+            content_blocks=ordered,
+            learning_evidence_summary={
+                "unstable_prerequisite_count": len(evidence_data.get("unstable_prerequisites") or []),
+                "weak_topic_count": len(evidence_data.get("weak_topics") or []),
+                "recent_question_count": len(evidence_data.get("recent_questions") or []),
+            },
+            preflight_review=preflight_review,
         )
 
     async def _populate_stage_questions(
@@ -1199,6 +1241,7 @@ class Harness:
         """
         history: list[ReviewRound] = []
         trace_id = f"tr_{uuid.uuid4().hex[:16]}"
+        learning_evidence = LearningEvidenceService(self.state_manager.db_client).build(session_id, stage)
 
         # 读取本阶段原始 knowledge_chunks（分块由数据侧负责入库）。
         source_chunks = self.agent3.iter_stage_chunks(stage)
@@ -1210,6 +1253,7 @@ class Harness:
                 stage=stage,
                 learning_profile=profile,
                 practice_profile=practice_profile,
+                learning_evidence=learning_evidence,
             ))
             return await self._review_learning_package(
                 session_id, generated.learning_package, stage, profile,
@@ -1221,7 +1265,7 @@ class Harness:
         review_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
         pairs = await asyncio.gather(*[
             self._generate_and_review_block(
-                session_id, stage, profile, practice_profile, chunk, idx, round_index=1,
+                session_id, stage, profile, practice_profile, learning_evidence, chunk, idx, round_index=1,
                 generation_sem=gen_sem, review_sem=review_sem,
             )
             for idx, chunk in enumerate(source_chunks)
@@ -1263,6 +1307,7 @@ class Harness:
         draft_package = self._aggregate_blocks(
             session_id, stage, [st.block for st in states.values()], trace_id,
             questions=stage_questions, recommended_videos=stage_videos,
+            learning_evidence=learning_evidence,
         )
         self._persist_trace_init(trace_id, session_id, stage, draft_package)
         # 首轮审核结果作为第 1 轮 review_round 落库（Agent4 异步审核结果统一留痕）
@@ -1440,6 +1485,7 @@ class Harness:
         package = self._aggregate_blocks(
             session_id, stage, [st.block for st in states.values()], trace_id,
             questions=stage_questions, recommended_videos=stage_videos,
+            learning_evidence=learning_evidence,
         )
         # 块级路径以块为最小单位，不产出整阶段自测题；聚合后与整篇路径一致地补齐题目，
         # 保证学习包可作答（提交答案/掌握判定依赖题目）。

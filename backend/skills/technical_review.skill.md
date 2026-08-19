@@ -13,7 +13,13 @@
   - 知识库（`knowledge_verify_tool` 提供的语义相似度检索）
   - 学习资源库（`learning_resource_tool.get_recommended_videos(block_id, subtopic_id)` 只读查询 `learning_resources / block_resources / subtopic_resources` 表中 `mapping_status='confirmed'` 且 `resource_type='video'` 的资源，作为视频归属与 URL 校验的权威基线）
   - 规范规则库（`rule_check_tool` 的正则规则、`industry_standards.skill.md` 的红线条款）
-  - 当前学习阶段信息（`ReviewInput.stage.block_name` / `block_id` / `subtopic_id`）和用户画像（`ReviewInput.profile`）
+- 当前学习阶段信息（`ReviewInput.stage.block_name` / `block_id` / `subtopic_id`）和用户画像（`ReviewInput.profile`）
+
+### 1.1 块级双通道审核补充
+
+- **事实通道**：审核技术事实、命令、参数、代码、安全与来源对应关系；发现问题才阻断发布并进入 Agent3-4 修订闭环。
+- **个性化通道**：审核 `personalization_action`、`personalization_reason`、`fact_source_chunk_ids` 与 `teaching_tasks` 是否落实画像；同时保留难度、认知负荷和风格检查。
+- 个性化通道的问题返回为 `personalization_errors`，是教学改进建议，不因正文与原文表达不同而判为幻觉，也不阻断已通过事实通道的内容块。
 
 ## 2. 核心方法论
 ### 2.1 内容审核/回答审核流程（通用场景）
