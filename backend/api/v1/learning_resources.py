@@ -132,6 +132,34 @@ _REF_TITLE_LINE = re.compile(
 )
 
 
+def _strip_preamble_before_suitable_audience(content: str) -> str:
+    """Strip everything up to (and excluding) the "适合人群" line.
+
+    Intended to clean the lesson preamble shown to end-users in the frontend:
+    remove top-level H1, reference header blocks ("> **参考文章链接**" quote /
+    "## 参考资料" H2 / newly-added vLLM version banner), all circled reference
+    entries (① 底稿 / 权威 / 参考文章 + 网址), version/hardware hint quote
+    blocks, and leading "---" separators —- everything that sits **before** the
+    "适合人群" metadata line. The "适合人群" line itself and every line after
+    it (预计学习时长 / 环境准备 / 版本说明 / 正文章节) are preserved as-is.
+
+    SAFETY: if the document contains no "适合人群" marker, return the original
+    content unchanged to avoid accidentally wiping the whole lesson.
+    """
+    if not content:
+        return content
+    lines = content.splitlines(keepends=True)
+    i = 0
+    n = len(lines)
+    while i < n:
+        if "适合人群" in lines[i]:
+            break
+        i += 1
+    if i >= n:
+        return content
+    return "".join(lines[i:]).lstrip()
+
+
 def _strip_reference_urls(content: str) -> str:
     """Remove article reference URL lines from lesson content.
 
@@ -191,9 +219,11 @@ def _clean_headings(content: str) -> str:
 
 def _nest_document_markdown(content: str) -> str:
     """Place a full lesson below a topic H2 without changing fenced code."""
-    # 先去掉文章参考链接行（它们已在"文章网址"区单独展示）
+    # 1) 语义级：删除"适合人群"之前的整段前言（参考文章链接块/版本头/H1/分隔线等），保留适合人群本身
+    content = _strip_preamble_before_suitable_audience(content)
+    # 2) 行级兜底：去掉散落在正文中的"① 底稿...网址..."单行（它们已在"拓展网址"区单独展示）
     content = _strip_reference_urls(content)
-    # 清理标题面包屑和（①）标记
+    # 3) 清理标题面包屑和（①）标记
     content = _clean_headings(content)
     lines = content.strip().splitlines()
     if lines and re.match(r"^#\s+", lines[0]):
