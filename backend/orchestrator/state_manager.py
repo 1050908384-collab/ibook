@@ -150,7 +150,26 @@ class StateManager:
                 # user-visible conversation.
                 "qa_history": self.db_client.list_qa_records_for_stage(session_id, stage_num),
             }
-        snapshot = state.stage_snapshots.get(str(stage_num))
+        # New snapshots are keyed by immutable stage_id.  Keep the numeric
+        # lookup as a compatibility path for sessions written before this
+        # fix, but never let a retry with the same stage_num overwrite the
+        # original stage instance.
+        snapshot = None
+        if state.stage_info and state.stage_info.stage_num == stage_num:
+            snapshot = state.stage_snapshots.get(state.stage_info.stage_id)
+        if not snapshot:
+            candidates = []
+            for key, item in state.stage_snapshots.items():
+                info = (item or {}).get("stage_info") or {}
+                if info.get("stage_num") == stage_num:
+                    candidates.append((key, item))
+            if candidates:
+                # Preserve the legacy numeric entry only when no immutable
+                # stage snapshot exists; otherwise prefer the first instance
+                # recorded in stage_progress for historical navigation.
+                snapshot = candidates[0][1]
+        if not snapshot:
+            snapshot = state.stage_snapshots.get(str(stage_num))
         if snapshot:
             snapshot = dict(snapshot)
             snapshot["qa_history"] = self.db_client.list_qa_records_for_stage(session_id, stage_num)
@@ -177,20 +196,38 @@ class StateManager:
             "qa_history": self.db_client.list_qa_records_for_stage(session_id, stage_num),
         }
 
+    def get_stage_snapshot_by_id(self, session_id: str, stage_id: str) -> Optional[Dict[str, Any]]:
+        """读取指定阶段实例；stage_id 是阶段历史的稳定身份。"""
+        state = self._get(session_id)
+        if not state or not stage_id:
+            return None
+        if state.stage_info and state.stage_info.stage_id == stage_id:
+            info = state.stage_info.model_dump(mode="json")
+            return {"stage_info": info, "learning_package": state.learning_package.model_dump(mode="json") if state.learning_package else None,
+                    "qa_history": self.db_client.list_qa_records_for_stage(session_id, info.get("stage_num"))}
+        snapshot = state.stage_snapshots.get(stage_id)
+        if snapshot:
+            result = dict(snapshot)
+            num = ((result.get("stage_info") or {}).get("stage_num"))
+            result["qa_history"] = self.db_client.list_qa_records_for_stage(session_id, num)
+            return result
+        return None
+
     def save_stage_result(self, session_id: str, stage_num: int, result: Dict[str, Any]) -> None:
         """Persist the Agent6 outcome with the immutable stage snapshot."""
         state = self.require_session(session_id)
-        snapshot = dict(state.stage_snapshots.get(str(stage_num)) or {})
+        key = state.stage_info.stage_id if state.stage_info and state.stage_info.stage_num == stage_num else str(stage_num)
+        snapshot = dict(state.stage_snapshots.get(key) or {})
         if not snapshot and state.stage_info and state.stage_info.stage_num == stage_num:
             self._save_current_stage_snapshot(state)
-            snapshot = dict(state.stage_snapshots.get(str(stage_num)) or {})
+            snapshot = dict(state.stage_snapshots.get(key) or {})
         if not snapshot:
             # Older sessions have completed stages only in stage_progress.
             # Preserve that stage metadata when adding a recovered Agent6
             # result, otherwise the new result would hide the old stage.
             snapshot = dict(self.get_stage_snapshot(session_id, stage_num) or {})
         snapshot["stage_result"] = result
-        state.stage_snapshots[str(stage_num)] = snapshot
+        state.stage_snapshots[key] = snapshot
         self._save(state)
 
     def get_stage_result(self, session_id: str, stage_num: int) -> Optional[Dict[str, Any]]:
@@ -198,8 +235,23 @@ class StateManager:
         state = self._get(session_id)
         if not state:
             return None
-        snapshot = state.stage_snapshots.get(str(stage_num)) or {}
+        snapshot = {}
+        state_info = state.stage_info
+        if state_info and state_info.stage_num == stage_num:
+            snapshot = state.stage_snapshots.get(state_info.stage_id) or {}
+        if not snapshot:
+            snapshot = state.stage_snapshots.get(str(stage_num)) or {}
+        if not snapshot:
+            for item in state.stage_snapshots.values():
+                if ((item or {}).get("stage_info") or {}).get("stage_num") == stage_num:
+                    snapshot = item
+                    break
         result = snapshot.get("stage_result")
+        return dict(result) if isinstance(result, dict) else None
+
+    def get_stage_result_by_id(self, session_id: str, stage_id: str) -> Optional[Dict[str, Any]]:
+        snapshot = self.get_stage_snapshot_by_id(session_id, stage_id)
+        result = (snapshot or {}).get("stage_result")
         return dict(result) if isinstance(result, dict) else None
 
     def update_next_stage(self, session_id: str, next_stage: StageInfo | dict) -> None:
@@ -374,6 +426,22 @@ class StateManager:
         if not payload:
             return None
         state = SessionData.model_validate(payload)
+        # Migrate legacy numeric snapshot keys in memory.  Older releases
+        # used stage_num as the dictionary key, which collides when a failed
+        # stage is retried.  Once stage_id is available, use it as the stable
+        # identity and retain the old key only when no stage metadata exists.
+        migrated_snapshots: Dict[str, Dict[str, Any]] = {}
+        for key, snapshot in (state.stage_snapshots or {}).items():
+            info = (snapshot or {}).get("stage_info") or {}
+            stable_key = info.get("stage_id") or key
+            # Numeric legacy aliases ("1", "2", ...) are removed after the
+            # immutable stage_id entry has been recovered; keeping both makes
+            # dashboard consumers see the same stage twice.
+            if stable_key not in migrated_snapshots:
+                migrated_snapshots[stable_key] = snapshot
+        if migrated_snapshots != state.stage_snapshots:
+            state.stage_snapshots = migrated_snapshots
+            self._save(state)
         target = self.db_client.get_target_settings(session_id) or {}
         state.user_id = target.get("user_id") or state.user_id
         state.goal = target.get("goal") or state.goal
@@ -385,6 +453,43 @@ class StateManager:
             state.profile = UserProfile.model_validate(composed_profile)
         user_profile = self.db_client.get_user_profile(state.user_id) or {}
         state.practice_profile = self._practice_profile_from_user(user_profile)
+        # Recover sessions persisted by the earlier delete-last-stage code,
+        # which cleared stage_info while leaving the preceding snapshot intact.
+        if state.phase in {"learning", "stage_ready"} and state.stage_info is None:
+            try:
+                persisted_stages = self.db_client.list_stage_progress(session_id)
+                stage_nums = [int(item.get("stage_num", 0)) for item in persisted_stages if item.get("stage_num")]
+                fallback_num = max(stage_nums) if stage_nums else 0
+                fallback_snapshot = state.stage_snapshots.get(str(fallback_num)) or {}
+                if fallback_snapshot.get("stage_info"):
+                    state.stage_info = StageInfo.model_validate(fallback_snapshot["stage_info"])
+                    state.current_stage = fallback_num
+                    if fallback_snapshot.get("learning_package"):
+                        state.learning_package = LearningPackage.model_validate(fallback_snapshot["learning_package"])
+                    if fallback_snapshot.get("stage_result"):
+                        state.phase = "stage_result"
+                        state.available_actions = ["plan_next_stage"]
+                    else:
+                        state.phase = "learning"
+                        state.available_actions = ["ask_question", "start_assessment"]
+                    self._save(state)
+            except Exception:
+                # A legacy session without a usable snapshot remains readable
+                # through the existing stage_progress fallback path.
+                pass
+        # Heal sessions created by the earlier delete-last-stage behavior:
+        # a completed restored snapshot must allow plan-next instead of being
+        # left in the generic learning phase (which causes a 409 response).
+        if state.phase == "learning" and state.stage_info:
+            snapshot = (
+                state.stage_snapshots.get(state.stage_info.stage_id)
+                or state.stage_snapshots.get(str(state.stage_info.stage_num))
+                or {}
+            )
+            if snapshot.get("stage_result"):
+                state.phase = "stage_result"
+                state.available_actions = ["plan_next_stage"]
+                self._save(state)
         self._cache[session_id] = state
         return state
 
@@ -405,7 +510,7 @@ class StateManager:
         """Copy the active stage's user-visible state before it is replaced."""
         if not state.stage_info:
             return
-        state.stage_snapshots[str(state.stage_info.stage_num)] = {
+        state.stage_snapshots[state.stage_info.stage_id] = {
             "stage_info": state.stage_info.model_dump(mode="json"),
             "learning_package": state.learning_package.model_dump(mode="json") if state.learning_package else None,
             "qa_history": list(state.qa_history),

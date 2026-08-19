@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Any, Optional
 import asyncio
 import httpx
 import json
@@ -17,7 +17,10 @@ class LLMClient:
         self.deepseek_model = settings.DEEPSEEK_MODEL
         self.ollama_base_url = settings.OLLAMA_BASE_URL.rstrip("/")
         self.ollama_model = settings.OLLAMA_MODEL
-        self.client = httpx.AsyncClient(timeout=120)
+        self.client = httpx.AsyncClient(timeout=httpx.Timeout(
+            settings.DEEPSEEK_TIMEOUT_SECONDS,
+            connect=min(20.0, settings.DEEPSEEK_TIMEOUT_SECONDS),
+        ))
         self.last_done_reason: Optional[str] = None
 
     @property
@@ -93,6 +96,85 @@ class LLMClient:
             return "Error: DeepSeek API rate limit exceeded (HTTP 429). Retry later."
         return f"Error: DeepSeek API request failed (HTTP {status_code}). Detail: {detail}"
 
+    @staticmethod
+    def _is_retryable_status(status_code: int) -> bool:
+        return status_code in {408, 429, 500, 502, 503, 504}
+
+    async def _complete_deepseek(self, payload: dict[str, Any]) -> str:
+        """Request DeepSeek with bounded retries for transient transport failures.
+
+        A response that contains reasoning but no user-facing content is not a
+        usable answer. Retry it once with an explicit concise-answer instruction
+        instead of allowing Agent3's legacy fallback to expose prompt context.
+        """
+        attempts = max(1, settings.DEEPSEEK_MAX_RETRIES + 1)
+        last_error = ""
+        retry_payload = payload
+
+        for attempt in range(1, attempts + 1):
+            try:
+                response = await self.client.post(
+                    self._chat_completions_url,
+                    json=retry_payload,
+                    headers=self._headers(),
+                )
+                response.raise_for_status()
+                result = response.json()
+                choice = result.get("choices", [{}])[0]
+                self.last_done_reason = choice.get("finish_reason")
+                message = choice.get("message") or {}
+                cleaned_response = self._clean_response(str(message.get("content") or ""))
+                reasoning_length = len(str(message.get("reasoning_content") or ""))
+
+                if cleaned_response:
+                    logger.info(
+                        "DeepSeek response accepted: attempt=%d finish_reason=%s content_chars=%d reasoning_chars=%d",
+                        attempt, self.last_done_reason, len(cleaned_response), reasoning_length,
+                    )
+                    return cleaned_response
+
+                last_error = (
+                    "DeepSeek returned empty content "
+                    f"(finish_reason={self.last_done_reason or 'unknown'}, reasoning_chars={reasoning_length})"
+                )
+                logger.warning("%s; attempt=%d/%d", last_error, attempt, attempts)
+                # A concise retry is especially important for reasoning models
+                # that spend their entire budget before emitting message.content.
+                retry_instruction = "请直接输出完整、简洁的最终答案，不要展示推理过程；控制在 180 字以内。"
+                if payload.get("response_format"):
+                    retry_instruction = "请直接输出符合请求格式的完整 JSON，不要展示推理过程。"
+                retry_payload = {
+                    **payload,
+                    "messages": [
+                        *payload["messages"],
+                        {
+                            "role": "user",
+                            "content": retry_instruction,
+                        },
+                    ],
+                    "max_tokens": max(512, min(int(payload["max_tokens"]), 2048)),
+                }
+            except httpx.HTTPStatusError as error:
+                status_code = error.response.status_code
+                last_error = self._format_deepseek_status_error(error)
+                logger.warning("DeepSeek HTTP failure: attempt=%d/%d status=%d", attempt, attempts, status_code)
+                if not self._is_retryable_status(status_code):
+                    return last_error
+            except httpx.RequestError as error:
+                last_error = f"Error: DeepSeek API transport failure: {error}"
+                logger.warning("DeepSeek transport failure: attempt=%d/%d error=%s", attempt, attempts, error)
+            except (ValueError, KeyError, TypeError) as error:
+                last_error = f"Error: DeepSeek API response format invalid: {error}"
+                logger.warning("DeepSeek response parse failure: attempt=%d/%d error=%s", attempt, attempts, error)
+                break
+
+            if attempt < attempts:
+                await asyncio.sleep(min(2 ** (attempt - 1), 3))
+
+        if last_error.startswith("Error:"):
+            return last_error
+        return f"Error: DeepSeek {last_error or 'API returned no usable answer'}"
+
     async def complete(
         self,
         prompt: str,
@@ -104,51 +186,25 @@ class LLMClient:
         self.last_done_reason = None
         if not self._has_deepseek_credentials():
             return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
-        try:
-            logger.debug("Sending DeepSeek prompt: %s", prompt[:200])
-            messages = []
-            if system_prompt:
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
-            payload = {
-                "model": self.deepseek_model,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-            }
-            if json_mode:
-                payload["response_format"] = {"type": "json_object"}
+        logger.debug("Sending DeepSeek prompt: %s", prompt[:200])
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        payload: dict[str, Any] = {
+            "model": self.deepseek_model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
 
-            response = await self.client.post(
-                self._chat_completions_url,
-                json=payload,
-                headers=self._headers(),
-            )
-            response.raise_for_status()
-            result = response.json()
-            choice = result.get("choices", [{}])[0]
-            self.last_done_reason = choice.get("finish_reason")
-            response_text = choice.get("message", {}).get("content", "")
-            cleaned_response = self._clean_response(response_text)
-            if self.last_done_reason == "length":
-                logger.warning("DeepSeek stopped generation because max_tokens was exhausted")
-            logger.debug("DeepSeek response: %s", cleaned_response[:500])
-            return cleaned_response
-        except httpx.HTTPStatusError as e:
-            logger.error("DeepSeek returned HTTP %s: %s", e.response.status_code, self._extract_error_message(e.response))
-            if self._can_fallback_to_ollama():
-                logger.info("Falling back to local Ollama after DeepSeek HTTP error")
-                return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
-            return self._format_deepseek_status_error(e)
-        except httpx.RequestError as e:
-            logger.error("DeepSeek request failed: %s", e)
-            if self._can_fallback_to_ollama():
-                logger.info("Falling back to local Ollama after DeepSeek request failure")
-                return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
-            return f"Error: {str(e)}"
-        except Exception as e:
-            logger.error(f"LLM complete error: {e}")
-            return f"Error: {str(e)}"
+        response = await self._complete_deepseek(payload)
+        if response.startswith("Error:") and self._can_fallback_to_ollama():
+            logger.info("Falling back to local Ollama after DeepSeek failure")
+            return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
+        return response
 
     async def _complete_with_ollama(
         self,

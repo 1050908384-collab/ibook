@@ -612,7 +612,7 @@ class DeterministicDiagnosticAgent:
         if not structured.get("skill_tags"):
             questions.append("你目前已经掌握哪些相关技能？例如 Python、PyTorch、Transformer。")
         if not has_hours:
-            questions.append("你每天大约能投入多少小时学习？")
+            questions.append("你每个学习阶段大约能安排多少小时？")
         if not has_style:
             questions.append("你更偏好理论讲解、动手实操，还是两者结合？")
         return questions

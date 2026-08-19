@@ -7,7 +7,7 @@ import {
   sortProjectsForDashboard
 } from '../node_modules/.cache/agent-flow-tests/utils/learningProjects.js';
 
-test('当前目标始终排在第一位，其余目标按建立日期由近到远排序', () => {
+test('学习目标始终按建立日期由近到远排序，不因当前会话改变', () => {
   const projects = [
     { sessionId: 'old', createdAt: 100, updatedAt: 500 },
     { sessionId: 'current', createdAt: 50, updatedAt: 50 },
@@ -15,7 +15,7 @@ test('当前目标始终排在第一位，其余目标按建立日期由近到�
   ];
 
   const result = sortProjectsForDashboard(projects, 'current');
-  assert.deepEqual(result.map((project) => project.sessionId), ['current', 'new', 'old']);
+  assert.deepEqual(result.map((project) => project.sessionId), ['new', 'old', 'current']);
   assert.notEqual(result, projects);
 });
 

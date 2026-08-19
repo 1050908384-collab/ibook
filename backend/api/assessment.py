@@ -91,12 +91,15 @@ async def get_assessment_attempt(attempt_id: str, _user_id: str = Depends(requir
 async def get_stage_result(
     session_id: str,
     stage_num: int,
+    stage_id: str | None = None,
     _user_id: str = Depends(require_owned_session),
 ):
     """Read a persisted Agent6 summary and the submitted assessment review."""
     try:
-        summary = harness.state_manager.get_stage_result(session_id, stage_num)
-        snapshot = harness.state_manager.get_stage_snapshot(session_id, stage_num) or {}
+        summary = (harness.state_manager.get_stage_result_by_id(session_id, stage_id)
+                   if stage_id else harness.state_manager.get_stage_result(session_id, stage_num))
+        snapshot = (harness.state_manager.get_stage_snapshot_by_id(session_id, stage_id)
+                    if stage_id else harness.state_manager.get_stage_snapshot(session_id, stage_num)) or {}
         stage = snapshot.get("stage_info") or {}
         attempt = assessment_service.get_submitted_attempt(session_id, stage.get("stage_id"))
         if not attempt:

@@ -1746,15 +1746,31 @@ class SQLiteClient:
                     raise PermissionError(f"Session {session_id} does not belong to user {user_id}")
 
             # 1. 找到最后一个 stage_progress
+            # Prefer the runtime's immutable current stage_id. Falling back
+            # to max(stage_num) is ambiguous when a retry shares the same
+            # number with its predecessor.
+            current_stage_id = session.execute(text("""
+                SELECT json_extract(state_json, '$.stage_info.stage_id')
+                FROM session_states WHERE session_id = :sid
+            """), {"sid": session_id}).scalar()
             last_stage = session.execute(
                 text("""
                     SELECT stage_id, stage_num, block_id, subtopic_id, status
                     FROM stage_progress
                     WHERE session_id = :sid
+                      AND (:current_stage_id IS NULL OR stage_id = :current_stage_id)
                     ORDER BY stage_num DESC
                     LIMIT 1
-                """), {"sid": session_id},
+                """), {"sid": session_id, "current_stage_id": current_stage_id},
             ).first()
+            if last_stage is None:
+                last_stage = session.execute(
+                    text("""
+                        SELECT stage_id, stage_num, block_id, subtopic_id, status
+                        FROM stage_progress WHERE session_id = :sid
+                        ORDER BY stage_num DESC, rowid DESC LIMIT 1
+                    """), {"sid": session_id},
+                ).first()
             if last_stage is None:
                 session.execute(text("PRAGMA foreign_keys = ON"))
                 raise LookupError(f"No stage to delete for session {session_id}")
@@ -1832,31 +1848,7 @@ class SQLiteClient:
                 {"sid": session_id, "stage_id": stage_id},
             )
 
-            # 5. 清理 session_states.state_json 里阶段相关字段，并调整 sessions.current_stage
-            state_row = session.execute(
-                text("SELECT state_json FROM session_states WHERE session_id = :sid"),
-                {"sid": session_id},
-            ).first()
-            state_json = state_row[0] if state_row else None
-            import json as _json
-            if state_json:
-                try:
-                    state = _json.loads(state_json)
-                except (TypeError, ValueError):
-                    state = {}
-                # 清掉阶段相关字段；保留 profile / user_id 等画像信息
-                for key in ("stage_info", "learning_package", "next_stage",
-                            "planning_notes", "result", "assessment_state"):
-                    state.pop(key, None)
-                # phase 回退到 stage_ready，让用户从下一个阶段重新开始
-                state["phase"] = "stage_ready"
-                state["available_actions"] = ["start_stage", "plan_next_stage"]
-                session.execute(
-                    text("UPDATE session_states SET state_json = :payload, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
-                    {"payload": _json.dumps(state, ensure_ascii=False), "sid": session_id},
-                )
-
-            # 6. 计算剩余阶段数；若为 0 则整 session 删掉，否则 current_stage 回退
+            # 5. Find the previous stage before reconstructing the runtime state.
             remaining = session.execute(
                 text("SELECT MAX(stage_num) FROM stage_progress WHERE session_id = :sid"),
                 {"sid": session_id},
@@ -1870,6 +1862,79 @@ class SQLiteClient:
                 details["session_deleted"] = True
                 details["cascade"] = cascade
                 return details
+
+            previous_stage = session.execute(text("""
+                SELECT stage_id, stage_num, block_id, block_name, subtopic_id,
+                       estimated_hours, status, accuracy, strategy_used
+                FROM stage_progress
+                WHERE session_id = :sid AND stage_num = :stage_num
+                LIMIT 1
+            """), {"sid": session_id, "stage_num": remaining}).mappings().first()
+
+            # Restore the preceding stage instead of clearing the whole runtime
+            # view. Its immutable snapshot contains the learning package and
+            # conversation metadata needed to return to the previous page.
+            state_row = session.execute(
+                text("SELECT state_json FROM session_states WHERE session_id = :sid"),
+                {"sid": session_id},
+            ).first()
+            state_json = state_row[0] if state_row else None
+            import json as _json
+            if state_json:
+                try:
+                    state = _json.loads(state_json)
+                except (TypeError, ValueError):
+                    state = {}
+                snapshots = dict(state.get("stage_snapshots") or {})
+                snapshots.pop(stage_id, None)
+                snapshots.pop(str(stage_num), None)  # legacy numeric key
+                previous_snapshot = snapshots.get(previous_stage["stage_id"]) if previous_stage else None
+                if not previous_snapshot:
+                    previous_snapshot = snapshots.get(str(remaining)) or {}
+                restored_stage = previous_snapshot.get("stage_info")
+                restored_package = previous_snapshot.get("learning_package")
+                restored_result = previous_snapshot.get("stage_result")
+
+                if not restored_stage and previous_stage:
+                    restored_stage = {
+                        "stage_id": previous_stage["stage_id"],
+                        "stage_num": previous_stage["stage_num"],
+                        "block_id": previous_stage["block_id"],
+                        "block_name": previous_stage["block_name"],
+                        "subtopic_id": previous_stage["subtopic_id"],
+                        "subtopic_ids": [previous_stage["subtopic_id"]] if previous_stage["subtopic_id"] else [],
+                        "estimated_hours": previous_stage["estimated_hours"],
+                        "status": previous_stage["status"],
+                        "accuracy": previous_stage["accuracy"],
+                        "strategy_used": previous_stage["strategy_used"],
+                    }
+
+                state["stage_snapshots"] = snapshots
+                state["current_stage"] = int(remaining)
+                state["stage_info"] = restored_stage
+                state.pop("next_stage", None)
+                state.pop("next_stage_planning_notes", None)
+                state.pop("planning_notes", None)
+                state.pop("result", None)
+                state.pop("assessment_state", None)
+                if restored_package:
+                    state["learning_package"] = restored_package
+                    state["qa_history"] = previous_snapshot.get("qa_history") or []
+                    if restored_result:
+                        state["phase"] = "stage_result"
+                        state["available_actions"] = ["plan_next_stage"]
+                    else:
+                        state["phase"] = "learning"
+                        state["available_actions"] = ["ask_question", "start_assessment"]
+                else:
+                    state.pop("learning_package", None)
+                    state["qa_history"] = []
+                    state["phase"] = "stage_ready"
+                    state["available_actions"] = ["start_stage"]
+                session.execute(
+                    text("UPDATE session_states SET state_json = :payload, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
+                    {"payload": _json.dumps(state, ensure_ascii=False), "sid": session_id},
+                )
 
             session.execute(
                 text("UPDATE sessions SET current_stage = :stage, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
@@ -2340,7 +2405,9 @@ class SQLiteClient:
                 SELECT question, answer, tech_pass, quality_pass, created_at
                 FROM user_qa
                 WHERE session_id = :session_id AND stage = :stage
-                ORDER BY created_at ASC, qa_id ASC
+                -- created_at has second-level precision and qa_id is random;
+                -- rowid preserves the actual dialogue insertion order.
+                ORDER BY rowid ASC
             """), {"session_id": session_id, "stage": stage}).mappings().all()
         return [dict(row) for row in rows]
 

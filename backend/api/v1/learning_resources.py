@@ -515,6 +515,28 @@ def build_stage_document_resources(stage: dict[str, Any]) -> list[dict[str, Any]
             fallback = str(document.get("source") or "").strip()
             if fallback.startswith(("http://", "https://")):
                 refs = [(doc_title or "学习文章", fallback)]
+            else:
+                # 本地 Markdown 可能没有外部网址，但它仍是该知识点的
+                # 垂直领域来源。保留一个 documentation 资源，前端可显示
+                # 来源名称/本地文档标识，而不是把“参考文章”渲染成空白。
+                local_locator = f"knowledge_doc:{doc_id or subtopic_id}"
+                result.append({
+                    "resource_id": f"{doc_id or 'LOCAL'}-DOC",
+                    "resource_type": "documentation",
+                    "title": doc_title or f"{subtopic_id} 学习资料",
+                    "url": "",
+                    "canonical_url": "",
+                    "platform": "local",
+                    "description": "本地领域知识库文档",
+                    "content_summary": doc_title or "本地领域知识库文档",
+                    "content_ref": local_locator,
+                    "locator": local_locator,
+                    "recommendation_level": "primary",
+                    "role": "primary",
+                    "order": order_counter + 1,
+                    "subtopic_id": doc_subtopic_id,
+                })
+                order_counter += 1
         logger.info(
             "build_stage_document_resources: subtopic=%s doc_id=%s refs_count=%d",
             subtopic_id, doc_id, len(refs),
