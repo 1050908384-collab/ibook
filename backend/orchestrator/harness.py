@@ -140,12 +140,11 @@ class Harness:
         # actual answer, e.g. "已根据审核意见修复……以下是修改后的完整回答：" or
         # "修改后内容如下：" / "修订后答复：". That is internal orchestration
         # metadata, not learner-facing content, so strip the leading marker.
-        # 覆盖常见变体：前导词(以下是/下面是) + 修饰(修改后/修复后/修订后/最终/更新后) +
-        # 载体(回答/内容/答复/版本，可缺省) + 结尾(如下/：)。
+        # 载体词（回答/内容/答复/版本）必选，避免正文里"最终结果："被误匹配而剥掉前半段。
         revision_answer_markers = re.findall(
             r"(?:以下是|下面是)?(?:的)?"
             r"(?:修改后|修复后|修订后|更新后|最终)(?:的)?(?:完整)?"
-            r"(?:回答|内容|答复|版本)?\s*(?:如下|请见)?\s*[：:]",
+            r"(?:回答|内容|答复|版本)\s*(?:如下|请见)?\s*[：:]",
             text,
             flags=re.IGNORECASE,
         )

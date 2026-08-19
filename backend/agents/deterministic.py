@@ -71,7 +71,7 @@ SKILL_NAMES = (
 DAILY_ANSWER_LIMIT = 150
 # deepseek-r1 spends part of num_predict on internal reasoning. These are
 # generation budgets, not user-facing length targets.
-TECHNICAL_ANSWER_TOKENS = 1536
+TECHNICAL_ANSWER_TOKENS = 3072  # 原 1536 对详细中文技术回答（原理+公式+示例）不够，导致 length 截断后保留半截回答
 DAILY_ANSWER_TOKENS = 768
 
 
@@ -2277,7 +2277,7 @@ class HybridContentAgent(DeterministicContentAgent):
             retry_prompt,
             system_prompt,
             temperature=min(temperature, 0.3),
-            max_tokens=max(max_tokens, 1024),
+            max_tokens=max_tokens + 1024,  # 重试时增加 token 预算，给"更简洁但完整"的回答留足空间
         )
         if getattr(self.llm_client, "last_done_reason", None) == "length":
             # A local reasoning model can use most of its token budget before
