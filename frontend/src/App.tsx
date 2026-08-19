@@ -3339,8 +3339,9 @@ function ResultView({
   // In either case this summary must never offer to generate a duplicate.
   const availableNextStage = plannedStage || existingNextStage;
   const depthMetrics = deriveProfileDepth(profile, accuracy);
-  const previousDepthMetrics = previousProfile ? deriveProfileDepth(previousProfile) : null;
   const capability = getCapabilityLabel(depthMetrics);
+  const wrongQuestions = (assessmentReview?.questions?.filter((q) => !q.is_correct) || []);
+  const hasWrongQuestions = wrongQuestions.length > 0;
   const nextTopic = availableNextStage?.block_name || needsWork[0]?.skill || '当前薄弱点';
   const heroTitle = result?.all_mastered
     ? '本轮目标已闭环，可以把能力带到真实任务里'
@@ -3386,18 +3387,22 @@ function ResultView({
 
           <aside className="archive-card">
             <div className="archive-heading"><span>存档区</span><b>v{profile.version ?? 1}</b></div>
-            <button className="profile-compare-trigger" onClick={onOpenProfileCompare}>
-              <span><strong>v{previousProfile?.version ?? Math.max(1, (profile.version ?? 1) - 1)} → v{profile.version ?? 1}</strong><small>点击查看画像差异</small></span>
-              <ChevronRight size={18} />
-            </button>
+            {previousProfile && (
+              <button className="profile-compare-trigger" onClick={onOpenProfileCompare}>
+                <span><strong>v{previousProfile.version ?? 1} → v{profile.version ?? 1}</strong><small>点击查看画像差异</small></span>
+                <ChevronRight size={18} />
+              </button>
+            )}
             <div className="archive-facts">
               <div><span>答题数</span><strong>{assessmentReview?.total_questions ?? '--'} 题</strong></div>
               <div><span>当前策略</span><strong>{strategyLabel}</strong></div>
               <div><span>信心指数</span><strong>{pct(profile.confidence_index ?? 0)}%</strong></div>
             </div>
-            <button className="weak-spot-button" onClick={onOpenWeakSpotDrill} disabled={loading}>
-              <Target size={16} /> 薄弱点突击：随机抽查 3 道变式题
-            </button>
+            {hasWrongQuestions && (
+              <button className="weak-spot-button" onClick={onOpenWeakSpotDrill} disabled={loading}>
+                <Target size={16} /> 薄弱点突击：随机抽查 3 道变式题
+              </button>
+            )}
           </aside>
 
           <section className="white-card result-section past-section">
@@ -3423,11 +3428,12 @@ function ResultView({
                 <em>{entries.length === 1 ? '只有一种错误类型，说明问题集中，可以针对性突破。' : '错误分布较散，建议先复习基础概念再做变式题。'}</em>
               </div>;
             })()}
+            {previousProfile && <ProfileGrowthChart previous={deriveProfileDepth(previousProfile)} current={depthMetrics} />}
             <div className="evidence-strip"><Check size={15} /><span>{hasAssessment ? `本轮 ${assessmentReview?.total_questions ?? '测试'} 道题的结果已归档，建议用变式题验证"真掌握"。` : '本阶段缺少测试题，暂不把完成状态等同于掌握。'}</span></div>
           </section>
 
           <section className="white-card result-section current-section">
-            <div className="section-title"><div><span>现在 · 定位</span><h3>能力迁移度</h3></div><button className="inline-link" onClick={onOpenProfileCompare}>查看 v5 → v6</button></div>
+            <div className="section-title"><div><span>现在 · 定位</span><h3>能力迁移度</h3></div>{previousProfile && <button className="inline-link" onClick={onOpenProfileCompare}>查看 v{previousProfile.version ?? 1} → v{profile.version ?? 1}</button>}</div>
             <div className="capability-callout"><div className="capability-mark"><Gauge size={20} /></div><div><span>当前更接近</span><strong>真实开发中的「{capability}」</strong><p>{capability === '脚本阅读者' ? '能读懂现有代码，但独立修改与闭环排错还需要更多证据。' : '已经具备一定修改能力，下一步要用完整任务检验模块化与异常处理。'}</p></div></div>
             <div className="gap-chip-list">{needsWork.slice(0, 4).map((gap) => <span key={gap.skill}>{gap.skill}</span>)}{!needsWork.length && <span className="is-clear">暂无明确薄弱点</span>}</div>
           </section>
@@ -3436,10 +3442,11 @@ function ResultView({
             <div className="section-title"><div><span>未来 · 行动</span><h3>下一阶段必学清单</h3></div><b>{result?.all_mastered ? '目标完成' : strategyLabel}</b></div>
             <div className="next-action-main"><div><span>建议先学</span><h3>{result?.all_mastered ? '独立项目与综合实战' : nextTopic}</h3><p>{result?.all_mastered ? '知识点已经闭环，接下来用一个完整项目证明创造层能力。' : `因为 v${profile.version ?? 1} 画像显示你已具备阅读条件，但「${needsWork[0]?.skill || nextTopic}」仍需要通过变式题和错误回溯完成闭环。`}</p></div>{!result?.all_mastered && <div className="next-action-number">01</div>}</div>
             <div className="next-facts"><div><span>预计时长</span><strong>{availableNextStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div><div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div><div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div></div>
-            {!result?.all_mastered && <div className="result-actions">
-              {needsReinforcement && <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}><RefreshCw size={16} />回到当前阶段复习</button>}
-              {availableNextStage ? <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={16} />开始下一阶段</button> : <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={16} />生成下一阶段</button>}
-            </div>}
+            <div className="result-actions">
+              {!result?.all_mastered && needsReinforcement && <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}><RefreshCw size={16} />回到当前阶段复习</button>}
+              {result?.all_mastered && <button className="primary wide" onClick={onContinueNext} disabled={loading}><Play size={16} />进入下一阶段</button>}
+              {!result?.all_mastered && (availableNextStage ? <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={16} />开始下一阶段</button> : <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={16} />生成下一阶段</button>)}
+            </div>
           </section>
 
           <section className="white-card result-section detail-section">
@@ -3574,6 +3581,7 @@ export default function App() {
   const [profileCompareOpen, setProfileCompareOpen] = useState(false);
   const [assessmentReview, setAssessmentReview] = useState<AssessmentReview | null>(null);
   const [assessmentReviewOpen, setAssessmentReviewOpen] = useState(false);
+  const wrongQuestions = (assessmentReview?.questions?.filter((q) => !q.is_correct) || []);
   const [agentStatuses, setAgentStatuses] = useState<AgentStatusMap>(createAgentStatusMap);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
     return readLearningProjects().filter((item) => item.sessionId !== DEMO_SESSION_ID);
@@ -5398,6 +5406,19 @@ export default function App() {
       )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
       {assessmentReview && assessmentReviewOpen && <AssessmentReviewModal review={assessmentReview} onClose={() => setAssessmentReviewOpen(false)} />}
+      {weakSpotDrillOpen && wrongQuestions.length > 0 && (
+        <WeakSpotDrillModal
+          questions={wrongQuestions.slice(0, 3)}
+          onClose={() => setWeakSpotDrillOpen(false)}
+        />
+      )}
+      {profileCompareOpen && profile && previousProfile && (
+        <ProfileCompareModal
+          previous={previousProfile}
+          current={profile}
+          onClose={() => setProfileCompareOpen(false)}
+        />
+      )}
       {noQuestionsDialog.open && (
         <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
           <div className="stage-delete-modal">
