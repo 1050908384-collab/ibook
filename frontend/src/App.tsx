@@ -28,6 +28,7 @@ import {
   Gauge,
   LayoutDashboard,
   ListTree,
+  LocateFixed,
   Loader2,
   MessageCircle,
   Minus,
@@ -3028,6 +3029,8 @@ function ResultView({
   const needsWork = gaps.filter((gap) => gap.status !== '已掌握' && (gap.progress ?? 0) < 1);
   const canPlanNext = result?.can_plan_next_stage ?? result?.available_actions?.includes('plan_next_stage') ?? false;
   const needsReinforcement = hasAssessment && (accuracy ?? 0) < 0.7;
+  const [networkZoom, setNetworkZoom] = useState(1.0);
+  const [networkMode, setNetworkMode] = useState<'overview' | 'focus'>('overview');
   // A later stage may already be underway, not merely waiting in next_stage.
   // In either case this summary must never offer to generate a duplicate.
   const availableNextStage = plannedStage || existingNextStage;
@@ -3109,9 +3112,51 @@ function ResultView({
           <section className="white-card">
             <div className="section-title">
               <div><span>画像变化</span><h3>知识网络更新</h3></div>
-              <b>v{profile.version ?? 1}</b>
+              <div className="section-title-actions">
+                <div className="knowledge-network-zoom-controls" role="group" aria-label="知识点图放大缩小">
+                  <button
+                    type="button"
+                    className="knowledge-zoom-button zoom-out"
+                    onClick={() => setNetworkZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))}
+                    disabled={networkZoom <= 0.5}
+                    aria-label="缩小知识点图"
+                    title={`缩小（当前 ${Math.round(networkZoom * 100)}%）`}
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="knowledge-zoom-indicator" aria-live="polite">{Math.round(networkZoom * 100)}%</span>
+                  <button
+                    type="button"
+                    className="knowledge-zoom-button zoom-in"
+                    onClick={() => setNetworkZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}
+                    disabled={networkZoom >= 1.6}
+                    aria-label="放大知识点图"
+                    title={`放大（当前 ${Math.round(networkZoom * 100)}%）`}
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="knowledge-locate-button"
+                  onClick={() => setNetworkMode(networkMode === 'focus' ? 'overview' : 'focus')}
+                  aria-pressed={networkMode === 'focus'}
+                >
+                  <LocateFixed size={15} />{networkMode === 'focus' ? '取消定位' : '定位'}
+                </button>
+                <b>v{profile.version ?? 1}</b>
+              </div>
             </div>
-            <KnowledgeNetwork profile={profile} stage={stage} compact />
+            <KnowledgeNetwork
+              profile={profile}
+              stage={stage}
+              compact
+              externalZoom={networkZoom}
+              onZoomChange={setNetworkZoom}
+              externalMode={networkMode}
+              onModeChange={setNetworkMode}
+              showLocateControl={false}
+            />
             <div className="updated-profile-facts">
               <div><span>信心指数</span><strong>{pct(profile.confidence_index ?? 0)}%</strong></div>
               <div><span>困惑标记</span><strong>{profile.confusion_markers?.join('、') || '暂无'}</strong></div>

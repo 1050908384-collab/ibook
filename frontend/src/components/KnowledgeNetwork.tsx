@@ -15,6 +15,10 @@ type KnowledgeNetworkProps = {
   defaultMode?: NetworkMode;
   showNodeDetails?: boolean;
   showLocateControl?: boolean;
+  externalZoom?: number;
+  onZoomChange?: (zoom: number) => void;
+  externalMode?: NetworkMode;
+  onModeChange?: (mode: NetworkMode) => void;
 };
 
 type DisplayStatus = 'mastered' | 'learning' | 'pending';
@@ -59,22 +63,37 @@ export default function KnowledgeNetwork({
   compact = false,
   defaultMode = 'overview',
   showNodeDetails = true,
-  showLocateControl = true
+  showLocateControl = true,
+  externalZoom,
+  onZoomChange,
+  externalMode,
+  onModeChange
 }: KnowledgeNetworkProps) {
   const [statuses, setStatuses] = useState<KnowledgeNetworkSubtopicStatus[]>([]);
   const [loading, setLoading] = useState(!isUiPreviewMode);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mode, setMode] = useState<NetworkMode>(defaultMode);
+  const [mode, setModeState] = useState<NetworkMode>(defaultMode);
+  const modeValue = externalMode ?? mode;
+  const setMode = (next: NetworkMode) => {
+    if (externalMode === undefined) setModeState(next);
+    onModeChange?.(next);
+  };
   const [dragging, setDragging] = useState(false);
   // ---- 知识点图（SVG）专门的放大缩小：范围 50%~160% ----
   const ZOOM_MIN = 0.5;
   const ZOOM_MAX = 1.6;
   const ZOOM_STEP = 0.1;
-  const [zoom, setZoom] = useState(1.0);
-  const zoomIn = () => setZoom((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
-  const zoomOut = () => setZoom((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));
+  const [zoom, setZoomState] = useState(1.0);
+  const zoomValue = externalZoom ?? zoom;
+  const setZoom = (nextZoom: number) => {
+    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +nextZoom.toFixed(2)));
+    if (externalZoom === undefined) setZoomState(clamped);
+    onZoomChange?.(clamped);
+  };
+  const zoomIn = () => setZoom(zoomValue + ZOOM_STEP);
+  const zoomOut = () => setZoom(zoomValue - ZOOM_STEP);
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef({
     active: false,
@@ -172,10 +191,10 @@ export default function KnowledgeNetwork({
   };
 
   useEffect(() => {
-    if (mode !== 'focus' || !currentId) return;
+    if (modeValue !== 'focus' || !currentId) return;
     const frame = window.requestAnimationFrame(() => centerCurrentSubtopic('auto'));
     return () => window.cancelAnimationFrame(frame);
-  }, [currentId, mode]);
+  }, [currentId, modeValue]);
 
   const selectMode = (nextMode: NetworkMode) => {
     setMode(nextMode);
@@ -226,14 +245,14 @@ export default function KnowledgeNetwork({
       event.preventDefault();
       if (event.deltaY === 0) return;
       const direction = event.deltaY < 0 ? 1 : -1;
-      setZoom((value) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(value + direction * ZOOM_STEP).toFixed(2))));
+      setZoom(zoomValue + direction * ZOOM_STEP);
     };
     viewport.addEventListener('wheel', handler, { passive: false });
     return () => viewport.removeEventListener('wheel', handler);
-  }, []);
+  }, [zoomValue]);
 
   return (
-    <section className={`knowledge-network ${mode}${compact ? ' compact' : ''}`} aria-label="知识网络">
+    <section className={`knowledge-network ${modeValue}${compact ? ' compact' : ''}`} aria-label="知识网络">
       <div className="knowledge-network-toolbar">
         <div className="knowledge-network-legend" aria-label="图例">
           <span className="mastered"><i />已掌握</span>
@@ -242,39 +261,39 @@ export default function KnowledgeNetwork({
           <span className="foundation"><i />首次填写基础</span>
           <span className="target"><i />当前目标</span>
         </div>
-        {showLocateControl && <div className="knowledge-network-actions" aria-label="图谱定位与缩放">
-          <div className="knowledge-network-zoom-controls" role="group" aria-label="知识点图放大缩小">
+        {showLocateControl && (externalZoom === undefined || externalMode === undefined) && <div className="knowledge-network-actions" aria-label="图谱定位与缩放">
+          {externalZoom === undefined && <div className="knowledge-network-zoom-controls" role="group" aria-label="知识点图放大缩小">
             <button
               type="button"
               className="knowledge-zoom-button zoom-out"
               onClick={zoomOut}
-              disabled={zoom <= ZOOM_MIN}
+              disabled={zoomValue <= ZOOM_MIN}
               aria-label="缩小知识点图"
-              title={`缩小（当前 ${Math.round(zoom * 100)}%）`}
+              title={`缩小（当前 ${Math.round(zoomValue * 100)}%）`}
             >
               <Minus size={14} />
             </button>
-            <span className="knowledge-zoom-indicator" aria-live="polite">{Math.round(zoom * 100)}%</span>
+            <span className="knowledge-zoom-indicator" aria-live="polite">{Math.round(zoomValue * 100)}%</span>
             <button
               type="button"
               className="knowledge-zoom-button zoom-in"
               onClick={zoomIn}
-              disabled={zoom >= ZOOM_MAX}
+              disabled={zoomValue >= ZOOM_MAX}
               aria-label="放大知识点图"
-              title={`放大（当前 ${Math.round(zoom * 100)}%）`}
+              title={`放大（当前 ${Math.round(zoomValue * 100)}%）`}
             >
               <Plus size={14} />
             </button>
-          </div>
-          <button
+          </div>}
+          {externalMode === undefined && <button
             type="button"
             className="knowledge-locate-button"
-            onClick={() => selectMode(mode === 'focus' ? 'overview' : 'focus')}
+            onClick={() => selectMode(modeValue === 'focus' ? 'overview' : 'focus')}
             disabled={!currentId}
-            aria-pressed={mode === 'focus'}
+            aria-pressed={modeValue === 'focus'}
           >
-            <LocateFixed size={15} />{mode === 'focus' ? '取消定位' : '定位'}
-          </button>
+            <LocateFixed size={15} />{modeValue === 'focus' ? '取消定位' : '定位'}
+          </button>}
         </div>}
       </div>
 
@@ -308,7 +327,7 @@ export default function KnowledgeNetwork({
         <svg
           className="knowledge-route-map"
           viewBox={`0 0 ${layout.width} ${layout.height}`}
-          style={{ width: layout.width * zoom, height: layout.height * zoom }}
+          style={{ width: layout.width * zoomValue, height: layout.height * zoomValue }}
           role="img"
           aria-label="15 个模块、73 个知识点及其前置关系组成的知识航线图"
         >
@@ -318,7 +337,7 @@ export default function KnowledgeNetwork({
               const relevant = block.subtopics.some((subtopic) => focusIds.has(subtopic.subtopic_id));
               const masteredCount = block.subtopics.filter((item) => statusById.get(item.subtopic_id)?.status === 1).length;
               return (
-                <g className={`knowledge-region tone-${index % 4}${mode === 'focus' && !relevant ? ' is-muted' : ''}`} key={block.block_id}>
+                <g className={`knowledge-region tone-${index % 4}${modeValue === 'focus' && !relevant ? ' is-muted' : ''}`} key={block.block_id}>
                   <title>{block.block_name}</title>
                   <rect x={area.x} y={area.y} width={area.width} height={area.height} rx="24" />
                   <text className="knowledge-region-code" x={area.x + 20} y={area.y + 27}>{block.block_id}</text>
@@ -341,7 +360,7 @@ export default function KnowledgeNetwork({
               return (
                 <path
                   key={`${edge.source_id}-${edge.target_id}`}
-                  className={`${edge.kind} ${edgeStatus}${mode === 'focus' && !relevant ? ' is-muted' : ''}`}
+                  className={`${edge.kind} ${edgeStatus}${modeValue === 'focus' && !relevant ? ' is-muted' : ''}`}
                   d={edgePath(edge, positionById)}
                 />
               );
@@ -360,7 +379,7 @@ export default function KnowledgeNetwork({
               const classes = [
                 'knowledge-route-node', displayStatus,
                 initial ? 'initial-foundation' : '', target ? 'current-target' : '',
-                current ? 'is-current' : '', mode === 'focus' && !relevant ? 'is-muted' : ''
+                current ? 'is-current' : '', modeValue === 'focus' && !relevant ? 'is-muted' : ''
               ].filter(Boolean).join(' ');
               const tooltip = `${subtopic.subtopic_name} · ${statusLabel(displayStatus)}${initial ? ' · 首次填写基础' : ''}${target ? ' · 当前目标' : ''}`;
               return (

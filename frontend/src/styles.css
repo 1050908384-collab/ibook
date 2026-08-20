@@ -5199,6 +5199,21 @@ body.resizing-workspace-panels * {
   gap: 14px;
 }
 
+.section-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.section-title-actions > b {
+  color: var(--violet);
+  background: var(--violet-soft);
+  padding: 5px 7px;
+  border-radius: 6px;
+  font-size: 10px;
+}
+
 .card-title h3,
 .section-title h3 {
   font-size: 15px;
@@ -5507,7 +5522,7 @@ body.resizing-workspace-panels * {
   font-weight: 600;
 }
 
-.knowledge-network-actions .knowledge-locate-button {
+.knowledge-locate-button {
   min-width: 72px;
   height: 34px;
   display: inline-flex;
@@ -5525,11 +5540,13 @@ body.resizing-workspace-panels * {
   cursor: pointer;
 }
 
+.section-title-actions .knowledge-locate-button:disabled,
 .knowledge-network-actions .knowledge-locate-button:disabled {
   opacity: 0.45;
   cursor: default;
 }
 
+.section-title-actions .knowledge-locate-button[aria-pressed="true"],
 .knowledge-network-actions .knowledge-locate-button[aria-pressed="true"] {
   border-color: #b89c45;
   background: #fff9e8;
