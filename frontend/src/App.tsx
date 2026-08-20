@@ -2989,307 +2989,8 @@ function DashboardView({
   );
 }
 
-type ProfileDepthMetrics = {
-  understanding: number;
-  application: number;
-  creation: number;
-};
-
-function deriveProfileDepth(profile: Profile, accuracy?: number): ProfileDepthMetrics {
-  const gaps = profile.knowledge_gaps || [];
-  const averageProgress = gaps.length
-    ? gaps.reduce((sum, gap) => sum + Math.max(0, Math.min(1, gap.progress ?? 0)), 0) / gaps.length
-    : 0;
-  const masteredRatio = gaps.length
-    ? gaps.filter((gap) => gap.status === '已掌握' || (gap.progress ?? 0) >= 1).length / gaps.length
-    : 0;
-  const confidence = profile.confidence_index ?? averageProgress;
-  const understanding = accuracy === undefined
-    ? averageProgress * 0.65 + confidence * 0.35
-    : accuracy * 0.7 + confidence * 0.3;
-  const application = averageProgress * 0.75 + masteredRatio * 0.25;
-  return {
-    understanding: Math.round(Math.max(0, Math.min(1, understanding)) * 100),
-    application: Math.round(Math.max(0, Math.min(1, application)) * 100),
-    creation: Math.round(Math.max(0, Math.min(1, application * 0.72)) * 100)
-  };
-}
-
-function getCapabilityLabel(metrics: ProfileDepthMetrics) {
-  if (metrics.creation >= 70) return '模块开发者';
-  if (metrics.application >= 55) return '脚本修改者';
-  return '脚本阅读者';
-}
-
-function getStrategyLabel(strategy?: string) {
-  return ({
-    finish: '完成本轮目标',
-    advance: '进入下一阶段',
-    reinforce: '巩固后再进阶',
-    simplify: '降维重学',
-    backtrack: '回到前置知识'
-  } as Record<string, string>)[strategy || ''] || strategy || '待确认';
-}
-
-function ProfileDepthBars({ metrics }: { metrics: ProfileDepthMetrics }) {
-  const items = [
-    { label: '理解层', value: metrics.understanding, note: '能看懂代码与概念' },
-    { label: '应用层', value: metrics.application, note: '能修改并完成变式题' },
-    { label: '创造层', value: metrics.creation, note: '独立产出证据仍需补充' }
-  ];
-  return (
-    <div className="depth-bars">
-      {items.map((item) => (
-        <div className="depth-bar" key={item.label}>
-          <div className="depth-bar-head"><strong>{item.label}</strong><b>{item.value}</b></div>
-          <div className="depth-track"><i style={{ width: `${item.value}%` }} /></div>
-          <span>{item.note}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ProfileGrowthChart({
-  previous,
-  current
-}: {
-  previous: ProfileDepthMetrics | null;
-  current: ProfileDepthMetrics;
-}) {
-  const points = previous ? [previous, current] : [current];
-  const values = points.flatMap((point) => [point.understanding, point.application, point.creation]);
-  const max = Math.max(100, ...values);
-  const min = Math.min(0, ...values);
-  const xFor = (index: number) => points.length === 1 ? 110 : 38 + index * 144;
-  const yFor = (value: number) => 92 - ((value - min) / Math.max(1, max - min)) * 64;
-  const line = (key: keyof ProfileDepthMetrics) => points.map((point, index) => `${xFor(index)},${yFor(point[key])}`).join(' ');
-  const legend = [
-    { label: '理解层', color: '#6258e8' },
-    { label: '应用层', color: '#22a76a' },
-    { label: '创造层', color: '#e88b32' }
-  ];
-
-  return (
-    <div className="growth-chart-wrap">
-      <div className="growth-chart-head">
-        <div><span>能力成长曲线</span><strong>{previous ? '上一版 → 本轮' : '本轮能力快照'}</strong></div>
-        <div className="growth-legend">
-          {legend.map((item) => <span key={item.label}><i style={{ background: item.color }} />{item.label}</span>)}
-        </div>
-      </div>
-      <svg className="growth-chart" viewBox="0 0 220 112" role="img" aria-label="理解、应用、创造三层能力变化曲线">
-        {[28, 60, 92].map((y) => <line key={y} x1="18" x2="202" y1={y} y2={y} className="growth-grid-line" />)}
-        {legend.map((item, index) => {
-          const key = ['understanding', 'application', 'creation'][index] as keyof ProfileDepthMetrics;
-          return (
-            <g key={item.label}>
-              <polyline points={line(key)} fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              {points.map((point, pointIndex) => <circle key={`${item.label}-${pointIndex}`} cx={xFor(pointIndex)} cy={yFor(point[key])} r="3.5" fill="#fff" stroke={item.color} strokeWidth="2" />)}
-            </g>
-          );
-        })}
-        <text x="25" y="108">{previous ? `v${previousProfileVersion(previous)}` : '本轮'}</text>
-        {previous && <text x="169" y="108">本轮</text>}
-      </svg>
-      <p>{previous ? '曲线只展示当前可获得的画像快照，能力分值用于辅助判断，不替代变式题和真实任务。' : '上一版画像快照不可用，先记录本轮基线；完成下一阶段后这里会形成可比变化。'}</p>
-    </div>
-  );
-}
-
-function previousProfileVersion(metrics: ProfileDepthMetrics) {
-  return metrics ? '上一版' : '上一版';
-}
-
-function ProfileCompareModal({
-  previous,
-  current,
-  onClose
-}: {
-  previous: Profile | null;
-  current: Profile;
-  onClose: () => void;
-}) {
-  const currentMetrics = deriveProfileDepth(current);
-  const previousMetrics = previous ? deriveProfileDepth(previous) : null;
-  const rows = [
-    { label: '理解层', before: previousMetrics?.understanding, after: currentMetrics.understanding },
-    { label: '应用层', before: previousMetrics?.application, after: currentMetrics.application },
-    { label: '创造层', before: previousMetrics?.creation, after: currentMetrics.creation }
-  ];
-  return (
-    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="profile-compare-modal" role="dialog" aria-modal="true" aria-labelledby="profile-compare-title">
-        <header>
-          <div><span>画像变化</span><h2 id="profile-compare-title">{previous ? `v${previous.version ?? 1} → v${current.version ?? 1}` : `本轮画像 v${current.version ?? 1}`}</h2></div>
-          <button onClick={onClose} aria-label="关闭画像对比"><X size={18} /></button>
-        </header>
-        <div className="profile-compare-body">
-          <p className="compare-note">{previous ? '上一版快照来自进入本阶段前的画像，变化用于帮助你理解系统为什么调整下一步。' : '当前会话没有保存上一版快照，因此只展示本轮画像基线，不虚构历史变化。'}</p>
-          <div className="compare-rows">
-            {rows.map((row) => {
-              const delta = row.before === undefined ? null : row.after - row.before;
-              return <div className="compare-row" key={row.label}><span>{row.label}</span><strong>{row.before ?? '--'}</strong><i>→</i><strong>{row.after}</strong><b className={delta === null ? '' : delta >= 0 ? 'positive' : 'negative'}>{delta === null ? '暂无对比' : `${delta >= 0 ? '+' : ''}${delta}`}</b></div>;
-            })}
-          </div>
-          <div className="compare-gaps"><span>本轮仍需闭环</span><div>{(current.knowledge_gaps || []).filter((gap) => gap.status !== '已掌握' && (gap.progress ?? 0) < 1).slice(0, 5).map((gap) => <b key={gap.skill}>{gap.skill}</b>) || <small>暂无明确薄弱点</small>}</div></div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-const ERROR_CATEGORY_META: Record<string, { label: string; icon: string; className: string }> = {
-  concept: { label: '概念混淆', icon: '🔀', className: 'error-tag-concept' },
-  syntax: { label: '语法/格式', icon: '⚙️', className: 'error-tag-syntax' },
-  knowledge: { label: '知识缺失', icon: '❓', className: 'error-tag-knowledge' },
-  careless: { label: '粗心失误', icon: '⚡', className: 'error-tag-careless' },
-  logic: { label: '逻辑缺失', icon: '🧩', className: 'error-tag-logic' },
-  comparison: { label: '对比偏差', icon: '📏', className: 'error-tag-comparison' },
-  unknown: { label: '待分析', icon: '🔍', className: 'error-tag-unknown' },
-};
-
-function categorizeQuestionError(
-  question: AssessmentReviewQuestion,
-  userAnswer: string | undefined
-): { category: string; reason: string } {
-  const answerKey = (a: string | undefined) => (a || '').trim().toLowerCase();
-  const normalizedUser = answerKey(userAnswer);
-  const normalizedCorrect = answerKey(question.correct_answer);
-
-  if (!normalizedUser) {
-    return { category: 'knowledge', reason: '未作答，说明对该知识点完全陌生' };
-  }
-  if (normalizedUser === normalizedCorrect) {
-    return { category: 'unknown', reason: '作答正确，无错误归因' };
-  }
-
-  const userLen = normalizedUser.length;
-  const correctLen = normalizedCorrect.length;
-  const lenDiff = Math.abs(userLen - correctLen);
-  const lenRatio = lenDiff / Math.max(correctLen, 1);
-
-  if (question.question_type?.toLowerCase().includes('choice') || question.options?.length) {
-    if (normalizedUser.length === 1 && normalizedCorrect.length === 1 && normalizedUser !== normalizedCorrect) {
-      return { category: 'comparison', reason: '选择题选错了选项，说明对相似概念的区分度不足' };
-    }
-  }
-
-  if (lenRatio < 0.25 && userLen > 3) {
-    const set1 = new Set(normalizedUser.split(''));
-    const set2 = new Set(normalizedCorrect.split(''));
-    const overlap = [...set1].filter((c) => set2.has(c)).length;
-    const charRatio = overlap / Math.max(set1.size, set2.size, 1);
-    if (charRatio > 0.7) {
-      return { category: 'careless', reason: '答案与正确答案高度相似，属于粗心或格式问题' };
-    }
-    return { category: 'concept', reason: '答案长度接近但内容有偏差，可能是概念理解有混淆' };
-  }
-
-  if (question.question_text && /function|def |class |import|循环|条件|异常|递归|sort|map|filter/i.test(question.question_text)) {
-    return { category: 'logic', reason: '编程题答错，可能是逻辑构建不完整或边界条件遗漏' };
-  }
-
-  if (normalizedUser.length >= correctLen * 2 || normalizedUser.length <= correctLen * 0.3) {
-    return { category: 'knowledge', reason: '答案与正确答案长度差异大，说明知识点掌握不牢' };
-  }
-
-  const userTokens = normalizedUser.split(/[\s,.;:=()\[\]{}"'\/\\]+/).filter(Boolean);
-  const correctTokens = normalizedCorrect.split(/[\s,.;:=()\[\]{}"'\/\\]+/).filter(Boolean);
-  const tokenOverlap = userTokens.filter((t) => correctTokens.includes(t)).length;
-  const tokenRatio = tokenOverlap / Math.max(correctTokens.length, 1);
-
-  if (tokenRatio > 0.5) {
-    return { category: 'concept', reason: '答案包含了部分正确要素，但关键概念使用有误' };
-  }
-  if (tokenRatio > 0.2) {
-    return { category: 'logic', reason: '答案涉及相关关键词但组织逻辑不正确' };
-  }
-
-  return { category: 'knowledge', reason: '答案与正确答案差异较大，需要回顾基础知识点' };
-}
-
-function WeakSpotDrillModal({
-  questions,
-  onClose
-}: {
-  questions: AssessmentReviewQuestion[];
-  onClose: () => void;
-}) {
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const current = questions[index];
-  if (!current) return null;
-  const answerKey = (answer: string | undefined) => (answer || '').trim().toLowerCase();
-  const done = questions.every((question) => answers[question.question_id]);
-  const score = questions.filter((question) => answerKey(answers[question.question_id]) === answerKey(question.correct_answer)).length;
-
-  const categoryStats: Record<string, number> = {};
-  questions.forEach((q) => {
-    const ak = answerKey(answers[q.question_id]);
-    const ck = answerKey(q.correct_answer);
-    if (ak !== ck) {
-      const { category } = categorizeQuestionError(q, answers[q.question_id]);
-      categoryStats[category] = (categoryStats[category] || 0) + 1;
-    }
-  });
-
-  return (
-    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="weak-spot-modal" role="dialog" aria-modal="true" aria-labelledby="weak-spot-title">
-        <header><div><span>薄弱点突击</span><h2 id="weak-spot-title">3 道复核题，验证是不是真会</h2></div><button onClick={onClose} aria-label="关闭薄弱点突击"><X size={18} /></button></header>
-        {!submitted ? <div className="weak-spot-body">
-          <div className="weak-spot-progress"><span>第 {index + 1} / {questions.length} 题</span><b>{Object.keys(answers).length} / {questions.length} 已作答</b></div>
-          <span className="question-label">{current.question_type || '复核题'}</span>
-          <h3>{current.question_text}</h3>
-          {current.options?.length ? <div className="options">{current.options.map((option, optionIndex) => {
-            const key = typeof option === 'string' ? String.fromCharCode(65 + optionIndex) : option.key || String.fromCharCode(65 + optionIndex);
-            const text = typeof option === 'string' ? option : option.text || key;
-            return <button type="button" key={key} className={answers[current.question_id] === key ? 'selected' : ''} onClick={() => setAnswers((prev) => ({ ...prev, [current.question_id]: key }))}><span>{key}</span>{text}{answers[current.question_id] === key && <Check size={17} />}</button>;
-          })}</div> : <textarea className="answer-textarea" value={answers[current.question_id] || ''} onChange={(event) => setAnswers((prev) => ({ ...prev, [current.question_id]: event.target.value }))} />}
-          {current.hint && <p className="question-hint">提示：{current.hint}</p>}
-          <div className="test-nav"><button className="ghost" disabled={index === 0} onClick={() => setIndex(index - 1)}>上一题</button>{index < questions.length - 1 ? <button className="primary" disabled={!answers[current.question_id]} onClick={() => setIndex(index + 1)}>下一题 <ChevronRight size={15} /></button> : <button className="primary" disabled={!done} onClick={() => setSubmitted(true)}>提交复核</button>}</div>
-        </div> : <div className="weak-spot-result"><div className={score === questions.length ? 'drill-score perfect' : 'drill-score'}><strong>{score}/{questions.length}</strong><span>{score === questions.length ? '本轮变式验证通过，可以进入下一阶段。' : '有题目没有答稳，建议先回看对应解析再继续。'}</span></div>
-          {Object.keys(categoryStats).length > 0 && (
-            <div className="drill-error-summary"><span>错因统计</span><div className="error-tags">{Object.entries(categoryStats).map(([cat, count]) => {
-              const meta = ERROR_CATEGORY_META[cat] || ERROR_CATEGORY_META.unknown;
-              return <span key={cat} className={`error-tag ${meta.className}`} title={meta.label}>{meta.icon} {meta.label} ×{count}</span>;
-            })}</div></div>
-          )}
-          <div className="drill-review-list">{questions.map((question) => {
-            const isCorrect = answerKey(answers[question.question_id]) === answerKey(question.correct_answer);
-            const errorInfo = isCorrect ? null : categorizeQuestionError(question, answers[question.question_id]);
-            const errorMeta = errorInfo ? (ERROR_CATEGORY_META[errorInfo.category] || ERROR_CATEGORY_META.unknown) : null;
-            return (
-              <div key={question.question_id} className={`drill-review-item ${isCorrect ? 'is-correct' : 'is-incorrect'}`}>
-                <div className="drill-review-head">
-                  <span>{question.is_correct === false ? '原先错题' : '复核题'}</span>
-                  <strong className={isCorrect ? 'correct' : 'incorrect'}>{isCorrect ? '这次答对' : '仍需复习'}</strong>
-                </div>
-                <h4 className="drill-review-question">{question.question_text}</h4>
-                {question.options?.length ? <div className="drill-review-options">{question.options.map((option, optIdx) => {
-                  const key = typeof option === 'string' ? String.fromCharCode(65 + optIdx) : option.key || String.fromCharCode(65 + optIdx);
-                  const text = typeof option === 'string' ? option : option.text || key;
-                  const isUserChoice = answerKey(answers[question.question_id]) === key;
-                  const isCorrectChoice = answerKey(question.correct_answer) === key;
-                  return <span key={key} className={`drill-option ${isUserChoice ? 'user-pick' : ''} ${isCorrectChoice ? 'correct-pick' : ''}`}>{key}. {text}{isUserChoice && isCorrectChoice ? ' ✓' : isUserChoice ? ' ✗' : isCorrectChoice ? ' ★' : ''}</span>;
-                })}</div> : <div className="drill-review-answers"><div><span>你的答案</span><b>{answers[question.question_id] || '未作答'}</b></div><div><span>正确答案</span><b>{question.correct_answer || '未提供'}</b></div></div>}
-                {errorMeta && <div className="drill-error-tag-row"><span className={`error-tag ${errorMeta.className}`}>{errorMeta.icon} {errorMeta.label}</span><em>{errorInfo!.reason}</em></div>}
-                {question.explanation && <p className="drill-explanation">{question.explanation}</p>}
-              </div>
-            );
-          })}</div>
-          <button className="primary wide" onClick={onClose}>返回总结页</button>
-        </div>}
-      </section>
-    </div>
-  );
-}
-
 function ResultView({
   profile,
-  previousProfile,
   stage,
   plannedStage,
   existingNextStage,
@@ -3300,16 +3001,11 @@ function ResultView({
   onContinueNext,
   onReturnToChat,
   onOpenAssessmentReview,
-  onOpenWeakSpotDrill,
-  onOpenProfileCompare,
-  assessmentReview,
   hasAssessmentReview,
-  isCurrentStage,
   loading,
   error
 }: {
   profile: Profile;
-  previousProfile: Profile | null;
   stage: StageInfo;
   plannedStage: StageInfo | null;
   existingNextStage: StageInfo | null;
@@ -3320,15 +3016,10 @@ function ResultView({
   onContinueNext: () => void;
   onReturnToChat: () => void;
   onOpenAssessmentReview: () => void;
-  onOpenWeakSpotDrill: () => void;
-  onOpenProfileCompare: () => void;
-  assessmentReview: AssessmentReview | null;
   hasAssessmentReview: boolean;
-  isCurrentStage: boolean;
   loading: boolean;
   error: string | null;
 }) {
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const bypass = Boolean(result?.bypass_assessment);
   const hasAssessment = !bypass && typeof result?.accuracy === 'number';
   const accuracy = result?.accuracy;
@@ -3340,23 +3031,14 @@ function ResultView({
   // A later stage may already be underway, not merely waiting in next_stage.
   // In either case this summary must never offer to generate a duplicate.
   const availableNextStage = plannedStage || existingNextStage;
-  const depthMetrics = deriveProfileDepth(profile, accuracy);
-  const capability = getCapabilityLabel(depthMetrics);
-  const wrongQuestions = (assessmentReview?.questions?.filter((q) => !q.is_correct) || []);
-  const hasWrongQuestions = wrongQuestions.length > 0;
-  const nextTopic = availableNextStage?.block_name || needsWork[0]?.skill || '当前薄弱点';
-  const heroTitle = result?.all_mastered
-    ? '本轮目标已闭环，可以把能力带到真实任务里'
-    : bypass
-      ? `建议先完成开机自检，再进入「${nextTopic}」`
-      : needsReinforcement
-        ? '先巩固当前阶段，再决定是否进阶'
-        : `建议进入下一阶段「${nextTopic}」`;
-  const heroSubtitle = result?.all_mastered
-    ? '你已经完成当前画像中的目标知识块，下一步重点是独立产出与迁移。'
-    : `基于画像 v${profile.version ?? 1}，你当前更接近真实开发中的「${capability}」。${needsWork.length ? `距离下一层还差 ${needsWork.slice(0, 2).map((gap) => gap.skill).join('、')} 的能力闭环。` : '本阶段没有遗留的明显薄弱点。'}`;
-  const hasPaceRisk = profile.learning_rhythm === 'fast';
-  const strategyLabel = getStrategyLabel(result?.next_strategy);
+  const heroTitle = bypass
+    ? '本阶段无测试题目，已直接完成'
+    : (accuracy ?? 0) >= 0.7
+      ? '很好，可以进入下一阶段'
+      : '建议先巩固当前阶段';
+  const heroSubtitle = bypass
+    ? '系统已结合本阶段学习记录生成画像更新和后续建议。'
+    : '系统已结合本阶段学习记录和测试结果生成反馈，并更新为画像 v{version}。'.replace('{version}', String(profile.version ?? 1));
   return (
     <div className="page-shell">
       <Topbar
@@ -3367,126 +3049,109 @@ function ResultView({
         onReturnToChat={onReturnToChat}
       />
       <main className="result-page">
-        <div className="result-layout">
-          <section className="decision-card">
-            <div className="decision-score">
-              {hasAssessment ? <strong>{pct(accuracy!)}<small>分</small></strong> : <AlertTriangle size={28} />}
-              <span>{hasAssessment ? '本轮结果，仅作参考' : '本阶段无测试题目'}</span>
+        <section className="result-hero">
+          {hasAssessment ? (
+            <div className="score-ring" style={{ '--score': `${Math.round((accuracy ?? 0) * 100)}%` } as CSSProperties}>
+              <span><strong>{pct(accuracy!)}</strong><small>正确率</small></span>
             </div>
-            <div className="decision-copy">
-              <span className="success-label"><Check size={14} /> 阶段完成</span>
-              <h2>{heroTitle}</h2>
-              <p>{heroSubtitle}</p>
+          ) : (
+            <div className="score-ring no-score" aria-hidden>
+              <AlertTriangle size={28} />
+              <small>无测试题目</small>
             </div>
-            <div className="decision-reason">
-              <span>为什么这样决定</span>
-              <strong>{needsWork.length ? `画像已确认 ${mastered.length} 个知识块，下一步优先补上 ${needsWork[0].skill}。` : '画像显示本阶段没有明显遗留错误，适合把难度往真实任务推进。'}</strong>
+          )}
+          <div>
+            <span className="success-label"><Check size={14} /> 阶段完成</span>
+            <h2>{heroTitle}</h2>
+            <p>{heroSubtitle}</p>
+          </div>
+          {bypass ? (
+            <div className="strategy no-strategy">
+              <span>阶段状态</span>
+              <strong>直接完成</strong>
+              <small>当前知识点未收录测试题</small>
             </div>
-            {hasPaceRisk && (
-              <div className="pace-warning"><AlertTriangle size={17} /><div><strong>节奏预警：学速偏快</strong><span>下一阶段前 10 分钟建议完成开机自检题，避免“刚看完题”被误判成真掌握。</span></div></div>
-            )}
-          </section>
-
-          <aside className="archive-card">
-            <div className="archive-heading"><span>存档区</span><b>v{profile.version ?? 1}</b></div>
-            {previousProfile && (
-              <button className="profile-compare-trigger" onClick={onOpenProfileCompare}>
-                <span><strong>v{previousProfile.version ?? 1} → v{profile.version ?? 1}</strong><small>点击查看画像差异</small></span>
-                <ChevronRight size={18} />
-              </button>
-            )}
-            <div className="archive-facts">
-              <div><span>答题数</span><strong>{assessmentReview?.total_questions ?? '--'} 题</strong></div>
-              <div><span>当前策略</span><strong>{strategyLabel}</strong></div>
-              <div><span>信心指数</span><strong>{pct(profile.confidence_index ?? 0)}%</strong></div>
+          ) : (
+            <div className="strategy">
+              <span>下一阶段策略</span>
+              <strong>{result?.next_strategy || ((accuracy ?? 0) >= 0.7 ? 'advance' : 'reinforce')}</strong>
+              <small>Agent6 综合决策</small>
             </div>
-            {hasWrongQuestions && (
-              <button className="weak-spot-button" onClick={onOpenWeakSpotDrill} disabled={loading}>
-                <Target size={16} /> 薄弱点突击：随机抽查 3 道变式题
-              </button>
-            )}
-          </aside>
-
-          <section className="white-card result-section past-section">
-            <div className="section-title"><div><span>过去 · 诊断</span><h3>掌握深度，而不是只看分数</h3></div><b>基于本阶段记录估算</b></div>
-            <p className="section-lede">100 分只能说明你避开了本轮题目的错误，下面三层能力用来判断这些知识能否迁移到真实开发。</p>
-            <ProfileDepthBars metrics={depthMetrics} />
-            {hasAssessment && assessmentReview?.questions?.some((q) => !q.is_correct) && (() => {
-              const errorCategories: Record<string, number> = {};
-              assessmentReview.questions.forEach((q) => {
-                if (!q.is_correct) {
-                  const { category } = categorizeQuestionError(q, q.user_answer);
-                  errorCategories[category] = (errorCategories[category] || 0) + 1;
-                }
-              });
-              const entries = Object.entries(errorCategories);
-              if (!entries.length) return null;
-              return <div className="error-overview">
-                <span>错题归因速览</span>
-                <div className="error-tags">{entries.map(([cat, count]) => {
-                  const meta = ERROR_CATEGORY_META[cat] || ERROR_CATEGORY_META.unknown;
-                  return <span key={cat} className={`error-tag ${meta.className}`}>{meta.icon} {meta.label} ×{count}</span>;
-                })}</div>
-                <em>{entries.length === 1 ? '只有一种错误类型，说明问题集中，可以针对性突破。' : '错误分布较散，建议先复习基础概念再做变式题。'}</em>
-              </div>;
-            })()}
-            {previousProfile && <ProfileGrowthChart previous={deriveProfileDepth(previousProfile)} current={depthMetrics} />}
-            <div className="evidence-strip"><Check size={15} /><span>{hasAssessment ? `本轮 ${assessmentReview?.total_questions ?? '测试'} 道题的结果已归档，建议用变式题验证"真掌握"。` : '本阶段缺少测试题，暂不把完成状态等同于掌握。'}</span></div>
-          </section>
-
-          <section className="white-card result-section current-section">
-            <div className="section-title"><div><span>现在 · 定位</span><h3>能力迁移度</h3></div>{previousProfile && <button className="inline-link" onClick={onOpenProfileCompare}>查看 v{previousProfile.version ?? 1} → v{profile.version ?? 1}</button>}</div>
-            <div className="capability-callout"><div className="capability-mark"><Gauge size={20} /></div><div><span>当前更接近</span><strong>真实开发中的「{capability}」</strong><p>{capability === '脚本阅读者' ? '能读懂现有代码，但独立修改与闭环排错还需要更多证据。' : '已经具备一定修改能力，下一步要用完整任务检验模块化与异常处理。'}</p></div></div>
-            <div className="gap-chip-list">{needsWork.slice(0, 4).map((gap) => <span key={gap.skill}>{gap.skill}</span>)}{!needsWork.length && <span className="is-clear">暂无明确薄弱点</span>}</div>
-          </section>
-
-          <section className="white-card result-section future-section">
-            <div className="section-title"><div><span>未来 · 行动</span><h3>下一阶段必学清单</h3></div><b>{result?.all_mastered ? '目标完成' : strategyLabel}</b></div>
-            <div className="next-action-main"><div><span>{result?.all_mastered ? '学习目标已完成' : '建议先学'}</span><h3>{result?.all_mastered ? '查看本次学习总结' : nextTopic}</h3><p>{result?.all_mastered ? '全部计划知识点已完成，完成弹窗会在最后阶段提交成功后自动显示；不再生成新的学习阶段。' : `因为 v${profile.version ?? 1} 画像显示你已具备阅读条件，但「${needsWork[0]?.skill || nextTopic}」仍需要通过变式题和错误回溯完成闭环。`}</p></div>{!result?.all_mastered && <div className="next-action-number">01</div>}</div>
-            <div className="next-facts"><div><span>预计时长</span><strong>{availableNextStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div><div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div><div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div></div>
-            <div className="result-actions">
-              {isCurrentStage ? (
-                <>
-              {!result?.all_mastered && needsReinforcement && <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}><RefreshCw size={16} />回到当前阶段复习</button>}
-              {result?.all_mastered && <span className="history-stage-note">学习目标已完成，本阶段总结已归档。</span>}
-              {!result?.all_mastered && (availableNextStage ? <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={16} />开始下一阶段</button> : <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={16} />生成下一阶段</button>)}
-                </>
-              ) : (
-                <span className="history-stage-note">该阶段已归档，仅供查看，不能生成或进入后续阶段。</span>
+          )}
+        </section>
+        <div className="feedback-summary-grid">
+          <section className="white-card feedback-overview">
+            <div className="section-title"><div><span>反馈总结</span><h3>本阶段学习情况</h3></div><b>{statusText[stage.status || 'completed'] || stage.status}</b></div>
+            <div className="feedback-facts">
+              <div><span>学习主题</span><strong>{stage.block_name || '当前阶段'}</strong></div>
+              {hasAssessment && (
+                <div><span>测试结果</span><strong>{pct(accuracy!)}% 正确率</strong></div>
+              )}
+              {!bypass && (
+                <div><span>策略建议</span><strong>{result?.next_strategy || ((accuracy ?? 0) >= 0.7 ? 'advance' : 'reinforce')}</strong></div>
+              )}
+              {bypass && (
+                <div><span>测试情况</span><strong>本阶段无测试题目</strong></div>
               )}
             </div>
+            <div className="feedback-knowledge-columns">
+              <div><span>已掌握知识点</span><p>{mastered.map((gap) => gap.skill).join('、') || '本阶段暂无新增完全掌握项'}</p></div>
+              <div><span>仍需加强</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
+            </div>
+            <div className="feedback-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{result?.stage_summary || '本阶段记录已完成。建议根据薄弱知识点继续学习。'}</ReactMarkdown></div>
+            {hasAssessmentReview && (
+              <button className="assessment-review-button" onClick={onOpenAssessmentReview}>
+                <FileQuestion size={16} />
+                查看测试题目
+              </button>
+            )}
           </section>
-          <section className="white-card result-section detail-section">
-            <div className="section-title"><div><span>详细报告</span><h3>查看 Agent6 的完整分析</h3></div><button className="inline-link" onClick={() => setDetailsOpen((open) => !open)}>{detailsOpen ? '收起报告' : '展开报告'} <ChevronDown size={14} className={detailsOpen ? 'rotate-180' : ''} /></button></div>
-            {detailsOpen && <div className="feedback-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{result?.stage_summary || '本阶段记录已完成。建议根据薄弱知识点继续学习。'}</ReactMarkdown></div>}
-            <div className="detail-actions">{hasAssessmentReview && <button className="assessment-review-button" onClick={onOpenAssessmentReview}><FileQuestion size={16} />查看测试题目</button>}</div>
+          <section className="white-card">
+            <div className="section-title">
+              <div><span>画像变化</span><h3>知识网络更新</h3></div>
+              <b>v{profile.version ?? 1}</b>
+            </div>
+            <KnowledgeNetwork profile={profile} stage={stage} compact />
+            <div className="updated-profile-facts">
+              <div><span>信心指数</span><strong>{pct(profile.confidence_index ?? 0)}%</strong></div>
+              <div><span>困惑标记</span><strong>{profile.confusion_markers?.join('、') || '暂无'}</strong></div>
+            </div>
+          </section>
+          <section className="white-card next-stage">
+            <div className="stage-eyebrow">
+              <span>{result?.all_mastered ? '学习目标' : availableNextStage ? '下一阶段已就绪' : '下一阶段建议'}</span>
+              <b>{result?.all_mastered ? '已完成' : `阶段 ${availableNextStage?.stage_num ?? (stage.stage_num ?? 1) + 1}`}</b>
+            </div>
+            <h3>{result?.all_mastered ? profile.goal : availableNextStage?.block_name || '根据新画像按需生成'}</h3>
+            <p>{result?.all_mastered ? '全部目标知识点已掌握，本轮学习计划已经完成。' : availableNextStage?.gap_skill ? `下一阶段将继续处理「${availableNextStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。'}</p>
+            <div className="next-facts">
+              <div><span>预计时长</span><strong>{availableNextStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div>
+              <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
+              <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
+            </div>
+            {!result?.all_mastered && needsReinforcement ? (
+              <div className="low-score-actions">
+                <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}>
+                  <Play size={17} />正确率低，建议重新开始学习该阶段
+                </button>
+                {availableNextStage ? (
+                  <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}>
+                    <Play size={17} />开始下一阶段
+                  </button>
+                ) : (
+                  <button className="primary wide" onClick={onContinueNext} disabled={loading || !canPlanNext}>
+                    <Sparkles size={17} />继续进行下一个阶段
+                  </button>
+                )}
+              </div>
+            ) : !result?.all_mastered && (plannedStage ? (
+              <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={17} />开始下一阶段</button>
+            ) : !existingNextStage ? (
+              <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
+            ) : null)}
           </section>
         </div>
       </main>
-    </div>
-  );
-}
-
-function GoalCompletionModal({
-  goal,
-  stageName,
-  onClose,
-}: {
-  goal: string;
-  stageName: string;
-  onClose: () => void;
-}) {
-  return (
-    <div className="goal-completion-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="goal-completion-modal" role="dialog" aria-modal="true" aria-labelledby="goal-completion-title">
-        <button type="button" className="goal-completion-close" onClick={onClose} aria-label="关闭完成提示"><X size={18} /></button>
-        <div className="goal-completion-icon"><Award size={30} /></div>
-        <span className="goal-completion-kicker">LEARNING GOAL COMPLETE</span>
-        <h2 id="goal-completion-title">学习目标已完成</h2>
-        <p>你已完成「{goal || '当前学习目标'}」的全部计划知识点。</p>
-        <div className="goal-completion-stage"><Check size={16} /><span>刚刚完成：{stageName || '最后一个学习阶段'}</span></div>
-        <button type="button" className="goal-completion-action" onClick={onClose}>查看学习总结</button>
-      </section>
     </div>
   );
 }
@@ -3604,16 +3269,11 @@ export default function App() {
     goal: string;
     blockName: string;
   }>({ open: false, goal: '', blockName: '' });
-  const [goalCompletionDialog, setGoalCompletionDialog] = useState({ open: false, goal: '', stageName: '' });
   const [result, setResult] = useState<StageResult | null>(null);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
-  const [previousProfile, setPreviousProfile] = useState<Profile | null>(null);
-  const [weakSpotDrillOpen, setWeakSpotDrillOpen] = useState(false);
-  const [profileCompareOpen, setProfileCompareOpen] = useState(false);
   const [assessmentReview, setAssessmentReview] = useState<AssessmentReview | null>(null);
   const [assessmentReviewOpen, setAssessmentReviewOpen] = useState(false);
-  const wrongQuestions = (assessmentReview?.questions?.filter((q) => !q.is_correct) || []);
   const [agentStatuses, setAgentStatuses] = useState<AgentStatusMap>(createAgentStatusMap);
   const [learningProjects, setLearningProjects] = useState<LearningProject[]>(() => {
     return readLearningProjects().filter((item) => item.sessionId !== DEMO_SESSION_ID);
@@ -3647,14 +3307,6 @@ export default function App() {
 
   const finishAgentRun = (agentIds: AgentId[], succeeded: boolean) => {
     setAgentStatuses((current) => finishAgents(current, agentIds, succeeded));
-  };
-
-  const handleOpenWeakSpotDrill = () => {
-    setWeakSpotDrillOpen(true);
-  };
-
-  const handleOpenProfileCompare = () => {
-    setProfileCompareOpen(true);
   };
 
   const rememberProject = (
@@ -4487,13 +4139,6 @@ export default function App() {
         void refreshRemoteProjects();
         setTestOpen(false);
         setView('result');
-        if (response.all_mastered) {
-          setGoalCompletionDialog({
-            open: true,
-            goal: response.updated_profile?.goal || profile?.goal || '',
-            stageName: completedStage?.block_name || stage?.block_name || '',
-          });
-        }
         finishAgentRun(['agent6'], true);
       } else {
         throw new Error('尚未创建后端会话');
@@ -5206,13 +4851,8 @@ export default function App() {
       // session 仍在：本地立即移除最后一个阶段，刷新列表
       setLearningProjects((projects) => projects.map((project) => {
         if (project.sessionId !== targetSessionId) return project;
-        const deletedStageId = result.details?.stage_id;
-        const deletedStageNum = Number(result.details?.stage_num);
-        const stages = (project.stages || []).filter((item) => {
-          if (deletedStageId && item.stage_id) return item.stage_id !== deletedStageId;
-          return !Number.isFinite(deletedStageNum) || (item.stage_num ?? 0) !== deletedStageNum;
-        });
-        return { ...project, stages };
+        const sortedStages = [...(project.stages || [])].sort((a, b) => (a.stage_num ?? 1) - (b.stage_num ?? 1));
+        return { ...project, stages: sortedStages.slice(0, -1) };
       }));
 
       // 若删的是当前会话，回退到删除后的最新阶段
@@ -5423,7 +5063,6 @@ export default function App() {
       {profile && workflow === 'learning' && view === 'result' && (
         <ResultView
           profile={workspaceProfile}
-          previousProfile={previousProfile}
           stage={workspaceStage}
           plannedStage={plannedStage}
           existingNextStage={learningProjects
@@ -5440,37 +5079,13 @@ export default function App() {
             setMaterialPanelOpen(true);
           }}
           onOpenAssessmentReview={() => setAssessmentReviewOpen(true)}
-          onOpenWeakSpotDrill={handleOpenWeakSpotDrill}
-          onOpenProfileCompare={handleOpenProfileCompare}
-          assessmentReview={assessmentReview}
           hasAssessmentReview={Boolean(assessmentReview?.questions?.length)}
-          isCurrentStage={Boolean(activeStageNum && (workspaceStage.stage_num ?? 0) === activeStageNum)}
           loading={loading}
           error={error}
         />
       )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
       {assessmentReview && assessmentReviewOpen && <AssessmentReviewModal review={assessmentReview} onClose={() => setAssessmentReviewOpen(false)} />}
-      {goalCompletionDialog.open && (
-        <GoalCompletionModal
-          goal={goalCompletionDialog.goal}
-          stageName={goalCompletionDialog.stageName}
-          onClose={() => setGoalCompletionDialog((dialog) => ({ ...dialog, open: false }))}
-        />
-      )}
-      {weakSpotDrillOpen && wrongQuestions.length > 0 && (
-        <WeakSpotDrillModal
-          questions={wrongQuestions.slice(0, 3)}
-          onClose={() => setWeakSpotDrillOpen(false)}
-        />
-      )}
-      {profileCompareOpen && profile && previousProfile && (
-        <ProfileCompareModal
-          previous={previousProfile}
-          current={profile}
-          onClose={() => setProfileCompareOpen(false)}
-        />
-      )}
       {noQuestionsDialog.open && (
         <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
           <div className="stage-delete-modal">
