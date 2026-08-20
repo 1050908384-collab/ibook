@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { Check, CircleAlert, Loader2, LocateFixed, Minus, Plus, Target } from 'lucide-react';
 import { apiClient, isUiPreviewMode, type KnowledgeNetworkSubtopicStatus } from '../api/client';
 import { knowledgeGraphBlocks, type KnowledgeGraphSubtopic } from '../data/knowledgeGraph';
@@ -218,12 +218,19 @@ export default function KnowledgeNetwork({
     setDragging(false);
   };
 
-  const zoomWithWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    if (event.deltaY === 0) return;
-    const direction = event.deltaY < 0 ? 1 : -1;
-    setZoom((value) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(value + direction * ZOOM_STEP).toFixed(2))));
-  };
+  // 用 ref 监听 wheel 事件，必须用 { passive: false } 才能阻止页面滚动
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const handler = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.deltaY === 0) return;
+      const direction = event.deltaY < 0 ? 1 : -1;
+      setZoom((value) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(value + direction * ZOOM_STEP).toFixed(2))));
+    };
+    viewport.addEventListener('wheel', handler, { passive: false });
+    return () => viewport.removeEventListener('wheel', handler);
+  }, []);
 
   return (
     <section className={`knowledge-network ${mode}${compact ? ' compact' : ''}`} aria-label="知识网络">
@@ -297,7 +304,6 @@ export default function KnowledgeNetwork({
         onPointerMove={moveWhileDragging}
         onPointerUp={stopDragging}
         onPointerCancel={stopDragging}
-        onWheel={zoomWithWheel}
       >
         <svg
           className="knowledge-route-map"

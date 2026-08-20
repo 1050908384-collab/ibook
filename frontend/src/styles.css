@@ -4972,13 +4972,13 @@ body.resizing-workspace-panels * {
 
 .feedback-summary-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-top: 14px;
 }
 
 .feedback-summary-grid .next-stage {
-  grid-column: 1 / -1;
+  grid-column: auto;
 }
 
 .low-score-actions {
@@ -5443,7 +5443,7 @@ body.resizing-workspace-panels * {
 }
 
 .knowledge-network.compact .knowledge-network-viewport {
-  height: min(455px, 52dvh);
+  height: min(560px, 58dvh);
 }
 
 /* Deterministic SVG knowledge route map */
@@ -5767,7 +5767,7 @@ body.resizing-workspace-panels * {
 }
 
 .knowledge-network.compact .knowledge-network-viewport {
-  height: min(490px, 54dvh);
+  height: min(560px, 58dvh);
 }
 
 @media (prefers-reduced-motion: reduce) {
