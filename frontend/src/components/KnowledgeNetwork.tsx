@@ -95,6 +95,7 @@ export default function KnowledgeNetwork({
   const zoomIn = () => setZoom(zoomValue + ZOOM_STEP);
   const zoomOut = () => setZoom(zoomValue - ZOOM_STEP);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const routeMapRef = useRef<SVGSVGElement>(null);
   const dragStateRef = useRef({
     active: false,
     moved: false,
@@ -239,16 +240,16 @@ export default function KnowledgeNetwork({
 
   // 用 ref 监听 wheel 事件，必须用 { passive: false } 才能阻止页面滚动
   useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
+    const routeMap = routeMapRef.current;
+    if (!routeMap) return;
     const handler = (event: WheelEvent) => {
       event.preventDefault();
       if (event.deltaY === 0) return;
       const direction = event.deltaY < 0 ? 1 : -1;
       setZoom(zoomValue + direction * ZOOM_STEP);
     };
-    viewport.addEventListener('wheel', handler, { passive: false });
-    return () => viewport.removeEventListener('wheel', handler);
+    routeMap.addEventListener('wheel', handler, { passive: false });
+    return () => routeMap.removeEventListener('wheel', handler);
   }, [zoomValue]);
 
   return (
@@ -325,6 +326,7 @@ export default function KnowledgeNetwork({
         onPointerCancel={stopDragging}
       >
         <svg
+          ref={routeMapRef}
           className="knowledge-route-map"
           viewBox={`0 0 ${layout.width} ${layout.height}`}
           style={{ width: layout.width * zoomValue, height: layout.height * zoomValue }}

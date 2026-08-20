@@ -3144,7 +3144,7 @@ function ResultView({
                 >
                   <LocateFixed size={15} />{networkMode === 'focus' ? '取消定位' : '定位'}
                 </button>
-                <b>v{profile.version ?? 1}</b>
+                <b style={{ outline: '3px solid red', outlineOffset: '2px' }}>v{profile.version ?? 1} 🔧</b>
               </div>
             </div>
             <KnowledgeNetwork
