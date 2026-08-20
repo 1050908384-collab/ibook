@@ -43,8 +43,8 @@ test('agents sharing one request complete independently from their own evidence'
   assert.equal(reviewFailed.agent4, 'failed');
 });
 
-test('starting a new flow clears historical states', () => {
-  const historical = createAgentStatusMap(['agent1', 'agent3', 'agent4']);
+test('starting a new stage clears every previous-stage status', () => {
+  const historical = createAgentStatusMap(['agent1', 'agent3', 'agent4', 'agent6']);
   const nextFlow = startAgents(historical, ['agent1'], true);
   assert.deepEqual(nextFlow, {
     agent1: 'running',
@@ -67,4 +67,21 @@ test('session restore never restores a running state', () => {
     agent6: 'pending'
   });
   assert.equal(Object.values(restored).includes('running'), false);
+});
+test('Agent6 follows the displayed stage result instead of the session phase', () => {
+  const historicalSummary = restoreAgentStatuses({
+    hasProfile: true,
+    hasLearningPackage: true,
+    hasStageResult: true,
+    phase: 'learning'
+  });
+  assert.equal(historicalSummary.agent6, 'completed');
+
+  const newStage = restoreAgentStatuses({
+    hasProfile: true,
+    hasLearningPackage: true,
+    hasStageResult: false,
+    phase: 'next_stage_ready'
+  });
+  assert.equal(newStage.agent6, 'pending');
 });

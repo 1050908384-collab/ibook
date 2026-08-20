@@ -1197,17 +1197,48 @@ class SQLiteClient:
                 {"session_id": session_id},
             ).scalar() or "[]"
         gaps = json.loads(gaps_json)
+        rows = self.list_subtopic_statuses(session_id)
+
+        # Keep the compatibility profile gaps synchronized with the durable
+        # subtopic statuses. Previously only target_progress was refreshed,
+        # leaving knowledge_gaps at progress=1.0 after a stage was deleted.
+        normalized_gaps: list[dict] = []
+        for raw_gap in gaps:
+            if not isinstance(raw_gap, dict):
+                continue
+            gap = dict(raw_gap)
+            gap_target_ids = {
+                str(subtopic_id) for subtopic_id in gap.get("target_subtopic_ids", [])
+                if subtopic_id
+            }
+            gap_block_id = gap.get("block_id")
+            gap_rows = [
+                row for row in rows
+                if row["subtopic_id"] in gap_target_ids
+                or (not gap_target_ids and gap_block_id and row["block_id"] == gap_block_id)
+            ]
+            mastered = sum(1 for row in gap_rows if int(row.get("status", -1)) == 1)
+            learning = sum(1 for row in gap_rows if int(row.get("status", -1)) == 0)
+            gap_progress = round(mastered / len(gap_rows), 4) if gap_rows else 0.0
+            if gap_rows and mastered == len(gap_rows):
+                gap_status = "已掌握"
+            elif mastered > 0 or learning > 0:
+                gap_status = "学习中"
+            else:
+                gap_status = "未掌握"
+            gap["progress"] = gap_progress
+            gap["status"] = gap_status
+            normalized_gaps.append(gap)
+
         target_ids = {
             subtopic_id
-            for gap in gaps if isinstance(gap, dict)
+            for gap in normalized_gaps
             for subtopic_id in gap.get("target_subtopic_ids", [])
             if subtopic_id
         }
         target_blocks = {
-            gap.get("block_id") for gap in gaps
-            if isinstance(gap, dict) and gap.get("block_id")
+            gap.get("block_id") for gap in normalized_gaps if gap.get("block_id")
         }
-        rows = self.list_subtopic_statuses(session_id)
         selected = [
             row for row in rows
             if row["subtopic_id"] in target_ids
@@ -1228,10 +1259,22 @@ class SQLiteClient:
         progress = round(
             sum(float(row.get("mastery_score") or 0) for row in selected) / len(selected), 4
         ) if selected else 0.0
+        with self.Session() as session:
+            session.execute(text("""
+                UPDATE sessions
+                SET target_knowledge_gaps = :knowledge_gaps,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE session_id = :session_id
+            """), {
+                "session_id": session_id,
+                "knowledge_gaps": json.dumps(normalized_gaps, ensure_ascii=False),
+            })
+            session.commit()
         return self.update_target_settings(session_id, {
             "target_total_hours": total_hours,
             "target_progress": progress,
         }, redistribute_stage_hours=False)
+
 
     def session_exists(self, session_id: str) -> bool:
         with self.Session() as session:
@@ -1735,17 +1778,16 @@ class SQLiteClient:
             session.execute(text("PRAGMA foreign_keys = OFF"))
 
             # 所有权校验
-            if user_id:
-                owner = session.execute(
-                    text("SELECT user_id FROM sessions WHERE session_id = :sid"),
-                    {"sid": session_id},
-                ).scalar()
-                if owner is None:
-                    session.execute(text("PRAGMA foreign_keys = ON"))
-                    raise LookupError(f"Session not found: {session_id}")
-                if str(owner) != str(user_id):
-                    session.execute(text("PRAGMA foreign_keys = ON"))
-                    raise PermissionError(f"Session {session_id} does not belong to user {user_id}")
+            owner = session.execute(
+                text("SELECT user_id FROM sessions WHERE session_id = :sid"),
+                {"sid": session_id},
+            ).scalar()
+            if owner is None:
+                session.execute(text("PRAGMA foreign_keys = ON"))
+                raise LookupError(f"Session not found: {session_id}")
+            if user_id and str(owner) != str(user_id):
+                session.execute(text("PRAGMA foreign_keys = ON"))
+                raise PermissionError(f"Session {session_id} does not belong to user {user_id}")
 
             # 1. 找到最后一个 stage_progress。
             # “删除最后阶段”必须按持久化的最大阶段号执行。运行时的
@@ -1765,6 +1807,33 @@ class SQLiteClient:
                 raise LookupError(f"No stage to delete for session {session_id}")
 
             stage_id, stage_num, block_id, subtopic_id, status = last_stage
+            state_row = session.execute(
+                text("SELECT state_json FROM session_states WHERE session_id = :sid"),
+                {"sid": session_id},
+            ).first()
+            state_json = state_row[0] if state_row else None
+            try:
+                state = json.loads(state_json) if state_json else {}
+            except (TypeError, ValueError):
+                state = {}
+            snapshots = dict(state.get("stage_snapshots") or {})
+            deleted_snapshot = snapshots.get(stage_id) or snapshots.get(str(stage_num)) or {}
+            deleted_stage_info = deleted_snapshot.get("stage_info") or {}
+            deleted_subtopic_ids = {
+                str(item) for item in deleted_stage_info.get("subtopic_ids", []) if item
+            }
+            if deleted_stage_info.get("subtopic_id"):
+                deleted_subtopic_ids.add(str(deleted_stage_info["subtopic_id"]))
+            if subtopic_id:
+                deleted_subtopic_ids.add(str(subtopic_id))
+            retained_snapshot_subtopic_ids = {
+                str(item)
+                for key, snapshot in snapshots.items()
+                if key not in {stage_id, str(stage_num)}
+                for item in ((snapshot or {}).get("stage_info") or {}).get("subtopic_ids", [])
+                if item
+            }
+
             trace_ids = [
                 r[0] for r in session.execute(
                     text("SELECT trace_id FROM review_traces WHERE session_id = :sid AND (stage_id = :stage_id OR stage_id IS NULL)"),
@@ -1852,6 +1921,44 @@ class SQLiteClient:
                 details["cascade"] = cascade
                 return details
 
+            retained_stage_subtopic_ids = {
+                str(row[0]) for row in session.execute(text("""
+                    SELECT subtopic_id
+                    FROM stage_progress
+                    WHERE session_id = :sid AND subtopic_id IS NOT NULL
+                """), {"sid": session_id}).fetchall()
+                if row[0]
+            }
+            rollback_subtopic_ids = sorted(
+                deleted_subtopic_ids
+                - retained_snapshot_subtopic_ids
+                - retained_stage_subtopic_ids
+            )
+            if rollback_subtopic_ids:
+                rollback_stmt = text("""
+                    UPDATE user_subtopic_status
+                    SET status = -1,
+                        mastery_score = 0.0,
+                        last_accuracy = NULL,
+                        attempt_count = CASE
+                            WHEN attempt_count > 0 THEN attempt_count - 1
+                            ELSE 0
+                        END,
+                        started_at = NULL,
+                        completed_at = NULL,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = :owner
+                      AND subtopic_id IN :subtopic_ids
+                      AND is_initial_foundation = 0
+                """).bindparams(bindparam("subtopic_ids", expanding=True))
+                details["subtopic_statuses_rolled_back"] = session.execute(
+                    rollback_stmt,
+                    {"owner": owner, "subtopic_ids": rollback_subtopic_ids},
+                ).rowcount or 0
+            else:
+                details["subtopic_statuses_rolled_back"] = 0
+            details["rolled_back_subtopic_ids"] = rollback_subtopic_ids
+
             previous_stage = session.execute(text("""
                 SELECT stage_id, stage_num, block_id, block_name, subtopic_id,
                        estimated_hours, status, accuracy, strategy_used
@@ -1863,18 +1970,7 @@ class SQLiteClient:
             # Restore the preceding stage instead of clearing the whole runtime
             # view. Its immutable snapshot contains the learning package and
             # conversation metadata needed to return to the previous page.
-            state_row = session.execute(
-                text("SELECT state_json FROM session_states WHERE session_id = :sid"),
-                {"sid": session_id},
-            ).first()
-            state_json = state_row[0] if state_row else None
-            import json as _json
             if state_json:
-                try:
-                    state = _json.loads(state_json)
-                except (TypeError, ValueError):
-                    state = {}
-                snapshots = dict(state.get("stage_snapshots") or {})
                 snapshots.pop(stage_id, None)
                 snapshots.pop(str(stage_num), None)  # legacy numeric key
                 previous_snapshot = snapshots.get(previous_stage["stage_id"]) if previous_stage else None
@@ -1903,6 +1999,7 @@ class SQLiteClient:
 
                 state["stage_snapshots"] = snapshots
                 state["current_stage"] = int(remaining)
+                state["status"] = "active"
                 state["stage_info"] = restored_stage
                 state.pop("next_stage", None)
                 state.pop("next_stage_planning_notes", None)
@@ -1929,16 +2026,19 @@ class SQLiteClient:
                         state["available_actions"] = ["start_stage"]
                 session.execute(
                     text("UPDATE session_states SET state_json = :payload, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
-                    {"payload": _json.dumps(state, ensure_ascii=False), "sid": session_id},
+                    {"payload": json.dumps(state, ensure_ascii=False), "sid": session_id},
                 )
 
             session.execute(
-                text("UPDATE sessions SET current_stage = :stage, updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
+                text("UPDATE sessions SET current_stage = :stage, status = 'active', updated_at = CURRENT_TIMESTAMP WHERE session_id = :sid"),
                 {"stage": remaining, "sid": session_id},
             )
 
             session.execute(text("PRAGMA foreign_keys = ON"))
             session.commit()
+
+        self.refresh_target_metrics(session_id)
+
 
         details["remaining_stage_num"] = remaining
         details["session_deleted"] = False

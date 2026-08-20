@@ -161,6 +161,10 @@ export type PlanNextStageResponse = {
   updated_profile?: ApiProfile | null;
   next_stage?: ApiStage | null;
   can_plan_next_stage?: boolean;
+  status?: string;
+  session_status?: string;
+  all_mastered?: boolean;
+  final_report?: Record<string, unknown>;
 };
 
 export type GenerationEvent = {
@@ -542,7 +546,7 @@ export const apiClient = {
   planNextStage: async (sessionId: string, adjustmentNotes = '', forceAdvance = false) => {
     const response = await axios.post<PlanNextStageResponse>(`${BASE_URL}/sessions/${sessionId}/stages/next/plan`, {
       adjustment_notes: adjustmentNotes,
-      force_advance: forceAdvance
+      force_advance: forceAdvance === true
     });
     return response.data;
   },

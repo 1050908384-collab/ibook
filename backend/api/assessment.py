@@ -96,10 +96,19 @@ async def get_stage_result(
 ):
     """Read a persisted Agent6 summary and the submitted assessment review."""
     try:
-        summary = (harness.state_manager.get_stage_result_by_id(session_id, stage_id)
-                   if stage_id else harness.state_manager.get_stage_result(session_id, stage_num))
-        snapshot = (harness.state_manager.get_stage_snapshot_by_id(session_id, stage_id)
-                    if stage_id else harness.state_manager.get_stage_snapshot(session_id, stage_num)) or {}
+        summary = None
+        snapshot = None
+        if stage_id:
+            summary = harness.state_manager.get_stage_result_by_id(session_id, stage_id)
+            snapshot = harness.state_manager.get_stage_snapshot_by_id(session_id, stage_id)
+        # Dashboard/history caches can retain an earlier stage_id after a
+        # deterministic stage snapshot is rebuilt. Fall back to stage_num so
+        # an existing completed stage does not incorrectly return 404.
+        if not summary:
+            summary = harness.state_manager.get_stage_result(session_id, stage_num)
+        if not snapshot:
+            snapshot = harness.state_manager.get_stage_snapshot(session_id, stage_num)
+        snapshot = snapshot or {}
         stage = snapshot.get("stage_info") or {}
         attempt = assessment_service.get_submitted_attempt(session_id, stage.get("stage_id"))
         if not attempt:

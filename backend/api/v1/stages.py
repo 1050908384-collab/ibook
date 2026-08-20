@@ -664,18 +664,22 @@ async def plan_next_stage(
         harness.state_manager.update_field(session_id, "available_actions", result.get("available_actions", ["start_stage"]))
         
         # 获取下一阶段信息（含个性化字段）
-        next_stage = result.get("next_stage", {})
+        next_stage = result.get("next_stage")
         
         return {
             "session_id": session_id,
-            "next_stage_id": next_stage.get("stage_id"),
-            "status": "planned",
+            "next_stage_id": next_stage.get("stage_id") if next_stage else None,
+            "status": result.get("status", "planned"),
             "phase": phase,
             "next_stage": next_stage,
             "updated_profile": result.get("updated_profile"),
+            "session_status": result.get("session_status", "active"),
+            "can_plan_next_stage": result.get("can_plan_next_stage", False),
+            "all_mastered": result.get("all_mastered", False),
+            "final_report": result.get("final_report"),
             "planning_notes": result.get("planning_notes"),
             "available_actions": result.get("available_actions", ["start_stage"]),
-            "message": "下一阶段规划完成",
+            "message": "学习目标已完成" if result.get("all_mastered") else "下一阶段规划完成",
         }
     except HTTPException:
         raise

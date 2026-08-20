@@ -716,8 +716,6 @@ class Harness:
         # 只有全部掌握才真正结束 session
         all_mastered = all(gap.progress >= 1.0 for gap in synced_profile.knowledge_gaps)
         if all_mastered:
-            self.state_manager.end_session(session_id)
-            self._log(session_id, "complete_stage:all_mastered -> end_session")
             final_report = self._generate_final_report(synced_profile, accuracy)
         else:
             # 未全部掌握：session 保持 active，等用户按需触发 plan-next
@@ -729,7 +727,7 @@ class Harness:
 
         # 可规划下一阶段的条件：session 仍 active 即可；即便 repeat 场景也允许重新规划
         session_state = self.state_manager.get_session(session_id)
-        session_status = session_state.get("status") if session_state else "active"
+        session_status = "completed" if all_mastered else (session_state.get("status") if session_state else "active")
         can_plan_next_stage = not all_mastered and session_status == "active"
 
         result_status = "completed" if all_mastered else ("repeat" if accuracy < 0.7 else "continue")
@@ -762,6 +760,11 @@ class Harness:
         # The result view must remain available after a refresh or after a
         # later stage becomes active, so do not leave this only in the HTTP response.
         self.state_manager.save_stage_result(session_id, stage.stage_num, result)
+        if all_mastered:
+            # Persist the final summary while the session is still active;
+            # save_stage_result intentionally rejects already-ended sessions.
+            self.state_manager.end_session(session_id)
+            self._log(session_id, "complete_stage:all_mastered -> end_session")
         return result
 
     async def plan_next_stage(
@@ -780,8 +783,64 @@ class Harness:
         - accuracy >= 0.7（已掌握本阶段，正确率 ≥ 70%）：stage_num = current_stage + 1
         - accuracy < 0.7（retreat/repeat）：stage_num = current_stage（重试当前阶段）
         """
-        profile = UserProfile.model_validate(self._require_profile(session_id))
         current_stage_info = StageInfo.model_validate(self._require_stage(session_id))
+        profile = UserProfile.model_validate(self._require_profile(session_id))
+        session_state = self.state_manager.get_session(session_id) or {}
+        # Heal sessions affected by the legacy delete-last-stage flow. Those
+        # sessions were restored to stage_result but remained completed and
+        # kept deleted, non-foundation target nodes at mastery=1.0.
+        is_legacy_deleted_stage_state = (
+            session_state.get("status") == "completed"
+            and session_state.get("phase") == "stage_result"
+            and "plan_next_stage" in (session_state.get("available_actions") or [])
+            and all(gap.progress >= 1.0 for gap in profile.knowledge_gaps)
+        )
+        if is_legacy_deleted_stage_state:
+            covered_subtopic_ids: set[str] = set()
+            for snapshot in (session_state.get("stage_snapshots") or {}).values():
+                snapshot_stage = (snapshot or {}).get("stage_info") or {}
+                covered_subtopic_ids.update(snapshot_stage.get("subtopic_ids") or [])
+                if snapshot_stage.get("subtopic_id"):
+                    covered_subtopic_ids.add(snapshot_stage["subtopic_id"])
+            current_stage = session_state.get("stage_info") or {}
+            covered_subtopic_ids.update(current_stage.get("subtopic_ids") or [])
+            if current_stage.get("subtopic_id"):
+                covered_subtopic_ids.add(current_stage["subtopic_id"])
+
+            target_subtopic_ids = {
+                subtopic_id
+                for gap in profile.knowledge_gaps
+                for subtopic_id in gap.target_subtopic_ids
+                if subtopic_id
+            }
+            status_rows = {
+                row["subtopic_id"]: row
+                for row in self.state_manager.db_client.list_subtopic_statuses(session_id)
+            }
+            stale_deleted_ids = sorted(
+                subtopic_id
+                for subtopic_id in target_subtopic_ids - covered_subtopic_ids
+                if not bool((status_rows.get(subtopic_id) or {}).get("is_initial_foundation"))
+            )
+            for subtopic_id in stale_deleted_ids:
+                self.state_manager.db_client.set_subtopic_status(
+                    session_id=session_id,
+                    subtopic_id=subtopic_id,
+                    status=-1,
+                    mastery_score=0.0,
+                    increment_attempt=False,
+                )
+            if stale_deleted_ids:
+                self.state_manager.set_status(session_id, "active")
+                self.state_manager.db_client.refresh_target_metrics(session_id)
+                self.state_manager.refresh_cached_target(session_id)
+                profile = UserProfile.model_validate(self._require_profile(session_id))
+                self._log(
+                    session_id,
+                    "plan_next_stage:healed_legacy_deleted_stage",
+                    f"subtopics={stale_deleted_ids}",
+                )
+
         self._log(
             session_id,
             "plan_next_stage:start",
@@ -792,6 +851,11 @@ class Harness:
         if force_advance or accuracy >= 0.7:
             next_stage_num = current_stage_info.stage_num + 1
             if force_advance and accuracy < 0.7:
+                # Product rule: when the learner explicitly chooses to
+                # continue, the current stage knowledge points count as
+                # mastered. Re-evaluate goal completion before Agent1 runs;
+                # otherwise the final target incorrectly reaches Agent1 with
+                # no remaining gap and becomes a 400 response.
                 stage_subtopic_ids = list(current_stage_info.subtopic_ids or [])
                 if not stage_subtopic_ids and current_stage_info.subtopic_id:
                     stage_subtopic_ids = [current_stage_info.subtopic_id]
@@ -806,12 +870,57 @@ class Harness:
                     )
                 current_stage_info.status = "completed"
                 self.state_manager.update_stage(session_id, current_stage_info)
+                self.state_manager.db_client.refresh_target_metrics(session_id)
+                self.state_manager.refresh_cached_target(session_id)
+                profile = UserProfile.model_validate(self._require_profile(session_id))
                 profile = await self._sync_profile_from_subtopic_status(profile)
                 self.state_manager.update_profile(session_id, profile)
                 default_notes = (
-                    f"用户确认跳过本阶段巩固，已将阶段（{current_stage_info.stage_num}）"
-                    "的知识点标记为已掌握并推进"
+                    f"用户确认继续下一阶段，阶段（{current_stage_info.stage_num}）"
+                    "的知识点按产品规则计为已掌握"
                 )
+
+                all_mastered = all(gap.progress >= 1.0 for gap in profile.knowledge_gaps)
+                if all_mastered:
+                    final_report = self._generate_final_report(profile, accuracy)
+                    previous_result = self.state_manager.get_stage_result(
+                        session_id, current_stage_info.stage_num
+                    ) or {}
+                    completed_result = {
+                        **previous_result,
+                        "status": "completed",
+                        "session_id": session_id,
+                        "stage_id": current_stage_info.stage_id,
+                        "stage_num": current_stage_info.stage_num,
+                        "accuracy": accuracy,
+                        "updated_profile": profile.model_dump(mode="json"),
+                        "can_plan_next_stage": False,
+                        "session_status": "completed",
+                        "all_mastered": True,
+                        "final_report": final_report,
+                        "phase": "completed",
+                        "available_actions": [],
+                    }
+                    self.state_manager.save_stage_result(
+                        session_id, current_stage_info.stage_num, completed_result
+                    )
+                    self.state_manager.end_session(session_id)
+                    self._log(
+                        session_id,
+                        "plan_next_stage:force_advance_all_mastered -> end_session",
+                    )
+                    return {
+                        "status": "completed",
+                        "session_id": session_id,
+                        "next_stage": None,
+                        "updated_profile": profile.model_dump(mode="json"),
+                        "planning_notes": default_notes,
+                        "session_status": "completed",
+                        "all_mastered": True,
+                        "final_report": final_report,
+                        "phase": "completed",
+                        "available_actions": [],
+                    }
             else:
                 default_notes = f"本阶段（{current_stage_info.stage_num}）已达标，推进到下一阶段"
         else:

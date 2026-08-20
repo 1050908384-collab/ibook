@@ -47,13 +47,14 @@ export function finishAgents(
 export function restoreAgentStatuses(input: {
   hasProfile: boolean;
   hasLearningPackage: boolean;
+  hasStageResult?: boolean;
   phase?: string;
 }): AgentStatusMap {
   const completed: AgentId[] = [];
   if (input.hasProfile) completed.push('agent1');
   if (input.hasLearningPackage) completed.push('agent3', 'agent4');
-  if (['stage_result', 'next_stage_ready', 'completed'].includes(input.phase || '')) {
-    completed.push('agent6');
-  }
+  const agent6Completed = input.hasStageResult
+    ?? ['stage_result', 'next_stage_ready', 'completed'].includes(input.phase || '');
+  if (agent6Completed) completed.push('agent6');
   return createAgentStatusMap(completed);
 }

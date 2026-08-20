@@ -81,6 +81,7 @@ import {
   type AgentStatusMap
 } from './utils/agentFlowState';
 import { filterProjectsForDashboard, formatProjectCreatedDate, sortProjectsForDashboard } from './utils/learningProjects';
+import { isHistoricalStageReview, resolveStageResultActionMode } from './utils/stageResultActions';
 
 type View = 'chat' | 'learn' | 'settings' | 'result';
 
@@ -1475,22 +1476,7 @@ function MaterialDocument({
       Boolean(resource.content_summary || getResourceUrl(resource))
     )
   );
-  // 诊断日志：追踪文章资源过滤过程
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log('[MaterialDocument] article diagnosis:', {
-      stage_block_id: stage.block_id,
-      stage_subtopic_ids: stage.subtopic_ids,
-      stage_subtopic_names: stage.subtopic_names,
-      pkg_subtopic_ids: learningPackage.subtopic_ids,
-      pkg_subtopic_names: learningPackage.subtopic_names,
-      selectedSubtopic,
-      total_resources: learningResources.length,
-      scoped_count: scopedResources.length,
-      article_count: articleResources.length,
-      resource_types: learningResources.map(r => `${r.resource_type}:${(r as any).subtopic_id || ''}`),
-    });
-  }
+
   const codeResourceItems = uniqueResources(
     scopedResources.filter((resource) => resource.resource_type === 'code' && Boolean(resource.content_summary || getResourceUrl(resource)))
   );
@@ -2382,6 +2368,67 @@ function AssessmentReviewModal({ review, onClose }: { review: AssessmentReview; 
   );
 }
 
+function GoalCompletionModal({ goal, onClose }: { goal: string; onClose: () => void }) {
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const displayGoal = goal.trim() || '当前学习目标';
+
+  useEffect(() => {
+    confirmButtonRef.current?.focus();
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="stage-delete-modal-overlay goal-completion-overlay" role="dialog" aria-modal="true" aria-labelledby="goal-completion-title">
+      <section className="goal-completion-modal">
+        <div className="goal-completion-glow" aria-hidden />
+        <div className="goal-completion-confetti" aria-hidden>
+          {Array.from({ length: 12 }, (_, index) => <i key={index} />)}
+        </div>
+        <button type="button" className="goal-completion-close" onClick={onClose} aria-label="关闭学习目标完成弹窗">
+          <X size={19} />
+        </button>
+
+        <div className="goal-completion-emblem" aria-hidden>
+          <span className="goal-completion-emblem-ring" />
+          <Award size={42} strokeWidth={1.9} />
+          <Sparkles className="goal-completion-emblem-sparkle" size={22} />
+        </div>
+
+        <div className="goal-completion-copy">
+          <span className="goal-completion-eyebrow"><Check size={14} /> LEARNING GOAL COMPLETE</span>
+          <h2 id="goal-completion-title">“{displayGoal}”学习完毕</h2>
+          <p>恭喜你，已经完成该学习目标下的全部知识点。本次学习路线正式结业。</p>
+        </div>
+
+        <div className="goal-completion-progress" aria-label="学习目标完成度百分之百">
+          <div className="goal-completion-progress-heading">
+            <span><Target size={16} />目标完成度</span>
+            <strong>100%</strong>
+          </div>
+          <div className="goal-completion-progress-track"><span /></div>
+          <div className="goal-completion-milestones">
+            <span><Check size={14} />目标知识点全部掌握</span>
+            <span><Check size={14} />学习画像已更新</span>
+          </div>
+        </div>
+
+        <div className="goal-completion-note">
+          <Sparkles size={16} />
+          <span>关闭弹窗后仍可查看最后阶段总结、错题记录和画像变化。</span>
+        </div>
+
+        <button ref={confirmButtonRef} type="button" className="goal-completion-confirm" onClick={onClose}>
+          查看最终阶段总结 <ChevronRight size={18} />
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function ProjectSwitcherModal({
   projects,
   currentSessionId,
@@ -3003,6 +3050,7 @@ function ResultView({
   onReturnToChat,
   onOpenAssessmentReview,
   hasAssessmentReview,
+  readOnlyReview,
   loading,
   error
 }: {
@@ -3018,6 +3066,7 @@ function ResultView({
   onReturnToChat: () => void;
   onOpenAssessmentReview: () => void;
   hasAssessmentReview: boolean;
+  readOnlyReview: boolean;
   loading: boolean;
   error: string | null;
 }) {
@@ -3034,19 +3083,31 @@ function ResultView({
   // A later stage may already be underway, not merely waiting in next_stage.
   // In either case this summary must never offer to generate a duplicate.
   const availableNextStage = plannedStage || existingNextStage;
-  const heroTitle = bypass
-    ? '本阶段无测试题目，已直接完成'
-    : (accuracy ?? 0) >= 0.7
-      ? '很好，可以进入下一阶段'
-      : '建议先巩固当前阶段';
-  const heroSubtitle = bypass
-    ? '系统已结合本阶段学习记录生成画像更新和后续建议。'
-    : '系统已结合本阶段学习记录和测试结果生成反馈，并更新为画像 v{version}。'.replace('{version}', String(profile.version ?? 1));
+  const actionMode = resolveStageResultActionMode({
+    allMastered: Boolean(result?.all_mastered),
+    historicalReview: readOnlyReview,
+    needsReinforcement,
+    hasNextStage: Boolean(availableNextStage)
+  });
+  const heroTitle = result?.all_mastered
+    ? '学习目标已完成'
+    : bypass
+      ? '本阶段无测试题目，已直接完成'
+      : (accuracy ?? 0) >= 0.7
+        ? '很好，可以进入下一阶段'
+        : '建议先巩固当前阶段';
+  const heroSubtitle = readOnlyReview
+    ? '这是已经完成的历史阶段，仅用于回顾总结、测试题目和画像变化。'
+    : result?.all_mastered
+      ? '全部目标知识点均已掌握，系统不会再生成新的学习阶段。'
+      : bypass
+        ? '系统已结合本阶段学习记录生成画像更新和后续建议。'
+        : '系统已结合本阶段学习记录和测试结果生成反馈，并更新为画像 v{version}。'.replace('{version}', String(profile.version ?? 1));
   return (
     <div className="page-shell">
       <Topbar
         title="阶段结果"
-        subtitle={bypass ? '阶段完成（无测试题目）' : '阶段完成后展示画像更新和下一阶段策略'}
+        subtitle={readOnlyReview ? '历史阶段总结，仅供回顾' : result?.all_mastered ? '学习目标已完成，可查看最终总结与画像变化' : bypass ? '阶段完成（无测试题目）' : '阶段完成后展示画像更新和下一阶段策略'}
         loading={loading}
         error={error}
         onReturnToChat={onReturnToChat}
@@ -3064,11 +3125,17 @@ function ResultView({
             </div>
           )}
           <div>
-            <span className="success-label"><Check size={14} /> 阶段完成</span>
+            <span className="success-label"><Check size={14} /> {readOnlyReview ? '历史回顾' : result?.all_mastered ? '目标完成' : '阶段完成'}</span>
             <h2>{heroTitle}</h2>
             <p>{heroSubtitle}</p>
           </div>
-          {bypass ? (
+          {result?.all_mastered ? (
+            <div className="strategy no-strategy">
+              <span>学习目标</span>
+              <strong>已全部掌握</strong>
+              <small>Agent6 已终止后续阶段规划</small>
+            </div>
+          ) : bypass ? (
             <div className="strategy no-strategy">
               <span>阶段状态</span>
               <strong>直接完成</strong>
@@ -3076,7 +3143,7 @@ function ResultView({
             </div>
           ) : (
             <div className="strategy">
-              <span>下一阶段策略</span>
+              <span>{readOnlyReview ? '历史阶段策略' : '下一阶段策略'}</span>
               <strong>{result?.next_strategy || ((accuracy ?? 0) >= 0.7 ? 'advance' : 'reinforce')}</strong>
               <small>Agent6 综合决策</small>
             </div>
@@ -3109,7 +3176,7 @@ function ResultView({
               </button>
             )}
           </section>
-          <section className="white-card">
+          <section className="white-card summary-knowledge-network-card">
             <div className="section-title">
               <div><span>画像变化</span><h3>知识网络更新</h3></div>
               <div className="section-title-actions">
@@ -3144,7 +3211,7 @@ function ResultView({
                 >
                   <LocateFixed size={15} />{networkMode === 'focus' ? '取消定位' : '定位'}
                 </button>
-                <b style={{ outline: '3px solid red', outlineOffset: '2px' }}>v{profile.version ?? 1} 🔧</b>
+                <b>v{profile.version ?? 1}</b>
               </div>
             </div>
             <KnowledgeNetwork
@@ -3162,39 +3229,41 @@ function ResultView({
               <div><span>困惑标记</span><strong>{profile.confusion_markers?.join('、') || '暂无'}</strong></div>
             </div>
           </section>
-          <section className="white-card next-stage">
-            <div className="stage-eyebrow">
-              <span>{result?.all_mastered ? '学习目标' : availableNextStage ? '下一阶段已就绪' : '下一阶段建议'}</span>
-              <b>{result?.all_mastered ? '已完成' : `阶段 ${availableNextStage?.stage_num ?? (stage.stage_num ?? 1) + 1}`}</b>
-            </div>
-            <h3>{result?.all_mastered ? profile.goal : availableNextStage?.block_name || '根据新画像按需生成'}</h3>
-            <p>{result?.all_mastered ? '全部目标知识点已掌握，本轮学习计划已经完成。' : availableNextStage?.gap_skill ? `下一阶段将继续处理「${availableNextStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。'}</p>
-            <div className="next-facts">
-              <div><span>预计时长</span><strong>{availableNextStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div>
-              <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
-              <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
-            </div>
-            {!result?.all_mastered && needsReinforcement ? (
-              <div className="low-score-actions">
-                <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}>
-                  <Play size={17} />正确率低，建议重新开始学习该阶段
-                </button>
-                {availableNextStage ? (
-                  <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}>
-                    <Play size={17} />开始下一阶段
-                  </button>
-                ) : (
-                  <button className="primary wide" onClick={onContinueNext} disabled={loading || !canPlanNext}>
-                    <Sparkles size={17} />继续进行下一个阶段
-                  </button>
-                )}
+          {actionMode !== 'review_only' && (
+            <section className="white-card next-stage">
+              <div className="stage-eyebrow">
+                <span>{availableNextStage ? '下一阶段已就绪' : '下一阶段建议'}</span>
+                <b>阶段 {availableNextStage?.stage_num ?? (stage.stage_num ?? 1) + 1}</b>
               </div>
-            ) : !result?.all_mastered && (plannedStage ? (
-              <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={17} />开始下一阶段</button>
-            ) : !existingNextStage ? (
-              <button className="primary wide" onClick={onPlanNext} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
-            ) : null)}
-          </section>
+              <h3>{availableNextStage?.block_name || '根据新画像按需生成'}</h3>
+              <p>{availableNextStage?.gap_skill ? `下一阶段将继续处理「${availableNextStage.gap_skill}」。` : '生成动作只会创建下一个阶段，不会一次生成全部学习资料。'}</p>
+              <div className="next-facts">
+                <div><span>预计时长</span><strong>{availableNextStage?.estimated_hours ?? stage.estimated_hours ?? 1} 小时</strong></div>
+                <div><span>学习方式</span><strong>{styleText[profile.learning_style || 'mixed']}</strong></div>
+                <div><span>画像依据</span><strong className="green">v{profile.version ?? 1}</strong></div>
+              </div>
+              {actionMode === 'reinforce_and_start' || actionMode === 'reinforce_and_plan' ? (
+                <div className="low-score-actions">
+                  <button className="ghost wide" onClick={onRestartCurrent} disabled={loading}>
+                    <Play size={17} />正确率低，建议重新开始学习该阶段
+                  </button>
+                  {actionMode === 'reinforce_and_start' ? (
+                    <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}>
+                      <Play size={17} />开始下一阶段
+                    </button>
+                  ) : (
+                    <button className="primary wide" onClick={onContinueNext} disabled={loading || !canPlanNext}>
+                      <Sparkles size={17} />继续进行下一个阶段
+                    </button>
+                  )}
+                </div>
+              ) : actionMode === 'start_next' ? (
+                <button className="primary wide" onClick={() => onStartNext(availableNextStage)} disabled={loading}><Play size={17} />开始下一阶段</button>
+              ) : (
+                <button className="primary wide" onClick={() => onPlanNext()} disabled={loading || !canPlanNext}><Sparkles size={17} />生成下一阶段</button>
+              )}
+            </section>
+          )}
         </div>
       </main>
     </div>
@@ -3315,6 +3384,7 @@ export default function App() {
     blockName: string;
   }>({ open: false, goal: '', blockName: '' });
   const [result, setResult] = useState<StageResult | null>(null);
+  const [goalCompletionOpen, setGoalCompletionOpen] = useState(false);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
   const [assessmentReview, setAssessmentReview] = useState<AssessmentReview | null>(null);
@@ -4044,6 +4114,10 @@ export default function App() {
 
   const startStage = async (stageToStart?: StageInfo | null) => {
     setError(null);
+    if (workflow === 'learning' && (result?.all_mastered || isHistoricalStageReview(stage?.stage_num, activeStageNum))) {
+      setError('该阶段总结仅用于回顾，不能从这里启动新的学习阶段');
+      return;
+    }
     if (!sessionId) {
       setError('尚未创建后端会话');
       return;
@@ -4053,7 +4127,7 @@ export default function App() {
     setWorkflow('starting_stage');
 
     const isFirst = workflow === 'profile_ready';
-    beginAgentRun(['agent1', 'agent3', 'agent4']);
+    beginAgentRun(['agent1', 'agent3', 'agent4'], true);
 
     // 用户可能画像确认后，当前 stage 已经有了（来自 submitFoundation 的返回），
     // 可以作为阶段①的 immediate 预览，弹窗一打开就看到，不用再等。
@@ -4170,6 +4244,7 @@ export default function App() {
         }
         const response = await apiClient.completeStage(sessionId, options);
         setResult(response);
+        setGoalCompletionOpen(Boolean(response.all_mastered));
         if (response.updated_profile) setProfile(toProfile(response.updated_profile));
         const completedStage = response.state?.stage_info || stage;
         if (completedStage) {
@@ -4199,12 +4274,39 @@ export default function App() {
   const completeStage = async (answers: Record<string, string>) => completeStageWithPayload({}, answers);
 
   const planNextStage = async (forceAdvance = false) => {
-    if (!sessionId || loading) return;
+    if (
+      !sessionId
+      || loading
+      || result?.all_mastered
+      || isHistoricalStageReview(stage?.stage_num, activeStageNum)
+    ) return;
     setLoading(true);
     setError(null);
     beginAgentRun(['agent1']);
     try {
       const response = await apiClient.planNextStage(sessionId, '', forceAdvance);
+      if (response.all_mastered) {
+        const completedProfile = toProfile(response.updated_profile) || profile || fallbackProfile;
+        setProfile(completedProfile);
+        setResult((current) => ({
+          ...(current || {}),
+          status: 'completed',
+          can_plan_next_stage: false,
+          all_mastered: true,
+          session_status: response.session_status || 'completed',
+          phase: response.phase || 'completed',
+          available_actions: [],
+          final_report: response.final_report,
+        }));
+        setGoalCompletionOpen(true);
+        setPlannedStage(null);
+        rememberProject(sessionId, completedProfile, stage, response.phase || 'completed');
+        void loadDashboardStages(sessionId, stage);
+        void refreshRemoteProjects();
+        finishAgentRun(['agent1'], true);
+        return;
+      }
+
       const canStartNextStage =
         response.phase === 'next_stage_ready' ||
         response.available_actions?.includes('start_stage');
@@ -4585,6 +4687,7 @@ export default function App() {
     preferLastStage = false,
     requestedStageId?: string
   ) => {
+    setGoalCompletionOpen(false);
     if (!ignoreBusy && (nextSessionId === sessionId || loading)) {
       const requestedConversationId = requestedStageNum === undefined
         ? ''
@@ -4688,9 +4791,15 @@ export default function App() {
       setLearningPackage(displayPackage);
       setResult(null);
       setAssessmentReview(null);
+      let displayStageHasResult = Boolean(
+        displayStage && ['completed', 'retreat'].includes(displayStage.status || '')
+      );
       try {
         const persisted = await apiClient.getStageResult(nextSessionId, displayStageNum, displayStage?.stage_id);
-        if (persisted.stage_result) setResult(persisted.stage_result as StageResult);
+        if (persisted.stage_result) {
+          displayStageHasResult = true;
+          setResult(persisted.stage_result as StageResult);
+        }
         if (persisted.assessment_attempt) setAssessmentReview(persisted.assessment_attempt as AssessmentReview);
       } catch {
         // Keep completed legacy stages accessible while an older backend
@@ -4703,8 +4812,8 @@ export default function App() {
             bypass_assessment: bypass,
             stage_summary: `# 阶段学习总结\n\n你已完成“${displayStage.block_name || '当前学习主题'}”阶段。${bypass ? '本阶段没有匹配的测试题目，系统已按无题完成流程归档。' : '测试与学习记录已归档，可根据总结继续巩固。'}`,
             next_strategy: displayStage.strategy_used || 'review',
-            can_plan_next_stage: true,
-            available_actions: ['plan_next_stage'],
+            can_plan_next_stage: false,
+            available_actions: [],
           });
         }
       }
@@ -4716,6 +4825,7 @@ export default function App() {
       setAgentStatuses(restoreAgentStatuses({
         hasProfile: true,
         hasLearningPackage,
+        hasStageResult: displayStageHasResult,
         phase: session.phase
       }));
       setWorkflow(isLearningPhase(session.phase) || hasLearningPackage ? 'learning' : 'profile_ready');
@@ -4964,6 +5074,7 @@ export default function App() {
   }, [profile, newGoalReturnState?.profile, storedUserProfile, onboardingForm.hardware]);
   const workspaceProfile = profile || fallbackProfile;
   const workspaceStage = stage || unavailableStage;
+  const historicalStageReview = isHistoricalStageReview(workspaceStage.stage_num, activeStageNum);
   const onboardingFoundationNames = useMemo(
     () => onboardingForm.skill_tags.filter(Boolean),
     [onboardingForm.skill_tags]
@@ -5115,7 +5226,7 @@ export default function App() {
             ?.filter((item) => (item.stage_num ?? 1) > (workspaceStage.stage_num ?? 1))
             .sort((left, right) => (left.stage_num ?? 1) - (right.stage_num ?? 1))[0] || null}
           result={result}
-          onPlanNext={planNextStage}
+          onPlanNext={() => void planNextStage(false)}
           onStartNext={(nextStage) => void startStage(nextStage)}
           onRestartCurrent={() => void startStage()}
           onContinueNext={() => planNextStage(true)}
@@ -5125,12 +5236,16 @@ export default function App() {
           }}
           onOpenAssessmentReview={() => setAssessmentReviewOpen(true)}
           hasAssessmentReview={Boolean(assessmentReview?.questions?.length)}
+          readOnlyReview={historicalStageReview}
           loading={loading}
           error={error}
         />
       )}
       {testOpen && <TestModal questions={currentQuestions} onClose={() => setTestOpen(false)} onComplete={completeStage} />}
       {assessmentReview && assessmentReviewOpen && <AssessmentReviewModal review={assessmentReview} onClose={() => setAssessmentReviewOpen(false)} />}
+      {goalCompletionOpen && result?.all_mastered && (
+        <GoalCompletionModal goal={workspaceProfile.goal || ''} onClose={() => setGoalCompletionOpen(false)} />
+      )}
       {noQuestionsDialog.open && (
         <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
           <div className="stage-delete-modal">
