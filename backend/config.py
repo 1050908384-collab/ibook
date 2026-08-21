@@ -42,10 +42,12 @@ class Settings(BaseSettings):
     # 超时更长的读取窗口，并由客户端对可恢复错误做有限重试。
     DEEPSEEK_TIMEOUT_SECONDS: float = 180.0
     DEEPSEEK_MAX_RETRIES: int = 2
-    # Use the configured cloud model by default. Ollama remains an automatic
-    # fallback only when explicitly enabled for a deployment.
+    # Use the configured cloud model by default. When the cloud DeepSeek call
+    # fails, automatically fall back to the local Ollama model
+    # (deepseek-r1:7b by default, see OLLAMA_MODEL). Set this to "" to disable
+    # the automatic local fallback for a deployment.
     LLM_PROVIDER: str = "deepseek"
-    LLM_FALLBACK_PROVIDER: str = ""
+    LLM_FALLBACK_PROVIDER: str = "ollama"
 
     DATABASE_URL: str = "sqlite:///../data/sqlite_data/project.db"
     CHROMA_PATH: str = "../data/chroma_db"

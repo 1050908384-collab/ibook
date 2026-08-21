@@ -165,62 +165,34 @@ def _extract_knowledge_gaps(user_input: str) -> List[Dict[str, Any]]:
 
 
 def _llm_extract(user_input: str) -> dict | None:
-    """调用 LLM 做结构化提取，失败返回 None。"""
-    import httpx
-    from config import settings
+    """调用 LLM 做结构化提取，失败返回 None。
 
+    经 LLMClient.complete_sync 调用：云端 DeepSeek 失败时自动回退本地
+    deepseek-r1:7b（LLM_FALLBACK_PROVIDER=ollama 时）；仍失败或非 JSON 则返回 None。
+    """
     prompt = _LLM_PROMPT_TEMPLATE.format(user_input=user_input)
-    # 复用与 llm/client.py 相同的占位符判定逻辑，避免未替换模板 key 时发请求
-    placeholder_tokens = {
-        "", "your-api-key-here", "your-deepseek-api-key",
-        "your_api_key_here", "your_deepseek_api_key",
-        "sk-yourkey", "sk-your-key", "placeholder", "xxx", "xxxx",
-    }
-    normalized_key = (settings.DEEPSEEK_API_KEY or "").strip().strip('"').strip("'").lower()
-    key_ok = (
-        bool(settings.DEEPSEEK_API_KEY)
-        and normalized_key not in placeholder_tokens
-        and not normalized_key.startswith("your-")
-        and not normalized_key.startswith("your_")
+    messages = [
+        {"role": "system", "content": _LLM_SYSTEM_PROMPT},
+        {"role": "user", "content": prompt},
+    ]
+    response = LLMClient().complete_sync(
+        messages, max_tokens=1024, temperature=0.3, json_mode=True,
     )
-    if settings.LLM_PROVIDER.lower() != "deepseek" or not key_ok:
+    if not response or response.startswith("Error:"):
+        logger.warning("LLM提取调用失败: %s", response[:200])
         return None
-    api_base = settings.DEEPSEEK_API_BASE.rstrip("/")
-    endpoint = (
-        f"{api_base}/chat/completions"
-        if api_base.endswith("/v1")
-        else f"{api_base}/v1/chat/completions"
-    )
-    payload = {
-        "model": settings.DEEPSEEK_MODEL,
-        "messages": [
-            {"role": "system", "content": _LLM_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        "max_tokens": 1024,
-        "temperature": 0.3,
-        "response_format": {"type": "json_object"},
-    }
+    text = _clean_response(response)
     try:
-        with httpx.Client(timeout=30) as client:
-            resp = client.post(
-                endpoint,
-                json=payload,
-                headers={"Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}"},
-            )
-            resp.raise_for_status()
-            text = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
-        text = _clean_response(text)
         parsed = json.loads(text)
-        if "skill_tags" in parsed or "knowledge_gaps" in parsed:
-            return {
-                "skill_tags": parsed.get("skill_tags", []),
-                "knowledge_gaps": parsed.get("knowledge_gaps", []),
-            }
-        return None
-    except Exception as e:
+    except json.JSONDecodeError as e:
         logger.warning("LLM提取解析失败: %s", e)
         return None
+    if "skill_tags" in parsed or "knowledge_gaps" in parsed:
+        return {
+            "skill_tags": parsed.get("skill_tags", []),
+            "knowledge_gaps": parsed.get("knowledge_gaps", []),
+        }
+    return None
 
 
 # ------------------------------------------------------------------

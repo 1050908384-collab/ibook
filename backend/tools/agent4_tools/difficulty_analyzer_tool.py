@@ -336,65 +336,35 @@ _LLM_PROMPT_TEMPLATE = """用户画像：{profile_summary}
 def _llm_judge(content: str, profile: dict, user_type: str, user_level: str) -> tuple[Optional[dict], bool, bool]:
     """
     调用 LLM 评估难度。返回 (result_dict|None, llm_used, fallback_used)。
-    使用同步 httpx 直连 Ollama（与 llm/client.py 同一端点），失败降级启发式。
+    经 LLMClient.complete_sync 调用：云端 DeepSeek 失败时自动回退本地
+    deepseek-r1:7b（LLM_FALLBACK_PROVIDER=ollama 时），仍失败则降级启发式。
     """
+    from llm.client import LLMClient
+
     profile_summary = (
         f"类型={user_type}, 水平={_LEVEL_CN[user_level]}, "
         f"年级={profile.get('grade','未知')}, "
         f"技能={profile.get('skill_tags','[]')}, "
         f"知识盲区={profile.get('knowledge_gaps','[]')}"
     )
-    # 与 llm/client.py 保持一致的占位符判定逻辑，避免未替换模板 key 时发请求
-    placeholder_tokens = {
-        "", "your-api-key-here", "your-deepseek-api-key",
-        "your_api_key_here", "your_deepseek_api_key",
-        "sk-yourkey", "sk-your-key", "placeholder", "xxx", "xxxx",
-    }
-    normalized_key = (settings.DEEPSEEK_API_KEY or "").strip().strip('"').strip("'").lower()
-    key_ok = (
-        bool(settings.DEEPSEEK_API_KEY)
-        and normalized_key not in placeholder_tokens
-        and not normalized_key.startswith("your-")
-        and not normalized_key.startswith("your_")
+    messages = [
+        {"role": "system", "content": _LLM_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": _LLM_PROMPT_TEMPLATE.format(
+                profile_summary=profile_summary,
+                content=content[:2000],
+            ),
+        },
+    ]
+    response = LLMClient().complete_sync(
+        messages, max_tokens=1024, temperature=0.3, json_mode=True,
     )
-    if settings.LLM_PROVIDER.lower() != "deepseek" or not key_ok:
-        return None, False, True
-    api_base = settings.DEEPSEEK_API_BASE.rstrip("/")
-    endpoint = (
-        f"{api_base}/chat/completions"
-        if api_base.endswith("/v1")
-        else f"{api_base}/v1/chat/completions"
-    )
-    payload = {
-        "model": settings.DEEPSEEK_MODEL,
-        "messages": [
-            {"role": "system", "content": _LLM_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": _LLM_PROMPT_TEMPLATE.format(
-                    profile_summary=profile_summary,
-                    content=content[:2000],
-                ),
-            },
-        ],
-        "max_tokens": 1024,
-        "temperature": 0.3,
-        "response_format": {"type": "json_object"},
-    }
-    try:
-        with httpx.Client(timeout=60) as client:
-            resp = client.post(
-                endpoint,
-                json=payload,
-                headers={"Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}"},
-            )
-            resp.raise_for_status()
-            text = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
-    except Exception as e:
-        logger.warning("LLM 调用失败，降级启发式: %s", e)
+    if not response or response.startswith("Error:"):
+        logger.warning("LLM 调用失败，降级启发式: %s", response[:200])
         return None, False, True
 
-    text = _clean_response(text)
+    text = _clean_response(response)
     parsed = _parse_json(text)
     if parsed is None:
         logger.warning("LLM 响应无法解析，降级启发式: %s", text[:200])

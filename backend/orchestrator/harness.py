@@ -38,9 +38,9 @@ from services.learning_evidence_service import LearningEvidenceService
 # 审核辩论协议常量（协议第 7 节）
 MAX_DEBATE_ROUNDS = 2  # 内层答辩复核轮次上限
 
-# 块级流水线并发上限：Agent3 生成/修改、Agent4 复核均限制为同时 4 个块在飞，
+# 块级流水线并发上限：Agent3 生成/修改、Agent4 复核均限制为同时 2 个块在飞，
 # 兼顾低配设备（不做成 settings 开关——属内部调度细节，非运维旋钮）。
-BLOCK_CONCURRENCY = 4
+BLOCK_CONCURRENCY = 2
 
 
 @dataclass
@@ -1334,9 +1334,9 @@ class Harness:
     ) -> tuple[LearningPackage, list[ReviewRound]]:
         """块级真并发生产者/消费者流水线（任务 5 + 真并发改造）。
 
-        - 生成：并发上限 BLOCK_CONCURRENCY（=4），每块生成后立即提交独立审核；
+        - 生成：并发上限 BLOCK_CONCURRENCY（=2），每块生成后立即提交独立审核；
         - 首轮后一次性构造完整 issue_package（按块分组），交给 Agent3；
-        - 修改：并发上限 BLOCK_CONCURRENCY（=4），每块改完立即派发独立复核 task
+        - 修改：并发上限 BLOCK_CONCURRENCY（=2），每块改完立即派发独立复核 task
           （块1复核不阻塞块2修改）；
         - 全部块无 open 问题才 passed；Agent4 交还问题清单最多 MAX_REVIEW_ITERATIONS 次；
         - 无可用原始 chunk 时安全降级为原整篇链路。

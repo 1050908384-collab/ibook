@@ -320,3 +320,116 @@ class LLMClient:
         except Exception as e:
             logger.error(f"LLM chat error: {e}")
             return f"Error: {str(e)}"
+
+    def complete_sync(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        max_tokens: int = 1024,
+        temperature: float = 0.3,
+        json_mode: bool = False,
+    ) -> str:
+        """Synchronous cloud-then-local completion for tools that cannot await.
+
+        Mirrors :meth:`complete`: prefers cloud DeepSeek, and on failure falls
+        back to the local Ollama model (deepseek-r1:7b by default) when
+        ``LLM_FALLBACK_PROVIDER=ollama``. Returns the answer text, or
+        ``"Error: ..."`` when no provider yields a usable answer.
+        """
+        # No cloud credentials configured: go straight to the local model,
+        # matching the async complete() behavior (no fallback flag required).
+        if not self._has_deepseek_credentials():
+            return self._complete_with_ollama_sync(messages, max_tokens, temperature, json_mode)
+
+        payload: dict[str, Any] = {
+            "model": self.deepseek_model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
+        try:
+            with httpx.Client(
+                timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
+                proxy=(settings.DEEPSEEK_PROXY_URL.strip() or None),
+                trust_env=False,
+            ) as client:
+                resp = client.post(
+                    self._chat_completions_url,
+                    json=payload,
+                    headers=self._headers(),
+                )
+                resp.raise_for_status()
+                choice = (resp.json().get("choices") or [{}])[0]
+                content = self._clean_response(
+                    str((choice.get("message") or {}).get("content") or "")
+                )
+            if content:
+                logger.info(
+                    "DeepSeek sync response accepted: finish_reason=%s content_chars=%d",
+                    choice.get("finish_reason"), len(content),
+                )
+                return content
+            logger.warning(
+                "DeepSeek sync returned empty content (finish_reason=%s)",
+                choice.get("finish_reason"),
+            )
+        except httpx.HTTPStatusError as error:
+            status_code = error.response.status_code
+            logger.warning("DeepSeek sync HTTP failure: status=%d", status_code)
+            if not self._can_fallback_to_ollama():
+                return self._format_deepseek_status_error(error)
+        except (httpx.RequestError, ValueError, KeyError, TypeError) as error:
+            logger.warning("DeepSeek sync failure: %s", error)
+            if not self._can_fallback_to_ollama():
+                return f"Error: DeepSeek sync failure: {error}"
+
+        # Cloud failed (HTTP error, transport error, or empty content) and the
+        # local fallback is enabled: switch to the local deepseek-r1:7b model.
+        if self._can_fallback_to_ollama():
+            logger.info("Falling back to local Ollama after DeepSeek sync failure")
+            return self._complete_with_ollama_sync(messages, max_tokens, temperature, json_mode)
+        return "Error: DeepSeek sync returned no usable answer"
+
+    def _complete_with_ollama_sync(
+        self,
+        messages: list[dict[str, Any]],
+        max_tokens: int,
+        temperature: float,
+        json_mode: bool,
+    ) -> str:
+        """Synchronous local Ollama call mirroring the async fallback path."""
+        last_error = ""
+        for model in self._ordered_ollama_models():
+            try:
+                payload: dict[str, Any] = {
+                    "model": model,
+                    "messages": messages,
+                    "stream": False,
+                    "think": False,
+                    "options": {"temperature": temperature, "num_predict": max_tokens},
+                }
+                if json_mode:
+                    payload["format"] = "json"
+                with httpx.Client(timeout=settings.DEEPSEEK_TIMEOUT_SECONDS, trust_env=False) as client:
+                    resp = client.post(f"{self.ollama_base_url}/api/chat", json=payload)
+                    resp.raise_for_status()
+                    result = resp.json()
+                message = result.get("message") or {}
+                content = self._clean_response(str(message.get("content") or ""))
+                if content:
+                    logger.info("Ollama sync response accepted from model=%s", model)
+                    return content
+                last_error = (
+                    f"Ollama model {model} returned no final content "
+                    f"(done_reason={result.get('done_reason') or 'unknown'})"
+                )
+                logger.warning("%s; trying next local model", last_error)
+            except httpx.RequestError as error:
+                last_error = f"Ollama model {model} request failed: {error}"
+                logger.warning("%s; trying next local model", last_error)
+            except Exception as error:
+                last_error = f"Ollama model {model} completion failed: {error}"
+                logger.warning("%s; trying next local model", last_error)
+        return f"Error: {last_error or 'no configured Ollama model produced a usable answer'}"

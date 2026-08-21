@@ -2731,8 +2731,19 @@ class HybridContentAgent(DeterministicContentAgent):
             max_tokens=TECHNICAL_ANSWER_TOKENS,
         )
         if answer.startswith("Error: DeepSeek"):
-            _agent_log("Agent3", "answer:llm_error -> surface_deepseek_error")
-            return AnswerGenerationOutput(answer=answer, question_type="technical")
+            # 云端失败：切到本地 deepseek-r1:7b 兜底，绝不把云端错误串暴露给用户
+            _agent_log("Agent3", "answer:deepseek_error -> local_ollama_fallback")
+            local = await self.llm_client._complete_with_ollama(
+                prompt,
+                "你是技术准确、适合教学的学习助手。",
+                max_tokens=TECHNICAL_ANSWER_TOKENS,
+                temperature=0.5,
+                json_mode=False,
+            )
+            if local and not local.startswith("Error:"):
+                return AnswerGenerationOutput(answer=local, question_type="technical")
+            _agent_log("Agent3", "answer:local_unavailable -> deterministic_fallback")
+            return await super().generate_answer(request)
         if self._is_valid_response(answer):
             _agent_log("Agent3", f"answer:llm_done | answer_len={len(answer)}")
             return AnswerGenerationOutput(answer=answer, question_type="technical")
@@ -2883,7 +2894,17 @@ class HybridContentAgent(DeterministicContentAgent):
                 max_tokens=DAILY_ANSWER_TOKENS,
             )
             if response.startswith("Error: DeepSeek"):
-                return response
+                # 云端失败：切到本地 deepseek-r1:7b 兜底，再不行用确定性日常回答
+                local = await self.llm_client._complete_with_ollama(
+                    prompt,
+                    system_prompt,
+                    max_tokens=DAILY_ANSWER_TOKENS,
+                    temperature=0.5,
+                    json_mode=False,
+                )
+                if local and not local.startswith("Error:"):
+                    return self._clip_daily_answer(local)
+                return self._generate_daily_answer(request)
             if response and not response.startswith("Error:"):
                 return self._clip_daily_answer(response)
         except Exception:
