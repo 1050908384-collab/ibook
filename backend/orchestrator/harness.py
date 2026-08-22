@@ -108,6 +108,8 @@ class Harness:
         # operational evidence only and never become learner-facing content.
         self._generation_events: Dict[str, List[Dict[str, Any]]] = {}
         self._generation_event_seq: Dict[str, int] = {}
+        # LLM 判分兜底：懒加载，hybrid 模式且配置可用时才启用；deterministic 模式下永远跳过
+        self._llm_client_grading: Any = None
 
     def _reset_generation_events(self, session_id: str) -> None:
         self._generation_events[session_id] = []
@@ -1991,6 +1993,158 @@ class Harness:
             raise ValueError("Session has no learning package")
         return package
 
+    # ====================================================================
+    # 答案判分：多级匹配 + 预处理归一化（含跨平台、Python注释、多候选答案）
+    # ====================================================================
+
+    # Linux(Bash) ↔ Windows(CMD/PowerShell) 常见命令等价映射
+    # 格式: {linux_command: [cmd_equivalent1, cmd_equivalent2, ...]}
+    # 注意：变体必须是"Windows CMD 独有的写法"，避免把 Linux 通用词也当变体造成二次替换
+    # 例如 'mkdir' 不要出现在 'mkdir -p' 的变体中（否则正确答案中 'mkdir -p' 会被替换为 'mkdir -p -p'）
+    _CROSS_PLATFORM_CMD_MAP: Dict[str, List[str]] = {
+        'ls -la':            ['dir /a', 'dir'],
+        'ls':                ['dir'],
+        'cp':                ['copy', 'xcopy'],
+        'mv':                ['move'],
+        'rm -rf':            ['rmdir /s /q', 'rd /s /q'],
+        'rm':                ['del', 'erase'],
+        'cat':               ['type'],
+        'mkdir -p':          ['md'],        # CMD: md 直接创建多级目录；mkdir 在两平台同名不同参数语义，留给下文参数归一
+        'touch':             ['type nul >', 'echo. >'],
+        'grep':              ['findstr', 'select-string'],
+        'find':              ['dir /s /b', 'get-childitem'],
+        'pwd':               ['echo %cd%'],
+        'export':            ['set', '$env:'],
+        'echo $':            ['echo %', 'echo $env:'],
+        'source':            ['call'],
+        'chmod':             ['icacls', 'attrib'],
+        'python --version':  ['python -V', 'py --version'],
+        'pip install':       ['py -m pip install'],
+        'conda activate':    ['activate'],
+        'conda deactivate':  ['deactivate'],
+    }
+
+    @staticmethod
+    def _normalize_path_separators(text: str) -> str:
+        r"""统一路径分隔符：把 Windows 反斜杠 (\) 全部归一为 Linux 正斜杠 (/)。"""
+        # 先把所有反斜杠换成正斜杠（注意不要破坏转义字符）
+        return text.replace('\\\\', '/').replace('\\', '/')
+
+    @staticmethod
+    def _strip_code_comments(text: str, question_type: str = '') -> str:
+        """
+        针对代码类填空题/实操题：
+        - 剥离 Python 行内注释 # ...（保留代码本体）
+        - 剥离 bash 行内注释 # ...
+        避免因注释措辞不同导致语义等价的答案被判错。
+        """
+        if not text:
+            return text
+        qt_lower = (question_type or '').lower()
+        # 只对可能含代码的题型做注释剥离
+        code_types = {'fill_blank', 'practical', 'short_answer', '填空', '简答', '实操', '代码'}
+        if qt_lower not in code_types and not any(c in text for c in ['#', '```', 'import ', 'def ', 'print(']):
+            return text
+        import re
+        lines = text.splitlines()
+        stripped_lines = []
+        for line in lines:
+            # 跳过 markdown 代码围栏
+            if line.strip().startswith('```'):
+                stripped_lines.append(line)
+                continue
+            # 去除行尾 # 注释：
+            # 不在字符串内部的 #（简单启发：# 前面不是 quote 字符且前面有空格/行首）
+            original = line
+            # 只在明显像"代码行注释"时剥离：前面有空白/行首且不在引号内
+            # 简单实现：找 # 且不在单引号/双引号对内部的位置
+            in_single = False
+            in_double = False
+            cut_pos = -1
+            for i, ch in enumerate(line):
+                if ch == "'" and not in_double:
+                    in_single = not in_single
+                elif ch == '"' and not in_single:
+                    in_double = not in_double
+                elif ch == '#' and not in_single and not in_double:
+                    # 前面要有空白或是行首，避免误匹配 URL fragment / C# 等
+                    if i == 0 or line[i - 1] in (' ', '\t'):
+                        cut_pos = i
+                        break
+            if cut_pos >= 0:
+                line = line[:cut_pos].rstrip()
+            if line.strip() or original.strip().startswith('```'):
+                stripped_lines.append(line)
+        # 如果是空行全部被剥光，保留至少原文
+        result = '\n'.join(stripped_lines).strip()
+        return result if result else text.strip()
+
+    @staticmethod
+    def _normalize_cross_platform(text: str) -> str:
+        """
+        跨平台命令归一化：
+        1. 路径分隔符统一 /
+        2. Windows 盘符 C: D: 去除（Linux 无盘符）
+        3. Linux ↔ CMD 命令变体替换（严格按变体长度从大到小，避免子串冲突）
+        4. 命令连接符 &&/& 归一
+        5. 可选参数归一：mkdir -p 与 mkdir 在语义上都视为"创建目录"，参数可宽松匹配
+        """
+        if not text:
+            return text
+        import re
+        t = Harness._normalize_path_separators(text)
+        # 2) 去除 Windows 盘符前缀：C:\xxx / D:/xxx → 统一转为 /xxx 绝对路径形式
+        #    注意：把盘符 + 后面的分隔符一起替换成 /，
+        #    避免 C:\tmp\backup 去除后变成 tmp/backup 丢失前导斜杠
+        t = re.sub(r'\b[a-z]:[/\\]+', '/', t, flags=re.IGNORECASE)
+        # 盘符后若没有分隔符（罕见写法：C:foo），仍然移除盘符本身（不引入多余 /）
+        t = re.sub(r'\b[a-z]:(?![/\\])', '', t, flags=re.IGNORECASE)
+        # 3) 归一命令连接符
+        t = re.sub(r'\s*&&\s*', ' ; ', t)
+        t = re.sub(r'(?<!&)&(?!&)', ' ; ', t)
+        # 4) 归一常见目录路径别名：用"无歧义占位符"代替，避免连字符等造成变体替换边界问题
+        #    注意占位符前后不能加空格（否则 /tmp/data → "/tmp/ data" 会错断开）
+        t = t.replace('/tmp/', '___TMPPATH___/').replace('~/', '___HOMEPATH___/')
+        lowered = t.lower()
+        # 5) 归一命令变体：变体长度从大到小，保证长串优先匹配（dir /a 先于 dir）
+        items = []
+        for linux_cmd, cmd_variants in Harness._CROSS_PLATFORM_CMD_MAP.items():
+            for variant in cmd_variants:
+                items.append((len(variant), variant.lower(), linux_cmd.lower()))
+        items.sort(key=lambda x: -x[0])
+        for _, variant, linux_cmd in items:
+            if variant in lowered:
+                lowered = re.sub(r'(?<![a-z0-9_-])' + re.escape(variant) + r'(?![a-z0-9_-])',
+                                 linux_cmd + ' ', lowered)
+        # 6) 宽松参数归一：仅剥离"纯标志位参数"（不带值的短/长选项）
+        #    匹配策略：
+        #      - 短标志位：空格 + -字母串(2~4个字母的连缀常见 -la -rf -p) + 空格/行尾
+        #        且后面不是另一个 token 作为值（简单启发：字母序列后面跟空格/结束 且长度 ≤4）
+        #      - 长标志位（保守，暂不剥离，避免 --data <值> 被错误处理）
+        #    适用例：mkdir -p dir ⇔ mkdir dir；ls -la ⇔ ls
+        lowered = re.sub(r'\s+-[a-zA-Z]{1,4}(?=\s|$)', ' ', lowered)
+        # 7) 恢复目录占位符到标准 Linux 路径
+        lowered = lowered.replace('___tmppath___/', '/tmp/').replace('___homepath___/', '~/')
+        # 8) 合并多重空白
+        lowered = re.sub(r'\s+', ' ', lowered).strip()
+        return lowered
+
+    @staticmethod
+    def _split_alternatives(correct_answer: str) -> List[str]:
+        """
+        解析"多个正确答案（候选）"。
+        支持两种格式：
+          a) 使用 ||| 分隔（在 JSON/correct_answer 字段中）
+             例："conda activate myenv ||| activate myenv"
+          b) 行注释内写"或"/"CMD:"标签的多版本描述
+        """
+        if not correct_answer:
+            return [correct_answer or '']
+        alts = [a.strip() for a in correct_answer.split('|||') if a.strip()]
+        if alts:
+            return alts
+        return [correct_answer]
+
     @staticmethod
     def _normalize_answer(answer: str) -> str:
         """标准化答案：去空格、转小写、去标点符号。"""
@@ -1999,81 +2153,271 @@ class Harness:
         return cleaned
 
     @staticmethod
-    def _match_answer(user_answer: str, correct_answer: str, question_type: str = '') -> bool:
+    def _match_answer_single(user_answer: str, correct_answer: str, question_type: str = '') -> bool:
         """
-        多级答案匹配策略（P2 模糊匹配）。
-        1. 精确匹配（标准化后相等）
-        2. 判断题：A/B/√/× 等多种形式与 正确/错误 文本归一
-        3. 选择题：单字母选项匹配
-        4. 包含匹配（正确答案含用户答案或反之）
-        5. 数值近似（误差 < 5%）
+        单组（user vs 一个正确答案）的多级匹配。
+        与旧版 _match_answer 一致，但增加了：
+          - 代码注释剥离预处理
+          - 跨平台命令/路径归一化预处理
         """
         TRUE_FALSE_TYPES = {
             'true_false', '判断', '判断题', 'yes_no', 'truefalse', 'tf', '对错', '正误'
         }
-        user_norm = Harness._normalize_answer(user_answer)
-        correct_norm = Harness._normalize_answer(correct_answer)
-        qt_norm = (question_type or '').strip().lower()
+        qt = (question_type or '').strip()
+        qt_norm = qt.lower()
 
-        # 1. 精确匹配
-        if user_norm == correct_norm:
-            return True
+        # ---- 预处理层（按题型选择性增强）----
+        user_raw = user_answer if isinstance(user_answer, str) else str(user_answer or '')
+        correct_raw = correct_answer if isinstance(correct_answer, str) else str(correct_answer or '')
 
-        # 2. 判断题：前端点击 A="正确" / B="错误" 选项键提交；correct_answer 可能存
-        #    "正确"/"错误"/"T"/"F"/"true"/"false"/"是"/"否"/"√"/"×" 等多种文本。
-        #    先做归一化再比较。
-        def _tf_map(text: str) -> str | None:
-            t = text.strip().lower() if isinstance(text, str) else ''
-            t_plain = t  # 保留原始去标点前版本用于判断
-            # 去标点版本（_normalize_answer 已做过，但这里更安全再做一次）
-            import re as _re
-            t_clean = _re.sub(r'[^\w.\u4e00-\u9fff/]', '', t)
-            true_aliases = {
-                '正确', '对', '对的', '是', '是的', '正确的',
-                't', 'true', 'yes', 'y', '1',
-                'a',  # 前端选项 A 对应 ["正确","错误"] 中的第一个
-                '√', '✔', '✓',
-            }
-            false_aliases = {
-                '错误', '错', '不对', '否', '不是', '假的', '错误的', '不正确',
-                'f', 'false', 'no', 'n', '0',
-                'b',  # 前端选项 B 对应第二个选项
-                '×', '✗', '✘', 'x',
-            }
-            if t_clean in true_aliases or t_plain in true_aliases:
-                return '正确'
-            if t_clean in false_aliases or t_plain in false_aliases:
-                return '错误'
-            return None
+        # 1) 代码注释剥离（代码类答案）
+        user_nocomment = Harness._strip_code_comments(user_raw, qt)
+        correct_nocomment = Harness._strip_code_comments(correct_raw, qt)
 
-        if qt_norm in {Harness._normalize_answer(t) for t in TRUE_FALSE_TYPES} or \
-           (not qt_norm and (_tf_map(user_norm) or _tf_map(correct_norm))):
-            user_tf = _tf_map(user_answer)
-            correct_tf = _tf_map(correct_answer)
-            if user_tf and correct_tf and user_tf == correct_tf:
+        # 2) 跨平台命令 / 路径归一化（实操题、命令行类）
+        command_types = {'practical', '实操', '命令', 'fill_blank', '填空', 'short_answer', '简答'}
+        user_plat = user_nocomment
+        correct_plat = correct_nocomment
+        if qt_norm in {t.lower() for t in command_types} or True:
+            # 对所有题型都尝试归一，匹配失败前退化为原始版本
+            user_plat = Harness._normalize_cross_platform(user_nocomment)
+            correct_plat = Harness._normalize_cross_platform(correct_nocomment)
+
+        # 对三份候选：原始、去注释、平台归一化，逐一尝试标准化后比较
+        candidate_pairs = [
+            (user_raw, correct_raw),
+            (user_nocomment, correct_nocomment),
+            (user_plat, correct_plat),
+        ]
+
+        def _try_single_pair(u_raw: str, c_raw: str) -> bool:
+            user_norm = Harness._normalize_answer(u_raw)
+            correct_norm = Harness._normalize_answer(c_raw)
+
+            # 1. 精确匹配
+            if user_norm == correct_norm:
                 return True
 
-        # 3. 选择题选项字母匹配
-        if question_type in ('选择', '选择题', '单选', 'multiple_choice', 'single_choice', '多选', 'multi_choice'):
-            if len(user_norm) == 1 and user_norm.isalpha() and \
-               correct_norm.startswith(user_norm):
-                return True
+            # 2. 判断题归一化
+            def _tf_map(text: str) -> str | None:
+                import re as _re
+                t = text.strip().lower() if isinstance(text, str) else ''
+                t_plain = t
+                t_clean = _re.sub(r'[^\w.\u4e00-\u9fff/]', '', t)
+                true_aliases = {
+                    '正确', '对', '对的', '是', '是的', '正确的',
+                    't', 'true', 'yes', 'y', '1',
+                    'a',
+                    '√', '✔', '✓',
+                }
+                false_aliases = {
+                    '错误', '错', '不对', '否', '不是', '假的', '错误的', '不正确',
+                    'f', 'false', 'no', 'n', '0',
+                    'b',
+                    '×', '✗', '✘', 'x',
+                }
+                if t_clean in true_aliases or t_plain in true_aliases:
+                    return '正确'
+                if t_clean in false_aliases or t_plain in false_aliases:
+                    return '错误'
+                return None
 
-        # 4. 包含匹配（双向，至少2字符防止单字母误判）
-        if len(user_norm) >= 3 and len(correct_norm) >= 3:
-            if user_norm in correct_norm or correct_norm in user_norm:
-                return True
+            if qt_norm in {Harness._normalize_answer(t) for t in TRUE_FALSE_TYPES} or \
+               (not qt_norm and (_tf_map(user_norm) or _tf_map(correct_norm))):
+                user_tf = _tf_map(u_raw)
+                correct_tf = _tf_map(c_raw)
+                if user_tf and correct_tf and user_tf == correct_tf:
+                    return True
 
-        # 5. 数值近似
-        try:
-            user_num = float(user_norm.replace(',', '').replace('，', ''))
-            correct_num = float(correct_norm.replace(',', '').replace('，', ''))
-            if abs(user_num - correct_num) / max(abs(correct_num), 1.0) < 0.05:
-                return True
-        except (ValueError, ZeroDivisionError):
-            pass
+            # 3. 选择题字母匹配
+            if qt in ('选择', '选择题', '单选', 'multiple_choice', 'single_choice', '多选', 'multi_choice') or \
+               qt_norm in {'single_choice', 'multi_choice', 'multiple_choice'}:
+                if len(user_norm) == 1 and user_norm.isalpha() and correct_norm.startswith(user_norm):
+                    return True
 
+            # 4. 包含匹配（双向）
+            #    阈值降低到 2 字符：覆盖命令类答案（ls/cp/rm 等只有 2~3 字母的情况）
+            if len(user_norm) >= 2 and len(correct_norm) >= 2:
+                if user_norm in correct_norm or correct_norm in user_norm:
+                    return True
+
+            # 5. 数值近似（误差 < 5%）
+            try:
+                user_num = float(user_norm.replace(',', '').replace('，', ''))
+                correct_num = float(correct_norm.replace(',', '').replace('，', ''))
+                if abs(user_num - correct_num) / max(abs(correct_num), 1.0) < 0.05:
+                    return True
+            except (ValueError, ZeroDivisionError):
+                pass
+
+            # 6. 中文关键词覆盖度匹配（fill_blank / short_answer 类的"语义近似但字面不完全相同"兜底）
+            #    提取中文 2~4 字片段，若用户覆盖正确答案中 ≥60% 的关键词则判对
+            #    适用场景：填空题"解释 ls -la 参数的含义"，用户写出核心语义但措辞不同
+            zh_qt_hint = any(kw in qt_norm for kw in ('fill_blank', 'short_answer', '填空', '简答')) or \
+                         bool(re.search(r'[\u4e00-\u9fff]{2,}', correct_norm + user_norm))
+            if zh_qt_hint:
+                def _extract_cn_ngrams(s: str, nmin=2, nmax=3):
+                    ngrams = set()
+                    chars = [ch for ch in s if '\u4e00' <= ch <= '\u9fff']
+                    joined = ''.join(chars)
+                    for n in range(nmin, nmax + 1):
+                        for i in range(max(0, len(joined) - n + 1)):
+                            piece = joined[i:i + n]
+                            if len(piece) == n:
+                                ngrams.add(piece)
+                    return ngrams
+                import re as _re_loc
+                # 从"原始文本"提取关键词，避免 _normalize_answer 去标点后把标点分隔的语义连起来
+                user_clean  = _re_loc.sub(r'[^\u4e00-\u9fff0-9a-zA-Z]+', ' ', u_raw).strip()
+                corr_clean  = _re_loc.sub(r'[^\u4e00-\u9fff0-9a-zA-Z]+', ' ', c_raw).strip()
+                user_kw  = _extract_cn_ngrams(user_clean)
+                corr_kw  = _extract_cn_ngrams(corr_clean)
+                if len(corr_kw) > 0 and user_kw:
+                    hit = len(corr_kw & user_kw)
+                    coverage = hit / len(corr_kw)
+                    # 阈值：≥60% 命中且核心关键词都在（命中 ≥ 2 个或覆盖率达标）
+                    if coverage >= 0.60 or (hit >= 2 and coverage >= 0.35):
+                        return True
+            return False
+
+        # 尝试三对候选（先平台归一、再去注释、最后纯原始）
+        for pair in [(user_plat, correct_plat), (user_nocomment, correct_nocomment), (user_raw, correct_raw)]:
+            if _try_single_pair(pair[0], pair[1]):
+                return True
         return False
+
+    @staticmethod
+    def _match_answer(user_answer: str, correct_answer: str, question_type: str = '') -> bool:
+        """
+        多级答案匹配策略（P2 模糊匹配 + P3 多候选答案/跨平台/注释剥离）。
+
+        整体流程：
+        A. 从 correct_answer 中拆分出"多个正确候选"（||| 分隔）
+        B. 对每个候选分别按以下规则判分，任一候选匹配即判对：
+            1. 三版本预处理（平台归一 / 注释剥离 / 原始）分别尝试
+            2. 精确匹配（标准化后相等）
+            3. 判断题：A/B/√/× 等多种形式与 正确/错误 文本归一
+            4. 选择题：单字母选项匹配
+            5. 包含匹配（双向）
+            6. 数值近似（误差 < 5%）
+        """
+        # 多候选答案拆分：任一匹配即通过
+        correct_alternatives = Harness._split_alternatives(correct_answer)
+        for alt in correct_alternatives:
+            if Harness._match_answer_single(user_answer, alt, question_type=question_type):
+                return True
+        return False
+
+    def _get_grading_llm_client(self):
+        """懒加载 LLM 客户端（仅 hybrid 模式且 API key 有效时可用）。"""
+        if self.execution_mode != "hybrid":
+            return None
+        if self._llm_client_grading is None:
+            try:
+                from llm.client import LLMClient
+                client = LLMClient()
+                # 只有凭证可用时才保留，否则置 None 避免每次创建
+                if not client._has_deepseek_credentials():
+                    # 没有 DeepSeek，看 Ollama 是否可用（本地 11434 端口可访问）
+                    if not client._can_fallback_to_ollama():
+                        return None
+                self._llm_client_grading = client
+            except Exception:
+                self._llm_client_grading = None
+        return self._llm_client_grading
+
+    @staticmethod
+    def _should_try_llm_grading(question_type: str, rule_passed: bool) -> bool:
+        """哪些题型 + 规则失败的情况下，值得尝试 LLM 语义判分兜底。"""
+        if rule_passed:
+            return False
+        qt = (question_type or '').strip().lower()
+        # 仅对"自由文本答案"类型启用 LLM 兜底；选择/判断题规则已完备
+        semantic_types = {
+            'fill_blank', '填空', 'practical', '实操', 'short_answer', '简答',
+            'manual_review', 'essay', 'case_analysis',
+        }
+        return qt in semantic_types
+
+    async def _grade_semantically_with_llm(
+        self,
+        question_text: str,
+        user_answer: str,
+        correct_answer: str,
+        question_type: str = '',
+    ) -> bool:
+        """
+        （兜底）LLM 语义等价判分。
+        只在规则判分失败且题型为 fill_blank / short_answer / practical 时调用。
+        返回 True 表示 LLM 认为答案语义等价；False 表示不等价或调用失败。
+        为节省 token 与防止幻觉，prompt 中强制只输出 YES / NO。
+        """
+        client = self._get_grading_llm_client()
+        if client is None:
+            return False
+        if not user_answer or not correct_answer:
+            return False
+        system_prompt = (
+            "你是严格的客观评卷人。只判断用户答案与参考答案在语义上是否等价。\n"
+            "规则：\n"
+            "1) 只看核心知识是否正确，忽略措辞风格差异；\n"
+            "2) 对于代码类：忽略代码注释内容差异、空格/换行/路径分隔符差异、Linux vs CMD 命令等价差异；\n"
+            "3) 对于命令行题：只要在任一主流操作系统（Linux/Windows/Mac）上能达到相同效果即算正确；\n"
+            "4) 只有在明确错误、核心概念缺失或与题意相反时才判 NO。\n"
+            "只输出 YES 或 NO，不要输出任何解释或其他字符。"
+        )
+        prompt = (
+            "题目：\n"
+            f"{question_text}\n\n"
+            "参考答案（可多个，等价即算对）：\n"
+            f"{correct_answer}\n\n"
+            "用户回答：\n"
+            f"{user_answer}\n\n"
+            "判断用户回答在语义上是否等价于任一参考答案。只输出 YES 或 NO："
+        )
+        try:
+            raw = await client.complete(
+                prompt,
+                system_prompt=system_prompt,
+                max_tokens=16,
+                temperature=0.0,
+                json_mode=False,
+            )
+            verdict = (raw or '').strip().upper()
+            # 兼容 "YES" / "YES." / "是"
+            return verdict.startswith('YES') or verdict.startswith('是') or verdict == 'Y'
+        except Exception as exc:
+            logger_assessment = logging.getLogger(__name__)
+            logger_assessment.warning("LLM semantic grading failed (fallback to rule result): %s", exc)
+            return False
+
+    async def _match_answer_async(
+        self,
+        user_answer: str,
+        correct_answer: str,
+        question_type: str = '',
+        question_text: str = '',
+    ) -> bool:
+        """
+        异步版本判分：先走规则（同 _match_answer），规则失败且题型适合时 → LLM 语义兜底。
+        question_text 用于 LLM 上下文理解；可空，空时退化为纯规则。
+        """
+        # Step 1: 规则快速路径（同同步版本）
+        rule_result = Harness._match_answer(user_answer, correct_answer, question_type=question_type)
+        if rule_result:
+            return True
+        # Step 2: 是否值得走 LLM 兜底
+        if not Harness._should_try_llm_grading(question_type, rule_passed=False):
+            return False
+        if not question_text:
+            return False
+        # Step 3: LLM 语义判分（失败时返回 False，不影响规则结果）
+        return await self._grade_semantically_with_llm(
+            question_text=question_text,
+            user_answer=user_answer,
+            correct_answer=correct_answer,
+            question_type=question_type,
+        )
 
     def _generate_final_report(self, profile: UserProfile, accuracy: float) -> Dict[str, Any]:
         return {

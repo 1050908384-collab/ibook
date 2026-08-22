@@ -36,19 +36,62 @@ NO_QUESTIONS_AVAILABLE_CODE = "NO_QUESTIONS_AVAILABLE"
 
 
 class AssessmentService:
-    def __init__(self, db_client: SQLiteClient, state_manager=None):
+    def __init__(self, db_client: SQLiteClient, state_manager=None, harness=None):
         self.db = db_client
-        # state_manager 用于读取“当前学习包”的题目以冻结；缺省时退化为按当前阶段读题
+        # state_manager 用于读取"当前学习包"的题目以冻结；缺省时退化为按当前阶段读题
         self.state_manager = state_manager
+        # harness 引用用于异步 LLM 语义判分兜底（可空；空时退化为纯规则）
+        self._harness = harness
+
+    def attach_harness(self, harness) -> None:
+        """后续绑定 harness 实例，使 LLM 语义兜底判分生效。"""
+        self._harness = harness
 
     # ------------------------------------------------------------------
     # 判题：复用 Harness 的多级答案匹配策略，保持与 submit_answer 一致口径
     # ------------------------------------------------------------------
     @staticmethod
     def _grade(user_answer: str, correct_answer: str, question_type: str = "") -> bool:
+        """同步规则判分（快速路径）。"""
         if user_answer is None:
             return False
         return Harness._match_answer(user_answer, correct_answer, question_type=question_type)
+
+    async def _grade_async(
+        self,
+        user_answer: str,
+        correct_answer: str,
+        question_type: str = "",
+        question_text: str = "",
+    ) -> bool:
+        """
+        异步判分（推荐路径）：
+        1. 先走同步规则（跨平台归一化 + 注释剥离 + 多候选 + 多级匹配）
+        2. 规则失败时，若题型合适（fill_blank/short_answer/practical）且 harness 可用，
+           调用 LLM 语义等价兜底
+        """
+        if user_answer is None:
+            return False
+        # 1) 规则快速路径
+        rule_ok = Harness._match_answer(user_answer, correct_answer, question_type=question_type)
+        if rule_ok:
+            return True
+        # 2) LLM 语义兜底（仅当 harness 可用时）
+        if self._harness is not None and question_text:
+            try:
+                llm_ok = await self._harness._match_answer_async(
+                    user_answer=user_answer,
+                    correct_answer=correct_answer,
+                    question_type=question_type,
+                    question_text=question_text,
+                )
+                if llm_ok:
+                    return True
+            except Exception as exc:
+                logger_assessment.warning(
+                    "AssessmentService async grading LLM fallback skipped: %s", exc
+                )
+        return False
 
     @staticmethod
     def _is_answered(user_answer: Optional[str]) -> bool:
@@ -252,15 +295,14 @@ class AssessmentService:
     # 4) 提交：完整性校验 + 统一判题 + 公布结果
     # ------------------------------------------------------------------
     def submit_attempt(self, attempt_id: str) -> Dict[str, Any]:
+        """同步版本：纯规则判分（兼容旧调用方，不使用 LLM 兜底）。"""
         attempt = self._require_attempt(attempt_id)
-        # 约束 5：重复提交拒绝
         if attempt["status"] == "submitted":
             raise AssessmentError("测试已提交，不能重复提交")
 
         questions = self.db.get_assessment_attempt_questions(attempt_id)
         answers = self.db.get_assessment_answers(attempt_id)
 
-        # 约束 4：未完成全部必答题时不能提交
         missing = [
             q["question_id"]
             for q in questions
@@ -269,7 +311,6 @@ class AssessmentService:
         if missing:
             raise AssessmentError(f"还有必答题未完成，不能提交：{missing}")
 
-        # 统一判题
         graded_answers: List[Dict[str, Any]] = []
         correct_count = 0
         for q in questions:
@@ -293,7 +334,57 @@ class AssessmentService:
             correct_count=correct_count,
             accuracy=accuracy,
         )
-        # 约束 6：提交后返回带正确答案与解析的完整结果
+        return self.get_attempt(attempt_id)
+
+    async def submit_attempt_async(self, attempt_id: str) -> Dict[str, Any]:
+        """
+        异步版本（推荐）：规则判分 + fill_blank/实操题失败时 LLM 语义兜底。
+        与 submit_attempt 流程一致，仅在判题环节使用增强版 _grade_async。
+        """
+        attempt = self._require_attempt(attempt_id)
+        if attempt["status"] == "submitted":
+            raise AssessmentError("测试已提交，不能重复提交")
+
+        questions = self.db.get_assessment_attempt_questions(attempt_id)
+        answers = self.db.get_assessment_answers(attempt_id)
+
+        missing = [
+            q["question_id"]
+            for q in questions
+            if q["is_required"] and not self._is_answered(answers.get(q["question_id"], {}).get("user_answer"))
+        ]
+        if missing:
+            raise AssessmentError(f"还有必答题未完成，不能提交：{missing}")
+
+        # 统一异步判题：对每条自由文本题，规则失败时尝试 LLM 语义等价
+        graded_answers: List[Dict[str, Any]] = []
+        correct_count = 0
+        for q in questions:
+            saved = answers.get(q["question_id"], {})
+            user_answer = saved.get("user_answer")
+            is_correct = await self._grade_async(
+                user_answer=user_answer,
+                correct_answer=q["correct_answer"],
+                question_type=q.get("question_type") or "",
+                question_text=q.get("question_text") or "",
+            )
+            if is_correct:
+                correct_count += 1
+            graded_answers.append({
+                "question_id": q["question_id"],
+                "user_answer": user_answer,
+                "is_correct": is_correct,
+                "time_spent": saved.get("time_spent", 0),
+            })
+
+        total = len(questions)
+        accuracy = round(correct_count / total, 4) if total else 0.0
+        self.db.finalize_assessment_attempt(
+            attempt_id=attempt_id,
+            graded_answers=graded_answers,
+            correct_count=correct_count,
+            accuracy=accuracy,
+        )
         return self.get_attempt(attempt_id)
 
     # ------------------------------------------------------------------

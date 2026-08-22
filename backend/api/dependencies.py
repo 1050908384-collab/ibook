@@ -58,13 +58,15 @@ def require_owned_attempt(
 
 
 def get_assessment_service():
-    """获取 AssessmentService 单例"""
+    """获取 AssessmentService 单例（已绑定 harness，支持异步 LLM 判分兜底）。"""
     global _assessment_service_instance
     if _assessment_service_instance is None:
         from services.assessment_service import AssessmentService
         db_client = SQLiteClient()
+        harness = get_harness()
         _assessment_service_instance = AssessmentService(
             db_client=db_client,
-            state_manager=get_harness().state_manager,
+            state_manager=harness.state_manager,
+            harness=harness,
         )
     return _assessment_service_instance

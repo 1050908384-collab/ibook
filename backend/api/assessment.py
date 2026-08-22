@@ -183,10 +183,13 @@ async def save_assessment_answer(attempt_id: str, question_id: str, request: Sav
 
 @router.post("/assessment-attempts/{attempt_id}/submit")
 async def submit_assessment_attempt(attempt_id: str, _user_id: str = Depends(require_owned_attempt)):
-    """检查完整性、统一判题并公布结果（提交后不可再改）。"""
+    """
+    检查完整性、统一判题并公布结果（提交后不可再改）。
+    异步路径：规则判分（快速）+ fill_blank/实操题失败时 LLM 语义兜底（可选，hybrid 模式且 harness 可用时生效）。
+    """
     try:
         print(f"[API][POST /assessment-attempts/submit] attempt_id={attempt_id}", flush=True)
-        return assessment_service.submit_attempt(attempt_id)
+        return await assessment_service.submit_attempt_async(attempt_id)
     except Exception as e:
         _raise(e)
 
