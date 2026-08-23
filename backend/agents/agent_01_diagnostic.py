@@ -57,7 +57,7 @@ class DiagnosticAgent(BaseAgent):
         return profile
 
     async def generate_stage(self, session_id: str, profile: Dict[str, Any], stage_num: int = 1) -> Dict[str, Any]:
-        """生成下一学习阶段计划（原Agent2功能，已合并至Agent1）。"""
+        """生成下一学习阶段计划（原Agent2功能，已合并至学情诊断与阶段规划 Agent）。"""
         knowledge_gaps = profile.get("knowledge_gaps", [])
         unmastered_gaps = [g for g in knowledge_gaps if g.get("status") != "已掌握"]
 

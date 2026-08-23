@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-stage_generator_tool — Agent1 阶段计划生成工具（原Agent2工具，已合并至Agent1）
+stage_generator_tool — 学情诊断与阶段规划 Agent 阶段计划生成工具（原Agent2工具，已合并至学情诊断与阶段规划 Agent）
 ========================================================================================
 功能：根据知识盲区和学习目标生成学习阶段计划，对齐 StageInfo 契约。
     - 真实模式：基于 knowledge_blocks 表数据生成阶段（含 estimated_hours/prerequisites）

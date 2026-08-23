@@ -82,9 +82,9 @@
 - 多卡 → 单卡梯度累积：`for _ in range(accumulation_steps): loss.backward()`
 
 ### 规则5：代码能力画像评估（Code Skill Profile）
-- **适用场景**：当 Agent4 完成代码错误分析（`mode == "code_error_analysis"`）或用户提交代码问题时，本规则触发，用于评估用户的代码能力特征
+- **适用场景**：当 专业知识与教学质量审核 Agent 完成代码错误分析（`mode == "code_error_analysis"`）或用户提交代码问题时，本规则触发，用于评估用户的代码能力特征
 - **评估维度**：
-  1. **错误频率分布（error_frequency_map）**——统计用户各类型错误的累计出现次数，格式为 `{"KeyError": 5, "SyntaxError": 2, "TypeError": 3}`。数据来源：从历史会话中提取 Agent4 的 `error_type` 字段累计计数
+  1. **错误频率分布（error_frequency_map）**——统计用户各类型错误的累计出现次数，格式为 `{"KeyError": 5, "SyntaxError": 2, "TypeError": 3}`。数据来源：从历史会话中提取 专业知识与教学质量审核 Agent 的 `error_type` 字段累计计数
   2. **错误类型多样性（error_type_diversity）**——用户出现过的不同错误类型数量。≤3种=集中型（说明在某个特定领域薄弱），>5种=分散型（说明整体代码基础薄弱）
   3. **代码熟练度等级（code_proficiency_level）**——基于错误频率和类型推断的用户代码熟练度：
      - `beginner`（初级）：SyntaxError 占比 > 30% 或错误类型 > 5 种
@@ -110,7 +110,7 @@
 - `style_match`(0-1) → 对应 `quality_metrics` 的 **风格适配度** 维度（权重10%）
 - `environment_fit`(0/1) → 对应 `quality_metrics` 的 **环境可行性** 维度（权重10%），**同时用于红线检查**
 - `code_skill_score`(0-100) → 代码修复场景专用，供 `quality_metrics` 作为难度适配的补充参考（仅代码错误分析场景生效）
-- `code_skill_profile` → 供 `quality_metrics` 和 Agent6 使用的用户代码能力画像数据
+- `code_skill_profile` → 供 `quality_metrics` 和 学情评估与动态决策 Agent 使用的用户代码能力画像数据
 - `issues` 数组 → 合并到 `QualityReviewResult.errors`（用于附加条件检查）
 学习者适配评估结果，LLM返回JSON格式：
 ```json
@@ -151,7 +151,7 @@
 | `knowledge_gaps[].level` 为空 | 默认按 `"beginner"` 处理，difficulty_match按初级基准计算 |
 | 内容无代码块（无法统计代码行数） | 跳过代码行数检查，仅按概念密度评估difficulty_match，在summary中注明"无代码块，仅按概念密度评估" |
 | 用户环境经验字段缺失 | 默认按"无特殊环境经验"处理，environment_fit检查时若内容涉及Docker/GPU则标记待人工确认 |
-| 内容审核循环达上限（Agent4统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
+| 内容审核循环达上限（专业知识与教学质量审核 Agent统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 
@@ -275,7 +275,7 @@
 
 ## 7. 版本信息
 - 版本：v3.2，更新日期：2026-07-25
-- 变更记录：能力描述明确3个适用场景（难度匹配度/风格适配度/环境可行性）；核心方法论重构为3步（识别用户类型→映射基准→比对输出匹配度）；规则2难度适配映射新增代码行数维度（≤50/50-150/≥150行）；规则3风格适配规则新增匹配度计算方式；新增规则4环境容忍度规则（Docker→conda、GPU→CPU、多卡→单卡梯度累积替代方案库）；输入输出规范新增user_type/difficulty_match(0-1)/style_match(0-1)/environment_fit(0/1)完整JSON示例；异常处理新增混合型用户加权平均评估场景；附录A补充3个学习者风格理论；附录B新增工程师型vs学生型同一内容对比评估示例。**v3.1变更**：新增"审核循环≥3次"异常处置路径。**v3.2变更**：新增规则5代码能力画像评估（error_frequency_map、error_type_diversity、code_proficiency_level、root_cause_tendency四维评估）；输出新增 code_skill_score 和 code_skill_profile；明确代码能力评估对难度匹配度和环境可行性评分的影响规则；适配 Agent4 代码错误分析新功能，为 Agent5 和 Agent6 提供用户代码能力特征数据
+- 变更记录：能力描述明确3个适用场景（难度匹配度/风格适配度/环境可行性）；核心方法论重构为3步（识别用户类型→映射基准→比对输出匹配度）；规则2难度适配映射新增代码行数维度（≤50/50-150/≥150行）；规则3风格适配规则新增匹配度计算方式；新增规则4环境容忍度规则（Docker→conda、GPU→CPU、多卡→单卡梯度累积替代方案库）；输入输出规范新增user_type/difficulty_match(0-1)/style_match(0-1)/environment_fit(0/1)完整JSON示例；异常处理新增混合型用户加权平均评估场景；附录A补充3个学习者风格理论；附录B新增工程师型vs学生型同一内容对比评估示例。**v3.1变更**：新增"审核循环≥3次"异常处置路径。**v3.2变更**：新增规则5代码能力画像评估（error_frequency_map、error_type_diversity、code_proficiency_level、root_cause_tendency四维评估）；输出新增 code_skill_score 和 code_skill_profile；明确代码能力评估对难度匹配度和环境可行性评分的影响规则；适配 专业知识与教学质量审核 Agent 代码错误分析新功能，为 Agent5 和 学情评估与动态决策 Agent 提供用户代码能力特征数据
 
 
 ## 7. 2026-07-30 增补

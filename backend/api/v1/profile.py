@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-v1/profile.py - Agent1/3 前端 API：用户画像接口
+v1/profile.py - 学情诊断与阶段规划 Agent/3 前端 API：用户画像接口
 ================================================
-对应文档：Agent13_API接口任务说明.md 第 2 节（画像相关）
+对应文档：学情诊断与阶段规划 Agent3_API接口任务说明.md 第 2 节（画像相关）
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -233,7 +233,7 @@ async def update_profile(
             updated_fields["learning_style"] = request.learning_style
         if request.hardware is not None:
             # update_practice_profile persists to learner_profiles and then
-            # refreshes the runtime DTO used by Agent3.
+            # refreshes the runtime DTO used by 个性化学习资源生成 Agent.
             sm.update_practice_profile(session_id, {"hardware": request.hardware})
             updated_fields["hardware"] = request.hardware
         

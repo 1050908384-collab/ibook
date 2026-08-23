@@ -2,15 +2,15 @@
 """
 问答链路「库外专业知识」只读诊断脚本
 =====================================
-目的（只读、不改任何生产逻辑、不写生产库、不触发 Agent3 生成 / Agent4 改写循环）：
-  实测用户问答环节中，几类问题在当前 Agent4 事实核验（verify_knowledge / knowledge_verify）
+目的（只读、不改任何生产逻辑、不写生产库、不触发 个性化学习资源生成 Agent 生成 / 专业知识与教学质量审核 Agent 改写循环）：
+  实测用户问答环节中，几类问题在当前 专业知识与教学质量审核 Agent 事实核验（verify_knowledge / knowledge_verify）
   下的 **相似度分布** 与 **分支走向**，验证「库里没有对应内容的专业领域提问」会走到：
-    - hallucination（confidence < 0.65，critical，会逼 Agent3 反复改写）
+    - hallucination（confidence < 0.65，critical，会逼 个性化学习资源生成 Agent 反复改写）
     - review_needed（0.65 ~ 0.80 灰区）
     - pass（>= 0.80，返回 []）
     - unverifiable（空库降级，fallback_reason=knowledge_chunks_empty，直接放行）
-  同时打印 Agent3 侧的问答分流结果（_classify_question_by_keywords → technical/daily），
-  说明哪些问题根本不会进入 Agent4 核验。
+  同时打印 个性化学习资源生成 Agent 侧的问答分流结果（_classify_question_by_keywords → technical/daily），
+  说明哪些问题根本不会进入 专业知识与教学质量审核 Agent 核验。
 
 方法：
   用一个内存/临时 SQLite 建最小 knowledge_chunks（只放 LoRA / QLoRA 两条），
@@ -123,9 +123,9 @@ def _branch_of(confidence: float, errors: list) -> str:
         return "pass_or_skipped(返回[]，直接通过)"
     et = errors[0].get("error_type")
     if et == "out_of_scope":
-        return "out_of_scope(库外 → 直接输出 Agent3 内容，不改写)"
+        return "out_of_scope(库外 → 直接输出 个性化学习资源生成 Agent 内容，不改写)"
     if et == "hallucination":
-        return "hallucination(critical → 逼 Agent3 反复改写)"
+        return "hallucination(critical → 逼 个性化学习资源生成 Agent 反复改写)"
     if et == "review_needed":
         return "review_needed(灰区 → major，需复核)"
     return f"other({et})"
@@ -160,7 +160,7 @@ async def _run_verify_suite(title: str, with_chunks: bool) -> None:
             method = data.get("verify_method", "-")
             fallback = data.get("fallback_reason")
 
-            # 再调 Agent4 实际使用的适配器 verify_knowledge，拿真实分支
+            # 再调 专业知识与教学质量审核 Agent 实际使用的适配器 verify_knowledge，拿真实分支
             errors = await tool.verify_knowledge(q)
             branch = _branch_of(conf, errors)
             if fallback:
@@ -176,16 +176,16 @@ async def _run_verify_suite(title: str, with_chunks: bool) -> None:
 
 
 def _run_classify_suite() -> None:
-    """打印 Agent3 侧问答分流：哪些问题会被判 daily（跳过 Agent4），哪些 technical。"""
+    """打印 个性化学习资源生成 Agent 侧问答分流：哪些问题会被判 daily（跳过 专业知识与教学质量审核 Agent），哪些 technical。"""
     from agents.deterministic import DeterministicContentAgent
 
     print("=" * 78)
-    print("# Agent3 问答分流 _classify_question_by_keywords（daily 直接跳过 Agent4 核验）")
+    print("# 个性化学习资源生成 Agent 问答分流 _classify_question_by_keywords（daily 直接跳过 专业知识与教学质量审核 Agent 核验）")
     print("=" * 78)
     agent = DeterministicContentAgent()
     classify = getattr(agent, "_classify_question_by_keywords", None)
     if classify is None:
-        print("(当前 Agent3 实现无 _classify_question_by_keywords，跳过分流诊断)")
+        print("(当前 个性化学习资源生成 Agent 实现无 _classify_question_by_keywords，跳过分流诊断)")
         return
     extra = [("问候", "你好呀"), ("情绪", "我最近学得好累")]
     for label, q in QUESTIONS + extra:
@@ -193,7 +193,7 @@ def _run_classify_suite() -> None:
             qtype = classify(q)
         except Exception as e:  # noqa: BLE001
             qtype = f"ERROR({e})"
-        gate = "→ 进入 Agent4 核验" if qtype == "technical" else "→ 跳过 Agent4（直接返回）"
+        gate = "→ 进入 专业知识与教学质量审核 Agent 核验" if qtype == "technical" else "→ 跳过 专业知识与教学质量审核 Agent（直接返回）"
         print(f"  [{qtype:<9}] {label:<12} {gate}   {q}")
 
 
@@ -205,7 +205,7 @@ async def main() -> None:
     await _run_verify_suite("场景 B：知识库为空（knowledge_chunks 无数据）", with_chunks=False)
     print()
     print("=" * 78)
-    print("说明：本脚本为只读诊断，未修改任何生产代码，未触发 Agent3 生成 / Agent4 改写循环。")
+    print("说明：本脚本为只读诊断，未修改任何生产代码，未触发 个性化学习资源生成 Agent 生成 / 专业知识与教学质量审核 Agent 改写循环。")
     print("=" * 78)
 
 

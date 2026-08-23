@@ -100,11 +100,11 @@ class ReviewInput(BaseModel):
     profile: UserProfile
     question: Optional[str] = None
     code_examples: List[dict] = Field(default_factory=list)
-    # === Agent3/4 审核辩论协议扩展（对接需求清单 1.1）===
+    # === 个性化学习资源生成 Agent/4 审核辩论协议扩展（对接需求清单 1.1）===
     trace_id: Optional[str] = None                       # 本次审核生命周期 ID（review_traces.trace_id）
-    sources: List[dict] = Field(default_factory=list)    # Agent3 产出的来源清单（协议 2.1）
-    claims: List[dict] = Field(default_factory=list)     # Agent3 产出的可验证陈述（协议 2.2）
-    recommended_videos: List[dict] = Field(default_factory=list)  # Agent3 按当前子知识点推荐的视频资源
+    sources: List[dict] = Field(default_factory=list)    # 个性化学习资源生成 Agent 产出的来源清单（协议 2.1）
+    claims: List[dict] = Field(default_factory=list)     # 个性化学习资源生成 Agent 产出的可验证陈述（协议 2.2）
+    recommended_videos: List[dict] = Field(default_factory=list)  # 个性化学习资源生成 Agent 按当前子知识点推荐的视频资源
     round_index: int = 1                                 # 当前审核轮次，用于 error_id 后缀 _r{round_index}
     # === 块级审核扩展（块级并行流水线）：整篇路径留空，块级路径由 review_block 填充 ===
     content_block_id: Optional[str] = None
@@ -116,22 +116,22 @@ class ReviewInput(BaseModel):
 
 
 class BlockRevisionInput(BaseModel):
-    """Agent3 块级定点修改输入：一个待修订块 + 该块相关的 issues。"""
+    """个性化学习资源生成 Agent 块级定点修改输入：一个待修订块 + 该块相关的 issues。"""
     session_id: str
     block: ContentBlock
     issues: List[dict] = Field(default_factory=list)
 
 
 class RebutInput(BaseModel):
-    """Agent4 复核输入：Agent4 上一轮 issues + Agent3 逐条回复（对接需求清单 1.2）。"""
+    """专业知识与教学质量审核 Agent 复核输入：专业知识与教学质量审核 Agent 上一轮 issues + 个性化学习资源生成 Agent 逐条回复（对接需求清单 1.2）。"""
     session_id: str
     trace_id: str
-    issues: List[dict]           # Agent4 上一轮 issues（canonical_error_id/must_fix/severity...）
-    author_replies: List[dict]   # Agent3 逐条回复（canonical_error_id/disposition/reason/patched_sections/source_refs）
+    issues: List[dict]           # 专业知识与教学质量审核 Agent 上一轮 issues（canonical_error_id/must_fix/severity...）
+    author_replies: List[dict]   # 个性化学习资源生成 Agent 逐条回复（canonical_error_id/disposition/reason/patched_sections/source_refs）
 
 
 class RebutOutput(BaseModel):
-    """Agent4 复核输出：每个 canonical_error_id 的裁决（对接需求清单 1.2）。"""
+    """专业知识与教学质量审核 Agent 复核输出：每个 canonical_error_id 的裁决（对接需求清单 1.2）。"""
     verdicts: Dict[str, str]     # {canonical_error_id: "persist" | "withdraw" | "downgrade"}
 
 
@@ -158,7 +158,7 @@ class AnswerGenerationInput(BaseModel):
 class AnswerGenerationOutput(BaseModel):
     answer: str
     # 问题类型标记：technical（技术类）| daily（日常类）
-    # harness 据此决定是否调用 Agent4 审核
+    # harness 据此决定是否调用 专业知识与教学质量审核 Agent 审核
     question_type: Literal["technical", "daily"] = "technical"
 
 

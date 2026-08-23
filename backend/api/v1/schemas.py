@@ -174,7 +174,7 @@ def to_public_learning_package(
         for resource in resources
         if isinstance(resource, dict) and resource.get("resource_id")
     }
-    # Agent3 persists videos under recommended_videos. Normalise and merge
+    # 个性化学习资源生成 Agent persists videos under recommended_videos. Normalise and merge
     # them at the API boundary so article backfills never hide videos.
     resources.extend(
         [
@@ -279,7 +279,7 @@ def to_public_learning_package(
         questions=[to_public_question(question) for question in package.get("questions", [])],
         review_summary={
             "status": package.get("status", "draft"),
-            "reviewed_by": "Agent4",
+            "reviewed_by": "专业知识与教学质量审核 Agent",
             "review_notes": package.get("review_notes", ""),
         },
         recommended_daily_hours=stage.get("recommended_daily_hours"),

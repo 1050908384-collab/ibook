@@ -9,7 +9,7 @@ class ReviewError(BaseModel):
     description: str
     evidence: Optional[str] = None
     suggestion: Optional[str] = None
-    # === Agent3/4 审核辩论协议扩展字段（协议 2.3 / 2.4）===
+    # === 个性化学习资源生成 Agent/4 审核辩论协议扩展字段（协议 2.3 / 2.4）===
     error_id: Optional[str] = None                          # 当前轮实例 ID：canonical_error_id + "_r" + round_index
     canonical_error_id: Optional[str] = None                # 跨轮稳定 ID（sha1 前12位，见协议 2.4）
     source_refs: List[str] = Field(default_factory=list)    # 证据来源，指向 sources[].source_id；空表示"未命中来源"
@@ -22,7 +22,7 @@ class ReviewError(BaseModel):
     content_block_id: Optional[str] = None                  # 被审核的个性化内容块 ID
     content_chunk_id: Optional[str] = None                  # 回指的原始 knowledge_chunk ID
     content_version: Optional[int] = None                   # 被审核块的版本号
-    in_chunk_position: Optional[str] = None                 # 块内定位（供 Agent3 定点修改）
+    in_chunk_position: Optional[str] = None                 # 块内定位（供 个性化学习资源生成 Agent 定点修改）
 
 class ReviewResult(BaseModel):
     reviewer: Literal["technical", "quality"]
@@ -55,7 +55,7 @@ class ReviewRound(BaseModel):
 
 
 # ============================================================================
-# Agent3/4 审核辩论协议模型（协议 2.3 / 第 3~5 节；映射数据库框架第九节 3 张表）
+# 个性化学习资源生成 Agent/4 审核辩论协议模型（协议 2.3 / 第 3~5 节；映射数据库框架第九节 3 张表）
 # 字段与约束严格对齐 review_debate_issues / review_debate_rounds /
 # review_debate_responses 的 DDL（backend/db/sqlite_client.py）。
 # 注意：source_id / claim_id / canonical_error_id 均为「单个 trace 内唯一」，
@@ -115,7 +115,7 @@ class DebateResponse(BaseModel):
 
 
 class DebateRound(BaseModel):
-    """答辩复核轮次（一轮 = Agent3 回复 + Agent4 复核 + Orchestrator 裁决）。
+    """答辩复核轮次（一轮 = 个性化学习资源生成 Agent 回复 + 专业知识与教学质量审核 Agent 复核 + Orchestrator 裁决）。
 
     对应表 review_debate_rounds（主键 round_id，UNIQUE(trace_id, round_num)）。
     """

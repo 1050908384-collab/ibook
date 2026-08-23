@@ -3,10 +3,10 @@ import { Brain, CheckCircle, TrendingUp, Target } from 'lucide-react';
 
 const AgentFlowChart: React.FC = () => {
   const agents = [
-    { id: 1, name: '学情诊断与规划', icon: Brain, color: 'blue', description: '生成画像并规划知识点阶段' },
-    { id: 3, name: '个性化内容生成', icon: Target, color: 'purple', description: '生成教程、代码与测试题' },
-    { id: 4, name: '技术与教学双审', icon: CheckCircle, color: 'orange', description: '核验技术正确性与学习适配度' },
-    { id: 6, name: '学情决策与推进', icon: TrendingUp, color: 'cyan', description: '更新画像并确定后续策略' },
+    { id: 1, name: '学情诊断与阶段规划 Agent', icon: Brain, color: 'blue', description: '生成画像并规划知识点阶段' },
+    { id: 3, name: '个性化学习资源生成 Agent', icon: Target, color: 'purple', description: '生成教程、代码与测试题' },
+    { id: 4, name: '专业知识与教学质量审核 Agent', icon: CheckCircle, color: 'orange', description: '核验技术正确性与学习适配度' },
+    { id: 6, name: '学情评估与动态决策 Agent', icon: TrendingUp, color: 'cyan', description: '更新画像并确定后续策略' },
   ];
 
   return (
@@ -19,7 +19,6 @@ const AgentFlowChart: React.FC = () => {
               <agent.icon size={24} />
             </div>
             <div className="agent-info">
-              <p className="agent-name">Agent{agent.id}</p>
               <p className="agent-title">{agent.name}</p>
               <p className="agent-desc">{agent.description}</p>
             </div>

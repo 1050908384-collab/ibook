@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-rule_check_tool — Agent4 行业规范检查工具
+rule_check_tool — 专业知识与教学质量审核 Agent 行业规范检查工具
 ================================================
 功能：检查内容是否违反行业规范（安全/部署/数据隐私）+ 技术确定性规则（LoRA机制/参数量）。
     - 真实模式：内置确定性正则规则 + 匹配 knowledge_docs 表中 doc_type='best_practice' 的规则文档作为依据来源
@@ -193,7 +193,7 @@ def _load_best_practice_docs() -> tuple[List[Dict[str, str]], bool]:
     """
     SQL: 从 knowledge_docs 表读取 doc_type='best_practice' 的行业规范规则文档。
     knowledge_docs.doc_type 取值含 tutorial/code/spec/best_practice/pitfall，
-    其中 best_practice 即 Agent4 行业规范规则库（industry_standards.skill.md）。
+    其中 best_practice 即 专业知识与教学质量审核 Agent 行业规范规则库（industry_standards.skill.md）。
     数据库不存在时返回空列表与 db_available=False。
     """
     db_path = _get_db_path()
@@ -664,7 +664,7 @@ def _load_mock() -> dict:
 
 
 # ------------------------------------------------------------------
-# 代码错误模式检测（供 Agent4 analyze_code_error 调用）
+# 代码错误模式检测（供 专业知识与教学质量审核 Agent analyze_code_error 调用）
 # 对齐 technical_review.skill.md 规则2 + code_error_patterns.skill.md
 # ------------------------------------------------------------------
 _CODE_ERROR_PATTERNS: List[Dict[str, Any]] = [
@@ -723,7 +723,7 @@ _CODE_ERROR_PATTERNS: List[Dict[str, Any]] = [
 
 def check_code_error_patterns(code: str) -> List[Dict[str, Any]]:
     """
-    检测代码中常见的错误模式（供 Agent4 analyze_code_error Step5 调用）。
+    检测代码中常见的错误模式（供 专业知识与教学质量审核 Agent analyze_code_error Step5 调用）。
 
     参数：
         code: str  待检测的代码片段

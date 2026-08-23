@@ -6,7 +6,7 @@
 项目 data\sqlite_data\project.db 同时保存了两部分数据：
   * 公共知识库（知识点目录、本地文章、视频清单、题库、语义向量分块等）
   * 个人运行时数据（你的用户画像、学习会话、进度、对话问答、测试答题、
-    Agent3/4 审核辩论过程等）
+    个性化学习资源生成 Agent/4 审核辩论过程等）
 
 直接把整个 project.db 拷给别人，会把你的个人学习记录一起发过去。
 方案 1 是"保留单库 + 发布前清理个人表"——你平时继续用自己的完整 db，
@@ -88,7 +88,7 @@ scripts\clean_personal_data.py          Python 主脚本（带备份/统计/VACU
   user_answers / assessment_attempts / assessment_attempt_questions / assessment_answers
                              测试答题与正确率记录
   review_traces / review_debate_rounds / review_debate_issues / review_debate_responses
-                             Agent3/4 审核辩论过程
+                             个性化学习资源生成 Agent/4 审核辩论过程
   learning_package_claims / learning_package_sources
                              学习包溯源 claim/source（随 session/trace 生成）
 

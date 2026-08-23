@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-format_converter_tool — Agent3 格式转换工具
+format_converter_tool — 个性化学习资源生成 Agent 格式转换工具
 ================================================
 功能：在不同格式之间转换教程内容（Markdown↔HTML↔JSON）。
     - 真实模式：使用 Python 库进行格式转换

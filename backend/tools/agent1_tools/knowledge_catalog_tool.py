@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Agent1 knowledge taxonomy retrieval and grounding helpers."""
+"""学情诊断与阶段规划 Agent knowledge taxonomy retrieval and grounding helpers."""
 
 from __future__ import annotations
 

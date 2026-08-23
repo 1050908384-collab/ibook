@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Agent4 真实知识库核验回归测试（任务 1 + 任务 2）
+专业知识与教学质量审核 Agent 真实知识库核验回归测试（任务 1 + 任务 2）
 ===============================================
 覆盖点：
   ① 真实块核验默认走真实模式（use_mock=False，读 SQLite knowledge_chunks）；
@@ -8,7 +8,7 @@ Agent4 真实知识库核验回归测试（任务 1 + 任务 2）
   ③ 数据侧未入库新列时防御式降级（不崩溃、证据省略 heading/lines 但仍带 chunk_id）；
   ④ 空库安全降级（fallback_reason==knowledge_chunks_empty，不把全文误报为幻觉）；
   ⑤ verify_against_chunk 精确绑定来源块；未知块返回 []（不臆造幻觉）；
-  ⑥ Claim 优先核验 vs 无 Claim 整篇回退（Agent4.run，issue 是否带 claim_id）。
+  ⑥ Claim 优先核验 vs 无 Claim 整篇回退（专业知识与教学质量审核 Agent.run，issue 是否带 claim_id）。
 
 运行：
   pytest tests/test_agent4_real_verify.py -q
@@ -198,7 +198,7 @@ class RealVerifyTest(unittest.TestCase):
         unknown = asyncio.run(tool.verify_against_chunk(LORA_TEXT, "CHK-UNKNOWN"))
         self.assertEqual(unknown, [])
 
-    # ⑥ Claim 优先核验 vs 无 Claim 整篇回退（Agent4.review 层）
+    # ⑥ Claim 优先核验 vs 无 Claim 整篇回退（专业知识与教学质量审核 Agent.review 层）
     def test_claim_priority_vs_full_tutorial_fallback(self):
         """存在有效关键 Claim 时只核验 Claim（不回退整篇、事实 issue 带 claim_id）；
         无有效关键 Claim 时才回退整篇送检（复现全文级误报，用于对照）。"""

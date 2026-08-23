@@ -129,11 +129,11 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 **说明**：本规则基于BKT掌握度生成纯数据驱动的策略建议，不考虑迭代历史和方向切换条件。最终策略决策由 `iteration_strategy.skill.md` 负责，其会将此建议与迭代历史结合，判断是否需要方向切换（如连续降维无效时触发回溯）或强制结业。
 
 ### 规则9：代码错误特征提取（Code Error Feature Extraction）
-**适用场景**：当 Agent4 完成代码错误分析（`mode == "code_error_analysis"`）且分析结果包含 `error_category`、`root_cause`、`severity` 字段时，本规则触发，将代码错误特征提取并写入用户画像。
+**适用场景**：当 专业知识与教学质量审核 Agent 完成代码错误分析（`mode == "code_error_analysis"`）且分析结果包含 `error_category`、`root_cause`、`severity` 字段时，本规则触发，将代码错误特征提取并写入用户画像。
 
 **提取逻辑（按优先级执行）**：
 
-1. **错误类型计数更新**——对 Agent4 返回的 `error_type`（如 KeyError、SyntaxError）在画像中累计计数。格式：`profile.code_skill_gaps` 中对应错误类型的 `frequency += 1`，并记录 `last_seen` 时间戳
+1. **错误类型计数更新**——对 专业知识与教学质量审核 Agent 返回的 `error_type`（如 KeyError、SyntaxError）在画像中累计计数。格式：`profile.code_skill_gaps` 中对应错误类型的 `frequency += 1`，并记录 `last_seen` 时间戳
 
 2. **confusion_tags 写入规则**（满足任一即写入）：
    - 若错误等级为 `critical`（SyntaxError 类）→ 在 `confusion_tags` 中添加 `"语法基础薄弱"` 标签
@@ -167,7 +167,7 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 - `profile_updates.confusion_tags`：追加代码错误相关的困惑标签
 
 **与其他规则的协作**：
-- 本规则的 `code_proficiency_level` 输出与 `learner_model.skill.md` 规则5保持一致，供 Agent4 统一审核调整难度匹配度评估
+- 本规则的 `code_proficiency_level` 输出与 `learner_model.skill.md` 规则5保持一致，供 专业知识与教学质量审核 Agent 统一审核调整难度匹配度评估
 - 本规则的 `code_skill_gaps` 和 `confusion_tags` 传递给 `iteration_strategy.skill.md`，用于触发代码错误专项策略（见 iteration_strategy 规则1补充）
 
 ### 规则10：阶段总结报告生成规则
@@ -320,7 +320,7 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 - `time_spent_hours`：本阶段实际用时（小时）。优先取**已提交测试的逐题 time_spent 聚合值**（各题 time_spent 求和后换算为小时）；为 0 时退回 interactions 估算
 - `emotion_score`：情绪均分（-1~+1浮点数）
 - `current_profile`：当前用户画像（UserProfile对象）
-- `code_error_analysis`（可选）：Agent4 的代码错误分析结果，含 `error_type`、`error_category`、`root_cause`、`severity` 字段（仅代码错误分析场景传入）
+- `code_error_analysis`（可选）：专业知识与教学质量审核 Agent 的代码错误分析结果，含 `error_type`、`error_category`、`root_cause`、`severity` 字段（仅代码错误分析场景传入）
 
 > **触发前置（v1 统一链路）**：阶段完成经 `POST /api/v1/sessions/{session_id}/stages/current/complete` 触发时，接口层硬性要求当前阶段存在 `status=submitted` 的 assessment_attempt，否则返回 409 `ASSESSMENT_NOT_SUBMITTED`。因此 v1 链路下本 skill 的 `question_records` / `accuracy` / `time_spent_hours` 一定来自完整交卷的测试；旧 `/api/stage/complete` 接口仍保留兼容（可退回交互记录估算）。
 
@@ -528,7 +528,7 @@ P(L)_new = 0.7533 + 0.2467×0.4 = 0.7533 + 0.0987 = 0.8520
 
 ## 7. 版本信息
 - 版本：v3.5，更新日期：2026-08-03
-- 变更记录：合并原 `knowledge_tracing.skill.md`（BKT参数）和 `emotion_model.skill.md`（情绪规则）全部内容；能力描述明确"掌握度精算和画像组装"适用场景；核心方法论重构为5步（BKT计算→状态映射→节奏信心推断→困惑标记→组装画像+策略建议）；新增规则1 BKT四参数表（P(L₀)/P(T)/P(G)/P(S)含取值依据和BKT更新公式）；新增规则2修正因子（Wt时长权重三档+We情绪权重三档+P_corrected公式）；规则3状态映射升级为三档（≥0.8已掌握/0.4~0.8学习中/<0.4未掌握，基于P_corrected而非accuracy）；新增规则4学习节奏推断（耗时比三档）；规则5信心指数升级为加权公式（accuracy×0.6+emotion×0.4）；新增规则6困惑标记生成（答错≥2次或提问≥3次）；新增规则7情绪规则（5类情绪标签关键词+行为信号+得分-1~+1映射）；新增规则8 next_strategy计算规则（基于P_corrected的四档策略建议）；输入输出规范新增profile_updates、next_strategy和update_rationale完整JSON示例；异常处理新增阈值边界fallback和finish策略降级；附录A补充3个参考论文；附录B新增完整BKT计算场景。**v3.2变更**：恢复 next_strategy 输出字段（基于BKT掌握度的策略建议），明确与 iteration_strategy 的边界——本SKILL输出数据驱动建议，iteration_strategy结合迭代历史做最终决策。**v3.3变更**：新增规则9代码错误特征提取（错误类型计数更新、confusion_tags写入规则、code_skill_gaps字段结构、熟练度等级推断）；输入新增 code_error_analysis 可选字段；profile_updates 新增 code_skill_gaps 和 code_proficiency_level 字段；明确与 learner_model.skill.md 规则5和 iteration_strategy.skill.md 的协作边界；适配 Agent4 代码错误分析新功能，实现从代码错误到画像更新的完整链路。**v3.4变更**：明确 `question_records[].time_spent` 与 `time_spent_hours` 的运行时来源——优先取自已提交测试 attempt 的 `assessment_answers.time_spent`（前端 `PUT /api/v1/assessment-attempts/{attempt_id}/answers/{question_id}` 提交的答题用时），由 Harness `complete_stage` 经 `get_submitted_attempt_records` 读取并透传 `assessment_records`/`time_spent_hours` 给 Agent6，用于 BKT 的 Wt 时长修正与阶段总结用时统计；无已提交测试时退回 interactions 估算，向后兼容。**v3.5变更**：补充 v1 统一链路触发前置说明——阶段完成经 `POST /api/v1/sessions/{session_id}/stages/current/complete` 触发时，接口层硬性要求当前阶段存在 `status=submitted` 的 assessment_attempt，否则 409 `ASSESSMENT_NOT_SUBMITTED`，据此保证 v1 链路下 `question_records`/`accuracy`/`time_spent_hours` 均来自完整交卷；旧 `/api/stage/complete` 保留兼容。
+- 变更记录：合并原 `knowledge_tracing.skill.md`（BKT参数）和 `emotion_model.skill.md`（情绪规则）全部内容；能力描述明确"掌握度精算和画像组装"适用场景；核心方法论重构为5步（BKT计算→状态映射→节奏信心推断→困惑标记→组装画像+策略建议）；新增规则1 BKT四参数表（P(L₀)/P(T)/P(G)/P(S)含取值依据和BKT更新公式）；新增规则2修正因子（Wt时长权重三档+We情绪权重三档+P_corrected公式）；规则3状态映射升级为三档（≥0.8已掌握/0.4~0.8学习中/<0.4未掌握，基于P_corrected而非accuracy）；新增规则4学习节奏推断（耗时比三档）；规则5信心指数升级为加权公式（accuracy×0.6+emotion×0.4）；新增规则6困惑标记生成（答错≥2次或提问≥3次）；新增规则7情绪规则（5类情绪标签关键词+行为信号+得分-1~+1映射）；新增规则8 next_strategy计算规则（基于P_corrected的四档策略建议）；输入输出规范新增profile_updates、next_strategy和update_rationale完整JSON示例；异常处理新增阈值边界fallback和finish策略降级；附录A补充3个参考论文；附录B新增完整BKT计算场景。**v3.2变更**：恢复 next_strategy 输出字段（基于BKT掌握度的策略建议），明确与 iteration_strategy 的边界——本SKILL输出数据驱动建议，iteration_strategy结合迭代历史做最终决策。**v3.3变更**：新增规则9代码错误特征提取（错误类型计数更新、confusion_tags写入规则、code_skill_gaps字段结构、熟练度等级推断）；输入新增 code_error_analysis 可选字段；profile_updates 新增 code_skill_gaps 和 code_proficiency_level 字段；明确与 learner_model.skill.md 规则5和 iteration_strategy.skill.md 的协作边界；适配 专业知识与教学质量审核 Agent 代码错误分析新功能，实现从代码错误到画像更新的完整链路。**v3.4变更**：明确 `question_records[].time_spent` 与 `time_spent_hours` 的运行时来源——优先取自已提交测试 attempt 的 `assessment_answers.time_spent`（前端 `PUT /api/v1/assessment-attempts/{attempt_id}/answers/{question_id}` 提交的答题用时），由 Harness `complete_stage` 经 `get_submitted_attempt_records` 读取并透传 `assessment_records`/`time_spent_hours` 给 学情评估与动态决策 Agent，用于 BKT 的 Wt 时长修正与阶段总结用时统计；无已提交测试时退回 interactions 估算，向后兼容。**v3.5变更**：补充 v1 统一链路触发前置说明——阶段完成经 `POST /api/v1/sessions/{session_id}/stages/current/complete` 触发时，接口层硬性要求当前阶段存在 `status=submitted` 的 assessment_attempt，否则 409 `ASSESSMENT_NOT_SUBMITTED`，据此保证 v1 链路下 `question_records`/`accuracy`/`time_spent_hours` 均来自完整交卷；旧 `/api/stage/complete` 保留兼容。
 
 
 ## 11. 2026-07-30 增补

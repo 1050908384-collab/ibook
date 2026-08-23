@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""AssessmentService — 测试服务（Agent46_API接口任务说明.md 第 2 节）。
+"""AssessmentService — 测试服务（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 2 节）。
 
-由 Agent4/6 队友承担工程实现，负责创建测试、保存答案、判题和计算正确率，
-不属于 Agent4 的运行职责（Agent4 只审核学习包与答疑回答）。
+由 专业知识与教学质量审核 Agent/6 队友承担工程实现，负责创建测试、保存答案、判题和计算正确率，
+不属于 专业知识与教学质量审核 Agent 的运行职责（专业知识与教学质量审核 Agent 只审核学习包与答疑回答）。
 
 严格落实第 2 节的测试模块约束：
 1. 每次测试有独立 attempt_id。
@@ -184,7 +184,7 @@ class AssessmentService:
                     question_id = q.get("question_id")
                     db_question = self.db.get_question(question_id) if question_id else None
                     # The assessment is a frozen snapshot of test_questions,
-                    # never an Agent3-generated question that happens to be in
+                    # never an 个性化学习资源生成 Agent-generated question that happens to be in
                     # the learning package.
                     if not db_question:
                         continue
@@ -420,6 +420,33 @@ class AssessmentService:
             return None
         latest = max(submitted, key=lambda item: item.get("submitted_at") or item.get("created_at") or "")
         return self.get_attempt(latest["attempt_id"])
+
+    @staticmethod
+    def stage_allows_persisted_result(stage: Optional[Dict[str, Any]]) -> bool:
+        """Only ended stages may restore a submitted assessment as their result.
+
+        A low-score retry intentionally reuses the same ``stage_id``. Once the
+        regenerated stage is pending/learning, an older submitted attempt with
+        that id belongs to the previous learning cycle and must not reopen the
+        previous summary after refresh.
+        """
+        status = str((stage or {}).get("status") or "").strip().lower()
+        return not status or status in {"completed", "retreat"}
+
+    def get_submitted_attempt_for_result(
+        self,
+        session_id: str,
+        stage: Optional[Dict[str, Any]],
+        stage_num: int,
+    ) -> Optional[Dict[str, Any]]:
+        """Return the assessment review only when the requested stage has ended."""
+        if not self.stage_allows_persisted_result(stage):
+            return None
+        stage_id = (stage or {}).get("stage_id")
+        attempt = self.get_submitted_attempt(session_id, stage_id)
+        if attempt:
+            return attempt
+        return self.get_submitted_attempt_for_stage_num(session_id, stage_num)
 
     # ------------------------------------------------------------------
     # 内部工具

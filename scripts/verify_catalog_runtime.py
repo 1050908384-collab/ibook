@@ -1,4 +1,4 @@
-"""Smoke-check the graph and video paths used by Agent1 and Agent3."""
+"""Smoke-check the graph and video paths used by 学情诊断与阶段规划 Agent and 个性化学习资源生成 Agent."""
 from __future__ import annotations
 
 import asyncio

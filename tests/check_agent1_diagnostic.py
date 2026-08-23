@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Agent1 独立测试 —— 诊断 Agent（学习者画像 + 阶段规划）
+学情诊断与阶段规划 Agent 独立测试 —— 诊断 Agent（学习者画像 + 阶段规划）
 
 职责（对齐 backend/agents/deterministic.py）：
   - 解析学习者自述文本 -> 生成 UserProfile + followup_questions（置信度不足时追问）
-  - 置信度达标后，按画像生成第一个学习阶段 StageInfo（原 Agent2 功能已并入 Agent1）
+  - 置信度达标后，按画像生成第一个学习阶段 StageInfo（原 Agent2 功能已并入 学情诊断与阶段规划 Agent）
 
 独立运行：
   python tests/check_agent1_diagnostic.py
@@ -13,7 +13,7 @@ Agent1 独立测试 —— 诊断 Agent（学习者画像 + 阶段规划）
   1. Agent 配置（模式、工具列表）
   2. 输入（DiagnosticInput）
   3. 运行中主要参数（技能提取、知识图谱查询、置信度计算 — 直接调用工具预览中间数据）
-  4. Agent1 run() 输出（UserProfile、followup_questions）
+  4. 学情诊断与阶段规划 Agent run() 输出（UserProfile、followup_questions）
   5. 阶段规划中间参数（知识板块查询、可学习子知识点候选）
   6. 阶段规划输出（StageInfo）
 
@@ -69,8 +69,8 @@ def show_agent_config(agent) -> None:
 
 
 async def show_runtime_params_diagnostic(agent, text: str) -> dict:
-    """直接调用 Agent1 的工具，预览运行中的主要参数。"""
-    section("运行中主要参数（Agent1 内部工具调用预览）")
+    """直接调用 学情诊断与阶段规划 Agent 的工具，预览运行中的主要参数。"""
+    section("运行中主要参数（学情诊断与阶段规划 Agent 内部工具调用预览）")
     params = {}
 
     # 1. 技能提取
@@ -132,7 +132,7 @@ async def show_runtime_params_diagnostic(agent, text: str) -> dict:
 
 async def show_runtime_params_stage(agent, profile, stage_num: int, session_id: str) -> dict:
     """阶段规划的中间参数。"""
-    section("阶段规划中间参数（Agent1.generate_stage 内部工具调用预览）")
+    section("阶段规划中间参数（学情诊断与阶段规划 Agent.generate_stage 内部工具调用预览）")
     params = {}
     gap = next(
         (item for item in profile.knowledge_gaps if float(item.progress or 0.0) < 1.0),
@@ -232,7 +232,7 @@ DEFAULT_INPUT = (
 
 async def main():
     print("=" * 60)
-    print("Agent1 诊断 Agent 独立测试（画像 + 阶段规划）")
+    print("学情诊断与阶段规划 Agent 诊断 Agent 独立测试（画像 + 阶段规划）")
     print("=" * 60)
 
     mode = choose_mode()
@@ -261,7 +261,7 @@ async def main():
     runtime_params = await show_runtime_params_diagnostic(agent, user_input)
     pretty("【运行参数汇总】", runtime_params)
 
-    # ========== 4. Agent1 run() 输出 ==========
+    # ========== 4. 学情诊断与阶段规划 Agent run() 输出 ==========
     section("[Step 1] 运行 run() 生成 UserProfile")
     diagnostic = await agent.run(request)
     pretty("【输出】DiagnosticOutput.profile", diagnostic.profile)

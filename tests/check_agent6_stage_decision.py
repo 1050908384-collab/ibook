@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Agent6 独立测试 —— 阶段决策 Agent
+学情评估与动态决策 Agent 独立测试 —— 阶段决策 Agent
 
 职责（对齐 backend/agents/deterministic.py）：
   - 阶段结束后，依据 accuracy / qa_history / interactions 更新画像（掌握度、节奏、信心、困惑标记）
@@ -18,12 +18,12 @@ Agent6 独立测试 —— 阶段决策 Agent
 
 参数：
   --accuracy FLOAT     本阶段正确率（0~1）；省略则交互询问（非交互默认 0.85）
-  --verbose            额外逐个打印 Agent6 内部工具链的输入/输出（BKT掌握度、节奏、信心、
+  --verbose            额外逐个打印 学情评估与动态决策 Agent 内部工具链的输入/输出（BKT掌握度、节奏、信心、
                        困惑、策略、总结），方便查看链路中每一步的中间结果
   --non-interactive    强制不读 stdin，全部用参数/默认值（管道/CI 友好）
 
 说明：
-  - Agent6 仅有 deterministic 版本（无 hybrid），Harness 中即 DeterministicStageDecisionAgent，本测试与之一致。
+  - 学情评估与动态决策 Agent 仅有 deterministic 版本（无 hybrid），Harness 中即 DeterministicStageDecisionAgent，本测试与之一致。
   - accuracy >= 0.8 -> continue；< 0.8 -> repeat；全部掌握或 strategy=finish -> completed。
 """
 import argparse
@@ -88,7 +88,7 @@ def resolve_accuracy(cli_accuracy: float | None, non_interactive: bool) -> float
 
 
 async def show_tool_chain(agent: DeterministicStageDecisionAgent, request: StageDecisionInput) -> None:
-    """逐个调用 Agent6 内部工具，打印链路中每一步的输入/输出（--verbose）。
+    """逐个调用 学情评估与动态决策 Agent 内部工具，打印链路中每一步的输入/输出（--verbose）。
 
     与 DeterministicStageDecisionAgent.run 的调用顺序一致：
       profile_update_tool.update_gaps      -> 逐知识点 BKT 掌握度/状态
@@ -98,7 +98,7 @@ async def show_tool_chain(agent: DeterministicStageDecisionAgent, request: Stage
       strategy_selector_tool.select_strategy_full -> 策略 + 决策 + 回溯/终止信号
       stage_summary_generator_tool.generate_summary -> Markdown 总结
     """
-    print(f"\n{'*' * 60}\n★ Agent6 内部工具链逐步输入/输出（--verbose）\n{'*' * 60}")
+    print(f"\n{'*' * 60}\n★ 学情评估与动态决策 Agent 内部工具链逐步输入/输出（--verbose）\n{'*' * 60}")
     profile_dict = request.profile.model_dump(mode="json")
     gaps_in = [g.model_dump(mode="json") for g in request.profile.knowledge_gaps]
 
@@ -189,9 +189,9 @@ async def show_tool_chain(agent: DeterministicStageDecisionAgent, request: Stage
 async def main(args: argparse.Namespace):
     non_interactive = bool(args.non_interactive)
     print("=" * 60)
-    print("Agent6 阶段决策 Agent 独立测试（画像更新 + 决策 + 总结）")
+    print("学情评估与动态决策 Agent 阶段决策 Agent 独立测试（画像更新 + 决策 + 总结）")
     print("=" * 60)
-    print("说明：Agent6 仅 deterministic 版本（无 hybrid），与 Harness 实际使用一致。")
+    print("说明：学情评估与动态决策 Agent 仅 deterministic 版本（无 hybrid），与 Harness 实际使用一致。")
 
     agent = DeterministicStageDecisionAgent()
 
@@ -270,7 +270,7 @@ async def main(args: argparse.Namespace):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Agent6 阶段决策 Agent 独立测试（命令行参数优先，无参数回退交互）",
+        description="学情评估与动态决策 Agent 阶段决策 Agent 独立测试（命令行参数优先，无参数回退交互）",
     )
     parser.add_argument("--accuracy", type=float, default=None,
                         help="本阶段正确率（0~1）；省略则交互询问（非交互默认 0.85）")

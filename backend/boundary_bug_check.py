@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""极端边界场景 Bug 检测 - 只测 Agent1/3 相关"""
+"""极端边界场景 Bug 检测 - 只测 学情诊断与阶段规划 Agent/3 相关"""
 import sys, os, json
 sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -18,7 +18,7 @@ def make_client():
     return TestClient(app)
 
 print("=" * 60)
-print("极端边界 Bug 检测 - Agent1/3 专属")
+print("极端边界 Bug 检测 - 学情诊断与阶段规划 Agent/3 专属")
 print("=" * 60)
 
 # ============================================================

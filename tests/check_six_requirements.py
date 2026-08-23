@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Agent3↔Agent4 学习包块级流水线 —— 六项需求一体化验收测试
+个性化学习资源生成 Agent↔专业知识与教学质量审核 Agent 学习包块级流水线 —— 六项需求一体化验收测试
 ==========================================================
 一次运行覆盖用户明确的 6 项需求，每条断言前标注对应需求编号：
 
-  1. 验证 Agent4 真实知识库核验
+  1. 验证 专业知识与教学质量审核 Agent 真实知识库核验
      1-1 关键技术 Claim 默认读真实 SQLite knowledge_chunks（use_mock=False）
      1-2 审核结果关联来源块 / 标题路径 / 原文行号
      1-3 空库/不可用时安全降级，不把全部内容误报为幻觉
@@ -13,21 +13,21 @@ Agent3↔Agent4 学习包块级流水线 —— 六项需求一体化验收测�
      2-1 有有效关键 Claim 时只核验 Claim/内容块（不回退整篇）
      2-2 无有效 Claim 时才回退整篇教程核验
      2-3 每个事实问题绑定 claim_id + 块标识 + 块内位置
-  3. 改造 Agent3：按块生成个性化内容
+  3. 改造 个性化学习资源生成 Agent：按块生成个性化内容
      3-1 读取当前阶段/子知识点的一个原始 knowledge_chunk
      3-2 结合画像/风格/实践条件/阶段目标做个性化（解释/降维/补例）
      3-3 输出单个个性化块（不等整篇）
      3-4 输出保留 source_chunk_id / 标题路径 / 来源说明 / Claim
-     3-完成条件 每完成一个块即可独立提交 Agent4 审核
-  4. 改造 Agent4：块级审核
+     3-完成条件 每完成一个块即可独立提交 专业知识与教学质量审核 Agent 审核
+  4. 改造 专业知识与教学质量审核 Agent：块级审核
      4-1 输入为一个个性化内容块 + 来源块信息
      4-2 回查 source_chunk_id 对应原始资料做事实核验
      4-3 issue 含 content_chunk_id/content_version/claim_id/块内位置/原因/证据/建议
      4-4 保留难度/认知负荷/风格/代码审核，范围限定当前块
-  5. 改造 Orchestrator：Agent3 与 Agent4 并行
+  5. 改造 Orchestrator：个性化学习资源生成 Agent 与 专业知识与教学质量审核 Agent 并行
      5-1 Phase A 块间生成×审核并发（时间重叠）
      5-2 端到端聚合为一个 LearningPackage 并正常终止
-  6. Agent3 修改回传：只回传修订后的问题块 + 版本号 + 修改说明
+  6. 个性化学习资源生成 Agent 修改回传：只回传修订后的问题块 + 版本号 + 修改说明
      6-1 modify_block 返回同一块（content_block_id 不变），version+1，status=revised
      6-2 带 revision_note（修改说明），且只动本块
 
@@ -177,13 +177,13 @@ def _fact_errors(errors):
     return out
 
 
-# ============ 需求 1 + 2：Agent4 真实知识库核验 & Claim 回退逻辑 ============
+# ============ 需求 1 + 2：专业知识与教学质量审核 Agent 真实知识库核验 & Claim 回退逻辑 ============
 async def check_req_1_2(checker: Checker, temp_dir: str) -> None:
     from tools.agent4_tools.knowledge_verify_tool import KnowledgeVerifyTool
     import tools.agent4_tools.knowledge_verify_tool as kv
     from agents.agent_04_tech_review import TechnicalReviewAgent
 
-    print("\n=== 需求 1 & 2：Agent4 真实知识库核验 + Claim 回退逻辑 ===")
+    print("\n=== 需求 1 & 2：专业知识与教学质量审核 Agent 真实知识库核验 + Claim 回退逻辑 ===")
 
     # ---- 1-1：默认读真实库（use_mock=False）----
     db_full = Path(temp_dir) / "req12_full.db"
@@ -191,7 +191,7 @@ async def check_req_1_2(checker: Checker, temp_dir: str) -> None:
     _point_db(db_full)
     tool = KnowledgeVerifyTool()
     checker.check("1-1", tool._default_config.get("use_mock") is False,
-                  "Agent4 知识核验默认真实模式（use_mock=False，读 SQLite knowledge_chunks）")
+                  "专业知识与教学质量审核 Agent 知识核验默认真实模式（use_mock=False，读 SQLite knowledge_chunks）")
 
     # 与来源块完全一致的关键陈述 → 不误报
     ok_errors = await tool.verify_knowledge(LORA_TEXT)
@@ -280,13 +280,13 @@ async def check_req_1_2(checker: Checker, temp_dir: str) -> None:
     checker.check("1-4", True, "真实核验具备自动化回归（本脚本 + test_agent4_real_verify.py）")
 
 
-# ============ 需求 3 + 4 + 6：Agent3 按块生成 / Agent4 块级审核 / Agent3 修改回传 ============
+# ============ 需求 3 + 4 + 6：个性化学习资源生成 Agent 按块生成 / 专业知识与教学质量审核 Agent 块级审核 / 个性化学习资源生成 Agent 修改回传 ============
 async def check_req_3_4_6(checker: Checker, temp_dir: str) -> None:
     from agents.deterministic import DeterministicContentAgent, DeterministicTechnicalReviewAgent
     from models.profile import PracticeProfile, UserProfile
     from models.stage import ContentBlock, StageInfo
 
-    print("\n=== 需求 3 & 4 & 6：Agent3 按块生成 / Agent4 块级审核 / Agent3 修改回传 ===")
+    print("\n=== 需求 3 & 4 & 6：个性化学习资源生成 Agent 按块生成 / 专业知识与教学质量审核 Agent 块级审核 / 个性化学习资源生成 Agent 修改回传 ===")
 
     db_full = Path(temp_dir) / "req346.db"
     _seed(db_full, with_new_columns=True, with_chunks=True)
@@ -326,12 +326,12 @@ async def check_req_3_4_6(checker: Checker, temp_dir: str) -> None:
                   "输出保留关键技术 Claim")
     checker.check("3-4",
                   (block0.claims[0].metadata_json or {}).get("source_chunk_id") == src0.get("chunk_id"),
-                  "Claim 绑定来源块（供 Agent4 块级核验）")
-    # 完成条件：每完成一个块即可独立提交 Agent4——下面 review_block 单独收一个块即证明。
+                  "Claim 绑定来源块（供 专业知识与教学质量审核 Agent 块级核验）")
+    # 完成条件：每完成一个块即可独立提交 专业知识与教学质量审核 Agent——下面 review_block 单独收一个块即证明。
 
-    # ---- 4-1 / 4-2 / 4-4：Agent4 输入单块 + 回查来源块 + 保留质量审核 ----
+    # ---- 4-1 / 4-2 / 4-4：专业知识与教学质量审核 Agent 输入单块 + 回查来源块 + 保留质量审核 ----
     review0 = await agent4.review_block(block=block0, stage=stage, profile=profile, round_index=1)
-    checker.check("4-1", review0 is not None, "Agent4 接受「单个内容块」作为输入并产出审核结果")
+    checker.check("4-1", review0 is not None, "专业知识与教学质量审核 Agent 接受「单个内容块」作为输入并产出审核结果")
     # 4-2：构造一个与来源块相悖的块，触发块级事实核验（走 verify_against_chunk / Claim 核验）
     bad_block = block0.model_copy(deep=True)
     bad_block.personalized_content = "梯度检查点通过重算激活值来降低反向传播的显存峰值，与 LoRA 无关。"
@@ -361,7 +361,7 @@ async def check_req_3_4_6(checker: Checker, temp_dir: str) -> None:
     checker.check("4-3", all(getattr(e, "evidence", None) is not None for e in bad_facts),
                   "事实 issue 携带证据 evidence")
 
-    # ---- 6-1 / 6-2：Agent3 修改只回传修订块 + 版本号 + 修改说明 ----
+    # ---- 6-1 / 6-2：个性化学习资源生成 Agent 修改只回传修订块 + 版本号 + 修改说明 ----
     accepted = [e.model_dump(mode="json") for e in bad_review.errors]
     revised = await agent3.modify_block(bad_block, accepted)
     checker.check("6-1", revised.content_block_id == bad_block.content_block_id,
@@ -425,7 +425,7 @@ async def check_req_5(checker: Checker, temp_dir: str) -> None:
     from models.profile import PracticeProfile, UserProfile
     from models.stage import LearningPackage, StageInfo
 
-    print("\n=== 需求 5：Orchestrator —— Agent3 与 Agent4 并行 ===")
+    print("\n=== 需求 5：Orchestrator —— 个性化学习资源生成 Agent 与 专业知识与教学质量审核 Agent 并行 ===")
     db_full = Path(temp_dir) / "req5.db"
     _seed(db_full, with_new_columns=True, with_chunks=True)
     _point_db(db_full)

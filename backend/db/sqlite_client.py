@@ -325,7 +325,7 @@ class SQLiteClient:
 
     @staticmethod
     def _create_knowledge_chunks_fts(conn) -> None:
-        """创建并维护 Agent3 技术问答使用的 FTS5/BM25 索引。"""
+        """创建并维护 个性化学习资源生成 Agent 技术问答使用的 FTS5/BM25 索引。"""
         conn.execute(text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunks_fts
             USING fts5(
@@ -691,7 +691,7 @@ class SQLiteClient:
         conn.execute(text("DROP TABLE test_questions_legacy"))
 
     def _create_assessment_tables(self, conn) -> None:
-        """测试服务（AssessmentService）三张表（Agent46_API接口任务说明.md 第 2 节）。
+        """测试服务（AssessmentService）三张表（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 2 节）。
 
         - assessment_attempts：一次测试的生命周期（每次独立 attempt_id、状态、正确率）。
         - assessment_attempt_questions：测试开始时冻结的题目快照（正确答案/解析随快照保存，
@@ -2525,7 +2525,7 @@ class SQLiteClient:
             session.commit()
 
     # ========================================================================
-    # 测试服务（AssessmentService）落库接口（Agent46_API接口任务说明.md 第 2 节）
+    # 测试服务（AssessmentService）落库接口（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 2 节）
     # 约束：独立 attempt_id / 开始冻结题目 / 单题只存一条最终答案 /
     #      未答完必答题不能提交 / 提交后不能改 / 只从已提交完整 attempt 算正确率。
     # 本层只做落库与查询，判题与生命周期约束由 AssessmentService 负责。
@@ -2763,7 +2763,7 @@ class SQLiteClient:
         session_id: str,
         stage_id: str | None = None,
     ) -> dict | None:
-        """读取最近一次已提交 attempt 的「逐题判题记录（含耗时）」，供 Agent6 决策使用。
+        """读取最近一次已提交 attempt 的「逐题判题记录（含耗时）」，供 学情评估与动态决策 Agent 决策使用。
 
         - 定位口径与 get_submitted_attempt_accuracy 一致：阶段维度优先，退回会话维度，
           均取最近一次已提交（submitted_at DESC）的完整 attempt（约束 7）。
@@ -2826,9 +2826,9 @@ class SQLiteClient:
         return [dict(row) for row in rows]
 
     # ========================================================================
-    # 仪表盘聚合查询（Agent46_API接口任务说明.md 第 4 节）
+    # 仪表盘聚合查询（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 4 节）
     # 后端直接从 user_profiles / stage_progress / subtopic_status /
-    # assessment_attempts / user_qa 聚合，不属于 Agent4 运行职责。
+    # assessment_attempts / user_qa 聚合，不属于 专业知识与教学质量审核 Agent 运行职责。
     # ========================================================================
 
     def get_latest_profile(self, session_id: str) -> dict | None:
@@ -2926,7 +2926,7 @@ class SQLiteClient:
         return result
 
     # ========================================================================
-    # Agent3-4 审核辩论协议 — 落库接口（P2，按 trace_id 组织）
+    # 个性化学习资源生成 Agent-4 审核辩论协议 — 落库接口（P2，按 trace_id 组织）
     # source_id / claim_id / canonical_error_id 在单个 trace 内唯一，
     # 所有写入必须携带 trace_id，不允许脱离 trace_id 操作。
     # ========================================================================

@@ -55,6 +55,7 @@ type RunParams = {
    * 若外部在此之前已经拿到了 stage，可以直接传入跳过调用。
    */
   initialStage?: ApiStage | GenStagePreview | null;
+  restartCurrent?: boolean;
   onStageReady?: (stage: GenStagePreview) => void | Promise<void>;
   onPackageReady?: (payload: { packageResponse: any; stageResponse: any; startResponse: any }) => void | Promise<void>;
   onError?: (error: unknown) => void;
@@ -93,25 +94,25 @@ function describeGenerationEvent(event: GenerationEvent) {
   const labels: Record<string, { actor: string; text: string }> = {
     'start_stage:apply_planned_next_stage': { actor: '系统', text: '已切换到已规划的下一阶段' },
     'start_stage:start': { actor: '系统', text: '开始创建本阶段学习包' },
-    'pipeline:phaseA_start': { actor: '协同调度', text: 'Agent3 与 Agent4 开始并行处理知识块' },
+    'pipeline:phaseA_start': { actor: '协同调度', text: '个性化学习资源生成 Agent 与 专业知识与教学质量审核 Agent 开始并行处理知识块' },
     'pipeline:phaseA_done': { actor: '协同调度', text: '首轮生成与审核已汇总' },
-    'pipeline:issue_package': { actor: '协同调度', text: '审核问题包已交给 Agent3' },
+    'pipeline:issue_package': { actor: '协同调度', text: '审核问题包已交给 个性化学习资源生成 Agent' },
     'pipeline:phaseC_round': { actor: '协同调度', text: '本轮修订与复核已完成' },
     'pipeline:converge_freeze': { actor: '协同调度', text: '已完成当前轮次审核汇总' },
     'pipeline:done': { actor: '系统', text: '学习包已完成生成与审核' },
-    'agent3:block_generate_start': { actor: 'Agent3', text: '开始生成个性化内容块' },
-    'agent3:block_generate_done': { actor: 'Agent3', text: '已完成内容块生成，提交 Agent4 审核' },
-    'agent4:first_review_start': { actor: 'Agent4', text: '开始技术正确性与教学质量审核' },
-    'agent4:first_review_done': { actor: 'Agent4', text: '已完成首轮审核' },
-    'agent4:first_review_failed': { actor: 'Agent4', text: '本块审核异常，已记录为待处理问题' },
-    'agent3:review_reply_start': { actor: 'Agent3', text: '正在回应审核意见' },
-    'agent3:review_reply_done': { actor: 'Agent3', text: '已提交审核意见回应' },
-    'agent4:verdict_start': { actor: 'Agent4', text: '正在裁决 Agent3 的回应' },
-    'agent4:verdict_done': { actor: 'Agent4', text: '已完成审核裁决' },
-    'agent3:revision_start': { actor: 'Agent3', text: '正在按裁决修订内容' },
-    'agent3:revision_done': { actor: 'Agent3', text: '已完成修订，提交复核' },
-    'agent4:recheck_start': { actor: 'Agent4', text: '正在复核修订结果' },
-    'agent4:recheck_done': { actor: 'Agent4', text: '已完成修订复核' },
+    'agent3:block_generate_start': { actor: '个性化学习资源生成 Agent', text: '开始生成个性化内容块' },
+    'agent3:block_generate_done': { actor: '个性化学习资源生成 Agent', text: '已完成内容块生成，提交 专业知识与教学质量审核 Agent 审核' },
+    'agent4:first_review_start': { actor: '专业知识与教学质量审核 Agent', text: '开始技术正确性与教学质量审核' },
+    'agent4:first_review_done': { actor: '专业知识与教学质量审核 Agent', text: '已完成首轮审核' },
+    'agent4:first_review_failed': { actor: '专业知识与教学质量审核 Agent', text: '本块审核异常，已记录为待处理问题' },
+    'agent3:review_reply_start': { actor: '个性化学习资源生成 Agent', text: '正在回应审核意见' },
+    'agent3:review_reply_done': { actor: '个性化学习资源生成 Agent', text: '已提交审核意见回应' },
+    'agent4:verdict_start': { actor: '专业知识与教学质量审核 Agent', text: '正在裁决 个性化学习资源生成 Agent 的回应' },
+    'agent4:verdict_done': { actor: '专业知识与教学质量审核 Agent', text: '已完成审核裁决' },
+    'agent3:revision_start': { actor: '个性化学习资源生成 Agent', text: '正在按裁决修订内容' },
+    'agent3:revision_done': { actor: '个性化学习资源生成 Agent', text: '已完成修订，提交复核' },
+    'agent4:recheck_start': { actor: '专业知识与教学质量审核 Agent', text: '正在复核修订结果' },
+    'agent4:recheck_done': { actor: '专业知识与教学质量审核 Agent', text: '已完成修订复核' },
   };
   const mapped = labels[event.event];
   // Runtime logs may contain internal counts (issues/replies/decisions). Keep
@@ -166,7 +167,7 @@ export function GenerationProgressProvider({ children }: { children: React.React
 
   const run = useCallback(async (p: RunParams) => {
     const {
-      sessionId, action, initialStage, onStageReady, onPackageReady, onError, onFinally, onSuccessClose,
+      sessionId, action, initialStage, restartCurrent, onStageReady, onPackageReady, onError, onFinally, onSuccessClose,
     } = p;
 
     // 打开弹窗，进入阶段①
@@ -253,7 +254,7 @@ export function GenerationProgressProvider({ children }: { children: React.React
         }
       };
 
-      const startRequest = apiClient.startStage(sessionId);
+      const startRequest = apiClient.startStage(sessionId, { restartCurrent });
       const pollingTask = pollEvents();
       let startResponse: any;
       try {
@@ -421,7 +422,7 @@ function GenerationProgressModal({
             <span className="gen-step-label">
               <strong>生成学习包</strong>
               <em>{state.review?.iterations
-                ? `Agent4 实际完成第 ${state.review.iterations} 轮审核`
+                ? `专业知识与教学质量审核 Agent 实际完成第 ${state.review.iterations} 轮审核`
                 : '教程、示例与资源整理'}</em>
             </span>
           </li>
@@ -480,9 +481,9 @@ function GenerationProgressModal({
             <div className="gen-live-events-list">
               {state.events.map((event) => {
                 const described = describeGenerationEvent(event);
-                const actorClass = described.actor === 'Agent3'
+                const actorClass = described.actor === '个性化学习资源生成 Agent'
                   ? 'agent3'
-                  : described.actor === 'Agent4'
+                  : described.actor === '专业知识与教学质量审核 Agent'
                     ? 'agent4'
                     : 'system';
                 return (
@@ -505,23 +506,23 @@ function GenerationProgressModal({
         {state.phase === 'success' && state.review?.iterations && (
           <section className="gen-review-timeline" aria-label="本块学习包的协同审核过程">
             <div className="gen-review-timeline-title">
-              <strong>Agent3-Agent4 协同审核</strong>
+              <strong>个性化学习资源生成 Agent-专业知识与教学质量审核 Agent 协同审核</strong>
               <span>本块学习包</span>
             </div>
             <div className="gen-review-timeline-events">
               <div className="gen-review-event agent3">
-                <span>Agent3</span>
+                <span>个性化学习资源生成 Agent</span>
                 <p>已生成个性化教程、代码示例与测试题。</p>
               </div>
               {(state.review.timeline || []).map((round) => (
                 <div className="gen-review-round" key={round.round}>
                   <div className="gen-review-event agent4">
-                    <span>Agent4 第 {round.round} 轮审核</span>
+                    <span>专业知识与教学质量审核 Agent 第 {round.round} 轮审核</span>
                     <p>已完成技术正确性与教学质量审核{round.issue_count ? '，发现优化项并进入下一轮复审。' : '，本轮通过。'}</p>
                   </div>
                   {round.issue_count > 0 && (
                     <div className="gen-review-event agent3 revision">
-                      <span>Agent3 修订</span>
+                      <span>个性化学习资源生成 Agent 修订</span>
                       <p>已根据审核意见修订学习包，提交下一轮复审。</p>
                     </div>
                   )}

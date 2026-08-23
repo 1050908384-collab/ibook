@@ -1,11 +1,11 @@
 # AI 实训导师前端 API 对接说明
 
-本文合并原 `Agent13_API接口任务说明.md` 与 `Agent46_API接口任务说明.md`，并以当前 `/openapi.json` 和后端实现为准。新前端只使用 `/api/v1/*`，基础地址为 `http://localhost:8500/api/v1`。
+本文合并原 `学情诊断与阶段规划 Agent3_API接口任务说明.md` 与 `专业知识与教学质量审核 Agent6_API接口任务说明.md`，并以当前 `/openapi.json` 和后端实现为准。新前端只使用 `/api/v1/*`，基础地址为 `http://localhost:8500/api/v1`。
 
 ## 1. 职责与安全边界
 
-- Agent1：诊断、画像、下一阶段规划；Agent3：学习包和答疑；Agent4：审核学习包和答疑回答；Agent6：阶段决策、总结和画像更新。
-- AssessmentService 负责建卷、保存答案和 `time_spent`、判题、正确率，不属于 Agent4 的职责。
+- 学情诊断与阶段规划 Agent：诊断、画像、下一阶段规划；个性化学习资源生成 Agent：学习包和答疑；专业知识与教学质量审核 Agent：审核学习包和答疑回答；学情评估与动态决策 Agent：阶段决策、总结和画像更新。
+- AssessmentService 负责建卷、保存答案和 `time_spent`、判题、正确率，不属于 专业知识与教学质量审核 Agent 的职责。
 - 学习包、会话快照、未提交测试均不返回 `correct_answer`、`explanation`、`expected_output` 或内部判题规则；只有整卷 `submit` 成功后才返回答案与解析。
 - 以 `/openapi.json` 生成 TypeScript 类型，不手写 `any`。
 
@@ -13,7 +13,7 @@
 
 ```text
 创建会话 -> 多轮诊断 -> 确认画像 -> 开始阶段 -> 学习/答疑/测试
--> 提交整卷测试 -> 完成阶段（Agent6）-> 规划下一阶段（Agent1）-> 开始下一阶段
+-> 提交整卷测试 -> 完成阶段（学情评估与动态决策 Agent）-> 规划下一阶段（学情诊断与阶段规划 Agent）-> 开始下一阶段
 ```
 
 | phase | 前端可用操作 |
@@ -71,7 +71,7 @@ PATCH 只持久化设置，不重新诊断，也不重规划当前阶段。确�
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
 | GET | `/sessions/{session_id}/stages/current` | 当前阶段摘要 |
-| POST | `/sessions/{session_id}/stages/current/start` | Agent3 生成学习包，Agent4 审核 |
+| POST | `/sessions/{session_id}/stages/current/start` | 个性化学习资源生成 Agent 生成学习包，专业知识与教学质量审核 Agent 审核 |
 | GET | `/sessions/{session_id}/stages/current/package` | 获取或恢复学习包 |
 
 阶段字段：`stage_id`、`stage_num`、`block_id`、`block_name`、`subtopic_id`、`subtopic_name`、`estimated_hours`、`status`、`title`、`description`、`objectives`、`difficulty`、`recommended_daily_hours`、`suggested_study_days`、`learning_style_notes`、`hardware_notes`、`personalization_summary`。
@@ -84,7 +84,7 @@ PATCH 只持久化设置，不重新诊断，也不重规划当前阶段。确�
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| POST / GET | `/sessions/{session_id}/qa` | Agent3 答疑、Agent4 审核、恢复历史 |
+| POST / GET | `/sessions/{session_id}/qa` | 个性化学习资源生成 Agent 答疑、专业知识与教学质量审核 Agent 审核、恢复历史 |
 
 POST 请求：`{ "question": "QLoRA 的 NF4 量化为什么适合微调？" }`。
 
@@ -115,8 +115,8 @@ POST 请求：`{ "question": "QLoRA 的 NF4 量化为什么适合微调？" }`�
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| POST | `/sessions/{session_id}/stages/current/complete` | 已交卷后调用 Agent6 阶段决策 |
-| POST | `/sessions/{session_id}/stages/next/plan` | Agent1 规划下一阶段 |
+| POST | `/sessions/{session_id}/stages/current/complete` | 已交卷后调用 学情评估与动态决策 Agent 阶段决策 |
+| POST | `/sessions/{session_id}/stages/next/plan` | 学情诊断与阶段规划 Agent 规划下一阶段 |
 | GET | `/sessions/{session_id}/dashboard` | 仪表盘数据库聚合数据 |
 
 `complete` 的前置条件是当前阶段存在 `submitted` 测试；否则返回 `409`，错误码为 `ASSESSMENT_NOT_SUBMITTED`。完成阶段主要响应：`status`（`continue`、`repeat`、`completed`）、`accuracy`、`stage_summary`、`next_strategy`、`updated_profile`、`can_plan_next_stage`、`all_mastered`、`final_report`、`phase`、`available_actions`。

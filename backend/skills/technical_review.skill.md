@@ -3,13 +3,13 @@
 ## 1. 能力描述
 - 功能：为Agent④技术审核提供**幻觉判定阈值、常见错误模式库、审核检查清单、报错分级标准、裁决优先级**，定义"什么是错"。原 `hallucination_detection.skill.md` 的内容已合并至此，本SKILL同时承载"阈值和错误模式"与"裁决逻辑"两重职责。Agent④调用 `rule_check_tool` 执行确定性规则检查（LoRA机制错误、参数量计算错误），同时调用LLM进行语义审核（幻觉、事实、规范），按裁决优先级合并结果生成最终审核报告
 - 适用场景（4个）：
-  1. **内容审核**：Agent3生成的学习包（tutorial、code_examples）发布前审核技术正确性，由Orchestrator在 `_review_learning_package` 时触发
+  1. **内容审核**：个性化学习资源生成 Agent生成的学习包（tutorial、code_examples）发布前审核技术正确性，由Orchestrator在 `_review_learning_package` 时触发
   2. **回答审核**：用户问题回答（answer）发送前审核，由Orchestrator在 `_review_answer` 时触发
-  3. **推荐视频资源审核**：审核学习包时，Agent3 从资源库（`learning_resources` 表）挑选并随学习包一起送来的推荐视频（`ReviewInput.recommended_videos`），需校验其**是否属于当前学习阶段**、**URL 是否与资源库一致**、**内容摘要/字幕是否已完成人工审核**。仅在 `target_type="learning_package"` 时触发，`answer` 场景不涉及视频
+  3. **推荐视频资源审核**：审核学习包时，个性化学习资源生成 Agent 从资源库（`learning_resources` 表）挑选并随学习包一起送来的推荐视频（`ReviewInput.recommended_videos`），需校验其**是否属于当前学习阶段**、**URL 是否与资源库一致**、**内容摘要/字幕是否已完成人工审核**。仅在 `target_type="learning_package"` 时触发，`answer` 场景不涉及视频
   4. **多工具结果冲突裁决**：当 `rule_check_tool`、知识库依据校验和 LLM 审核结论不一致时，按裁决优先级输出最终结论
 - 前置依赖：
   - 待审核内容（`ReviewInput.content`）
-  - 待审核推荐视频（`ReviewInput.recommended_videos`：Agent3 产出的视频列表，每条含 `resource_id / title / url / review_status / content_summary / block_id / subtopic_id`）
+  - 待审核推荐视频（`ReviewInput.recommended_videos`：个性化学习资源生成 Agent 产出的视频列表，每条含 `resource_id / title / url / review_status / content_summary / block_id / subtopic_id`）
   - 知识库（`knowledge_verify_tool` 提供的语义相似度检索）
   - 学习资源库（`learning_resource_tool.get_recommended_videos(block_id, subtopic_id)` 只读查询 `learning_resources / block_resources / subtopic_resources` 表中 `mapping_status='confirmed'` 且 `resource_type='video'` 的资源，作为视频归属与 URL 校验的权威基线）
   - 规范规则库（`rule_check_tool` 的正则规则、`industry_standards.skill.md` 的红线条款）
@@ -17,7 +17,7 @@
 
 ### 1.1 块级双通道审核补充
 
-- **事实通道**：审核技术事实、命令、参数、代码、安全与来源对应关系；发现问题才阻断发布并进入 Agent3-4 修订闭环。
+- **事实通道**：审核技术事实、命令、参数、代码、安全与来源对应关系；发现问题才阻断发布并进入 个性化学习资源生成 Agent-4 修订闭环。
 - **个性化通道**：审核 `personalization_action`、`personalization_reason`、`fact_source_chunk_ids` 与 `teaching_tasks` 是否落实画像；同时保留难度、认知负荷和风格检查。
 - 个性化通道的问题返回为 `personalization_errors`，是教学改进建议，不因正文与原文表达不同而判为幻觉，也不阻断已通过事实通道的内容块。
 
@@ -29,10 +29,10 @@
 - **步骤4：标准检查（调用 `industry_standards` 子模块）**——**调用 `industry_standards` 子检查模块**，传入相同的 `ReviewInput`，获取LoRA/QLoRA微调与vLLM部署领域合规红线的 `ReviewError` 列表（含显存分配、端口安全、数据脱敏、许可证合规等）
 - **步骤5：推荐视频资源审核（仅 `learning_package`，调用 `learning_resource_tool`）**——当 `target_type="learning_package"` 且 `recommended_videos` 非空时，调用 `learning_resource_tool.validate_recommended_videos(recommended_videos, stage.block_id, stage.subtopic_id)`，应用规则5（推荐视频资源审核）逐条比对：视频是否仍属于当前 block/subtopic、URL 是否与资源库 `canonical_url` 一致、`review_status` 是否为 `confirmed`。产出 `video_resource_mismatch` / `video_url_mismatch` / `video_content_unverified` 三类 `ReviewError`。此步骤为纯资源库比对，无LLM参与，结果100%确定；`answer` 场景与 `recommended_videos` 为空时整步跳过
 - **步骤6：综合裁决输出**——合并步骤2~5的所有ReviewError，应用规则2（错误模式库）标记、规则3（报错分级标准）分类（Critical/Major/Minor）、规则4（裁决优先级）裁决：若硬性检查发现critical错误，`passed` 强制为 `false`。最终输出包含status、errors数组、summary的结构化报告
-- **步骤7：审核辩论协议字段补全（`_enrich_debate_fields`）**——对步骤6产出的每一条 `ReviewError`，按规则6逐条补全辩论协议字段：关联 `claim_id`（按 `location` 命中 Agent3 `claims` 的 `section_ref`）、解析 `source_refs`（命中 Agent3 `sources` 的 `source_id`）、派生 `must_fix` / `must_fix_reason`（规则6派生表）、生成 `change_request`、计算跨轮稳定的 `canonical_error_id` / `error_id`。此步骤将审核结论转化为可与 Agent3 逐条辩论的 issues，无 LLM 参与，结果100%确定
+- **步骤7：审核辩论协议字段补全（`_enrich_debate_fields`）**——对步骤6产出的每一条 `ReviewError`，按规则6逐条补全辩论协议字段：关联 `claim_id`（按 `location` 命中 个性化学习资源生成 Agent `claims` 的 `section_ref`）、解析 `source_refs`（命中 个性化学习资源生成 Agent `sources` 的 `source_id`）、派生 `must_fix` / `must_fix_reason`（规则6派生表）、生成 `change_request`、计算跨轮稳定的 `canonical_error_id` / `error_id`。此步骤将审核结论转化为可与 个性化学习资源生成 Agent 逐条辩论的 issues，无 LLM 参与，结果100%确定
 
 ### 2.2 用户提交代码审核流程（代码错误分析专用场景）
-当Agent4收到"用户代码错误分析"请求时（含代码+报错，或仅问题描述），执行以下专属流程：
+当专业知识与教学质量审核 Agent收到"用户代码错误分析"请求时（含代码+报错，或仅问题描述），执行以下专属流程：
 
 - **步骤1：解析报错信息提取错误类型**——从 `error_info` 中提取异常类型名（如 `KeyError`、`TypeError`），**优先引用 `code_error_patterns.skill.md` 规则1的错误类型→等级映射表**进行错误分类映射
 - **步骤2：错误分级判定**——应用 `code_error_patterns.skill.md` 规则1，将错误类型映射为三级严重等级：SyntaxError类→致命(critical)、RuntimeError类→主要(major)、LogicError类→次要(minor)
@@ -108,7 +108,7 @@
 - 知识库依据不足或工具结果冲突时，不得通过未实现的标准答案兜底放行；应保留审核错误并要求补充可靠来源或人工复核
 
 ### 规则5：推荐视频资源审核
-Agent3 从资源库挑选并随学习包一起送来的 `recommended_videos`，必须逐条比对资源库权威记录（`learning_resource_tool.get_recommended_videos` 返回的当前阶段已确认视频），产出以下三类 `ReviewError`。
+个性化学习资源生成 Agent 从资源库挑选并随学习包一起送来的 `recommended_videos`，必须逐条比对资源库权威记录（`learning_resource_tool.get_recommended_videos` 返回的当前阶段已确认视频），产出以下三类 `ReviewError`。
 
 | 错误类型 | 触发条件 | severity | change_request.action | 处置 |
 |:---|:---|:---|:---|:---|
@@ -120,10 +120,10 @@ Agent3 从资源库挑选并随学习包一起送来的 `recommended_videos`，�
 1. **归属优先于 URL**：先判 `video_resource_mismatch`（资源不属于当前阶段）；仅当资源命中后，才继续判 `video_url_mismatch` 与 `video_content_unverified`。三类检查非互斥——URL 不一致与内容未审核可对同一视频同时命中
 2. **未审核视频降级为参考**：`video_content_unverified` 为 `minor`（不阻断发布），但其语义是"该视频不可作为技术事实/幻觉判定的证据来源"——审核 tutorial 技术声明时，不得引用 `review_status != 'confirmed'` 的视频摘要作为放行依据
 3. **禁止模型自造链接**：视频 URL 必须来自资源库 `canonical_url`；`video_url_mismatch` 属 major，因错误链接可能导向失效或不相关内容
-4. **协议字段派生**：`video_resource_mismatch` / `video_url_mismatch` 的原始 dict 携带 `change_request.required=true` 与 `source_ref="src_video_{resource_id}"`，经 `_enrich_debate_fields` 后进入辩论协议（命中 Agent3 创建的同名视频 source，`change_request.required=true` 触发 `must_fix`）；`video_content_unverified` 无 `change_request`，`must_fix=false`
+4. **协议字段派生**：`video_resource_mismatch` / `video_url_mismatch` 的原始 dict 携带 `change_request.required=true` 与 `source_ref="src_video_{resource_id}"`，经 `_enrich_debate_fields` 后进入辩论协议（命中 个性化学习资源生成 Agent 创建的同名视频 source，`change_request.required=true` 触发 `must_fix`）；`video_content_unverified` 无 `change_request`，`must_fix=false`
 
 ### 规则6：学习包 claims/sources 辩论协议分析（`_enrich_debate_fields`）
-Agent3 送来的学习包除 tutorial/code/视频外，还携带 **`claims`（可验证陈述声明）** 与 **`sources`（来源清单）**（协议 2.1 / 2.2）。Agent4 每产出一条 `ReviewError`，都必须逐条比对 claims/sources 并补全以下辩论协议字段（协议 2.3 / 2.4 / 第 6 节），使审核结论可与 Agent3 逐条辩论、跨轮追踪。
+个性化学习资源生成 Agent 送来的学习包除 tutorial/code/视频外，还携带 **`claims`（可验证陈述声明）** 与 **`sources`（来源清单）**（协议 2.1 / 2.2）。专业知识与教学质量审核 Agent 每产出一条 `ReviewError`，都必须逐条比对 claims/sources 并补全以下辩论协议字段（协议 2.3 / 2.4 / 第 6 节），使审核结论可与 个性化学习资源生成 Agent 逐条辩论、跨轮追踪。
 
 **（1）claim_id 关联**（`_match_claim`）：
 1. 若工具原始错误已显式给出 `claim_id`，优先采用（须在 `claims` 中存在）
@@ -143,7 +143,7 @@ Agent3 送来的学习包除 tutorial/code/视频外，还携带 **`claims`（�
 | 2 | `error_type` 含事实错误/来源缺失/代码不可执行/违反安全或规范关键词（hallucination/fact/source_missing/syntaxerror/runtimeerror/security/compliance/deploy 等） | error_type 属于事实错误/来源缺失/代码不可执行/违反安全规范 |
 | 3 | 关键技术陈述缺来源：`source_refs` 为空且 `is_key_technical=true` | 关键技术陈述缺少有效来源支撑 |
 | 4 | 关键技术陈述来源存在但不支持该 Claim：`source_refs` 非空且 `is_key_technical=true` 且工具给出 `source_supports_claim=false`（或 error_type 含 source_mismatch/source_unsupported/source_conflict/来源不支持 等） | 关键技术陈述的来源存在但不支持该 Claim（协议第 6 节规则3） |
-| 5 | `change_request.required == true`（工具原始已提示，如视频归属/URL 错误） | change_request.required=true，明确要求 Agent3 修改 |
+| 5 | `change_request.required == true`（工具原始已提示，如视频归属/URL 错误） | change_request.required=true，明确要求 个性化学习资源生成 Agent 修改 |
 | — | 以上均不命中 | `must_fix=false`，`must_fix_reason=null` |
 
 **（4）change_request 生成**（`_build_change_request`，字段固定为 `{"required": bool, "action": str}`）：
@@ -158,25 +158,25 @@ Agent3 送来的学习包除 tutorial/code/视频外，还携带 **`claims`（�
 **判定要点**：
 1. **每条 error 必补全全部 6 字段**：`claim_id` / `source_refs` / `must_fix` / `must_fix_reason` / `change_request` / `canonical_error_id`（+`error_id`），缺一即视为不符合协议
 2. **单条异常不阻断**：某条 error 的字段补全若因数据缺失异常，兜底为保守值（`source_refs=[]` / `must_fix` 按已知信息派生），不得中断整批补全
-3. **跨轮一致性**：canonical_error_id 只由内容语义决定，Agent4 不得为同一语义问题在不同轮次生成不同 canonical
+3. **跨轮一致性**：canonical_error_id 只由内容语义决定，专业知识与教学质量审核 Agent 不得为同一语义问题在不同轮次生成不同 canonical
 
 ### 规则7：rebut 复核裁决（`_adjudicate_reply`）
-辩论第二回合，Agent4 收到 Agent3 对每条 issue 的逐条回复（`disposition` ∈ accepted|rejected|partially_accepted，含 `reason` / `patched_sections` / `source_refs`），对每个 `canonical_error_id` 输出 **persist（坚持）/ withdraw（撤销）/ downgrade（降级）** 裁决（协议第 4~5 节）。
+辩论第二回合，专业知识与教学质量审核 Agent 收到 个性化学习资源生成 Agent 对每条 issue 的逐条回复（`disposition` ∈ accepted|rejected|partially_accepted，含 `reason` / `patched_sections` / `source_refs`），对每个 `canonical_error_id` 输出 **persist（坚持）/ withdraw（撤销）/ downgrade（降级）** 裁决（协议第 4~5 节）。
 
-| 优先级 | Agent3 回复情形 | 裁决 | 理由 |
+| 优先级 | 个性化学习资源生成 Agent 回复情形 | 裁决 | 理由 |
 |:--|:---|:---|:---|
 | 1（最高） | issue `must_fix=true` 且 `disposition=rejected` | **persist** | 违反协议约束（must_fix 不允许直接驳回），一律坚持，交 Orchestrator 最终裁决 |
-| 2 | `disposition=accepted` 且提供了新 `source_refs` 或 `patched_sections` | **withdraw** | Agent3 已按要求整改，Agent4 认可并撤销 |
+| 2 | `disposition=accepted` 且提供了新 `source_refs` 或 `patched_sections` | **withdraw** | 个性化学习资源生成 Agent 已按要求整改，专业知识与教学质量审核 Agent 认可并撤销 |
 | 3 | `disposition=accepted` 但无任何整改证据 | **persist** | 声称接受却无证据，保守坚持 |
 | 4 | `disposition=partially_accepted` 且**无任何整改证据**（既无新 `source_refs` 也无 `patched_sections`） | **persist** | 口头「部分接受」但零实质动作，不足以放松 issue（降级会解除 must_fix，一轮即放松红线） |
 | 5 | `disposition=partially_accepted` 且属**质量红线类**（认知负荷/难度超载），但**只补了 `source_refs`、无 `patched_sections`** | **persist** | 质量红线成因是物理度量（概念密度/难度），只能靠改写正文缓解，补来源无效，须提供正文 patch 才可降级 |
 | 6 | `disposition=partially_accepted` 且提供了有效整改证据（新 `source_refs` 或 `patched_sections`；质量红线类须含 `patched_sections`） | **downgrade** | 部分整改，风险下降但未完全消除（critical→major 或解除 must_fix） |
-| 7 | 非 must_fix 且 `disposition=rejected`，给出有效反证（新 `source_refs`） | **withdraw** | 反证成立，Agent4 认错撤销 |
+| 7 | 非 must_fix 且 `disposition=rejected`，给出有效反证（新 `source_refs`） | **withdraw** | 反证成立，专业知识与教学质量审核 Agent 认错撤销 |
 | 8 | 非 must_fix 且 `disposition=rejected`，无反证但 `severity=minor` 且给出 `reason` | **downgrade** | minor 且有理由，可降级 |
 | 9 | 其余 rejected / disposition 缺失或非法 | **persist** | 无有效反证，保守坚持 |
 
 **判定要点**：
-1. **must_fix 保护**：must_fix issue 被直接 rejected 一律 persist，绝不因 Agent3 单方拒绝而撤销——这是防止关键错误被强行忽略的护栏
+1. **must_fix 保护**：must_fix issue 被直接 rejected 一律 persist，绝不因 个性化学习资源生成 Agent 单方拒绝而撤销——这是防止关键错误被强行忽略的护栏
 2. **撤销/降级需证据**：withdraw 与 partially_accepted 的 downgrade 都必须有整改证据（新来源/patch）或有效反证，"口头接受/口头部分接受"不足以放松 issue（协议第 5 节「证据优先」）
 3. **质量红线只认正文 patch**：认知负荷超载 / 难度不匹配一类问题成因是正文度量，补来源无法缓解，`partially_accepted` 须带 `patched_sections` 才能降级，否则 persist
 4. **单条裁决异常兜底**：某条回复裁决抛异常时兜底为 `persist`（保守坚持，避免误撤销）
@@ -187,9 +187,9 @@ Agent3 送来的学习包除 tutorial/code/视频外，还携带 **`claims`（�
 ### 输入
 ReviewInput对象，包含：
 - `content`：待审核内容字符串（tutorial / answer / code_examples）
-- `recommended_videos`：Agent3 从资源库挑选的推荐视频列表（仅 `learning_package` 场景，`List[dict]`，每条含 `resource_id / title / url / review_status / content_summary / block_id / subtopic_id`）
-- `claims`：Agent3 产出的可验证陈述声明（协议 2.2，`List[dict]`，每条含 `claim_id / text / section_ref / claim_type / is_key_technical / source_ref / confidence`）——供规则6按 `location`↔`section_ref` 关联 `claim_id` 与判定 `is_key_technical`
-- `sources`：Agent3 产出的来源清单（协议 2.1，`List[dict]`，每条含 `source_id / source_type / title / locator / content_ref`）——供规则6解析 `source_refs`（含 Agent3 为推荐视频创建的 `src_video_{resource_id}` 视频 source）
+- `recommended_videos`：个性化学习资源生成 Agent 从资源库挑选的推荐视频列表（仅 `learning_package` 场景，`List[dict]`，每条含 `resource_id / title / url / review_status / content_summary / block_id / subtopic_id`）
+- `claims`：个性化学习资源生成 Agent 产出的可验证陈述声明（协议 2.2，`List[dict]`，每条含 `claim_id / text / section_ref / claim_type / is_key_technical / source_ref / confidence`）——供规则6按 `location`↔`section_ref` 关联 `claim_id` 与判定 `is_key_technical`
+- `sources`：个性化学习资源生成 Agent 产出的来源清单（协议 2.1，`List[dict]`，每条含 `source_id / source_type / title / locator / content_ref`）——供规则6解析 `source_refs`（含 个性化学习资源生成 Agent 为推荐视频创建的 `src_video_{resource_id}` 视频 source）
 - `round_index`：当前审核轮次，用于生成 `error_id` 后缀 `_r{round_index}`（规则6）
 - `user_profile`：用户画像（UserProfile）
 - `context`：可选上下文（当前StageInfo、历史审核记录）
@@ -275,12 +275,12 @@ CodeErrorClassification对象，JSON格式：
 | 多工具冲突（`rule_check_tool` 与LLM结论不一致） | 按规则4裁决优先级：硬性阻断 > 规范红线 > 语义冲突，以高优先级工具结论为准 |
 | 待审核内容为空（`content.strip()` 为空） | 添加 `ReviewError(error_type="missing_content", severity="critical", description="待审核内容为空")`，passed=false |
 | `rule_check_tool` 执行异常 | 记录日志，继续执行LLM审核，在review_details中标注"规则检查缺失" |
-| LLM审核结果无法解析（`parse_json_object` 返回None） | 添加 `ReviewError(error_type="review_system_error", severity="critical", description="Agent4审核结果无法解析", suggestion="重新执行技术审核")`，passed=false |
+| LLM审核结果无法解析（`parse_json_object` 返回None） | 添加 `ReviewError(error_type="review_system_error", severity="critical", description="专业知识与教学质量审核 Agent审核结果无法解析", suggestion="重新执行技术审核")`，passed=false |
 | LLM返回的severity值不在 `{"critical","major","minor"}` 范围内 | 自动修正为 `"major"` |
-| 内容审核循环达上限（Agent4统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容"，不再发回Agent3修改 |
+| 内容审核循环达上限（专业知识与教学质量审核 Agent统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容"，不再发回个性化学习资源生成 Agent修改 |
 | 学习资源库不可读（`learning_resource_tool` 查询 `learning_resources` 抛 `sqlite3.Error`） | `get_recommended_videos` 安全降级返回空列表，`validate_recommended_videos` 因基线为空对所有视频判 `video_resource_mismatch`（major）；不中断其余审核步骤，在 review_details 中注明"视频资源库不可读，视频归属无法核验" |
 | `recommended_videos` 为空或 `target_type="answer"` | 跳过步骤5视频审核，不产出任何视频类错误 |
-| 视频缺失 `resource_id` 字段 | 判 `video_resource_mismatch`（major），description 标注"未提供资源ID"，要求 Agent3 补齐资源库 `resource_id` |
+| 视频缺失 `resource_id` 字段 | 判 `video_resource_mismatch`（major），description 标注"未提供资源ID"，要求 个性化学习资源生成 Agent 补齐资源库 `resource_id` |
 
 ## 6. 附录
 
@@ -396,12 +396,12 @@ CodeErrorClassification对象，JSON格式：
       "must_fix": false
     }
   ],
-  "summary": "检测到1个major（推荐视频不属于当前阶段）和1个minor（视频内容未审核），已阻断发布。要求 Agent3 替换越界视频。",
+  "summary": "检测到1个major（推荐视频不属于当前阶段）和1个minor（视频内容未审核），已阻断发布。要求 个性化学习资源生成 Agent 替换越界视频。",
   "review_details": "tutorial 技术内容无误；视频资源审核发现1条major（归属越界，must_fix）、1条minor（内容未审核）。"
 }
 ```
 
-**说明**：场景3体现规则5——视频归属越界（`video_resource_mismatch`）为 major 且 `must_fix`，强制 Agent3 替换；视频内容未审核（`video_content_unverified`）为 minor 提示，不阻断发布但明确该视频不可作为技术事实依据。由于 seed 库视频默认 `review_status=pending`，任一被推荐视频都会至少触发一条 `video_content_unverified`。
+**说明**：场景3体现规则5——视频归属越界（`video_resource_mismatch`）为 major 且 `must_fix`，强制 个性化学习资源生成 Agent 替换；视频内容未审核（`video_content_unverified`）为 minor 提示，不阻断发布但明确该视频不可作为技术事实依据。由于 seed 库视频默认 `review_status=pending`，任一被推荐视频都会至少触发一条 `video_content_unverified`。
 
 #### 场景4：claims/sources 辩论协议分析 + rebut 复核（规则6 + 规则7）
 **输入（学习包携带 claims/sources）**：
@@ -417,7 +417,7 @@ CodeErrorClassification对象，JSON格式：
 }
 ```
 
-**处理过程（Agent4）**：
+**处理过程（专业知识与教学质量审核 Agent）**：
 1. 步骤2硬性检查：`rule_check_tool` 正则命中 `lora.*?(?:svd|奇异值分解)` → `lora_mechanism_error`（critical），`location="tutorial:sec_1"`
 2. 步骤7协议字段补全（规则6）：
    - claim_id 关联：`location=tutorial:sec_1` 命中 `clm_002.section_ref` → `claim_id=clm_002`、`is_key_technical=true`
@@ -426,7 +426,7 @@ CodeErrorClassification对象，JSON格式：
    - change_request：`must_fix=true` 且有来源 → `{"required": true, "action": "rewrite"}`
    - canonical_error_id：`sha1("clm_002"+"lora_mechanism_error"+归一化location+归一化description)[:12]`，如 `0725b47bd465`；`error_id=0725b47bd465_r1`
 
-**Agent4 产出 issue（进入辩论）**：
+**专业知识与教学质量审核 Agent 产出 issue（进入辩论）**：
 ```json
 {
   "error_type": "lora_mechanism_error", "severity": "critical",
@@ -438,14 +438,14 @@ CodeErrorClassification对象，JSON格式：
 }
 ```
 
-**Agent3 逐条回复 → Agent4 rebut 复核（规则7）**：
+**个性化学习资源生成 Agent 逐条回复 → 专业知识与教学质量审核 Agent rebut 复核（规则7）**：
 - 回复A `{disposition: "partially_accepted", reason: "已改写但保留部分表述"}` → **downgrade**（序4：部分整改，critical→major）
 - 回复B `{disposition: "accepted", patched_sections: ["tutorial:sec_1"]}` → **withdraw**（序2：有整改证据）
 - 回复C `{disposition: "rejected", source_refs: []}` → **persist**（序1：must_fix 被直接 rejected，护栏坚持，交 Orchestrator）
 
-**说明**：场景4展示规则6把一条 tutorial 技术错误转化为可辩论 issue（关联 clm_002、继承来源、按 critical 判 must_fix、生成跨轮稳定 canonical_error_id），以及规则7对 Agent3 三种回复的差异化裁决——其中 must_fix issue 被直接驳回时的 persist 护栏是防止关键错误被强行忽略的核心约束。
+**说明**：场景4展示规则6把一条 tutorial 技术错误转化为可辩论 issue（关联 clm_002、继承来源、按 critical 判 must_fix、生成跨轮稳定 canonical_error_id），以及规则7对 个性化学习资源生成 Agent 三种回复的差异化裁决——其中 must_fix issue 被直接驳回时的 persist 护栏是防止关键错误被强行忽略的核心约束。
 
 ## 7. 版本信息
 - 版本：v3.5，更新日期：2026-08-02
-- 变更记录：**v3.5变更**：补齐"学习包 claims/sources 辩论协议分析"方法论——核心方法论 2.1 流程新增步骤7"审核辩论协议字段补全（`_enrich_debate_fields`）"；新增规则6（claims/sources 辩论协议分析，定义 `claim_id` 关联、`source_refs` 解析、`must_fix` 五条派生规则表、`change_request` 生成、`canonical_error_id`/`error_id` 哈希规则与判定要点）与规则7（rebut 复核裁决，定义 persist/withdraw/downgrade 的七级优先级裁决表与 must_fix 护栏）；输入规范补充 `claims`/`sources`/`round_index` 结构说明；附录新增场景4（claims/sources 分析 + rebut 复核完整示例）。**v3.4变更**：新增"推荐视频资源审核"能力——适用场景扩展为4个（新增场景3推荐视频资源审核）；核心方法论 2.1 流程新增步骤5"推荐视频资源审核"（调用 `learning_resource_tool.validate_recommended_videos`，仅 `learning_package` 场景），综合裁决顺延为步骤6；新增规则5（推荐视频资源审核，定义 `video_resource_mismatch`/`video_url_mismatch`/`video_content_unverified` 三类错误的触发条件、severity、change_request 与协议字段派生）；输入规范新增 `recommended_videos` 字段与 `stage.block_id/subtopic_id`；输出示例与异常处理新增视频审核相关条目；附录新增场景3完整示例。**v3.3变更**：新增"用户提交代码审核流程"（2.2节），定义Agent4处理代码错误分析请求的6步专属流程；明确判断依据优先级（code_error_patterns.skill.md规则 > knowledge_verify_tool > 静态检查工具）；新增代码错误分析场景的输出格式与字段说明（含error_category、severity、root_cause、fix_suggestion等字段），输出格式为"错误分类：xxx，严重等级：xxx，修改建议：xxx"。**v3.2变更**：将核心方法论的"逐级检查"拆分为独立的硬性检查、事实检查、标准检查三个步骤，明确各步骤的工具调用和职责边界，与文档3的流程步骤一一对应
+- 变更记录：**v3.5变更**：补齐"学习包 claims/sources 辩论协议分析"方法论——核心方法论 2.1 流程新增步骤7"审核辩论协议字段补全（`_enrich_debate_fields`）"；新增规则6（claims/sources 辩论协议分析，定义 `claim_id` 关联、`source_refs` 解析、`must_fix` 五条派生规则表、`change_request` 生成、`canonical_error_id`/`error_id` 哈希规则与判定要点）与规则7（rebut 复核裁决，定义 persist/withdraw/downgrade 的七级优先级裁决表与 must_fix 护栏）；输入规范补充 `claims`/`sources`/`round_index` 结构说明；附录新增场景4（claims/sources 分析 + rebut 复核完整示例）。**v3.4变更**：新增"推荐视频资源审核"能力——适用场景扩展为4个（新增场景3推荐视频资源审核）；核心方法论 2.1 流程新增步骤5"推荐视频资源审核"（调用 `learning_resource_tool.validate_recommended_videos`，仅 `learning_package` 场景），综合裁决顺延为步骤6；新增规则5（推荐视频资源审核，定义 `video_resource_mismatch`/`video_url_mismatch`/`video_content_unverified` 三类错误的触发条件、severity、change_request 与协议字段派生）；输入规范新增 `recommended_videos` 字段与 `stage.block_id/subtopic_id`；输出示例与异常处理新增视频审核相关条目；附录新增场景3完整示例。**v3.3变更**：新增"用户提交代码审核流程"（2.2节），定义专业知识与教学质量审核 Agent处理代码错误分析请求的6步专属流程；明确判断依据优先级（code_error_patterns.skill.md规则 > knowledge_verify_tool > 静态检查工具）；新增代码错误分析场景的输出格式与字段说明（含error_category、severity、root_cause、fix_suggestion等字段），输出格式为"错误分类：xxx，严重等级：xxx，修改建议：xxx"。**v3.2变更**：将核心方法论的"逐级检查"拆分为独立的硬性检查、事实检查、标准检查三个步骤，明确各步骤的工具调用和职责边界，与文档3的流程步骤一一对应
 - **与代码对齐说明**：`analyze_code_error()` 方法已实现代码错误分析功能，v3.3要求该方法集成 `code_error_patterns.skill.md` 的错误分级与归因规则，优先使用规则分类结果作为最终判定，knowledge_verify_tool结果作为辅助参考；v3.4的视频资源审核方法论已由 `learning_resource_tool.validate_recommended_videos` 与 `DeterministicTechnicalReviewAgent.run` / `HybridTechnicalReviewAgent.run` 的 `target_type=="learning_package"` 分支实现（视频错误经 `_enrich_debate_fields(raw_errors=video_resource_errors)` 补全协议字段）；v3.5的规则6/规则7方法论已由 `agent_04_tech_review.py` 的 `_enrich_debate_fields`（含 `_match_claim`/`_resolve_source_refs`/`derive_must_fix`/`_build_change_request`/`compute_canonical_error_id`）与 `rebut`（`_adjudicate_reply`）实现，规则表逐条对应代码分支

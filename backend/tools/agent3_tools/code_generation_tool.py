@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-code_generation_tool — Agent3 代码示例生成工具
+code_generation_tool — 个性化学习资源生成 Agent 代码示例生成工具
 ================================================
 功能：生成或修复教程中的代码示例，遵循 code_style.skill.md 规范。
     - 真实模式：查 knowledge_docs 表 doc_type='code' 的文档作为代码示例来源
@@ -19,6 +19,7 @@ code_generation_tool — Agent3 代码示例生成工具
 保留 CodeGenerationTool 类作为向后兼容适配器。
 """
 
+import asyncio
 import json
 import logging
 import sqlite3
@@ -189,8 +190,14 @@ def _llm_generate_code(skill_name: str) -> List[Dict[str, Any]]:
 
 代码功能：展示{skill_name}的核心用法。"""
 
-    llm_client = LLMClient()
-    response = llm_client.complete(prompt, system_prompt)
+    response = LLMClient().complete_sync(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=4096,
+        temperature=0.3,
+    )
 
     import re
     code_blocks = re.findall(r'```(\w*)\n(.*?)```', response, re.DOTALL)
@@ -240,8 +247,15 @@ def _fix_code(input_data: dict) -> dict:
 
 请修复代码示例，返回修复后的代码示例列表（JSON格式）。"""
 
-    llm_client = LLMClient()
-    response = llm_client.complete(prompt, system_prompt)
+    response = LLMClient().complete_sync(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt},
+        ],
+        max_tokens=4096,
+        temperature=0.3,
+        json_mode=True,
+    )
 
     import re
     match = re.search(r'\[.*\]', response, re.DOTALL)
@@ -332,7 +346,7 @@ class CodeGenerationTool:
         if stage_info:
             skill_name = stage_info.get("gap_skill", "") or stage_info.get("block_name", "")
         
-        result = code_generation({
+        result = await asyncio.to_thread(code_generation, {
             "mode": "generate",
             "block_id": block_id,
             "skill_name": skill_name,
@@ -342,7 +356,7 @@ class CodeGenerationTool:
         return result["data"].get("code_examples", [])
 
     async def fix_code(self, code_examples: List[Dict[str, Any]], errors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        result = code_generation({
+        result = await asyncio.to_thread(code_generation, {
             "mode": "fix",
             "code_examples": code_examples,
             "errors": errors,

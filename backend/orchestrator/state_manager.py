@@ -57,7 +57,7 @@ class StateManager:
         if practice_profile.hardware and not practice_profile.gpu_model and practice_profile.vram_gb is None:
             practice_profile = PracticeProfile.from_hardware_text(practice_profile.hardware)
         # Hardware belongs to the user-level profile. PracticeProfile is only
-        # the Agent3 execution view and must not become another source of truth.
+        # the 个性化学习资源生成 Agent execution view and must not become another source of truth.
         self.db_client.upsert_user_profile(
             self.db_client.get_session_user_id(session_id),
             {
@@ -80,7 +80,7 @@ class StateManager:
         return state.practice_profile.model_dump(mode="json")
 
     def refresh_practice_profile(self, session_id: str) -> None:
-        """Refresh the runtime Agent3 DTO from the user-level hardware field."""
+        """Refresh the runtime 个性化学习资源生成 Agent DTO from the user-level hardware field."""
         state = self.require_session(session_id)
         user_profile = self.db_client.get_user_profile(
             self.db_client.get_session_user_id(session_id)
@@ -89,8 +89,33 @@ class StateManager:
         self._save(state)
 
     @staticmethod
+    def _stage_has_ended(stage: StageInfo | dict) -> bool:
+        status = stage.status if isinstance(stage, StageInfo) else stage.get("status")
+        return str(status or "").strip().lower() in {"completed", "retreat"}
+
+    def _heal_active_retry_state(self, state: SessionData) -> bool:
+        if not state.stage_info or self._stage_has_ended(state.stage_info):
+            return False
+        snapshot_key = state.stage_info.stage_id
+        snapshot = (
+            state.stage_snapshots.get(snapshot_key)
+            or state.stage_snapshots.get(str(state.stage_info.stage_num))
+            or {}
+        )
+        has_stale_result = bool(snapshot.get("stage_result"))
+        if not has_stale_result and state.phase != "stage_result":
+            return False
+        if has_stale_result:
+            cleaned_snapshot = dict(snapshot)
+            cleaned_snapshot.pop("stage_result", None)
+            state.stage_snapshots[snapshot_key] = cleaned_snapshot
+        state.phase = "learning"
+        state.available_actions = ["ask_question", "start_assessment"]
+        return True
+
+    @staticmethod
     def _practice_profile_from_user(user_profile: Dict[str, Any]) -> PracticeProfile:
-        """Rebuild the Agent3 DTO from the user profile row.
+        """Rebuild the 个性化学习资源生成 Agent DTO from the user profile row.
 
         Older rows only carry the free-text ``hardware``; auto-complete the
         structured GPU fields from it so historic sessions gain VRAM/architecture
@@ -112,11 +137,29 @@ class StateManager:
     def update_stage(self, session_id: str, stage: StageInfo | dict) -> None:
         state = self.require_session(session_id)
         next_stage = StageInfo.model_validate(stage)
+        if (
+            state.stage_info
+            and state.stage_info.stage_id == next_stage.stage_id
+            and state.stage_info.subtopic_id
+            and next_stage.subtopic_id
+            and state.stage_info.subtopic_id != next_stage.subtopic_id
+        ):
+            raise ValueError(
+                "Cannot replace a stage_id with a different subtopic: "
+                f"{state.stage_info.subtopic_id} -> {next_stage.subtopic_id}"
+            )
         if state.stage_info and state.stage_info.stage_id != next_stage.stage_id:
             self._save_current_stage_snapshot(state)
             # A new stage starts with an independent dialogue context. The
             # completed stage's history remains in its snapshot.
             state.qa_history = []
+        elif state.stage_info and not self._stage_has_ended(next_stage):
+            # A low-score retry reuses the same stage_id. Its previous result
+            # remains historical assessment data, but must not keep the newly
+            # generated learning cycle in the result phase after refresh.
+            snapshot = dict(state.stage_snapshots.get(next_stage.stage_id) or {})
+            if snapshot.pop("stage_result", None) is not None:
+                state.stage_snapshots[next_stage.stage_id] = snapshot
         state.stage_info = next_stage
         state.current_stage = state.stage_info.stage_num
         self.db_client.save_stage(session_id, state.stage_info.model_dump(mode="json"))
@@ -214,7 +257,7 @@ class StateManager:
         return None
 
     def save_stage_result(self, session_id: str, stage_num: int, result: Dict[str, Any]) -> None:
-        """Persist the Agent6 outcome with the immutable stage snapshot."""
+        """Persist the 学情评估与动态决策 Agent outcome with the immutable stage snapshot."""
         state = self.require_session(session_id)
         key = state.stage_info.stage_id if state.stage_info and state.stage_info.stage_num == stage_num else str(stage_num)
         snapshot = dict(state.stage_snapshots.get(key) or {})
@@ -223,7 +266,7 @@ class StateManager:
             snapshot = dict(state.stage_snapshots.get(key) or {})
         if not snapshot:
             # Older sessions have completed stages only in stage_progress.
-            # Preserve that stage metadata when adding a recovered Agent6
+            # Preserve that stage metadata when adding a recovered 学情评估与动态决策 Agent
             # result, otherwise the new result would hide the old stage.
             snapshot = dict(self.get_stage_snapshot(session_id, stage_num) or {})
         snapshot["stage_result"] = result
@@ -231,7 +274,7 @@ class StateManager:
         self._save(state)
 
     def get_stage_result(self, session_id: str, stage_num: int) -> Optional[Dict[str, Any]]:
-        """Return a previously persisted Agent6 outcome for one stage."""
+        """Return a previously persisted 学情评估与动态决策 Agent outcome for one stage."""
         state = self._get(session_id)
         if not state:
             return None
@@ -421,7 +464,10 @@ class StateManager:
 
     def _get(self, session_id: str) -> SessionData | None:
         if session_id in self._cache:
-            return self._cache[session_id]
+            state = self._cache[session_id]
+            if self._heal_active_retry_state(state):
+                self._save(state)
+            return state
         payload = self.db_client.load_session_state(session_id)
         if not payload:
             return None
@@ -453,6 +499,8 @@ class StateManager:
             state.profile = UserProfile.model_validate(composed_profile)
         user_profile = self.db_client.get_user_profile(state.user_id) or {}
         state.practice_profile = self._practice_profile_from_user(user_profile)
+        if self._heal_active_retry_state(state):
+            self._save(state)
         # Recover sessions persisted by the earlier delete-last-stage code,
         # which cleared stage_info while leaving the preceding snapshot intact.
         if state.phase in {"learning", "stage_ready"} and state.stage_info is None:
@@ -481,12 +529,13 @@ class StateManager:
         # a completed restored snapshot must allow plan-next instead of being
         # left in the generic learning phase (which causes a 409 response).
         if state.phase == "learning" and state.stage_info:
+            snapshot_key = state.stage_info.stage_id
             snapshot = (
-                state.stage_snapshots.get(state.stage_info.stage_id)
+                state.stage_snapshots.get(snapshot_key)
                 or state.stage_snapshots.get(str(state.stage_info.stage_num))
                 or {}
             )
-            if snapshot.get("stage_result"):
+            if snapshot.get("stage_result") and self._stage_has_ended(state.stage_info):
                 state.phase = "stage_result"
                 state.available_actions = ["plan_next_stage"]
                 self._save(state)

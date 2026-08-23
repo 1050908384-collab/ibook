@@ -448,8 +448,11 @@ export const apiClient = {
     return response.data;
   },
 
-  startStage: async (sessionId: string) => {
-    const response = await axios.post(`${BASE_URL}/sessions/${sessionId}/stages/current/start`);
+  startStage: async (sessionId: string, options?: { restartCurrent?: boolean }) => {
+    const params = new URLSearchParams();
+    if (options?.restartCurrent) params.set('restart_current', 'true');
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await axios.post(`${BASE_URL}/sessions/${sessionId}/stages/current/start${suffix}`);
     return response.data;
   },
 

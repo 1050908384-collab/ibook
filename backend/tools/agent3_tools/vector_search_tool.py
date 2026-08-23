@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-vector_search_tool — Agent3 语义检索工具
+vector_search_tool — 个性化学习资源生成 Agent 语义检索工具
 ================================================
 功能：对用户问题或关键词进行语义检索，返回相关知识文档片段。
     - 真实模式：查 knowledge_chunks 表，按相似度排序返回top_k片段
@@ -687,7 +687,7 @@ class VectorSearchTool:
         return [row[0] for row in rows if row[0]]
 
     def get_stage_chunks(self, block_id: str, subtopic_ids: list[str]) -> List[Dict[str, Any]]:
-        """读取某阶段（block + 子知识点集合）的原始 knowledge_chunks（供 Agent3 块级生成）。
+        """读取某阶段（block + 子知识点集合）的原始 knowledge_chunks（供 个性化学习资源生成 Agent 块级生成）。
 
         - 只读 sqlite，按 (subtopic_id, chunk_index) 稳定排序；
         - PRAGMA 探测新列（heading_path 等），缺失即以 NULL 降级，不崩溃；
@@ -732,7 +732,7 @@ class VectorSearchTool:
         ]
 
     def get_chunk_by_id(self, chunk_id: str) -> Optional[Dict[str, Any]]:
-        """按 chunk_id 回查单个原始 knowledge_chunk（供 Agent4 回查来源块）。
+        """按 chunk_id 回查单个原始 knowledge_chunk（供 专业知识与教学质量审核 Agent 回查来源块）。
 
         同样防御式列选择；未找到或库不可用返回 None（不产生假数据）。
         """

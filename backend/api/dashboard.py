@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""仪表盘 API（Agent46_API接口任务说明.md 第 4 节）。
+"""仪表盘 API（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 4 节）。
 
-由 Agent4/6 队友承担工程实现：后端聚合 user_profiles / stage_progress /
-subtopic_status / assessment_attempts / user_qa，不属于 Agent4 的运行职责。
+由 专业知识与教学质量审核 Agent/6 队友承担工程实现：后端聚合 user_profiles / stage_progress /
+subtopic_status / assessment_attempts / user_qa，不属于 专业知识与教学质量审核 Agent 的运行职责。
 """
 from typing import Any, Dict, List, Optional
 

@@ -38,7 +38,7 @@ from services.learning_evidence_service import LearningEvidenceService
 # 审核辩论协议常量（协议第 7 节）
 MAX_DEBATE_ROUNDS = 2  # 内层答辩复核轮次上限
 
-# 块级流水线并发上限：Agent3 生成/修改、Agent4 复核均限制为同时 2 个块在飞，
+# 块级流水线并发上限：个性化学习资源生成 Agent 生成/修改、专业知识与教学质量审核 Agent 复核均限制为同时 2 个块在飞，
 # 兼顾低配设备（不做成 settings 开关——属内部调度细节，非运维旋钮）。
 BLOCK_CONCURRENCY = 2
 
@@ -49,7 +49,7 @@ class BlockState:
 
     - open_issues 为空 ⇒ 该块已 done；
     - block.version 即版本追踪（modify_block 自增），无需另存；
-    - rounds_sent 记录该块被交还 Agent3 的次数（每块二级防死循环）。
+    - rounds_sent 记录该块被交还 个性化学习资源生成 Agent 的次数（每块二级防死循环）。
     - last_issue_fp 记录上一轮「修改+复核后」的 open_issues 指纹，用于收敛检测：
       若某块连续两轮复核后的问题集完全一致（同一批注定改不动的问题原地打转），
       即判定该块无法收敛，冻结它、不再对它继续 modify+recheck，省掉注定失败的轮次。
@@ -102,7 +102,7 @@ class Harness:
             else DeterministicContentAgent(database_url=self.state_manager.db_client.database_url)
         )
         self.agent4 = HybridTechnicalReviewAgent() if self.execution_mode == "hybrid" else DeterministicTechnicalReviewAgent()
-        # Agent5已合并至Agent4，质量审核功能已集成
+        # Agent5已合并至专业知识与教学质量审核 Agent，质量审核功能已集成
         self.agent6 = DeterministicStageDecisionAgent()
         # Short-lived event buffer for the generation modal. These records are
         # operational evidence only and never become learner-facing content.
@@ -172,7 +172,7 @@ class Harness:
         if all(marker in text for marker in internal_context_markers):
             return "当前回答服务暂时不可用，请稍后重试。"
 
-        # Agent3 may occasionally expose the revision workflow before the
+        # 个性化学习资源生成 Agent may occasionally expose the revision workflow before the
         # actual answer, e.g. "已根据审核意见修复……以下是修改后的完整回答：" or
         # "修改后内容如下：" / "修订后答复：". That is internal orchestration
         # metadata, not learner-facing content, so strip the leading marker.
@@ -261,7 +261,7 @@ class Harness:
             diagnostic.profile.user_id = user_id
         # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
         self.state_manager.update_profile(session_id, diagnostic.profile)
-        # PracticeProfile remains Agent3's execution DTO, while hardware has a
+        # PracticeProfile remains 个性化学习资源生成 Agent's execution DTO, while hardware has a
         # single durable source in learner_profiles. Only first-time input may
         # seed that source; later goals always reuse it.
         if not reusable_profile:
@@ -301,14 +301,21 @@ class Harness:
             "stage_info": stage.stage.model_dump(mode="json"),
         }
 
-    async def start_stage(self, session_id: str) -> Dict[str, Any]:
+    async def start_stage(
+        self,
+        session_id: str,
+        apply_planned_stage: bool = True,
+    ) -> Dict[str, Any]:
         self._reset_generation_events(session_id)
-        # 若已通过 plan-next 规划过 next_stage，则在真正启动阶段前把 next_stage 切换为当前 stage_info
         planned = self.state_manager.get_next_stage(session_id)
-        if planned:
+        if planned and apply_planned_stage:
             self._log(session_id, "start_stage:apply_planned_next_stage", f"planned_stage_num={planned.get('stage_num')}, block={planned.get('block_name')}")
             self.state_manager.update_stage(session_id, StageInfo.model_validate(planned))
-            # 切换完成后清理 next_stage / planning_notes，避免重复套用
+            self.state_manager.clear_next_stage(session_id)
+        elif planned:
+            # “重新学习当前阶段”必须忽略已规划的下一知识点，否则按钮语义
+            # 与实际启动内容不一致，并会覆盖当前阶段的历史记录。
+            self._log(session_id, "start_stage:discard_planned_for_restart", f"planned_stage_num={planned.get('stage_num')}")
             self.state_manager.clear_next_stage(session_id)
 
         stage = StageInfo.model_validate(self._require_stage(session_id))
@@ -318,7 +325,7 @@ class Harness:
         )
         self._log(session_id, "start_stage:start", f"stage={stage.stage_num}, block={stage.block_name}")
         if settings.BLOCK_PIPELINE_ENABLED:
-            # 块级并行流水线：Agent3 逐块生成、Agent4 逐块审核并行推进（任务 5）。
+            # 块级并行流水线：个性化学习资源生成 Agent 逐块生成、专业知识与教学质量审核 Agent 逐块审核并行推进（任务 5）。
             learning_package, review_history = await self._review_learning_package_pipeline(
                 session_id, stage, profile, practice_profile,
             )
@@ -401,7 +408,7 @@ class Harness:
         self._log(session_id, "handle_question:start", f"question={question[:60]}")
         is_greeting = self._is_greeting(question)
 
-        # === 构建 memory 上下文（供 Agent3 生成更贴合用户的回答）===
+        # === 构建 memory 上下文（供 个性化学习资源生成 Agent 生成更贴合用户的回答）===
         # 当前阶段 block_id，用于技术类回答时检索本阶段相关的知识文档
         block_id = stage.block_id if stage else None
         # 历史问答记录（过滤非 dict 项，防止 Pydantic 验证失败）
@@ -412,7 +419,7 @@ class Harness:
 
         if is_greeting:
             raw_answer = self._greeting_answer(stage.block_name)
-            question_type = "daily"  # 问候属于日常类，不走 Agent4
+            question_type = "daily"  # 问候属于日常类，不走 专业知识与教学质量审核 Agent
         elif self._is_profile_fact_question(question):
             # 画像事实查询不应交给知识库检索或通用闲聊模型猜测；直接读取
             # 实践画像中的结构化设备字段，保证“我的设备型号是什么”这类问题稳定可答。
@@ -444,9 +451,9 @@ class Harness:
             raw_answer = generated.answer
             question_type = getattr(generated, "question_type", "technical")
 
-        # === 根据问题类型决定是否调用 Agent4 审核 ===
+        # === 根据问题类型决定是否调用 专业知识与教学质量审核 Agent 审核 ===
         if question_type in {"daily", "profile_fact"}:
-            # 日常类：跳过 Agent4 审核，直接使用 Agent3 的回答
+            # 日常类：跳过 专业知识与教学质量审核 Agent 审核，直接使用 个性化学习资源生成 Agent 的回答
             self._log(session_id, "handle_question:daily_skip_review", f"question_type={question_type}")
             answer = self._extract_user_facing_answer(raw_answer)
             # 构造一个"通过"的审核结果，保持返回体结构一致
@@ -466,7 +473,7 @@ class Harness:
                 "reason": "profile_fact_skipped_agent4" if question_type == "profile_fact" else "daily_question_skipped_agent4",
             }
         else:
-            # 技术类：走原 Agent4 审核流程
+            # 技术类：走原 专业知识与教学质量审核 Agent 审核流程
             answer, review_history = await self._review_answer(
                 session_id,
                 question,
@@ -475,8 +482,8 @@ class Harness:
                 profile,
                 practice_profile=practice_profile,
             )
-            # A greeting is a conversational turn, not a technical answer. Agent4
-            # may classify it as off-topic and ask Agent3 to rewrite it; preserve
+            # A greeting is a conversational turn, not a technical answer. 专业知识与教学质量审核 Agent
+            # may classify it as off-topic and ask 个性化学习资源生成 Agent to rewrite it; preserve
             # the deterministic greeting instead of exposing that rewrite.
             answer = self._extract_user_facing_answer(raw_answer if is_greeting else answer)
             latest_review = review_history[-1]
@@ -484,7 +491,7 @@ class Harness:
                 latest_review.technical,
                 iterations=len(review_history),
             )
-            # 库外/超纲问题：直接输出 Agent3 内容，向前端呈现为非失败的独立状态，
+            # 库外/超纲问题：直接输出 个性化学习资源生成 Agent 内容，向前端呈现为非失败的独立状态，
             # 避免把「知识库未覆盖」误报成审核未通过。
             if self._is_out_of_scope_review(latest_review.technical):
                 review_summary = {
@@ -528,7 +535,7 @@ class Harness:
 
     @staticmethod
     def _build_profile_summary(profile: UserProfile) -> str:
-        """将用户画像转为摘要文本，供 Agent3 日常类回答使用。"""
+        """将用户画像转为摘要文本，供 个性化学习资源生成 Agent 日常类回答使用。"""
         parts = []
         if getattr(profile, "goal", None):
             parts.append(f"学习目标：{profile.goal}")
@@ -562,7 +569,7 @@ class Harness:
         technical_result: TechnicalReviewResult,
         iterations: int = 1,
     ) -> Dict[str, Any]:
-        """解析并调用 Agent4 的答疑审核摘要生成器（第 1 节 review_summary）。
+        """解析并调用 专业知识与教学质量审核 Agent 的答疑审核摘要生成器（第 1 节 review_summary）。
 
         build_answer_review_summary 是无状态方法（仅由 TechnicalReviewResult + iterations
         推导 5 个固定字段），故按以下优先级健壮解析，避免对具体 reviewer 实现的强耦合：
@@ -599,7 +606,7 @@ class Harness:
         return {"is_correct": is_correct, "correct_answer": question.correct_answer}
 
     def _resolve_stage_accuracy(self, session_id: str, stage: StageInfo) -> float:
-        """确定本阶段用于 Agent6 决策的正确率（Agent46_API接口任务说明.md 第 2/3 节）。
+        """确定本阶段用于 学情评估与动态决策 Agent 决策的正确率（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 2/3 节）。
 
         - §3 complete 流程要求「读取已提交测试的准确率」，§2 约束 7 要求正确率只能来自
           已提交的完整 attempt，不能从零散答题记录计算。
@@ -627,13 +634,13 @@ class Harness:
         return self.state_manager.calculate_accuracy(session_id)
 
     def _resolve_stage_records(self, session_id: str, stage: StageInfo):
-        """取本阶段已提交测试的逐题记录与聚合用时，供 Agent6 决策使用。
+        """取本阶段已提交测试的逐题记录与聚合用时，供 学情评估与动态决策 Agent 决策使用。
 
-        - 与 _resolve_stage_accuracy 同源同口径（Agent46_API接口任务说明.md 第 2/3 节）：
+        - 与 _resolve_stage_accuracy 同源同口径（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 2/3 节）：
           优先当前阶段已提交 attempt，退回会话维度最近一次已提交 attempt。
         - 逐题记录含 time_spent（前端 PUT .../answers/{qid} 提交的答题用时），
-          聚合用时换算为小时透传给 Agent6，替代仅从 interactions 估算的耗时。
-        - 无已提交 attempt 时返回 ([], 0.0)，Agent6 退化为旧的 interactions 估算，不阻断流程。
+          聚合用时换算为小时透传给 学情评估与动态决策 Agent，替代仅从 interactions 估算的耗时。
+        - 无已提交 attempt 时返回 ([], 0.0)，学情评估与动态决策 Agent 退化为旧的 interactions 估算，不阻断流程。
         """
         try:
             stage_id = getattr(stage, "stage_id", None)
@@ -657,8 +664,8 @@ class Harness:
     async def complete_stage(self, session_id: str, bypass_assessment: bool = False) -> Dict[str, Any]:
         """
         complete_stage 新职责（P3 按需阶段规划）：
-        1. 只负责调用 Agent6 决策
-        2. 保存 Agent6 更新后的用户画像 / 个性化数据
+        1. 只负责调用 学情评估与动态决策 Agent 决策
+        2. 保存 学情评估与动态决策 Agent 更新后的用户画像 / 个性化数据
         3. 只有在全部知识盲区都掌握时，才真正结束 session
         4. 返回 status/session_id/accuracy/updated_profile/stage_summary/
            next_strategy/can_plan_next_stage/session_status/all_mastered/
@@ -733,7 +740,7 @@ class Harness:
         can_plan_next_stage = not all_mastered and session_status == "active"
 
         result_status = "completed" if all_mastered else ("repeat" if accuracy < 0.7 else "continue")
-        # 阶段结果的 phase / available_actions（Agent46_API接口任务说明.md 第 3 节）：
+        # 阶段结果的 phase / available_actions（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 3 节）：
         # - 结业（all_mastered）：phase=completed，无后续动作
         # - 未结业：phase=stage_result，开放 plan_next_stage（前端据此展示“生成下一阶段”）
         if all_mastered:
@@ -777,7 +784,7 @@ class Harness:
     ) -> Dict[str, Any]:
         """
         按需生成下一阶段（plan-next 接口）：
-        - 基于 complete_stage 后最新的画像，调用 Agent1 的规划链路
+        - 基于 complete_stage 后最新的画像，调用 学情诊断与阶段规划 Agent 的规划链路
         - 生成真正的 next_stage 并保存到 session state
         - 不立刻把 next_stage 覆盖到当前 stage_info（留待 start_stage 或前端确认后切换）
 
@@ -855,8 +862,8 @@ class Harness:
             if force_advance and accuracy < 0.7:
                 # Product rule: when the learner explicitly chooses to
                 # continue, the current stage knowledge points count as
-                # mastered. Re-evaluate goal completion before Agent1 runs;
-                # otherwise the final target incorrectly reaches Agent1 with
+                # mastered. Re-evaluate goal completion before 学情诊断与阶段规划 Agent runs;
+                # otherwise the final target incorrectly reaches 学情诊断与阶段规划 Agent with
                 # no remaining gap and becomes a 400 response.
                 stage_subtopic_ids = list(current_stage_info.subtopic_ids or [])
                 if not stage_subtopic_ids and current_stage_info.subtopic_id:
@@ -934,24 +941,28 @@ class Harness:
             f"{default_notes}；{user_notes}" if user_notes else default_notes
         )
 
-        planned = await self.agent1.generate_stage(StagePlanningInput(
-            session_id=session_id,
-            profile=profile,
-            stage_num=next_stage_num,
-            adjustment_notes=user_notes,
-            excluded_subtopic_ids=(
-                [current_stage_info.subtopic_id]
-                if force_advance and current_stage_info.subtopic_id
-                else []
-            ),
-        ))
-        next_stage = planned.stage
-        # A below-threshold result is a retry of the same stage instance, not
-        # a second stage with the same number. Reuse the immutable stage_id so
-        # stage_progress and snapshots update in place and cannot hide an
-        # earlier knowledge point (for example installation -> syntax).
         if next_stage_num == current_stage_info.stage_num and not force_advance:
-            next_stage.stage_id = current_stage_info.stage_id
+            next_stage = current_stage_info.model_copy(
+                deep=True,
+                update={
+                    "status": "pending",
+                    "accuracy": None,
+                    "strategy_used": None,
+                },
+            )
+        else:
+            planned = await self.agent1.generate_stage(StagePlanningInput(
+                session_id=session_id,
+                profile=profile,
+                stage_num=next_stage_num,
+                adjustment_notes=user_notes,
+                excluded_subtopic_ids=(
+                    [current_stage_info.subtopic_id]
+                    if force_advance and current_stage_info.subtopic_id
+                    else []
+                ),
+            ))
+            next_stage = planned.stage
         self.state_manager.update_next_stage(session_id, next_stage)
         self.state_manager.update_planning_notes(session_id, planning_notes)
 
@@ -969,7 +980,7 @@ class Harness:
             "updated_profile": profile.model_dump(mode="json"),
             "planning_notes": planning_notes,
             "session_status": session_status,
-            # plan-next 成功后的 phase / available_actions（Agent46_API接口任务说明.md 第 3 节）
+            # plan-next 成功后的 phase / available_actions（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 3 节）
             "phase": "next_stage_ready",
             "available_actions": ["start_stage"],
         }
@@ -984,7 +995,7 @@ class Harness:
         """审核学习包：审核 → 答辩 → 复核 → 裁决（协议第 4~5 节）。
 
         外层 review iteration（MAX_REVIEW_ITERATIONS）内嵌 debate 子循环。
-        每个 iteration = 一次完整辩论轮（Agent4 审核 → Agent3 答辩 → Agent4 复核 → Orchestrator 裁决 → Agent3 修改）。
+        每个 iteration = 一次完整辩论轮（专业知识与教学质量审核 Agent 审核 → 个性化学习资源生成 Agent 答辩 → 专业知识与教学质量审核 Agent 复核 → Orchestrator 裁决 → 个性化学习资源生成 Agent 修改）。
         达到最大轮次仍有未决 must_fix → needs_human_review（非阻塞，package 降级为 provisional）。
         """
         history: list[ReviewRound] = []
@@ -1001,7 +1012,7 @@ class Harness:
         for iteration in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
             print(f"=== 学习包审核循环：第{iteration}轮（trace={trace_id}）===")
 
-            # 步骤1：Agent4 首轮审核（传 sources/claims/trace_id/round_index）
+            # 步骤1：专业知识与教学质量审核 Agent 首轮审核（传 sources/claims/trace_id/round_index）
             reviews = await self._review(ReviewInput(
                 session_id=session_id,
                 target_type="learning_package",
@@ -1030,18 +1041,18 @@ class Harness:
                 print(f"=== 学习包第{iteration}轮审核通过 ===")
                 break
 
-            # 步骤2：Agent3 答辩（对每条 issue 逐条回复）
+            # 步骤2：个性化学习资源生成 Agent 答辩（对每条 issue 逐条回复）
             issues = [e.model_dump(mode="json") for e in reviews.technical.errors]
             package_dict = current_package.model_dump(mode="json")
-            print(f"=== 调用 Agent3.reply_to_review（{len(issues)} 条 issue）===")
+            print(f"=== 调用 个性化学习资源生成 Agent.reply_to_review（{len(issues)} 条 issue）===")
             author_replies = await self.agent3.reply_to_review(
                 session_id, issues, package_dict
             )
 
-            # 步骤3：Agent4 复核裁决（对 Agent3 的回复做 persist/withdraw/downgrade）
-            print(f"=== 调用 Agent4.rebut ===")
+            # 步骤3：专业知识与教学质量审核 Agent 复核裁决（对 个性化学习资源生成 Agent 的回复做 persist/withdraw/downgrade）
+            print(f"=== 调用 专业知识与教学质量审核 Agent.rebut ===")
             verdicts = await self.agent4.rebut(session_id, issues, author_replies)
-            print(f"=== Agent4 复核裁决结果：{verdicts} ===")
+            print(f"=== 专业知识与教学质量审核 Agent 复核裁决结果：{verdicts} ===")
 
             # 步骤4：Orchestrator 裁决 — 根据复核结果分类 issues
             accepted_issues, unresolved_must_fix_count = self._adjudicate_issues(
@@ -1054,9 +1065,9 @@ class Harness:
                 author_replies, verdicts, accepted_issues, unresolved_must_fix_count,
             )
 
-            # 步骤5：Agent3 修改学习包（只处理被裁决通过/降级的 issue）
+            # 步骤5：个性化学习资源生成 Agent 修改学习包（只处理被裁决通过/降级的 issue）
             if accepted_issues:
-                print(f"=== 调用 Agent3.modify_package（{len(accepted_issues)} 条已裁决 issue）===")
+                print(f"=== 调用 个性化学习资源生成 Agent.modify_package（{len(accepted_issues)} 条已裁决 issue）===")
                 revised_package_dict = await self.agent3.modify_package(
                     session_id,
                     package_dict,
@@ -1119,9 +1130,9 @@ class Harness:
         return current_package, history
 
     # ==================================================================
-    # 块级真并发流水线：Agent3 生成/修改与 Agent4 审核/复核并发推进。
-    # Phase A：Agent3 受控生成，Agent4 独立消费已生成块
-    # 首轮后：一次性构造完整 issue_package（按 content_block_id 分组）交给 Agent3
+    # 块级真并发流水线：个性化学习资源生成 Agent 生成/修改与 专业知识与教学质量审核 Agent 审核/复核并发推进。
+    # Phase A：个性化学习资源生成 Agent 受控生成，专业知识与教学质量审核 Agent 独立消费已生成块
+    # 首轮后：一次性构造完整 issue_package（按 content_block_id 分组）交给 个性化学习资源生成 Agent
     # Phase C：并发修改（Semaphore(2)），每块改完立即 create_task 派发独立复核
     #          （块1复核不阻塞块2修改）；双层防死循环（全局轮次 + 每块 rounds_sent ≤ MAX）
     # Phase D：聚合所有块为一个 LearningPackage
@@ -1139,10 +1150,10 @@ class Harness:
         generation_sem: asyncio.Semaphore,
         review_sem: asyncio.Semaphore,
     ) -> tuple[Any, TechnicalReviewResult]:
-        """单块生产/消费：Agent3 生成后立即提交 Agent4 审核。
+        """单块生产/消费：个性化学习资源生成 Agent 生成后立即提交 专业知识与教学质量审核 Agent 审核。
 
-        两个 Semaphore 有意分离：审核等待或执行时不占用 Agent3 的生成槽，
-        因此 Agent3 可继续生产后续块，Agent4 独立消费已完成的块。
+        两个 Semaphore 有意分离：审核等待或执行时不占用 个性化学习资源生成 Agent 的生成槽，
+        因此 个性化学习资源生成 Agent 可继续生产后续块，专业知识与教学质量审核 Agent 独立消费已完成的块。
         """
         chunk_label = str(source_chunk.get("chunk_id") or source_chunk.get("source_chunk_id") or block_index + 1)
         self._log(session_id, "agent3:block_generate_start", f"block={block_index + 1}, chunk={chunk_label}")
@@ -1174,7 +1185,7 @@ class Harness:
                 errors=[ReviewError(
                     error_type="review_system_error",
                     severity="critical",
-                    description=f"Agent4 review_block failed: {exc}",
+                    description=f"专业知识与教学质量审核 Agent review_block failed: {exc}",
                     content_block_id=getattr(block, "content_block_id", None),
                 )],
             )
@@ -1260,7 +1271,7 @@ class Harness:
     ) -> None:
         """为聚合后的学习包补齐自测题（块级流水线路径）。
 
-        整篇路径由 Agent3.run 直接从 test_questions 表提取题目，块级路径以块为最小
+        整篇路径由 个性化学习资源生成 Agent.run 直接从 test_questions 表提取题目，块级路径以块为最小
         生成单位、不产出整阶段题目，故聚合后需与整篇路径一致地按 block_id + subtopic_ids
         提取题目，保证学习包可作答（提交答案→掌握判定→阶段推进依赖此题目）。
         题库不可用或无匹配题目时优雅降级为空列表，不中断学习流。
@@ -1337,13 +1348,13 @@ class Harness:
         """块级真并发生产者/消费者流水线（任务 5 + 真并发改造）。
 
         - 生成：并发上限 BLOCK_CONCURRENCY（=2），每块生成后立即提交独立审核；
-        - 首轮后一次性构造完整 issue_package（按块分组），交给 Agent3；
+        - 首轮后一次性构造完整 issue_package（按块分组），交给 个性化学习资源生成 Agent；
         - 修改：并发上限 BLOCK_CONCURRENCY（=2），每块改完立即派发独立复核 task
           （块1复核不阻塞块2修改）；
-        - 全部块无 open 问题才 passed；Agent4 交还问题清单最多 MAX_REVIEW_ITERATIONS 次；
+        - 全部块无 open 问题才 passed；专业知识与教学质量审核 Agent 交还问题清单最多 MAX_REVIEW_ITERATIONS 次；
         - 无可用原始 chunk 时安全降级为原整篇链路。
 
-        省 token / 省耗时（避免 Agent3↔Agent4 无谓来回扯皮）：
+        省 token / 省耗时（避免 个性化学习资源生成 Agent↔专业知识与教学质量审核 Agent 无谓来回扯皮）：
         - 收敛检测：某块「修改+复核后」问题集与上一轮完全一致（同一批注定改不动的
           问题原地打转，如认知负荷/难度红线）即冻结该块、留待人工，不再对它继续
           modify+recheck，砍掉注定失败的重复轮次；
@@ -1421,7 +1432,7 @@ class Harness:
             learning_evidence=learning_evidence,
         )
         self._persist_trace_init(trace_id, session_id, stage, draft_package)
-        # 首轮审核结果作为第 1 轮 review_round 落库（Agent4 异步审核结果统一留痕）
+        # 首轮审核结果作为第 1 轮 review_round 落库（专业知识与教学质量审核 Agent 异步审核结果统一留痕）
         self._record_review_round(session_id, "learning_package", history[0])
 
         # ---- Phase C：修改（并发上限 2）+ 每块改完并发复核 ----
@@ -1430,7 +1441,7 @@ class Harness:
         total_unresolved = 0
 
         for round_num in range(1, settings.MAX_REVIEW_ITERATIONS + 1):
-            # Agent3 先接收本轮完整问题列表，再从已建立的待修改队列中取块。
+            # 个性化学习资源生成 Agent 先接收本轮完整问题列表，再从已建立的待修改队列中取块。
             # 后续轮次同样以完整列表重新交付，已通过的块不会进入该列表。
             revision_queue = await self.agent3.receive_issue_package(
                 session_id,
@@ -1466,19 +1477,19 @@ class Harness:
                 st.recheck_task = None
                 # 记录本轮该块的原始 issues（修改前快照，用于辩论落库）
                 pre_errors = list(st.open_issues)
-                # 从 Agent3 已接收的完整 issue_package 队列取本块问题；状态快照
+                # 从 个性化学习资源生成 Agent 已接收的完整 issue_package 队列取本块问题；状态快照
                 # 仍保留 ReviewError 实例，供 Orchestrator 做裁决和落库。
                 issues = self.agent3.queued_issues(session_id, cid)
                 block_dict = st.block.model_dump(mode="json")
 
-                # Agent3 答辩（块作为最小上下文）
+                # 个性化学习资源生成 Agent 答辩（块作为最小上下文）
                 try:
                     self._log(session_id, "agent3:review_reply_start", f"round={round_num}")
                     author_replies = await self.agent3.reply_to_review(session_id, issues, block_dict)
                     self._log(session_id, "agent3:review_reply_done", f"round={round_num}, replies={len(author_replies)}")
                 except Exception:
                     author_replies = []
-                # Agent4 复核裁决
+                # 专业知识与教学质量审核 Agent 复核裁决
                 try:
                     self._log(session_id, "agent4:verdict_start", f"round={round_num}")
                     verdicts = await self.agent4.rebut(session_id, issues, author_replies)
@@ -1545,8 +1556,8 @@ class Harness:
                     f"round={round_num}, frozen_blocks={frozen_this_round}",
                 )
 
-            # Agent4 完成本轮复核后，再构造下一轮完整问题列表；只含仍未通过的块，
-            # 且排除已冻结块（冻结块留待人工，不再交还 Agent3 空转）。
+            # 专业知识与教学质量审核 Agent 完成本轮复核后，再构造下一轮完整问题列表；只含仍未通过的块，
+            # 且排除已冻结块（冻结块留待人工，不再交还 个性化学习资源生成 Agent 空转）。
             issue_package = {
                 cid: st.open_issues
                 for cid, st in states.items()
@@ -1681,7 +1692,7 @@ class Harness:
                 verdict_summary=f"unresolved_must_fix={unresolved_must_fix_count}",
             )
 
-            # 3. Agent3 答辩 responses
+            # 3. 个性化学习资源生成 Agent 答辩 responses
             author_responses = []
             for reply in author_replies:
                 cid = reply.get("canonical_error_id", "")
@@ -1697,7 +1708,7 @@ class Harness:
                 })
             db.save_review_debate_responses(round_id, author_responses)
 
-            # 4. Agent4 复核 responses
+            # 4. 专业知识与教学质量审核 Agent 复核 responses
             reviewer_responses = []
             for cid, verdict in verdicts.items():
                 reviewer_responses.append({
@@ -1724,7 +1735,7 @@ class Harness:
                     "actor": "orchestrator",
                     "response_type": "orchestrator_ruling",
                     "disposition": disposition,
-                    "rationale": f"Agent4 verdict={verdict}",
+                    "rationale": f"专业知识与教学质量审核 Agent verdict={verdict}",
                 })
                 db.update_review_debate_issue_status(
                     issue_id=issue_id,
@@ -1803,10 +1814,10 @@ class Harness:
         errors: List[ReviewError],
         verdicts: Dict[str, str],
     ) -> tuple[List[Dict[str, Any]], int]:
-        """Orchestrator 裁决：根据 Agent4 复核结果分类 issues。
+        """Orchestrator 裁决：根据 专业知识与教学质量审核 Agent 复核结果分类 issues。
 
         返回 (accepted_issues, unresolved_must_fix_count)：
-        - accepted_issues：Agent3 需要 modify 的 issues（withdraw + downgrade）
+        - accepted_issues：个性化学习资源生成 Agent 需要 modify 的 issues（withdraw + downgrade）
         - unresolved_must_fix_count：仍坚持(persist)且 must_fix=true 的数量
         """
         accepted_issues: List[Dict[str, Any]] = []
@@ -1817,19 +1828,19 @@ class Harness:
             verdict = verdicts.get(cid, "persist")
 
             if verdict == "withdraw":
-                # Agent4 撤销该 issue → Agent3 接受处理
+                # 专业知识与教学质量审核 Agent 撤销该 issue → 个性化学习资源生成 Agent 接受处理
                 accepted_issues.append(err.model_dump(mode="json"))
             elif verdict == "downgrade":
-                # Agent4 降级 → 降级 severity，若原 must_fix 则解除
+                # 专业知识与教学质量审核 Agent 降级 → 降级 severity，若原 must_fix 则解除
                 err.severity = "minor" if err.severity == "major" else err.severity
                 if err.must_fix:
                     err.must_fix = False
-                    err.must_fix_reason = "Agent4 复核降级，解除 must_fix"
+                    err.must_fix_reason = "专业知识与教学质量审核 Agent 复核降级，解除 must_fix"
                 accepted_issues.append(err.model_dump(mode="json"))
             else:
-                # persist → Agent4 坚持该 issue
+                # persist → 专业知识与教学质量审核 Agent 坚持该 issue
                 if err.must_fix:
-                    # must_fix=True：强制 Agent3 修改，但仍计入未决（进下一轮重新审核）
+                    # must_fix=True：强制 个性化学习资源生成 Agent 修改，但仍计入未决（进下一轮重新审核）
                     accepted_issues.append(err.model_dump(mode="json"))
                     unresolved_must_fix_count += 1
                 # must_fix=False：minor 问题，允许通过，不强制修改
@@ -1843,7 +1854,7 @@ class Harness:
         触发条件（同时满足）：
           - 至少存在一个 error_type == out_of_scope 的错误（知识库未覆盖该主题）；
           - 不存在其他会强制改写的阻塞错误（must_fix=True 或 severity=critical）。
-        满足时上层直接输出 Agent3 内容，不再逼迫改写（库外问题无从溯源，改写无益）。
+        满足时上层直接输出 个性化学习资源生成 Agent 内容，不再逼迫改写（库外问题无从溯源，改写无益）。
         """
         errors = getattr(technical_result, "errors", None) or []
         if not errors:
@@ -1891,14 +1902,23 @@ class Harness:
                 print(f"=== 回答第{iteration}轮审核通过 ===")
                 break
             # 库外/超纲：问题不在知识库覆盖范围内。此时无从溯源，改写也无益，
-            # 直接输出 Agent3 内容而非逼迫反复改写。判据：本轮技术错误全部为 out_of_scope。
+            # 直接输出 个性化学习资源生成 Agent 内容而非逼迫反复改写。判据：本轮技术错误全部为 out_of_scope。
             if self._is_out_of_scope_review(round_result.technical):
-                print(f"=== 回答第{iteration}轮判定为库外问题（out_of_scope），直接输出 Agent3 内容 ===")
+                print(f"=== 回答第{iteration}轮判定为库外问题（out_of_scope），直接输出 个性化学习资源生成 Agent 内容 ===")
+                break
+            # ``review_needed`` is advisory for interactive answers.  A whole
+            # answer's lexical overlap is not enough evidence for another
+            # free-form rewrite; only must_fix issues may trigger a new round.
+            if round_result.technical.errors and not any(
+                getattr(error, "must_fix", False)
+                for error in round_result.technical.errors
+            ):
+                print(f"=== 回答第{iteration}轮为非阻断复核提示，停止重复改写 ===")
                 break
             if iteration == settings.MAX_REVIEW_ITERATIONS:
                 print("=== 回答达到最大审核轮次，返回未通过状态 ===")
                 break
-            print(f"=== Orchestrator汇总第{iteration}轮意见，调用Agent3修改回答 ===")
+            print(f"=== Orchestrator汇总第{iteration}轮意见，调用个性化学习资源生成 Agent修改回答 ===")
             revised = await self.agent3.revise_answer(AnswerRevisionInput(
                 session_id=session_id,
                 question=question,
@@ -1913,7 +1933,7 @@ class Harness:
         return current_answer, history
 
     async def _review(self, request: ReviewInput) -> ReviewOutput:
-        # Agent5已合并至Agent4，统一调用合并后的TechnicalReviewAgent
+        # Agent5已合并至专业知识与教学质量审核 Agent，统一调用合并后的TechnicalReviewAgent
         try:
             technical = await self.agent4.run(request)
         except Exception as exc:
@@ -1922,8 +1942,8 @@ class Harness:
                 errors=[ReviewError(
                     error_type="review_system_error",
                     severity="critical",
-                    description=f"Agent4 review failed: {exc}",
-                    suggestion="重新执行审核，若仍失败请检查合并后的 Agent4、skill 与 tool 链路",
+                    description=f"专业知识与教学质量审核 Agent review failed: {exc}",
+                    suggestion="重新执行审核，若仍失败请检查合并后的 专业知识与教学质量审核 Agent、skill 与 tool 链路",
                 )],
                 review_details={"exception": str(exc)},
             )

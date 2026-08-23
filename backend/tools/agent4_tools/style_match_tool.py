@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-style_match_tool — 风格匹配评估工具（原Agent5，合并至Agent4）
+style_match_tool — 风格匹配评估工具（原Agent5，合并至专业知识与教学质量审核 Agent）
 ================================================
 功能：输入内容风格特征与画像中 learning_style，输出匹配度评分（0~1）。
 特性：纯规则匹配，无需 Mock（mock_used 始终为 False）。

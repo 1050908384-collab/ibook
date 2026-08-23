@@ -24,7 +24,7 @@
           (claim_fp+chunk_id) round-trip；重复写累加 hit_count；批量命中；
           指纹对「空白/大小写等价改写」稳定、对不同 chunk_id 天然区分。
 
-  集成    Agent4 核验接入缓存/路由 _verify_claims_hallucination
+  集成    专业知识与教学质量审核 Agent 核验接入缓存/路由 _verify_claims_hallucination
           命中 pass → 跳过送检（0 issue）；命中 hallucination → 复用裁决产出 issue（from_cache=True，不再送检）；
           profile_fact / personalized 路由 → 豁免核验（0 issue）。
 
@@ -90,7 +90,7 @@ def section(title: str) -> None:
 # 方案 1：强制溯源
 # ============================================================
 def test_forced_sourcing() -> None:
-    section("方案 1：Agent3 生成侧强制溯源（_build_sourced_claim）")
+    section("方案 1：个性化学习资源生成 Agent 生成侧强制溯源（_build_sourced_claim）")
 
     sourced = _build_sourced_claim(
         claim_id="clm_s1",
@@ -283,10 +283,10 @@ def test_claim_cache(db_url: str) -> None:
 
 
 # ============================================================
-# 集成：Agent4 核验接入缓存 / 路由
+# 集成：专业知识与教学质量审核 Agent 核验接入缓存 / 路由
 # ============================================================
 async def test_agent4_cache_integration(db_url: str) -> None:
-    section("集成：Agent4._verify_claims_hallucination 接入缓存 + 路由")
+    section("集成：专业知识与教学质量审核 Agent._verify_claims_hallucination 接入缓存 + 路由")
 
     agent = TechnicalReviewAgent()
     # 用临时库替换懒加载 DB 客户端，避免污染真实 project.db

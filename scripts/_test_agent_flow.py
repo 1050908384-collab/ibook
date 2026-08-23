@@ -19,7 +19,7 @@ from models.stage import StageInfo
 
 async def test_agent1_graph_integration():
     print("=" * 60)
-    print("TEST 1: Agent1 (DeterministicDiagnosticAgent) graph_query integration")
+    print("TEST 1: 学情诊断与阶段规划 Agent (DeterministicDiagnosticAgent) graph_query integration")
     print("=" * 60)
     agent = DeterministicDiagnosticAgent()
     result = await agent.run(DiagnosticInput(
@@ -32,12 +32,12 @@ async def test_agent1_graph_integration():
         print(f"  skill={gap.skill}, prereqs={gap.prerequisites}")
     print(f"Confidence: {result.profile.confidence}")
     assert len(result.profile.knowledge_gaps) > 0, "No gaps generated"
-    print("[PASS] Agent1 graph integration works\n")
+    print("[PASS] 学情诊断与阶段规划 Agent graph integration works\n")
 
 
 async def test_agent2_integration():
     print("=" * 60)
-    print("TEST 2: Agent1 (generate_stage) integration (merged Agent2 functionality)")
+    print("TEST 2: 学情诊断与阶段规划 Agent (generate_stage) integration (merged Agent2 functionality)")
     print("=" * 60)
     agent = DeterministicDiagnosticAgent()
     # Use skill that maps to existing knowledge block ("大模型微调" -> KB-10 or similar)
@@ -59,12 +59,12 @@ async def test_agent2_integration():
     # Verify stage was generated (block_id should not be empty or None)
     assert result.stage.block_id is not None, "No block_id assigned"
     assert result.stage.block_name is not None, "No block_name assigned"
-    print("[PASS] Agent1.generate_stage integration works (merged Agent2)\n")
+    print("[PASS] 学情诊断与阶段规划 Agent.generate_stage integration works (merged Agent2)\n")
 
 
 async def test_agent6_integration():
     print("=" * 60)
-    print("TEST 3: Agent6 (DeterministicStageDecisionAgent) integration")
+    print("TEST 3: 学情评估与动态决策 Agent (DeterministicStageDecisionAgent) integration")
     print("=" * 60)
     agent = DeterministicStageDecisionAgent()
     profile = UserProfile(
@@ -99,7 +99,7 @@ async def test_agent6_integration():
     print(f"Decision: {result.decision}")
     print(f"Strategy: {result.strategy}")
     print(f"All mastered: {all(g.status == '已掌握' for g in result.profile.knowledge_gaps)}")
-    print("[PASS] Agent6 integration works\n")
+    print("[PASS] 学情评估与动态决策 Agent integration works\n")
 
 
 async def test_harness_basic():
@@ -129,7 +129,7 @@ async def main():
     try:
         await test_agent1_graph_integration()
     except Exception as e:
-        print(f"[FAIL] Agent1 test: {e}\n")
+        print(f"[FAIL] 学情诊断与阶段规划 Agent test: {e}\n")
 
     try:
         await test_agent2_integration()
@@ -139,7 +139,7 @@ async def main():
     try:
         await test_agent6_integration()
     except Exception as e:
-        print(f"[FAIL] Agent6 test: {e}\n")
+        print(f"[FAIL] 学情评估与动态决策 Agent test: {e}\n")
 
     try:
         await test_harness_basic()

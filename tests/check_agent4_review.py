@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Agent4 独立测试 —— 技术+质量审核 Agent（review + rebut 辩论协议）
+专业知识与教学质量审核 Agent 独立测试 —— 技术+质量审核 Agent（review + rebut 辩论协议）
 
 职责（对齐 backend/agents/deterministic.py）：
   - 审核 learning_package / answer -> TechnicalReviewResult
     每个 error 强制携带：canonical_error_id / error_id / source_refs / change_request /
     must_fix / must_fix_reason / claim_id（审核辩论协议 2.3 / 2.4 / 第 6 节）
-  - rebut 复核：对 Agent3 的逐条回复做裁决 -> {canonical_error_id: persist|withdraw|downgrade}
+  - rebut 复核：对 个性化学习资源生成 Agent 的逐条回复做裁决 -> {canonical_error_id: persist|withdraw|downgrade}
 
 运行方式（命令行参数优先，无参数时回退到交互提示）：
   # 交互模式
@@ -22,7 +22,7 @@ Agent4 独立测试 —— 技术+质量审核 Agent（review + rebut 辩论协�
   --mode {hybrid,deterministic}          执行模式；省略则交互询问（非交互默认 hybrid）
   --target {learning_package,answer}     审核目标类型；省略则交互询问（非交互默认 learning_package）
   --content TEXT                         自定义待审核内容；省略则用默认（含事实错误）
-  --verbose                              逐步打印 Agent4 内部工具链的输入/输出（仅 deterministic 生效）：
+  --verbose                              逐步打印 专业知识与教学质量审核 Agent 内部工具链的输入/输出（仅 deterministic 生效）：
                                          规则检查→幻觉检测→难度→认知负荷→风格→辩论协议字段补全
   --rebut / --no-rebut                   是否继续 rebut 复核；省略则交互询问（非交互默认执行 rebut）
   --non-interactive                      强制不读 stdin，全部用参数/默认值（管道/CI 友好）
@@ -30,7 +30,7 @@ Agent4 独立测试 —— 技术+质量审核 Agent（review + rebut 辩论协�
 说明：
   - 默认示例内容「故意包含事实错误」（LoRA 不是 SVD 分解；参数量算错），
     用于触发规则检查 / 幻觉检测，直观看到审核输出。
-  - rebut 步骤会自动按 Agent3 风格构造 author_replies（must_fix->partially_accepted，其余->accepted），
+  - rebut 步骤会自动按 个性化学习资源生成 Agent 风格构造 author_replies（must_fix->partially_accepted，其余->accepted），
     无需手写即可观察 persist/withdraw/downgrade 裁决。
 """
 import argparse
@@ -133,7 +133,7 @@ DEFAULT_CONTENT_LP = (
 DEFAULT_CONTENT_ANS = "LoRA 通过对权重矩阵做 SVD 分解来减少参数量，训练 U、Σ、V 三个矩阵。"
 
 # 默认推荐视频（取自 data/knowledge_base/video_resources.json 的真实 seed 记录 RES-VID-064，
-# 映射到 KB-12/KBS-12-01）。用于触发 Agent4 的「推荐视频资源审核」（technical_review.skill.md 规则5）：
+# 映射到 KB-12/KBS-12-01）。用于触发 专业知识与教学质量审核 Agent 的「推荐视频资源审核」（technical_review.skill.md 规则5）：
 #   - 资源库已 seed（learning_resources 有该记录，mapping_status=confirmed）时 -> video_content_unverified（minor，review_status=pending）
 #   - 资源库未 seed（当前 project.db 尚无 learning_resources 表）时      -> video_resource_mismatch（major，must_fix）
 # 两种资源库状态下都会命中视频校验路径，测试保持稳健。answer 场景不涉及视频，videos 传空。
@@ -153,7 +153,7 @@ async def show_tool_chain(
     agent: DeterministicTechnicalReviewAgent,
     request: ReviewInput,
 ) -> None:
-    """逐个调用 Agent4 内部工具，打印链路中每一步的输入/输出（--verbose）。
+    """逐个调用 专业知识与教学质量审核 Agent 内部工具，打印链路中每一步的输入/输出（--verbose）。
 
     与 DeterministicTechnicalReviewAgent.run 的调用顺序严格一致，便于对照调试：
       1. rule_check_tool.check_rules          -> 硬性规则命中（LoRA机制/参数量/安全红线）
@@ -167,7 +167,7 @@ async def show_tool_chain(
 
     仅在 deterministic 模式下逐步展示（hybrid 内部走 LLM 提示词，工具链不逐个暴露）。
     """
-    print(f"\n{'*' * 60}\n★ Agent4 内部工具链逐步输入/输出（--verbose）\n{'*' * 60}")
+    print(f"\n{'*' * 60}\n★ 专业知识与教学质量审核 Agent 内部工具链逐步输入/输出（--verbose）\n{'*' * 60}")
     content = request.content
     profile = request.profile.model_dump(mode="json") if hasattr(request.profile, "model_dump") else request.profile
     raw_errors: list = []
@@ -263,7 +263,7 @@ async def show_tool_chain(
 async def main(args: argparse.Namespace):
     non_interactive = bool(args.non_interactive)
     print("=" * 60)
-    print("Agent4 技术+质量审核 Agent 独立测试（review + rebut）")
+    print("专业知识与教学质量审核 Agent 技术+质量审核 Agent 独立测试（review + rebut）")
     print("=" * 60)
 
     mode = choose_mode(args.mode, non_interactive)
@@ -311,7 +311,7 @@ async def main(args: argparse.Namespace):
     }]
 
     # 推荐视频：仅 learning_package 场景传入（answer 场景不涉及视频）。
-    # 同步为每个视频补一条 source_type="video" 的 source（对齐 Agent3 产出 src_video_{id}），
+    # 同步为每个视频补一条 source_type="video" 的 source（对齐 个性化学习资源生成 Agent 产出 src_video_{id}），
     # 使视频错误的 source_ref=src_video_RES-VID-064 能命中 sources，辩论协议字段可完整补全。
     recommended_videos = DEFAULT_RECOMMENDED_VIDEOS if target_type == "learning_package" else []
     for video in recommended_videos:
@@ -334,7 +334,7 @@ async def main(args: argparse.Namespace):
         recommended_videos=recommended_videos,
         round_index=1,
     )
-    pretty("【输入】ReviewInput（Agent4 审核入参）", {
+    pretty("【输入】ReviewInput（专业知识与教学质量审核 Agent 审核入参）", {
         "session_id": session_id,
         "target_type": target_type,
         "content": content,
@@ -383,7 +383,7 @@ async def main(args: argparse.Namespace):
         print("\n已跳过 rebut 复核。")
         return
 
-    # 自动构造 Agent3 风格 author_replies（must_fix->partially_accepted，其余->accepted）
+    # 自动构造 个性化学习资源生成 Agent 风格 author_replies（must_fix->partially_accepted，其余->accepted）
     issues = [e.model_dump(mode="json") for e in result.errors]
     author_replies = []
     for iss in issues:
@@ -400,27 +400,27 @@ async def main(args: argparse.Namespace):
             "source_refs": refs,
             "patched_sections": [iss.get("location") or "tutorial:sec_0"],
         })
-    pretty("【输入】rebut 的 author_replies（自动按 Agent3 风格构造）", author_replies)
+    pretty("【输入】rebut 的 author_replies（自动按 个性化学习资源生成 Agent 风格构造）", author_replies)
     print("\n[Step 2] 运行 rebut() 复核裁决 ...")
     verdicts = await agent.rebut(session_id, issues, author_replies)
     pretty("【输出】rebut verdicts（persist=坚持 / withdraw=撤销 / downgrade=降级）", verdicts)
 
-    # 逐条对照：issue -> Agent3 回复 -> Agent4 裁决
-    print(f"\n{'-' * 60}\n★ issue ↔ Agent3 回复 ↔ Agent4 裁决 逐条对照\n{'-' * 60}")
+    # 逐条对照：issue -> 个性化学习资源生成 Agent 回复 -> 专业知识与教学质量审核 Agent 裁决
+    print(f"\n{'-' * 60}\n★ issue ↔ 个性化学习资源生成 Agent 回复 ↔ 专业知识与教学质量审核 Agent 裁决 逐条对照\n{'-' * 60}")
     reply_by_cid = {r["canonical_error_id"]: r for r in author_replies}
     for idx, iss in enumerate(issues, 1):
         cid = iss.get("canonical_error_id")
         reply = reply_by_cid.get(cid, {})
         verdict = verdicts.get(cid, "—")
         print(f"\n[{idx}] {cid}  ({iss.get('error_type')}/{iss.get('severity')}, must_fix={iss.get('must_fix')})")
-        print(f"    Agent4 提出 : {iss.get('description')}")
-        print(f"    Agent3 回复 : {reply.get('disposition')}（source_refs={reply.get('source_refs')}）")
-        print(f"    Agent4 裁决 : {verdict}")
+        print(f"    专业知识与教学质量审核 Agent 提出 : {iss.get('description')}")
+        print(f"    个性化学习资源生成 Agent 回复 : {reply.get('disposition')}（source_refs={reply.get('source_refs')}）")
+        print(f"    专业知识与教学质量审核 Agent 裁决 : {verdict}")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Agent4 技术+质量审核 Agent 独立测试（命令行参数优先，无参数回退交互）",
+        description="专业知识与教学质量审核 Agent 技术+质量审核 Agent 独立测试（命令行参数优先，无参数回退交互）",
     )
     parser.add_argument("--mode", choices=["hybrid", "deterministic"], default=None,
                         help="执行模式；省略则交互询问（非交互默认 hybrid）")
@@ -429,7 +429,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--content", type=str, default=None,
                         help="自定义待审核内容；省略则用默认示例（含事实错误）")
     parser.add_argument("--verbose", action="store_true",
-                        help="额外逐步打印 Agent4 内部工具链的输入/输出"
+                        help="额外逐步打印 专业知识与教学质量审核 Agent 内部工具链的输入/输出"
                              "（规则/幻觉/难度/认知负荷/风格/协议字段补全），仅 deterministic 模式生效")
     rebut_group = parser.add_mutually_exclusive_group()
     rebut_group.add_argument("--rebut", dest="rebut", action="store_true", default=None,

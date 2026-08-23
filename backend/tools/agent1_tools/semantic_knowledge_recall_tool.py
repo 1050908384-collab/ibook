@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Agent1 专用的知识文档语义召回工具。"""
+"""学情诊断与阶段规划 Agent 专用的知识文档语义召回工具。"""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
-# chromadb / fastembed 是重依赖（向量库 + 本地 embedding），仅 Agent1 语义召回真正需要。
-# 为了让不依赖向量库的链路（如 Agent4/6 审核与决策测试）能在未安装这两个包的环境下
+# chromadb / fastembed 是重依赖（向量库 + 本地 embedding），仅 学情诊断与阶段规划 Agent 语义召回真正需要。
+# 为了让不依赖向量库的链路（如 专业知识与教学质量审核 Agent/6 审核与决策测试）能在未安装这两个包的环境下
 # 正常 import，这里改为惰性加载：模块导入不再强依赖，只有真正调用到时才导入并报清晰错误。
 if TYPE_CHECKING:  # 仅供类型检查，运行期不导入
     from chromadb import PersistentClient
@@ -85,7 +85,7 @@ class FastEmbedChineseEmbeddingFunction:
     def _embed(self, texts: list[str], query: bool) -> list[list[float]]:
         if not self.allow_model_load and not MODEL_READY_FILE.exists():
             raise RuntimeError(
-                "Agent1 FastEmbed model is not initialized. Run the explicit index initialization script."
+                "学情诊断与阶段规划 Agent FastEmbed model is not initialized. Run the explicit index initialization script."
             )
         if self._model is None:
             model_kwargs: dict[str, Any] = {}
@@ -93,7 +93,7 @@ class FastEmbedChineseEmbeddingFunction:
             if cached_model_path:
                 model_kwargs["specific_model_path"] = str(cached_model_path)
             elif not self.allow_model_load:
-                raise RuntimeError("Agent1 FastEmbed model files are unavailable.")
+                raise RuntimeError("学情诊断与阶段规划 Agent FastEmbed model files are unavailable.")
             self._model = _load_text_embedding()(
                 model_name=EMBEDDING_MODEL,
                 cache_dir=str(MODEL_CACHE_DIR),
@@ -112,7 +112,7 @@ class FastEmbedChineseEmbeddingFunction:
 
 
 class Agent1ChromaClient:
-    """Own the Agent1 collection and embedding configuration only."""
+    """Own the 学情诊断与阶段规划 Agent collection and embedding configuration only."""
 
     def __init__(self) -> None:
         chroma_path = Path(settings.CHROMA_PATH)
@@ -146,7 +146,7 @@ class Agent1ChromaClient:
 
 
 class SemanticKnowledgeRecallTool:
-    """Query the Agent1-only semantic index without changing other agents' stores."""
+    """Query the 学情诊断与阶段规划 Agent-only semantic index without changing other agents' stores."""
 
     def __init__(self) -> None:
         try:

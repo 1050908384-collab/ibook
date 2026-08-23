@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-code_parser_tool — Agent4 代码语法检查工具
+code_parser_tool — 专业知识与教学质量审核 Agent 代码语法检查工具
 ================================================
 功能：使用 Python 标准库 ast 检查代码语法，返回是否有错误及错误行号/偏移。
 特性：纯计算，不依赖外部服务，无 Mock（mock_used 始终为 False）。

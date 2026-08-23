@@ -1,4 +1,4 @@
-"""Build a compact, source-of-truth learner evidence package for Agent3."""
+"""Build a compact, source-of-truth learner evidence package for 个性化学习资源生成 Agent."""
 from __future__ import annotations
 
 import json

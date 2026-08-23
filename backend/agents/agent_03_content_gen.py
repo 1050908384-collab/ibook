@@ -161,7 +161,7 @@ class ContentGeneratorAgent(BaseAgent):
         package: Dict[str, Any],
         debate_history: Optional[List[Dict]] = None,
     ) -> List[Dict[str, Any]]:
-        """对 Agent4 的每条 issue 逐条回复。
+        """对 专业知识与教学质量审核 Agent 的每条 issue 逐条回复。
 
         边界规则（协议强制）：
         - must_fix=true 的 issue：只能 accepted 或 partially_accepted，不能 rejected
@@ -293,7 +293,7 @@ class ContentGeneratorAgent(BaseAgent):
         question_type = await self.llm_generate_tool.classify_question(question)
 
         if question_type == "daily":
-            # 日常类：只用历史对话 memory + 画像，跳过 Agent4
+            # 日常类：只用历史对话 memory + 画像，跳过 专业知识与教学质量审核 Agent
             answer = await self.llm_generate_tool.generate_daily_answer(
                 question, "", qa_history or [], profile_summary
             )

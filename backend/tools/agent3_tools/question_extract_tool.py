@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-question_extract_tool — Agent3 自测题提取工具
+question_extract_tool — 个性化学习资源生成 Agent 自测题提取工具
 ==============================================
 功能：从 test_questions 表按 block_id / block_name 提取 1~3 道题目。
 题型优先级：客观题（填空/选择/判断/简答）优先，主观题（简答/实操）其次。

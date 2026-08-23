@@ -89,7 +89,7 @@ class RejectOnceTechnicalReviewer:
         return TechnicalReviewResult(passed=True)
 
     async def rebut(self, session_id, issues, author_replies):
-        # 第 1 轮坚持 issue（persist），迫使 Agent3 修改后进第 2 轮审核
+        # 第 1 轮坚持 issue（persist），迫使 个性化学习资源生成 Agent 修改后进第 2 轮审核
         return {issue.get("canonical_error_id", ""): "persist" for issue in issues}
 
 
@@ -350,6 +350,54 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         session = harness.state_manager.get_session(session_id)
         self.assertEqual("active", session["status"])
 
+    async def test_restart_current_discards_a_planned_next_stage(self):
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        initial = await harness.process_initial_input(session_id, "want to learn Python")
+        current_stage = StageInfo.model_validate(initial["stage_info"])
+        planned_stage = current_stage.model_copy(update={
+            "stage_id": "planned-different-stage",
+            "stage_num": current_stage.stage_num + 1,
+            "subtopic_id": "KBS-02-01",
+            "subtopic_name": "语法",
+            "subtopic_ids": ["KBS-02-01"],
+            "subtopic_names": ["语法"],
+        })
+        harness.state_manager.update_next_stage(session_id, planned_stage)
+
+        await harness.start_stage(session_id, apply_planned_stage=False)
+
+        restored = harness.state_manager.get_current_stage(session_id)
+        self.assertEqual(current_stage.stage_id, restored["stage_id"])
+        self.assertEqual(current_stage.subtopic_id, restored["subtopic_id"])
+        self.assertIsNone(harness.state_manager.get_next_stage(session_id))
+
+    async def test_low_score_plans_exact_current_stage_without_agent1(self):
+        harness = self.create_harness()
+        session_id = harness.state_manager.create_session()["session_id"]
+        initial = await harness.process_initial_input(session_id, "want to learn Python")
+        current_stage = StageInfo.model_validate(initial["stage_info"]).model_copy(update={
+            "status": "retreat",
+            "accuracy": 0.5,
+            "strategy_used": "reinforce",
+        })
+        harness.state_manager.update_stage(session_id, current_stage)
+
+        async def fail_if_called(*args, **kwargs):
+            raise AssertionError("学情诊断与阶段规划 Agent must not choose another subtopic for a retry")
+
+        harness.agent1.generate_stage = fail_if_called
+        planned = await harness.plan_next_stage(session_id)
+        retry_stage = planned["next_stage"]
+
+        self.assertEqual(current_stage.stage_id, retry_stage["stage_id"])
+        self.assertEqual(current_stage.stage_num, retry_stage["stage_num"])
+        self.assertEqual(current_stage.subtopic_id, retry_stage["subtopic_id"])
+        self.assertEqual(current_stage.subtopic_ids, retry_stage["subtopic_ids"])
+        self.assertEqual("pending", retry_stage["status"])
+        self.assertIsNone(retry_stage["accuracy"])
+        self.assertIsNone(retry_stage["strategy_used"])
+
     async def test_force_advance_marks_current_stage_subtopics_mastered(self):
         """用户明确继续下一阶段时，当前阶段不能在后续规划中再次出现。"""
         harness = self.create_harness()
@@ -479,8 +527,8 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         """用真实 deterministic agent 验证完整辩论协议链路。
 
         验证点：
-        - Agent3 首轮包带 sources + claims
-        - Agent4 审核结果带 canonical_error_id + must_fix
+        - 个性化学习资源生成 Agent 首轮包带 sources + claims
+        - 专业知识与教学质量审核 Agent 审核结果带 canonical_error_id + must_fix
         - harness 返回 review_trace_id / package_status / needs_human_review
         - DB 6 张表有记录（review_traces / learning_package_claims 至少有数据）
         """
@@ -490,9 +538,9 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
         result = await harness.start_stage(session_id)
 
-        # 1. Agent3 产出带 claims（sources 依赖知识库数据，可能为空）
+        # 1. 个性化学习资源生成 Agent 产出带 claims（sources 依赖知识库数据，可能为空）
         pkg = result["learning_package"]
-        self.assertGreater(len(pkg.get("claims", [])), 0, "Agent3 首轮包必须带 claims")
+        self.assertGreater(len(pkg.get("claims", [])), 0, "个性化学习资源生成 Agent 首轮包必须带 claims")
         claim = pkg["claims"][0]
         self.assertIn("claim_id", claim)
         self.assertIn("claim_type", claim)
@@ -524,7 +572,7 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
             conn.close()
 
     async def test_needs_human_review_deadlock(self):
-        """Agent4 永远 persist + must_fix，验证超轮次后 needs_human_review=True。
+        """专业知识与教学质量审核 Agent 永远 persist + must_fix，验证超轮次后 needs_human_review=True。
 
         这是死循环停止机制的核心验证：达到 MAX_REVIEW_ITERATIONS 后不阻塞，
         返回 needs_human_review=True + package_status=provisional。
@@ -586,7 +634,7 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         harness = self.create_harness()
         session_id = harness.state_manager.create_session()["session_id"]
         await harness.process_initial_input(session_id, "want to learn LoRA")
-        # Agent5已合并至Agent4，质量审核通过合并后的agent4处理
+        # Agent5已合并至专业知识与教学质量审核 Agent，质量审核通过合并后的agent4处理
         harness.agent4 = ExplodingReviewer()
 
         result = await harness.handle_question(session_id, "What is LoRA?")

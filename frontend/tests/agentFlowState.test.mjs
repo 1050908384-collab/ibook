@@ -68,7 +68,7 @@ test('session restore never restores a running state', () => {
   });
   assert.equal(Object.values(restored).includes('running'), false);
 });
-test('Agent6 follows the displayed stage result instead of the session phase', () => {
+test('学情评估与动态决策 Agent follows the displayed stage result instead of the session phase', () => {
   const historicalSummary = restoreAgentStatuses({
     hasProfile: true,
     hasLearningPackage: true,

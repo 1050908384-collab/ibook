@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-extract_skills_tool — Agent1 技能与盲区提取工具
+extract_skills_tool — 学情诊断与阶段规划 Agent 技能与盲区提取工具
 ================================================
 功能：从用户自然语言输入提取已掌握技能标签（skill_tags）和知识盲区（knowledge_gaps）。
     - 真实模式：调用 LLM 做结构化提取，对齐 learner_profiling.skill.md 规则1

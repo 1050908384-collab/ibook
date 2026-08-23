@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-knowledge_verify_tool — Agent4 知识依据验证工具（幻觉检测 + 代码错误匹配）
+knowledge_verify_tool — 专业知识与教学质量审核 Agent 知识依据验证工具（幻觉检测 + 代码错误匹配）
 ======================================================================
 功能：
   模式1（陈述验证）：输入技术陈述，输出置信度(0~1)与是否有知识库依据，用于幻觉判定。
@@ -45,7 +45,7 @@ THRESHOLD_CRITICAL = 0.65  # < 此值判为潜在幻觉
 THRESHOLD_PASS = 0.80      # >= 此值判为有依据
 
 # 「库外/超纲」判定阈值：相似度极低且几乎零命中时，说明知识库根本没有覆盖该主题，
-# 与「库内但表述错误」的幻觉本质不同——不应逼 Agent3 反复改写，而应放行 Agent3 内容。
+# 与「库内但表述错误」的幻觉本质不同——不应逼 个性化学习资源生成 Agent 反复改写，而应放行 个性化学习资源生成 Agent 内容。
 # 见问答链路库外诊断（tests/check_qa_out_of_kb_diagnostic.py）：库外提问相似度普遍 <= 0.02。
 THRESHOLD_OUT_OF_SCOPE = 0.10
 
@@ -218,7 +218,7 @@ def _get_db_path() -> Path:
 def _load_chunks() -> tuple[List[Dict[str, str]], bool]:
     """
     SQL: 从 knowledge_chunks 表读取全部分块（doc_id/block_id 关联 knowledge_docs/knowledge_blocks）。
-    knowledge_chunks 是 Agent4 的事实核验来源表，chunk_id 用于精确绑定 Agent3 来源块。
+    knowledge_chunks 是 专业知识与教学质量审核 Agent 的事实核验来源表，chunk_id 用于精确绑定 个性化学习资源生成 Agent 来源块。
     数据库或表不存在时返回空列表与 db_available=False，调用方据此降级。
 
     带进程内缓存：按 (db路径, 文件mtime) 缓存结果，避免同一次审核对多条 Claim 逐条送检时
@@ -935,11 +935,22 @@ def _load_mock() -> dict:
 class KnowledgeVerifyTool:
     def __init__(self):
         # 真实模式：查 knowledge_chunks 表做语义近似检索（关键词重叠归一化相似度）。
-        # 与 rule_check_tool / Agent1 各工具一致，默认走真实检索而非 Mock，
-        # 否则 Agent4 的“交叉验证/幻觉检测”名存实亡（见《Agent34学习包三问题检查报告》问题①）。
+        # 与 rule_check_tool / 学情诊断与阶段规划 Agent 各工具一致，默认走真实检索而非 Mock，
+        # 否则 专业知识与教学质量审核 Agent 的“交叉验证/幻觉检测”名存实亡（见《个性化学习资源生成 专业知识与教学质量审核 Agent学习包三问题检查报告》问题①）。
         self._default_config = {"use_mock": False}
 
-    async def verify_knowledge(self, content: str) -> List[Dict[str, Any]]:
+    async def verify_knowledge(
+        self,
+        content: str,
+        *,
+        strict: bool = True,
+    ) -> List[Dict[str, Any]]:
+        """Verify content against the KB.
+
+        ``strict=True`` is the learning-package policy.  Interactive answers
+        use ``strict=False`` because a whole answer is not an atomic claim and
+        its lexical score is diluted by explanations and examples.
+        """
         result = knowledge_verify({"statement": content}, config=self._default_config)
         if result.get("status") != "success":
             return []
@@ -956,7 +967,7 @@ class KnowledgeVerifyTool:
 
         if confidence < THRESHOLD_CRITICAL:
             # 库外/超纲：相似度极低且无有效命中 → 知识库未覆盖该主题（而非表述错误的幻觉）。
-            # 标记为 out_of_scope（非 critical、must_fix=False），上层据此直接放行 Agent3 内容，
+            # 标记为 out_of_scope（非 critical、must_fix=False），上层据此直接放行 个性化学习资源生成 Agent 内容，
             # 不再逼迫反复改写。区分依据：几乎零命中（top 相似度 < THRESHOLD_OUT_OF_SCOPE）。
             top_similarity = float(top.get("similarity", 0.0)) if top else 0.0
             if confidence < THRESHOLD_OUT_OF_SCOPE and top_similarity < THRESHOLD_OUT_OF_SCOPE:
@@ -970,9 +981,26 @@ class KnowledgeVerifyTool:
                         f"该主题不在当前知识库覆盖范围内。"
                     ),
                     "evidence": evidence,
-                    "suggestion": "该问题超出知识库覆盖范围，直接输出 Agent3 内容，不做幻觉改写。",
+                    "suggestion": "该问题超出知识库覆盖范围，直接输出 个性化学习资源生成 Agent 内容，不做幻觉改写。",
                     "type": "out_of_scope",
                     "message": f"知识库相似度 {confidence:.2f}，主题超出覆盖范围。",
+                    "confidence": confidence,
+                    "content_chunk_id": content_chunk_id,
+                    "in_chunk_position": in_chunk_position,
+                }]
+            if not strict:
+                return [{
+                    "error_type": "review_needed",
+                    "severity": "major",
+                    "location": "技术陈述",
+                    "description": (
+                        f"知识库词面相似度 {confidence:.2f} 偏低；整段问答需要复核，"
+                        "该分数不等同于回答错误。"
+                    ),
+                    "evidence": evidence,
+                    "suggestion": "仅核对关键技术结论；不要因整段回答的词面相似度直接判定幻觉。",
+                    "type": "review_needed",
+                    "message": f"问答相似度 {confidence:.2f}，非阻断复核提示。",
                     "confidence": confidence,
                     "content_chunk_id": content_chunk_id,
                     "in_chunk_position": in_chunk_position,

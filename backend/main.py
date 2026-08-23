@@ -226,10 +226,10 @@ app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(session_router, prefix="/api/session", tags=["Session"])
 app.include_router(stage_router, prefix="/api/stage", tags=["Stage"])
 app.include_router(visualize_router, prefix="/api/visualize", tags=["Visualize"])
-# Agent46_API接口任务说明.md 第 2/4 节：测试服务与仪表盘，路径遵循文档 /api/v1 前缀
+# 专业知识与教学质量审核 Agent6_API接口任务说明.md 第 2/4 节：测试服务与仪表盘，路径遵循文档 /api/v1 前缀
 app.include_router(assessment_router, prefix="/api/v1", tags=["Assessment"])
 app.include_router(dashboard_router, prefix="/api/v1", tags=["Dashboard"])
-# Agent13_API接口任务说明.md：会话/诊断/画像/阶段管理接口
+# 学情诊断与阶段规划 Agent3_API接口任务说明.md：会话/诊断/画像/阶段管理接口
 app.include_router(v1_sessions_router, prefix="/api/v1", tags=["Sessions"])
 app.include_router(v1_diagnosis_router, prefix="/api/v1", tags=["Diagnosis"])
 app.include_router(v1_profile_router, prefix="/api/v1", tags=["Profile"])

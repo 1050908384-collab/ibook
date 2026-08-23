@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-stage_summary_generator_tool — Agent6 阶段总结报告生成工具
+stage_summary_generator_tool — 学情评估与动态决策 Agent 阶段总结报告生成工具
 ===========================================================
 功能：输入正确率、画像更新数据、交互数据、策略标签，输出面向用户的
 Markdown格式阶段学习总结报告（8个维度）。

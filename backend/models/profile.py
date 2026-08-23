@@ -37,12 +37,12 @@ class UserProfile(BaseModel):
 
 
 class PracticeProfile(BaseModel):
-    """Execution context supplied by orchestration to Agent3 only.
+    """Execution context supplied by orchestration to 个性化学习资源生成 Agent only.
 
     ``hardware`` keeps the user-facing free-text device string for backward
     compatibility. The structured ``gpu_model`` / ``vram_gb`` /
     ``gpu_architecture`` / ``device_type`` fields are auto-derived from that
-    text (and auto-completed from a device-model lookup) so Agent3 can reason
+    text (and auto-completed from a device-model lookup) so 个性化学习资源生成 Agent can reason
     about VRAM without re-parsing the string every time.
     """
     hardware: str = ""

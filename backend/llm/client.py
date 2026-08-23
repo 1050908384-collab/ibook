@@ -121,7 +121,7 @@ class LLMClient:
 
         A response that contains reasoning but no user-facing content is not a
         usable answer. Retry it once with an explicit concise-answer instruction
-        instead of allowing Agent3's legacy fallback to expose prompt context.
+        instead of allowing 个性化学习资源生成 Agent's legacy fallback to expose prompt context.
         """
         attempts = max(1, settings.DEEPSEEK_MAX_RETRIES + 1)
         last_error = ""
@@ -286,40 +286,17 @@ class LLMClient:
         self.last_done_reason = None
         if not self._has_deepseek_credentials():
             return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
-        try:
-            payload = {
-                "model": self.deepseek_model,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-            }
-
-            response = await self.deepseek_client.post(
-                self._chat_completions_url,
-                json=payload,
-                headers=self._headers(),
-            )
-            response.raise_for_status()
-            result = response.json()
-            choice = result.get("choices", [{}])[0]
-            self.last_done_reason = choice.get("finish_reason")
-            response_text = choice.get("message", {}).get("content", "")
-            cleaned_response = self._clean_response(response_text)
-            logger.debug("DeepSeek chat response: %s", cleaned_response[:500])
-            return cleaned_response
-        except httpx.HTTPStatusError as e:
-            logger.error("DeepSeek chat returned HTTP %s: %s", e.response.status_code, self._extract_error_message(e.response))
-            if not self._can_fallback_to_ollama():
-                return self._format_deepseek_status_error(e)
+        payload = {
+            "model": self.deepseek_model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        response = await self._complete_deepseek(payload)
+        if response.startswith("Error:") and self._can_fallback_to_ollama():
+            logger.info("Falling back to local Ollama after DeepSeek chat failure")
             return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
-        except httpx.RequestError as e:
-            logger.error("DeepSeek chat request failed: %s", e)
-            if not self._can_fallback_to_ollama():
-                return f"Error: {str(e)}"
-            return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
-        except Exception as e:
-            logger.error(f"LLM chat error: {e}")
-            return f"Error: {str(e)}"
+        return response
 
     def complete_sync(
         self,

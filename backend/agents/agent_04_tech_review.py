@@ -145,7 +145,7 @@ def compute_canonical_error_id(
     """canonical_error_id = sha1(claim_id + error_type + normalized_location + normalized_description)[:12]
 
     跨轮稳定 ID，同一问题跨轮保留同一个值；在单个 trace 语义下唯一。
-    Agent4 不自行发明跨轮逻辑 ID（协议 2.4）。
+    专业知识与教学质量审核 Agent 不自行发明跨轮逻辑 ID（协议 2.4）。
     """
     seed = "".join([
         (claim_id or ""),
@@ -273,7 +273,7 @@ def _build_change_request(raw: Dict[str, Any], must_fix: bool, source_refs: List
 
     - 若工具已显式给出完整 change_request，则沿用（仅做类型收敛）
     - 否则依据 must_fix 与是否命中来源推导默认 action
-    - must_fix=true 时 required 必为 true（明确告诉 Agent3 要改什么）
+    - must_fix=true 时 required 必为 true（明确告诉 个性化学习资源生成 Agent 要改什么）
     """
     existing = raw.get("change_request")
     if isinstance(existing, dict) and "required" in existing and "action" in existing:
@@ -317,7 +317,7 @@ def derive_must_fix(
     change_request_required: bool,
     source_supports_claim: bool = True,
 ) -> tuple[bool, Optional[str]]:
-    """must_fix 派生规则（协议第 6 节 / Agent4任务说明 第 5 点）。
+    """must_fix 派生规则（协议第 6 节 / 专业知识与教学质量审核 Agent任务说明 第 5 点）。
 
     满足任一条件即自动进入 must_fix：
       - severity = critical
@@ -337,7 +337,7 @@ def derive_must_fix(
     if source_refs and is_key_technical and not source_supports_claim:
         return True, "关键技术陈述的来源存在但不支持该 Claim（协议第 6 节规则3）"
     if change_request_required:
-        return True, "change_request.required=true，明确要求 Agent3 修改"
+        return True, "change_request.required=true，明确要求 个性化学习资源生成 Agent 修改"
     return False, None
 
 
@@ -494,13 +494,13 @@ class TechnicalReviewAgent(BaseAgent):
         recommended_videos: Optional[List[Dict[str, Any]]] = None,
         stage: Optional[Dict[str, Any]] = None,
     ) -> TechnicalReviewResult:
-        """审核学习包 / 回答，产出带证据可追溯的 issues（审核辩论协议 Agent4→Agent3）。
+        """审核学习包 / 回答，产出带证据可追溯的 issues（审核辩论协议 专业知识与教学质量审核 Agent→个性化学习资源生成 Agent）。
 
         参数（协议 2.1 / 2.2）：
-        - sources：学习包来源清单（Agent3 产出），每条含 source_id 等字段
-        - claims：Agent3 的可验证陈述声明，每条含 claim_id / section_ref / is_key_technical 等
+        - sources：学习包来源清单（个性化学习资源生成 Agent 产出），每条含 source_id 等字段
+        - claims：个性化学习资源生成 Agent 的可验证陈述声明，每条含 claim_id / section_ref / is_key_technical 等
         - round_index：当前审核轮次（用于生成 error_id 后缀 _r{round_index}），跨轮稳定 canonical 不变
-        - recommended_videos：Agent3 从资源库挑选的推荐视频列表（仅学习包场景，
+        - recommended_videos：个性化学习资源生成 Agent 从资源库挑选的推荐视频列表（仅学习包场景，
           对应 technical_review.skill.md 规则5「推荐视频资源审核」）
         - stage：当前阶段信息（含 block_id / subtopic_id），供视频归属校验；dict 或含同名属性的对象均可
 
@@ -511,14 +511,14 @@ class TechnicalReviewAgent(BaseAgent):
         """
         raw_errors = []
         video_resource_errors: List[Dict[str, Any]] = []
-        print(f"=== Agent4(合并后) TechnicalReviewAgent 开始审核 ===")
+        print(f"=== 专业知识与教学质量审核 Agent(合并后) TechnicalReviewAgent 开始审核 ===")
 
         profile_dict = self._profile_to_dict(profile) if profile else {}
 
         # 入口 guard：content 必须包含至少一个已知分支
         known_branches = ("tutorial", "code_examples", "answer")
         if not any(k in content for k in known_branches):
-            print(f"=== Agent4(合并后) content 缺少已知分支（tutorial/code_examples/answer）===")
+            print(f"=== 专业知识与教学质量审核 Agent(合并后) content 缺少已知分支（tutorial/code_examples/answer）===")
             guard_error = ReviewError(
                 error_type="invalid_input",
                 severity="critical",
@@ -595,7 +595,9 @@ class TechnicalReviewAgent(BaseAgent):
             print(f"=== 审核回答内容（前200字符）===\n{content['answer'][:200]}")
             # 步骤2：事实检查（幻觉检测）
             try:
-                hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(content["answer"])
+                hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(
+                    content["answer"], strict=False
+                )
                 raw_errors.extend(hallucination_errors)
             except Exception:
                 pass
@@ -648,7 +650,7 @@ class TechnicalReviewAgent(BaseAgent):
             + (f"（其中{critical_count}个critical）" if critical_count else "")
             + (f"，must_fix={must_fix_count}个" if must_fix_count else "")
         )
-        print(f"=== Agent4(合并后) TechnicalReviewAgent 审核完成 ===")
+        print(f"=== 专业知识与教学质量审核 Agent(合并后) TechnicalReviewAgent 审核完成 ===")
         print(f"=== 发现问题: {len(errors)}个, must_fix={must_fix_count}个, passed={passed} ===")
         if errors:
             for i, e in enumerate(errors, 1):
@@ -666,13 +668,13 @@ class TechnicalReviewAgent(BaseAgent):
         iterations: int = 1,
         max_iterations: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """产出答疑链路的审核摘要（Agent46_API接口任务说明.md 第 1 节）。
+        """产出答疑链路的审核摘要（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 1 节）。
 
-        Agent4 在答疑链路中的职责仅是审核 `answer`，并返回审核摘要，字段固定为：
+        专业知识与教学质量审核 Agent 在答疑链路中的职责仅是审核 `answer`，并返回审核摘要，字段固定为：
             technical_passed / quality_passed / iterations / status / needs_human_review
 
-        说明（与合并后 Agent4 事实一致）：
-        - 质量审核已合并进 Agent4，`quality_passed` 与 `technical_passed` 共享同一份
+        说明（与合并后 专业知识与教学质量审核 Agent 事实一致）：
+        - 质量审核已合并进 专业知识与教学质量审核 Agent，`quality_passed` 与 `technical_passed` 共享同一份
           审核结论（technical_result.passed），不再存在独立的质量审核体。
         - status 取值：
             "passed"              —— 审核通过（无遗留问题）
@@ -682,7 +684,7 @@ class TechnicalReviewAgent(BaseAgent):
           与学习包审核链路的降级判定口径一致（不阻塞用户，交由人工复核）。
 
         参数：
-        - technical_result：Agent4 最后一轮审核结果（含 errors / passed）
+        - technical_result：专业知识与教学质量审核 Agent 最后一轮审核结果（含 errors / passed）
         - iterations：答疑审核实际迭代轮次
         - max_iterations：允许的最大审核轮次；缺省时从 config.settings 读取，
           读取失败兜底为 iterations（即视为「已到上限」，保守判定）
@@ -791,7 +793,7 @@ class TechnicalReviewAgent(BaseAgent):
         for c in claims or []:
             if not isinstance(c, dict) or not c.get("is_key_technical"):
                 continue
-            # 已被 Agent3 修改/丢弃的 Claim 不再送检（status=dropped 语义上已作废）。
+            # 已被 个性化学习资源生成 Agent 修改/丢弃的 Claim 不再送检（status=dropped 语义上已作废）。
             if c.get("status") == "dropped":
                 continue
             text = c.get("text") or ""
@@ -997,24 +999,24 @@ class TechnicalReviewAgent(BaseAgent):
         issues: List[Dict[str, Any]],
         author_replies: List[Dict[str, Any]],
     ) -> Dict[str, str]:
-        """对 Agent3 的每条回复做二次裁决（复核，协议第 4~5 节 / Agent4任务说明 第 5 点）。
+        """对 个性化学习资源生成 Agent 的每条回复做二次裁决（复核，协议第 4~5 节 / 专业知识与教学质量审核 Agent任务说明 第 5 点）。
 
         参数：
-        - issues：Agent4 上一轮出具的 issues（每条含 canonical_error_id / must_fix / severity /
+        - issues：专业知识与教学质量审核 Agent 上一轮出具的 issues（每条含 canonical_error_id / must_fix / severity /
           source_refs / change_request 等）
-        - author_replies：Agent3 的逐条回复，每条含
+        - author_replies：个性化学习资源生成 Agent 的逐条回复，每条含
           canonical_error_id、disposition(accepted|rejected|partially_accepted)、
           reason、patched_sections、source_refs
 
         返回 {canonical_error_id: "persist" | "withdraw" | "downgrade"}：
-        - persist   坚持原 issue（Agent3 反证不成立，或对 must_fix issue 直接 rejected）
-        - withdraw  撤销该 issue（Agent3 反证成立，Agent4 认错）
+        - persist   坚持原 issue（个性化学习资源生成 Agent 反证不成立，或对 must_fix issue 直接 rejected）
+        - withdraw  撤销该 issue（个性化学习资源生成 Agent 反证成立，专业知识与教学质量审核 Agent 认错）
         - downgrade 降级（如 critical→major，或 must_fix→false）
 
-        约束：must_fix=true 时 Agent3 不允许直接 rejected；若仍 rejected，Agent4 一律 persist，
+        约束：must_fix=true 时 个性化学习资源生成 Agent 不允许直接 rejected；若仍 rejected，专业知识与教学质量审核 Agent 一律 persist，
         交由 Orchestrator 最终裁决（协议第 4 节）。
         """
-        print(f"=== Agent4 复核裁决 rebut 开始（session={session_id}）===")
+        print(f"=== 专业知识与教学质量审核 Agent 复核裁决 rebut 开始（session={session_id}）===")
         # 建立 issue 索引（按 canonical_error_id）
         issue_index: Dict[str, Dict[str, Any]] = {}
         for iss in issues or []:
@@ -1038,7 +1040,7 @@ class TechnicalReviewAgent(BaseAgent):
                 # 单条裁决异常兜底：保守坚持原 issue，避免误撤销
                 verdicts[cid] = "persist"
 
-        print(f"=== Agent4 复核裁决 rebut 完成：{verdicts} ===")
+        print(f"=== 专业知识与教学质量审核 Agent 复核裁决 rebut 完成：{verdicts} ===")
         return verdicts
 
     def _adjudicate_reply(
@@ -1046,7 +1048,7 @@ class TechnicalReviewAgent(BaseAgent):
         issue: Dict[str, Any],
         reply: Dict[str, Any],
     ) -> str:
-        """对单条 Agent3 回复裁决，返回 persist / withdraw / downgrade。"""
+        """对单条 个性化学习资源生成 Agent 回复裁决，返回 persist / withdraw / downgrade。"""
         disposition = str(reply.get("disposition", "")).lower()
         must_fix = bool(issue.get("must_fix", False))
         severity = str(issue.get("severity", "major")).lower()
@@ -1058,12 +1060,12 @@ class TechnicalReviewAgent(BaseAgent):
         if isinstance(patched, str):
             patched = [patched]
 
-        # must_fix=true 且 Agent3 直接 rejected：违反协议约束，一律 persist 交 Orchestrator
+        # must_fix=true 且 个性化学习资源生成 Agent 直接 rejected：违反协议约束，一律 persist 交 Orchestrator
         if must_fix and disposition == "rejected":
             return "persist"
 
         if disposition == "accepted":
-            # Agent3 已按要求整改：若补充了新来源或完成 patch，Agent4 认可并撤销
+            # 个性化学习资源生成 Agent 已按要求整改：若补充了新来源或完成 patch，专业知识与教学质量审核 Agent 认可并撤销
             if reply_source_refs or patched:
                 return "withdraw"
             # 声称接受但无任何整改证据 → 保守坚持
@@ -1073,8 +1075,8 @@ class TechnicalReviewAgent(BaseAgent):
             # 部分整改：风险下降但未完全消除 → 降级（critical→major，或解除 must_fix）。
             # 但「降级」会经 Orchestrator 解除 must_fix 并降 severity，一轮即放松红线。
             #
-            # 关键：rebut 发生在 Agent3.modify_package 之前，此时正文尚未真正修改，
-            # patched_sections 往往只是 Agent3 对 issue.location 的回显（其 modify_package
+            # 关键：rebut 发生在 个性化学习资源生成 Agent.modify_package 之前，此时正文尚未真正修改，
+            # patched_sections 往往只是 个性化学习资源生成 Agent 对 issue.location 的回显（其 modify_package
             # 目前仅在文末追加「## 辩论修订」说明，并不定点改正原文，见检查报告问题③.2）。
             # 因此 patched_sections 不能单独作为「已整改」的证据，否则会「口头部分接受即一轮放行」。
             #
@@ -1098,7 +1100,7 @@ class TechnicalReviewAgent(BaseAgent):
             return "downgrade"
 
         if disposition == "rejected":
-            # 非 must_fix 的驳回：若 Agent3 给出有效反证（新来源或说明），Agent4 认错撤销
+            # 非 must_fix 的驳回：若 个性化学习资源生成 Agent 给出有效反证（新来源或说明），专业知识与教学质量审核 Agent 认错撤销
             if reply_source_refs:
                 return "withdraw"
             # 仅 minor 且给出理由，可降级；否则坚持
@@ -1155,7 +1157,7 @@ class TechnicalReviewAgent(BaseAgent):
                 "mode": "code_error_analysis"
             }
         """
-        print(f"=== Agent4 代码错误分析 开始 ===")
+        print(f"=== 专业知识与教学质量审核 Agent 代码错误分析 开始 ===")
         print(f"  错误信息: {error_info[:200]}")
         if code:
             print(f"  代码片段: {code[:200]}")
@@ -1347,7 +1349,7 @@ class TechnicalReviewAgent(BaseAgent):
             evidence_parts.append(f"代码执行: {'成功' if not exec_result.get('has_error') else '出错'}")
         result["evidence"] = "; ".join(evidence_parts)
 
-        print(f"=== Agent4 代码错误分析 完成 ===")
+        print(f"=== 专业知识与教学质量审核 Agent 代码错误分析 完成 ===")
         print(f"  错误分类: {result['error_category']}")
         print(f"  严重等级: {result['severity']}")
         print(f"  归因: {result['root_cause']}")

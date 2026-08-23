@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-v1/sessions.py - Agent1/3 前端 API：会话管理接口
+v1/sessions.py - 学情诊断与阶段规划 Agent/3 前端 API：会话管理接口
 ================================================
-对应文档：Agent13_API接口任务说明.md 第 1 节
+对应文档：学情诊断与阶段规划 Agent3_API接口任务说明.md 第 1 节
 """
 
 from typing import Any, Optional

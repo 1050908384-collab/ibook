@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-llm_generate_tool — Agent3 LLM内容生成工具
+llm_generate_tool — 个性化学习资源生成 Agent LLM内容生成工具
 ================================================
 功能：调用LLM生成教程、回答用户问题，并根据审核意见修订内容。
     - 真实模式：调用 LLM 生成四段式教程/回答，对齐 content_generation.skill.md
@@ -18,6 +18,7 @@ llm_generate_tool — Agent3 LLM内容生成工具
 保留 LLMGenerateTool 类作为向后兼容适配器。
 """
 
+import asyncio
 import json
 import logging
 import sqlite3
@@ -32,6 +33,14 @@ if not logger.handlers:
     logger.addHandler(logging.NullHandler())
 
 MOCK_FILE = DATA_DIR / "test_data" / "mock_llm_generate_tool.json"
+
+
+def _complete_sync(prompt: str, system_prompt: str, **kwargs: Any) -> str:
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+    return LLMClient().complete_sync(messages, **kwargs)
 
 
 # ------------------------------------------------------------------
@@ -139,8 +148,7 @@ def _generate_tutorial(input_data: dict) -> dict:
 
 请用markdown格式编写，内容要详细但易于理解。"""
 
-    llm_client = LLMClient()
-    response = llm_client.complete(prompt, system_prompt)
+    response = _complete_sync(prompt, system_prompt, max_tokens=8192, temperature=0.7)
 
     code_examples = _extract_code_examples(response)
 
@@ -172,8 +180,7 @@ def _generate_answer(input_data: dict) -> dict:
 
 请详细回答这个问题，确保技术准确性和易懂性。如果涉及代码，请提供示例代码。"""
 
-    llm_client = LLMClient()
-    response = llm_client.complete(prompt, system_prompt)
+    response = _complete_sync(prompt, system_prompt, max_tokens=8192, temperature=0.7)
 
     return {
         "content": response,
@@ -210,8 +217,7 @@ def _fix_tutorial(input_data: dict) -> dict:
 
 请修改教程，解决以上问题，并保持内容的完整性和可读性。"""
 
-    llm_client = LLMClient()
-    response = llm_client.complete(prompt, system_prompt)
+    response = _complete_sync(prompt, system_prompt, max_tokens=8192, temperature=0.7)
 
     code_examples = _extract_code_examples(response)
 
@@ -258,8 +264,7 @@ def _fix_answer(input_data: dict) -> dict:
 
 请修改回答，只针对上述问题进行修正。保持回答的完整性和详细程度，不要删减正确的内容。"""
 
-    llm_client = LLMClient()
-    response = llm_client.complete(prompt, system_prompt)
+    response = _complete_sync(prompt, system_prompt, max_tokens=8192, temperature=0.7)
 
     return {
         "content": response,
@@ -406,7 +411,7 @@ class LLMGenerateTool:
 
     async def generate_tutorial(self, block_id: str, gap: Dict[str, Any],
                                 related_docs: List[Dict[str, Any]] = None) -> str:
-        result = llm_generate({
+        result = await asyncio.to_thread(llm_generate, {
             "mode": "tutorial",
             "block_id": block_id,
             "gap": gap,
@@ -417,7 +422,7 @@ class LLMGenerateTool:
         return result["data"].get("content", "")
 
     async def fix_tutorial(self, tutorial: str, errors: List[Dict[str, Any]]) -> str:
-        result = llm_generate({
+        result = await asyncio.to_thread(llm_generate, {
             "mode": "fix_tutorial",
             "tutorial": tutorial,
             "errors": errors,
@@ -439,7 +444,7 @@ class LLMGenerateTool:
         - qa_history: 历史问答记录，用于理解用户上下文
         - profile_summary: 用户画像摘要，个性化回答
         """
-        result = llm_generate({
+        result = await asyncio.to_thread(llm_generate, {
             "mode": "answer",
             "question": question,
             "related_docs": related_docs or [],
@@ -587,7 +592,7 @@ class LLMGenerateTool:
     ) -> str:
         """生成日常类回答：只用历史对话 memory + 用户画像。
 
-        日常类回答不涉及技术准确性，无需 Agent4 审核。
+        日常类回答不涉及技术准确性，无需 专业知识与教学质量审核 Agent 审核。
         注：tutorial 参数保留用于向后兼容，但不再使用。
         """
         history_text = ""
@@ -656,7 +661,7 @@ class LLMGenerateTool:
         for e in quality_errors:
             all_errors.append({"category": "quality", "type": e.get("type"), "message": e.get("message")})
 
-        result = llm_generate({
+        result = await asyncio.to_thread(llm_generate, {
             "mode": "fix_answer",
             "answer": answer,
             "errors": all_errors,

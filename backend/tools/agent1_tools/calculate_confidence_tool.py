@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-calculate_confidence_tool — Agent1 置信度计算工具
+calculate_confidence_tool — 学情诊断与阶段规划 Agent 置信度计算工具
 ================================================
 功能：评估用户画像的信息完整度，输出置信度(0~1)，用于决定是否需要追问。
     - 真实模式：基于 skill_tags/knowledge_gaps/goal/daily_hours/learning_style 综合评分

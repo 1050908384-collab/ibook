@@ -1,14 +1,14 @@
-"""Interactive acceptance check for Agent1 with step-by-step foundation selection.
+"""Interactive acceptance check for 学情诊断与阶段规划 Agent with step-by-step foundation selection.
 
 Run from the project root:
     python tests/manual_agent1_stage_planning.py
 
 Flow:
 1. User inputs a learning goal (e.g. "掌握 LoRA 微调并部署")
-2. Agent1 returns matching knowledge blocks
+2. 学情诊断与阶段规划 Agent returns matching knowledge blocks
 3. User selects mastered blocks
 4. User expands each selected block to pick mastered subtopics
-5. User confirms → Agent1 builds profile + generates first stage
+5. User confirms → 学情诊断与阶段规划 Agent builds profile + generates first stage
 6. Stage-by-stage planning simulation
 """
 
@@ -185,14 +185,14 @@ def display_foundation(mastered_subtopic_ids: list[str], blocks: list[dict]) -> 
 
 async def main() -> None:
     print("=" * 72)
-    print("Agent1 stage-planning acceptance check (step-by-step foundation)")
-    print("Hardware is collected separately and is not sent to Agent1.")
+    print("学情诊断与阶段规划 Agent stage-planning acceptance check (step-by-step foundation)")
+    print("Hardware is collected separately and is not sent to 学情诊断与阶段规划 Agent.")
     print("=" * 72)
 
     goal = prompt("Learning goal", "掌握 LoRA 微调并部署")
     daily_hours_text = prompt("Daily study hours", "2")
     learning_style = prompt("Learning style", "mixed")
-    hardware = prompt("Practice hardware/environment (Agent3-only; optional)")
+    hardware = prompt("Practice hardware/environment (个性化学习资源生成 Agent-only; optional)")
     stage_limit_text = prompt("Maximum stages to display", "30")
 
     try:
@@ -216,7 +216,7 @@ async def main() -> None:
             agent = DeterministicDiagnosticAgent(db_client=client)
 
             # === 第 1 步：按目标获取知识板块 ===
-            print("\n[Agent1] 根据目标检索知识板块 ...")
+            print("\n[学情诊断与阶段规划 Agent] 根据目标检索知识板块 ...")
             blocks = agent.get_goal_blocks(goal)
             print(f"  匹配到 {len(blocks)} 个知识板块")
 
@@ -245,8 +245,8 @@ async def main() -> None:
                 print("已取消。")
                 return
 
-            # === 第 5 步：Agent1 用 foundation 构建 profile ===
-            print("\n[Agent1] 构建画像 ...")
+            # === 第 5 步：学情诊断与阶段规划 Agent 用 foundation 构建 profile ===
+            print("\n[学情诊断与阶段规划 Agent] 构建画像 ...")
             diagnostic = await agent.run_with_foundation(
                 session_id=session_id,
                 goal=goal,
@@ -258,9 +258,9 @@ async def main() -> None:
 
             print("\nLearning profile:")
             print(profile.model_dump_json(indent=2))
-            print("\nPractice profile retained outside Agent1:")
+            print("\nPractice profile retained outside 学情诊断与阶段规划 Agent:")
             print(practice_profile.model_dump_json(indent=2))
-            print("\nAgent1 knowledge gaps:")
+            print("\n学情诊断与阶段规划 Agent knowledge gaps:")
             for gap in profile.knowledge_gaps:
                 print(f"- {gap.block_id}: {gap.skill}; targets={gap.target_subtopic_ids}")
 
@@ -287,7 +287,7 @@ async def main() -> None:
                 print("\n" + format_stage(stage))
 
                 if not stage.subtopic_id and not stage.subtopic_ids:
-                    print("Stopped: Agent1 returned a fallback stage without a catalog subtopic.")
+                    print("Stopped: 学情诊断与阶段规划 Agent returned a fallback stage without a catalog subtopic.")
                     break
 
                 # 标记阶段内所有知识点为已完成

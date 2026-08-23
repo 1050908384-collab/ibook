@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-graph_query_tool — Agent1 知识图谱依赖查询工具
+graph_query_tool — 学情诊断与阶段规划 Agent 知识图谱依赖查询工具
 ================================================
 功能：按技能名称/板块ID查询知识图谱节点与先修依赖，递归推导学习先后顺序。
     - 真实模式：读取 data/graph_data/runtime 的图谱结果
@@ -244,7 +244,7 @@ class GraphQueryTool:
         return [item["block_name"] for item in deps]
 
     async def query_direct_prerequisites(self, skill_name: str) -> List[Dict[str, Any]]:
-        """Return only direct block predecessors for Agent1 stage ordering."""
+        """Return only direct block predecessors for 学情诊断与阶段规划 Agent stage ordering."""
         try:
             graph_client = GraphClient()
             seed_index = _load_seed_index()

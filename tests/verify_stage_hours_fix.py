@@ -76,7 +76,7 @@ async def run_case(goal: str, daily_hours: float, question: str, mode: str = "de
 
             result = await harness.handle_question(session_id, question)
             answer = result.get("answer", "")
-            print(f"\n[Agent3 回答]")
+            print(f"\n[个性化学习资源生成 Agent 回答]")
             print("-" * 72)
             print(answer)
             print("-" * 72)

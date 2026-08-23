@@ -1,4 +1,4 @@
-"""Interactive acceptance check for Agent3 question-answering + Agent4 review.
+"""Interactive acceptance check for 个性化学习资源生成 Agent question-answering + 专业知识与教学质量审核 Agent review.
 
 Run from the project root:
     python tests/manual_agent3_qa_review.py
@@ -6,11 +6,11 @@ Run from the project root:
 The script creates an isolated SQLite database, loads the knowledge seeds,
 runs initial diagnostic + start_stage to establish a learning context, then
 enters an interactive loop where the user asks questions. Each technical
-question goes through the Agent3 → Agent4 review → Agent3 revise loop, and
+question goes through the 个性化学习资源生成 Agent → 专业知识与教学质量审核 Agent review → 个性化学习资源生成 Agent revise loop, and
 every round of the review debate is printed in detail.
 
-Daily (greeting / chit-chat) questions skip Agent4; technical questions
-trigger the full Agent3↔Agent4 review iteration.
+Daily (greeting / chit-chat) questions skip 专业知识与教学质量审核 Agent; technical questions
+trigger the full 个性化学习资源生成 Agent↔专业知识与教学质量审核 Agent review iteration.
 
 Commands available in the Q&A loop:
   - type a question to get an answer
@@ -65,7 +65,7 @@ def prompt(label: str, default: str = "") -> str:
 
 
 def print_review_round(round_num: int, total: int, round_data: dict) -> None:
-    """详细打印一轮 Agent4 审核结果。"""
+    """详细打印一轮 专业知识与教学质量审核 Agent 审核结果。"""
     technical = round_data.get("technical", {}) or {}
     quality = round_data.get("quality", {}) or {}
     tech_passed = technical.get("passed", False)
@@ -73,11 +73,11 @@ def print_review_round(round_num: int, total: int, round_data: dict) -> None:
     tech_errors = technical.get("errors", []) or []
 
     print(f"\n--- 第 {round_num}/{total} 轮审核 ---")
-    print(f"  技术审核 (Agent4): {'✅ 通过' if tech_passed else '❌ 未通过'}")
+    print(f"  技术审核 (专业知识与教学质量审核 Agent): {'✅ 通过' if tech_passed else '❌ 未通过'}")
     print(f"  质量审核        : {'✅ 通过' if quality_passed else '❌ 未通过'}")
 
     if tech_errors:
-        print(f"  Agent4 提出 {len(tech_errors)} 条 issue：")
+        print(f"  专业知识与教学质量审核 Agent 提出 {len(tech_errors)} 条 issue：")
         for idx, err in enumerate(tech_errors, 1):
             must_fix = err.get("must_fix", False)
             severity = err.get("severity", "")
@@ -89,11 +89,11 @@ def print_review_round(round_num: int, total: int, round_data: dict) -> None:
             if cid:
                 print(f"        issue_id: {cid}")
     else:
-        print("  Agent4 未提出 issue")
+        print("  专业知识与教学质量审核 Agent 未提出 issue")
 
-    # 非最后一轮且未通过 → Agent3 会修改回答后进入下一轮
+    # 非最后一轮且未通过 → 个性化学习资源生成 Agent 会修改回答后进入下一轮
     if round_num < total and not (tech_passed and quality_passed):
-        print("  → 本轮未通过，Agent3 修改回答后重新提交 Agent4 审核")
+        print("  → 本轮未通过，个性化学习资源生成 Agent 修改回答后重新提交 专业知识与教学质量审核 Agent 审核")
 
 
 def print_current_stage(harness: Harness, session_id: str) -> None:
@@ -178,7 +178,7 @@ async def advance_stage(harness: Harness, session_id: str) -> bool:
 
 async def main() -> None:
     print("=" * 72)
-    print("Agent3 问答质量 + Agent3↔Agent4 审核辩论  交互测试")
+    print("个性化学习资源生成 Agent 问答质量 + 个性化学习资源生成 Agent↔专业知识与教学质量审核 Agent 审核辩论  交互测试")
     print("=" * 72)
 
     # 执行模式：hybrid 有真实 LLM 回答，deterministic 为模板回答
@@ -188,12 +188,12 @@ async def main() -> None:
     os.environ["EXECUTION_MODE"] = mode
 
     # === 输入字段与 manual_agent1_stage_planning.py 对齐 ===
-    # Hardware is collected separately and is not sent to Agent1.
+    # Hardware is collected separately and is not sent to 学情诊断与阶段规划 Agent.
     goal = prompt("Learning goal", "I want to learn LoRA")
     mastered = prompt("Mastered skills (comma-separated; optional)")
     daily_hours_text = prompt("Daily study hours", "2")
     learning_style = prompt("Learning style", "mixed")
-    hardware = prompt("Practice hardware/environment (Agent3-only; 例: Windows 11, RTX 5060)", "")
+    hardware = prompt("Practice hardware/environment (个性化学习资源生成 Agent-only; 例: Windows 11, RTX 5060)", "")
 
     try:
         daily_hours = float(daily_hours_text)
@@ -201,7 +201,7 @@ async def main() -> None:
         raise SystemExit("Daily study hours must be numeric.")
 
     session_id = f"manual-agent3-qa-{uuid.uuid4().hex[:8]}"
-    # user_input 只包含 Agent1 需要的信息，不包含 hardware
+    # user_input 只包含 学情诊断与阶段规划 Agent 需要的信息，不包含 hardware
     user_input = "\n".join((
         f"学习目标：{goal}",
         f"已掌握基础：{mastered or '无'}",
@@ -238,7 +238,7 @@ async def main() -> None:
                     print(f"  - {q}")
                 return
 
-            # 如果用户输入了硬件信息，保存到 practice_profile（Agent3 使用）
+            # 如果用户输入了硬件信息，保存到 practice_profile（个性化学习资源生成 Agent 使用）
             if hardware:
                 harness.state_manager.update_practice_profile(
                     session_id, {"hardware": hardware}
@@ -274,7 +274,7 @@ async def main() -> None:
             # === 交互问答循环 ===
             print("\n" + "=" * 72)
             print("进入问答交互模式")
-            print("  - 输入问题后，Agent3 回答，Agent4 逐轮审核")
+            print("  - 输入问题后，个性化学习资源生成 Agent 回答，专业知识与教学质量审核 Agent 逐轮审核")
             print("  - next     : 完成当前阶段，推进到下一阶段")
             print("  - status   : 查看当前阶段信息")
             print("  - exit/quit: 结束")
@@ -320,16 +320,16 @@ async def main() -> None:
 
                 print(f"\n【问题分类】{question_type}")
                 if question_type == "daily":
-                    print("  日常类问题 → 跳过 Agent4 审核")
+                    print("  日常类问题 → 跳过 专业知识与教学质量审核 Agent 审核")
                 else:
-                    print(f"  技术类问题 → 触发 Agent3↔Agent4 审核辩论，共 {iterations} 轮")
+                    print(f"  技术类问题 → 触发 个性化学习资源生成 Agent↔专业知识与教学质量审核 Agent 审核辩论，共 {iterations} 轮")
                     for i, round_data in enumerate(review_history, 1):
                         print_review_round(i, len(review_history), round_data)
 
                 # 最终回答与审核状态
                 review_summary = result.get("review_summary", {}) or {}
                 print("\n" + "=" * 72)
-                print("【Agent3 最终回答】")
+                print("【个性化学习资源生成 Agent 最终回答】")
                 print("=" * 72)
                 print(result.get("answer", ""))
                 print("=" * 72)

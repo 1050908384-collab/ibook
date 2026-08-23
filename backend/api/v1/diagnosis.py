@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-v1/diagnosis.py - Agent1/3 前端 API：诊断接口
+v1/diagnosis.py - 学情诊断与阶段规划 Agent/3 前端 API：诊断接口
 ==============================================
-对应文档：Agent13_API接口任务说明.md 第 2 节（诊断消息）
+对应文档：学情诊断与阶段规划 Agent3_API接口任务说明.md 第 2 节（诊断消息）
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -291,7 +291,7 @@ async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
     POST /api/v1/sessions/{session_id}/diagnosis/foundation
 
     前端流程最后一步：用户选好已掌握的知识点后点击"确定"，
-    将 mastered_subtopic_ids 提交给 Agent1，生成 profile 和第一个学习阶段。
+    将 mastered_subtopic_ids 提交给 学情诊断与阶段规划 Agent，生成 profile 和第一个学习阶段。
     """
     try:
         session = harness.get_session(session_id)

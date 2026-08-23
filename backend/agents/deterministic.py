@@ -90,7 +90,7 @@ def _build_sourced_claim(
 
     规则：
       - 有来源块（chunk_id 非空）→ source_ref 指向该来源，is_key_technical=True，
-        进入 Agent4 的 KB 事实核验（可被核验/辩论）。
+        进入 专业知识与教学质量审核 Agent 的 KB 事实核验（可被核验/辩论）。
       - 无来源块 → 该客观陈述无引用，直接标 is_key_technical=False 且 source_ref=None，
         并在 metadata_json 记 sourcing="unsupported"。此类「无依据」主张不作为可核验关键
         Claim 进入辩论（_select_key_claims 只挑 is_key_technical=True），从源头减少幻觉。
@@ -168,7 +168,7 @@ class DeterministicDiagnosticAgent:
         self.db_client = db_client or SQLiteClient()
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
-        _agent_log("Agent1", f"diagnostic:start | session={request.session_id}")
+        _agent_log("学情诊断与阶段规划 Agent", f"diagnostic:start | session={request.session_id}")
         text = request.user_input.strip()
         structured = self._parse_structured_input(text)
         target_text = structured.get("goal") or self._target_text(text)
@@ -253,7 +253,7 @@ class DeterministicDiagnosticAgent:
             learning_style=structured.get("learning_style", self._extract_learning_style(text)),
             confidence=confidence,
         )
-        _agent_log("Agent1", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
+        _agent_log("学情诊断与阶段规划 Agent", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
         return DiagnosticOutput(profile=profile, followup_questions=followup_questions)
 
     # ------------------------------------------------------------------
@@ -404,7 +404,7 @@ class DeterministicDiagnosticAgent:
             confidence=confidence,
         )
         _agent_log(
-            "Agent1",
+            "学情诊断与阶段规划 Agent",
             f"foundation:done | goal={profile.goal} | mastered_subtopics={len(mastered_set)} | "
             f"mastered_blocks={len(mastered_blocks)} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}",
         )
@@ -622,8 +622,8 @@ class DeterministicDiagnosticAgent:
         return self._extract_goal_from_sentences(text) or text
 
     async def generate_stage(self, request: StagePlanningInput) -> StagePlanningOutput:
-        """Stage planning functionality merged from Agent2 into Agent1."""
-        _agent_log("Agent1", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
+        """Stage planning functionality merged from Agent2 into 学情诊断与阶段规划 Agent."""
+        _agent_log("学情诊断与阶段规划 Agent", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
 
         gap = next(
             (item for item in request.profile.knowledge_gaps if float(item.progress or 0.0) < 1.0),
@@ -817,7 +817,7 @@ class DeterministicDiagnosticAgent:
             personalization_summary=generated_stage.get("personalization_summary"),
         )
         _agent_log(
-            "Agent1",
+            "学情诊断与阶段规划 Agent",
             f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopics={','.join(stage.subtopic_ids) or '-'} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
         )
         return StagePlanningOutput(stage=stage)
@@ -874,7 +874,7 @@ class DeterministicDiagnosticAgent:
                 recommended_daily_hours=0.0,
                 suggested_study_days=0,
             )
-            _agent_log("Agent1", f"stage_planning:fallback | gap fully mastered, stop")
+            _agent_log("学情诊断与阶段规划 Agent", f"stage_planning:fallback | gap fully mastered, stop")
             return StagePlanningOutput(stage=empty_stage)
 
         # 构造一个临时 gap，target_subtopic_ids 为未完成集合（确保 stage_generator_tool 选对）
@@ -951,7 +951,7 @@ class DeterministicDiagnosticAgent:
             personalization_summary=fallback_stage.get("personalization_summary"),
         )
         _agent_log(
-            "Agent1",
+            "学情诊断与阶段规划 Agent",
             f"stage_planning:fallback | block={stage.block_name} | subtopics={','.join(fb_sub_ids)} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
         )
         return StagePlanningOutput(stage=stage)
@@ -1237,7 +1237,7 @@ class DeterministicContentAgent:
         self.video_search_tool = VideoSearchTool()
         self.learning_resource_tool = LearningResourceTool()
         # 以 session 为键保存当前轮完整问题列表。块级流水线先一次性交付
-        # issue_package，再由 Agent3 从该队列中并发取块修改。
+        # issue_package，再由 个性化学习资源生成 Agent 从该队列中并发取块修改。
         self._revision_queues: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
 
     @staticmethod
@@ -1335,7 +1335,7 @@ class DeterministicContentAgent:
         return questions, videos
 
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
-        _agent_log("Agent3", f"content:start | block={request.stage.block_name}")
+        _agent_log("个性化学习资源生成 Agent", f"content:start | block={request.stage.block_name}")
         stage = request.stage
         related_docs = []
         try:
@@ -1444,7 +1444,7 @@ class DeterministicContentAgent:
             },
             preflight_review=request.learning_evidence.preflight_review,
         )
-        _agent_log("Agent3", f"content:done | materials={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
+        _agent_log("个性化学习资源生成 Agent", f"content:done | materials={len(related_docs)} | videos={len(recommended_videos)} | questions={len(package.questions)} | tutorial_len={len(package.tutorial)}")
         return ContentGenerationOutput(learning_package=package)
 
     @staticmethod
@@ -1519,12 +1519,12 @@ class DeterministicContentAgent:
         )
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
-        _agent_log("Agent3", f"answer:start | question={request.question[:60]}")
+        _agent_log("个性化学习资源生成 Agent", f"answer:start | question={request.question[:60]}")
 
         # === 问题分类：technical（技术类）| daily（日常类）===
         # Deterministic 模式无 LLM，用关键词兜底分类
         question_type = self._classify_question_by_keywords(request.question)
-        _agent_log("Agent3", f"answer:classified | type={question_type}")
+        _agent_log("个性化学习资源生成 Agent", f"answer:classified | type={question_type}")
 
         # 检测是否为"学习内容/阶段信息"询问 — 结构化回答，不依赖 LLM
         question = request.question
@@ -1587,11 +1587,11 @@ class DeterministicContentAgent:
             if memory_context:
                 answer_text += f"\n\n{memory_context}"
 
-            _agent_log("Agent3", f"answer:structured_learning_content | len={len(answer_text)}")
+            _agent_log("个性化学习资源生成 Agent", f"answer:structured_learning_content | len={len(answer_text)}")
             return AnswerGenerationOutput(answer=answer_text, question_type="technical")
 
         if question_type == "daily":
-            # 日常类：只用历史对话 memory + 画像，跳过 Agent4
+            # 日常类：只用历史对话 memory + 画像，跳过 专业知识与教学质量审核 Agent
             answer = self._generate_daily_answer(request)
             return AnswerGenerationOutput(answer=answer, question_type="daily")
 
@@ -1602,7 +1602,7 @@ class DeterministicContentAgent:
             memory_context = self._build_memory_context(request)
             if memory_context:
                 answer_text += f"\n\n{memory_context}"
-            _agent_log("Agent3", f"answer:structured_self_assessment | len={len(answer_text)}")
+            _agent_log("个性化学习资源生成 Agent", f"answer:structured_self_assessment | len={len(answer_text)}")
             return AnswerGenerationOutput(answer=answer_text, question_type="technical")
 
         # 技术类：问题分析 + 本阶段相关知识文档检索 + 历史 memory 整合
@@ -1776,7 +1776,7 @@ class DeterministicContentAgent:
         """Deterministic 模式下用规则分类问题（无 LLM）。
 
         返回 "technical" 或 "daily"。明确技术诉求优先；高置信问候、闲聊、
-        情绪表达和学习状态咨询归为 daily，避免进入知识检索与 Agent4 审核。
+        情绪表达和学习状态咨询归为 daily，避免进入知识检索与 专业知识与教学质量审核 Agent 审核。
         """
         q = (question or "").strip()
         q_lower = q.lower()
@@ -1789,7 +1789,7 @@ class DeterministicContentAgent:
             return "technical"
 
         # 情绪词可以和技术问题同时出现，例如“CUDA 报错让我很焦虑”。
-        # 只要有明确技术诉求，仍应进入知识检索和 Agent4 审核。
+        # 只要有明确技术诉求，仍应进入知识检索和 专业知识与教学质量审核 Agent 审核。
         tech_keywords = [
             "代码", "报错", "error", "bug", "算法", "原理", "公式", "实现",
             "函数", "类", "接口", "api", "框架", "配置", "安装", "部署",
@@ -1904,7 +1904,7 @@ class DeterministicContentAgent:
         package: Dict[str, Any],
         debate_history: Optional[List] = None,
     ) -> List[Dict[str, Any]]:
-        """对 Agent4 的每条 issue 逐条回复。
+        """对 专业知识与教学质量审核 Agent 的每条 issue 逐条回复。
 
         边界规则（协议强制）：
         - must_fix=true 的 issue：只能 accepted 或 partially_accepted，不能 rejected
@@ -1945,9 +1945,9 @@ class DeterministicContentAgent:
         issue_package: Dict[str, List[Any]],
         blocks_by_id: Dict[str, Any],
     ) -> List[str]:
-        """一次接收 Agent4 的完整问题列表，并建立本轮待修改块队列。
+        """一次接收 专业知识与教学质量审核 Agent 的完整问题列表，并建立本轮待修改块队列。
 
-        ``issue_package`` 以 ``content_block_id`` 分组，故 Agent3 在开始修改
+        ``issue_package`` 以 ``content_block_id`` 分组，故 个性化学习资源生成 Agent 在开始修改
         任一块之前已经掌握本轮所有待处理块和对应问题。返回值按块顺序稳定排列，
         Orchestrator 可据此以受控并发执行 ``modify_block``。
         """
@@ -1974,7 +1974,7 @@ class DeterministicContentAgent:
         )
 
     def queued_issues(self, session_id: str, content_block_id: str) -> List[Dict[str, Any]]:
-        """读取 Agent3 已接收的当前问题队列中的一个块，供修改阶段消费。"""
+        """读取 个性化学习资源生成 Agent 已接收的当前问题队列中的一个块，供修改阶段消费。"""
         return list(self._revision_queues.get(session_id, {}).get(content_block_id, []))
 
     async def modify_package(
@@ -2047,7 +2047,7 @@ class DeterministicContentAgent:
         return package
 
     # ==================================================================
-    # 块级流水线（任务 3 / 任务 6）：Agent3 逐块生成个性化内容 + 定点修改回传
+    # 块级流水线（任务 3 / 任务 6）：个性化学习资源生成 Agent 逐块生成个性化内容 + 定点修改回传
     # ==================================================================
     def iter_stage_chunks(self, stage: StageInfo) -> List[Dict[str, Any]]:
         """读取当前阶段（block + 子知识点集合）的原始 knowledge_chunk 列表。
@@ -2175,7 +2175,7 @@ class DeterministicContentAgent:
     ) -> ContentBlock:
         """对单个原始 knowledge_chunk 生成一个个性化内容块（ContentBlock）。
 
-        完成条件（任务 3）：每完成一个块即可独立提交给 Agent4 审核。输出保留
+        完成条件（任务 3）：每完成一个块即可独立提交给 专业知识与教学质量审核 Agent 审核。输出保留
         source_chunk_id / 标题路径 / 来源说明 / Claim，Claim 绑定来源块以便块级事实核验。
         异步签名统一：Hybrid 版覆盖为 LLM 改写，deterministic 版仅做保守个性化。
         """
@@ -2204,7 +2204,7 @@ class DeterministicContentAgent:
             ]).strip()
         source_note = self._chunk_source_note(source_chunk, title)
 
-        # 来源：回指原始块，Agent4 据 content_ref/metadata 的 source_chunk_id 回查核验
+        # 来源：回指原始块，专业知识与教学质量审核 Agent 据 content_ref/metadata 的 source_chunk_id 回查核验
         source = Source(
             source_id=f"src_{chunk_id or block_index}",
             source_type="knowledge_doc",
@@ -2222,7 +2222,7 @@ class DeterministicContentAgent:
             },
         )
 
-        # 每块一条关键技术 Claim，claim_id 绑定 content_block_id，便于 Agent4 逐块核验。
+        # 每块一条关键技术 Claim，claim_id 绑定 content_block_id，便于 专业知识与教学质量审核 Agent 逐块核验。
         # 强制溯源（辩论方案 第 1 点）：有来源块才作为可核验关键 Claim；无来源块的客观陈述
         # 标为 unsupported（无依据），不进入辩论，从源头减少幻觉。
         claim_id = f"clm_{content_block_id}"
@@ -2369,9 +2369,9 @@ class HybridContentAgent(DeterministicContentAgent):
             # finishing. Keep a non-empty second response instead of replacing
             # a usable partial answer with the emergency fallback.
             if response.strip():
-                _agent_log("Agent3", "answer:llm_truncated_twice -> keep_partial_answer")
+                _agent_log("个性化学习资源生成 Agent", "answer:llm_truncated_twice -> keep_partial_answer")
                 return response.strip()
-            _agent_log("Agent3", "answer:llm_truncated_twice -> deterministic_fallback")
+            _agent_log("个性化学习资源生成 Agent", "answer:llm_truncated_twice -> deterministic_fallback")
             return ""
         return response
 
@@ -2395,7 +2395,7 @@ class HybridContentAgent(DeterministicContentAgent):
 
     async def run(self, request: ContentGenerationInput) -> ContentGenerationOutput:
         output = await super().run(request)
-        _agent_log("Agent3", f"content:llm_enhance | block={request.stage.block_name}")
+        _agent_log("个性化学习资源生成 Agent", f"content:llm_enhance | block={request.stage.block_name}")
         stage = request.stage
         related_docs = await self._search_stage_docs(stage)
         learning_profile = request.learning_profile.model_dump(mode="json") if request.learning_profile else {}
@@ -2420,7 +2420,7 @@ class HybridContentAgent(DeterministicContentAgent):
 1. 保留原资料中的核心概念与可追溯技术事实；不得编造技术事实、命令或参数；
 2. 可根据学习者画像缩减、重排、解释或突出资料内容；
 3. 可增加不引入新技术事实的学习检查、操作验证或反思任务；
-4. 实训条件只用于调整讲解重点和任务颗粒度，不得改变 Agent1 的知识点路径。
+4. 实训条件只用于调整讲解重点和任务颗粒度，不得改变 学情诊断与阶段规划 Agent 的知识点路径。
 
 本节经检索确认的知识库资料：
 {material_context or '无可用资料，不得补充未验证的技术细节。'}
@@ -2439,12 +2439,12 @@ class HybridContentAgent(DeterministicContentAgent):
             tutorial = await self._compress_to_budget(tutorial, source_budget)
         if self._is_usable_tutorial(tutorial, stage, related_docs):
             output.learning_package.tutorial = tutorial
-            _agent_log("Agent3", f"content:llm_done | tutorial_len={len(tutorial)}")
+            _agent_log("个性化学习资源生成 Agent", f"content:llm_done | tutorial_len={len(tutorial)}")
         else:
             # LLM 输出不可用时，保留 super().run() 生成的带 ## 子标题结构化 tutorial。
             # 不能用 source_material（所有知识点内容的纯拼接，无 ## 分隔）覆盖——
             # 否则前端 getTopicTutorial 无法按知识点切片，所有页都会显示同一份合并内容。
-            _agent_log("Agent3", "content:llm_invalid -> keep structured tutorial from base agent")
+            _agent_log("个性化学习资源生成 Agent", "content:llm_invalid -> keep structured tutorial from base agent")
         output.learning_package.tutorial = self._prepend_preflight_review(
             output.learning_package.tutorial, request.learning_evidence,
         )
@@ -2463,7 +2463,7 @@ class HybridContentAgent(DeterministicContentAgent):
         """块级个性化（Hybrid）：先构造确定性块骨架，再用 LLM 在原文范围内改写表达。
 
         仅改写 personalized_content（表达层），不改动 source_chunk_id / 标题路径 /
-        Claim 等溯源字段，保证 Agent4 仍能回查来源块做事实核验。LLM 失败或产出
+        Claim 等溯源字段，保证 专业知识与教学质量审核 Agent 仍能回查来源块做事实核验。LLM 失败或产出
         不可用时保留确定性个性化正文兜底。
         """
         block = await super().generate_block(
@@ -2520,11 +2520,11 @@ class HybridContentAgent(DeterministicContentAgent):
                     candidate = f"{block.personalized_content}\n\n**本块学习检查**：{task_markdown}"
                     if self._fits_budget(candidate, budget):
                         block.personalized_content = candidate
-            _agent_log("Agent3", f"block:llm_done | cb={block.content_block_id} | len={len(rewritten)}")
+            _agent_log("个性化学习资源生成 Agent", f"block:llm_done | cb={block.content_block_id} | len={len(rewritten)}")
         else:
             # 保留确定性教学层，而非退回裸原文；这样模型暂时不可用时仍可体现
-            # 当前画像的教学任务，并保留原始事实主体供 Agent4 核验。
-            _agent_log("Agent3", f"block:llm_invalid -> deterministic_fallback | cb={block.content_block_id}")
+            # 当前画像的教学任务，并保留原始事实主体供 专业知识与教学质量审核 Agent 核验。
+            _agent_log("个性化学习资源生成 Agent", f"block:llm_invalid -> deterministic_fallback | cb={block.content_block_id}")
         return block
 
     async def modify_block(
@@ -2586,14 +2586,14 @@ class HybridContentAgent(DeterministicContentAgent):
         return base
 
     async def generate_answer(self, request: AnswerGenerationInput) -> AnswerGenerationOutput:
-        _agent_log("Agent3", f"answer:hybrid_start | question={request.question[:60]}")
+        _agent_log("个性化学习资源生成 Agent", f"answer:hybrid_start | question={request.question[:60]}")
 
         # === 问题分类：用 LLM 判断 technical / daily ===
         question_type = await self._classify_question_by_llm(request.question)
-        _agent_log("Agent3", f"answer:classified | type={question_type}")
+        _agent_log("个性化学习资源生成 Agent", f"answer:classified | type={question_type}")
 
         if question_type == "daily":
-            # 日常类：整合 memory + 对话历史 + 学习包内容，跳过 Agent4
+            # 日常类：整合 memory + 对话历史 + 学习包内容，跳过 专业知识与教学质量审核 Agent
             answer = await self._generate_daily_answer_llm(request)
             return AnswerGenerationOutput(answer=answer, question_type="daily")
 
@@ -2655,14 +2655,14 @@ class HybridContentAgent(DeterministicContentAgent):
 
             answer_text = "\n".join(answer_lines)
 
-            _agent_log("Agent3", f"answer:structured_learning_content | len={len(answer_text)}")
+            _agent_log("个性化学习资源生成 Agent", f"answer:structured_learning_content | len={len(answer_text)}")
             return AnswerGenerationOutput(answer=answer_text, question_type="technical")
 
         # 自测/检验掌握程度 意图：走专门路径返回本阶段练习题，不依赖 LLM 自由发挥
         # （本地 LLM 易把"如何检验掌握程度"误解为"用代码捕捉错误"）
         if self._is_self_assessment_query(question):
             answer_text = await self._build_self_assessment_answer(request)
-            _agent_log("Agent3", f"answer:structured_self_assessment | len={len(answer_text)}")
+            _agent_log("个性化学习资源生成 Agent", f"answer:structured_self_assessment | len={len(answer_text)}")
             return AnswerGenerationOutput(answer=answer_text, question_type="technical")
 
         # 技术类（非学习内容询问）：按用户问题语义检索本阶段相关文档 + LLM 回答
@@ -2732,7 +2732,7 @@ class HybridContentAgent(DeterministicContentAgent):
         )
         if answer.startswith("Error: DeepSeek"):
             # 云端失败：切到本地 deepseek-r1:7b 兜底，绝不把云端错误串暴露给用户
-            _agent_log("Agent3", "answer:deepseek_error -> local_ollama_fallback")
+            _agent_log("个性化学习资源生成 Agent", "answer:deepseek_error -> local_ollama_fallback")
             local = await self.llm_client._complete_with_ollama(
                 prompt,
                 "你是技术准确、适合教学的学习助手。",
@@ -2742,12 +2742,12 @@ class HybridContentAgent(DeterministicContentAgent):
             )
             if local and not local.startswith("Error:"):
                 return AnswerGenerationOutput(answer=local, question_type="technical")
-            _agent_log("Agent3", "answer:local_unavailable -> deterministic_fallback")
+            _agent_log("个性化学习资源生成 Agent", "answer:local_unavailable -> deterministic_fallback")
             return await super().generate_answer(request)
         if self._is_valid_response(answer):
-            _agent_log("Agent3", f"answer:llm_done | answer_len={len(answer)}")
+            _agent_log("个性化学习资源生成 Agent", f"answer:llm_done | answer_len={len(answer)}")
             return AnswerGenerationOutput(answer=answer, question_type="technical")
-        _agent_log("Agent3", "answer:llm_invalid -> deterministic_fallback")
+        _agent_log("个性化学习资源生成 Agent", "answer:llm_invalid -> deterministic_fallback")
         return await super().generate_answer(request)
 
     async def _classify_question_by_llm(self, question: str) -> str:
@@ -2755,7 +2755,7 @@ class HybridContentAgent(DeterministicContentAgent):
         import json as _json
         rule_type = self._classify_question_by_keywords(question)
         # 高置信日常表达直接短路，避免分类模型波动导致问候、闲聊或情绪表达
-        # 误入知识库检索和 Agent4 技术审核。
+        # 误入知识库检索和 专业知识与教学质量审核 Agent 技术审核。
         if rule_type == "daily":
             return "daily"
         # Questions about the learner's current-stage difficulty are technical
@@ -2928,7 +2928,7 @@ class HybridContentAgent(DeterministicContentAgent):
 要求：逐条解决审核问题，保留正确内容，返回修改后的完整Markdown教程。"""
         tutorial = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent3内容生成专家，负责依据合并审核意见严谨改稿。",
+            system_prompt="你是个性化学习资源生成 Agent内容生成专家，负责依据合并审核意见严谨改稿。",
             temperature=0.3,
             max_tokens=self._source_max_tokens(request.learning_package.tutorial),
         )
@@ -2972,7 +2972,7 @@ class HybridContentAgent(DeterministicContentAgent):
 要求：逐条修复问题，保持技术准确和教学清晰，返回完整修改后回答。"""
         answer = await self._complete_answer_with_retry(
             prompt,
-            "你是Agent3答疑专家，负责依据合并审核意见修改回答。",
+            "你是个性化学习资源生成 Agent答疑专家，负责依据合并审核意见修改回答。",
             temperature=0.3,
             max_tokens=TECHNICAL_ANSWER_TOKENS,
         )
@@ -2981,7 +2981,7 @@ class HybridContentAgent(DeterministicContentAgent):
         return AnswerGenerationOutput(answer=answer)
 
     def _format_feedback(self, technical_errors: list[ReviewError], quality_errors: list[ReviewError]) -> str:
-        # Agent5已合并至Agent4，所有错误统一在technical_errors中
+        # Agent5已合并至专业知识与教学质量审核 Agent，所有错误统一在technical_errors中
         lines = []
         for error in technical_errors:
             lines.append(
@@ -3018,7 +3018,7 @@ class DeterministicTechnicalReviewAgent:
         self.style_match_tool = StyleMatchTool()
         self.personalization_check_tool = PersonalizationCheckTool()
         self.learning_resource_tool = LearningResourceTool()
-        # 委托 Agent4 协议字段补全（对接需求清单 2.1）
+        # 委托 专业知识与教学质量审核 Agent 协议字段补全（对接需求清单 2.1）
         self._protocol_agent = TechnicalReviewAgent()
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
@@ -3053,7 +3053,9 @@ class DeterministicTechnicalReviewAgent:
                 errors.extend(normalize_review_errors(claim_hallucinations))
             else:
                 hallucination_errors = normalize_review_errors(
-                    await self.knowledge_verify_tool.verify_knowledge(request.content)
+                    await self.knowledge_verify_tool.verify_knowledge(
+                        request.content, strict=request.target_type != "answer"
+                    )
                 )
                 errors.extend(hallucination_errors)
         except Exception:
@@ -3081,7 +3083,7 @@ class DeterministicTechnicalReviewAgent:
                 errors.extend(normalize_review_errors(video_resource_errors))
             except Exception:
                 video_resource_errors = []
-        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 专业知识与教学质量审核 Agent 实现）
         # raw_errors 汇入视频错误与逐 Claim 幻觉原始 dict（后者含显式 claim_id，供精确归属）
         errors = self._protocol_agent._enrich_debate_fields(
             errors,
@@ -3114,7 +3116,7 @@ class DeterministicTechnicalReviewAgent:
         issues: List[Dict[str, Any]],
         author_replies: List[Dict[str, Any]],
     ) -> Dict[str, str]:
-        """委托 Agent4 实现复核裁决（对接需求清单 2.2）。"""
+        """委托 专业知识与教学质量审核 Agent 实现复核裁决（对接需求清单 2.2）。"""
         return await self._protocol_agent.rebut(session_id, issues, author_replies)
 
     # ==================================================================
@@ -3136,7 +3138,7 @@ class DeterministicTechnicalReviewAgent:
         )
 
 
-# DeterministicQualityReviewAgent 和 HybridQualityReviewAgent 已合并至 Agent4
+# DeterministicQualityReviewAgent 和 HybridQualityReviewAgent 已合并至 专业知识与教学质量审核 Agent
 # 质量审核功能已集成到 DeterministicTechnicalReviewAgent 和 HybridTechnicalReviewAgent
 
 
@@ -3158,11 +3160,11 @@ class HybridTechnicalReviewAgent:
             "learner_model",
             "quality_metrics",
         ])
-        # 委托 Agent4 协议字段补全（对接需求清单 2.1）
+        # 委托 专业知识与教学质量审核 Agent 协议字段补全（对接需求清单 2.1）
         self._protocol_agent = TechnicalReviewAgent()
 
     async def run(self, request: ReviewInput) -> TechnicalReviewResult:
-        print(f"=== Agent4(合并后) 技术+质量审核开始：{request.target_type} ===")
+        print(f"=== 专业知识与教学质量审核 Agent(合并后) 技术+质量审核开始：{request.target_type} ===")
         video_resource_errors = []
         # 步骤1：硬性检查（规则检查）— 异常兜底
         try:
@@ -3187,7 +3189,9 @@ class HybridTechnicalReviewAgent:
                 hallucination_errors = normalize_review_errors(claim_hallucinations)
             else:
                 hallucination_errors = normalize_review_errors(
-                    await self.knowledge_verify_tool.verify_knowledge(request.content)
+                    await self.knowledge_verify_tool.verify_knowledge(
+                        request.content, strict=request.target_type != "answer"
+                    )
                 )
         except Exception:
             hallucination_errors = []
@@ -3225,7 +3229,7 @@ class HybridTechnicalReviewAgent:
         prompt = self._build_prompt(request)
         response = await self.llm_client.complete(
             prompt,
-            system_prompt="你是Agent4(合并后)技术+质量审核专家。必须独立审核，不得因为内容表达流畅就默认正确。",
+            system_prompt="你是专业知识与教学质量审核 Agent(合并后)技术+质量审核专家。必须独立审核，不得因为内容表达流畅就默认正确。",
             temperature=0.1,
             json_mode=True,
         )
@@ -3241,7 +3245,7 @@ class HybridTechnicalReviewAgent:
         if personalization_errors:
             print(f"=== 个性化教学建议：{len(personalization_errors)}个（不阻断发布） ===")
 
-        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 Agent4 实现）
+        # 步骤5：审核辩论协议字段补全（对接需求清单 2.1，委托 专业知识与教学质量审核 Agent 实现）
         # 强制为每个 error 补全 canonical_error_id/error_id/source_refs/change_request/
         # must_fix/must_fix_reason/claim_id（协议 2.3 / 2.4 / 第 6 节）
         result.errors = self._protocol_agent._enrich_debate_fields(
@@ -3262,7 +3266,7 @@ class HybridTechnicalReviewAgent:
             issue.must_fix_reason = "个性化教学建议不阻断事实已核验的内容发布"
             issue.change_request = {"required": False, "action": "improve_personalization"}
 
-        print(f"=== Agent4(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
+        print(f"=== 专业知识与教学质量审核 Agent(合并后) 审核完成：passed={result.passed}, errors={len(result.errors)} ===")
         return result
 
     async def rebut(
@@ -3271,7 +3275,7 @@ class HybridTechnicalReviewAgent:
         issues: List[Dict[str, Any]],
         author_replies: List[Dict[str, Any]],
     ) -> Dict[str, str]:
-        """委托 Agent4 实现复核裁决（对接需求清单 2.2）。
+        """委托 专业知识与教学质量审核 Agent 实现复核裁决（对接需求清单 2.2）。
 
         返回 {canonical_error_id: "persist" | "withdraw" | "downgrade"}。
         """
@@ -3351,7 +3355,7 @@ class HybridTechnicalReviewAgent:
             error = ReviewError(
                 error_type="review_system_error",
                 severity="critical",
-                description="Agent4审核结果无法解析",
+                description="专业知识与教学质量审核 Agent审核结果无法解析",
                 suggestion="重新执行技术审核",
             )
             return TechnicalReviewResult(passed=False, errors=[error])
@@ -3443,7 +3447,7 @@ async def _review_block_impl(
     sources = bd.get("sources") or []
 
     _agent_log(
-        "Agent4",
+        "专业知识与教学质量审核 Agent",
         f"review_block:start | cb={content_block_id} | src_chunk={source_chunk_id} | v={content_version}",
     )
 
@@ -3536,7 +3540,7 @@ async def _review_block_impl(
             e.content_chunk_id = source_chunk_id
 
     _agent_log(
-        "Agent4",
+        "专业知识与教学质量审核 Agent",
         f"review_block:done | cb={content_block_id} | fact_errors={len(fact_errors)} | personalization_errors={len(personalization_errors)}",
     )
     return TechnicalReviewResult(
@@ -3574,7 +3578,7 @@ async def _llm_review_block(agent: Any, block: Dict[str, Any], stage: StageInfo)
 若本块无问题返回 {{"issues": []}}。不要报告学习风格、认知负荷、篇幅或表达偏好问题，它们由个性化审核通道处理。只针对本块，不要臆造原文之外的事实。"""
     response = await agent.llm_client.complete(
         prompt,
-        system_prompt="你是Agent4块级审核专家，只审核给定内容块，不越界，不因表达流畅默认正确。",
+        system_prompt="你是专业知识与教学质量审核 Agent块级审核专家，只审核给定内容块，不越界，不因表达流畅默认正确。",
         temperature=0.1,
         json_mode=True,
     )
@@ -3608,7 +3612,7 @@ class DeterministicStageDecisionAgent:
         # （须在 update_gaps 之前计算，避免 BKT 引擎因缺少原始记录退化为简化公式）
         # 只读层 state_manager.add_answer_record 存储的记录不含 skill/knowledge_point 字段，
         # 若不补齐则 _group_by_skill 会全部归入 "unknown"，导致 update_gaps 按 gap.skill
-        # 匹配失败、BKT 引擎退化为聚合兜底公式（Wt/P(G) 失效）。故在 Agent6 层用当前阶段
+        # 匹配失败、BKT 引擎退化为聚合兜底公式（Wt/P(G) 失效）。故在 学情评估与动态决策 Agent 层用当前阶段
         # 的 gap_skill 给缺失 skill 的记录补齐归属，使 BKT 引擎真正作用于当前知识点。
         current_skill = request.stage.gap_skill
         pre_question_records: list[dict] = []
@@ -3789,7 +3793,7 @@ class DeterministicStageDecisionAgent:
 
 
 async def run_deterministic_reviews(request: ReviewInput) -> ReviewOutput:
-    # Agent5已合并至Agent4，统一由合并后的TechnicalReviewAgent处理
+    # Agent5已合并至专业知识与教学质量审核 Agent，统一由合并后的TechnicalReviewAgent处理
     technical = await DeterministicTechnicalReviewAgent().run(request)
     # 质量审核结果已合并在technical结果中
     quality = QualityReviewResult(

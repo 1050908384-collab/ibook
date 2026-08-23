@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-Agent3 ↔ Agent4 块级并行流水线 端到端独立验证脚本
+个性化学习资源生成 Agent ↔ 专业知识与教学质量审核 Agent 块级并行流水线 端到端独立验证脚本
 =====================================================
 镜像 tests/check_agent34_debate.py 的结构，但验证的是「块级」链路（任务 3~6）：
 
-  iter_stage_chunks  -> Agent3 读取阶段内原始 knowledge_chunk 列表
-  generate_block     -> Agent3 逐块生成个性化内容块（保留 source_chunk_id/标题路径/来源说明/Claim）
-  review_block       -> Agent4 逐块审核（回查 source_chunk_id 做事实核验，issue 绑定块级字段）
-  modify_block       -> Agent3 只回传修订后的问题块 + 版本号 + 修改说明（任务 6）
-  review_block(again)-> Agent4 复审修订块
+  iter_stage_chunks  -> 个性化学习资源生成 Agent 读取阶段内原始 knowledge_chunk 列表
+  generate_block     -> 个性化学习资源生成 Agent 逐块生成个性化内容块（保留 source_chunk_id/标题路径/来源说明/Claim）
+  review_block       -> 专业知识与教学质量审核 Agent 逐块审核（回查 source_chunk_id 做事实核验，issue 绑定块级字段）
+  modify_block       -> 个性化学习资源生成 Agent 只回传修订后的问题块 + 版本号 + 修改说明（任务 6）
+  review_block(again)-> 专业知识与教学质量审核 Agent 复审修订块
 
 它不实例化 Harness/StateManager（避免全量 DB 依赖），而是把 knowledge_docs +
 knowledge_chunks（含《知识库分块新增字段说明.md》的新列）种到一个临时 SQLite，
-再把 settings.DATABASE_URL 指向它，让 Agent3/Agent4 的工具走真实核验。
+再把 settings.DATABASE_URL 指向它，让 个性化学习资源生成 Agent/专业知识与教学质量审核 Agent 的工具走真实核验。
 
 覆盖的验收点（对应用户任务）：
-  [任务3] Agent3 逐块产出：content_block_id / source_chunk_id / heading_path / source_note / Claim
-  [任务4] Agent4 块级审核：每条 issue 携带 content_chunk_id / content_version / claim_id / in_chunk_position
+  [任务3] 个性化学习资源生成 Agent 逐块产出：content_block_id / source_chunk_id / heading_path / source_note / Claim
+  [任务4] 专业知识与教学质量审核 Agent 块级审核：每条 issue 携带 content_chunk_id / content_version / claim_id / in_chunk_position
   [任务2] Claim 优先核验：有关键 Claim 时只对 Claim/来源块核验，不整篇送检
   [任务1] 真实核验 + 安全降级：未知来源块 / 空库不把内容误报为幻觉
   [任务6] modify_block 只回传单块：version+1 / status=revised / 带 revision_note
@@ -179,7 +179,7 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
 
     mode = args.mode
     print("=" * 60)
-    print("Agent3 ↔ Agent4 块级并行流水线 端到端验证")
+    print("个性化学习资源生成 Agent ↔ 专业知识与教学质量审核 Agent 块级并行流水线 端到端验证")
     print(f">>> 执行模式：{mode}")
     print(f">>> 临时知识库：{settings.DATABASE_URL}")
     print("=" * 60)
@@ -203,7 +203,7 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
     # ------------------------------------------------------------------
     # 步骤 0：iter_stage_chunks 读取阶段原始块
     # ------------------------------------------------------------------
-    print("\n[Step 0] Agent3.iter_stage_chunks（读取阶段原始 knowledge_chunk）...")
+    print("\n[Step 0] 个性化学习资源生成 Agent.iter_stage_chunks（读取阶段原始 knowledge_chunk）...")
     source_chunks = agent3.iter_stage_chunks(stage)
     pretty("原始块列表（iter_stage_chunks）", source_chunks)
     checker.check(len(source_chunks) == 2, "iter_stage_chunks 读到 2 个原始块",
@@ -220,9 +220,9 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
         return
 
     # ------------------------------------------------------------------
-    # 步骤 1：Agent3 逐块生成个性化内容块（任务 3）
+    # 步骤 1：个性化学习资源生成 Agent 逐块生成个性化内容块（任务 3）
     # ------------------------------------------------------------------
-    print("\n[Step 1] Agent3.generate_block（逐块个性化，改一块即可送审）...")
+    print("\n[Step 1] 个性化学习资源生成 Agent.generate_block（逐块个性化，改一块即可送审）...")
     blocks = []
     for idx, chunk in enumerate(source_chunks):
         block = await agent3.generate_block(
@@ -259,7 +259,7 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
                   "块携带关键技术 Claim", b0.claims[0].claim_id if b0.claims else "无")
     checker.check(
         b0.claims and (b0.claims[0].metadata_json or {}).get("source_chunk_id") == "CHK-LORA-0",
-        "Claim 绑定 source_chunk_id（供 Agent4 块级核验）",
+        "Claim 绑定 source_chunk_id（供 专业知识与教学质量审核 Agent 块级核验）",
         str((b0.claims[0].metadata_json or {}) if b0.claims else {}),
     )
     checker.check(
@@ -271,9 +271,9 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
     )
 
     # ------------------------------------------------------------------
-    # 步骤 2：Agent4 逐块审核（任务 4 + 任务 2 Claim 优先核验）
+    # 步骤 2：专业知识与教学质量审核 Agent 逐块审核（任务 4 + 任务 2 Claim 优先核验）
     # ------------------------------------------------------------------
-    print("\n[Step 2] Agent4.review_block（逐块审核，issue 绑定块级字段）...")
+    print("\n[Step 2] 专业知识与教学质量审核 Agent.review_block（逐块审核，issue 绑定块级字段）...")
     reviews = []
     for block in blocks:
         result = await agent4.review_block(block, stage, profile=profile, round_index=1)
@@ -358,7 +358,7 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
     # ------------------------------------------------------------------
     # 步骤 4：modify_block 只回传修订块 + 版本号 + 修改说明（任务 6）
     # ------------------------------------------------------------------
-    print("\n[Step 4] Agent3.modify_block（只回传修订块 + version + revision_note）...")
+    print("\n[Step 4] 个性化学习资源生成 Agent.modify_block（只回传修订块 + version + revision_note）...")
     revised = await agent3.modify_block(
         weak_block, weak_issues, revision_note="已按审核建议修正为来源块支持的表述。",
     )
@@ -377,9 +377,9 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
                   "修订块 content_block_id 保持不变（只回传问题块）", revised.content_block_id)
 
     # ------------------------------------------------------------------
-    # 步骤 5：Agent4 复审修订块（改一块即刻送审的闭环）
+    # 步骤 5：专业知识与教学质量审核 Agent 复审修订块（改一块即刻送审的闭环）
     # ------------------------------------------------------------------
-    print("\n[Step 5] Agent4.review_block（复审修订块，round_index=2）...")
+    print("\n[Step 5] 专业知识与教学质量审核 Agent.review_block（复审修订块，round_index=2）...")
     recheck = await agent4.review_block(revised, stage, profile=profile, round_index=2)
     recheck_issues = [e.model_dump(mode="json") for e in recheck.errors]
     pretty("修订块复审结果", {"passed": recheck.passed, "issues": recheck_issues})

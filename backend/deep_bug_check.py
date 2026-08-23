@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""最刁钻 Bug 检测 - 异常码一致性 + 幂等性 + 字段完整性（只测Agent1/3）"""
+"""最刁钻 Bug 检测 - 异常码一致性 + 幂等性 + 字段完整性（只测学情诊断与阶段规划 Agent/3）"""
 import sys, os
 sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -18,7 +18,7 @@ def make_client():
     return TestClient(app)
 
 print("=" * 60)
-print("最刁钻 Bug 检测 - Agent1/3 专属")
+print("最刁钻 Bug 检测 - 学情诊断与阶段规划 Agent/3 专属")
 print("=" * 60)
 
 # ============================================================

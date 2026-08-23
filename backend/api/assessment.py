@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""测试服务 API（Agent46_API接口任务说明.md 第 2 节）。
+"""测试服务 API（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 2 节）。
 
-由 Agent4/6 队友承担工程实现。路径遵循文档定义的 /api/v1 前缀。
+由 专业知识与教学质量审核 Agent/6 队友承担工程实现。路径遵循文档定义的 /api/v1 前缀。
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -40,7 +40,7 @@ async def _rebuild_agent6_summary(
     stage: dict,
     attempt: dict,
 ) -> str:
-    """Recreate a legacy Agent6 report from immutable submitted answers."""
+    """Recreate a legacy 学情评估与动态决策 Agent report from immutable submitted answers."""
     profile = harness.state_manager.get_profile(session_id) or {}
     question_records = [
         {
@@ -94,7 +94,7 @@ async def get_stage_result(
     stage_id: str | None = None,
     _user_id: str = Depends(require_owned_session),
 ):
-    """Read a persisted Agent6 summary and the submitted assessment review."""
+    """Read a persisted 学情评估与动态决策 Agent summary and the submitted assessment review."""
     try:
         summary = None
         snapshot = None
@@ -110,10 +110,15 @@ async def get_stage_result(
             snapshot = harness.state_manager.get_stage_snapshot(session_id, stage_num)
         snapshot = snapshot or {}
         stage = snapshot.get("stage_info") or {}
-        attempt = assessment_service.get_submitted_attempt(session_id, stage.get("stage_id"))
-        if not attempt:
-            attempt = assessment_service.get_submitted_attempt_for_stage_num(session_id, stage_num)
-        # Historical attempts created before Agent6 summaries were persisted
+        # A retry keeps the same stage_id but resets the stage to pending/learning.
+        # Never let the previous cycle's persisted summary or submitted attempt
+        # make that regenerated learning package look completed after refresh.
+        if summary and not assessment_service.stage_allows_persisted_result(stage):
+            summary = None
+        attempt = assessment_service.get_submitted_attempt_for_result(
+            session_id, stage, stage_num
+        )
+        # Historical attempts created before 学情评估与动态决策 Agent summaries were persisted
         # still need to open as a completed-stage summary, never as a new test.
         if not summary and attempt:
             accuracy = attempt.get("accuracy")
@@ -129,7 +134,7 @@ async def get_stage_result(
                 "available_actions": ["plan_next_stage"],
             }
             harness.state_manager.save_stage_result(session_id, stage_num, summary)
-        # Some earlier no-question stages were marked completed by Agent6 but
+        # Some earlier no-question stages were marked completed by 学情评估与动态决策 Agent but
         # their textual result was only returned to the browser, never stored.
         # Recreate a durable archive summary from the completed stage itself.
         if not summary and stage.get("status") in {"completed", "retreat"}:
@@ -258,7 +263,7 @@ async def complete_current_stage_v1(
     # 3) 前置 OK，走既有阶段完成链路
     try:
         result = await harness.complete_stage(session_id, bypass_assessment=bypass_assessment)
-        # 无测试题直接完成时：修正 accuracy/策略判断，避免 Agent6 把 accuracy=0 当成"测试失败"
+        # 无测试题直接完成时：修正 accuracy/策略判断，避免 学情评估与动态决策 Agent 把 accuracy=0 当成"测试失败"
         if bypass_assessment:
             # accuracy 字段直接置为 null 表示无测试数据，前端据此隐藏正确率
             result["accuracy"] = None

@@ -1,7 +1,7 @@
 # SKILL名称：learner_profiling
 
 ## 1. 能力描述
-- 功能：从用户自然语言输入提取**标准化学习者画像**——技能标签（skill_tags）、知识盲区（knowledge_gaps，每项含 skill 与 level）、学习目标（goal）、每日时长（daily_hours）、学习风格（learning_style），并评估置信度（confidence），置信不足时生成追问。对齐 Agent1 `HybridDiagnosticAgent` 的单次 LLM 提取 + 正则回退行为
+- 功能：从用户自然语言输入提取**标准化学习者画像**——技能标签（skill_tags）、知识盲区（knowledge_gaps，每项含 skill 与 level）、学习目标（goal）、每日时长（daily_hours）、学习风格（learning_style），并评估置信度（confidence），置信不足时生成追问。对齐 学情诊断与阶段规划 Agent `HybridDiagnosticAgent` 的单次 LLM 提取 + 正则回退行为
 - 适用场景（3个）：
   1. **首次对话诊断**：新会话首条消息触发 `HybridDiagnosticAgent.run`，从用户输入提取画像
   2. **置信不足追问**：confidence < `CONFIDENCE_THRESHOLD`(0.7) 时返回 `needs_more_info` + follow_up_questions 补齐信息
@@ -113,7 +113,7 @@ confidence = clamp(base * 0.5 + completeness * 0.5, 0.3, 0.95)
 | 用户输入过短/无有效信息 | 降低confidence<0.7，触发追问 |
 | LLM返回非JSON | 回退 `DeterministicDiagnosticAgent` 正则匹配 `SKILL_NAMES`，confidence=0.75 |
 | 无识别到目标 | 默认"通用学习目标"，confidence=0.75 |
-| knowledge_gaps为空 | 不生成阶段，置信度压低并由 Agent1 返回追问或完成状态（无盲区时阶段选路抛异常） |
+| knowledge_gaps为空 | 不生成阶段，置信度压低并由 学情诊断与阶段规划 Agent 返回追问或完成状态（无盲区时阶段选路抛异常） |
 | LLM提取的level非枚举值 | 自动修正为 beginner |
 
 ## 6. 附录

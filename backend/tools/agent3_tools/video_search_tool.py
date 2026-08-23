@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Agent3 video lookup backed by the canonical video resource catalogue.
+"""个性化学习资源生成 Agent video lookup backed by the canonical video resource catalogue.
 
 The old implementation parsed a Markdown file with a hard-coded block-ID map.
-That map drifted after the curriculum was expanded.  Both Agent3 paths now use
+That map drifted after the curriculum was expanded.  Both 个性化学习资源生成 Agent paths now use
 the same catalogue that is imported into SQLite, so returned URLs are stable
 ``canonical_url`` values and remain aligned with the knowledge graph.
 """

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-校验 Agent3↔Agent4 学习包流水线的「并发语义」是否符合需求（真并发生产者/消费者）
+校验 个性化学习资源生成 Agent↔专业知识与教学质量审核 Agent 学习包流水线的「并发语义」是否符合需求（真并发生产者/消费者）
 ================================================================
 用户明确的并发模型：
-  ❌ 模型A（交错流水线）：Agent3 在生成后续块的同时，修改 Agent4 已回馈的早期块。
-  ✅ 当前需求：Agent3 与 Agent4 同时处理各块（生成+首轮审核并发，上限 2），
-     Agent4 首轮跑完后一次性构造完整 issue_package（按块分组）交给 Agent3；
-     随后 Agent3 并发修改（上限 2），每块改完立即派发独立复核，
+  ❌ 模型A（交错流水线）：个性化学习资源生成 Agent 在生成后续块的同时，修改 专业知识与教学质量审核 Agent 已回馈的早期块。
+  ✅ 当前需求：个性化学习资源生成 Agent 与 专业知识与教学质量审核 Agent 同时处理各块（生成+首轮审核并发，上限 2），
+     专业知识与教学质量审核 Agent 首轮跑完后一次性构造完整 issue_package（按块分组）交给 个性化学习资源生成 Agent；
+     随后 个性化学习资源生成 Agent 并发修改（上限 2），每块改完立即派发独立复核，
      且块1的复核不阻塞块2的修改。
 
 本脚本给真实 Harness 的 agent3/agent4 方法套上「带时间戳的记录器」，跑一遍
@@ -23,7 +23,7 @@ _review_learning_package_pipeline，然后对事件时间线做断言：
   P5 [修改并发上限=2] 修改阶段任一时刻在飞的 modify_block ≤ 2 且曾达到并发（>1）。
   P6 [非阻塞复核] 存在「某块 mod_start」早于「另一块修改后复核 rev_end」——
      证明块1的复核（create_task 派发）不阻塞块2开始修改。
-  P7 [交还≤3] Agent4 交还问题清单的轮次 round_num 不超过 MAX_REVIEW_ITERATIONS(=3)。
+  P7 [交还≤3] 专业知识与教学质量审核 Agent 交还问题清单的轮次 round_num 不超过 MAX_REVIEW_ITERATIONS(=3)。
 
 运行：
   python tests/check_pipeline_parallel_semantics.py
@@ -193,7 +193,7 @@ def _install_recorders(harness, tl: Timeline, delay: float = 0.05):
         return revised
 
     async def receive_issue_package(session_id, issue_package, blocks_by_id):
-        # 记录 Agent3 实际收到的完整问题列表，而不是只记录 Harness 构造了它。
+        # 记录 个性化学习资源生成 Agent 实际收到的完整问题列表，而不是只记录 Harness 构造了它。
         tl.record("issue_package_received", "|".join(sorted(issue_package)))
         return await orig_receive_issue_package(session_id, issue_package, blocks_by_id)
 
@@ -282,14 +282,14 @@ async def run(checker: Checker) -> None:
         f"max_gen_inflight={max_gen_inflight}",
     )
 
-    # -------- P2-1：审核不占用 Agent3 生成槽 --------
+    # -------- P2-1：审核不占用 个性化学习资源生成 Agent 生成槽 --------
     # 三块用例中，第 3 块的生成必须在任一首轮审核结束前开始；否则 generation
     # semaphore 仍然错误地包住了 generate→review 整条协程。
     third_gen_start_t = phase_a_gen_starts[2]["t"] if len(phase_a_gen_starts) >= 3 else float("inf")
     first_phase_a_review_end_t = min((e["t"] for e in phase_a_rev_ends), default=0.0)
     checker.check(
         len(phase_a_gen_starts) >= 3 and third_gen_start_t < first_phase_a_review_end_t,
-        "P2-1 Agent4 审核不占用 Agent3 生成槽（第3块在首轮审核结束前开始生成）",
+        "P2-1 专业知识与教学质量审核 Agent 审核不占用 个性化学习资源生成 Agent 生成槽（第3块在首轮审核结束前开始生成）",
         f"third_gen_start={third_gen_start_t:.4f} < first_phaseA_rev_end={first_phase_a_review_end_t:.4f}",
     )
 
@@ -300,14 +300,14 @@ async def run(checker: Checker) -> None:
         p3 = first_mod_t >= phase_a_last_rev_end_t
         checker.check(
             p3,
-            "P3 首次修改发生在「所有块首轮审核堆积完毕」之后（Agent4 一次性反馈）",
+            "P3 首次修改发生在「所有块首轮审核堆积完毕」之后（专业知识与教学质量审核 Agent 一次性反馈）",
             f"first_mod_start={first_mod_t:.4f} >= last_phaseA_rev_end={phase_a_last_rev_end_t:.4f}",
         )
     else:
         # 无 mod 意味着首轮全通过；本用例特意构造了会触发问题的块，理应有 mod。
         checker.check(False, "P3 预期存在修改动作（构造了会触发问题的块）", "mod_starts 为空")
 
-    # -------- P3-1：Agent3 先收到完整问题列表，再开始块级修改 --------
+    # -------- P3-1：个性化学习资源生成 Agent 先收到完整问题列表，再开始块级修改 --------
     package_receipts = tl.of("issue_package_received")
     first_receipt = package_receipts[0] if package_receipts else None
     first_receipt_blocks = first_receipt["cid"].split("|") if first_receipt else []
@@ -315,7 +315,7 @@ async def run(checker: Checker) -> None:
         bool(first_receipt)
         and first_receipt["t"] <= first_mod_t
         and len(first_receipt_blocks) == 3,
-        "P3-1 Agent3 首次修改前收到完整 issue_package（含全部问题块）",
+        "P3-1 个性化学习资源生成 Agent 首次修改前收到完整 issue_package（含全部问题块）",
         f"received_blocks={len(first_receipt_blocks)}",
     )
 

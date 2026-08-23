@@ -69,7 +69,7 @@ def parse_resources(subtopics_by_block: dict[str, list[dict]]) -> tuple[list[dic
 
         heading_match = re.match(r"^\*\*(.+?)\*\*\s*$", line)
         # Environment preparation is a real ``-00`` learning node, not a
-        # board-level decoration.  Its videos must be reachable by Agent3
+        # board-level decoration.  Its videos must be reachable by 个性化学习资源生成 Agent
         # when the installation stage is scheduled.
         if heading_match and "~~" not in line:
             current_heading = heading_match.group(1)

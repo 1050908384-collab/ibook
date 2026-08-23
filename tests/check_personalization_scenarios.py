@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Compare Agent3 output for multiple learner profiles on one real source chunk.
+"""Compare 个性化学习资源生成 Agent output for multiple learner profiles on one real source chunk.
 
 Run:
   python tests/check_personalization_scenarios.py

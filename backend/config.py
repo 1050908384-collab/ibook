@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     # in backend/.env (or the process environment), never in source control.
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_BASE: str = "https://api.deepseek.com"
-    DEEPSEEK_MODEL: str = "deepseek-v4-flash"
+    DEEPSEEK_MODEL: str = "deepseek-chat"
     DEEPSEEK_PROXY_URL: str = ""
     # 云端推理偶发长时间排队或先输出 reasoning_content；答疑需要比默认 HTTP
     # 超时更长的读取窗口，并由客户端对可恢复错误做有限重试。
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     MAX_REVIEW_ITERATIONS: int = 3
     CONFIDENCE_THRESHOLD: float = 0.7
     EXECUTION_MODE: str = "hybrid"
-    # 块级并行流水线开关（Agent3/Agent4 按块并行生成+审核）。
+    # 块级并行流水线开关（个性化学习资源生成 Agent/专业知识与教学质量审核 Agent 按块并行生成+审核）。
     # 默认开启：start_stage 走块级真并发流水线（生成/修改并发上限 2）；
     # 如需回退旧整篇审核链路，可在 .env 覆盖为 False。
     BLOCK_PIPELINE_ENABLED: bool = True

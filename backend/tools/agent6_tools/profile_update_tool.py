@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-profile_update_tool — Agent6 画像更新工具
+profile_update_tool — 学情评估与动态决策 Agent 画像更新工具
 ==========================================
 功能：输入掌握度数据和策略标签，输出结构化画像更新字段
 （knowledge_gaps、confidence_index、learning_rhythm、confusion_markers、next_strategy），
@@ -436,13 +436,13 @@ def profile_update(input_data: dict, config: dict = None) -> dict:
 
 def record_code_error(error_analysis: Dict[str, Any], current_profile: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
-    从 Agent4 的代码错误分析结果中提取技能差距信息，用于画像更新。
+    从 专业知识与教学质量审核 Agent 的代码错误分析结果中提取技能差距信息，用于画像更新。
 
     对齐 iteration_strategy.skill.md v3.3：读取 code_skill_gaps（错误频率）、
     code_proficiency_level（代码熟练度），供策略调整使用。
 
     参数：
-        error_analysis: Dict  Agent4 analyze_code_error() 的返回结果
+        error_analysis: Dict  专业知识与教学质量审核 Agent analyze_code_error() 的返回结果
         current_profile: Dict  当前用户画像（可选）
 
     返回：

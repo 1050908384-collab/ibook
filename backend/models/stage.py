@@ -72,7 +72,7 @@ class Claim(BaseModel):
 class ContentBlock(BaseModel):
     """块级个性化内容单元（对应一个原始 knowledge_chunk）。
 
-    Agent3 逐块生成、Agent4 逐块审核的最小交换单位。所有来源溯源字段可选，
+    个性化学习资源生成 Agent 逐块生成、专业知识与教学质量审核 Agent 逐块审核的最小交换单位。所有来源溯源字段可选，
     数据侧新字段（heading_path 等）缺失时优雅降级，不影响块级流水线运行。
     """
     content_block_id: str                                   # 个性化内容块唯一 ID
@@ -91,7 +91,7 @@ class ContentBlock(BaseModel):
     source_line_end: Optional[int] = None
     source_note: str = ""                                   # 人类可读来源说明
     personalized_content: str = ""                          # 个性化后的正文
-    # 教学层元数据：前端仍渲染 personalized_content，以下字段供 Agent4 审核、
+    # 教学层元数据：前端仍渲染 personalized_content，以下字段供 专业知识与教学质量审核 Agent 审核、
     # 审核追溯和后续展示“为何为该用户这样组织内容”。均有默认值以兼容旧会话。
     personalization_action: str = "keep"
     personalization_reason: str = ""

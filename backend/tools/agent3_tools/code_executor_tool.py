@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-code_executor_tool — Agent3 代码执行工具
+code_executor_tool — 个性化学习资源生成 Agent 代码执行工具
 ================================================
 功能：在本地执行用户提供的Python代码，捕获执行结果、报错信息或运行输出。
     - 真实模式：使用 subprocess 执行代码，捕获 stdout/stderr 和返回码

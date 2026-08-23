@@ -1,4 +1,4 @@
-"""Learning Q&A endpoints backed by the existing Agent3 -> Agent4 harness flow."""
+"""Learning Q&A endpoints backed by the existing 个性化学习资源生成 Agent -> 专业知识与教学质量审核 Agent harness flow."""
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException

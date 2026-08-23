@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-code_executor_tool — Agent4 受限代码执行工具
+code_executor_tool — 专业知识与教学质量审核 Agent 受限代码执行工具
 ==============================================
 功能：在受限沙箱中执行用户 Python 代码，捕获 stdout/stderr/异常堆栈，
 为代码错误分析场景提供 error_info 输入源。

@@ -172,7 +172,7 @@ llm = LLM(model="meta-llama/Llama-2-7b", gpu_memory_utilization=0.85)
 | 规则正则匹配引擎超时 | 跳过该条规则检查，在返回结果中追加 `error_type="rule_check_timeout"`（severity=minor），标注"建议人工复核" |
 | 模型名无法识别许可证 | 追加 `error_type="license_unknown"`（severity=minor），建议人工确认许可证 |
 | PEFT配置字段拼写错误（如`target_modules`拼写为`target_moduels`） | 追加 `error_type="peft_typo"`（severity=critical），提示常见拼写错误 |
-| 内容审核循环达上限（Agent4统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，本子模块返回的ReviewError仍合并到TechnicalReviewResult，但整体status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
+| 内容审核循环达上限（专业知识与教学质量审核 Agent统一审核循环≥3次仍未通过） | Orchestrator强制终止循环，本子模块返回的ReviewError仍合并到TechnicalReviewResult，但整体status=`"review_needed"`，summary标注"审核循环达3次上限，建议人工介入修订内容" |
 
 ## 6. 附录
 

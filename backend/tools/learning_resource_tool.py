@@ -90,7 +90,7 @@ class LearningResourceTool:
         block_id: str,
         subtopic_id: str | list[str] | None,
     ) -> list[dict[str, Any]]:
-        """校验 Agent3 输出的视频仍属于当前阶段，并提示未完成内容审核的资源。"""
+        """校验 个性化学习资源生成 Agent 输出的视频仍属于当前阶段，并提示未完成内容审核的资源。"""
         if not videos or not block_id:
             return []
         subtopic_ids = [subtopic_id] if isinstance(subtopic_id, str) else list(subtopic_id or [])

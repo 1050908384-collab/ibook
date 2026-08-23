@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Build the Agent1-only Chroma index from the canonical knowledge_docs seed."""
+"""Build the 学情诊断与阶段规划 Agent-only Chroma index from the canonical knowledge_docs seed."""
 
 from __future__ import annotations
 
@@ -73,4 +73,4 @@ def build_agent1_semantic_index() -> int:
 
 
 if __name__ == "__main__":
-    print(f"Agent1 semantic index documents: {build_agent1_semantic_index()}")
+    print(f"学情诊断与阶段规划 Agent semantic index documents: {build_agent1_semantic_index()}")

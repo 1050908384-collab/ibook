@@ -4,7 +4,7 @@
 数据源：data/sqlite_data/project.db 的 knowledge_chunks 表（JOIN knowledge_docs
 取 title/source/subtopic_id）。每个 chunk 作为一个 document 写入 Chroma
 的 knowledge_base collection，metadata 包含 chunk_id / block_id / subtopic_id
-/ source / title，供 Agent3 vector_search_tool 检索使用。
+/ source / title，供 个性化学习资源生成 Agent vector_search_tool 检索使用。
 
 重复运行安全：写入前先删除旧 collection 重建，避免脏数据残留。
 """

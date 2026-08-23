@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-accuracy_calculator_tool — Agent6 正确率计算工具
+accuracy_calculator_tool — 学情评估与动态决策 Agent 正确率计算工具
 ================================================
 功能：输入 session_id 和 stage，从 user_answers 表统计该阶段答题正确率（0~1），
 返回正确数和总数。Mock 模式返回预设正确率。

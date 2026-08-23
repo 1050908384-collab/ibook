@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Agent3 独立测试 —— 内容生成 Agent（学习包 + 答疑）
+个性化学习资源生成 Agent 独立测试 —— 内容生成 Agent（学习包 + 答疑）
 
 职责（对齐 backend/agents/deterministic.py）：
   - 依据 StageInfo 生成 LearningPackage（tutorial / code_examples / questions / sources / claims）
@@ -13,7 +13,7 @@ Agent3 独立测试 —— 内容生成 Agent（学习包 + 答疑）
   1. Agent 配置（模式、工具列表）
   2. 输入（ContentGenerationInput: session_id + StageInfo）
   3. 运行中主要参数（向量检索结果、题目提取结果 — 直接调用工具预览中间数据）
-  4. Agent3 run() 输出（LearningPackage: tutorial / questions / sources / claims）
+  4. 个性化学习资源生成 Agent run() 输出（LearningPackage: tutorial / questions / sources / claims）
   5. 答疑中间参数（知识文档向量检索）
   6. 答疑输出（answer）
 
@@ -71,8 +71,8 @@ def show_agent_config(agent) -> None:
 
 
 async def show_runtime_params_content(agent, stage: StageInfo) -> dict:
-    """直接调用 Agent3 的工具，预览内容生成运行中的主要参数。"""
-    section("运行中主要参数（Agent3 内部工具调用预览）")
+    """直接调用 个性化学习资源生成 Agent 的工具，预览内容生成运行中的主要参数。"""
+    section("运行中主要参数（个性化学习资源生成 Agent 内部工具调用预览）")
     params = {}
 
     # 1. 向量检索（按 block_id 检索相关文档）
@@ -134,7 +134,7 @@ async def show_runtime_params_content(agent, stage: StageInfo) -> dict:
 
 async def show_runtime_params_answer(agent, question: str, stage: StageInfo) -> dict:
     """答疑的中间参数。"""
-    section("答疑中间参数（Agent3.generate_answer 内部工具调用预览）")
+    section("答疑中间参数（个性化学习资源生成 Agent.generate_answer 内部工具调用预览）")
     params = {}
 
     # 知识文档向量检索（按问题检索）
@@ -163,7 +163,7 @@ def choose_mode() -> str:
 
 async def main():
     print("=" * 60)
-    print("Agent3 内容生成 Agent 独立测试（学习包 + 答疑）")
+    print("个性化学习资源生成 Agent 内容生成 Agent 独立测试（学习包 + 答疑）")
     print("=" * 60)
 
     mode = choose_mode()
@@ -201,7 +201,7 @@ async def main():
     runtime_params = await show_runtime_params_content(agent, stage)
     pretty("【运行参数汇总】", runtime_params)
 
-    # ========== 4. Agent3 run() 输出 ==========
+    # ========== 4. 个性化学习资源生成 Agent run() 输出 ==========
     section("[Step 1] 运行 run() 生成 LearningPackage")
     output = await agent.run(request)
     pkg = output.learning_package

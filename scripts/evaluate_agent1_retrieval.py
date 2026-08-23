@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Evaluate Agent1's lightweight Chinese semantic retrieval against intent cases."""
+"""Evaluate 学情诊断与阶段规划 Agent's lightweight Chinese semantic retrieval against intent cases."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ def main() -> None:
     recall = SemanticKnowledgeRecallTool()
     if not recall.is_ready():
         raise RuntimeError(
-            "Agent1 FastEmbed index is unavailable. Run "
+            "学情诊断与阶段规划 Agent FastEmbed index is unavailable. Run "
             "python scripts/init_agent1_semantic_index.py."
         )
 

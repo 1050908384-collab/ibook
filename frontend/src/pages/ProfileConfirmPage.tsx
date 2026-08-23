@@ -77,7 +77,7 @@ export default function ProfileConfirmPage({ profile, stage, loading, error, onE
             <div className="card-title">
               <div>
                 <h3>学习画像</h3>
-                <p>来自 Agent1 诊断结果</p>
+                <p>来自 学情诊断与阶段规划 Agent 诊断结果</p>
               </div>
               <UserRound size={20} />
             </div>

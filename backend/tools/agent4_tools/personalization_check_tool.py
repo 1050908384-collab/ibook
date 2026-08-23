@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Agent4 checker for whether a block applies Agent3's personalization plan."""
+"""专业知识与教学质量审核 Agent checker for whether a block applies 个性化学习资源生成 Agent's personalization plan."""
 from __future__ import annotations
 
 from typing import Any

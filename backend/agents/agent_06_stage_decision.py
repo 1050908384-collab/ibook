@@ -134,7 +134,7 @@ class StageDecisionAgent(BaseAgent):
             "strategy": str,            # 可能含 backtrack（回溯）策略标签
             "update_rationale": str,
 
-            # === 阶段结果契约字段（Agent46_API接口任务说明.md 第 3 节）===
+            # === 阶段结果契约字段（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 3 节）===
             "status": str,              # continue/repeat/completed（= decision 的对外别名）
             "accuracy": float,          # 本阶段已提交测试的正确率
             "next_strategy": str,       # 下一阶段策略（= strategy 的对外别名）
@@ -245,7 +245,7 @@ class StageDecisionAgent(BaseAgent):
         else:
             decision = "repeat"
 
-        # 5. 阶段结果契约字段（Agent46_API接口任务说明.md 第 3 节）
+        # 5. 阶段结果契约字段（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 3 节）
         # - all_mastered：全部知识盲区已掌握 → 结业
         # - can_plan_next_stage：未结业即可按需规划下一阶段（含 repeat 场景重规划本阶段）
         # - phase / available_actions：未结业时进入 stage_result 状态并开放 plan_next_stage
@@ -285,9 +285,9 @@ class StageDecisionAgent(BaseAgent):
         accuracy: float,
         gaps_with_mastery: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
-        """结业总报告（Agent6 结业职责，全部知识盲区掌握时产出）。
+        """结业总报告（学情评估与动态决策 Agent 结业职责，全部知识盲区掌握时产出）。
 
-        仅使用 Agent6 已持有的数据（画像 + 更新后的知识盲区），不依赖外部服务：
+        仅使用 学情评估与动态决策 Agent 已持有的数据（画像 + 更新后的知识盲区），不依赖外部服务：
         - goal：学习目标（画像缺失时留空字符串）
         - accuracy：最后一阶段正确率
         - mastered_skills：掌握度达标（status=已掌握 或 mastery/progress>=1.0）的技能

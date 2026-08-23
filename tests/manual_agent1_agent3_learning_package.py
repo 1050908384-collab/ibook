@@ -1,4 +1,4 @@
-"""Manual acceptance check: Agent1 plans one stage, then Agent3 builds its package.
+"""Manual acceptance check: 学情诊断与阶段规划 Agent plans one stage, then 个性化学习资源生成 Agent builds its package.
 
 Run from the project root:
     python tests/manual_agent1_agent3_learning_package.py
@@ -71,13 +71,13 @@ def seed_test_database(client: SQLiteClient, database_path: Path) -> None:
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Agent1 stage planning -> Agent3 learning package")
+    parser = argparse.ArgumentParser(description="学情诊断与阶段规划 Agent stage planning -> 个性化学习资源生成 Agent learning package")
     parser.add_argument(
         "--mode", choices=("hybrid", "deterministic"), default="hybrid",
         help="hybrid uses the local LLM; deterministic only validates data/retrieval",
     )
     args = parser.parse_args()
-    print("Agent1 -> Agent3 learning-package acceptance check")
+    print("学情诊断与阶段规划 Agent -> 个性化学习资源生成 Agent learning-package acceptance check")
     goal = prompt("Learning goal", "掌握 LoRA 微调")
     mastered = prompt("Mastered skills", "Python, PyTorch, HuggingFace")
     daily_hours = float(prompt("Daily study hours", "2"))
@@ -111,7 +111,7 @@ async def main() -> None:
                 "learning_style": learning_style,
             })
             if not profile.knowledge_gaps:
-                raise RuntimeError("Agent1 未映射出知识盲区，请补充学习目标。")
+                raise RuntimeError("学情诊断与阶段规划 Agent 未映射出知识盲区，请补充学习目标。")
 
             stage = (await agent1.generate_stage(StagePlanningInput(
                 session_id=session_id, profile=profile, stage_num=1,

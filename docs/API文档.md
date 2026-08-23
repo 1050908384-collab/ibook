@@ -1,4 +1,4 @@
-﻿# AI Agent Trainer API文档
+# AI Agent Trainer API文档
 
 ## 一、基础信息
 
@@ -187,7 +187,7 @@
 
 **POST** `/api/stage/complete/{session_id}`
 
-完成当前阶段并调用 Agent6 决策。该接口只保存当前阶段结果和更新后的画像，不直接生成下一阶段；仍有未掌握内容时返回 `can_plan_next_stage=true`。
+完成当前阶段并调用 学情评估与动态决策 Agent 决策。该接口只保存当前阶段结果和更新后的画像，不直接生成下一阶段；仍有未掌握内容时返回 `can_plan_next_stage=true`。
 
 响应：
 ```json
@@ -206,7 +206,7 @@
 
 **POST** `/api/stage/plan-next`
 
-用户确认继续后调用。Orchestrator 基于 Agent6 更新后的画像调用 Agent1 的 `generate_stage`（逻辑 Agent2 的阶段规划职责），生成并保存 `next_stage`；不会立即覆盖当前阶段。
+用户确认继续后调用。Orchestrator 基于 学情评估与动态决策 Agent 更新后的画像调用 学情诊断与阶段规划 Agent 的 `generate_stage`（逻辑 Agent2 的阶段规划职责），生成并保存 `next_stage`；不会立即覆盖当前阶段。
 
 请求体：
 ```json

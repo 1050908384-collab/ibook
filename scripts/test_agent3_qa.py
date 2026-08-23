@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Agent3 问答检索效果测试脚本（交互式）
+个性化学习资源生成 Agent 问答检索效果测试脚本（交互式）
 
 流程：
-  1. 调用 Agent1 生成一个学习阶段
+  1. 调用 学情诊断与阶段规划 Agent 生成一个学习阶段
   2. 打印阶段的板块(block_id)和知识点(subtopic_id/name)
   3. 用户自己在终端输入问题，脚本实时输出命中的板块和知识点
   4. 输入 q 退出
@@ -100,7 +100,7 @@ def do_search(question: str, block_ids: list[str], subtopic_ids: list[str],
 
 async def run_test():
     print("=" * 60)
-    print("  Agent3 问答检索效果测试（交互式）")
+    print("  个性化学习资源生成 Agent 问答检索效果测试（交互式）")
     print("  Embedding: qwen3-embedding:0.6b")
     print("=" * 60)
 
@@ -110,14 +110,14 @@ async def run_test():
     session_id = harness.state_manager.create_session(None)["session_id"]
     print(f"\n✅ Session 创建成功: {session_id}")
 
-    # === Step 2: 调用 Agent1 生成阶段 ===
+    # === Step 2: 调用 学情诊断与阶段规划 Agent 生成阶段 ===
     user_input = """
     我的学习背景：研究生，有PyTorch基础，用过transformer库
     我的学习目标：掌握LoRA微调，能独立部署到生产环境
     我每天能学：2小时
     我喜欢怎么学：偏爱动手实操，不太喜欢纯理论讲解
     """
-    print("\n⏳ 正在调用 Agent1 生成学习阶段（需要 LLM，请耐心等待）...")
+    print("\n⏳ 正在调用 学情诊断与阶段规划 Agent 生成学习阶段（需要 LLM，请耐心等待）...")
     result = await harness.process_initial_input(session_id, user_input)
 
     if result["status"] != "ready":

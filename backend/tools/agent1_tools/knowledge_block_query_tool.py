@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-knowledge_block_query_tool — Agent1 知识板块查询工具（原Agent2工具，已合并至Agent1）
+knowledge_block_query_tool — 学情诊断与阶段规划 Agent 知识板块查询工具（原Agent2工具，已合并至学情诊断与阶段规划 Agent）
 ========================================================================================
 功能：按技能名称/板块ID查询知识板块详情（含 estimated_hours、difficulty、
 prerequisites、subtopics）。

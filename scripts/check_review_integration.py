@@ -1,8 +1,8 @@
-"""Agent3-4 审核辩论协议联调验证（P4）。
+"""个性化学习资源生成 Agent-4 审核辩论协议联调验证（P4）。
 
 3 个验证点：
-1. Agent3 首轮包带 sources + claims
-2. Agent4 审核结果带 canonical_error_id + must_fix
+1. 个性化学习资源生成 Agent 首轮包带 sources + claims
+2. 专业知识与教学质量审核 Agent 审核结果带 canonical_error_id + must_fix
 3. harness._review_learning_package() 后数据库 6 张表里有记录
 
 用法：python scripts/check_review_integration.py
@@ -26,8 +26,8 @@ DB_PATH = ROOT_DIR / "data" / "sqlite_data" / "project.db"
 
 
 async def verify_agent3_sources_claims() -> bool:
-    """验证点1：Agent3 首轮包带 sources + claims。"""
-    print("\n=== 验证点1：Agent3 首轮包带 sources + claims ===")
+    """验证点1：个性化学习资源生成 Agent 首轮包带 sources + claims。"""
+    print("\n=== 验证点1：个性化学习资源生成 Agent 首轮包带 sources + claims ===")
     from agents.deterministic import DeterministicContentAgent
     from models.contracts import ContentGenerationInput
     from models.stage import StageInfo
@@ -67,8 +67,8 @@ async def verify_agent3_sources_claims() -> bool:
 
 
 async def verify_agent4_canonical_must_fix() -> bool:
-    """验证点2：Agent4 审核结果带 canonical_error_id + must_fix。"""
-    print("\n=== 验证点2：Agent4 审核结果带 canonical_error_id + must_fix ===")
+    """验证点2：专业知识与教学质量审核 Agent 审核结果带 canonical_error_id + must_fix。"""
+    print("\n=== 验证点2：专业知识与教学质量审核 Agent 审核结果带 canonical_error_id + must_fix ===")
     from agents.deterministic import DeterministicTechnicalReviewAgent
     from models.contracts import ReviewInput
     from models.profile import UserProfile
@@ -104,7 +104,7 @@ async def verify_agent4_canonical_must_fix() -> bool:
     ))
 
     if not result.errors:
-        print("  WARN: Agent4 未检出错误（可能内容太短），跳过字段验证")
+        print("  WARN: 专业知识与教学质量审核 Agent 未检出错误（可能内容太短），跳过字段验证")
         return True
 
     ok = True
@@ -217,7 +217,7 @@ async def verify_harness_db_write() -> bool:
 
 async def main() -> int:
     print("=" * 60)
-    print("Agent3-4 审核辩论协议联调验证")
+    print("个性化学习资源生成 Agent-4 审核辩论协议联调验证")
     print("=" * 60)
 
     r1 = await verify_agent3_sources_claims()
@@ -225,8 +225,8 @@ async def main() -> int:
     r3 = await verify_harness_db_write()
 
     print("\n" + "=" * 60)
-    print(f"验证点1 (Agent3 sources+claims):  {'PASS' if r1 else 'FAIL'}")
-    print(f"验证点2 (Agent4 canonical+must_fix): {'PASS' if r2 else 'FAIL'}")
+    print(f"验证点1 (个性化学习资源生成 Agent sources+claims):  {'PASS' if r1 else 'FAIL'}")
+    print(f"验证点2 (专业知识与教学质量审核 Agent canonical+must_fix): {'PASS' if r2 else 'FAIL'}")
     print(f"验证点3 (DB 6张表有记录):         {'PASS' if r3 else 'FAIL'}")
     print("=" * 60)
 

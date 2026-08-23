@@ -99,6 +99,65 @@ class StageSnapshotTest(unittest.TestCase):
             restored.db_client.close()
             manager.db_client.close()
 
+    def test_same_stage_id_cannot_replace_a_different_subtopic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database_url = f"sqlite:///{(Path(directory) / 'stage-identity.db').as_posix()}"
+            manager = StateManager(SQLiteClient(database_url))
+            session_id = manager.create_session()["session_id"]
+            manager.update_stage(session_id, stage(1))
+
+            changed = {
+                **stage(1),
+                "subtopic_id": "KBS-01-99",
+                "subtopic_name": "Different topic",
+                "subtopic_ids": ["KBS-01-99"],
+                "subtopic_names": ["Different topic"],
+            }
+            with self.assertRaisesRegex(ValueError, "Cannot replace a stage_id"):
+                manager.update_stage(session_id, changed)
+            manager.db_client.close()
+
+    def test_retry_restore_discards_stale_result_but_keeps_completed_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database_url = f"sqlite:///{(Path(directory) / 'retry-restore.db').as_posix()}"
+            manager = StateManager(SQLiteClient(database_url))
+            session_id = manager.create_session()["session_id"]
+
+            retry_stage = {**stage(1), "status": "learning"}
+            manager.update_stage(session_id, retry_stage)
+            manager.update_learning_package(session_id, package(session_id, 1))
+            manager.save_stage_result(session_id, 1, {"accuracy": 0.4})
+            manager.update_field(session_id, "phase", "learning")
+            manager.update_field(session_id, "available_actions", ["ask_question", "start_assessment"])
+            manager.db_client.close()
+
+            restored = StateManager(SQLiteClient(database_url))
+            retry_session = restored.get_session(session_id)
+            self.assertEqual("learning", retry_session["phase"])
+            self.assertEqual(
+                ["ask_question", "start_assessment"],
+                retry_session["available_actions"],
+            )
+            self.assertIsNone(restored.get_stage_result(session_id, 1))
+
+            restored.save_stage_result(session_id, 1, {"accuracy": 0.4})
+            restored.update_field(session_id, "phase", "stage_result")
+            cached_retry_session = restored.get_session(session_id)
+            self.assertEqual("learning", cached_retry_session["phase"])
+            self.assertIsNone(restored.get_stage_result(session_id, 1))
+
+            completed_stage = {**stage(1), "status": "completed", "accuracy": 0.8}
+            restored.update_stage(session_id, completed_stage)
+            restored.save_stage_result(session_id, 1, {"accuracy": 0.8})
+            restored.update_field(session_id, "phase", "learning")
+            restored.db_client.close()
+
+            completed_restore = StateManager(SQLiteClient(database_url))
+            completed_session = completed_restore.get_session(session_id)
+            self.assertEqual("stage_result", completed_session["phase"])
+            self.assertEqual(["plan_next_stage"], completed_session["available_actions"])
+            completed_restore.db_client.close()
+
 
 if __name__ == "__main__":
     unittest.main()

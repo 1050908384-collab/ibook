@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-difficulty_analyzer_tool — 难度分析工具（原Agent5，合并至Agent4）
+difficulty_analyzer_tool — 难度分析工具（原Agent5，合并至专业知识与教学质量审核 Agent）
 ================================================
 功能：输入学习包内容与用户画像，输出内容难度等级（初级/中级/高级）及与用户水平的匹配度（0~1）。
     - 真实模式：调用 LLM（llm/client.py 同一 Ollama 端点）评估难度；LLM 不可用时降级为启发式

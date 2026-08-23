@@ -488,32 +488,28 @@ const styleText: Record<string, string> = {
 const sidebarAgents = [
   {
     id: 'agent1',
-    number: '1',
-    title: '学情诊断与规划',
+    title: '学情诊断与阶段规划 Agent',
     desc: '画像诊断 / 阶段规划',
     icon: Brain,
     tone: 'blue'
   },
   {
     id: 'agent3',
-    number: '3',
-    title: '个性化内容生成',
+    title: '个性化学习资源生成 Agent',
     desc: '生成教程、代码与测试题',
     icon: BookOpen,
     tone: 'violet'
   },
   {
     id: 'agent4',
-    number: '4',
-    title: '技术与教学双审',
+    title: '专业知识与教学质量审核 Agent',
     desc: '技术正确性 / 学习适配度',
     icon: Check,
     tone: 'orange'
   },
   {
     id: 'agent6',
-    number: '6',
-    title: '学情决策与推进',
+    title: '学情评估与动态决策 Agent',
     desc: '更新画像 / 确定后续策略',
     icon: Gauge,
     tone: 'green'
@@ -652,7 +648,7 @@ function Sidebar({
       <div className="agent-mini">
         <div className="mini-title">
           <Bot size={16} />
-          Agent协同流程
+          智能体协同流程
         </div>
         <div className="agent-flow">
           {sidebarAgents.map((agent) => {
@@ -676,7 +672,6 @@ function Sidebar({
                   <Icon size={18} />
                 </span>
                 <div className="agent-copy">
-                  <b>Agent{agent.number}</b>
                   <strong>{agent.title}</strong>
                   <small>{agent.desc}</small>
                   <small className={`agent-state-label ${state}`}>{statusLabel}</small>
@@ -1991,7 +1986,7 @@ function ChatView({
                       <Check size={13} />
                       {message.reviewSummary.status === 'skipped'
                         ? '日常问题，无需技术审核'
-                        : `Agent4 审核：技术${message.reviewSummary.technical_passed ? '通过' : '待复核'} · 教学${message.reviewSummary.quality_passed ? '通过' : '待复核'}${message.reviewSummary.iterations ? ` · ${message.reviewSummary.iterations} 轮` : ''}`}
+                        : `专业知识与教学质量审核 Agent 审核：技术${message.reviewSummary.technical_passed ? '通过' : '待复核'} · 教学${message.reviewSummary.quality_passed ? '通过' : '待复核'}${message.reviewSummary.iterations ? ` · ${message.reviewSummary.iterations} 轮` : ''}`}
                     </div>
                   )}
                 </div>
@@ -3133,7 +3128,7 @@ function ResultView({
             <div className="strategy no-strategy">
               <span>学习目标</span>
               <strong>已全部掌握</strong>
-              <small>Agent6 已终止后续阶段规划</small>
+              <small>学情评估与动态决策 Agent 已终止后续阶段规划</small>
             </div>
           ) : bypass ? (
             <div className="strategy no-strategy">
@@ -3145,7 +3140,7 @@ function ResultView({
             <div className="strategy">
               <span>{readOnlyReview ? '历史阶段策略' : '下一阶段策略'}</span>
               <strong>{result?.next_strategy || ((accuracy ?? 0) >= 0.7 ? 'advance' : 'reinforce')}</strong>
-              <small>Agent6 综合决策</small>
+              <small>学情评估与动态决策 Agent 综合决策</small>
             </div>
           )}
         </section>
@@ -4112,7 +4107,10 @@ export default function App() {
     }
   };
 
-  const startStage = async (stageToStart?: StageInfo | null) => {
+  const startStage = async (
+    stageToStart?: StageInfo | null,
+    options?: { restartCurrent?: boolean }
+  ) => {
     setError(null);
     if (workflow === 'learning' && (result?.all_mastered || isHistoricalStageReview(stage?.stage_num, activeStageNum))) {
       setError('该阶段总结仅用于回顾，不能从这里启动新的学习阶段');
@@ -4133,7 +4131,9 @@ export default function App() {
     // 可以作为阶段①的 immediate 预览，弹窗一打开就看到，不用再等。
     // 下一阶段已由 plan-next 生成时必须直接使用它。否则低分用户的
     // force_advance 计划会被启动流程中的普通 plan-next 覆盖为当前阶段复习。
-    let initialStage: GenStagePreview | ApiStage | null = stageToStart || plannedStage || null;
+    let initialStage: GenStagePreview | ApiStage | null = stageToStart
+      || (options?.restartCurrent ? stage : plannedStage)
+      || null;
     if (isFirst) {
       initialStage = initialStage || stage || null;
     }
@@ -4142,6 +4142,7 @@ export default function App() {
       sessionId,
       action: isFirst ? 'first' : 'next',
       initialStage,
+      restartCurrent: options?.restartCurrent,
       onStageReady: (readyStage) => {
         // 阶段①完成：把规划好的知识点先写入本地 stage，让用户在阶段②期间能看到
         const mapped: StageInfo = {
@@ -4194,8 +4195,8 @@ export default function App() {
           id: shortId(),
           role: 'assistant',
           content: startResponse?.review_summary?.iterations
-            ? `学习包已生成，Agent4 已完成 ${startResponse.review_summary.iterations} 轮技术与教学审核。`
-            : '学习包已生成，Agent4 已完成技术与教学审核。',
+            ? `学习包已生成，专业知识与教学质量审核 Agent 已完成 ${startResponse.review_summary.iterations} 轮技术与教学审核。`
+            : '学习包已生成，专业知识与教学质量审核 Agent 已完成技术与教学审核。',
           note: '学习包'
         }]);
         setWorkflow('learning');
@@ -5228,7 +5229,7 @@ export default function App() {
           result={result}
           onPlanNext={() => void planNextStage(false)}
           onStartNext={(nextStage) => void startStage(nextStage)}
-          onRestartCurrent={() => void startStage()}
+          onRestartCurrent={() => void startStage(stage, { restartCurrent: true })}
           onContinueNext={() => planNextStage(true)}
           onReturnToChat={() => {
             setView('chat');

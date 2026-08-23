@@ -1,11 +1,11 @@
 # SKILL名称：code_style
 
 ## 1. 能力描述
-- 功能：为Agent3（HybridContentAgent）生成教程中的 **Python 代码片段提供风格与规范约束**，作为内容生成 prompt 的提示规范。定义"教程里什么样的代码是合格的"：PEP8 风格、docstring 要求、异常处理、配置化与安全规范。在 `HybridContentAgent.run` 中与 `content_generation` 一同被加载为 `content_skill_context`，注入 LLM 生成 tutorial 的 prompt；本SKILL不执行实际校验，代码规范违规由 Agent4 `rule_check_tool` 与 `industry_standards` 兜底检测
+- 功能：为个性化学习资源生成 Agent（HybridContentAgent）生成教程中的 **Python 代码片段提供风格与规范约束**，作为内容生成 prompt 的提示规范。定义"教程里什么样的代码是合格的"：PEP8 风格、docstring 要求、异常处理、配置化与安全规范。在 `HybridContentAgent.run` 中与 `content_generation` 一同被加载为 `content_skill_context`，注入 LLM 生成 tutorial 的 prompt；本SKILL不执行实际校验，代码规范违规由 专业知识与教学质量审核 Agent `rule_check_tool` 与 `industry_standards` 兜底检测
 - 适用场景（3个）：
-  1. **教程代码生成**：Agent3 生成含代码示例的 Markdown 教程时，作为 `content_skill_context` 一同注入 prompt，约束生成代码风格
-  2. **改稿期代码修订**：`revise_learning_package` 接到 Agent4 代码相关 errors（如 `missing_exception_handler`、`api_deprecated`）时，本SKILL指导如何修订代码
-  3. **答疑代码片段**：Agent3 `generate_answer` 回答中含代码时，约束片段风格
+  1. **教程代码生成**：个性化学习资源生成 Agent 生成含代码示例的 Markdown 教程时，作为 `content_skill_context` 一同注入 prompt，约束生成代码风格
+  2. **改稿期代码修订**：`revise_learning_package` 接到 专业知识与教学质量审核 Agent 代码相关 errors（如 `missing_exception_handler`、`api_deprecated`）时，本SKILL指导如何修订代码
+  3. **答疑代码片段**：个性化学习资源生成 Agent `generate_answer` 回答中含代码时，约束片段风格
 - 前置依赖：
   - 当前阶段 StageInfo（`block_name`，决定代码主题）
   - `content_generation` 技能（本SKILL作为其子规范，不独立产出）
@@ -57,10 +57,10 @@
 
 ### 输出
 - 约束 LLM 生成的教程内代码片段风格（不产出独立校验报告）
-- 代码规范违规的实际检测与报告由 Agent4 `rule_check_tool`（正则）与 `industry_standards`（红线）产出 ReviewError
+- 代码规范违规的实际检测与报告由 专业知识与教学质量审核 Agent `rule_check_tool`（正则）与 `industry_standards`（红线）产出 ReviewError
 
-### 与 Agent4 的衔接
-教程代码经 Agent4 审核后，常见的代码类 ReviewError：
+### 与 专业知识与教学质量审核 Agent 的衔接
+教程代码经 专业知识与教学质量审核 Agent 审核后，常见的代码类 ReviewError：
 ```json
 {
   "error_type": "missing_exception_handler",
@@ -74,10 +74,10 @@
 ## 5. 异常处理
 | 异常场景 | 处置方式 |
 |:---|:---|
-| 本SKILL为被动提示，不执行实际校验 | 代码规范违规由 Agent4 `rule_check_tool` 与 `industry_standards` 兜底检测 |
-| 生成的代码缺 docstring/异常处理 | 由 Agent4 标记 `missing_docstring` / `missing_exception_handler`，回流至 `revise_learning_package` 由本SKILL指导修订 |
-| 生成的代码硬编码路径/密钥 | 由 Agent4 标记 critical（`path_hardcoded` / `secret_hardcoded`），强制改稿 |
-| 代码片段使用过时 API | 由 Agent4 标记 `api_deprecated`（major），改稿时参照规则4替换为推荐写法 |
+| 本SKILL为被动提示，不执行实际校验 | 代码规范违规由 专业知识与教学质量审核 Agent `rule_check_tool` 与 `industry_standards` 兜底检测 |
+| 生成的代码缺 docstring/异常处理 | 由 专业知识与教学质量审核 Agent 标记 `missing_docstring` / `missing_exception_handler`，回流至 `revise_learning_package` 由本SKILL指导修订 |
+| 生成的代码硬编码路径/密钥 | 由 专业知识与教学质量审核 Agent 标记 critical（`path_hardcoded` / `secret_hardcoded`），强制改稿 |
+| 代码片段使用过时 API | 由 专业知识与教学质量审核 Agent 标记 `api_deprecated`（major），改稿时参照规则4替换为推荐写法 |
 
 ## 6. 附录
 
@@ -143,4 +143,4 @@ API_KEY = "sk-xxxxxxxxxxxx"
 
 ## 7. 版本信息
 - 版本：v3.0，更新日期：2026-07-23
-- 变更记录：能力描述明确3个适用场景与被动提示定位（实际校验由Agent4兜底）；核心方法论重构为5步（PEP8→docstring→异常处理→配置化安全→API时效）；规则1新增PEP8检查表（含违规/正确示例/severity）；规则2新增docstring规范表；规则3新增异常处理规范表（禁裸except/禁静默吞异常）；规则4新增配置化与安全规范表（含critical级硬编码处置）；输入输出规范新增与Agent4衔接的ReviewError JSON示例；异常处理扩展为4场景表格；附录A补4个参考标准（PEP8/Google Style/OWASP/Clean Code）；附录B新增合规代码 vs 违规代码完整对比示例（含4类ReviewError清单）
+- 变更记录：能力描述明确3个适用场景与被动提示定位（实际校验由专业知识与教学质量审核 Agent兜底）；核心方法论重构为5步（PEP8→docstring→异常处理→配置化安全→API时效）；规则1新增PEP8检查表（含违规/正确示例/severity）；规则2新增docstring规范表；规则3新增异常处理规范表（禁裸except/禁静默吞异常）；规则4新增配置化与安全规范表（含critical级硬编码处置）；输入输出规范新增与专业知识与教学质量审核 Agent衔接的ReviewError JSON示例；异常处理扩展为4场景表格；附录A补4个参考标准（PEP8/Google Style/OWASP/Clean Code）；附录B新增合规代码 vs 违规代码完整对比示例（含4类ReviewError清单）

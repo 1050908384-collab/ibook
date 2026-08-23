@@ -61,7 +61,7 @@ async def submit_answer(request: SubmitAnswerRequest):
 async def complete_stage(session_id: str):
     """
     complete_stage 职责（P3 按需阶段规划）：
-    - 只调用 Agent6 决策，保存更新后的用户画像
+    - 只调用 学情评估与动态决策 Agent 决策，保存更新后的用户画像
     - 只在全部知识盲区都掌握时才真正结束 session
     - 返回 can_plan_next_stage / all_mastered / session_status
     - 不在此接口内生成 next_stage，交由 /plan-next 按需生成
@@ -84,7 +84,7 @@ async def plan_next_stage(request: PlanNextStageRequest):
     按需生成下一阶段：
     - 由前端在用户点击“生成下一阶段”后调用
     - 基于 complete_stage 后最新的画像 + (可选) 用户 adjustment_notes
-    - 通过 Agent1.generate_stage 规划出真正的 next_stage
+    - 通过 学情诊断与阶段规划 Agent.generate_stage 规划出真正的 next_stage
     - 保存到当前 session 的 next_stage 字段中（start_stage 时自动切换为当前）
     """
     try:

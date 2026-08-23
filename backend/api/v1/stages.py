@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-v1/stages.py - Agent1/3 前端 API：阶段与学习包接口
+v1/stages.py - 学情诊断与阶段规划 Agent/3 前端 API：阶段与学习包接口
 ================================================
-对应文档：Agent13_API接口任务说明.md 第 3 节
+对应文档：学情诊断与阶段规划 Agent3_API接口任务说明.md 第 3 节
 """
 
 import logging
@@ -51,8 +51,8 @@ def _build_learning_resources(stage_info: dict, package: dict) -> list[dict]:
     构建学习资源列表（文档要求字段）。
 
     数据源（全部合并，不再二选一，避免视频被丢弃）：
-    1. package.learning_resources（Agent3 生成的 article/video 混合）
-    2. package.recommended_videos（Agent3 独立持久化的视频字段）
+    1. package.learning_resources（个性化学习资源生成 Agent 生成的 article/video 混合）
+    2. package.recommended_videos（个性化学习资源生成 Agent 独立持久化的视频字段）
     3. 通过 LearningResourceTool 从数据库读取已确认视频资源（1/2 缺失时补齐）
     4. 兜底：基于 tutorial/code_examples 生成默认资源
 
@@ -386,7 +386,7 @@ async def get_current_stage_package(session_id: str, stage_num: Optional[int] = 
             "questions": sanitized_questions,  # 已清理敏感字段
             "review_summary": {
                 "status": package.get("status", "draft"),
-                "reviewed_by": "Agent4",
+                "reviewed_by": "专业知识与教学质量审核 Agent",
                 "review_notes": package.get("review_notes", "待审核"),
             },
             # 个性化字段
@@ -440,7 +440,7 @@ async def get_generation_events(session_id: str, after: int = 0):
 
 
 @router.post("/current/start")
-async def start_current_stage(session_id: str):
+async def start_current_stage(session_id: str, restart_current: bool = False):
     """
     开始当前阶段学习
 
@@ -456,7 +456,10 @@ async def start_current_stage(session_id: str):
         if not session.get("profile_confirmed", False):
             raise HTTPException(status_code=409, detail="Profile must be confirmed before starting a stage")
 
-        result = await harness.start_stage(session_id)
+        result = await harness.start_stage(
+            session_id,
+            apply_planned_stage=not restart_current,
+        )
 
         # 更新 session 状态
         harness.state_manager.update_field(session_id, "phase", "learning")
@@ -475,7 +478,7 @@ async def start_current_stage(session_id: str):
             "available_actions": ["ask_question", "start_assessment"],
             "review_summary": {
                 "status": result.get("package_status", "approved"),
-                "reviewed_by": "Agent4",
+                "reviewed_by": "专业知识与教学质量审核 Agent",
                 "iterations": result.get("iterations", 0),
                 "max_iterations": settings.MAX_REVIEW_ITERATIONS,
                 "review_trace_id": result.get("review_trace_id"),
