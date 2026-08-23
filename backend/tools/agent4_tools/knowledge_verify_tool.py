@@ -939,6 +939,23 @@ class KnowledgeVerifyTool:
         # 否则 专业知识与教学质量审核 Agent 的“交叉验证/幻觉检测”名存实亡（见《个性化学习资源生成 专业知识与教学质量审核 Agent学习包三问题检查报告》问题①）。
         self._default_config = {"use_mock": False}
 
+    def retrieve_evidence(self, content: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """Return candidate KB chunks for semantic review.
+
+        Retrieval is deliberately separate from ``verify_knowledge``: interactive
+        answers may explain a concept in their own words, so lexical overlap is
+        useful for finding evidence but must not itself become a hallucination
+        verdict.
+        """
+        try:
+            config = {**self._default_config, "top_k": max(1, int(top_k))}
+            result = knowledge_verify({"statement": content}, config=config)
+            if result.get("status") != "success":
+                return []
+            return list((result.get("data") or {}).get("matched_chunks") or [])
+        except Exception:
+            return []
+
     async def verify_knowledge(
         self,
         content: str,

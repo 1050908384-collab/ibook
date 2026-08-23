@@ -2984,8 +2984,13 @@ class HybridContentAgent(DeterministicContentAgent):
         # Agent5已合并至专业知识与教学质量审核 Agent，所有错误统一在technical_errors中
         lines = []
         for error in technical_errors:
+            evidence = getattr(error, "evidence", None) or "未提供"
+            location = getattr(error, "location", None) or "未定位"
+            change_request = getattr(error, "change_request", None)
             lines.append(
-                f"- [审核][{error.severity}] {error.description}；建议：{error.suggestion or '请修正'}"
+                f"- [审核][{error.severity}] 位置：{location}；问题：{error.description}；"
+                f"证据：{evidence}；建议：{error.suggestion or '请修正'}；"
+                f"修改要求：{change_request or '请针对该问题定点修改'}"
             )
         return "\n".join(lines) or "无"
 
@@ -3051,11 +3056,14 @@ class DeterministicTechnicalReviewAgent:
                 )
                 raw_hallucinations = claim_hallucinations
                 errors.extend(normalize_review_errors(claim_hallucinations))
+            elif request.target_type == "answer":
+                # Interactive answers are judged semantically by the hybrid
+                # reviewer; do not turn whole-answer lexical overlap into an
+                # automatic hallucination error in deterministic mode either.
+                pass
             else:
                 hallucination_errors = normalize_review_errors(
-                    await self.knowledge_verify_tool.verify_knowledge(
-                        request.content, strict=request.target_type != "answer"
-                    )
+                    await self.knowledge_verify_tool.verify_knowledge(request.content, strict=True)
                 )
                 errors.extend(hallucination_errors)
         except Exception:
@@ -3187,11 +3195,13 @@ class HybridTechnicalReviewAgent:
                 )
                 raw_hallucinations = claim_hallucinations
                 hallucination_errors = normalize_review_errors(claim_hallucinations)
+            elif request.target_type == "answer":
+                # Q&A uses KB retrieval as candidate evidence only.  A whole
+                # answer's lexical score is not a fact verdict.
+                hallucination_errors = []
             else:
                 hallucination_errors = normalize_review_errors(
-                    await self.knowledge_verify_tool.verify_knowledge(
-                        request.content, strict=request.target_type != "answer"
-                    )
+                    await self.knowledge_verify_tool.verify_knowledge(request.content, strict=True)
                 )
         except Exception:
             hallucination_errors = []
@@ -3227,6 +3237,26 @@ class HybridTechnicalReviewAgent:
             hallucination_errors.extend(video_errors)
 
         prompt = self._build_prompt(request)
+        if request.target_type == "answer":
+            evidence = self.knowledge_verify_tool.retrieve_evidence(request.content, top_k=5)
+            evidence_lines = []
+            for item in evidence:
+                evidence_lines.append(
+                    "- chunk_id={chunk_id}; block_id={block_id}; heading={heading}; similarity={similarity:.2f}\n  text={text}".format(
+                        chunk_id=item.get("chunk_id", "unknown"),
+                        block_id=item.get("block_id", "unknown"),
+                        heading=item.get("heading_path", item.get("heading", "")),
+                        similarity=float(item.get("similarity", 0.0) or 0.0),
+                        text=str(item.get("content", item.get("text", "")))[:3000],
+                    )
+                )
+            prompt += ("\n\n问答事实核验规则（仅适用于用户问答）：\n"
+                       "知识库片段只是候选证据，similarity 仅用于检索排序，不得作为通过/不通过阈值。\n"
+                       "逐条检查回答中的关键技术结论：只有明确与证据或公认技术事实矛盾、代码不可运行、"
+                       "或存在安全风险时，才报告 major/critical 的 must-fix 问题；证据未覆盖、表达方式不同"
+                       "或无法由当前片段确认，不得直接判定幻觉。若无具体可定位的问题，返回 errors=[]。\n"
+                       "候选知识片段：\n" + ("\n".join(evidence_lines) or "（当前知识库没有可用候选片段，请依据技术事实独立判断。）"))
+            print("=== 问答事实核验：使用候选证据语义判断，不使用相似度硬门槛 ===")
         response = await self.llm_client.complete(
             prompt,
             system_prompt="你是专业知识与教学质量审核 Agent(合并后)技术+质量审核专家。必须独立审核，不得因为内容表达流畅就默认正确。",
@@ -3314,6 +3344,13 @@ class HybridTechnicalReviewAgent:
                 )
                 for video in request.recommended_videos
             )
+        answer_policy = (
+            "问答审核补充规则：整段词面相似度只能用于检索候选证据；不得以相似度阈值直接判定幻觉。"
+            "只有明确技术矛盾、不可运行代码或安全风险才生成需修改的问题；无法由片段确认不等于错误。"
+            if request.target_type == "answer"
+            else
+            "学习包审核补充规则：必须严格核对技术声明与来源片段；无法确认的关键声明应标记为需修改。"
+        )
         return f"""请审核以下{request.target_type}的技术正确性。
 
 学习阶段：{request.stage.block_name}
@@ -3331,7 +3368,7 @@ class HybridTechnicalReviewAgent:
 1. 独立提取并核验每个技术声明，不得沿用原文结论；
 2. 重新计算所有参数量、比例和数值示例；
 3. 区分“分解原权重”和“增加可训练低秩更新”等不同机制；
-4. 任何无法确认的关键声明不得直接判定通过。
+4. {answer_policy}
 5. 推荐视频必须属于当前知识点；视频摘要未审核时，明确指出其不能作为技术事实依据。
 
 当前领域校验基线：

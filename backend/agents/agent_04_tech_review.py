@@ -593,14 +593,10 @@ class TechnicalReviewAgent(BaseAgent):
 
         if "answer" in content:
             print(f"=== 审核回答内容（前200字符）===\n{content['answer'][:200]}")
-            # 步骤2：事实检查（幻觉检测）
-            try:
-                hallucination_errors = await self.knowledge_verify_tool.verify_knowledge(
-                    content["answer"], strict=False
-                )
-                raw_errors.extend(hallucination_errors)
-            except Exception:
-                pass
+            # Q&A does not use whole-answer lexical similarity as a verdict.
+            # HybridTechnicalReviewAgent supplies candidate chunks to its
+            # semantic LLM review; this protocol path keeps the same policy.
+            print("=== 问答事实核验：跳过整段词面相似度硬判定 ===")
             # 步骤3-4：质量审核
             print(f"=== 质量审核：分析回答质量 ===")
             try:

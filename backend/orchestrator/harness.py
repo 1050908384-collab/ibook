@@ -1906,15 +1906,6 @@ class Harness:
             if self._is_out_of_scope_review(round_result.technical):
                 print(f"=== 回答第{iteration}轮判定为库外问题（out_of_scope），直接输出 个性化学习资源生成 Agent 内容 ===")
                 break
-            # ``review_needed`` is advisory for interactive answers.  A whole
-            # answer's lexical overlap is not enough evidence for another
-            # free-form rewrite; only must_fix issues may trigger a new round.
-            if round_result.technical.errors and not any(
-                getattr(error, "must_fix", False)
-                for error in round_result.technical.errors
-            ):
-                print(f"=== 回答第{iteration}轮为非阻断复核提示，停止重复改写 ===")
-                break
             if iteration == settings.MAX_REVIEW_ITERATIONS:
                 print("=== 回答达到最大审核轮次，返回未通过状态 ===")
                 break
