@@ -60,9 +60,11 @@ class Settings(BaseSettings):
     CONFIDENCE_THRESHOLD: float = 0.7
     EXECUTION_MODE: str = "hybrid"
     # 块级并行流水线开关（个性化学习资源生成 Agent/专业知识与教学质量审核 Agent 按块并行生成+审核）。
-    # 默认开启：start_stage 走块级真并发流水线（生成/修改并发上限 2）；
+    # 默认开启：start_stage 走块级真并发流水线，并按云端/本地模型选择并发上限；
     # 如需回退旧整篇审核链路，可在 .env 覆盖为 False。
     BLOCK_PIPELINE_ENABLED: bool = True
+    BLOCK_CONCURRENCY_CLOUD: int = 5
+    BLOCK_CONCURRENCY_LOCAL: int = 3
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",

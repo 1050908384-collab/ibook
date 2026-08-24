@@ -4,9 +4,9 @@
 ================================================================
 用户明确的并发模型：
   ❌ 模型A（交错流水线）：个性化学习资源生成 Agent 在生成后续块的同时，修改 专业知识与教学质量审核 Agent 已回馈的早期块。
-  ✅ 当前需求：个性化学习资源生成 Agent 与 专业知识与教学质量审核 Agent 同时处理各块（生成+首轮审核并发，上限 2），
+  ✅ 当前需求：个性化学习资源生成 Agent 与 专业知识与教学质量审核 Agent 同时处理各块（生成+首轮审核受控并发），
      专业知识与教学质量审核 Agent 首轮跑完后一次性构造完整 issue_package（按块分组）交给 个性化学习资源生成 Agent；
-     随后 个性化学习资源生成 Agent 并发修改（上限 2），每块改完立即派发独立复核，
+     随后 个性化学习资源生成 Agent 按当前模型并发上限修改，每块改完立即派发独立复核，
      且块1的复核不阻塞块2的修改。
 
 本脚本给真实 Harness 的 agent3/agent4 方法套上「带时间戳的记录器」，跑一遍
@@ -15,12 +15,12 @@ _review_learning_package_pipeline，然后对事件时间线做断言：
   P1 [Phase A 并发] 各块的「生成→首轮审核」在时间上重叠：
      存在「某块 generate_block 开始」早于「另一块 review_block 结束」——
      证明 asyncio.gather 让块间并发，而非逐块串行。
-  P2 [生成并发上限=2] 任一时刻在飞的 generate_block ≤ 2（Semaphore(2) 限流）。
+  P2 [生成并发受控] 任一时刻在飞的 generate_block 不超过当前模型对应的并发上限。
   P3 [问题堆积到最后] 第一次 modify_block 严格发生在「最后一个 Phase A review_block 结束」之后：
      证明修改不是边审边改，而是等所有块首轮审核堆积完毕后一次性反馈。
   P4 [修改阶段不再生成] 第一次 modify_block 之后不再出现任何 generate_block：
      证明不存在模型A的「一边生成板块4、一边改板块1」的交错。
-  P5 [修改并发上限=2] 修改阶段任一时刻在飞的 modify_block ≤ 2 且曾达到并发（>1）。
+  P5 [修改并发受控] 修改阶段任一时刻在飞的 modify_block 不超过当前模型对应的并发上限。
   P6 [非阻塞复核] 存在「某块 mod_start」早于「另一块修改后复核 rev_end」——
      证明块1的复核（create_task 派发）不阻塞块2开始修改。
   P7 [交还≤3] 专业知识与教学质量审核 Agent 交还问题清单的轮次 round_num 不超过 MAX_REVIEW_ITERATIONS(=3)。
@@ -220,11 +220,12 @@ class Checker:
 
 
 async def run(checker: Checker) -> None:
-    from orchestrator.harness import Harness, BLOCK_CONCURRENCY
+    from orchestrator.harness import Harness
     from models.profile import PracticeProfile, UserProfile
     from models.stage import StageInfo
 
     harness = Harness(execution_mode="deterministic")
+    block_concurrency = harness._block_concurrency()
     harness.state_manager.create_session("orch-parallel")
     tl = Timeline()
     _install_recorders(harness, tl, delay=0.05)
@@ -273,12 +274,12 @@ async def run(checker: Checker) -> None:
         f"earliest_gen_start={earliest_gen_start_t:.4f} < latest_phaseA_rev_end={latest_phase_a_rev_end_t:.4f}",
     )
 
-    # -------- P2：生成并发上限=2（Semaphore(2) 限流，兼顾低配设备） --------
+    # -------- P2：生成并发受当前模型对应的 Semaphore 上限控制 --------
     # 用 gen_start / gen_end 计算任一时刻在飞的 generate_block 数（按时间顺序扫描）。
     max_gen_inflight = _max_inflight(tl, "gen_start", "gen_end")
     checker.check(
-        1 < max_gen_inflight <= BLOCK_CONCURRENCY,
-        f"P2 生成并发受控且曾并发（1 < 峰值 ≤ {BLOCK_CONCURRENCY}）",
+        1 < max_gen_inflight <= block_concurrency,
+        f"P2 生成并发受控且曾并发（1 < 峰值 ≤ {block_concurrency}）",
         f"max_gen_inflight={max_gen_inflight}",
     )
 
@@ -328,11 +329,11 @@ async def run(checker: Checker) -> None:
     )
 
     # -------- P5：修改并发上限=2（并发修改而非串行） --------
-    # 修改阶段任一时刻在飞的 modify_block ≤ 2，且至少一次达到 2（证明并发，非串行=1）。
+    # 修改阶段任一时刻在飞的 modify_block 不超过当前模型上限，且至少一次大于 1（证明并发）。
     max_mod_inflight = _max_inflight(tl, "mod_start", "mod_end")
     checker.check(
-        1 < max_mod_inflight <= BLOCK_CONCURRENCY,
-        f"P5 修改并发受控且曾并发（1 < 峰值 ≤ {BLOCK_CONCURRENCY}，非串行）",
+        1 < max_mod_inflight <= block_concurrency,
+        f"P5 修改并发受控且曾并发（1 < 峰值 ≤ {block_concurrency}，非串行）",
         f"max_mod_inflight={max_mod_inflight}",
     )
 

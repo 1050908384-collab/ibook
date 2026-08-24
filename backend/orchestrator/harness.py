@@ -38,9 +38,13 @@ from services.learning_evidence_service import LearningEvidenceService
 # 审核辩论协议常量（协议第 7 节）
 MAX_DEBATE_ROUNDS = 2  # 内层答辩复核轮次上限
 
-# 块级流水线并发上限：个性化学习资源生成 Agent 生成/修改、专业知识与教学质量审核 Agent 复核均限制为同时 2 个块在飞，
-# 兼顾低配设备（不做成 settings 开关——属内部调度细节，非运维旋钮）。
-BLOCK_CONCURRENCY = 2
+LOCAL_LLM_PROVIDERS = {"ollama", "local"}
+
+
+def resolve_block_concurrency(execution_mode: str, provider: str) -> int:
+    if execution_mode == "deterministic" or provider.strip().lower() in LOCAL_LLM_PROVIDERS:
+        return max(1, settings.BLOCK_CONCURRENCY_LOCAL)
+    return max(1, settings.BLOCK_CONCURRENCY_CLOUD)
 
 
 @dataclass
@@ -110,6 +114,15 @@ class Harness:
         self._generation_event_seq: Dict[str, int] = {}
         # LLM 判分兜底：懒加载，hybrid 模式且配置可用时才启用；deterministic 模式下永远跳过
         self._llm_client_grading: Any = None
+
+    def _block_concurrency(self) -> int:
+        provider = settings.LLM_PROVIDER
+        if self.execution_mode == "hybrid" and provider.strip().lower() == "deepseek":
+            llm_client = getattr(self.agent3, "llm_client", None)
+            has_cloud_credentials = getattr(llm_client, "_has_deepseek_credentials", None)
+            if callable(has_cloud_credentials) and not has_cloud_credentials():
+                provider = settings.LLM_FALLBACK_PROVIDER or "ollama"
+        return resolve_block_concurrency(self.execution_mode, provider)
 
     def _reset_generation_events(self, session_id: str) -> None:
         self._generation_events[session_id] = []
@@ -1347,9 +1360,9 @@ class Harness:
     ) -> tuple[LearningPackage, list[ReviewRound]]:
         """块级真并发生产者/消费者流水线（任务 5 + 真并发改造）。
 
-        - 生成：并发上限 BLOCK_CONCURRENCY（=2），每块生成后立即提交独立审核；
+        - 生成：并发上限按模型来源动态选择，每块生成后立即提交独立审核；
         - 首轮后一次性构造完整 issue_package（按块分组），交给 个性化学习资源生成 Agent；
-        - 修改：并发上限 BLOCK_CONCURRENCY（=2），每块改完立即派发独立复核 task
+        - 修改：使用同一动态并发上限，每块改完立即派发独立复核 task
           （块1复核不阻塞块2修改）；
         - 全部块无 open 问题才 passed；专业知识与教学质量审核 Agent 交还问题清单最多 MAX_REVIEW_ITERATIONS 次；
         - 无可用原始 chunk 时安全降级为原整篇链路。
@@ -1382,9 +1395,14 @@ class Harness:
             )
 
         # ---- Phase A：生成（并发上限 2）× 每块生成后立即首轮审核 ----
-        self._log(session_id, "pipeline:phaseA_start", f"chunks={len(source_chunks)}, cap={BLOCK_CONCURRENCY}")
-        gen_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
-        review_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
+        block_concurrency = self._block_concurrency()
+        self._log(
+            session_id,
+            "pipeline:phaseA_start",
+            f"chunks={len(source_chunks)}, cap={block_concurrency}, provider={settings.LLM_PROVIDER}",
+        )
+        gen_sem = asyncio.Semaphore(block_concurrency)
+        review_sem = asyncio.Semaphore(block_concurrency)
         pairs = await asyncio.gather(*[
             self._generate_and_review_block(
                 session_id, stage, profile, practice_profile, learning_evidence, chunk, idx, round_index=1,
@@ -1466,7 +1484,7 @@ class Harness:
                     package_status = "approved"
                 break
 
-            modify_sem = asyncio.Semaphore(BLOCK_CONCURRENCY)
+            modify_sem = asyncio.Semaphore(block_concurrency)
             # 收集本轮各块辩论产物，供统一落库（_persist_debate_round）
             round_debate: List[Dict[str, Any]] = []
 
