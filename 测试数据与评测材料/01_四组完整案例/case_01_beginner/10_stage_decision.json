@@ -1,0 +1,15 @@
+{
+  "case_id": "case_01_beginner",
+  "stage_id": "stage_1",
+  "assessment_accuracy": 0.52,
+  "planned_accuracy_band": "low",
+  "expected_strategy": "simplify",
+  "actual_strategy": "simplify",
+  "decision": "repeat",
+  "next_stage": "stage_2",
+  "next_stage_block": "KB-08",
+  "profile_updated": true,
+  "mastery_probability": 0.42,
+  "reasoning": "低正确率触发降维，阶段2拆分Transformer内容并补充图示；不重复已掌握Python内容",
+  "image_snapshot_diff": "KB-04 掌握度 0.42（未掌握），降维巩固"
+}

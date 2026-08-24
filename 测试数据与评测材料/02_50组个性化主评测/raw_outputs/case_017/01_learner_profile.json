@@ -1,0 +1,19 @@
+{
+  "case_id": "case_017",
+  "scenario_id": "scenario_017",
+  "learner_id": "case_017",
+  "background": "会Python但无GPU，想学LoRA微调",
+  "existing_skills": [
+    "KB-02",
+    "KB-04"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 1.0,
+  "learning_style": "理论结合简单实操",
+  "hardware": "无独立GPU（核显）",
+  "target_blocks": [
+    "KB-11",
+    "KB-12"
+  ],
+  "version": 1
+}

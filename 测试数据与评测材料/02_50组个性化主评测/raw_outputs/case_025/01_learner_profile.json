@@ -1,0 +1,19 @@
+{
+  "case_id": "case_025",
+  "scenario_id": "scenario_025",
+  "learner_id": "case_025",
+  "background": "云T4 16GB，想QLoRA微调并部署",
+  "existing_skills": [
+    "KB-04",
+    "KB-08"
+  ],
+  "learning_goal": "QLoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "实操型",
+  "hardware": "Tesla T4 16GB（云）",
+  "target_blocks": [
+    "KB-12",
+    "KB-15"
+  ],
+  "version": 1
+}

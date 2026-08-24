@@ -1,0 +1,30 @@
+{
+  "trace_id": "trace_case_02_low_vram_practice_s1",
+  "case_id": "case_02_low_vram_practice",
+  "stage_id": "stage_1",
+  "round_index": 1,
+  "review_status": "passed",
+  "sources": [
+    {
+      "source_id": "src_1",
+      "block_id": "KB-12",
+      "heading_path": "QLoRA 4-bit量化"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_1",
+      "text": "NF4 量化配合双重量化可显著降低显存占用",
+      "source_refs": [
+        "src_1"
+      ],
+      "verdict": "supported"
+    }
+  ],
+  "issues": [],
+  "revisions": [],
+  "recheck": {
+    "round": 1,
+    "result": "初稿通过，无需修订"
+  }
+}

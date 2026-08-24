@@ -1,0 +1,19 @@
+{
+  "case_id": "case_028",
+  "scenario_id": "scenario_028",
+  "learner_id": "case_028",
+  "background": "A100服务器，想做高并发vLLM推理服务",
+  "existing_skills": [
+    "KB-04",
+    "KB-08",
+    "KB-11"
+  ],
+  "learning_goal": "vLLM部署",
+  "daily_hours": 3.0,
+  "learning_style": "工程实操型",
+  "hardware": "A100 80GB（云）",
+  "target_blocks": [
+    "KB-15"
+  ],
+  "version": 1
+}

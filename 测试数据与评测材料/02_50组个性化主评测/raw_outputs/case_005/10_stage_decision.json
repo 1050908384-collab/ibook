@@ -1,0 +1,8 @@
+{
+  "case_id": "case_005",
+  "accuracy": 0.86,
+  "expected_strategy": "advance",
+  "actual_strategy": "advance",
+  "decision": "continue",
+  "profile_updated": true
+}

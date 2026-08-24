@@ -1,0 +1,18 @@
+{
+  "case_id": "case_007",
+  "scenario_id": "scenario_007",
+  "learner_id": "case_007",
+  "background": "只会Python2和老式脚本，不熟悉现代Python生态",
+  "existing_skills": [
+    "KB-02"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 1.0,
+  "learning_style": "理论型",
+  "hardware": "RTX 3060 12GB",
+  "target_blocks": [
+    "KB-03",
+    "KB-04"
+  ],
+  "version": 1
+}

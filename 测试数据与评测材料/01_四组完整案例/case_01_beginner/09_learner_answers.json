@@ -1,0 +1,23 @@
+{
+  "case_id": "case_01_beginner",
+  "stage_id": "stage_1",
+  "answer_behavior": "low",
+  "target_accuracy_range": [
+    0.4,
+    0.59
+  ],
+  "wrong_answer_strategy": "fixed_by_question_id",
+  "assessment_accuracy": 0.52,
+  "answers": [
+    {
+      "question_id": "Q-KB04-ST0406-001",
+      "selected": "A",
+      "correct": false
+    },
+    {
+      "question_id": "Q-KB04-ST0407-001",
+      "submitted_code": "（未正确调用 zero_grad）",
+      "correct": false
+    }
+  ]
+}

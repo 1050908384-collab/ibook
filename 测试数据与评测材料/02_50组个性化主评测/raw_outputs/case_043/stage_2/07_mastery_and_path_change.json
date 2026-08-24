@@ -1,0 +1,15 @@
+{
+  "case_id": "case_043",
+  "stage_1": {
+    "accuracy": 0.42,
+    "strategy": "backtrack",
+    "mastery": "not_mastered"
+  },
+  "stage_2": {
+    "accuracy": 0.47,
+    "strategy": "repeat",
+    "mastery": "learning"
+  },
+  "mastery_status_change": "阶段1→阶段2 掌握度变化",
+  "path_change_reason": "连续两次低分，回退更基础前置知识"
+}

@@ -1,0 +1,12 @@
+{
+  "case_id": "case_040",
+  "stage_id": "stage_2",
+  "target_blocks": [
+    "KB-13"
+  ],
+  "difficulty": "高级",
+  "estimated_hours": 4.0,
+  "hard_prerequisites": [],
+  "selection_reason": "阶段1高分推进，进入进阶知识点",
+  "path_change_from_stage_1": "阶段1高分推进，进入进阶知识点"
+}

@@ -1,0 +1,19 @@
+{
+  "case_id": "case_004",
+  "scenario_id": "scenario_004",
+  "learner_id": "case_004",
+  "background": "前端/Web开发背景，会JS和基础Python，想转LLM方向",
+  "existing_skills": [
+    "KB-02"
+  ],
+  "learning_goal": "vLLM部署",
+  "daily_hours": 2.0,
+  "learning_style": "工程实操型",
+  "hardware": "RTX 4060 8GB",
+  "target_blocks": [
+    "KB-04",
+    "KB-08",
+    "KB-15"
+  ],
+  "version": 1
+}

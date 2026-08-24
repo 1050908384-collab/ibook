@@ -1,0 +1,15 @@
+{
+  "case_id": "case_044",
+  "stage_1": {
+    "accuracy": 0.95,
+    "strategy": "advance",
+    "mastery": "mastered"
+  },
+  "stage_2": {
+    "accuracy": 0.95,
+    "strategy": "continue",
+    "mastery": "mastered"
+  },
+  "mastery_status_change": "阶段1→阶段2 掌握度变化",
+  "path_change_reason": "阶段1高分推进，进入进阶知识点"
+}

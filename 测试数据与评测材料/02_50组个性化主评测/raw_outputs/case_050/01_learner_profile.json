@@ -1,0 +1,16 @@
+{
+  "case_id": "case_050",
+  "scenario_id": "scenario_050",
+  "learner_id": "case_050",
+  "background": "只说\"我想学AI\"，无具体方向",
+  "existing_skills": [],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 1.0,
+  "learning_style": "理论型",
+  "hardware": "RTX 3060 12GB",
+  "target_blocks": [
+    "KB-08",
+    "KB-12"
+  ],
+  "version": 1
+}

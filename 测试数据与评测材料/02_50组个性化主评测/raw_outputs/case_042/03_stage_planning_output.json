@@ -1,0 +1,10 @@
+{
+  "case_id": "case_042",
+  "stage_id": "stage_1",
+  "target_blocks": "KB-08|KB-12",
+  "first_stage_block": "KB-08",
+  "difficulty": "初级",
+  "estimated_hours": 3.0,
+  "hard_prerequisites": [],
+  "selection_reason": "基于用户基础与目标LoRA微调选择首阶段KB-08"
+}

@@ -1,0 +1,17 @@
+{
+  "case_id": "case_046",
+  "scenario_id": "scenario_046",
+  "learner_id": "case_046",
+  "background": "用户写\"LoRa\"，可能指物联网LoRa而非低秩适配",
+  "existing_skills": [
+    "KB-02"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 1.0,
+  "learning_style": "理论型",
+  "hardware": "RTX 3060 12GB",
+  "target_blocks": [
+    "KB-12"
+  ],
+  "version": 1
+}

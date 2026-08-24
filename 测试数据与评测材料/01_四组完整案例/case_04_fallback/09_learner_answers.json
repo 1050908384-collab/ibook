@@ -1,0 +1,17 @@
+{
+  "case_id": "case_04_fallback",
+  "stage_id": "stage_1",
+  "answer_behavior": "medium",
+  "target_accuracy_range": [
+    0.6,
+    0.79
+  ],
+  "assessment_accuracy": 0.7,
+  "answers": [
+    {
+      "question_id": "Q-KB12-ST1202-001",
+      "selected": "A",
+      "correct": true
+    }
+  ]
+}

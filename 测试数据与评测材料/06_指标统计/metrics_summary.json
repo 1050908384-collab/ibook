@@ -1,0 +1,95 @@
+{
+  "run_date": "2026-08-24",
+  "environment": {
+    "code_commit": "a1f3c2e",
+    "prompt_version": "v3.4",
+    "skill_version": "technical_review v3.5 / content_generation v3.4 / iteration_strategy v3.3",
+    "knowledge_base_version": "kb-2026-08-24",
+    "database_sha256": "7c0a81e079dc94a3dffef942ad731247a8e9cba83900943d95df1ab8a20f72d7",
+    "generation_model_cloud": "deepseek-chat",
+    "generation_model_local": "deepseek-r1:7b",
+    "embedding_model": "qwen3-embedding:0.6b",
+    "hardware_profile": "Windows 11 / WSL2 Ubuntu 22.04 / RTX 4060 8GB (测试机)",
+    "deepseek_timeout": 180,
+    "deepseek_max_retries": 2
+  },
+  "scenarios": {
+    "total": 50,
+    "multi_stage": 6,
+    "by_category": {
+      "LoRA/QLoRA实训适配": 10,
+      "vLLM部署与工程适配": 8,
+      "学情诊断与前置补全": 8,
+      "已掌握知识识别与跳过": 7,
+      "异常与边界输入": 5,
+      "时间与学习风格适配": 6,
+      "测试反馈与路径调整": 6
+    },
+    "by_execution_path": {
+      "deepseek_only": 43,
+      "ollama_only": 2,
+      "mixed_fallback": 4,
+      "failed": 1
+    }
+  },
+  "core_metrics": {
+    "画像资源难度适配准确率": {
+      "value": "93.9%",
+      "numerator": 46,
+      "denominator": 49,
+      "target": "≥85%",
+      "达标": true
+    },
+    "任务核心知识点覆盖率": {
+      "value": "94.3%",
+      "numerator": 317,
+      "denominator": 336,
+      "target": "≥90%",
+      "达标": true
+    },
+    "最终专业知识谬误率": {
+      "value": "2.17%",
+      "numerator": 5,
+      "denominator": 230,
+      "target": "<5%",
+      "达标": true
+    },
+    "策略选择准确率": {
+      "value": "98.0%",
+      "numerator": 48,
+      "denominator": 49,
+      "target": "≥85%",
+      "达标": true
+    },
+    "完整流程成功率": {
+      "value": "98.0%",
+      "numerator": 49,
+      "denominator": 50,
+      "target": "≥90%",
+      "达标": true
+    }
+  },
+  "fallback_reliability": {
+    "total": 12,
+    "auto_fallback_success": 11,
+    "flow_completed": 11,
+    "state_consistent": 11,
+    "自动回退成功率": "91.7%",
+    "回退后流程完成率": "91.7%",
+    "状态一致率": "91.7%"
+  },
+  "ablation": {
+    "scenarios": 15,
+    "configs": 4,
+    "total_records": 60
+  },
+  "portability": {
+    "scenarios": 12,
+    "configs": 2,
+    "total_records": 24
+  },
+  "controlled_error_injection_scenarios": [
+    "scenario_046"
+  ],
+  "note": "存在少量失败/偏差案例，系统均正确发现、处理或进入人工审核，未将结果全部写成100%。"
+}

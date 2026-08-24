@@ -1,0 +1,42 @@
+{
+  "trace_id": "trace_case_04_fallback_s1",
+  "case_id": "case_04_fallback",
+  "stage_id": "stage_1",
+  "round_index": 1,
+  "review_status": "passed",
+  "review_agent_actual_model": "deepseek-r1:7b",
+  "fallback_during_review": true,
+  "fallback_reason": "deepseek_timeout",
+  "state_continuity": {
+    "session_id": "sess_case_04",
+    "content_block_ids_continuous": [
+      "block_s1_01",
+      "block_s1_02",
+      "block_s1_03",
+      "block_s1_04"
+    ],
+    "content_versions": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "review_trace_id_preserved": true,
+    "duplicate_content": false
+  },
+  "sources": [
+    {
+      "source_id": "src_1",
+      "block_id": "KB-12"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_1",
+      "text": "回退后审核Trace保持连续",
+      "verdict": "supported"
+    }
+  ],
+  "issues": [],
+  "revisions": []
+}

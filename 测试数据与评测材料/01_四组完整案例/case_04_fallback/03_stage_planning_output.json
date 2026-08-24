@@ -1,0 +1,14 @@
+{
+  "case_id": "case_04_fallback",
+  "stages": [
+    {
+      "stage_id": "stage_1",
+      "target_blocks": [
+        "KB-12"
+      ],
+      "difficulty": "中级",
+      "estimated_hours": 3.0,
+      "selection_reason": "12GB卡LoRA r=8方案；回退后阶段/内容块/审核记录保持连续"
+    }
+  ]
+}

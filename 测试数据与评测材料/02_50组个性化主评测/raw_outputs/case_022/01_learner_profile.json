@@ -1,0 +1,19 @@
+{
+  "case_id": "case_022",
+  "scenario_id": "scenario_022",
+  "learner_id": "case_022",
+  "background": "16GB卡，想深入LoRA rank/alpha参数设计",
+  "existing_skills": [
+    "KB-08",
+    "KB-11",
+    "KB-13"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 2.5,
+  "learning_style": "理论结合实操",
+  "hardware": "RTX 4060 Ti 16GB",
+  "target_blocks": [
+    "KB-12"
+  ],
+  "version": 1
+}

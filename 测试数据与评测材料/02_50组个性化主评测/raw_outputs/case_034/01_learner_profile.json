@@ -1,0 +1,17 @@
+{
+  "case_id": "case_034",
+  "scenario_id": "scenario_034",
+  "learner_id": "case_034",
+  "background": "每天只有0.5小时，理论型，想理解Transformer",
+  "existing_skills": [
+    "KB-02"
+  ],
+  "learning_goal": "理解Transformer架构",
+  "daily_hours": 0.5,
+  "learning_style": "理论型",
+  "hardware": "无独立GPU",
+  "target_blocks": [
+    "KB-08"
+  ],
+  "version": 1
+}

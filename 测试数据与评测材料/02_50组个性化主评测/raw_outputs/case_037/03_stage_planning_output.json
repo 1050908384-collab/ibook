@@ -1,0 +1,10 @@
+{
+  "case_id": "case_037",
+  "stage_id": "stage_1",
+  "target_blocks": "KB-15",
+  "first_stage_block": "KB-15",
+  "difficulty": "高级",
+  "estimated_hours": 6.0,
+  "hard_prerequisites": [],
+  "selection_reason": "基于用户基础与目标vLLM部署选择首阶段KB-15"
+}

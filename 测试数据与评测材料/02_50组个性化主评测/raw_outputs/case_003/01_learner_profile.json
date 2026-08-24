@@ -1,0 +1,20 @@
+{
+  "case_id": "case_003",
+  "scenario_id": "scenario_003",
+  "learner_id": "case_003",
+  "background": "会用Pandas/NumPy做数据分析，但没学过PyTorch",
+  "existing_skills": [
+    "KB-02",
+    "KB-03"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 1.5,
+  "learning_style": "实操型",
+  "hardware": "RTX 3060 12GB",
+  "target_blocks": [
+    "KB-04",
+    "KB-05",
+    "KB-06"
+  ],
+  "version": 1
+}

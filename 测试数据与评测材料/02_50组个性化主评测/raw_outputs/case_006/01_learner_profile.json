@@ -1,0 +1,17 @@
+{
+  "case_id": "case_006",
+  "scenario_id": "scenario_006",
+  "learner_id": "case_006",
+  "background": "数学专业硕士，懂线性代数和概率论，但无编程经验",
+  "existing_skills": [],
+  "learning_goal": "理解Transformer架构",
+  "daily_hours": 1.0,
+  "learning_style": "理论型",
+  "hardware": "无独立GPU",
+  "target_blocks": [
+    "KB-01",
+    "KB-02",
+    "KB-08"
+  ],
+  "version": 1
+}

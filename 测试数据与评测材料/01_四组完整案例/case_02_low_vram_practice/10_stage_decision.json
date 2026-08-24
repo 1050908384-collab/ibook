@@ -1,0 +1,14 @@
+{
+  "case_id": "case_02_low_vram_practice",
+  "stage_id": "stage_1",
+  "assessment_accuracy": 0.88,
+  "planned_accuracy_band": "high",
+  "expected_strategy": "advance",
+  "actual_strategy": "advance",
+  "decision": "continue",
+  "next_stage": "stage_2",
+  "next_stage_block": "KB-13",
+  "profile_updated": true,
+  "mastery_probability": 0.85,
+  "reasoning": "高分推进，进入进阶训练技巧配合QLoRA"
+}

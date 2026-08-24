@@ -1,0 +1,18 @@
+{
+  "case_id": "case_027",
+  "scenario_id": "scenario_027",
+  "learner_id": "case_027",
+  "background": "8GB卡，想部署小模型vLLM服务",
+  "existing_skills": [
+    "KB-04",
+    "KB-08"
+  ],
+  "learning_goal": "vLLM部署",
+  "daily_hours": 2.0,
+  "learning_style": "工程实操型",
+  "hardware": "RTX 4060 8GB",
+  "target_blocks": [
+    "KB-15"
+  ],
+  "version": 1
+}

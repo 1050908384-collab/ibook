@@ -1,0 +1,18 @@
+{
+  "case_id": "case_045",
+  "stage_id": "stage_2",
+  "snapshot_type": "post_stage_1",
+  "background": "用户调整目标/时长，阶段2重新规划",
+  "learning_goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "实操型",
+  "hardware": "RTX 4060 8GB",
+  "stage_1_accuracy": 0.74,
+  "stage_1_strategy": "reinforce",
+  "mastery_status_change": "阶段1掌握度 0.74 → 阶段2预估 0.84",
+  "path_change_reason": "阶段1中等正确率，增加针对性练习与巩固内容",
+  "target_blocks_stage_2": [
+    "KB-12"
+  ],
+  "version": 2
+}

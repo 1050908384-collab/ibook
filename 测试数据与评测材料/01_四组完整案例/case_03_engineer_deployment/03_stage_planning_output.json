@@ -1,0 +1,23 @@
+{
+  "case_id": "case_03_engineer_deployment",
+  "stages": [
+    {
+      "stage_id": "stage_1",
+      "target_blocks": [
+        "KB-12"
+      ],
+      "difficulty": "高级",
+      "estimated_hours": 6.0,
+      "selection_reason": "优先LoRA参数设计、权重合并；24GB卡可做r=16全覆盖；工程实操风格"
+    },
+    {
+      "stage_id": "stage_2",
+      "target_blocks": [
+        "KB-15"
+      ],
+      "difficulty": "高级",
+      "estimated_hours": 6.0,
+      "selection_reason": "阶段1高分推进，进入vLLM推理部署与性能优化"
+    }
+  ]
+}

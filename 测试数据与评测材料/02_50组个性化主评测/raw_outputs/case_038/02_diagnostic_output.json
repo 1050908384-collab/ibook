@@ -1,0 +1,10 @@
+{
+  "case_id": "case_038",
+  "confidence": 0.82,
+  "mapped_target_blocks": "未生成",
+  "knowledge_gaps": [],
+  "skipped_mastered": [
+    "KB-04",
+    "KB-08"
+  ]
+}

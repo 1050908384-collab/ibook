@@ -1,0 +1,30 @@
+{
+  "case_id": "case_01_beginner",
+  "learner_id": "case_01_beginner",
+  "background": "大模型方向初学者，掌握基础Python，但没有深度学习和Transformer经验",
+  "existing_skills": [
+    "KB-02"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 1.0,
+  "learning_style": "理论解释结合简单实操",
+  "hardware": "无独立GPU或仅8GB显存（核显笔记本）",
+  "target_blocks": [
+    "KB-04",
+    "KB-08",
+    "KB-11",
+    "KB-12"
+  ],
+  "version": 1,
+  "frozen_environment": {
+    "prompt_version": "v3.4",
+    "skill_version": "technical_review v3.5 / content_generation v3.4",
+    "knowledge_base_version": "kb-2026-08-24",
+    "generation_model": "deepseek-chat",
+    "embedding_model": "qwen3-embedding:0.6b",
+    "execution_mode": "hybrid",
+    "code_commit": "a1f3c2e",
+    "run_started_at": "2026-08-24T09:00:00",
+    "run_finished_at": "2026-08-24T10:35:00"
+  }
+}

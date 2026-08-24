@@ -1,0 +1,26 @@
+[
+  {
+    "question_id": "Q-KB14-ST14-00-001",
+    "difficulty": "高级",
+    "has_answer": true,
+    "can_be_scored": true
+  },
+  {
+    "question_id": "Q-KB14-ST14-01-001",
+    "difficulty": "高级",
+    "has_answer": true,
+    "can_be_scored": true
+  },
+  {
+    "question_id": "Q-KB15-ST15-00-001",
+    "difficulty": "高级",
+    "has_answer": true,
+    "can_be_scored": true
+  },
+  {
+    "question_id": "Q-KB15-ST15-01-001",
+    "difficulty": "高级",
+    "has_answer": true,
+    "can_be_scored": true
+  }
+]

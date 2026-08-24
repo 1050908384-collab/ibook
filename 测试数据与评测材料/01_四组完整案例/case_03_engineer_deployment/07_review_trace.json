@@ -1,0 +1,30 @@
+{
+  "trace_id": "trace_case_03_engineer_deployment_s1",
+  "case_id": "case_03_engineer_deployment",
+  "stage_id": "stage_1",
+  "round_index": 1,
+  "review_status": "passed",
+  "sources": [
+    {
+      "source_id": "src_1",
+      "block_id": "KB-12",
+      "heading_path": "LoRA权重合并"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_1",
+      "text": "merge_and_unload() 将LoRA权重合并回基础模型",
+      "source_refs": [
+        "src_1"
+      ],
+      "verdict": "supported"
+    }
+  ],
+  "issues": [],
+  "revisions": [],
+  "recheck": {
+    "round": 1,
+    "result": "初稿通过"
+  }
+}

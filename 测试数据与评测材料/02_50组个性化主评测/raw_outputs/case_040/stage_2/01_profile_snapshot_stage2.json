@@ -1,0 +1,18 @@
+{
+  "case_id": "case_040",
+  "stage_id": "stage_2",
+  "snapshot_type": "post_stage_1",
+  "background": "阶段1高正确率，验证是否进入后续知识点",
+  "learning_goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "实操型",
+  "hardware": "RTX 4060 8GB",
+  "stage_1_accuracy": 0.93,
+  "stage_1_strategy": "advance",
+  "mastery_status_change": "阶段1掌握度 0.93 → 阶段2预估 0.95",
+  "path_change_reason": "阶段1高分推进，进入进阶知识点",
+  "target_blocks_stage_2": [
+    "KB-13"
+  ],
+  "version": 2
+}

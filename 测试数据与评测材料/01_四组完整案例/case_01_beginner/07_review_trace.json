@@ -1,0 +1,74 @@
+{
+  "trace_id": "trace_case_01_beginner_s1",
+  "case_id": "case_01_beginner",
+  "stage_id": "stage_1",
+  "round_index": 2,
+  "review_status": "passed_after_revision",
+  "sources": [
+    {
+      "source_id": "src_1",
+      "block_id": "KB-04",
+      "heading_path": "训练循环编写",
+      "line_range": "12-45"
+    },
+    {
+      "source_id": "src_2",
+      "block_id": "KB-04",
+      "heading_path": "优化器与损失函数",
+      "line_range": "30-60"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_1",
+      "text": "optimizer.zero_grad() 应在 loss.backward() 之前调用以清空梯度",
+      "source_refs": [
+        "src_1"
+      ],
+      "verdict": "supported"
+    },
+    {
+      "claim_id": "claim_2",
+      "text": "初稿中 zero_grad 放在 backward 之后是错误的梯度计算顺序",
+      "source_refs": [
+        "src_1"
+      ],
+      "verdict": "supported"
+    }
+  ],
+  "issues": [
+    {
+      "issue_id": "iss_1",
+      "error_type": "gradient_flow_error",
+      "severity": "major",
+      "must_fix": true,
+      "claim_id": "claim_2",
+      "block_id": "block_s1_02",
+      "content_version": 1,
+      "description": "初稿训练循环示例将 optimizer.zero_grad() 放在 loss.backward() 之后，导致梯度累积错误",
+      "issue_fingerprint": "gradient_flow_error|claim_2"
+    }
+  ],
+  "revisions": [
+    {
+      "issue_id": "iss_1",
+      "agent": "个性化学习资源生成 Agent",
+      "action": "修正 zero_grad 调用顺序",
+      "patched_sections": [
+        "block_s1_02 代码块"
+      ],
+      "content_version_before": 1,
+      "content_version_after": 2,
+      "explanation": "将 optimizer.zero_grad() 移至 loss.backward() 之前"
+    }
+  ],
+  "recheck": {
+    "round": 2,
+    "agent": "专业知识与教学质量审核 Agent",
+    "use_llm_semantic": false,
+    "result": "复核通过，梯度计算顺序正确",
+    "issues_resolved": [
+      "iss_1"
+    ]
+  }
+}

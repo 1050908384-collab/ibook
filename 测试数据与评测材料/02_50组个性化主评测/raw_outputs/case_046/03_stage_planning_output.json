@@ -1,0 +1,10 @@
+{
+  "case_id": "case_046",
+  "stage_id": "stage_1",
+  "target_blocks": "KB-12",
+  "first_stage_block": "KB-12",
+  "difficulty": "中级",
+  "estimated_hours": 2.0,
+  "hard_prerequisites": [],
+  "selection_reason": "基于用户基础与目标LoRA微调选择首阶段KB-12"
+}

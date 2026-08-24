@@ -1,0 +1,18 @@
+{
+  "case_id": "case_041",
+  "scenario_id": "scenario_041",
+  "learner_id": "case_041",
+  "background": "阶段1中等正确率，验证是否增加针对性练习",
+  "existing_skills": [
+    "KB-04",
+    "KB-08"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "实操型",
+  "hardware": "RTX 4060 8GB",
+  "target_blocks": [
+    "KB-12"
+  ],
+  "version": 1
+}

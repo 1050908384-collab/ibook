@@ -1,0 +1,17 @@
+{
+  "case_id": "case_005",
+  "scenario_id": "scenario_005",
+  "learner_id": "case_005",
+  "background": "资深C++/Java工程师，但不会Python，想学大模型微调",
+  "existing_skills": [],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "工程实操型",
+  "hardware": "RTX 4070 12GB",
+  "target_blocks": [
+    "KB-02",
+    "KB-04",
+    "KB-08"
+  ],
+  "version": 1
+}

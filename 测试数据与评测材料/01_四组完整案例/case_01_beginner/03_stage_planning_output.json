@@ -1,0 +1,33 @@
+{
+  "case_id": "case_01_beginner",
+  "stages": [
+    {
+      "stage_id": "stage_1",
+      "target_blocks": [
+        "KB-04"
+      ],
+      "difficulty": "初级",
+      "estimated_hours": 2.0,
+      "selection_reason": "用户无PyTorch经验，须先补齐硬前置；1h/天拆分为2h阶段内容；理论+简单实操风格"
+    },
+    {
+      "stage_id": "stage_2",
+      "target_blocks": [
+        "KB-08"
+      ],
+      "difficulty": "中级",
+      "estimated_hours": 2.0,
+      "selection_reason": "阶段1低分后降维巩固，再进入Transformer架构"
+    }
+  ],
+  "hard_prerequisites": {
+    "KB-12": [
+      "KB-11",
+      "KB-08",
+      "KB-04"
+    ],
+    "KB-08": [
+      "KB-04"
+    ]
+  }
+}

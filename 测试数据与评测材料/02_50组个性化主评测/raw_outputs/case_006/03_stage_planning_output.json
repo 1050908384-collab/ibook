@@ -1,0 +1,10 @@
+{
+  "case_id": "case_006",
+  "stage_id": "stage_1",
+  "target_blocks": "KB-01|KB-02|KB-08",
+  "first_stage_block": "KB-01",
+  "difficulty": "中级",
+  "estimated_hours": 2.0,
+  "hard_prerequisites": [],
+  "selection_reason": "基于用户基础与目标理解Transformer架构选择首阶段KB-01"
+}

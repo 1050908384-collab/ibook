@@ -1,0 +1,30 @@
+{
+  "case_id": "case_020",
+  "answer_behavior": "high",
+  "accuracy": 0.81,
+  "answers": [
+    {
+      "question_id": "Q-KB12-ST12-00-001",
+      "correct": true
+    },
+    {
+      "question_id": "Q-KB12-ST12-01-001",
+      "correct": true
+    },
+    {
+      "question_id": "Q-KB15-ST15-00-001",
+      "correct": true
+    },
+    {
+      "question_id": "Q-KB15-ST15-01-001",
+      "correct": true
+    }
+  ],
+  "target_accuracy_range": [
+    0.8,
+    0.95
+  ],
+  "wrong_answer_strategy": "fixed_by_question_id",
+  "expected_next_strategy": "advance",
+  "assessment_accuracy": 0.81
+}

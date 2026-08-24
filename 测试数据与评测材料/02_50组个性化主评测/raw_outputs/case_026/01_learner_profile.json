@@ -1,0 +1,21 @@
+{
+  "case_id": "case_026",
+  "scenario_id": "scenario_026",
+  "learner_id": "case_026",
+  "background": "熟悉Transformer/HF/训练，想完成LoRA微调、权重合并和vLLM部署",
+  "existing_skills": [
+    "KB-04",
+    "KB-08",
+    "KB-11",
+    "KB-13"
+  ],
+  "learning_goal": "LoRA微调+权重合并+vLLM部署",
+  "daily_hours": 3.0,
+  "learning_style": "工程实操和故障排查",
+  "hardware": "RTX 4090 24GB",
+  "target_blocks": [
+    "KB-12",
+    "KB-15"
+  ],
+  "version": 1
+}

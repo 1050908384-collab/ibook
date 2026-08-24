@@ -1,0 +1,19 @@
+{
+  "case_id": "case_037",
+  "scenario_id": "scenario_037",
+  "learner_id": "case_037",
+  "background": "每天3小时，工程实操型，想学vLLM部署",
+  "existing_skills": [
+    "KB-04",
+    "KB-08",
+    "KB-13"
+  ],
+  "learning_goal": "vLLM部署",
+  "daily_hours": 3.0,
+  "learning_style": "工程实操和故障排查",
+  "hardware": "RTX 4090 24GB",
+  "target_blocks": [
+    "KB-15"
+  ],
+  "version": 1
+}

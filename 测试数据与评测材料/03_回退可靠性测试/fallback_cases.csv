@@ -1,0 +1,13 @@
+﻿fallback_case_id,fault_id,fault_scenario,fault_reason,reused_scenario_id,expected_behavior,auto_fallback_success,flow_completed_after_fallback,state_consistent,actual_model,fallback_occurred,retry_count,latency_normal_p50_ms,latency_fallback_ms,extra_delay_ms,duplicate_content_generated,run_id
+fb_case_01,F-01,API Key为空,deepseek_api_key_empty,scenario_016,不发送无效请求，回退Ollama,True,True,True,deepseek-r1:7b,True,1,17499,35931,18432,False,run_fb_01_20260824
+fb_case_02,F-02,DeepSeek返回401,deepseek_401,scenario_026,记录认证失败并回退,True,True,True,deepseek-r1:7b,True,2,12882,28398,15516,False,run_fb_02_20260824
+fb_case_03,F-03,DeepSeek返回403,deepseek_403,scenario_035,记录权限错误并回退,True,True,True,deepseek-r1:7b,True,1,11637,40987,29350,False,run_fb_03_20260824
+fb_case_04,F-04,DeepSeek返回429,deepseek_429,scenario_040,有限重试后回退,True,True,True,deepseek-r1:7b,True,1,13002,43675,30673,False,run_fb_04_20260824
+fb_case_05,F-05,DeepSeek连接超时,deepseek_timeout,scenario_042,有限重试后回退,True,True,True,deepseek-r1:7b,True,1,14413,26269,11856,False,run_fb_05_20260824
+fb_case_06,F-06,DeepSeek读取超时,deepseek_read_timeout,scenario_046,回退且会话不丢失,True,True,True,deepseek-r1:7b,True,2,8967,26703,17736,False,run_fb_06_20260824
+fb_case_07,F-07,DeepSeek返回500,deepseek_500,scenario_016,回退Ollama,True,True,True,deepseek-r1:7b,True,2,14302,18161,3859,False,run_fb_07_20260824
+fb_case_08,F-08,DeepSeek返回空正文,deepseek_empty_body,scenario_026,重试或回退,True,True,True,deepseek-r1:7b,True,0,14546,35698,21152,False,run_fb_08_20260824
+fb_case_09,F-09,DeepSeek只返回推理内容,deepseek_reasoning_only,scenario_035,重试并要求最终正文，失败则回退,True,True,True,deepseek-r1:7b,True,1,18230,35883,17653,False,run_fb_09_20260824
+fb_case_10,F-10,Ollama首选模型不可用,ollama_model_unavailable,scenario_040,尝试下一个本地模型,True,True,True,qwen2.5:7b-instruct,True,2,19524,20251,727,False,run_fb_10_20260824
+fb_case_11,F-11,所有生成模型不可用,all_models_unavailable,scenario_042,返回明确错误，不伪造内容,False,False,False,unavailable,False,2,17630,42497,24867,False,run_fb_11_20260824
+fb_case_12,F-12,审核中途发生回退,review_mid_fallback,scenario_046,保持审核Trace和内容版本连续,True,True,True,deepseek-r1:7b,True,0,15373,28255,12882,False,run_fb_12_20260824

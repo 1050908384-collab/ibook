@@ -1,0 +1,18 @@
+{
+  "case_id": "case_033",
+  "scenario_id": "scenario_033",
+  "learner_id": "case_033",
+  "background": "云T4，想做vLLM API服务",
+  "existing_skills": [
+    "KB-04",
+    "KB-08"
+  ],
+  "learning_goal": "vLLM部署",
+  "daily_hours": 2.5,
+  "learning_style": "工程实操型",
+  "hardware": "Tesla T4 16GB（云）",
+  "target_blocks": [
+    "KB-15"
+  ],
+  "version": 1
+}

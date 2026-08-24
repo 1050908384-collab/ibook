@@ -1,0 +1,23 @@
+{
+  "case_id": "case_02_low_vram_practice",
+  "stages": [
+    {
+      "stage_id": "stage_1",
+      "target_blocks": [
+        "KB-12"
+      ],
+      "difficulty": "中级",
+      "estimated_hours": 4.0,
+      "selection_reason": "跳过已掌握基础；8GB显存生成QLoRA 4-bit、小模型实训方案；包含代码、实验步骤、错误排查"
+    },
+    {
+      "stage_id": "stage_2",
+      "target_blocks": [
+        "KB-13"
+      ],
+      "difficulty": "高级",
+      "estimated_hours": 3.0,
+      "selection_reason": "阶段1高分推进，进入PyTorch进阶训练技巧（梯度累积/AMP）配合QLoRA微调"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "question_id": "Q-KB04-ST0406-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-06",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "optimizer.zero_grad() 的正确调用位置是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "loss.backward() 之后"
+      },
+      {
+        "key": "B",
+        "text": "loss.backward() 之前"
+      },
+      {
+        "key": "C",
+        "text": "optimizer.step() 之后"
+      },
+      {
+        "key": "D",
+        "text": "任意位置"
+      }
+    ],
+    "correct_answer": "B",
+    "explanation": "zero_grad 必须在反向传播前清空梯度，否则梯度会累积",
+    "grading_mode": "exact_match",
+    "has_answer_and_explanation": true,
+    "can_be_scored": true
+  },
+  {
+    "question_id": "Q-KB04-ST0407-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "编写一个完整的训练循环，对线性模型做1轮训练",
+    "correct_answer": "",
+    "explanation": "检查 zero_grad/forward/backward/step 顺序",
+    "grading_mode": "code_output_check",
+    "has_answer_and_explanation": true,
+    "can_be_scored": true
+  }
+]

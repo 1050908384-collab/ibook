@@ -1,0 +1,18 @@
+{
+  "case_id": "case_013",
+  "scenario_id": "scenario_013",
+  "learner_id": "case_013",
+  "background": "掌握预训练和SFT流程，想做LoRA微调",
+  "existing_skills": [
+    "KB-08",
+    "KB-10"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "实操型",
+  "hardware": "RTX 4070 12GB",
+  "target_blocks": [
+    "KB-12"
+  ],
+  "version": 1
+}

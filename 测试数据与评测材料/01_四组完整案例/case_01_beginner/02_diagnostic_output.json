@@ -1,0 +1,33 @@
+{
+  "case_id": "case_01_beginner",
+  "confidence": 0.88,
+  "mapped_target_blocks": "KB-12",
+  "mapped_goal": "LoRA微调",
+  "knowledge_gaps": [
+    {
+      "block_id": "KB-04",
+      "status": "not_mastered",
+      "reason": "无PyTorch经验"
+    },
+    {
+      "block_id": "KB-08",
+      "status": "not_mastered",
+      "reason": "无Transformer经验"
+    },
+    {
+      "block_id": "KB-11",
+      "status": "not_mastered",
+      "reason": "无HuggingFace经验"
+    },
+    {
+      "block_id": "KB-12",
+      "status": "not_mastered",
+      "reason": "目标未掌握"
+    }
+  ],
+  "skipped_mastered": [
+    "KB-02"
+  ],
+  "skipped_reason": "已确认掌握Python基础，不重复安排",
+  "hard_prerequisites_chain": "KB-02(已掌握)→KB-04→KB-08→KB-11→KB-12"
+}

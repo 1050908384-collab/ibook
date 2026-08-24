@@ -1,0 +1,22 @@
+{
+  "case_id": "case_049",
+  "answer_behavior": "low",
+  "accuracy": 0.58,
+  "answers": [
+    {
+      "question_id": "Q-KB12-ST12-00-001",
+      "correct": true
+    },
+    {
+      "question_id": "Q-KB12-ST12-01-001",
+      "correct": false
+    }
+  ],
+  "target_accuracy_range": [
+    0.4,
+    0.59
+  ],
+  "wrong_answer_strategy": "fixed_by_question_id",
+  "expected_next_strategy": "simplify",
+  "assessment_accuracy": 0.58
+}

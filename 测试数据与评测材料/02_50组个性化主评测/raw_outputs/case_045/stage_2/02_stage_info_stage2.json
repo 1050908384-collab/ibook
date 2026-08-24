@@ -1,0 +1,12 @@
+{
+  "case_id": "case_045",
+  "stage_id": "stage_2",
+  "target_blocks": [
+    "KB-12"
+  ],
+  "difficulty": "中级",
+  "estimated_hours": 4.0,
+  "hard_prerequisites": [],
+  "selection_reason": "阶段1中等正确率，增加针对性练习与巩固内容",
+  "path_change_from_stage_1": "阶段1中等正确率，增加针对性练习与巩固内容"
+}

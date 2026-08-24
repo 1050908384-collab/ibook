@@ -1,0 +1,12 @@
+{
+  "case_id": "case_043",
+  "stage_id": "stage_2",
+  "target_blocks": [
+    "KB-01"
+  ],
+  "difficulty": "初级",
+  "estimated_hours": 3.0,
+  "hard_prerequisites": [],
+  "selection_reason": "连续两次低分，回退更基础前置知识",
+  "path_change_from_stage_1": "连续两次低分，回退更基础前置知识"
+}

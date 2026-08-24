@@ -1,0 +1,19 @@
+{
+  "case_id": "case_029",
+  "scenario_id": "scenario_029",
+  "learner_id": "case_029",
+  "background": "RTX 3090，想学Tensor Parallel部署",
+  "existing_skills": [
+    "KB-04",
+    "KB-08",
+    "KB-13"
+  ],
+  "learning_goal": "vLLM部署",
+  "daily_hours": 2.5,
+  "learning_style": "工程实操型",
+  "hardware": "RTX 3090 24GB",
+  "target_blocks": [
+    "KB-15"
+  ],
+  "version": 1
+}

@@ -1,0 +1,19 @@
+{
+  "case_id": "case_021",
+  "confidence": 0.82,
+  "mapped_target_blocks": "KB-11|KB-12",
+  "knowledge_gaps": [
+    {
+      "block_id": "KB-11",
+      "status": "not_mastered"
+    },
+    {
+      "block_id": "KB-12",
+      "status": "not_mastered"
+    }
+  ],
+  "skipped_mastered": [
+    "KB-02",
+    "KB-04"
+  ]
+}

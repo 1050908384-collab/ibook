@@ -1,0 +1,15 @@
+{
+  "case_id": "case_04_fallback",
+  "stage_id": "stage_1",
+  "assessment_accuracy": 0.7,
+  "planned_accuracy_band": "medium",
+  "expected_strategy": "reinforce",
+  "actual_strategy": "reinforce",
+  "decision": "continue",
+  "next_stage": "stage_2",
+  "next_stage_block": "KB-12（巩固）",
+  "profile_updated": true,
+  "mastery_probability": 0.68,
+  "reasoning": "回退后阶段决策正常完成，中等正确率触发巩固策略",
+  "fallback_impact": "回退未影响决策正确性，状态连续"
+}

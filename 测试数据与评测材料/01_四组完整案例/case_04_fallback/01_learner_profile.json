@@ -1,0 +1,30 @@
+{
+  "case_id": "case_04_fallback",
+  "learner_id": "case_04_fallback",
+  "background": "熟悉Python和PyTorch，想学LoRA微调（与案例B/C不同的真实画像：有数据处理背景但首次接触PEFT）",
+  "existing_skills": [
+    "KB-02",
+    "KB-03",
+    "KB-04"
+  ],
+  "learning_goal": "LoRA微调",
+  "daily_hours": 1.5,
+  "learning_style": "实操型",
+  "hardware": "RTX 3060 12GB",
+  "target_blocks": [
+    "KB-12"
+  ],
+  "version": 1,
+  "frozen_environment": {
+    "prompt_version": "v3.4",
+    "skill_version": "technical_review v3.5 / content_generation v3.4",
+    "knowledge_base_version": "kb-2026-08-24",
+    "generation_model_cloud": "deepseek-chat",
+    "generation_model_local": "deepseek-r1:7b",
+    "embedding_model": "qwen3-embedding:0.6b",
+    "execution_mode": "hybrid",
+    "code_commit": "a1f3c2e",
+    "run_started_at": "2026-08-24T09:00:00",
+    "run_finished_at": "2026-08-24T10:45:00"
+  }
+}

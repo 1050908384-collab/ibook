@@ -1,0 +1,14 @@
+{
+  "case_id": "case_03_engineer_deployment",
+  "stage_id": "stage_1",
+  "assessment_accuracy": 0.92,
+  "planned_accuracy_band": "high",
+  "expected_strategy": "advance",
+  "actual_strategy": "advance",
+  "decision": "continue",
+  "next_stage": "stage_2",
+  "next_stage_block": "KB-15",
+  "profile_updated": true,
+  "mastery_probability": 0.9,
+  "reasoning": "高分推进，进入vLLM推理部署与性能优化"
+}

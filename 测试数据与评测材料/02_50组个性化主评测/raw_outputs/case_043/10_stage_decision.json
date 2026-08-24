@@ -1,0 +1,8 @@
+{
+  "case_id": "case_043",
+  "accuracy": 0.42,
+  "expected_strategy": "backtrack",
+  "actual_strategy": "backtrack",
+  "decision": "repeat",
+  "profile_updated": true
+}

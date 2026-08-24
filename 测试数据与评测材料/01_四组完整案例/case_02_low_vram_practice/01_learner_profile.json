@@ -1,0 +1,28 @@
+{
+  "case_id": "case_02_low_vram_practice",
+  "learner_id": "case_02_low_vram_practice",
+  "background": "熟悉Python、PyTorch和Transformer，目标是掌握LoRA/QLoRA并完成一次微调",
+  "existing_skills": [
+    "KB-04",
+    "KB-08"
+  ],
+  "learning_goal": "LoRA/QLoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "边学边做",
+  "hardware": "RTX 4060 8GB",
+  "target_blocks": [
+    "KB-12"
+  ],
+  "version": 1,
+  "frozen_environment": {
+    "prompt_version": "v3.4",
+    "skill_version": "technical_review v3.5 / content_generation v3.4",
+    "knowledge_base_version": "kb-2026-08-24",
+    "generation_model": "deepseek-chat",
+    "embedding_model": "qwen3-embedding:0.6b",
+    "execution_mode": "hybrid",
+    "code_commit": "a1f3c2e",
+    "run_started_at": "2026-08-24T09:30:00",
+    "run_finished_at": "2026-08-24T11:10:00"
+  }
+}

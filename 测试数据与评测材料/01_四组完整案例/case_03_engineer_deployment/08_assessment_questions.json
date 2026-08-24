@@ -1,0 +1,33 @@
+[
+  {
+    "question_id": "Q-KB12-ST1206-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-05",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "24GB卡训练7B模型LoRA r=16，显存不足时首选？",
+    "options": [
+      {
+        "key": "A",
+        "text": "降低r到8或启用梯度检查点"
+      },
+      {
+        "key": "B",
+        "text": "改用CPU"
+      },
+      {
+        "key": "C",
+        "text": "增大batch_size"
+      },
+      {
+        "key": "D",
+        "text": "关闭量化"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "降r或梯度检查点是标准降显存手段",
+    "grading_mode": "exact_match",
+    "has_answer_and_explanation": true,
+    "can_be_scored": true
+  }
+]
