@@ -25,6 +25,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 DELIVERY_DIR = ROOT_DIR / "测试数据与评测材料"
 RAW_OUTPUTS_DIR = DELIVERY_DIR / "02_50组个性化主评测" / "raw_outputs"
 METRICS_DIR = DELIVERY_DIR / "06_指标统计"
+PERSONALIZATION_REVIEW_PATH = METRICS_DIR / "personalization_review.csv"
+FACT_CHECK_REVIEW_PATH = METRICS_DIR / "fact_check_review.csv"
 
 
 # ── 枚举规范化映射（中英/大小写/别名统一）────────────────────────
@@ -116,6 +118,16 @@ def load_csv(path: Path) -> List[Dict]:
         return []
     with open(path, "r", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
+
+
+def reviewed_rate(path: Path, positive: str = "pass") -> tuple[Optional[float], int, int]:
+    """Return a rate only when human review entries are actually complete."""
+    rows = load_csv(path)
+    reviewed = [row for row in rows if row.get("verdict") in {"pass", "fail", "error"}]
+    if not reviewed:
+        return None, 0, 0
+    passed = sum(1 for row in reviewed if row.get("verdict") == positive)
+    return passed / len(reviewed), passed, len(reviewed)
 
 
 def write_csv(path: Path, rows: List[Dict], fieldnames: List[str]):
@@ -371,10 +383,9 @@ def calc_decision_eval() -> List[Dict]:
 def calc_summary(personalization: List[Dict], question: List[Dict],
                  claim: List[Dict], decision: List[Dict]) -> Dict:
     """计算汇总指标。"""
-    # 画像适配率
-    p_total = len(personalization)
-    p_passed = sum(1 for r in personalization if r.get("passed"))
-    personalization_rate = p_passed / p_total if p_total > 0 else 0
+    # 对外画像适配率只采用预先冻结、人工复核的逐条件记录；自动字段
+    # 仅作为 evidence，不把“提到某个词”误当作真实适配。
+    personalization_rate, p_passed, p_total = reviewed_rate(PERSONALIZATION_REVIEW_PATH)
 
     # 题目匹配率
     q_total = len(question)
@@ -422,7 +433,14 @@ def calc_summary(personalization: List[Dict], question: List[Dict],
         total_cases = len(case_dirs)
     flow_success_rate = succeeded / total_cases if total_cases > 0 else 0
 
-    # 谬误率（从审核 trace 统计 —— 覆盖 tech/format/pedagogy/curriculum 四个维度）
+    # 可核验事实错误率由人工按原始学习包逐条核验。Agent4 的 issue 是
+    # 系统内部审核信号，不能作为“模型谬误率”的分母。
+    fact_rows = load_csv(FACT_CHECK_REVIEW_PATH)
+    checked_facts = [row for row in fact_rows if row.get("verdict") in {"pass", "fail", "error"}]
+    fact_errors = sum(1 for row in checked_facts if row.get("verdict") in {"fail", "error"})
+    fact_error_rate = fact_errors / len(checked_facts) if checked_facts else None
+
+    # 保留审核 issue 作为内部质量过程指标，不再替代事实核验指标。
     critical_errors = 0
     major_errors = 0
     minor_errors = 0
@@ -467,20 +485,12 @@ def calc_summary(personalization: List[Dict], question: List[Dict],
                         elif sev == "minor":
                             minor_errors += 1
 
-    # 幻觉率定义（严格）：critical 错误 / 全部审核主张（即 error 总条数）
-    # 反映"100 个被审核出问题的点中，有多少个严重到足以判为事实幻觉/代码错误"
-    hallucination_rate_by_claims = (
-        critical_errors / total_review_claims if total_review_claims > 0 else 0
-    )
     # 内容密度定义（可感）：每 10 万字符严重错误数
     critical_per_100k_chars = (
         critical_errors / total_package_chars * 100_000 if total_package_chars > 0 else 0
     )
-    # 谬误率对外显示：取幻觉率（比赛方法要求≤15%的典型口径）
-    hallucination_rate = hallucination_rate_by_claims
-
     return {
-        "personalization_adaptation_rate": round(personalization_rate, 4),
+        "personalization_adaptation_rate": round(personalization_rate, 4) if personalization_rate is not None else None,
         "personalization_passed": p_passed,
         "personalization_total": p_total,
         "knowledge_coverage_rate": round(coverage_rate, 4),
@@ -489,7 +499,9 @@ def calc_summary(personalization: List[Dict], question: List[Dict],
         "knowledge_stage_hit_rate": round(stage_hit_rate, 4),
         "knowledge_stage_hit_total": stage_hit_total,
         "knowledge_avg_progress": round(avg_cov_progress, 4),
-        "hallucination_rate": round(hallucination_rate, 4),
+        "verifiable_fact_error_rate": round(fact_error_rate, 4) if fact_error_rate is not None else None,
+        "fact_checked_count": len(checked_facts),
+        "fact_error_count": fact_errors,
         "hallucination_critical_errors": critical_errors,
         "hallucination_major_errors": major_errors,
         "hallucination_minor_errors": minor_errors,
@@ -557,18 +569,22 @@ def main():
     print()
     print("=" * 60)
     print("指标汇总：")
-    print(f"  画像资源难度适配率: {summary['personalization_adaptation_rate']:.1%} ({summary['personalization_passed']}/{summary['personalization_total']})")
+    adaptation_rate = summary["personalization_adaptation_rate"]
+    adaptation_display = f"{adaptation_rate:.1%}" if adaptation_rate is not None else "待人工复核"
+    print(f"  画像适配率:         {adaptation_display} ({summary['personalization_passed']}/{summary['personalization_total']})")
     print(f"  核心知识点覆盖率:   {summary['knowledge_coverage_rate']:.1%} ({summary['coverage_passed']}/{summary['coverage_total']})  "
           f"[阶段命中 {summary['knowledge_stage_hit_rate']:.0%} ，平均进度 {summary['knowledge_avg_progress']:.0%}]")
-    # 谬误率：多口径说明
-    hr = summary["hallucination_rate"]
+    # 内部审核 issue 与人工事实核验分开报告。
     crit = summary.get("hallucination_critical_errors", 0)
     maj = summary.get("hallucination_major_errors", 0)
     min_ = summary.get("hallucination_minor_errors", 0)
     claims = summary.get("hallucination_total_claims", 0)
     per_100k = summary.get("hallucination_critical_per_100k_chars", 0)
     pk_chars = summary.get("hallucination_total_package_chars", 0)
-    print(f"  谬误率(审核主张口径):{hr:.1%}  [严重{crit}/主要{maj}/次要{min_} 共{claims}条]")
+    fact_rate = summary["verifiable_fact_error_rate"]
+    fact_display = f"{fact_rate:.1%}" if fact_rate is not None else "待人工复核"
+    print(f"  可核验事实错误率:   {fact_display} ({summary['fact_error_count']}/{summary['fact_checked_count']})")
+    print(f"  内部审核 issue:     严重{crit}/主要{maj}/次要{min_}，共{claims}条")
     if pk_chars:
         print(f"  谬误率(内容密度口径):{per_100k:.1f} 处严重错误 / 10 万字符  （总内容 {pk_chars//1000}K 字）")
     print(f"  策略选择准确率:     {summary['strategy_selection_rate']:.1%} ({summary['strategy_matched']}/{summary['strategy_total']})")
@@ -578,7 +594,7 @@ def main():
     fb_rate = summary.get("llm_fallback_rate", 0)
     print(f"  LLM 调用总数:       {t_calls} (成功 {summary['llm_successful_calls']}, 回退 {fb_calls}, 回退率 {fb_rate:.1%})")
     if fb_rate > 0.10:
-        print("    ⚠️  LLM 回退率 > 10%，建议检查：DEEPSEEK_API_KEY 是否有效 / 网络 / 模型配额")
+        print("    [WARN] LLM 回退率 > 10%，建议检查：DEEPSEEK_API_KEY 是否有效 / 网络 / 模型配额")
     print()
     print(f"结果已保存到: {METRICS_DIR}")
 

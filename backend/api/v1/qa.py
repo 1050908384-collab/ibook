@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from api.dependencies import get_harness, require_owned_session
+from llm.client import LLMUnavailableError
 
 router = APIRouter(prefix="/sessions/{session_id}/qa", tags=["Q&A"], dependencies=[Depends(require_owned_session)])
 harness = get_harness()
@@ -21,6 +22,7 @@ class QAResponse(BaseModel):
     question: str
     answer: str
     stage_id: Optional[str] = None
+    llm_provider: Optional[str] = None
     review_summary: dict[str, Any] = Field(default_factory=dict)
     source_summary: list[dict[str, Any]] = Field(default_factory=list)
     created_at: Optional[str] = None
@@ -51,12 +53,16 @@ async def ask_question(session_id: str, request: QARequest):
             "question": request.question,
             "answer": result["answer"],
             "stage_id": (snapshot.get("stage_info") or {}).get("stage_id"),
+            "llm_provider": result.get("llm_provider"),
             "review_summary": result.get("review_summary", {}),
             "source_summary": [],
             "created_at": session.get("updated_at"),
         }
     except HTTPException:
         raise
+    except LLMUnavailableError as error:
+        detail = harness._extract_user_facing_answer(str(error))
+        raise HTTPException(status_code=503, detail={"code": "LLM_UNAVAILABLE", "provider": "deepseek", "message": detail})
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error))
     except Exception as error:

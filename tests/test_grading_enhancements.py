@@ -13,6 +13,8 @@
 """
 from __future__ import annotations
 import sys, os
+import asyncio
+import types
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from orchestrator.harness import Harness
@@ -179,6 +181,26 @@ class TestRegressionOriginalFeatures(unittest.TestCase):
     def test_numeric_approx(self):
         self.assertTrue(Harness._match_answer('0.333', '0.33', 'fill_blank'))
         self.assertFalse(Harness._match_answer('0.5', '0.33', 'fill_blank'))
+
+
+class TestLlmSemanticFallback(unittest.TestCase):
+    def test_fill_blank_rule_failure_uses_semantic_grader(self):
+        harness = Harness.__new__(Harness)
+        called = []
+
+        async def semantic_grader(self, **kwargs):
+            called.append(kwargs)
+            return True
+
+        harness._grade_semantically_with_llm = types.MethodType(semantic_grader, harness)
+        result = asyncio.run(harness._match_answer_async(
+            user_answer="采用梯度累加模拟大批量训练",
+            correct_answer="optimizer.step()",
+            question_type="fill_blank",
+            question_text="梯度累积后执行什么操作？",
+        ))
+        self.assertTrue(result)
+        self.assertEqual(1, len(called))
 
 
 class TestStripCommentPreprocessor(unittest.TestCase):

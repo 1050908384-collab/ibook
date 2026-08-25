@@ -215,6 +215,16 @@ export type DiagnosisHistoryResponse = {
   total?: number;
 };
 
+export type QaResponse = {
+  qa_id: string;
+  session_id: string;
+  question: string;
+  answer: string;
+  stage_id?: string;
+  llm_provider?: 'deepseek' | 'ollama' | 'deterministic' | string;
+  review_summary?: Record<string, unknown>;
+};
+
 export type QaHistoryResponse = {
   items?: Array<{
     qa_id?: string;
@@ -473,7 +483,7 @@ export const apiClient = {
   },
 
   askQuestion: async (sessionId: string, question: string, stageNum?: number) => {
-    const response = await axios.post(`${BASE_URL}/sessions/${sessionId}/qa`, {
+    const response = await axios.post<QaResponse>(`${BASE_URL}/sessions/${sessionId}/qa`, {
       question,
       stage_num: stageNum
     });

@@ -39,6 +39,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 DELIVERY_DIR = ROOT_DIR / "测试数据与评测材料"
 MAIN_EVAL_DIR = DELIVERY_DIR / "02_50组个性化主评测"
 RAW_OUTPUTS_DIR = MAIN_EVAL_DIR / "raw_outputs"
+EVALUATION_SCHEMA_VERSION = "2026-08-26-final"
 
 # ── 上下文变量（跟踪当前执行上下文） ─────────────────────
 ctx_run_id: ContextVar[str] = ContextVar("run_id", default="")
@@ -286,6 +287,7 @@ def build_run_manifest(run_id: str, case: Dict[str, str]) -> Dict[str, Any]:
     return {
         "run_id": run_id,
         "case_id": case["case_id"],
+        "evaluation_schema_version": EVALUATION_SCHEMA_VERSION,
         "code_commit": code_commit,
         "knowledge_base_version": kb_hash,
         "model_config": model_config,
@@ -312,6 +314,8 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
     # 保存输入
     input_data = {
         "case_id": case_id,
+        "primary_category": case.get("primary_category", ""),
+        "tags": case.get("tags", ""),
         "background": case.get("background", ""),
         "existing_skills": case.get("existing_skills", ""),
         "learning_goal": case.get("learning_goal", ""),
@@ -319,6 +323,7 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
         "learning_style": case.get("learning_style", ""),
         "hardware": case.get("hardware", ""),
         "expected_target_blocks": case.get("expected_target_blocks", ""),
+        "expected_first_stage": case.get("expected_first_stage", ""),
         "expected_difficulty": case.get("expected_difficulty", ""),
         "expected_strategy": case.get("expected_strategy", ""),
         "run_stage_2": case.get("run_stage_2", "False"),
@@ -671,6 +676,7 @@ async def main():
     # 全局 run manifest
     global_manifest = {
         "run_id": run_id,
+        "evaluation_schema_version": EVALUATION_SCHEMA_VERSION,
         "run_started_at": _now_iso(),
         "total_cases": len(cases),
         "execution_mode": execution_mode or "default",

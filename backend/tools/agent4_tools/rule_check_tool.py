@@ -128,6 +128,7 @@ def rule_check(input_data: dict, config: dict = None) -> dict:
     use_mock = config.get("use_mock", True)
 
     content = (input_data or {}).get("content") or ""
+    include_deployment_rules = bool((input_data or {}).get("include_deployment_rules", True))
     if not content.strip():
         return {
             "status": "error",
@@ -157,8 +158,10 @@ def rule_check(input_data: dict, config: dict = None) -> dict:
             if re.search(rule["pattern"], content, re.IGNORECASE):
                 violations.append(_build_violation(rule))
 
-        # 3. 部署规范：许可证缺失 + 显存标注缺失（条件触发，需检测模型加载）
-        violations.extend(_check_deployment_rules(content))
+        # 3. 部署规范只用于学习包、部署文档或代码审核。普通答疑中的
+        #    from_pretrained 示例不应被要求补充许可证和显存说明。
+        if include_deployment_rules:
+            violations.extend(_check_deployment_rules(content))
 
         # 4. 用 best_practice 文档为各 category 违规补充 reference_doc 依据
         cat_map = _build_category_doc_map(bp_docs)
@@ -766,8 +769,19 @@ class RuleCheckTool:
     def __init__(self):
         self._default_config = {"use_mock": False}
 
-    async def check_rules(self, content: str) -> List[Dict[str, Any]]:
-        result = rule_check({"content": content}, config=self._default_config)
+    async def check_rules(
+        self,
+        content: str,
+        *,
+        include_deployment_rules: bool = True,
+    ) -> List[Dict[str, Any]]:
+        result = rule_check(
+            {
+                "content": content,
+                "include_deployment_rules": include_deployment_rules,
+            },
+            config=self._default_config,
+        )
         if result.get("status") != "success":
             return []
         return result["data"].get("violations", [])

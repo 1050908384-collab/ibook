@@ -108,6 +108,7 @@ async def get_stage_result(
             summary = harness.state_manager.get_stage_result(session_id, stage_num)
         if not snapshot:
             snapshot = harness.state_manager.get_stage_snapshot(session_id, stage_num)
+        snapshot_found = bool(snapshot)
         snapshot = snapshot or {}
         stage = snapshot.get("stage_info") or {}
         # A retry keeps the same stage_id but resets the stage to pending/learning.
@@ -158,8 +159,8 @@ async def get_stage_result(
                 "available_actions": ["plan_next_stage"],
             }
             harness.state_manager.save_stage_result(session_id, stage_num, summary)
-        if not summary and not attempt:
-            raise HTTPException(status_code=404, detail="Stage result not found")
+        if not summary and not attempt and not snapshot_found:
+            raise HTTPException(status_code=404, detail="Stage not found")
         return {
             "session_id": session_id,
             "stage_num": stage_num,

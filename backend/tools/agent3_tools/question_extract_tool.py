@@ -120,6 +120,23 @@ def _extract_questions(
                                 continue
                             picked_ids.add(qid)
                             rows.append(r)
+                    # A stage may contain installation or integration nodes
+                    # with no dedicated question.  First preserve all exact
+                    # subtopic matches, then fill the requested count from the
+                    # same block only.  Never borrow another block's questions.
+                    if len(rows) < count:
+                        fallback_sql = _BASE + "WHERE block_id = ? " + _QTYPE_ORDER
+                        pool = list(conn.execute(fallback_sql, (block_id,)).fetchall())
+                        pool = [row for row in pool if row[0] not in picked_ids]
+                        take = min(len(pool), count - len(rows))
+                        fallback_rows = random.sample(pool, take) if take > 0 else []
+                        rows.extend(fallback_rows)
+                        if fallback_rows:
+                            logger.info(
+                                "Question extraction used same-block fallback: block_id=%s, count=%s",
+                                block_id,
+                                len(fallback_rows),
+                            )
                 else:
                     # 无 subtopic → 全局池随机抽 count 题
                     sql = _BASE + "WHERE block_id = ? " + _QTYPE_ORDER

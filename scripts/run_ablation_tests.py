@@ -57,6 +57,7 @@ DEFAULT_CASES = [
 
 CONFIGS = ["Direct-LLM", "RAG-only", "No-Agent4", "Full-System"]
 RAW_OUTPUTS_DIR = DELIVERY_DIR / "02_50组个性化主评测" / "raw_outputs"
+REQUIRED_EVALUATION_SCHEMA_VERSION = "2026-08-26-final"
 
 
 # =====================================================================
@@ -82,6 +83,8 @@ def extract_fullsystem_from_main(case_id: str) -> Dict[str, Any] | None:
 
     with open(needed[0], "r", encoding="utf-8") as f:
         manifest = json.load(f)
+    if manifest.get("evaluation_schema_version") != REQUIRED_EVALUATION_SCHEMA_VERSION:
+        return None
     with open(needed[2], "r", encoding="utf-8") as f:
         profile = json.load(f)
     with open(needed[3], "r", encoding="utf-8") as f:
@@ -513,9 +516,9 @@ async def main():
                 else:
                     line.append(f"{cfg}[RUN]")
             print(f"  {c}: " + ", ".join(line))
-        print(f"\n  ⚡ 预计真 LLM 调用条数: {total - reused_count}（Full-System {reused_count} 条从主评测抽取，零消耗）")
+        print(f"\n  [PLAN] 预计真 LLM 调用条数: {total - reused_count}（Full-System {reused_count} 条从主评测抽取，零消耗）")
         if reused_count == 0 and "Full-System" in configs:
-            print(f"  ⚠️  没有任何 Full-System 可复用，检查 02_50组个性化主评测/raw_outputs/ 是否已有对应 case 结果")
+            print(f"  [WARN] 没有任何 Full-System 可复用，检查 02_50组个性化主评测/raw_outputs/ 是否已有对应 case 结果")
         return 0
 
     all_rows = []
@@ -551,8 +554,8 @@ async def main():
     print(f"完成 {len(all_rows)} 条消融测试记录 -> {csv_path}")
     success_rows = [r for r in all_rows if r.get("status") == "success"]
     print(f"  成功: {len(success_rows)}/{len(all_rows)}")
-    print(f"  🏷️  主评测复用(零 token): {reused_global} 条")
-    print(f"  🔁 真 LLM 执行(产生消耗): {real_runs} 条")
+    print(f"  [REUSE] 主评测复用(零 token): {reused_global} 条")
+    print(f"  [RUN] 真 LLM 执行(产生消耗): {real_runs} 条")
     # Full-System vs No-Agent4 对比摘要
     fs = [r for r in success_rows if r.get("config") == "Full-System"]
     na4 = [r for r in success_rows if r.get("config") == "No-Agent4"]

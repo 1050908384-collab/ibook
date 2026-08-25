@@ -420,6 +420,7 @@ class Harness:
         )
         self._log(session_id, "handle_question:start", f"question={question[:60]}")
         is_greeting = self._is_greeting(question)
+        llm_provider = "deterministic"
 
         # === 构建 memory 上下文（供 个性化学习资源生成 Agent 生成更贴合用户的回答）===
         # 当前阶段 block_id，用于技术类回答时检索本阶段相关的知识文档
@@ -463,6 +464,8 @@ class Harness:
             ))
             raw_answer = generated.answer
             question_type = getattr(generated, "question_type", "technical")
+            llm_provider = getattr(getattr(self.agent3, "llm_client", None), "last_provider", None) or "deterministic"
+            self._log(session_id, "handle_question:provider", f"provider={llm_provider}")
 
         # === 根据问题类型决定是否调用 专业知识与教学质量审核 Agent 审核 ===
         if question_type in {"daily", "profile_fact"}:
@@ -538,6 +541,7 @@ class Harness:
         return {
             "answer": answer,
             "question_type": question_type,
+            "llm_provider": llm_provider,
             "tech_pass": latest_review.technical.passed,
             "quality_pass": latest_review.quality.passed,
             "iterations": len(review_history),
@@ -610,9 +614,11 @@ class Harness:
         question = next((item for item in package.questions if item.question_id == question_id), None)
         if question is None:
             raise ValueError(f"Question not found in current stage: {question_id}")
-        is_correct = self._match_answer(
-            user_answer, question.correct_answer,
-            question_type=getattr(question, 'question_type', '')
+        is_correct = await self._match_answer_async(
+            user_answer=user_answer,
+            correct_answer=question.correct_answer,
+            question_type=getattr(question, "question_type", ""),
+            question_text=getattr(question, "question_text", ""),
         )
         self.state_manager.add_answer_record(session_id, question_id, user_answer, is_correct)
         self._log(session_id, "submit_answer", f"question_id={question_id}, correct={is_correct}")

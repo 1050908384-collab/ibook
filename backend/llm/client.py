@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Any, Optional
 import asyncio
+import httpcore
 import httpx
 import json
 import re
@@ -8,6 +9,83 @@ from config import settings
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class LLMUnavailableError(RuntimeError):
+    """Raised when the configured primary LLM fails and fallback is disabled."""
+
+
+class _DeepSeekAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
+    def __init__(self, hostname: str, fallback_ips: list[str]):
+        self.hostname = hostname
+        self.fallback_ips = fallback_ips
+        self.backend = httpcore.AnyIOBackend()
+
+    async def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+        candidates = [*self.fallback_ips, host] if host == self.hostname else [host]
+        last_error = None
+        candidate_timeout = min(timeout or 10.0, 8.0)
+        for candidate in candidates:
+            try:
+                return await self.backend.connect_tcp(
+                    candidate,
+                    port,
+                    timeout=candidate_timeout,
+                    local_address=local_address,
+                    socket_options=socket_options,
+                )
+            except (httpcore.ConnectError, httpcore.ConnectTimeout) as error:
+                last_error = error
+                logger.warning(
+                    "DeepSeek TCP candidate failed: hostname=%s candidate=%s error=%r",
+                    host,
+                    candidate,
+                    error,
+                )
+        if last_error is not None:
+            raise last_error
+        raise httpcore.ConnectError(f"No TCP candidate available for {host}")
+
+    async def connect_unix_socket(self, path, timeout=None, socket_options=None):
+        return await self.backend.connect_unix_socket(path, timeout, socket_options)
+
+    async def sleep(self, seconds):
+        await self.backend.sleep(seconds)
+
+
+class _DeepSeekSyncNetworkBackend(httpcore.NetworkBackend):
+    def __init__(self, hostname: str, fallback_ips: list[str]):
+        self.hostname = hostname
+        self.fallback_ips = fallback_ips
+        self.backend = httpcore.SyncBackend()
+
+    def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+        candidates = [*self.fallback_ips, host] if host == self.hostname else [host]
+        last_error = None
+        candidate_timeout = min(timeout or 10.0, 8.0)
+        for candidate in candidates:
+            try:
+                return self.backend.connect_tcp(
+                    candidate,
+                    port,
+                    timeout=candidate_timeout,
+                    local_address=local_address,
+                    socket_options=socket_options,
+                )
+            except (httpcore.ConnectError, httpcore.ConnectTimeout) as error:
+                last_error = error
+                logger.warning(
+                    "DeepSeek sync TCP candidate failed: hostname=%s candidate=%s error=%r",
+                    host,
+                    candidate,
+                    error,
+                )
+        if last_error is not None:
+            raise last_error
+        raise httpcore.ConnectError(f"No TCP candidate available for {host}")
+
+    def connect_unix_socket(self, path, timeout=None, socket_options=None):
+        return self.backend.connect_unix_socket(path, timeout, socket_options)
 
 
 class LLMClient:
@@ -22,14 +100,53 @@ class LLMClient:
             settings.DEEPSEEK_TIMEOUT_SECONDS,
             connect=min(20.0, settings.DEEPSEEK_TIMEOUT_SECONDS),
         )
-        self.client = httpx.AsyncClient(timeout=timeout)
+        self.client = httpx.AsyncClient(timeout=timeout, trust_env=False)
         proxy_url = settings.DEEPSEEK_PROXY_URL.strip() or None
-        self.deepseek_client = httpx.AsyncClient(
-            timeout=timeout,
-            proxy=proxy_url,
-            trust_env=False,
-        )
+        self.deepseek_client = self._build_async_deepseek_client(timeout, proxy_url)
         self.last_done_reason: Optional[str] = None
+        self.last_provider: Optional[str] = None
+        self.last_fallback_reason: Optional[str] = None
+
+    def _deepseek_fallback_ips(self) -> list[str]:
+        return [
+            value.strip()
+            for value in settings.DEEPSEEK_FALLBACK_IPS.split(",")
+            if value.strip()
+        ]
+
+    def _build_async_deepseek_client(
+        self, timeout: httpx.Timeout, proxy_url: Optional[str]
+    ) -> httpx.AsyncClient:
+        if proxy_url:
+            return httpx.AsyncClient(timeout=timeout, proxy=proxy_url, trust_env=False)
+        transport = httpx.AsyncHTTPTransport(trust_env=False)
+        fallback_ips = self._deepseek_fallback_ips()
+        if fallback_ips:
+            hostname = httpx.URL(self.deepseek_api_base).host
+            transport._pool._network_backend = _DeepSeekAsyncNetworkBackend(
+                hostname, fallback_ips
+            )
+        return httpx.AsyncClient(timeout=timeout, transport=transport)
+
+    def _build_sync_deepseek_client(self) -> httpx.Client:
+        proxy_url = settings.DEEPSEEK_PROXY_URL.strip() or None
+        if proxy_url:
+            return httpx.Client(
+                timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
+                proxy=proxy_url,
+                trust_env=False,
+            )
+        transport = httpx.HTTPTransport(trust_env=False)
+        fallback_ips = self._deepseek_fallback_ips()
+        if fallback_ips:
+            hostname = httpx.URL(self.deepseek_api_base).host
+            transport._pool._network_backend = _DeepSeekSyncNetworkBackend(
+                hostname, fallback_ips
+            )
+        return httpx.Client(
+            timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
+            transport=transport,
+        )
 
     @property
     def _chat_completions_url(self) -> str:
@@ -143,6 +260,7 @@ class LLMClient:
                 reasoning_length = len(str(message.get("reasoning_content") or ""))
 
                 if cleaned_response:
+                    self.last_provider = "deepseek"
                     logger.info(
                         "DeepSeek response accepted: attempt=%d finish_reason=%s content_chars=%d reasoning_chars=%d",
                         attempt, self.last_done_reason, len(cleaned_response), reasoning_length,
@@ -200,8 +318,13 @@ class LLMClient:
         json_mode: bool = False,
     ) -> str:
         self.last_done_reason = None
+        self.last_provider = None
+        self.last_fallback_reason = None
         if not self._has_deepseek_credentials():
-            return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
+            if self._can_fallback_to_ollama():
+                self.last_fallback_reason = "deepseek_credentials_missing"
+                return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
+            return "Error: DeepSeek API credentials are not configured."
         logger.debug("Sending DeepSeek prompt: %s", prompt[:200])
         messages = []
         if system_prompt:
@@ -218,7 +341,8 @@ class LLMClient:
 
         response = await self._complete_deepseek(payload)
         if response.startswith("Error:") and self._can_fallback_to_ollama():
-            logger.info("Falling back to local Ollama after DeepSeek failure")
+            self.last_fallback_reason = response
+            logger.info("Falling back to local Ollama after DeepSeek failure: %s", response)
             return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
         return response
 
@@ -266,6 +390,7 @@ class LLMClient:
                 message = result.get("message") or {}
                 content = self._clean_response(str(message.get("content") or ""))
                 if content:
+                    self.last_provider = "ollama"
                     logger.info("Ollama response accepted from model=%s", model)
                     return content
                 thinking = str(message.get("thinking") or "")
@@ -284,8 +409,13 @@ class LLMClient:
 
     async def chat(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
         self.last_done_reason = None
+        self.last_provider = None
+        self.last_fallback_reason = None
         if not self._has_deepseek_credentials():
-            return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
+            if self._can_fallback_to_ollama():
+                self.last_fallback_reason = "deepseek_credentials_missing"
+                return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
+            return "Error: DeepSeek API credentials are not configured."
         payload = {
             "model": self.deepseek_model,
             "messages": messages,
@@ -294,7 +424,8 @@ class LLMClient:
         }
         response = await self._complete_deepseek(payload)
         if response.startswith("Error:") and self._can_fallback_to_ollama():
-            logger.info("Falling back to local Ollama after DeepSeek chat failure")
+            self.last_fallback_reason = response
+            logger.info("Falling back to local Ollama after DeepSeek chat failure: %s", response)
             return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
         return response
 
@@ -313,10 +444,14 @@ class LLMClient:
         ``LLM_FALLBACK_PROVIDER=ollama``. Returns the answer text, or
         ``"Error: ..."`` when no provider yields a usable answer.
         """
-        # No cloud credentials configured: go straight to the local model,
-        # matching the async complete() behavior (no fallback flag required).
+        self.last_done_reason = None
+        self.last_provider = None
+        self.last_fallback_reason = None
         if not self._has_deepseek_credentials():
-            return self._complete_with_ollama_sync(messages, max_tokens, temperature, json_mode)
+            if self._can_fallback_to_ollama():
+                self.last_fallback_reason = "deepseek_credentials_missing"
+                return self._complete_with_ollama_sync(messages, max_tokens, temperature, json_mode)
+            return "Error: DeepSeek API credentials are not configured."
 
         payload: dict[str, Any] = {
             "model": self.deepseek_model,
@@ -327,11 +462,7 @@ class LLMClient:
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
         try:
-            with httpx.Client(
-                timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
-                proxy=(settings.DEEPSEEK_PROXY_URL.strip() or None),
-                trust_env=False,
-            ) as client:
+            with self._build_sync_deepseek_client() as client:
                 resp = client.post(
                     self._chat_completions_url,
                     json=payload,
@@ -343,6 +474,7 @@ class LLMClient:
                     str((choice.get("message") or {}).get("content") or "")
                 )
             if content:
+                self.last_provider = "deepseek"
                 logger.info(
                     "DeepSeek sync response accepted: finish_reason=%s content_chars=%d",
                     choice.get("finish_reason"), len(content),
@@ -355,17 +487,23 @@ class LLMClient:
         except httpx.HTTPStatusError as error:
             status_code = error.response.status_code
             logger.warning("DeepSeek sync HTTP failure: status=%d", status_code)
+            formatted_error = self._format_deepseek_status_error(error)
             if not self._can_fallback_to_ollama():
-                return self._format_deepseek_status_error(error)
+                return formatted_error
+            self.last_fallback_reason = formatted_error
         except (httpx.RequestError, ValueError, KeyError, TypeError) as error:
             logger.warning("DeepSeek sync failure: %s", error)
+            formatted_error = f"Error: DeepSeek sync failure: {error}"
             if not self._can_fallback_to_ollama():
-                return f"Error: DeepSeek sync failure: {error}"
+                return formatted_error
+            self.last_fallback_reason = formatted_error
 
         # Cloud failed (HTTP error, transport error, or empty content) and the
         # local fallback is enabled: switch to the local deepseek-r1:7b model.
         if self._can_fallback_to_ollama():
-            logger.info("Falling back to local Ollama after DeepSeek sync failure")
+            if self.last_fallback_reason is None:
+                self.last_fallback_reason = "deepseek_empty_response"
+            logger.info("Falling back to local Ollama after DeepSeek sync failure: %s", self.last_fallback_reason)
             return self._complete_with_ollama_sync(messages, max_tokens, temperature, json_mode)
         return "Error: DeepSeek sync returned no usable answer"
 
@@ -396,6 +534,7 @@ class LLMClient:
                 message = result.get("message") or {}
                 content = self._clean_response(str(message.get("content") or ""))
                 if content:
+                    self.last_provider = "ollama"
                     logger.info("Ollama sync response accepted from model=%s", model)
                     return content
                 last_error = (

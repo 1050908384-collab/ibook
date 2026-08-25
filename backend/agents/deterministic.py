@@ -10,7 +10,7 @@ try:
     from db.sqlite_client import SQLiteClient
 except ModuleNotFoundError:
     from backend.db.sqlite_client import SQLiteClient
-from llm.client import LLMClient
+from llm.client import LLMClient, LLMUnavailableError
 from models.contracts import (
     AnswerGenerationInput,
     AnswerGenerationOutput,
@@ -2731,7 +2731,9 @@ class HybridContentAgent(DeterministicContentAgent):
             max_tokens=TECHNICAL_ANSWER_TOKENS,
         )
         if answer.startswith("Error: DeepSeek"):
-            # 云端失败：切到本地 deepseek-r1:7b 兜底，绝不把云端错误串暴露给用户
+            if not self.llm_client._can_fallback_to_ollama():
+                _agent_log("个性化学习资源生成 Agent", "answer:deepseek_error -> strict_failure")
+                raise LLMUnavailableError(answer)
             _agent_log("个性化学习资源生成 Agent", "answer:deepseek_error -> local_ollama_fallback")
             local = await self.llm_client._complete_with_ollama(
                 prompt,
@@ -2894,7 +2896,8 @@ class HybridContentAgent(DeterministicContentAgent):
                 max_tokens=DAILY_ANSWER_TOKENS,
             )
             if response.startswith("Error: DeepSeek"):
-                # 云端失败：切到本地 deepseek-r1:7b 兜底，再不行用确定性日常回答
+                if not self.llm_client._can_fallback_to_ollama():
+                    raise LLMUnavailableError(response)
                 local = await self.llm_client._complete_with_ollama(
                     prompt,
                     system_prompt,
@@ -2907,9 +2910,11 @@ class HybridContentAgent(DeterministicContentAgent):
                 return self._generate_daily_answer(request)
             if response and not response.startswith("Error:"):
                 return self._clip_daily_answer(response)
+        except LLMUnavailableError:
+            raise
         except Exception:
             pass
-        # LLM 失败回退到父类的确定性日常回答
+        # 仅非严格模式下保留确定性日常回答兜底。
         return self._generate_daily_answer(request)
 
     async def revise_learning_package(self, request: ContentRevisionInput) -> ContentGenerationOutput:
@@ -3037,7 +3042,10 @@ class DeterministicTechnicalReviewAgent:
         # 步骤1：硬性检查（规则检查 — LoRA机制、参数量、安全红线）
         try:
             rule_errors = normalize_review_errors(
-                await self.rule_check_tool.check_rules(request.content)
+                await self.rule_check_tool.check_rules(
+                    request.content,
+                    include_deployment_rules=request.target_type != "answer",
+                )
             )
             errors.extend(rule_errors)
         except Exception:
@@ -3177,7 +3185,10 @@ class HybridTechnicalReviewAgent:
         # 步骤1：硬性检查（规则检查）— 异常兜底
         try:
             rule_errors = normalize_review_errors(
-                await self.rule_check_tool.check_rules(request.content)
+                await self.rule_check_tool.check_rules(
+                    request.content,
+                    include_deployment_rules=request.target_type != "answer",
+                )
             )
         except Exception:
             rule_errors = []

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 import sys
+import json
 from pathlib import Path
 
 
@@ -13,11 +14,22 @@ MINIMUM_COUNTS = {
     "knowledge_subtopics": 73,
     "knowledge_docs": 68,
     "knowledge_chunks": 1,
-    "test_questions": 217,
     "learning_resources": 1,
     "block_resources": 15,
     "subtopic_resources": 73,
 }
+
+
+def expected_question_count() -> int:
+    seed_path = ROOT_DIR / "data" / "seeds" / "test_questions.json"
+    try:
+        with seed_path.open("r", encoding="utf-8") as handle:
+            questions = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"cannot read question seed: {exc}")
+    if not isinstance(questions, list) or not questions:
+        fail("test_questions seed is empty or malformed")
+    return len(questions)
 
 
 def fail(message: str) -> None:
@@ -46,6 +58,11 @@ def main() -> int:
             if count < minimum:
                 fail(f"{table}: expected at least {minimum}, found {count}")
             print(f"[PASS] {table}: {count}")
+        question_count = conn.execute("SELECT COUNT(*) FROM test_questions").fetchone()[0]
+        minimum_questions = expected_question_count()
+        if question_count < minimum_questions:
+            fail(f"test_questions: expected at least {minimum_questions}, found {question_count}")
+        print(f"[PASS] test_questions: {question_count} (seed: {minimum_questions})")
     except sqlite3.Error as exc:
         fail(f"database query failed: {exc}")
     finally:

@@ -44,6 +44,7 @@ DEFAULT_CASES = [
 
 PROVIDERS = ["DeepSeek", "Ollama"]
 RAW_OUTPUTS_DIR = DELIVERY_DIR / "02_50组个性化主评测" / "raw_outputs"
+REQUIRED_EVALUATION_SCHEMA_VERSION = "2026-08-26-final"
 
 
 # =====================================================================
@@ -70,6 +71,8 @@ def extract_deepseek_from_main(case_id: str) -> Dict[str, Any] | None:
 
     with open(needed[0], "r", encoding="utf-8") as f:
         manifest = json.load(f)
+    if manifest.get("evaluation_schema_version") != REQUIRED_EVALUATION_SCHEMA_VERSION:
+        return None
     cfg = manifest.get("model_config", {}) or {}
     if not cfg.get("has_deepseek_key") or cfg.get("LLM_PROVIDER", "").lower() != "deepseek":
         return None
@@ -365,7 +368,7 @@ async def main():
                 else:
                     line.append(f"{p}[RUN]")
             print(f"  {c}: " + ", ".join(line))
-        print(f"\n  ⚡ 预计真 LLM 调用条数: {total - reused_count}（DeepSeek {reused_count} 条从主评测抽取，零消耗）")
+        print(f"\n  [PLAN] 预计真 LLM 调用条数: {total - reused_count}（DeepSeek {reused_count} 条从主评测抽取，零消耗）")
         return 0
 
     rows = []
@@ -408,8 +411,8 @@ async def main():
     print()
     print(f"完成 {len(rows)} 条 -> {csv_path}")
     print(f"  成功: {len(success)}/{len(rows)}")
-    print(f"  🏷️  主评测复用(零 token): {reused_global} 条")
-    print(f"  🔁 真 LLM 执行(产生消耗): {real_runs} 条")
+    print(f"  [REUSE] 主评测复用(零 token): {reused_global} 条")
+    print(f"  [RUN] 真 LLM 执行(产生消耗): {real_runs} 条")
     ds_total = sum(1 for r in success if r.get("provider") == "DeepSeek")
     ol_total = sum(1 for r in success if r.get("provider") == "Ollama")
     print(f"  DeepSeek-only 成功率: {len(ds_ok)}/{ds_total}")

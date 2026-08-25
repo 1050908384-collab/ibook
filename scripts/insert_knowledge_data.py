@@ -290,9 +290,21 @@ def remove_retired_subtopics(db: SQLiteClient, active_subtopic_ids: set[str]) ->
 
 
 def insert_test_questions(db: SQLiteClient, questions_data: list):
-    count = 0
-    for question in questions_data:
-        with db.Session() as session:
+    """Replace the shipped question bank while preserving user-added questions.
+
+    Earlier database initialization inserted a small ``legacy_seed`` bank and
+    a few rows without a source or subtopic.  Those rows cannot be traced to
+    the current knowledge graph, so they must not remain eligible for runtime
+    extraction after the canonical source bank is imported.
+    """
+    managed_sources = ("测试题目.md", "runtime_supplement", "legacy_seed", "test_questions.json")
+    with db.Session() as session:
+        placeholders = ", ".join(f":source_{index}" for index in range(len(managed_sources)))
+        params = {f"source_{index}": source for index, source in enumerate(managed_sources)}
+        session.execute(text(
+            f"DELETE FROM test_questions WHERE source IS NULL OR source IN ({placeholders})"
+        ), params)
+        for question in questions_data:
             session.execute(text("""
                 INSERT INTO test_questions (
                     question_id, block_id, subtopic_id, difficulty, question_type,
@@ -329,11 +341,10 @@ def insert_test_questions(db: SQLiteClient, questions_data: list):
                 "expected_output": question.get("expected_output"),
                 "grading_mode": question.get("grading_mode", "exact_match"),
                 "source": question.get("source", "test_questions.json"),
-                "hint": question.get("hint") or question.get("explanation") or None,
+            "hint": question.get("hint") or question.get("explanation") or None,
             })
-            session.commit()
-        count += 1
-    print("[OK] test_questions: 已插入 {} 条记录".format(count))
+        session.commit()
+    print("[OK] test_questions: 已同步 {} 条记录".format(len(questions_data)))
 
 
 def insert_learning_resources(db: SQLiteClient, resources_data: list):

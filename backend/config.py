@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     DEEPSEEK_API_BASE: str = "https://api.deepseek.com"
     DEEPSEEK_MODEL: str = "deepseek-chat"
     DEEPSEEK_PROXY_URL: str = ""
+    DEEPSEEK_FALLBACK_IPS: str = ""
     # 云端推理偶发长时间排队或先输出 reasoning_content；答疑需要比默认 HTTP
     # 超时更长的读取窗口，并由客户端对可恢复错误做有限重试。
     DEEPSEEK_TIMEOUT_SECONDS: float = 180.0

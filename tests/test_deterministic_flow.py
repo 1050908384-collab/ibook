@@ -657,6 +657,19 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("lora_mechanism_error", error_types)
         self.assertIn("parameter_count_error", error_types)
 
+    async def test_qa_rule_check_skips_deployment_only_requirements(self):
+        content = """from transformers import AutoModel
+model = AutoModel.from_pretrained(\"bert-base-uncased\")"""
+
+        errors = await RuleCheckTool().check_rules(
+            content,
+            include_deployment_rules=False,
+        )
+
+        error_types = {error["error_type"] for error in errors}
+        self.assertNotIn("license_missing", error_types)
+        self.assertNotIn("vram_note_missing", error_types)
+
 
 if __name__ == "__main__":
     unittest.main()
