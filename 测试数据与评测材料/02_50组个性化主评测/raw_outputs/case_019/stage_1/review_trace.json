@@ -1,0 +1,720 @@
+{
+  "review_passed": true,
+  "iterations": 2,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'虚拟环境'的比喻说明处被截断，未完成对虚拟环境概念的完整解释，导致信息不完整。",
+            "evidence": "原文以'虚拟环境'开头后，在'如果都装进同一个 Python，就会冲突报错。虚拟环境'处戛然而止，缺少后续说明。",
+            "suggestion": "补充完整虚拟环境的定义、作用及创建方法（如使用 conda 或 venv），确保内容完整。",
+            "error_id": "73b4939d62ad_r1",
+            "canonical_error_id": "73b4939d62ad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'方法二'处截断，未提供完整的安装方法，导致内容不完整。",
+            "evidence": "内容块以'**方法二'结尾，缺少后续内容。",
+            "suggestion": "补充'方法二'的完整内容，或删除不完整的部分。",
+            "error_id": "cb80e6b83713_r1",
+            "canonical_error_id": "cb80e6b83713",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_incorrect",
+            "severity": "major",
+            "location": null,
+            "description": "命令 `sudo apt install python3 python3-pip python3-venv -y` 中，Ubuntu/Debian 的 python3-pip 包可能不存在或已废弃，且未指定版本，可能导致安装失败或安装到旧版本。",
+            "evidence": "在 Ubuntu 20.04+ 中，python3-pip 包通常可用，但在某些 Debian 版本中可能不存在；且未指定 Python 3.10+ 版本，可能安装系统默认版本（如 3.8/3.9），不满足 'Python 3.10+' 的要求。",
+            "suggestion": "建议使用 `sudo apt install python3.10 python3.10-venv python3.10-pip` 或通过 deadsnakes PPA 安装指定版本，并验证 `python3 --version` 是否 >= 3.10。",
+            "error_id": "0cba460be209_r1",
+            "canonical_error_id": "0cba460be209",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "version_not_guaranteed",
+            "severity": "major",
+            "location": null,
+            "description": "内容声称安装 '最新的稳定版'，但实际命令未指定版本，无法保证安装 Python 3.10+，可能安装系统默认的旧版本。",
+            "evidence": "Ubuntu 20.04 默认 Python 3.8，Ubuntu 22.04 默认 3.10，但 Debian 11 默认 3.9，且未使用版本管理工具（如 pyenv）或 PPA，无法确保版本满足要求。",
+            "suggestion": "明确指定版本安装，或使用 pyenv 安装 Python 3.10+，并在命令后添加版本检查。",
+            "error_id": "128a54aafba7_r1",
+            "canonical_error_id": "128a54aafba7",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "critical",
+            "location": null,
+            "description": "内容声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护，且 CentOS 7 于 2024 年 6 月 30 日 EOL。该表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 已于 2021 年 12 月 31 日停止维护，但 CentOS Stream 8 仍在维护；CentOS 7 于 2024 年 6 月 30 日 EOL。",
+            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 已于 2024 年停止维护，建议使用 Ubuntu LTS 等活跃维护的发行版。”",
+            "error_id": "17db59a8ac68_r1",
+            "canonical_error_id": "17db59a8ac68",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "配置 Python 解释器的步骤不完整，内容在输入 'Python: Select Inter' 后中断，缺少后续步骤说明。",
+            "evidence": "原文在 '输入 `Python: Select Inter' 处截断，未提供完整的解释器选择流程。",
+            "suggestion": "补充完整的配置步骤，包括选择解释器命令的完整输入、如何选择正确的解释器以及验证配置成功的方法。",
+            "error_id": "4d59e645b71d_r1",
+            "canonical_error_id": "4d59e645b71d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "PyCharm Community 版并非“专业”，而是社区版，功能受限，缺少专业版中的科学工具、远程开发等高级功能。",
+            "evidence": "JetBrains 官方将 PyCharm 分为 Professional 和 Community 两个版本，Community 版是免费的开源版本，功能较专业版精简。",
+            "suggestion": "将“专业”改为“免费且功能足够”，或明确说明 Community 版与 Professional 版的区别。",
+            "error_id": "74fe51cd9286_r1",
+            "canonical_error_id": "74fe51cd9286",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "安装 PyCharm 时，勾选“Add to PATH”并不会使命令行命令 `pycharm` 可用，该选项仅将 PyCharm 的启动器添加到系统 PATH，但实际命令名可能为 `charm` 或 `pycharm` 取决于安装方式，且官方并未保证此命令可用。",
+            "evidence": "JetBrains 官方文档未提及安装时勾选“Add to PATH”后可直接使用 `pycharm` 命令启动；实际安装后，命令行启动通常使用 `charm` 命令（macOS/Linux）或通过完整路径调用。",
+            "suggestion": "删除“方便在命令行里直接敲 `pycharm` 启动”的表述，或改为“方便在命令行中调用 PyCharm 的启动脚本（具体命令可能因系统而异）”。",
+            "error_id": "9dc2c5780750_r1",
+            "canonical_error_id": "9dc2c5780750",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "新建项目时，Location 路径“别带中文”的建议过于绝对，现代工具链对中文路径的支持已较好，但为避免潜在问题，建议使用英文路径是合理的，但不应表述为“避免后续工具链报错”的必然结果。",
+            "evidence": "Python 和 PyCharm 在较新版本中已支持中文路径，但部分第三方库或工具可能仍存在兼容性问题，因此建议使用英文路径是稳妥做法，但并非绝对必要。",
+            "suggestion": "将“避免后续工具链报错”改为“减少潜在兼容性问题”，或删除该句，仅保留“建议使用英文路径”。",
+            "error_id": "07be82b27614_r1",
+            "canonical_error_id": "07be82b27614",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Anaconda 安装包大小描述不准确：Anaconda 安装包通常约 500MB 以上，但实际大小因版本和平台而异，且 Miniconda 安装包通常约 50-80MB，原文称 Miniconda 为 50MB 可能低估。",
+            "evidence": "Anaconda 官方文档显示安装包大小随版本变化，Miniconda 安装包大小约为 50-80MB。",
+            "suggestion": "建议修改为更准确的描述，如 'Anaconda 安装包较大（通常超过 500MB）' 和 'Miniconda 安装包较小（约 50-80MB）'。",
+            "error_id": "d9e5ec95d302_r1",
+            "canonical_error_id": "d9e5ec95d302",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "安装 Miniconda 的第三步验证部分内容被截断，未提供完整的验证命令和预期结果。",
+            "evidence": "原文以 '打开一个**新的' 结尾，明显不完整。",
+            "suggestion": "补充完整的验证步骤，例如运行 'conda --version' 和 'python --version' 并说明预期输出。",
+            "error_id": "8d33b889eea2_r1",
+            "canonical_error_id": "8d33b889eea2",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "path_hardcoding",
+            "severity": "critical",
+            "location": null,
+            "description": "PyCharm 配置中使用了硬编码的绝对路径（Windows 和 macOS/Linux 路径），违反了规则2中的路径硬编码错误模式。",
+            "evidence": "内容中明确写出 'C:\\Users\\你的用户名\\miniconda3\\envs\\llm-learn\\python.exe' 和 '~/miniconda3/envs/llm-learn/bin/python'，属于硬编码绝对路径。",
+            "suggestion": "建议使用环境变量或相对路径，例如：Windows 下使用 %USERPROFILE%\\miniconda3\\envs\\llm-learn\\python.exe，macOS/Linux 下使用 $HOME/miniconda3/envs/llm-learn/bin/python。",
+            "error_id": "3aa24f580abf_r1",
+            "canonical_error_id": "3aa24f580abf",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "代码块中调用 `exit()` 退出 Python 交互模式，但未使用 try-except 捕获可能出现的异常（如 SystemExit），且未提供异常处理建议。",
+            "evidence": "规则2 未捕获异常：涉及 IO/网络/模型加载的代码块缺失 try-except。此处 `exit()` 调用可能引发 SystemExit，但作为教学示例，应提示用户如何处理异常退出。",
+            "suggestion": "建议在代码示例中增加 try-except 块，或至少说明 `exit()` 会抛出 SystemExit 异常，并演示如何安全退出。",
+            "error_id": "a2180ccc0905_r1",
+            "canonical_error_id": "a2180ccc0905",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d4d89098fe63_r1",
+            "canonical_error_id": "d4d89098fe63",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'虚拟环境'的比喻说明处被截断，未完成对虚拟环境概念的完整解释，导致信息不完整。",
+            "evidence": "原文以'虚拟环境'开头后，在'如果都装进同一个 Python，就会冲突报错。虚拟环境'处戛然而止，缺少后续说明。",
+            "suggestion": "补充完整虚拟环境的定义、作用及创建方法（如使用 conda 或 venv），确保内容完整。",
+            "error_id": "73b4939d62ad_r1",
+            "canonical_error_id": "73b4939d62ad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'方法二'处截断，未提供完整的安装方法，导致内容不完整。",
+            "evidence": "内容块以'**方法二'结尾，缺少后续内容。",
+            "suggestion": "补充'方法二'的完整内容，或删除不完整的部分。",
+            "error_id": "cb80e6b83713_r1",
+            "canonical_error_id": "cb80e6b83713",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_incorrect",
+            "severity": "major",
+            "location": null,
+            "description": "命令 `sudo apt install python3 python3-pip python3-venv -y` 中，Ubuntu/Debian 的 python3-pip 包可能不存在或已废弃，且未指定版本，可能导致安装失败或安装到旧版本。",
+            "evidence": "在 Ubuntu 20.04+ 中，python3-pip 包通常可用，但在某些 Debian 版本中可能不存在；且未指定 Python 3.10+ 版本，可能安装系统默认版本（如 3.8/3.9），不满足 'Python 3.10+' 的要求。",
+            "suggestion": "建议使用 `sudo apt install python3.10 python3.10-venv python3.10-pip` 或通过 deadsnakes PPA 安装指定版本，并验证 `python3 --version` 是否 >= 3.10。",
+            "error_id": "0cba460be209_r1",
+            "canonical_error_id": "0cba460be209",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "version_not_guaranteed",
+            "severity": "major",
+            "location": null,
+            "description": "内容声称安装 '最新的稳定版'，但实际命令未指定版本，无法保证安装 Python 3.10+，可能安装系统默认的旧版本。",
+            "evidence": "Ubuntu 20.04 默认 Python 3.8，Ubuntu 22.04 默认 3.10，但 Debian 11 默认 3.9，且未使用版本管理工具（如 pyenv）或 PPA，无法确保版本满足要求。",
+            "suggestion": "明确指定版本安装，或使用 pyenv 安装 Python 3.10+，并在命令后添加版本检查。",
+            "error_id": "128a54aafba7_r1",
+            "canonical_error_id": "128a54aafba7",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "critical",
+            "location": null,
+            "description": "内容声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护，且 CentOS 7 于 2024 年 6 月 30 日 EOL。该表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 已于 2021 年 12 月 31 日停止维护，但 CentOS Stream 8 仍在维护；CentOS 7 于 2024 年 6 月 30 日 EOL。",
+            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 已于 2024 年停止维护，建议使用 Ubuntu LTS 等活跃维护的发行版。”",
+            "error_id": "17db59a8ac68_r1",
+            "canonical_error_id": "17db59a8ac68",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "配置 Python 解释器的步骤不完整，内容在输入 'Python: Select Inter' 后中断，缺少后续步骤说明。",
+            "evidence": "原文在 '输入 `Python: Select Inter' 处截断，未提供完整的解释器选择流程。",
+            "suggestion": "补充完整的配置步骤，包括选择解释器命令的完整输入、如何选择正确的解释器以及验证配置成功的方法。",
+            "error_id": "4d59e645b71d_r1",
+            "canonical_error_id": "4d59e645b71d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "PyCharm Community 版并非“专业”，而是社区版，功能受限，缺少专业版中的科学工具、远程开发等高级功能。",
+            "evidence": "JetBrains 官方将 PyCharm 分为 Professional 和 Community 两个版本，Community 版是免费的开源版本，功能较专业版精简。",
+            "suggestion": "将“专业”改为“免费且功能足够”，或明确说明 Community 版与 Professional 版的区别。",
+            "error_id": "74fe51cd9286_r1",
+            "canonical_error_id": "74fe51cd9286",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "安装 PyCharm 时，勾选“Add to PATH”并不会使命令行命令 `pycharm` 可用，该选项仅将 PyCharm 的启动器添加到系统 PATH，但实际命令名可能为 `charm` 或 `pycharm` 取决于安装方式，且官方并未保证此命令可用。",
+            "evidence": "JetBrains 官方文档未提及安装时勾选“Add to PATH”后可直接使用 `pycharm` 命令启动；实际安装后，命令行启动通常使用 `charm` 命令（macOS/Linux）或通过完整路径调用。",
+            "suggestion": "删除“方便在命令行里直接敲 `pycharm` 启动”的表述，或改为“方便在命令行中调用 PyCharm 的启动脚本（具体命令可能因系统而异）”。",
+            "error_id": "9dc2c5780750_r1",
+            "canonical_error_id": "9dc2c5780750",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "新建项目时，Location 路径“别带中文”的建议过于绝对，现代工具链对中文路径的支持已较好，但为避免潜在问题，建议使用英文路径是合理的，但不应表述为“避免后续工具链报错”的必然结果。",
+            "evidence": "Python 和 PyCharm 在较新版本中已支持中文路径，但部分第三方库或工具可能仍存在兼容性问题，因此建议使用英文路径是稳妥做法，但并非绝对必要。",
+            "suggestion": "将“避免后续工具链报错”改为“减少潜在兼容性问题”，或删除该句，仅保留“建议使用英文路径”。",
+            "error_id": "07be82b27614_r1",
+            "canonical_error_id": "07be82b27614",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Anaconda 安装包大小描述不准确：Anaconda 安装包通常约 500MB 以上，但实际大小因版本和平台而异，且 Miniconda 安装包通常约 50-80MB，原文称 Miniconda 为 50MB 可能低估。",
+            "evidence": "Anaconda 官方文档显示安装包大小随版本变化，Miniconda 安装包大小约为 50-80MB。",
+            "suggestion": "建议修改为更准确的描述，如 'Anaconda 安装包较大（通常超过 500MB）' 和 'Miniconda 安装包较小（约 50-80MB）'。",
+            "error_id": "d9e5ec95d302_r1",
+            "canonical_error_id": "d9e5ec95d302",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "安装 Miniconda 的第三步验证部分内容被截断，未提供完整的验证命令和预期结果。",
+            "evidence": "原文以 '打开一个**新的' 结尾，明显不完整。",
+            "suggestion": "补充完整的验证步骤，例如运行 'conda --version' 和 'python --version' 并说明预期输出。",
+            "error_id": "8d33b889eea2_r1",
+            "canonical_error_id": "8d33b889eea2",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "path_hardcoding",
+            "severity": "critical",
+            "location": null,
+            "description": "PyCharm 配置中使用了硬编码的绝对路径（Windows 和 macOS/Linux 路径），违反了规则2中的路径硬编码错误模式。",
+            "evidence": "内容中明确写出 'C:\\Users\\你的用户名\\miniconda3\\envs\\llm-learn\\python.exe' 和 '~/miniconda3/envs/llm-learn/bin/python'，属于硬编码绝对路径。",
+            "suggestion": "建议使用环境变量或相对路径，例如：Windows 下使用 %USERPROFILE%\\miniconda3\\envs\\llm-learn\\python.exe，macOS/Linux 下使用 $HOME/miniconda3/envs/llm-learn/bin/python。",
+            "error_id": "3aa24f580abf_r1",
+            "canonical_error_id": "3aa24f580abf",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "代码块中调用 `exit()` 退出 Python 交互模式，但未使用 try-except 捕获可能出现的异常（如 SystemExit），且未提供异常处理建议。",
+            "evidence": "规则2 未捕获异常：涉及 IO/网络/模型加载的代码块缺失 try-except。此处 `exit()` 调用可能引发 SystemExit，但作为教学示例，应提示用户如何处理异常退出。",
+            "suggestion": "建议在代码示例中增加 try-except 块，或至少说明 `exit()` 会抛出 SystemExit 异常，并演示如何安全退出。",
+            "error_id": "a2180ccc0905_r1",
+            "canonical_error_id": "a2180ccc0905",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d4d89098fe63_r1",
+            "canonical_error_id": "d4d89098fe63",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d4d89098fe63_r2",
+            "canonical_error_id": "d4d89098fe63",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d4d89098fe63_r2",
+            "canonical_error_id": "d4d89098fe63",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_8cb64248-4785-4d9e-acbd-f1dd12bfe817_2673d0a8-bf6c-59a8-8e07-7e87045fc37d_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

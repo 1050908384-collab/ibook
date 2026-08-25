@@ -1,17 +1,1 @@
-{
-  "case_id": "case_02_low_vram_practice",
-  "stage_id": "stage_1",
-  "answer_behavior": "high",
-  "target_accuracy_range": [
-    0.8,
-    0.95
-  ],
-  "assessment_accuracy": 0.88,
-  "answers": [
-    {
-      "question_id": "Q-KB12-ST1205-001",
-      "selected": "B",
-      "correct": true
-    }
-  ]
-}
+[]

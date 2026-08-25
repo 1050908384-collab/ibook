@@ -1,0 +1,15 @@
+{
+  "case_id": "case_028",
+  "background": "A100服务器，想做高并发vLLM推理服务",
+  "existing_skills": "KB-04|KB-08|KB-11",
+  "learning_goal": "vLLM部署",
+  "daily_hours": "3.0",
+  "learning_style": "工程实操型",
+  "hardware": "A100 80GB（云）",
+  "expected_target_blocks": "KB-15",
+  "expected_difficulty": "高级",
+  "expected_strategy": "advance",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "high",
+  "user_input_text": "我的学习背景：A100服务器，想做高并发vLLM推理服务\n已掌握技能：KB-04|KB-08|KB-11\n我的学习目标：vLLM部署\n我每天能学：3.0小时\n我喜欢怎么学：工程实操型\n我的硬件条件：A100 80GB（云）"
+}

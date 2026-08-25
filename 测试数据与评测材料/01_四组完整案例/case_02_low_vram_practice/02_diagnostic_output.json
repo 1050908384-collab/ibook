@@ -1,19 +1,6 @@
 {
-  "case_id": "case_02_low_vram_practice",
-  "confidence": 0.93,
-  "mapped_target_blocks": "KB-12",
-  "mapped_goal": "LoRA/QLoRA微调",
-  "knowledge_gaps": [
-    {
-      "block_id": "KB-12",
-      "status": "not_mastered",
-      "reason": "目标未掌握"
-    }
-  ],
-  "skipped_mastered": [
-    "KB-04",
-    "KB-08"
-  ],
-  "skipped_reason": "已确认掌握PyTorch与Transformer，跳过基础内容",
-  "hardware_constraint": "8GB显存 → 必须使用QLoRA 4-bit量化方案"
+  "status": "ready",
+  "session_id": "472b2802-3bb1-458a-8f41-0dd3d1ecb7bf",
+  "confidence": 0.95,
+  "questions": []
 }

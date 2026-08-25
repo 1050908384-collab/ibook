@@ -1,0 +1,37 @@
+{
+  "session_id": "ea3586aa-b352-49e9-af50-fcaafa0b2d40",
+  "user_id": "local-user",
+  "grade": "",
+  "skill_tags": [],
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "vLLM",
+      "block_id": "KB-15",
+      "block_name": "模型推理部署（vLLM）",
+      "target_subtopic_ids": [
+        "KBS-15-00",
+        "KBS-15-01",
+        "KBS-15-02",
+        "KBS-15-03",
+        "KBS-15-04"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "advanced",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "Transformer架构（Decoder-Only）",
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "vLLM部署",
+  "daily_hours": 3.0,
+  "learning_style": "hands-on",
+  "learning_rhythm": "fast",
+  "confidence_index": 0.2,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

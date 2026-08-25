@@ -1,0 +1,523 @@
+{
+  "run_id": "run_20260825_182738",
+  "run_started_at": "2026-08-25T10:27:38.819509+00:00",
+  "total_cases": 50,
+  "execution_mode": "default",
+  "run_finished_at": "2026-08-25T11:32:55.920670+00:00",
+  "summaries": [
+    {
+      "case_id": "case_001",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 111,
+      "stage_1_accuracy": 1.0,
+      "stage_1_strategy": "advance"
+    },
+    {
+      "case_id": "case_002",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_003",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 44,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_004",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 44,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_005",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_006",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 46,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_007",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 42,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_008",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_009",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_010",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_011",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_012",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 46,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_013",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 42,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_014",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 41,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_015",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 46,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_016",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 42,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_017",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_018",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 45,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_019",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_020",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 42,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_021",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_022",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 47,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_023",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_024",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 44,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_025",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 45,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_026",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 41,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_027",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 42,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_028",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 44,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_029",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_030",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_031",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 41,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_032",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 46,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_033",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 46,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_034",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 41,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_035",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 42,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_036",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 44,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_037",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 44,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_038",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 43,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_039",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 44,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_040",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": true,
+      "llm_call_count": 76,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify",
+      "stage_2_accuracy": 0.0,
+      "stage_2_strategy": "simplify"
+    },
+    {
+      "case_id": "case_041",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": true,
+      "llm_call_count": 67,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify",
+      "stage_2_accuracy": 0.0,
+      "stage_2_strategy": "simplify"
+    },
+    {
+      "case_id": "case_042",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": true,
+      "llm_call_count": 67,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify",
+      "stage_2_accuracy": 0.0,
+      "stage_2_strategy": "simplify"
+    },
+    {
+      "case_id": "case_043",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": true,
+      "llm_call_count": 67,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify",
+      "stage_2_accuracy": 0.0,
+      "stage_2_strategy": "simplify"
+    },
+    {
+      "case_id": "case_044",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": true,
+      "llm_call_count": 67,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify",
+      "stage_2_accuracy": 0.0,
+      "stage_2_strategy": "simplify"
+    },
+    {
+      "case_id": "case_045",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": true,
+      "llm_call_count": 68,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify",
+      "stage_2_accuracy": 0.0,
+      "stage_2_strategy": "simplify"
+    },
+    {
+      "case_id": "case_046",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 35,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_047",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 34,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_048",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 34,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_049",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 34,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    },
+    {
+      "case_id": "case_050",
+      "status": "completed",
+      "error": null,
+      "stage_1_completed": true,
+      "stage_2_completed": false,
+      "llm_call_count": 34,
+      "stage_1_accuracy": 0.0,
+      "stage_1_strategy": "simplify"
+    }
+  ],
+  "succeeded": 50,
+  "failed": 0
+}

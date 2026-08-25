@@ -1,0 +1,15 @@
+{
+  "case_id": "case_034",
+  "background": "每天只有0.5小时，理论型，想理解Transformer",
+  "existing_skills": "KB-02",
+  "learning_goal": "理解Transformer架构",
+  "daily_hours": "0.5",
+  "learning_style": "理论型",
+  "hardware": "无独立GPU",
+  "expected_target_blocks": "KB-08",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "medium",
+  "user_input_text": "我的学习背景：每天只有0.5小时，理论型，想理解Transformer\n已掌握技能：KB-02\n我的学习目标：理解Transformer架构\n我每天能学：0.5小时\n我喜欢怎么学：理论型\n我的硬件条件：无独立GPU"
+}

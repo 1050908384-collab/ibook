@@ -1,0 +1,15 @@
+{
+  "case_id": "case_044",
+  "background": "阶段1达掌握条件，验证是否跳过转下一目标",
+  "existing_skills": "KB-08|KB-11",
+  "learning_goal": "LoRA微调+权重合并+vLLM部署",
+  "daily_hours": "2.5",
+  "learning_style": "工程实操型",
+  "hardware": "RTX 4090 24GB",
+  "expected_target_blocks": "KB-12|KB-15",
+  "expected_difficulty": "高级",
+  "expected_strategy": "advance",
+  "run_stage_2": "True",
+  "answer_script_stage_1": "high",
+  "user_input_text": "我的学习背景：阶段1达掌握条件，验证是否跳过转下一目标\n已掌握技能：KB-08|KB-11\n我的学习目标：LoRA微调+权重合并+vLLM部署\n我每天能学：2.5小时\n我喜欢怎么学：工程实操型\n我的硬件条件：RTX 4090 24GB"
+}

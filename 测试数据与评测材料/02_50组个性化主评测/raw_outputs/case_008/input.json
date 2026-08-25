@@ -1,0 +1,15 @@
+{
+  "case_id": "case_008",
+  "background": "数据分析师，熟练SQL和Excel，想学LLM",
+  "existing_skills": "",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "1.5",
+  "learning_style": "理论结合简单实操",
+  "hardware": "无独立GPU",
+  "expected_target_blocks": "KB-02|KB-03|KB-04",
+  "expected_difficulty": "初级",
+  "expected_strategy": "simplify",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "low",
+  "user_input_text": "我的学习背景：数据分析师，熟练SQL和Excel，想学LLM\n我的学习目标：LoRA微调\n我每天能学：1.5小时\n我喜欢怎么学：理论结合简单实操\n我的硬件条件：无独立GPU"
+}

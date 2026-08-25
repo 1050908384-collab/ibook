@@ -1,0 +1,15 @@
+{
+  "case_id": "case_048",
+  "background": "未提供任何硬件信息，无法判断可执行性",
+  "existing_skills": "KB-02|KB-04",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "1.5",
+  "learning_style": "理论型",
+  "hardware": "未提供",
+  "expected_target_blocks": "KB-12",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "medium",
+  "user_input_text": "我的学习背景：未提供任何硬件信息，无法判断可执行性\n已掌握技能：KB-02|KB-04\n我的学习目标：LoRA微调\n我每天能学：1.5小时\n我喜欢怎么学：理论型"
+}

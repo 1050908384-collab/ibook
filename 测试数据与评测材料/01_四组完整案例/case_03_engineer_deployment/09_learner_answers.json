@@ -1,17 +1,1 @@
-{
-  "case_id": "case_03_engineer_deployment",
-  "stage_id": "stage_1",
-  "answer_behavior": "high",
-  "target_accuracy_range": [
-    0.85,
-    0.95
-  ],
-  "assessment_accuracy": 0.92,
-  "answers": [
-    {
-      "question_id": "Q-KB12-ST1206-001",
-      "selected": "A",
-      "correct": true
-    }
-  ]
-}
+[]

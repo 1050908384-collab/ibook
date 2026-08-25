@@ -1,22 +1,6 @@
 {
-  "case_id": "case_03_engineer_deployment",
+  "status": "ready",
+  "session_id": "c3936efc-1139-461d-97c0-1779159d4cd8",
   "confidence": 0.95,
-  "mapped_target_blocks": "KB-12+KB-15",
-  "knowledge_gaps": [
-    {
-      "block_id": "KB-12",
-      "status": "not_mastered"
-    },
-    {
-      "block_id": "KB-15",
-      "status": "not_mastered"
-    }
-  ],
-  "skipped_mastered": [
-    "KB-04",
-    "KB-08",
-    "KB-11",
-    "KB-13"
-  ],
-  "skipped_reason": "不重复讲解基础概念"
+  "questions": []
 }

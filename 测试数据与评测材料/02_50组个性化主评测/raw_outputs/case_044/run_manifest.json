@@ -1,0 +1,23 @@
+{
+  "run_id": "run_20260825_182738",
+  "case_id": "case_044",
+  "code_commit": "85aea5d2cb19",
+  "knowledge_base_version": "b7688878fe33",
+  "model_config": {
+    "LLM_PROVIDER": "deepseek",
+    "LLM_FALLBACK_PROVIDER": "ollama",
+    "DEEPSEEK_MODEL": "deepseek-chat",
+    "OLLAMA_MODEL": "deepseek-r1:7b",
+    "OLLAMA_BASE_URL": "http://localhost:11434",
+    "EXECUTION_MODE": "hybrid",
+    "BLOCK_PIPELINE_ENABLED": true,
+    "MAX_REVIEW_ITERATIONS": 3,
+    "DEEPSEEK_TIMEOUT_SECONDS": 180.0,
+    "DEEPSEEK_MAX_RETRIES": 2,
+    "has_deepseek_key": true
+  },
+  "run_started_at": "2026-08-25T11:05:26.919860+00:00",
+  "run_finished_at": "2026-08-25T11:11:23.631036+00:00",
+  "status": "completed",
+  "error": null
+}

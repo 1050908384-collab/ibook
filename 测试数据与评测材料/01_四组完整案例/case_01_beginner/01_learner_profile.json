@@ -1,30 +1,32 @@
 {
-  "case_id": "case_01_beginner",
-  "learner_id": "case_01_beginner",
-  "background": "大模型方向初学者，掌握基础Python，但没有深度学习和Transformer经验",
-  "existing_skills": [
-    "KB-02"
+  "session_id": "b510f260-e3aa-456c-83ec-ca45ff4884ae",
+  "user_id": "local-user",
+  "grade": "",
+  "skill_tags": [],
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "beginner",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    }
   ],
-  "learning_goal": "LoRA微调",
-  "daily_hours": 1.0,
-  "learning_style": "理论解释结合简单实操",
-  "hardware": "无独立GPU或仅8GB显存（核显笔记本）",
-  "target_blocks": [
-    "KB-04",
-    "KB-08",
-    "KB-11",
-    "KB-12"
-  ],
-  "version": 1,
-  "frozen_environment": {
-    "prompt_version": "v3.4",
-    "skill_version": "technical_review v3.5 / content_generation v3.4",
-    "knowledge_base_version": "kb-2026-08-24",
-    "generation_model": "deepseek-chat",
-    "embedding_model": "qwen3-embedding:0.6b",
-    "execution_mode": "hybrid",
-    "code_commit": "a1f3c2e",
-    "run_started_at": "2026-08-24T09:00:00",
-    "run_finished_at": "2026-08-24T10:35:00"
-  }
+  "goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "hands-on",
+  "learning_rhythm": "fast",
+  "confidence_index": 0.2,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
 }

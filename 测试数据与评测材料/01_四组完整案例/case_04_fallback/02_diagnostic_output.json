@@ -1,17 +1,6 @@
 {
-  "case_id": "case_04_fallback",
-  "confidence": 0.86,
-  "mapped_target_blocks": "KB-12",
-  "knowledge_gaps": [
-    {
-      "block_id": "KB-12",
-      "status": "not_mastered"
-    }
-  ],
-  "skipped_mastered": [
-    "KB-02",
-    "KB-03",
-    "KB-04"
-  ],
-  "note": "诊断阶段由DeepSeek完成（block_01），后续生成阶段DeepSeek超时触发Ollama回退"
+  "status": "ready",
+  "session_id": "472b2802-3bb1-458a-8f41-0dd3d1ecb7bf",
+  "confidence": 0.95,
+  "questions": []
 }

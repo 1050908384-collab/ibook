@@ -1,30 +1,32 @@
 {
-  "case_id": "case_04_fallback",
-  "learner_id": "case_04_fallback",
-  "background": "熟悉Python和PyTorch，想学LoRA微调（与案例B/C不同的真实画像：有数据处理背景但首次接触PEFT）",
-  "existing_skills": [
-    "KB-02",
-    "KB-03",
-    "KB-04"
+  "session_id": "472b2802-3bb1-458a-8f41-0dd3d1ecb7bf",
+  "user_id": "local-user",
+  "grade": "",
+  "skill_tags": [],
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "beginner",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    }
   ],
-  "learning_goal": "LoRA微调",
-  "daily_hours": 1.5,
-  "learning_style": "实操型",
-  "hardware": "RTX 3060 12GB",
-  "target_blocks": [
-    "KB-12"
-  ],
-  "version": 1,
-  "frozen_environment": {
-    "prompt_version": "v3.4",
-    "skill_version": "technical_review v3.5 / content_generation v3.4",
-    "knowledge_base_version": "kb-2026-08-24",
-    "generation_model_cloud": "deepseek-chat",
-    "generation_model_local": "deepseek-r1:7b",
-    "embedding_model": "qwen3-embedding:0.6b",
-    "execution_mode": "hybrid",
-    "code_commit": "a1f3c2e",
-    "run_started_at": "2026-08-24T09:00:00",
-    "run_finished_at": "2026-08-24T10:45:00"
-  }
+  "goal": "LoRA微调",
+  "daily_hours": 3.0,
+  "learning_style": "hands-on",
+  "learning_rhythm": "fast",
+  "confidence_index": 0.2,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
 }

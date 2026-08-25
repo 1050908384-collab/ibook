@@ -1,0 +1,15 @@
+{
+  "case_id": "case_001",
+  "background": "无任何编程经验，文科背景，希望转行做大模型微调",
+  "existing_skills": "",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "1.0",
+  "learning_style": "理论型",
+  "hardware": "无独立GPU（仅核显笔记本）",
+  "expected_target_blocks": "KB-01|KB-02|KB-03",
+  "expected_difficulty": "初级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "medium",
+  "user_input_text": "我的学习背景：无任何编程经验，文科背景，希望转行做大模型微调\n我的学习目标：LoRA微调\n我每天能学：1.0小时\n我喜欢怎么学：理论型\n我的硬件条件：无独立GPU（仅核显笔记本）"
+}

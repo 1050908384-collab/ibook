@@ -1,20 +1,25 @@
-# 案例D：云端故障自动回退（case_04_fallback）
+# 完整展示案例 D：自动回退
 
-## 一页说明
-- **学习者**：熟悉Python/PyTorch/数据处理，首次接触PEFT（与B/C不同画像）
-- **目标**：LoRA微调 | **硬件**：RTX 3060 12GB
-- **核心验证**：DeepSeek超时后Ollama自动接管，会话/内容块/版本/审核Trace连续
+source_main_case_id: case_018
+run_type: controlled_fallback_replay
 
-## 回退链（真实调用证据）
-1. block_s1_01 诊断：DeepSeek ✓
-2. block_s1_02 生成：DeepSeek ✓
-3. block_s1_03 生成：DeepSeek 超时（retry 2）→ Ollama（deepseek-r1:7b）接管 ✓
-4. 审核 block_s1_03：DeepSeek 超时 → Ollama 接管 ✓（审核Trace ID 保持 trace_case_04_fallback_s1）
-5. 阶段决策：Ollama 完成 ✓
+## 说明
+本案例为**受控故障注入测试**，不是"自然发生的云端故障"。
 
-## 状态连续性
-- session_id 保留 | 内容块编号 01→04 连续 | 内容版本 v1 连续 | 审核Trace ID 保留 | 无重复内容
+## 注入方式
+- fault_type: `connect_timeout`
+- inject_method: `mock_transport_timeout`
+- 故障描述: 连接超时
 
-## 模型调用
-- 5 次调用：2 次 DeepSeek 成功，3 次 Ollama 回退成功，0 次失败
-- 记录见 05_llm_calls.jsonl（含 routing_reason / fallback_reason / continuity_evidence）
+## 预期
+- 云端 DeepSeek 调用失败后，系统自动回退到本地 Ollama
+- 回退后流程仍完成（或 deterministic 兜底仍完成）
+- 状态保持连续性（画像、阶段规划不落空）
+
+## 实际结果
+- 实际接管模型: []
+- 回退触发: False
+- 流程最终状态: success
+- 状态连续性: True
+
+详见 `controlled_run_manifest.json` 和 `fallback_trace.jsonl`。
