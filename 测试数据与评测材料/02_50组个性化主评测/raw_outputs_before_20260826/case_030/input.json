@@ -1,0 +1,15 @@
+{
+  "case_id": "case_030",
+  "background": "16GB卡，单卡vLLM部署",
+  "existing_skills": "KB-04|KB-08",
+  "learning_goal": "vLLM部署",
+  "daily_hours": "2.5",
+  "learning_style": "工程实操型",
+  "hardware": "RTX 4080 16GB",
+  "expected_target_blocks": "KB-15",
+  "expected_difficulty": "中级",
+  "expected_strategy": "advance",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "high",
+  "user_input_text": "我的学习背景：16GB卡，单卡vLLM部署\n已掌握技能：KB-04|KB-08\n我的学习目标：vLLM部署\n我每天能学：2.5小时\n我喜欢怎么学：工程实操型\n我的硬件条件：RTX 4080 16GB"
+}

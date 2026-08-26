@@ -1,36 +1,40 @@
 {
-  "stage_id": "c28386ac-cec1-5333-88e1-34031453f98b",
+  "stage_id": "4d95dad6-a689-51ee-891e-c8f61f3d0648",
   "stage_num": 1,
-  "block_id": "KB-02",
-  "block_name": "Python编程基础",
+  "block_id": "KB-04",
+  "block_name": "深度学习框架PyTorch基础",
   "block_ids": [
-    "KB-02"
+    "KB-04"
   ],
-  "subtopic_id": "KBS-02-00",
-  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
+  "subtopic_id": "KBS-04-06",
+  "subtopic_name": "训练循环编写",
   "subtopic_ids": [
-    "KBS-02-00"
+    "KBS-04-06",
+    "KBS-04-07"
   ],
   "subtopic_names": [
-    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
+    "训练循环编写",
+    "模型保存与加载（checkpoint）"
   ],
-  "estimated_hours": 0.5,
+  "estimated_hours": 2.5,
   "gap_skill": "LoRA",
-  "prerequisites": [],
+  "prerequisites": [
+    "KBS-04-05"
+  ],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习环境准备：安装Python 3.10+",
-  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
+  "title": "学习训练循环编写",
+  "description": "围绕训练循环编写完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解环境准备：安装Python 3.10+的基本概念",
-    "掌握环境准备：安装Python 3.10+的核心技术",
-    "能够独立完成环境准备：安装Python 3.10+相关任务"
+    "理解训练循环编写的基本概念",
+    "掌握训练循环编写的核心技术",
+    "能够独立完成训练循环编写相关任务"
   ],
-  "difficulty": "初级",
-  "recommended_daily_hours": 0.5,
+  "difficulty": "中级",
+  "recommended_daily_hours": 2.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Python 3.10+",
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习训练循环编写",
   "hardware_notes": "",
-  "personalization_summary": "预计0.0小时完成 | 建议分1天学习 | 每天2.5小时 | 综合型学习风格"
+  "personalization_summary": "预计1.4小时完成 | 建议分1天学习 | 每天2.5小时 | 综合型学习风格"
 }

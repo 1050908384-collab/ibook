@@ -1,0 +1,15 @@
+{
+  "case_id": "case_006",
+  "background": "数学专业硕士，懂线性代数和概率论，但无编程经验",
+  "existing_skills": "",
+  "learning_goal": "理解Transformer架构",
+  "daily_hours": "1.0",
+  "learning_style": "理论型",
+  "hardware": "无独立GPU",
+  "expected_target_blocks": "KB-01|KB-02|KB-08",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "medium",
+  "user_input_text": "我的学习背景：数学专业硕士，懂线性代数和概率论，但无编程经验\n我的学习目标：理解Transformer架构\n我每天能学：1.0小时\n我喜欢怎么学：理论型\n我的硬件条件：无独立GPU"
+}

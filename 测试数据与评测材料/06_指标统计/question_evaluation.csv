@@ -1,3 +1,0 @@
-﻿case_id,stage,question_id,block_id,subtopic_id,difficulty,question_type,has_correct_answer,has_explanation,has_options,can_be_scored,submitted_answer,is_correct
-case_001,stage_1,Q-KB01-ST0101-004,KB-01,KBS-01-01,中级,single_choice,True,True,True,True,B,True
-case_001,stage_1,Q-KB01-ST0101-005,KB-01,KBS-01-01,中级,true_false,True,True,True,True,错误,True

@@ -1,36 +1,44 @@
 {
-  "stage_id": "72102aa3-7238-5887-8a5b-e0fdd45af46f",
+  "stage_id": "f4cc4862-fb4b-5f4c-b39b-f63c081834ff",
   "stage_num": 1,
-  "block_id": "KB-02",
-  "block_name": "Python编程基础",
+  "block_id": "KB-08",
+  "block_name": "Transformer架构（Decoder-Only）",
   "block_ids": [
-    "KB-02"
+    "KB-08"
   ],
-  "subtopic_id": "KBS-02-00",
-  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
+  "subtopic_id": "KBS-08-00",
+  "subtopic_name": "（环境准备：可选安装transformers库，加载小型模型（如GPT-2）进行前向传播实验）",
   "subtopic_ids": [
-    "KBS-02-00"
+    "KBS-08-00",
+    "KBS-08-01",
+    "KBS-08-02",
+    "KBS-08-03"
   ],
   "subtopic_names": [
-    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
+    "（环境准备：可选安装transformers库，加载小型模型（如GPT-2）进行前向传播实验）",
+    "掌握Transformer的Encoder-Decoder结构",
+    "重点理解Decoder-Only架构（如GPT/Llama/Qwen）",
+    "RMSNorm与残差连接"
   ],
-  "estimated_hours": 0.5,
+  "estimated_hours": 2.5,
   "gap_skill": "vLLM",
-  "prerequisites": [],
+  "prerequisites": [
+    "KBS-07-00"
+  ],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习环境准备：安装Python 3.10+",
-  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
+  "title": "学习环境准备：可选安装transformers库",
+  "description": "围绕环境准备：可选安装transformers库完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解环境准备：安装Python 3.10+的基本概念",
-    "掌握环境准备：安装Python 3.10+的核心技术",
-    "能够独立完成环境准备：安装Python 3.10+相关任务"
+    "理解环境准备：可选安装transformers库的基本概念",
+    "掌握环境准备：可选安装transformers库的核心技术",
+    "能够独立完成环境准备：可选安装transformers库相关任务"
   ],
-  "difficulty": "初级",
-  "recommended_daily_hours": 0.5,
+  "difficulty": "高级",
+  "recommended_daily_hours": 2.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Python 3.10+",
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：可选安装transformers库",
   "hardware_notes": "",
-  "personalization_summary": "预计0.0小时完成 | 建议分1天学习 | 每天2.5小时 | 综合型学习风格"
+  "personalization_summary": "预计0.5小时完成 | 建议分1天学习 | 每天2.5小时 | 综合型学习风格"
 }

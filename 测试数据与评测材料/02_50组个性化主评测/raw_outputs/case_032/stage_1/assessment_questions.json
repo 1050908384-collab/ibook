@@ -1,1 +1,149 @@
-[]
+[
+  {
+    "question_id": "Q-KB1504-017",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "FastAPI 相比 Flask 在大模型 API 开发中的主要优势是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "语法更复杂"
+      },
+      {
+        "key": "B",
+        "text": "原生支持异步（Async），性能更高，自动生成文档"
+      },
+      {
+        "key": "C",
+        "text": "不支持 JSON"
+      },
+      {
+        "key": "D",
+        "text": "只能运行在 Windows 上"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "请写出使用 vLLM 的 `LLM` 类加载 `meta-llama/Llama-2-7b-chat-hf` 模型并生成文本的代码。",
+    "options": [],
+    "correct_answer": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
+    "hint": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
+    "explanation": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```"
+  },
+  {
+    "question_id": "Q-KB1504-016",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写出一个简单的 Dockerfile，基于 `python:3.10-slim`，安装 `fastapi` 和 `uvicorn`，并暴露 8000 端口。",
+    "options": [],
+    "correct_answer": "```dockerfile\nFROM python:3.10-slim\n\nWORKDIR /app\nCOPY . /app\n\nRUN pip install --no-cache-dir fastapi uvicorn\n\nEXPOSE 8000\n\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```",
+    "hint": "```dockerfile\nFROM python:3.10-slim\n\nWORKDIR /app\nCOPY . /app\n\nRUN pip install --no-cache-dir fastapi uvicorn\n\nEXPOSE 8000\n\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```",
+    "explanation": "```dockerfile\nFROM python:3.10-slim\n\nWORKDIR /app\nCOPY . /app\n\nRUN pip install --no-cache-dir fastapi uvicorn\n\nEXPOSE 8000\n\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```"
+  },
+  {
+    "question_id": "Q-KB1504-006",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "模型量化（Quantization）的主要目的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "提高模型精度"
+      },
+      {
+        "key": "B",
+        "text": "减小模型体积和显存占用，加速推理"
+      },
+      {
+        "key": "C",
+        "text": "增加训练数据"
+      },
+      {
+        "key": "D",
+        "text": "改变模型架构"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-009",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "vLLM 和 TGI（Text Generation Inference）都是用于什么目的的框架？",
+    "options": [
+      {
+        "key": "A",
+        "text": "模型训练"
+      },
+      {
+        "key": "B",
+        "text": "大模型高性能推理服务部署"
+      },
+      {
+        "key": "C",
+        "text": "数据标注"
+      },
+      {
+        "key": "D",
+        "text": "模型微调"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB15-ST1501-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-01",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "贪心搜索在每一步选择当前概率最高的下一个________。",
+    "options": [],
+    "correct_answer": "token ||| 词元",
+    "hint": "贪心搜索不保留多个候选路径。",
+    "explanation": "贪心搜索不保留多个候选路径。"
+  },
+  {
+    "question_id": "Q-KB1504-010",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "vLLM 的核心技术优势是________，它极大提升了显存利用率和吞吐量。",
+    "options": [],
+    "correct_answer": "PagedAttention",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB15-ST1500-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "部署 vLLM 前应确保 CUDA、PyTorch 与 vLLM 三者的________兼容。",
+    "options": [],
+    "correct_answer": "版本 ||| 版本号",
+    "hint": "版本不兼容会导致安装或运行失败。",
+    "explanation": "版本不兼容会导致安装或运行失败。"
+  }
+]

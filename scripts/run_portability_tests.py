@@ -192,6 +192,37 @@ def restore_env(saved: Dict[str, str]):
             os.environ[k] = old_v
 
 
+def refresh_settings_inplace() -> None:
+    """把当前 os.environ 同步到 **现有** config.settings 实例（原地修改字段，保留对象引用）。"""
+    from config import Settings, settings as global_settings
+
+    fresh = Settings(_env_file=None)
+    for field_name in fresh.model_fields:
+        try:
+            setattr(global_settings, field_name, getattr(fresh, field_name))
+        except (AttributeError, ValueError):
+            continue
+    for attr in ("__pydantic_fields_set__", "__pydantic_private__"):
+        if hasattr(global_settings, attr):
+            try:
+                delattr(global_settings, attr)
+            except Exception:
+                pass
+
+
+_patch_applied_portability = False
+
+
+def apply_llm_patch_once() -> None:
+    """启用 LLM 调用记录拦截（和 run_real_evaluation 同一机制）。"""
+    global _patch_applied_portability
+    if _patch_applied_portability:
+        return
+    _patch_applied_portability = True
+    from scripts.run_real_evaluation import _patch_llm_client
+    _patch_llm_client()
+
+
 PROVIDER_ENV = {
     "DeepSeek": {
         # 强制 DeepSeek 云端，关闭回退（强制走这一路，用于证明可替换）
@@ -216,17 +247,22 @@ async def run_case_provider(case_id: str, provider: str,
         if reused is not None:
             return reused
 
+    # 启用 LLM 调用拦截（一次性）
+    apply_llm_patch_once()
+
     from orchestrator.harness import Harness
-    from config import Settings
+    from scripts.run_real_evaluation import _llm_call_records as lcr_global
 
     env_overrides = PROVIDER_ENV[provider]
     saved_env = apply_env_overrides(env_overrides)
+    # 把新环境变量同步到现有 config.settings（所有已导入的引用都会看到变化）
+    refresh_settings_inplace()
 
     run_started = _now_iso()
     t0 = time.time()
+    # 记录调用起始索引，避免取到前面案例的记录
+    lcr_start_idx = len(lcr_global)
     try:
-        # 实例化新的 settings，让它重新读 env
-        fresh = Settings(_env_file=None)
         harness = Harness()
         session = harness.state_manager.create_session(None)
         session_id = session["session_id"]
@@ -267,24 +303,42 @@ async def run_case_provider(case_id: str, provider: str,
         t1 = time.time()
         latency_ms = int((t1 - t0) * 1000)
 
-        # 从 LLM 调用记录提取模型名/成功率
-        actual_models = set()
+        # 从 LLM 调用记录提取【本场景专属】模型名/成功率
+        actual_models: set[str] = set()
         total_calls = 0
         failed_calls = 0
         fallback_count = 0
-        try:
-            from scripts.run_real_evaluation import _llm_call_records as lcr
-            recent = lcr[-50:]
-            total_calls = len(recent)
-            for c in recent:
-                if c.get("actual_model"):
-                    actual_models.add(c["actual_model"])
-                if not c.get("success", True):
-                    failed_calls += 1
-                if c.get("fallback_triggered"):
-                    fallback_count += 1
-        except Exception:
-            pass
+        current_calls = lcr_global[lcr_start_idx:]
+        total_calls = len(current_calls)
+        for c in current_calls:
+            if c.get("actual_model"):
+                actual_models.add(c["actual_model"])
+            if not c.get("success", True):
+                failed_calls += 1
+            if c.get("fallback_triggered"):
+                fallback_count += 1
+
+        # 严格校验「是否只用了预期 provider 的模型」
+        # DeepSeek-only：LLM_FALLBACK_PROVIDER=""，所以 fallback_count 必须为 0，
+        #   且所有实际模型不含 ollama / 本地模型关键字
+        if provider == "DeepSeek":
+            has_ollama_in_model = any(
+                ("ollama" in m.lower()) or ("deepseek-r1" in m.lower()) or ("qwen" in m.lower())
+                for m in actual_models
+            )
+            used_only_expected = (
+                (fallback_count == 0)
+                and (not has_ollama_in_model)
+                and bool(actual_models)  # 至少有一次真实调用，不能全是 deterministic 捷径
+            )
+        # Ollama-only：DEEPSEEK_API_KEY="" 且 LLM_PROVIDER=ollama
+        #   所有实际模型必须是 Ollama 家族（deepseek-r1、qwen...），绝不能出现 deepseek-chat
+        else:  # Ollama
+            has_cloud_model = any(
+                ("deepseek-chat" in m.lower()) and ("deepseek-r1" not in m.lower())
+                for m in actual_models
+            )
+            used_only_expected = (not has_cloud_model) and bool(actual_models)
 
         return {
             "case_id": case_id,
@@ -310,16 +364,7 @@ async def run_case_provider(case_id: str, provider: str,
                     if isinstance(b, dict)
                 )
             ),
-            "used_only_expected_provider": (
-                # DeepSeek 模式：实际只出现 deepseek-chat，没有 Ollama 回退
-                (provider == "DeepSeek" and all("ollama" not in m.lower() for m in actual_models))
-                or
-                # Ollama 模式：只出现 Ollama 模型
-                (provider == "Ollama" and all(
-                    any(name in m.lower() for name in ["deepseek-r1", "qwen", "ollama"])
-                    for m in actual_models
-                )) if actual_models else False
-            ),
+            "used_only_expected_provider": used_only_expected,
             "run_started_at": run_started,
             "run_finished_at": _now_iso(),
         }
@@ -334,6 +379,8 @@ async def run_case_provider(case_id: str, provider: str,
         }
     finally:
         restore_env(saved_env)
+        # 恢复正常环境变量后再刷新一次 settings，避免影响后续案例
+        refresh_settings_inplace()
 
 
 async def main():

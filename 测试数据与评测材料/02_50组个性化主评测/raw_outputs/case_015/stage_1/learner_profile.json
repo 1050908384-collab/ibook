@@ -1,5 +1,5 @@
 {
-  "session_id": "c0b43cb9-dea7-4560-b87b-c2b7a44c6a2c",
+  "session_id": "f240abe8-6edd-40cc-a3f9-14c3b047d189",
   "user_id": "local-user",
   "grade": "",
   "skill_tags": [],
@@ -18,7 +18,7 @@
         "KBS-12-05"
       ],
       "mapping_confidence": 1.0,
-      "level": "advanced",
+      "level": "intermediate",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
@@ -30,7 +30,7 @@
   "daily_hours": 2.0,
   "learning_style": "hands-on",
   "learning_rhythm": "fast",
-  "confidence_index": 0.2,
+  "confidence_index": 0.725,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

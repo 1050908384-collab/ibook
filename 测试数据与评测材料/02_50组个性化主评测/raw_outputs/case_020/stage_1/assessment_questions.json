@@ -1,1 +1,149 @@
-[]
+[
+  {
+    "question_id": "Q-KB0404-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "自定义数据集类需要继承的基类是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nn.Module`"
+      },
+      {
+        "key": "B",
+        "text": "`Dataset`"
+      },
+      {
+        "key": "C",
+        "text": "`DataLoader`"
+      },
+      {
+        "key": "D",
+        "text": "`Sampler`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0404-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请实现一个简单的自定义数据集类 `MyDataset`，接收数据列表 `data` 和标签列表 `labels`，实现 `__len__` 和 `__getitem__` 方法。",
+    "options": [],
+    "correct_answer": "```python\nfrom torch.utils.data import Dataset\n\nclass MyDataset(Dataset):\n    def __init__(self, data, labels):\n        self.data = data\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.data)\n\n    def __getitem__(self, idx):\n        return self.data[idx], self.labels[idx]\n```",
+    "hint": "```python\nfrom torch.utils.data import Dataset\n\nclass MyDataset(Dataset):\n    def __init__(self, data, labels):\n        self.data = data\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.data)\n\n    def __getitem__(self, idx):\n        return self.data[idx], self.labels[idx]\n```",
+    "explanation": "```python\nfrom torch.utils.data import Dataset\n\nclass MyDataset(Dataset):\n    def __init__(self, data, labels):\n        self.data = data\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.data)\n\n    def __getitem__(self, idx):\n        return self.data[idx], self.labels[idx]\n```"
+  },
+  {
+    "question_id": "Q-KB0405-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`CrossEntropyLoss` 的输入 `logits` 是否需要先经过 `Softmax`？",
+    "options": [
+      {
+        "key": "A",
+        "text": "需要"
+      },
+      {
+        "key": "B",
+        "text": "不需要"
+      },
+      {
+        "key": "C",
+        "text": "可选"
+      },
+      {
+        "key": "D",
+        "text": "取决于输出维度"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `CrossEntropyLoss` 内部已包含 `LogSoftmax`，直接传入未归一化的 logits 即可。",
+    "explanation": "> `CrossEntropyLoss` 内部已包含 `LogSoftmax`，直接传入未归一化的 logits 即可。"
+  },
+  {
+    "question_id": "Q-KB0405-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是**交叉熵损失**函数？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nn.MSELoss`"
+      },
+      {
+        "key": "B",
+        "text": "`nn.CrossEntropyLoss`"
+      },
+      {
+        "key": "C",
+        "text": "`nn.L1Loss`"
+      },
+      {
+        "key": "D",
+        "text": "`nn.BCELoss`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0407-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：从 `checkpoint.pth` 加载模型和优化器状态，并恢复训练。",
+    "options": [],
+    "correct_answer": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "hint": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "explanation": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0407-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：保存模型 `model` 的参数到 `checkpoint.pth`，并包含优化器状态和当前epoch。",
+    "options": [],
+    "correct_answer": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "hint": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "explanation": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```"
+  },
+  {
+    "question_id": "Q-KB0406-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-06",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请补全以下训练循环代码：\n```python\nmodel.train()\nfor epoch in range(epochs):\n    for batch in dataloader:\n        optimizer.zero_grad()\n        # 前向传播\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        # 反向传播\n        ________\n        # 更新参数\n        ________\n```",
+    "options": [],
+    "correct_answer": "```python\nloss.backward()\noptimizer.step()\n```",
+    "hint": "```python\nloss.backward()\noptimizer.step()\n```",
+    "explanation": "```python\nloss.backward()\noptimizer.step()\n```"
+  },
+  {
+    "question_id": "Q-KB0401-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请将以下两个张量按**列方向**（dim=1）拼接：\n```python\na = torch.tensor([[1, 2], [3, 4]])\nb = torch.tensor([[5], [6]])\n```",
+    "options": [],
+    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "hint": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "explanation": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```"
+  }
+]

@@ -1,1 +1,183 @@
-[]
+[
+  {
+    "question_id": "Q-KB1201-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "LoRA（Low-Rank Adaptation）的核心思想是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "冻结预训练模型的所有参数，仅训练新增的低秩分解矩阵"
+      },
+      {
+        "key": "B",
+        "text": "训练模型的所有参数"
+      },
+      {
+        "key": "C",
+        "text": "删除模型的部分层"
+      },
+      {
+        "key": "D",
+        "text": "仅训练Embedding层"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB12-ST1205-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-05",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "合并 LoRA 权重后最直接的用途是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "以不依赖单独适配器的形式部署推理"
+      },
+      {
+        "key": "B",
+        "text": "删除全部模型参数"
+      },
+      {
+        "key": "C",
+        "text": "跳过保存模型"
+      },
+      {
+        "key": "D",
+        "text": "自动增加训练数据"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "合并可简化独立推理部署。",
+    "explanation": "合并可简化独立推理部署。"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
+    "options": [],
+    "correct_answer": "lora_dropout",
+    "hint": "该参数用于适配器分支的 dropout。",
+    "explanation": "该参数用于适配器分支的 dropout。"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-03",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "若希望将 LoRA 注入注意力层的 query 与 value 投影，应配置什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "target_modules 指向对应投影层名"
+      },
+      {
+        "key": "B",
+        "text": "删除 tokenizer"
+      },
+      {
+        "key": "C",
+        "text": "把 batch size 设为0"
+      },
+      {
+        "key": "D",
+        "text": "关闭梯度计算"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "target_modules 控制 LoRA 的注入位置。",
+    "explanation": "target_modules 控制 LoRA 的注入位置。"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "QLoRA 的 4-bit 量化常依赖的库是________。",
+    "options": [],
+    "correct_answer": "bitsandbytes",
+    "hint": "bitsandbytes 提供低比特量化与优化器支持。",
+    "explanation": "bitsandbytes 提供低比特量化与优化器支持。"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-00",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "QLoRA 对显存要求相对较低，主要因为它将基座模型以何种精度加载？",
+    "options": [
+      {
+        "key": "A",
+        "text": "4-bit 量化精度"
+      },
+      {
+        "key": "B",
+        "text": "64-bit 浮点精度"
+      },
+      {
+        "key": "C",
+        "text": "纯文本精度"
+      },
+      {
+        "key": "D",
+        "text": "不加载模型"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "QLoRA 以低比特量化加载冻结的基座模型。",
+    "explanation": "QLoRA 以低比特量化加载冻结的基座模型。"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-05",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "PEFT 模型调用 `merge_and_unload()` 后，会将 LoRA 权重________到基座模型中。",
+    "options": [],
+    "correct_answer": "合并 ||| merge ||| 融合",
+    "hint": "合并后可作为普通模型进行推理部署。",
+    "explanation": "合并后可作为普通模型进行推理部署。"
+  },
+  {
+    "question_id": "Q-KB12-ST1202-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-02",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "在其他条件相同时，增大 LoRA rank 最可能带来什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "可训练参数量增加"
+      },
+      {
+        "key": "B",
+        "text": "基座模型词表被删除"
+      },
+      {
+        "key": "C",
+        "text": "不再需要训练数据"
+      },
+      {
+        "key": "D",
+        "text": "模型自动变为量化模型"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "更高 rank 意味着更大的低秩适配器。",
+    "explanation": "更高 rank 意味着更大的低秩适配器。"
+  }
+]

@@ -1,16 +1,66 @@
 [
   {
-    "question_id": "Q-KB01-ST0101-004",
+    "question_id": "Q-KB0200-004",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "24.0",
+    "is_correct": true,
+    "correct_answer": "24.0",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-005",
+    "submitted_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "is_correct": true,
+    "correct_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-002",
+    "submitted_answer": "`<class 'float'>`；`<class 'str'>`",
+    "is_correct": true,
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-003",
     "submitted_answer": "B",
     "is_correct": true,
     "correct_answer": "B",
-    "answer_behavior": "medium"
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB01-ST0101-005",
-    "submitted_answer": "错误",
+    "question_id": "Q-KB0205-007",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "submitted_answer": "C",
     "is_correct": true,
-    "correct_answer": "错误",
-    "answer_behavior": "medium"
+    "correct_answer": "C",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0205-003",
+    "submitted_answer": "```\nBefore\nHello!\nAfter\n```",
+    "is_correct": true,
+    "correct_answer": "```\nBefore\nHello!\nAfter\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
   }
 ]

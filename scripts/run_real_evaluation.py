@@ -223,6 +223,14 @@ ANSWER_BEHAVIOR_RATIOS = {
     "very_low": 0.10,
 }
 
+# 答题脚本 → 预期正确率区间（下限, 上限）
+ACCURACY_BEHAVIOR_MAP = {
+    "high": (0.80, 1.00),
+    "medium": (0.60, 0.79),
+    "low": (0.40, 0.59),
+    "very_low": (0.00, 0.39),
+}
+
 WRONG_ANSWER_OPTIONS = {
     "single_choice": "A",
     "multiple_choice": "A",
@@ -232,14 +240,74 @@ WRONG_ANSWER_OPTIONS = {
 }
 
 
-def generate_controlled_answer(question, behavior: str) -> str:
-    """根据受控答题行为生成答案。
+def parse_answer_script(raw_value: Any) -> Dict[str, Any]:
+    """解析 answer_script_stage_1 / answer_script_stage_2。
 
-    behavior: high(90%正确) / medium(65%) / low(35%) / very_low(10%)
+    同时兼容两种格式：
+    - 新版：完整 JSON 字符串 / dict，形如
+        {"answer_behavior": "medium", "target_accuracy_range": [0.60, 0.79],
+         "wrong_answer_strategy": "fixed_by_question_id",
+         "expected_next_strategy": "reinforce"}
+    - 旧版：纯字符串 "medium" / "high" / "low" / "very_low" → 自动补齐其它字段
+    """
+    import json
+    if raw_value is None:
+        raw_value = "medium"
+    if isinstance(raw_value, dict):
+        parsed = dict(raw_value)
+    elif isinstance(raw_value, str):
+        s = raw_value.strip()
+        if s.startswith("{"):
+            try:
+                parsed = json.loads(s)
+            except json.JSONDecodeError:
+                parsed = {"answer_behavior": s}
+        else:
+            parsed = {"answer_behavior": s}
+    else:
+        parsed = {"answer_behavior": str(raw_value)}
+
+    behavior = str(parsed.get("answer_behavior") or "medium").strip()
+    if behavior not in ANSWER_BEHAVIOR_RATIOS:
+        # 容错：未识别的行为映射到 medium
+        behavior = "medium"
+        parsed["answer_behavior"] = behavior
+
+    # target_accuracy_range：未提供时用 ACCURACY_BEHAVIOR_MAP 默认
+    if "target_accuracy_range" not in parsed or not isinstance(
+        parsed["target_accuracy_range"], (list, tuple)
+    ) or len(parsed["target_accuracy_range"]) != 2:
+        parsed["target_accuracy_range"] = list(ACCURACY_BEHAVIOR_MAP[behavior])
+    # 否则用原值，且确保元素是 float
+    parsed["target_accuracy_range"] = [float(parsed["target_accuracy_range"][0]),
+                                        float(parsed["target_accuracy_range"][1])]
+
+    if "wrong_answer_strategy" not in parsed:
+        parsed["wrong_answer_strategy"] = "fixed_by_question_id"
+    if "expected_next_strategy" not in parsed:
+        parsed["expected_next_strategy"] = ""
+    return parsed
+
+
+def generate_controlled_answer(question, script: Any) -> str:
+    """根据答题脚本生成答案。
+
+    script: 可以是行为字符串（high/medium/...），也可以是 parse_answer_script() 后的 dict。
+    wrong_answer_strategy 支持：
+      - fixed_by_question_id: 同一个 question_id 每次都出同一个「错误选项」（默认，可复现）
+      - random_distractor: 预留（暂未实现差异化，降级 fixed_by_question_id）
     """
     import random
-    rng = random.Random(hash(question.question_id + behavior))
+    if isinstance(script, dict):
+        behavior = script.get("answer_behavior") or "medium"
+        strategy = script.get("wrong_answer_strategy") or "fixed_by_question_id"
+    else:
+        behavior = script
+        strategy = "fixed_by_question_id"
+
     ratio = ANSWER_BEHAVIOR_RATIOS.get(behavior, 0.5)
+    seed = hash(f"{question.question_id}|{behavior}|{strategy}")
+    rng = random.Random(seed & 0xFFFFFFFF)
     if rng.random() < ratio:
         return question.correct_answer
     else:
@@ -247,7 +315,161 @@ def generate_controlled_answer(question, behavior: str) -> str:
         return WRONG_ANSWER_OPTIONS.get(qtype, "我不知道")
 
 
+def _accuracy_in_range(actual: float, rng) -> bool:
+    return rng[0] - 1e-9 <= actual <= rng[1] + 1e-9
+
+
 # ── Run Manifest ──────────────────────────────────────────
+def _probe_hardware() -> Dict[str, Any]:
+    """探测本机硬件信息（文档 §2.3 要求记录）。失败时返回 'unknown'，不影响主流程。"""
+    info: Dict[str, Any] = {
+        "cpu_model": "unknown",
+        "cpu_cores_physical": None,
+        "cpu_cores_logical": None,
+        "ram_total_gb": None,
+        "gpus": [],
+    }
+    try:
+        import psutil
+        # CPU
+        try:
+            if hasattr(psutil, "cpu_freq"):
+                pass
+        except Exception:
+            pass
+        # Windows: 用注册表/Win32 查 CPU 名字；跨平台降级用 cpuinfo（可选）
+        try:
+            if sys.platform.startswith("win"):
+                import subprocess as sp
+                r = sp.run(
+                    ["wmic", "cpu", "get", "Name", "/value"],
+                    capture_output=True, text=True, timeout=8,
+                )
+                if r.returncode == 0:
+                    for line in r.stdout.splitlines():
+                        if line.startswith("Name="):
+                            info["cpu_model"] = line.split("=", 1)[1].strip() or "unknown"
+                            break
+            elif sys.platform == "darwin":
+                import subprocess as sp
+                r = sp.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                            capture_output=True, text=True, timeout=8)
+                if r.returncode == 0 and r.stdout.strip():
+                    info["cpu_model"] = r.stdout.strip()
+            else:
+                # Linux
+                with open("/proc/cpuinfo", "r") as f:
+                    for line in f:
+                        if line.strip().startswith("model name"):
+                            info["cpu_model"] = line.split(":", 1)[1].strip() or "unknown"
+                            break
+        except Exception:
+            pass
+        # 若以上平台专属探测失败（如 wmic 在受限 Windows 上无输出），统一用 platform.processor() 兜底
+        try:
+            if info["cpu_model"] in (None, "", "unknown"):
+                import platform
+                pp = platform.processor()
+                if pp:
+                    info["cpu_model"] = pp.strip() or "unknown"
+        except Exception:
+            pass
+        info["cpu_cores_physical"] = psutil.cpu_count(logical=False)
+        info["cpu_cores_logical"] = psutil.cpu_count(logical=True)
+        mem = psutil.virtual_memory()
+        info["ram_total_gb"] = round(mem.total / (1024 ** 3), 2)
+    except Exception:
+        pass
+
+    # GPU：优先 pynvml（NVIDIA 官方）；兜底用 torch.cuda / 失败则空
+    try:
+        try:
+            import pynvml
+            try:
+                pynvml.nvmlInit()
+            except Exception:
+                pynvml = None
+            if pynvml is not None:
+                num_gpus = pynvml.nvmlDeviceGetCount()
+                for i in range(num_gpus):
+                    handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+                    name = pynvml.nvmlDeviceGetName(handle)
+                    if isinstance(name, bytes):
+                        name = name.decode("utf-8", errors="ignore")
+                    mem_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                    info["gpus"].append({
+                        "index": i,
+                        "name": name,
+                        "memory_total_gb": round(mem_info.total / (1024 ** 3), 2),
+                        "driver_version": (
+                            pynvml.nvmlSystemGetDriverVersion()
+                            if i == 0 else info["gpus"][0].get("driver_version", "unknown")
+                        ),
+                    })
+        except Exception:
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    for i in range(torch.cuda.device_count()):
+                        dev = torch.device(f"cuda:{i}")
+                        name = torch.cuda.get_device_name(dev)
+                        mem_total = torch.cuda.get_device_properties(dev).total_memory
+                        info["gpus"].append({
+                            "index": i,
+                            "name": name,
+                            "memory_total_gb": round(mem_total / (1024 ** 3), 2),
+                            "driver_version": "unknown",
+                        })
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return info
+
+
+def _dir_md5_12(dir_path) -> str:
+    """对目录下所有 .md/.prompt 文件按路径排序后做拼接哈希，用于 prompt_version/skill_version。"""
+    d = Path(dir_path)
+    if not d.exists():
+        return "unknown"
+    h = hashlib.sha256()
+    md_files = sorted(p for p in d.rglob("*") if p.is_file() and p.suffix.lower() in (".md", ".prompt"))
+    if not md_files:
+        return "unknown"
+    for fp in md_files:
+        try:
+            rel = str(fp.relative_to(d)).encode("utf-8")
+            h.update(b"F:")
+            h.update(rel)
+            h.update(b"\n")
+            with open(fp, "rb") as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    h.update(chunk)
+            h.update(b"\n")
+        except Exception:
+            continue
+    return h.hexdigest()[:12]
+
+
+def _file_sha256_12(path: Path) -> str:
+    if not path.exists():
+        return "unknown"
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            while True:
+                chunk = f.read(65536)
+                if not chunk:
+                    break
+                h.update(chunk)
+        return h.hexdigest()[:12]
+    except Exception:
+        return "unknown"
+
+
 def build_run_manifest(run_id: str, case: Dict[str, str]) -> Dict[str, Any]:
     from config import settings
     # 获取代码提交版本
@@ -261,27 +483,93 @@ def build_run_manifest(run_id: str, case: Dict[str, str]) -> Dict[str, Any]:
     except Exception:
         code_commit = "unknown"
 
-    # 获取知识库版本（文件哈希）
+    # 获取知识库版本（文件哈希）+ 数据库版本（SQLite 文件哈希，文档 §2.3 的 database_sha256）
     kb_hash = "unknown"
     kb_path = ROOT_DIR / "data" / "seeds" / "knowledge_blocks.json"
     if kb_path.exists():
-        with open(kb_path, "rb") as f:
-            kb_hash = hashlib.sha256(f.read()).hexdigest()[:12]
+        kb_hash = _file_sha256_12(kb_path)
 
-    # 模型配置（不记录 API Key）
+    # 从 settings.DATABASE_URL 解析真实 SQLite 文件路径（兼容 sqlite:///abs 和 sqlite:///rel）
+    database_sha256 = "unknown"
+    try:
+        from config import Settings, PROJECT_ROOT
+        db_url = settings.DATABASE_URL
+        if isinstance(db_url, str) and db_url.startswith("sqlite:///"):
+            raw = db_url[len("sqlite:///"):]
+            p = Path(raw)
+            if not p.is_absolute():
+                # 相对路径：settings 定义是 "sqlite:///../data/sqlite_data/project.db"，
+                # 相对的是 BACKEND_DIR (PROJECT_ROOT/backend)，从 PROJECT_ROOT 解析
+                p = (PROJECT_ROOT / "backend" / p).resolve()
+            if p.exists():
+                database_sha256 = _file_sha256_12(p)
+    except Exception:
+        database_sha256 = "unknown"
+
+    # prompt_version / skill_version：对应目录下所有 .md/.prompt 哈希
+    prompt_version = _dir_md5_12(ROOT_DIR / "backend" / "prompts")
+    # 如果 prompts 不存在（老目录结构），再 fallback 到 skills 目录
+    if prompt_version == "unknown":
+        prompt_version = _dir_md5_12(ROOT_DIR / "backend" / "skills")
+    skill_version = _dir_md5_12(ROOT_DIR / "backend" / "skills")
+
+    # 探测硬件信息（文档 §2.3）
+    hardware_info = _probe_hardware()
+
+    # 从 settings 提取生成参数（temperature / top_p / max_tokens）
+    # 考虑到用户可能只配置了一个 provider，这里从 settings 上尽力查找对应字段名
+    def _g_attr(prefixes, name, default=None):
+        for prefix in prefixes:
+            attr = f"{prefix}_{name}".upper()
+            if hasattr(settings, attr):
+                val = getattr(settings, attr)
+                if val is not None:
+                    return val
+        return default
+
+    temperature = _g_attr(["deepseek", "ollama"], "temperature", None)
+    top_p = _g_attr(["deepseek", "ollama"], "top_p", None)
+    max_tokens = _g_attr(["deepseek", "ollama"], "max_tokens", None)
+    embedding_model = getattr(settings, "EMBEDDING_MODEL", None) or getattr(
+        settings, "SENTENCE_TRANSFORMER_MODEL", None
+    )
+
+    # 安全检查：确保 settings.DEEPSEEK_API_KEY 不是空值后真正的占位符（双重保险，防止 has_deepseek_key 误判）
+    def _is_placeholder(v) -> bool:
+        if not v:
+            return True
+        s = str(v).strip().lower()
+        return s in {"", "your-deepseek-api-key", "sk-yourkey", "xxx", "xxxxxx",
+                      "replace_me", "replace-with-your-key", "changeme", "change_me"}
+
+    has_deepseek_key = (
+        bool(getattr(settings, "DEEPSEEK_API_KEY", None))
+        and not _is_placeholder(settings.DEEPSEEK_API_KEY)
+    )
+    has_ollama_fallback_cfg = (
+        bool(getattr(settings, "LLM_FALLBACK_PROVIDER", ""))
+        and settings.LLM_FALLBACK_PROVIDER.lower() == "ollama"
+    )
+
     model_config = {
         "LLM_PROVIDER": settings.LLM_PROVIDER,
         "LLM_FALLBACK_PROVIDER": settings.LLM_FALLBACK_PROVIDER,
         "DEEPSEEK_MODEL": settings.DEEPSEEK_MODEL,
         "OLLAMA_MODEL": settings.OLLAMA_MODEL,
+        "OLLAMA_FALLBACK_MODEL": getattr(settings, "OLLAMA_FALLBACK_MODEL", None),
         "OLLAMA_BASE_URL": settings.OLLAMA_BASE_URL,
         "EXECUTION_MODE": settings.EXECUTION_MODE,
         "BLOCK_PIPELINE_ENABLED": settings.BLOCK_PIPELINE_ENABLED,
         "MAX_REVIEW_ITERATIONS": settings.MAX_REVIEW_ITERATIONS,
         "DEEPSEEK_TIMEOUT_SECONDS": settings.DEEPSEEK_TIMEOUT_SECONDS,
         "DEEPSEEK_MAX_RETRIES": settings.DEEPSEEK_MAX_RETRIES,
-        "has_deepseek_key": bool(settings.DEEPSEEK_API_KEY) and
-            settings.DEEPSEEK_API_KEY not in ("", "your-deepseek-api-key"),
+        "has_deepseek_key": has_deepseek_key,
+        "has_ollama_fallback_configured": has_ollama_fallback_cfg,
+        # 文档 §2.3 补充字段
+        "embedding_model": embedding_model,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_tokens": max_tokens,
     }
 
     return {
@@ -290,6 +578,11 @@ def build_run_manifest(run_id: str, case: Dict[str, str]) -> Dict[str, Any]:
         "evaluation_schema_version": EVALUATION_SCHEMA_VERSION,
         "code_commit": code_commit,
         "knowledge_base_version": kb_hash,
+        # 文档 §2.3 补充字段
+        "prompt_version": prompt_version,
+        "skill_version": skill_version,
+        "database_sha256": database_sha256,
+        "hardware_info": hardware_info,
         "model_config": model_config,
         "run_started_at": _now_iso(),
         "run_finished_at": None,
@@ -345,6 +638,7 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
         "stage_1_completed": False,
         "stage_2_completed": False,
         "llm_call_count": 0,
+        "execution_path": None,  # deepseek_only / mixed_fallback / ollama_only / failed
     }
 
     # 记录本场景的 LLM 调用
@@ -442,7 +736,7 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
             json.dump(assessment_questions, f, ensure_ascii=False, indent=2)
 
         # 提交受控答案
-        answer_behavior = case.get("answer_script_stage_1", "medium")
+        script_1 = parse_answer_script(case.get("answer_script_stage_1", "medium"))
         learner_answers = []
         for q_obj in questions:
             # 构造临时 question 对象用于答题生成
@@ -454,7 +748,7 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
             tq.correct_answer = q_obj.get("correct_answer", "")
             tq.difficulty = q_obj.get("difficulty", "")
 
-            submitted_answer = generate_controlled_answer(tq, answer_behavior)
+            submitted_answer = generate_controlled_answer(tq, script_1)
             ctx_agent_name.set("Learner")
             ctx_task_type.set("submit_answer")
             answer_result = await harness.submit_answer(
@@ -465,7 +759,8 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
                 "submitted_answer": submitted_answer,
                 "is_correct": answer_result.get("is_correct", False),
                 "correct_answer": answer_result.get("correct_answer", ""),
-                "answer_behavior": answer_behavior,
+                "answer_behavior": script_1["answer_behavior"],
+                "wrong_answer_strategy": script_1["wrong_answer_strategy"],
             })
 
         with open(stage_1_dir / "learner_answers.json", "w", encoding="utf-8") as f:
@@ -479,9 +774,57 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
         with open(stage_1_dir / "stage_decision.json", "w", encoding="utf-8") as f:
             json.dump(decision_result, f, ensure_ascii=False, indent=2, default=str)
 
+        # 5.1 答案脚本一致性校验（文档 §3.1 的两个断言）
+        if learner_answers:
+            actual_correct = sum(1 for a in learner_answers if a.get("is_correct"))
+            actual_accuracy_learn = actual_correct / len(learner_answers)
+        else:
+            actual_accuracy_learn = decision_result.get("accuracy", None)
+        actual_strategy = (decision_result.get("next_strategy") or "").strip()
+        expected_strategy = (script_1.get("expected_next_strategy") or "").strip()
+        if actual_accuracy_learn is None:
+            accuracy_within_range = None
+        else:
+            accuracy_within_range = _accuracy_in_range(actual_accuracy_learn,
+                                                        script_1["target_accuracy_range"])
+        # 策略一致性：允许简化同义映射（文档 §4.3.7 指标11是严格匹配，这里记录原始值+判定）
+        if expected_strategy and actual_strategy:
+            strategy_match = (actual_strategy == expected_strategy)
+            discrepancy_reason = "" if strategy_match else (
+                f"脚本期望「{expected_strategy}」 vs 系统实际「{actual_strategy}」")
+        else:
+            strategy_match = None
+            discrepancy_reason = "" if expected_strategy else "脚本未设置 expected_next_strategy"
+
+        script_check_1 = {
+            "answer_behavior": script_1["answer_behavior"],
+            "target_accuracy_range": script_1["target_accuracy_range"],
+            "wrong_answer_strategy": script_1["wrong_answer_strategy"],
+            "expected_next_strategy": expected_strategy,
+            "actual_accuracy_from_learner": actual_accuracy_learn,
+            "actual_accuracy_from_decision": decision_result.get("accuracy"),
+            "accuracy_within_range": accuracy_within_range,
+            "actual_next_strategy": actual_strategy,
+            "strategy_match": strategy_match,
+            "discrepancy_reason": discrepancy_reason,
+        }
+        with open(stage_1_dir / "answer_script_check.json", "w", encoding="utf-8") as f:
+            json.dump(script_check_1, f, ensure_ascii=False, indent=2)
+
         result_summary["stage_1_completed"] = True
-        result_summary["stage_1_accuracy"] = decision_result.get("accuracy", 0)
-        result_summary["stage_1_strategy"] = decision_result.get("next_strategy", "")
+        # 文档 §4.3：accuracy 只是预设模拟学习者的成绩，不是系统效果本身
+        # 若无题目（assessment_questions 为空），accuracy 应为 null 而非 0
+        raw_accuracy = decision_result.get("accuracy", None)
+        if not questions:
+            result_summary["stage_1_accuracy"] = None
+            result_summary["stage_1_question_count"] = 0
+        else:
+            result_summary["stage_1_accuracy"] = raw_accuracy
+            result_summary["stage_1_question_count"] = len(questions)
+        result_summary["stage_1_strategy"] = actual_strategy
+        result_summary["stage_1_expected_strategy"] = expected_strategy
+        result_summary["stage_1_accuracy_within_range"] = accuracy_within_range
+        result_summary["stage_1_strategy_match"] = strategy_match
 
         # ── Step 6: 多阶段（case_040 ~ case_045） ──
         run_stage_2 = case.get("run_stage_2", "False").strip().lower() in ("true", "1", "yes")
@@ -527,7 +870,8 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
             with open(stage_2_dir / "assessment_questions.json", "w", encoding="utf-8") as f:
                 json.dump(questions2, f, ensure_ascii=False, indent=2, default=str)
 
-            # 阶段 2 受控答案（中等行为）
+            # 阶段 2 受控答案（读 answer_script_stage_2，默认 medium）
+            script_2 = parse_answer_script(case.get("answer_script_stage_2", "medium"))
             answers2 = []
             for q_obj2 in questions2:
                 class TQ2:
@@ -537,14 +881,15 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
                 tq2.question_type = q_obj2.get("question_type", "single_choice")
                 tq2.correct_answer = q_obj2.get("correct_answer", "")
                 tq2.difficulty = q_obj2.get("difficulty", "")
-                ans2 = generate_controlled_answer(tq2, "medium")
+                ans2 = generate_controlled_answer(tq2, script_2)
                 ar2 = await harness.submit_answer(session_id, tq2.question_id, ans2)
                 answers2.append({
                     "question_id": tq2.question_id,
                     "submitted_answer": ans2,
                     "is_correct": ar2.get("is_correct", False),
                     "correct_answer": ar2.get("correct_answer", ""),
-                    "answer_behavior": "medium",
+                    "answer_behavior": script_2["answer_behavior"],
+                    "wrong_answer_strategy": script_2["wrong_answer_strategy"],
                 })
             with open(stage_2_dir / "learner_answers.json", "w", encoding="utf-8") as f:
                 json.dump(answers2, f, ensure_ascii=False, indent=2)
@@ -557,9 +902,50 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
             with open(stage_2_dir / "stage_decision.json", "w", encoding="utf-8") as f:
                 json.dump(decision2, f, ensure_ascii=False, indent=2, default=str)
 
+            # 阶段 2 答题脚本一致性校验
+            if answers2:
+                actual_correct_2 = sum(1 for a in answers2 if a.get("is_correct"))
+                actual_acc_2 = actual_correct_2 / len(answers2)
+            else:
+                actual_acc_2 = decision2.get("accuracy", None)
+            actual_strat_2 = (decision2.get("next_strategy") or "").strip()
+            expected_strat_2 = (script_2.get("expected_next_strategy") or "").strip()
+            acc_ok_2 = (
+                None if actual_acc_2 is None
+                else _accuracy_in_range(actual_acc_2, script_2["target_accuracy_range"])
+            )
+            if expected_strat_2 and actual_strat_2:
+                strat_match_2 = (actual_strat_2 == expected_strat_2)
+                discrepancy_2 = "" if strat_match_2 else (
+                    f"脚本期望「{expected_strat_2}」 vs 系统实际「{actual_strat_2}」")
+            else:
+                strat_match_2 = None
+                discrepancy_2 = "" if expected_strat_2 else "脚本未设置 expected_next_strategy"
+            with open(stage_2_dir / "answer_script_check.json", "w", encoding="utf-8") as f:
+                json.dump({
+                    "answer_behavior": script_2["answer_behavior"],
+                    "target_accuracy_range": script_2["target_accuracy_range"],
+                    "wrong_answer_strategy": script_2["wrong_answer_strategy"],
+                    "expected_next_strategy": expected_strat_2,
+                    "actual_accuracy_from_learner": actual_acc_2,
+                    "actual_accuracy_from_decision": decision2.get("accuracy"),
+                    "accuracy_within_range": acc_ok_2,
+                    "actual_next_strategy": actual_strat_2,
+                    "strategy_match": strat_match_2,
+                    "discrepancy_reason": discrepancy_2,
+                }, f, ensure_ascii=False, indent=2)
+
             result_summary["stage_2_completed"] = True
-            result_summary["stage_2_accuracy"] = decision2.get("accuracy", 0)
-            result_summary["stage_2_strategy"] = decision2.get("next_strategy", "")
+            if not questions2:
+                result_summary["stage_2_accuracy"] = None
+                result_summary["stage_2_question_count"] = 0
+            else:
+                result_summary["stage_2_accuracy"] = decision2.get("accuracy", None)
+                result_summary["stage_2_question_count"] = len(questions2)
+            result_summary["stage_2_strategy"] = actual_strat_2
+            result_summary["stage_2_expected_strategy"] = expected_strat_2
+            result_summary["stage_2_accuracy_within_range"] = acc_ok_2
+            result_summary["stage_2_strategy_match"] = strat_match_2
 
         result_summary["status"] = "completed"
 
@@ -581,12 +967,30 @@ async def run_single_case(harness, case: Dict[str, str], run_id: str) -> Dict[st
                 f.write(json.dumps(call, ensure_ascii=False) + "\n")
         result_summary["llm_call_count"] = len(case_calls)
 
+        # 计算 execution_path（文档 §3.5 要求）
+        if result_summary["status"] == "failed":
+            result_summary["execution_path"] = "failed"
+        elif not case_calls:
+            result_summary["execution_path"] = "failed"
+        else:
+            fallback_count = sum(1 for c in case_calls if c.get("fallback_triggered"))
+            if fallback_count == 0:
+                result_summary["execution_path"] = "deepseek_only"
+            elif fallback_count < len(case_calls):
+                result_summary["execution_path"] = "mixed_fallback"
+            else:
+                result_summary["execution_path"] = "ollama_only"
+
         # 更新 manifest
         manifest["run_finished_at"] = _now_iso()
         manifest["status"] = result_summary["status"]
         manifest["error"] = result_summary.get("error")
+        manifest["execution_path"] = result_summary["execution_path"]
         with open(case_dir / "run_manifest.json", "w", encoding="utf-8") as f:
             json.dump(manifest, f, ensure_ascii=False, indent=2)
+        # 写入执行摘要（交付材料后续指标汇总用）
+        with open(case_dir / "run_summary.json", "w", encoding="utf-8") as f:
+            json.dump(result_summary, f, ensure_ascii=False, indent=2, default=str)
 
     return result_summary
 
@@ -674,9 +1078,15 @@ async def main():
     ctx_run_id.set(run_id)
 
     # 全局 run manifest
+    # 文档 §3.6 要求 manifest 含 evaluation_schema_version/code_commit/knowledge_base_version/model_config
+    # 复用 build_run_manifest 取这 3 个通用字段（与单 case manifest 同源）
+    _common_meta = build_run_manifest(run_id, cases[0])
     global_manifest = {
         "run_id": run_id,
         "evaluation_schema_version": EVALUATION_SCHEMA_VERSION,
+        "code_commit": _common_meta["code_commit"],
+        "knowledge_base_version": _common_meta["knowledge_base_version"],
+        "model_config": _common_meta["model_config"],
         "run_started_at": _now_iso(),
         "total_cases": len(cases),
         "execution_mode": execution_mode or "default",
@@ -715,6 +1125,12 @@ async def main():
     failed = sum(1 for s in summaries if s["status"] == "failed")
     global_manifest["succeeded"] = succeeded
     global_manifest["failed"] = failed
+    # 文档 §3.5：按执行路径分组统计
+    path_groups = {"deepseek_only": 0, "mixed_fallback": 0, "ollama_only": 0, "failed": 0}
+    for s in summaries:
+        p = s.get("execution_path") or "failed"
+        path_groups[p] = path_groups.get(p, 0) + 1
+    global_manifest["execution_path_breakdown"] = path_groups
     with open(RAW_OUTPUTS_DIR / "run_manifest.json", "w", encoding="utf-8") as f:
         json.dump(global_manifest, f, ensure_ascii=False, indent=2)
 
@@ -722,6 +1138,7 @@ async def main():
     print("=" * 60)
     print(f"运行完成：{succeeded} 成功 / {failed} 失败 / {len(summaries)} 总计")
     print(f"LLM 调用总数：{len(_llm_call_records)}")
+    print(f"执行路径分布：{path_groups}")
     print(f"结果目录：{RAW_OUTPUTS_DIR}")
     if failed > 0:
         print("\n失败场景：")

@@ -2,403 +2,472 @@
 
 ## 块 1
 
-**本块学习检查**：读完本节后，请合上资料，用自己的话说清楚：为什么没有解释器，你的 `.py` 文件就“只是一堆文本”？说不上来就回头再看一遍。
+## 2.1 定义一个最简单的网络
 
----
+你已经知道，`torch.nn` 是 PyTorch 的神经网络工具箱，而**所有网络模块都必须继承 `nn.Module`**。这个基类帮你自动管理参数、统一前向接口。现在，我们直接动手写一个最简单的网络，感受它的工作方式。
 
-### 1.1 Python 解释器：程序的"翻译官"
+### 最小网络长什么样？
 
-你的目标是用 LoRA 微调模型，但先别急着碰模型——所有 AI 工具都得靠 Python 跑起来，而 Python 代码本身电脑看不懂。
+```python
+import torch.nn as nn
 
-**一句话理解**：你写的是人话，电脑只认 0 和 1。**Python 解释器**就是夹在中间的"翻译官"，把你的代码逐句翻译成电脑能执行的指令。
+class MyNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc = nn.Linear(4, 2)   # 一个全连接层：输入4维，输出2维
 
-**关键点**：没有解释器，你写的 `.py` 文件就只是一堆普通文本，电脑不会执行它。
+    def forward(self, x):
+        return self.fc(x)
+```
 
-**给你的实操提示**：后面装环境时，你会看到"安装 Python"这个步骤——装的就是这个"翻译官"。装好它，你的代码才有机会被电脑听懂。现在不用深究细节，先记住这个角色定位，下一步我们看它怎么工作。
+就这么简单。拆开看，你只做了两件事：
+
+1. **在 `__init__` 里定义层**：`self.fc = nn.Linear(4, 2)` 创建了一个全连接层。`nn.Linear` 会自动生成权重和偏置，并注册为 `nn.Parameter`——这意味着它们默认 `requires_grad=True`，会被 `model.parameters()` 自动收集。
+2. **在 `forward` 里写前向计算**：`return self.fc(x)` 定义了数据如何流过网络。你不需要手动调用 `self.fc.forward(x)`，PyTorch 会通过 `__call__` 机制自动执行 `forward`。
+
+### 为什么必须写 `super().__init__()`？
+
+这一行调用了父类 `nn.Module` 的初始化方法。**不写它，`nn.Module` 内部的参数管理机制就不会生效**，你的层不会被正确注册，`model.parameters()` 会返回空。这是新手最容易踩的坑。
+
+### 怎么用这个网络？
+
+```python
+import torch
+
+net = MyNet()                    # 实例化
+x = torch.randn(3, 4)            # 3个样本，每个4维
+out = net(x)                     # 直接调用实例，自动走 forward
+print(out.shape)                 # 输出形状: torch.Size([3, 2])
+```
+
+注意：调用 `net(x)` 而不是 `net.forward(x)`。`nn.Module` 的 `__call__` 方法会先做一些内部处理（比如确保参数在正确设备上），再执行你的 `forward`。
+
+### 参数去哪了？
+
+```python
+for name, param in net.named_parameters():
+    print(name, param.shape, param.requires_grad)
+```
+
+输出：
+
+```
+fc.weight torch.Size([2, 4]) True
+fc.bias torch.Size([2]) True
+```
+
+你什么都没做，权重和偏置就自动被收集了，而且 `requires_grad` 默认是 `True`。这就是 `nn.Module` 帮你省下的功夫——**你只管定义层和写前向逻辑，参数管理交给基类**。
+
+### 本块学习检查
+
+在 `pytorch` conda 环境中，完成以下操作：
+
+1. 按上面的代码定义 `MyNet`，实例化后打印 `net`，观察输出中层的结构描述。
+2. 调用
 
 ## 块 2
 
-## 你的“工作台”与“独立房间”：为 LoRA 微调铺路
+## 定义一个最简单的网络
 
-你马上要动手做 LoRA 微调，这需要写代码、跑实验。用记事本写代码？效率太低。**IDE（集成开发环境）**就是你的“工作台”，提供语法高亮、自动补全、运行调试，让你写代码像用 Word 一样顺手。推荐 **VS Code**（轻量免费）或 **PyCharm**（专业强大），选一个装上即可。
+你的目标是LoRA微调，而LoRA微调的核心就是“改造一个已有模型”。要改造模型，第一步是看懂模型是怎么搭出来的。下面这个 `SimpleNet` 就是最基础的样子，我们边看边拆。
 
-接下来是虚拟环境——你的“独立房间”。微调 LoRA 时，你可能会同时折腾多个项目：一个要 `numpy 1.0`，另一个要 `numpy 2.0`，全装一起就冲突报
+```python
+import torch
+import torch.nn as nn
+
+class SimpleNet(nn.Module):
+    def __init__(self):
+        super().__init__()          # 必须调用父类构造函数
+        self.fc1 = nn.Linear(10, 20)   # 全连接层：输入10维，输出20维
+        self.relu = nn.ReLU()          # 激活函数
+        self.fc2 = nn.Linear(20, 1)    # 全连接层：输入20维，输出1维
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        return x
+
+model = SimpleNet()
+x = torch.randn(4, 10)     # 4个样本，每个10维
+output = model(x)          # 等价于 model.forward(x)，但推荐直接调用 model(x)
+print(output.shape)        # torch.Size([4, 1])
+```
+
+**拆解三个关键点：**
+
+1. **`super().__init__()` 必须写
 
 ## 块 3
 
-### 2.1 Windows 用户：装好 Python，为 LoRA 微调铺路
+## 3.1 全连接层：nn.Linear（①）
 
-你学 LoRA 微调，第一步就是把 Python 这个“地基”打牢。跟着做，10 分钟搞定。
+既然你的目标是 **LoRA 微调**，那全连接层就是你最先要打交道的“积木”。LoRA 的核心操作就是**冻结**原有全连接层的权重，在旁边加一个小矩阵去“模拟”权重的变化——所以理解 `nn.Linear` 的参数，是看懂 LoRA 代码的第一步。
 
-**第一步：下载安装包**
+**动手试一下（建议在 Jupyter 里跟着敲）：**
 
-1. 浏览器打开 https://www.python.org
-2. 鼠标移到顶部 **Downloads**，网站会自动推荐 Windows 版本（比如 `Python 3.13.x`）。
-3. 点击下载 **Windows installer (64-bit)**。
+```python
+fc = nn.Linear(in_features=784, out_features=128, bias=True)
+```
 
-**第二步：运行安装程序（⚠️ 关键步骤）**
+这行代码创建了一个全连接层，它接收 784 个输入数字，输出 128 个数字。你可以把它想象成一个“压缩器”：把 784 维的信息浓缩成 128 维。
 
-双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
+| 参数 | 含义 |
+|---|---|
+| `in_features` | 输入特征维度（本例：784）|
+| `out_features` | 输出特征维度（本例：128）|
+| `bias` | 是否使用偏置（默认 True）|
 
-1. **勾选最下方的 "Add python.exe to PATH"**  
-   这一步不勾，后面你在命令行敲 `python` 会提示“不是内部或外部命令”，所有命令都跑不了。勾上，一劳永逸。
-
-2. 点击 **"Install Now"**（默认安装）即可。  
-   默认安装路径通常为 `C:\Users\<用户名>\AppData\Local\Programs\Python\Python313`，若用户名含中文或路径含空格，建议自定义安装路径为纯英文无空格目录。
-
-**第三步：验证安装**
-
-1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
-2. 输入
+**快速验证（不引入新知识）：** 造一个形状为 `(1, 784)` 的随机张量喂给 `fc`
 
 ## 块 4
 
-### 你的目标：为 LoRA 微调铺好路
+**目标：LoRA微调，先搞懂基础层**
 
-既然你的目标是 LoRA 微调，且喜欢动手操作，那环境搭建这一步必须稳。macOS 上装 Python 有个关键点：**别用系统自带的旧版 `python3`**，自己装一个干净的。
+你正在为LoRA微调打基础，这里快速过一遍PyTorch最常用的三个基础层。别纠结理论，直接看代码怎么用。
 
-**方法一：官方安装包（推荐你，省心）**
-
-1. 打开 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
-2. 双击运行，一路点 "Continue" → "Install" 装完。
-3. 打开终端（Terminal），输入下面两行验证：
-
-```bash
-python3 --version
-pip3 --version
+**激活函数层**——给网络加“非线性”的开关：
+```python
+nn.ReLU()           # 最常用：max(0, x)，负数直接砍掉
+nn.Sigmoid()        # 输出压缩到0~1之间
+nn.Tanh()           # 输出压缩到-1~1之间
+nn.Softmax(dim=1)   # 多分类输出，dim=1表示在特征维度上算概率
 ```
 
-看到版本号就成功了。
-
-**为什么用 `python3` 而不是 `python`？** 现代 macOS 默认**没有** `python` 命令，只有 `python3`。以后你跑 LoRA 脚本、装 PyTorch，全用 `python3` 和 `pip3`，别混用。
-
-**方法二：Homebrew（如果你已经装了）**
-
-终端执行：
-
-```bash
-brew install python
-```
-
-装完同样用 `python3 --version` 验证。
-
----
-
-**本块学习检查**：在终端运行 `python3 --version`，把输出结果记下来。如果提示 "command not found"，说明没装好，回头重看方法一。
+**池化层**——缩小特征图尺寸，减少计算量
 
 ## 块 5
 
-**动手装好 Python，为 LoRA 微调铺路**
+### 4.1 nn.Sequential：顺序堆叠（最常用）
 
-你的目标是跑 LoRA 微调，但 Linux 自带的 Python 可能太老，装不上新版依赖。别急，三条命令搞定：
+**核心思想**：把网络层按顺序装进一个“管道”，数据自动从第一层流到最后一层，不用手动写前向传播。
 
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv -y
-python3 --version
-```
+**适合场景**：线性堆叠结构，比如你之后做LoRA微调时，替换或插入的线性层通常就是这种顺序关系。
 
-**拆开看**：第一条刷新软件源，让系统知道最新版本；第二条一次装齐 Python、pip 和虚拟环境模块（`-y` 免去手动确认）；第三条验证版本，看到输出就成功了。
+**代码示例**（直接跑）：
+```python
+model = nn.Sequential(
+    nn.Linear(784, 256),
+    nn.ReLU(),
+    nn.Linear(256, 64),
+    nn.ReLU(),
+    nn.Linear(64, 10)
+)
 
-**本块学习检查**：运行完三条命令后，把 `python3 --version` 的输出记下来——如果版本号低于 3.10，
+x = torch.randn(4, 784)
+output = model(x)      #
 
 ## 块 6
 
-## 2.4 操作系统与实训环境该怎么选
+### 4.2 nn.ModuleList：列表式动态管理（③）
 
-你的目标是跑通 LoRA 微调，那环境选型就一句话：**跟着任务走，别贪多**。
+**核心要点**：当你想用循环遍历一组层时，`nn.ModuleList` 是你的好帮手。它就像一个“智能列表”，专门用来存放网络层。
 
-**日常练命令、写 Python——Windows 用户**  
-直接启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它让你在 Windows 里拥有一个接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致。安装只需管理员 PowerShell 执行 `wsl --install`，一条命令搞定，别在 CMD 里浪费时间。
+**动手试试**：看下面这个动态网络，它把三个层装进一个列表里，前向传播时用 `for` 循环依次执行。
 
-**macOS / Linux 用户**  
-直接用本机终端，本身就是类 Unix 环境，无需额外配置。
+```python
+class DynamicNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.ModuleList([
+            nn.Linear(10, 20),
+            nn.ReLU(),
+            nn.Linear(20, 5)
+        ])
 
-**LoRA / QLoRA 微调、vLLM 部署等 GPU 实训**  
-用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态支持最成熟、文档最全。
-
-> **⚠️ 避坑**：别把 **"CentOS + VirtualBox 虚拟机"** 当最佳方案。CentOS 8 已停止维护（2021 年 EOL），CentOS Stream 8
+    def forward(self, x):
+        for layer in self.layers
 
 ## 块 7
 
-### 3.1 什么时候才需要镜像源
+### 4.3 nn.ModuleDict：字典式命名访问（③）
 
-`pip` 是 Python 的包管理工具，用来安装第三方库（比如 `numpy`、`pandas`）。默认情况下，`pip` 从官方 PyPI 服务器（`pypi.org`）下载——这是**最权威、最完整、应保留的默认源**。
+做LoRA微调时，你常会遇到多分支网络——比如给不同层挂不同的适配器。`nn.ModuleDict` 就是为这种场景准备的：**用键名（字符串）来管理子模块**，像查字典一样按名字取层。
 
-**什么时候才用镜像？** 只有当你网络受限、访问官方源明显变慢或经常超时时，才临时切换到国内镜像。记住：**镜像是“网络不好时的临时加速手段”，不是永久替换**——官方源始终是首选。
+看这个例子：
 
-### 3.2 首选做法：临时指定镜像源（推荐）
+```python
+class BranchNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.branches = nn.ModuleDict({
+            'branch_a': nn.Linear(10, 5),
+            'branch_b': nn.Linear(10, 3),
+            'branch_c': nn.Linear(10, 2)
+        })
 
-如果只是某次安装慢，最干净的做法是**只对这一次安装临时指定镜像**，不改动任何全局配置：
-
-```bash
-pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+    def forward(self, x, branch_name):
+        return self.branches[branch_name](x)
 ```
 
-**为什么推荐这种方式**：它
+关键点：`forward()` 接收一个 `branch_name` 参数，然后用 `self.branches[branch_name]` 动态选择要执行的分支。**前向传播需要你手动指定用哪个键**，不像 `nn.Sequential` 那样自动串联。
+
+### 4.4 三种容器速查（③）
+
+| 容器
 
 ## 块 8
 
-## 3.3 进阶：把镜像设为默认（仅限长期网络受限）
+### 5.1 查看模型参数（①+②）
 
-你正在为 LoRA 微调做准备，后面会频繁用 pip 安装 PyTorch、Transformers 等大包。如果网络长期不给力，每次手动加 `-i` 太烦，那就把它写进配置文件，一劳永逸。
+**动手做：先跑通，再看懂**
 
-**但先记住**：官方 PyPI 永远是最可靠的。网络恢复后，建议改回或删掉这个配置。
+把下面代码复制到你的环境里跑一遍，观察输出：
 
----
+```python
+model = nn.Sequential(
+    nn.Linear(10, 5),
+    nn.ReLU(),
+    nn.Linear(5, 2)
+)
 
-### Windows 操作（跟着做，3 分钟搞定）
-
-1. 按 `Win + R`，输入 `%APPDATA%`，回车，打开配置文件夹（路径类似 `C:\Users\你的用户名\AppData\Roaming`）。
-2. 在里面**新建文件夹**，命名为 `pip`。
-3. 进入 `pip` 文件夹，**新建文本文件**，命名为 `pip.ini`（注意扩展名是 `.ini`，不是 `.txt`）。
-4. 用记事本打开，写入：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+for name, param in model.named_parameters():
+    print(f"{name}: {param.shape}")
 ```
 
-**这行什么意思**：`index-url` 就是告诉 pip：“以后默认从清华这个地址下载包。”
+你会看到4行输出，对应4个可学习参数。注意两点：
 
----
-
-### macOS / Linux 操作
-
-打开终端，依次执行：
-
-```bash
-mkdir -p ~/.config/pip
-nano ~/.config/pip/pip.conf
-```
-
-在打开的编辑器里写入同样的两行：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-按 `Ctrl + O` 保存，`Ctrl + X` 退出。
-
----
-
-### ⚠️ 别乱加 `trusted-host`
-
-网上很多教程会让你顺手加一行 `trusted-host = ...`。**除非镜像真的报 HTTPS 证书错误，否则别加**——加了等于让 pip 跳过 TLS 安全校验，传输不再加密。清华、阿里这些主流镜像都有合法证书，正常用**不需要**。只有企业内网自建源、或确认来源可信且确实报证书错时，才临时加。若确需添加，正确写法是在命令行使用 `--trusted-host pypi.tuna.tsinghua.edu.cn` 临时指定，或写入配置文件对应小节
+1. **名字里的数字**：`0.weight` 和 `0.bias` 属于第一个 `Linear(10,5)`；`2.weight` 和 `2.bias` 属于第三个 `Linear(
 
 ## 块 9
 
-**本块学习检查**：安装完 VS Code 和 Python 插件后，新建一个 `test.py` 文件，输入 `print("hello")`，按右上角运行按钮，看能否在下方终端输出 `hello`。
+**目标：LoRA微调前的“摸家底”**
 
----
+你要做LoRA微调，第一步得知道模型长什么样。用 `model.modules()` 就能把模型里所有子模块（包括模型自身）递归地列出来：
 
-### 4.1 方案一：VS Code（轻量、免费、推荐）
+```python
+for idx, module in enumerate(model.modules()):
+    print(f"模块 {idx}: {type(module).__name__}")
+```
 
-**为什么选它**：VS Code 是微软出品的免费编辑器，启动快、插件丰富。你后续做 LoRA 微调要写 Python 脚本、改配置文件，它都能胜任。
+输出会像这样，从外到内一层层展示：
 
-**安装步骤**（跟着做，5分钟搞定）：
+```
+模块 0: Sequential
+模块 1: Linear
+模块 2: ReLU
+模块 3: Linear
+```
 
-1. 打开 https://code.visualstudio.com，下载对应系统的安装包。
-2. 运行安装程序，一路“下一步”即可。
+**动手验证**：在你准备微调的模型上跑这段代码，观察输出。数一数有几个 `Linear` 层——LoRA 通常只改这些层，记住它们的位置。
 
-**必装插件**（关键一步）：
-
-打开 VS Code，点击左侧活动栏最下方的**四个方块图标**（扩展），搜索并安装：
-
-- **Python**（微软官方出品，提供语法高亮、调试、智能提示）
-- **Pylance**（让代码提示更智能）
-
-装完这两个，VS Code 才能识别 `.py` 文件，给你代码补全、错误提示和一键运行功能
+**顺带一提**：如果只想训练部分层（比如只训后面几层），
 
 ## 块 10
 
-### 4.2 方案二：PyCharm Community（专业、开箱即用）
+**本块学习检查**：运行下面两行代码，观察打印出的字典里键和值分别是什么类型？这能帮你确认 `state_dict()` 的结构。
 
-**为什么选它**：PyCharm 是 JetBrains 出品的 Python 专用 IDE，社区版完全免费。它内置代码分析、版本控制、数据库工具等功能，适合大型项目开发——对 LoRA 微调这类需要频繁调试代码的任务，能帮你更快定位问题。
+```python
+model = YourModel()  # 替换为你的模型
+print(model.state_dict().keys())
+print(model.state_dict()["权重参数名"].shape)
+```
 
-**安装步骤**（跟着做，5分钟搞定）：
-1. 访问 https://www.jetbrains.com/pycharm/download/。
-2. 下载 **PyCharm Community Edition**（社区版，免费）。
-3. 运行安装程序，务必勾选：
-   - `Add "Open Folder as Project"`（右键菜单快速打开文件夹）
-   - `Add to PATH`（命令行可直接启动 PyCharm）
+---
 
-**首次启动配置**：
-1. 打开 PyCharm，选择 `New Project`。
-2. 在 `Location` 处选择项目存放路径（**路径中不要含中文**，否则后续可能报错）。
-3. `Interpreter`
+**保存模型参数**：训练完，用 `torch.save(model.state_dict(), "model.pth")` 把参数存成文件。`state_dict()` 返回一个字典，键是参数名，值是参数张量——这就是标准保存方式。
+
+**加载模型参数**：先实例化一个**结构完全相同**的模型，再用 `model.load_state_dict(torch.load("model.pth"))`。注意：加载大模型时请确保显存充足（例如 Llama-2-7b FP16 需要至少14GB显存）。
+
+# 模型许可证：请确认所用模型的开源许可证类型（如 Llama 2
 
 ## 块 11
 
-## 5.1 为什么用 Conda
+### 6.1 L1Loss：平均绝对误差（MAE）
 
-你马上要开始 LoRA 微调了，这意味着要装 PyTorch、CUDA 这些"重依赖"。如果直接在系统 Python 里装，很容易把环境搞乱。**Conda** 就是来解决这个问题的——它能为每个项目创建独立的 Python 空间，还能管理不同版本的 Python 解释器本身。对于深度学习，conda 几乎是必备工具。
+L1Loss 计算预测值与真实值之间**绝对差值的平均值**，公式为：`(|预测-真实|) 的平均`。
 
-## 5.2 安装 Conda：Anaconda vs Miniconda
+```python
+criterion = nn.L1Loss()
 
-两个选择：
+input = torch.tensor([1.0, 3.0, 6.0])
+target = torch.tensor([1.0, 4.0, 9.0])
+loss = criterion(input, target)
+print(loss)   # (|1-1| + |3-4| + |6-9|) / 3 = 4/3 ≈ 1.333
+```
 
-| 选项 | 特点 | 推荐人群 |
-|------|------|----------|
-| **Anaconda** | 体积大（安装包约 500MB-1GB，安装后占用数 GB），预装了大量数据科学库 | 做数据分析、不想手动装包的用户 |
-| **Miniconda** | 体积小（安装包约 50-100MB，安装后占用数百 MB），只包含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发的用户 |
-
-**推荐 Miniconda**——环境干净，后面做 LoRA 需要什么包再装什么，不拖泥带水。
-
-**安装步骤：**
-
-1. 访问 https://docs.conda.io/en/latest/miniconda.html
-2. 下载对应系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）
-3. 运行安装程序：
-   - **Windows**：一路下一步，**保持默认、不要勾选 "Add Miniconda3 to my PATH environment variable"**（安装器标为"不推荐"）。直接塞进系统 PATH 容易和已有 Python 冲突。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 来使用 conda。
-   - **macOS/Linux**：运行 `.sh` 文件，按提示输入 `yes` 同意协议、选择安装路径，最后一步选 `yes` 让安装器执行 **`conda init`**。这样每次打开终端 conda 会自动接管，而不是靠硬加 PATH。
-4. **验证安装**：打开一个**新的**终端
+**适用场景**：回归问题，对异常值不敏感（即
 
 ## 块 12
 
-### 5.3 创建你的第一个虚拟环境
+## 6.3 CrossEntropyLoss：交叉熵损失（④）
 
-**为什么这样做**：你要做 LoRA 微调，不同项目需要不同版本的 PyTorch 和 CUDA。现在学会创建环境，以后直接复用这套流程。
+做 LoRA 微调时，你几乎每次都会碰到这个损失函数——它是**多分类问题的标准选择**。好消息是：`CrossEntropyLoss` 内部已经帮你把 `LogSoftmax` 和 `NLLLoss` 打包好了，你只需要喂原始分数进去。
 
-在终端中执行：
+```python
+criterion = nn.CrossEntropyLoss()
 
-```bash
-# 创建一个名为 llm-learn 的环境，指定 Python 3.10
-conda create -n llm-learn python=3.10
+# input: (batch_size, num_classes) —— 原始 logits，不需要先 softmax
+input = torch.tensor([[2.0, 1.0, 0.1], [0.5, 2.0, 0.3]])
+# target: (batch_size,) —— 类别索引
+target = torch.tensor([0, 1])
+
+loss = criterion(input, target)
+print(loss)
 ```
 
-**命令拆解**：
-- `conda create`：创建环境的命令
-- `-n llm-learn`：给环境起名叫 `llm-learn`（`n` 是 `name` 的缩写）
-- `python=3.10`：指定这个环境里安装 Python 3.10
+**关键点（容易踩坑）**：
+- 输入是**未经 softmax 的原始分数（logits）**，别手滑先做 softmax。
+- 目标值是**类别索引**（如 `[0, 1]`），不是 one-hot 编码。
+- 如果你用 `NLLLoss`，那输入必须是 `log_softmax` 得到的对数概率——但用 `CrossEntropyLoss` 就省了这一步。
 
-执行后，终端会列出将要安装的包，并
+## 6.4 三种损失函数速查（④）
+
+| 损失函数 | 公式特点 | 适用任务 | 输入要求 |
+|---|---|---|---|
+| `L1
 
 ## 块 13
 
-## 5.4 激活与退出环境
+**目标**：为LoRA微调打基础——先搞懂PyTorch默认初始化，以及为什么需要Xavier。
 
-**激活环境**（进入这个“独立房间”）：
+**动手试**：创建一个小网络，打印`nn.Linear`的权重，观察数值范围。默认初始化因层类型而异，例如 `nn.Linear` 和 `nn.Conv2d` 默认使用 `kaiming_uniform_`，而某些层可能使用其他分布。
 
-```bash
-conda activate llm-learn
-```
+**关键点**：深层网络中，默认初始化可能不够理想。信号在层层传递中会衰减或爆炸。
 
-激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。
+**解决方案：Xavier初始化（Glorot）**
 
-**验证当前环境的 Python 版本**：
+核心思想：让每层输出的方差与输入方差保持一致，避免信号衰减或爆炸。
 
-```bash
-python --version
-```
+适用场景：Sigmoid、Tanh等饱和型激活函数。
 
-应该显示 `Python 3.10.x`。
+**代码实操**（在模型定义后添加）：
 
-**退出环境**（回到系统默认环境）：
-
-```bash
-conda deactivate
-```
-
-### 5.5 查看和管理环境
-
-**查看所有已创建的环境**：
-
-```bash
-conda env list
-```
-
-带 `*` 的就是当前激活的环境。
-
-**删除环境**（如果以后需要清理）：
-
-```bash
-conda remove -n llm-learn --all
-```
-
----
-
-## 第六章：在 VS Code / PyCharm 中使用 Conda 环境
-
----
-
-**本块
+```python
+for m in model.modules():
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight)   # Xavier 均匀分布
+        # 或 nn.init.xavier
 
 ## 块 14
 
-**你的目标：** 用 VS Code 跑通 LoRA 微调，第一步是让编辑器用上正确的 Python 环境。跟着做，3 步搞定。
+**Kaiming / HE 初始化：让 ReLU 网络不“熄火”**
 
-**操作步骤（VS Code）**
+你在为 LoRA 微调做准备，先掌握这个基础：ReLU 会把一半负值截断成 0，若初始化不当，梯度容易消失。Kaiming 初始化就是为此设计的——它调整方差，抵消 ReLU 的“截断”效应，让信号稳定传播。
 
-1. 打开终端，先激活环境：`conda activate llm-learn`
-2. 在 VS Code 里按 `Ctrl + Shift + P`，弹出命令面板。
-3. 输入并选择 `Python: Select Interpreter`。
-4. 在列表里选带 `conda` 字样的项，例如 `Python 3.10.x ('llm-learn': conda)`。
+**适用**：ReLU、LeakyReLU 这类非饱和激活函数。
 
-**为什么这么做**：VS Code 会自动认出 conda 环境。选好后，你写代码时用的就是 `llm-learn` 里的 Python 和已装好的包（比如 PyTorch），不会跑错环境。
-
-**验证一下（动手做）**
-
-在 VS Code 新建一个 `.py` 文件，输入以下代码并运行：
+**PyTorch 实操**（在模型定义后、训练前执行）：
 
 ```python
-import sys
-print(sys.executable)
-import torch
-```
-
-如果打印出的路径中包含 `llm-learn`，且 `
+for m in model.modules():
+    if isinstance(m, (nn.Linear, nn.Conv2d)):
+        nn.init.kaiming_uniform_(m.weight, nonlinearity='
 
 ## 块 15
 
-**7.1 在命令行验证**
+## 7.4 初始化策略速查
 
-你的目标是LoRA微调，动手跑通环境是关键。先打开终端，激活环境：
+你正在为 LoRA 微调打基础，初始化是理解模型训练的第一步。记住这张表，实战时直接查：
 
-```bash
-conda activate llm-learn
-```
-
-然后输入 `python` 回车，进入交互模式。看到 `>>>` 提示符后，输入：
-
-```python
-print("Hello, Python! 我的环境准备好了！")
-```
-
-回车，如果正确打印出这句话，说明Python环境没问题。最后输入 `exit()` 退出。
-
-**7.2 在 VS Code 中验证**
-
-命令行验证通过后，我们换到VS Code里再确认一次。新建文件夹 `my-first-project`，用VS Code打开。新建文件 `hello.py`，输入：
-
-```python
-print("Hello from VS Code!")
-```
-
-点击右上角的小三角运行
+| 方法 | 适用场景 | PyTorch 函数 |
+|---|---|---|
+| 默认初始化 | 未指定初始化方式时（不同层类型有各自的默认方法） | 无需操作 |
+| Xavier/Glorot | 使用 Sigmoid、Tanh 等饱和激活函数的网络 | `nn.init.xavier_uniform_` / `xavier_normal_` |
+| Kaiming/HE | 使用 ReLU 及其变体激活的网络 | `nn.init.kaiming_uniform_` / `kaiming_normal_` |
+| 常数初始化 | 偏置项初始化为 0 | `nn.init.constant_(m.bias, 0)`
 
 ## 块 16
 
-好的，我们直接进入正题。你的目标是搞定 LoRA 微调，但在此之前，得先确保你的“工作台”能跑起来。这一节，我们就用最直接的方式，在 PyCharm 里跑通你的第一行代码，为后续的模型训练热热身。
+## 搭建 CIFAR-10 图像分类的简单 CNN
 
-**在 PyCharm 中验证**
+你正在为 LoRA 微调打基础，而理解一个 CNN 的完整结构——从特征提取到分类输出——是后续做参数高效微调的前提。下面我们直接动手，把这个模型拆开看。
 
-1.  打开 PyCharm，新建一个项目。
-2.  在项目里新建一个 Python 文件，命名为 `hello.py`。
-3.  在文件中输入 `print("Hello, LoRA!")`。
-4.  在文件编辑区**右键点击**，选择 **`Run 'hello'`**。
-5.  看下方弹出的 **Run** 窗口，如果输出了 `Hello, LoRA!`，说明你的开发环境已经一切就绪，可以开始干活了。
+### 一、整体结构
+
+这个 `SimpleCNN` 由两部分组成：
+
+1. **特征提取层（`self.features`）**：用卷积层从图像中提取特征
+2. **分类器（`self.classifier`）**：把提取到的特征映射到 10 个类别
+
+### 二、特征提取层
+
+```python
+self.features = nn.Sequential(
+    nn.Conv2d(3, 16, kernel_size=3, padding=1),   # 3→16通道
+    nn.ReLU(),
+    nn.MaxPool2d(kernel_size=2, stride=2),         # 尺寸减半
+
+    nn.Conv2d(16, 32, kernel_size=3, padding=1),  # 16→32通道
+    nn.ReLU(),
+    nn.MaxPool2d(kernel_size=2, stride=2)          # 尺寸再减半
+)
+```
+
+**关键点**：
+- 输入是 3 通道的 32×32 图像（CIFAR-10 的格式）
+- 第一层卷积把通道数从 3 扩到 16，`padding=1` 保持空间尺寸不变
+- 每次 `MaxPool2d` 让尺寸减半：32→16→8
+- 最终特征图尺寸是 32 通道 × 8×8
+
+### 三、分类器
+
+```python
+self.classifier = nn.Sequential(
+    nn.Flatten(),                                  # 展平
+    nn.Linear(32 * 8 * 8, 128),                   # 展平后 2048 维 → 128 维
+    nn.ReLU(),
+    nn.Linear(128, 10)                             # 输出 10 个类别
+)
+```
+
+**关键点**：
+- `Flatten()` 把 32×8×8 的特征图展平成 2048 维向量
+- 第一个全连接层压缩到 128 维
+- 第二个全连接层输出 10 个值，对应 10 个类别
+
+### 四、参数初始化
+
+```
+
+## 块 17
+
+## 九、常见问题与解决（①+②+③+④+⑤）
+
+| 症状 | 可能原因 | 解决方案 |
+|---|---|---|
+| 模型参数不被优化器更新 | 层没有用 `self.xxx =` 定义 | 确保在 `__init__` 中使用 `self.layer = nn.Linear(...)` |
+| `Sequential` 里的层无法单独访问 | 不知道索引规则 | `model[0]` 访问第一层，`model[2]` 访问第三层 |
+| `CrossEntropyLoss` 报错 | 输入已经过 softmax | `CrossEntropyLoss` 内部已包含 LogSoftmax 和 NLLLoss，输入原始 logits 即可，不要额外进行 softmax 或 log_softmax |
+| 损失值不下降 / 模型不收敛 | 参数初始化不当或学习率问题 | 尝试 Kaiming/Xavier 初始化，调小学习率 |
+| 深层网络梯度消失 | Sigmoid/Tanh + 默认初始化 | 换 ReLU + Kaiming 初始化，或加 BatchNorm |
+| 冻结层后优化器报错 | 优化器接收了全部参数 | 确保冻结层的 `requires_grad` 已设为 False，并使用 `filter(lambda p: p.requires_grad, model.parameters())` 过滤参数 |
+| `load_state_dict` 报错 `Missing key` | 保存和加载的模型结构不一致 | 确保加载前实例化的模型结构与保存时完全一致 |
 
 ---
 
-**常见问题排查（遇到再看）**
+## 十、总结与后续学习路线（①+②+⑤）
 
-如果刚才的步骤没成功，别急，大概率是下面几个原因：
+恭喜你完成了 torch.nn 模块章节的学习！你现在应该掌握了：
 
-*   **提示“不是内部或外部命令”**：这是安装 Python 时忘了勾选“Add to PATH”。解决方法是重新运行 Python 安装程序，选择“Modify”，然后勾选“Add Python to environment variables”。
-*   **`pip install` 速度极慢**：网络问题。可以在命令后临时加 `-i` 参数指定国内镜像源（比如清华源）来提速。
-*   **`conda` 命令找不到**：Windows 用户请从开始菜单打开 `Anaconda Prompt (Miniconda3)`；macOS/Linux 用户则需先运行 `conda init` 并重开终端。
-*   **VS Code 提示“未选择 Python 解释器”**：按 `Ctrl + Shift + P`，输入并选择 `Python: Select Interpreter`，手动指定你的 conda 环境。
-*   **激活环境后 `python` 版本不对**：系统里可能有多个 Python。用 `where python` (Windows) 或 `which python` (Mac/Linux) 查看当前使用的是哪个路径，确保它指向你的 conda 环境。
-*   **`pip` 安装后 `import` 报错**：很可能装错了环境。请先激活目标 conda 环境，再用 `python -m pip install
+- ✅ `nn.Module` 基类：继承、定义 `__init__` 和 `forward`
+- ✅ 常用层：`nn.Linear`、`nn.Conv2d`、`nn.ReLU`、`nn.MaxPool2d`、`nn.Flatten`
+- ✅ 三种容器：`nn.Sequential`（顺序自动）、`nn.ModuleList`（列表动态）、`nn.ModuleDict`（字典命名）
+- ✅ 参数管理：`parameters()`、`named_parameters()`、`modules()`、冻结层、`state_dict()`
+- ✅ 三种核心损失函数：`L1Loss
+
+## 测评题目
+
+### Q-KB0403-004
+`nn.Module` 的子类中，`forward` 方法的作用是？
+
+### Q-KB0403-001
+以下哪个是PyTorch中定义**线性层**（全连接层）的类？
+
+### Q-KB04-ST0400-003
+下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？
+
+### Q-KB0402-005
+请写代码：计算 `y = x1 * x2 + x3` 对 `x1`、`x2`、`x3` 的梯度，其中 `x1=2, x2=3, x3=4`。
+
+### Q-KB0402-001
+PyTorch中，用于**反向传播**计算梯度的方法是？
+
+### Q-KB0403-005
+请写代码：使用 `nn.Sequential` 定义一个包含 `Linear(10, 5)`、`ReLU`、`Linear(5, 1)` 的网络。
+
+### Q-KB0401-005
+给定张量 `x` 形状为 `(2, 3, 4)`，请写出将其转置为 `(4, 3, 2)` 的代码。
+
+### Q-KB0406-004
+`model.train()` 和 `model.eval()` 的主要区别是？

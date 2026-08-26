@@ -1,5 +1,5 @@
 {
-  "session_id": "17360d17-9856-4119-b1fa-36aaf3cfc84a",
+  "session_id": "79e781ed-c2f1-4fa9-9ab0-ce8bf4a928c7",
   "user_id": "local-user",
   "grade": "",
   "skill_tags": [],
@@ -12,7 +12,9 @@
       "target_subtopic_ids": [
         "KBS-12-01",
         "KBS-12-02",
-        "KBS-12-03"
+        "KBS-12-03",
+        "KBS-12-04",
+        "KBS-12-05"
       ],
       "mapping_confidence": 1.0,
       "level": "advanced",
@@ -27,7 +29,7 @@
   "daily_hours": 2.5,
   "learning_style": "hands-on",
   "learning_rhythm": "fast",
-  "confidence_index": 0.2,
+  "confidence_index": 0.725,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

@@ -134,6 +134,57 @@ def validate(rows: list[dict[str, str]]) -> list[str]:
     if multi_stage_ids != expected_multi_stage_ids:
         errors.append("多阶段案例必须且只能是 case_040 至 case_045")
 
+    # answer_script_stage_1 / stage_2 JSON 完整性校验（文档 §3.1）
+    LEGAL_BEHAVIORS = {"high", "medium", "low", "very_low"}
+    LEGAL_STRATEGIES = {"fixed_by_question_id", "random_distractor"}
+    for row in rows:
+        cid = row.get("case_id", "<unknown>")
+        for stage_field in ("answer_script_stage_1", "answer_script_stage_2"):
+            raw = row.get(stage_field, "")
+            if stage_field == "answer_script_stage_2" and (
+                row.get("run_stage_2", "").strip().lower() not in {"true", "1", "yes"}
+            ):
+                # 非多阶段案例：answer_script_stage_2 允许空
+                continue
+            if not isinstance(raw, str) or not raw.strip():
+                errors.append(f"{cid} {stage_field} 不能为空（必须为 JSON 结构）")
+                continue
+            try:
+                obj = json.loads(raw.strip()) if isinstance(raw, str) else raw
+            except json.JSONDecodeError as exc:
+                errors.append(f"{cid} {stage_field} 不是合法 JSON：{exc}")
+                continue
+            if not isinstance(obj, dict):
+                errors.append(f"{cid} {stage_field} 必须是 JSON 对象（dict）")
+                continue
+            missing_sub = [
+                k for k in (
+                    "answer_behavior", "target_accuracy_range",
+                    "wrong_answer_strategy", "expected_next_strategy",
+                )
+                if k not in obj or (isinstance(obj[k], str) and not obj[k].strip())
+            ]
+            if missing_sub:
+                errors.append(f"{cid} {stage_field} 缺少子字段：{','.join(missing_sub)}")
+                continue
+            if obj["answer_behavior"] not in LEGAL_BEHAVIORS:
+                errors.append(
+                    f"{cid} {stage_field}.answer_behavior={obj['answer_behavior']} "
+                    f"不在合法集合 {LEGAL_BEHAVIORS}"
+                )
+            rng = obj.get("target_accuracy_range")
+            if not (isinstance(rng, (list, tuple)) and len(rng) == 2
+                    and all(isinstance(v, (int, float)) for v in rng)
+                    and 0.0 <= float(rng[0]) <= float(rng[1]) <= 1.0):
+                errors.append(
+                    f"{cid} {stage_field}.target_accuracy_range 必须是 [a, b] 且 0≤a≤b≤1，当前：{rng}"
+                )
+            if obj["wrong_answer_strategy"] not in LEGAL_STRATEGIES:
+                errors.append(
+                    f"{cid} {stage_field}.wrong_answer_strategy={obj['wrong_answer_strategy']} "
+                    f"不在合法集合 {LEGAL_STRATEGIES}"
+                )
+
     covered_blocks = {
         block.strip()
         for row in rows

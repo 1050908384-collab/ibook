@@ -1,5 +1,7 @@
 {
   "case_id": "case_036",
+  "primary_category": "时间与学习风格适配",
+  "tags": "时间与学习风格适配|QLoRA微调|边学边做|RTX 4060 8GB",
   "background": "每天2小时，边学边做，想学QLoRA",
   "existing_skills": "KB-04|KB-08",
   "learning_goal": "QLoRA微调",
@@ -7,9 +9,10 @@
   "learning_style": "边学边做",
   "hardware": "RTX 4060 8GB",
   "expected_target_blocks": "KB-12",
+  "expected_first_stage": "KB-12",
   "expected_difficulty": "中级",
   "expected_strategy": "advance",
   "run_stage_2": "False",
-  "answer_script_stage_1": "high",
+  "answer_script_stage_1": "{\"answer_behavior\":\"high\",\"target_accuracy_range\":[0.8,1.0],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"advance\"}",
   "user_input_text": "我的学习背景：每天2小时，边学边做，想学QLoRA\n已掌握技能：KB-04|KB-08\n我的学习目标：QLoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：边学边做\n我的硬件条件：RTX 4060 8GB"
 }

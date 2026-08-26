@@ -1,36 +1,26 @@
 {
-  "stage_id": "691d40a5-4d61-58cd-9d91-0d2385c96d88",
+  "stage_id": "empty-61d4235d-0b35-443d-8011-9bda1b0852c1-1",
   "stage_num": 1,
-  "block_id": "KB-02",
-  "block_name": "Python编程基础",
-  "block_ids": [
-    "KB-02"
-  ],
-  "subtopic_id": "KBS-02-00",
-  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
-  "subtopic_ids": [
-    "KBS-02-00"
-  ],
-  "subtopic_names": [
-    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
-  ],
-  "estimated_hours": 0.5,
+  "block_id": "KB-12",
+  "block_name": "LoRA",
+  "block_ids": [],
+  "subtopic_id": "",
+  "subtopic_name": "",
+  "subtopic_ids": [],
+  "subtopic_names": [],
+  "estimated_hours": 0.0,
   "gap_skill": "LoRA",
   "prerequisites": [],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习环境准备：安装Python 3.10+",
-  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
-  "objectives": [
-    "理解环境准备：安装Python 3.10+的基本概念",
-    "掌握环境准备：安装Python 3.10+的核心技术",
-    "能够独立完成环境准备：安装Python 3.10+相关任务"
-  ],
+  "title": "已完成全部知识点",
+  "description": "当前 gap 下没有需要学习的知识点了",
+  "objectives": [],
   "difficulty": "初级",
-  "recommended_daily_hours": 0.5,
-  "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Python 3.10+",
-  "hardware_notes": "",
-  "personalization_summary": "预计0.0小时完成 | 建议分1天学习 | 每天1.5小时 | 综合型学习风格"
+  "recommended_daily_hours": 0.0,
+  "suggested_study_days": 0,
+  "learning_style_notes": null,
+  "hardware_notes": null,
+  "personalization_summary": null
 }

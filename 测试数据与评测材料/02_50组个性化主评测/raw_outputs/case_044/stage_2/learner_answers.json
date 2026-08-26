@@ -1,1 +1,66 @@
-[]
+[
+  {
+    "question_id": "Q-KB12-ST1204-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "显存 ||| 内存 ||| 存储",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "peft",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-001",
+    "submitted_answer": "合并 ||| merge ||| 融合",
+    "is_correct": true,
+    "correct_answer": "合并 ||| merge ||| 融合",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1204-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "NF4 ||| NormalFloat4",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1201-001",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-002",
+    "submitted_answer": "lora_dropout",
+    "is_correct": true,
+    "correct_answer": "lora_dropout",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

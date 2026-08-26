@@ -1,6 +1,6 @@
 {
   "review_passed": true,
-  "iterations": 3,
+  "iterations": 2,
   "review_history": [
     {
       "iteration": 1,
@@ -9,258 +9,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“网站会自动推荐 Windows 版本（如 Python 3.13.x）”，但截至2025年，Python 3.13 已发布，但 vLLM 对 Python 3.13 的支持尚不明确，且 vLLM 官方要求 Python 3.8-3.12。推荐安装 Python 3.10 或 3.11 以确保兼容性。",
-            "evidence": "vLLM 官方文档要求 Python 3.8-3.12，Python 3.13 于2024年10月发布，vLLM 可能尚未完全支持。",
-            "suggestion": "建议明确推荐安装 Python 3.10 或 3.11，并说明 vLLM 对 Python 3.13 的支持情况。",
-            "error_id": "f8aff548fd05_r1",
-            "canonical_error_id": "f8aff548fd05",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_prerequisite",
-            "severity": "minor",
-            "location": null,
-            "description": "安装 Python 前未提及需要检查系统架构（32位/64位）和 Windows 版本（如 Windows 7 不支持 Python 3.9+），可能导致用户下载错误版本或安装失败。",
-            "evidence": "Python 3.10+ 仅支持 64 位 Windows 8.1 及以上版本，Windows 7 不支持。",
-            "suggestion": "建议在第一步前增加系统要求说明，如“确保你的 Windows 是 64 位且版本不低于 Windows 8.1”。",
-            "error_id": "fb3ffb136b1f_r1",
-            "canonical_error_id": "fb3ffb136b1f",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“现代 macOS（Catalina 10.15 起）已不预装 Python 2”，但 macOS Catalina 10.15 及后续版本（包括 Big Sur、Monterey、Ventura、Sonoma）仍然预装 Python 2.7（位于 /usr/bin/python），直到 macOS 12.3 才移除 Python 2。因此该陈述不准确。",
-            "evidence": "Apple 官方文档及社区记录显示，macOS 12.3 之前系统仍包含 Python 2.7，Catalina 10.15 并未移除 Python 2。",
-            "suggestion": "修改为“现代 macOS（12.3 起）已不预装 Python 2，部分系统虽有旧版 python3，但那是给系统脚本用的，强烈建议自己装最新版。”",
-            "error_id": "38211f7c1c32_r1",
-            "canonical_error_id": "38211f7c1c32",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "内容块末尾的“本块学习检查”要求运行 `python3`，但命令不完整，缺少 `--version` 或具体指令，导致学习者无法执行。",
-            "evidence": "原文为“在终端运行 `python3”，未闭合代码块，且缺少参数。",
-            "suggestion": "补全为“在终端运行 `python3 --version` 验证安装。”",
-            "error_id": "ebbc78166700_r1",
-            "canonical_error_id": "ebbc78166700",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "验证安装的代码块不完整，缺少退出 Python 交互式解释器的命令（如 exit() 或 Ctrl+D），导致用户无法继续后续步骤。",
-            "evidence": "内容块中第3步验证安装的代码块仅包含 'python3'，没有后续命令或说明如何退出。",
-            "suggestion": "在代码块中补充退出命令，例如：python3\n# 进入 Python 交互式环境后，输入 exit() 或按 Ctrl+D 退出",
-            "error_id": "0f85cfb05621_r1",
-            "canonical_error_id": "0f85cfb05621",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C005",
-            "content_chunk_id": "LOCAL-KBS-02-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块末尾的'你的行动清单'句子不完整，'GPU 实训用云上或'后内容缺失，导致信息不完整。",
-            "evidence": "原文最后一句为'GPU 实训用云上或'，句子中断，未提供完整建议。",
-            "suggestion": "补全句子，例如'GPU 实训用云上或本地实体 Linux 机器'。",
-            "error_id": "4b33fc875f27_r1",
-            "canonical_error_id": "4b33fc875f27",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C006",
-            "content_chunk_id": "LOCAL-KBS-02-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在'首次启动'步骤的'Location 选项目存放路径——'处截断，未完成后续步骤说明，导致学习检查目标（确认解释器路径）无法达成。",
-            "evidence": "原文在'Location 选项目存放路径——'处结束，缺少后续步骤和解释器路径确认说明。",
-            "suggestion": "补全'首次启动'步骤的剩余内容，包括选择解释器（Python 3.10+）并确认右下角显示解释器路径的说明。",
-            "error_id": "07f4d7299c39_r1",
-            "canonical_error_id": "07f4d7299c39",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "Anaconda 体积描述不准确：Anaconda 安装包实际约 500MB 至 1GB 以上，且安装后占用空间通常超过 3GB，原文称“约 500MB+”可能低估，但更关键的是 Miniconda 安装包约 50-80MB，原文称“约 50MB”基本准确，但 Anaconda 的“约 500MB+”与常见认知（安装后数 GB）存在偏差，建议核实。",
-            "evidence": "Anaconda 官方文档及常见安装经验显示，Anaconda 安装包约 500MB-1GB，安装后占用空间通常超过 3GB；Miniconda 安装包约 50-80MB。",
-            "suggestion": "建议将 Anaconda 体积描述改为“安装包约 500MB-1GB，安装后占用空间通常超过 3GB”，Miniconda 描述改为“安装包约 50-80MB”。",
-            "error_id": "9758bb5dd865_r1",
-            "canonical_error_id": "9758bb5dd865",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤第4点“验证安装”的说明不完整，句子在“macOS/Linux 关闭并重开终端使 conda init”处截断，缺少后续内容（如“生效”或“然后运行 conda --version”），导致指令不完整。",
-            "evidence": "原文第4点结尾为“macOS/Linux 关闭并重开终端使 conda init”，缺少谓语或后续步骤，句子不完整。",
-            "suggestion": "补全为“macOS/Linux 关闭并重开终端使 conda init 生效，然后运行 conda --version 验证安装”。",
-            "error_id": "4dfbee91ee38_r1",
-            "canonical_error_id": "4dfbee91ee38",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "truncated_command",
-            "severity": "critical",
-            "location": null,
-            "description": "命令拆解部分对 `python=3.10` 的解释被截断为 '指定环境内安装 Python 3.'，缺少版本号 '10'，导致信息不完整。",
-            "evidence": "原文中 'python=3.10' 的解释为 '指定环境内安装 Python 3.'，明显截断。",
-            "suggestion": "补全为 '指定环境内安装 Python 3.10'。",
-            "error_id": "03b2bc31b963_r1",
-            "canonical_error_id": "03b2bc31b963",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C012",
-            "content_chunk_id": "LOCAL-KBS-02-00-C012",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "path_hardcoding",
-            "severity": "critical",
-            "location": null,
-            "description": "PyCharm配置中使用了硬编码的绝对路径（Windows: C:\\Users\\你的用户名\\miniconda3\\envs\\llm-learn\\python.exe；macOS/Linux: ~/miniconda3/envs/llm-learn/bin/python），且包含占位符'你的用户名'，不符合可移植性和安全规范。",
-            "evidence": "规则2错误模式库：路径硬编码（critical）——代码中出现绝对路径C:\\Users\\xxx或~/xxx，应使用环境变量或相对路径。",
-            "suggestion": "建议使用环境变量或动态获取路径，例如在Windows中使用%USERPROFILE%\\miniconda3\\envs\\llm-learn\\python.exe，在macOS/Linux中使用$HOME/miniconda3/envs/llm-learn/bin/python，并提示用户替换为实际用户名。",
-            "error_id": "074d70dc82ef_r1",
-            "canonical_error_id": "074d70dc82ef",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C014",
-            "content_chunk_id": "LOCAL-KBS-02-00-C014",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "ec1b482bfeed_r1",
-            "canonical_error_id": "ec1b482bfeed",
+            "error_id": "00d3c6b32561_r1",
+            "canonical_error_id": "00d3c6b32561",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -268,31 +26,79 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-44"
           },
           {
-            "error_type": "incomplete_content",
-            "severity": "critical",
-            "location": null,
-            "description": "内容块在'第二行'处截断，未完成第八章常见问题排查表格的说明，导致信息不完整。",
-            "evidence": "原文以'**给你的重点**：vLLM 部署依赖大量 pip 包，**第二行'结尾，句子未结束，表格后缺少必要的解释。",
-            "suggestion": "补全该句，例如'第二行（pip 安装后 import 报错）最常见，务必确保在激活的 conda 环境中使用 python -m pip install 安装依赖。'并完成后续内容。",
-            "error_id": "7881183e9128_r1",
-            "canonical_error_id": "7881183e9128",
-            "source_refs": [],
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9de29fac690e_r1",
+            "canonical_error_id": "9de29fac690e",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C005"
+            ],
             "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
+              "required": false,
+              "action": "review_suggestion"
             },
             "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 1,
+            "in_chunk_position": "lines:88-111"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2998f6f175e4_r1",
+            "canonical_error_id": "2998f6f175e4",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C018"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 1,
+            "in_chunk_position": "lines:349-389"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C019",
+            "content_chunk_id": "LOCAL-KBS-15-03-C019",
             "content_version": 1,
             "in_chunk_position": null
           }
@@ -305,258 +111,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“网站会自动推荐 Windows 版本（如 Python 3.13.x）”，但截至2025年，Python 3.13 已发布，但 vLLM 对 Python 3.13 的支持尚不明确，且 vLLM 官方要求 Python 3.8-3.12。推荐安装 Python 3.10 或 3.11 以确保兼容性。",
-            "evidence": "vLLM 官方文档要求 Python 3.8-3.12，Python 3.13 于2024年10月发布，vLLM 可能尚未完全支持。",
-            "suggestion": "建议明确推荐安装 Python 3.10 或 3.11，并说明 vLLM 对 Python 3.13 的支持情况。",
-            "error_id": "f8aff548fd05_r1",
-            "canonical_error_id": "f8aff548fd05",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_prerequisite",
-            "severity": "minor",
-            "location": null,
-            "description": "安装 Python 前未提及需要检查系统架构（32位/64位）和 Windows 版本（如 Windows 7 不支持 Python 3.9+），可能导致用户下载错误版本或安装失败。",
-            "evidence": "Python 3.10+ 仅支持 64 位 Windows 8.1 及以上版本，Windows 7 不支持。",
-            "suggestion": "建议在第一步前增加系统要求说明，如“确保你的 Windows 是 64 位且版本不低于 Windows 8.1”。",
-            "error_id": "fb3ffb136b1f_r1",
-            "canonical_error_id": "fb3ffb136b1f",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“现代 macOS（Catalina 10.15 起）已不预装 Python 2”，但 macOS Catalina 10.15 及后续版本（包括 Big Sur、Monterey、Ventura、Sonoma）仍然预装 Python 2.7（位于 /usr/bin/python），直到 macOS 12.3 才移除 Python 2。因此该陈述不准确。",
-            "evidence": "Apple 官方文档及社区记录显示，macOS 12.3 之前系统仍包含 Python 2.7，Catalina 10.15 并未移除 Python 2。",
-            "suggestion": "修改为“现代 macOS（12.3 起）已不预装 Python 2，部分系统虽有旧版 python3，但那是给系统脚本用的，强烈建议自己装最新版。”",
-            "error_id": "38211f7c1c32_r1",
-            "canonical_error_id": "38211f7c1c32",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "内容块末尾的“本块学习检查”要求运行 `python3`，但命令不完整，缺少 `--version` 或具体指令，导致学习者无法执行。",
-            "evidence": "原文为“在终端运行 `python3”，未闭合代码块，且缺少参数。",
-            "suggestion": "补全为“在终端运行 `python3 --version` 验证安装。”",
-            "error_id": "ebbc78166700_r1",
-            "canonical_error_id": "ebbc78166700",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "验证安装的代码块不完整，缺少退出 Python 交互式解释器的命令（如 exit() 或 Ctrl+D），导致用户无法继续后续步骤。",
-            "evidence": "内容块中第3步验证安装的代码块仅包含 'python3'，没有后续命令或说明如何退出。",
-            "suggestion": "在代码块中补充退出命令，例如：python3\n# 进入 Python 交互式环境后，输入 exit() 或按 Ctrl+D 退出",
-            "error_id": "0f85cfb05621_r1",
-            "canonical_error_id": "0f85cfb05621",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C005",
-            "content_chunk_id": "LOCAL-KBS-02-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块末尾的'你的行动清单'句子不完整，'GPU 实训用云上或'后内容缺失，导致信息不完整。",
-            "evidence": "原文最后一句为'GPU 实训用云上或'，句子中断，未提供完整建议。",
-            "suggestion": "补全句子，例如'GPU 实训用云上或本地实体 Linux 机器'。",
-            "error_id": "4b33fc875f27_r1",
-            "canonical_error_id": "4b33fc875f27",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C006",
-            "content_chunk_id": "LOCAL-KBS-02-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在'首次启动'步骤的'Location 选项目存放路径——'处截断，未完成后续步骤说明，导致学习检查目标（确认解释器路径）无法达成。",
-            "evidence": "原文在'Location 选项目存放路径——'处结束，缺少后续步骤和解释器路径确认说明。",
-            "suggestion": "补全'首次启动'步骤的剩余内容，包括选择解释器（Python 3.10+）并确认右下角显示解释器路径的说明。",
-            "error_id": "07f4d7299c39_r1",
-            "canonical_error_id": "07f4d7299c39",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "Anaconda 体积描述不准确：Anaconda 安装包实际约 500MB 至 1GB 以上，且安装后占用空间通常超过 3GB，原文称“约 500MB+”可能低估，但更关键的是 Miniconda 安装包约 50-80MB，原文称“约 50MB”基本准确，但 Anaconda 的“约 500MB+”与常见认知（安装后数 GB）存在偏差，建议核实。",
-            "evidence": "Anaconda 官方文档及常见安装经验显示，Anaconda 安装包约 500MB-1GB，安装后占用空间通常超过 3GB；Miniconda 安装包约 50-80MB。",
-            "suggestion": "建议将 Anaconda 体积描述改为“安装包约 500MB-1GB，安装后占用空间通常超过 3GB”，Miniconda 描述改为“安装包约 50-80MB”。",
-            "error_id": "9758bb5dd865_r1",
-            "canonical_error_id": "9758bb5dd865",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤第4点“验证安装”的说明不完整，句子在“macOS/Linux 关闭并重开终端使 conda init”处截断，缺少后续内容（如“生效”或“然后运行 conda --version”），导致指令不完整。",
-            "evidence": "原文第4点结尾为“macOS/Linux 关闭并重开终端使 conda init”，缺少谓语或后续步骤，句子不完整。",
-            "suggestion": "补全为“macOS/Linux 关闭并重开终端使 conda init 生效，然后运行 conda --version 验证安装”。",
-            "error_id": "4dfbee91ee38_r1",
-            "canonical_error_id": "4dfbee91ee38",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "truncated_command",
-            "severity": "critical",
-            "location": null,
-            "description": "命令拆解部分对 `python=3.10` 的解释被截断为 '指定环境内安装 Python 3.'，缺少版本号 '10'，导致信息不完整。",
-            "evidence": "原文中 'python=3.10' 的解释为 '指定环境内安装 Python 3.'，明显截断。",
-            "suggestion": "补全为 '指定环境内安装 Python 3.10'。",
-            "error_id": "03b2bc31b963_r1",
-            "canonical_error_id": "03b2bc31b963",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C012",
-            "content_chunk_id": "LOCAL-KBS-02-00-C012",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "path_hardcoding",
-            "severity": "critical",
-            "location": null,
-            "description": "PyCharm配置中使用了硬编码的绝对路径（Windows: C:\\Users\\你的用户名\\miniconda3\\envs\\llm-learn\\python.exe；macOS/Linux: ~/miniconda3/envs/llm-learn/bin/python），且包含占位符'你的用户名'，不符合可移植性和安全规范。",
-            "evidence": "规则2错误模式库：路径硬编码（critical）——代码中出现绝对路径C:\\Users\\xxx或~/xxx，应使用环境变量或相对路径。",
-            "suggestion": "建议使用环境变量或动态获取路径，例如在Windows中使用%USERPROFILE%\\miniconda3\\envs\\llm-learn\\python.exe，在macOS/Linux中使用$HOME/miniconda3/envs/llm-learn/bin/python，并提示用户替换为实际用户名。",
-            "error_id": "074d70dc82ef_r1",
-            "canonical_error_id": "074d70dc82ef",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C014",
-            "content_chunk_id": "LOCAL-KBS-02-00-C014",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "ec1b482bfeed_r1",
-            "canonical_error_id": "ec1b482bfeed",
+            "error_id": "00d3c6b32561_r1",
+            "canonical_error_id": "00d3c6b32561",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -564,31 +128,79 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-44"
           },
           {
-            "error_type": "incomplete_content",
-            "severity": "critical",
-            "location": null,
-            "description": "内容块在'第二行'处截断，未完成第八章常见问题排查表格的说明，导致信息不完整。",
-            "evidence": "原文以'**给你的重点**：vLLM 部署依赖大量 pip 包，**第二行'结尾，句子未结束，表格后缺少必要的解释。",
-            "suggestion": "补全该句，例如'第二行（pip 安装后 import 报错）最常见，务必确保在激活的 conda 环境中使用 python -m pip install 安装依赖。'并完成后续内容。",
-            "error_id": "7881183e9128_r1",
-            "canonical_error_id": "7881183e9128",
-            "source_refs": [],
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9de29fac690e_r1",
+            "canonical_error_id": "9de29fac690e",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C005"
+            ],
             "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
+              "required": false,
+              "action": "review_suggestion"
             },
             "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 1,
+            "in_chunk_position": "lines:88-111"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2998f6f175e4_r1",
+            "canonical_error_id": "2998f6f175e4",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C018"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 1,
+            "in_chunk_position": "lines:349-389"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C019",
+            "content_chunk_id": "LOCAL-KBS-15-03-C019",
             "content_version": 1,
             "in_chunk_position": null
           }
@@ -608,14 +220,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "ec1b482bfeed_r2",
-            "canonical_error_id": "ec1b482bfeed",
+            "error_id": "00d3c6b32561_r2",
+            "canonical_error_id": "00d3c6b32561",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -623,11 +235,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-44"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9de29fac690e_r2",
+            "canonical_error_id": "9de29fac690e",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:88-111"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2998f6f175e4_r2",
+            "canonical_error_id": "2998f6f175e4",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C018"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 2,
+            "in_chunk_position": "lines:349-389"
           }
         ],
         "personalization_errors": [],
@@ -640,14 +300,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "ec1b482bfeed_r2",
-            "canonical_error_id": "ec1b482bfeed",
+            "error_id": "00d3c6b32561_r2",
+            "canonical_error_id": "00d3c6b32561",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -655,36 +315,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
-          }
-        ],
-        "personalization_errors": [],
-        "review_details": null,
-        "scores": null
-      },
-      "passed": false
-    },
-    {
-      "iteration": 3,
-      "technical": {
-        "reviewer": "technical",
-        "passed": false,
-        "errors": [
+            "in_chunk_position": "lines:1-44"
+          },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "ec1b482bfeed_r3",
-            "canonical_error_id": "ec1b482bfeed",
+            "error_id": "9de29fac690e_r2",
+            "canonical_error_id": "9de29fac690e",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C005"
             ],
             "change_request": {
               "required": false,
@@ -692,31 +339,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
-            "content_version": 3,
-            "in_chunk_position": "lines:421-460"
-          }
-        ],
-        "personalization_errors": [],
-        "review_details": null
-      },
-      "quality": {
-        "reviewer": "quality",
-        "passed": false,
-        "errors": [
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:88-111"
+          },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "ec1b482bfeed_r3",
-            "canonical_error_id": "ec1b482bfeed",
+            "error_id": "2998f6f175e4_r2",
+            "canonical_error_id": "2998f6f175e4",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C018"
             ],
             "change_request": {
               "required": false,
@@ -724,11 +363,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_2cc3a055-dfef-4bbf-8ec4-db30d64e8dcd_0d4d8134-ba62-5b5a-9cb1-005ea81fbe14_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
-            "content_version": 3,
-            "in_chunk_position": "lines:421-460"
+            "claim_id": "clm_cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_8fcacc5e-5495-45ac-8b29-637da08cf74b_215901d9-9243-5d12-8e75-83762fa2d056_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 2,
+            "in_chunk_position": "lines:349-389"
           }
         ],
         "personalization_errors": [],

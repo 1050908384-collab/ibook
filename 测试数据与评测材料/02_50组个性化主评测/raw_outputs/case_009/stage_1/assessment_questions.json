@@ -1,1 +1,149 @@
-[]
+[
+  {
+    "question_id": "Q-KB11-ST1102-002",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "datasets 的 `filter()` 会保留使筛选函数返回________的样本。",
+    "options": [],
+    "correct_answer": "True ||| 真",
+    "hint": "filter 依据布尔结果保留样本。",
+    "explanation": "filter 依据布尔结果保留样本。"
+  },
+  {
+    "question_id": "Q-KB11-ST1102-003",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "为了在每个训练轮次打乱样本顺序，通常使用？",
+    "options": [
+      {
+        "key": "A",
+        "text": "dataset.shuffle(seed=...)"
+      },
+      {
+        "key": "B",
+        "text": "dataset.filter(...)"
+      },
+      {
+        "key": "C",
+        "text": "dataset.save_to_disk(...)"
+      },
+      {
+        "key": "D",
+        "text": "dataset.select_columns(...)"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "shuffle 会随机重排数据集。",
+    "explanation": "shuffle 会随机重排数据集。"
+  },
+  {
+    "question_id": "Q-KB11-ST1102-001",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "datasets 的 `map()` 常用于对数据集样本执行批量________。",
+    "options": [],
+    "correct_answer": "转换 ||| 处理 ||| 映射",
+    "hint": "map 会将给定函数应用到数据集样本。",
+    "explanation": "map 会将给定函数应用到数据集样本。"
+  },
+  {
+    "question_id": "Q-KB1103-001",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "TRL（Transformer Reinforcement Learning）库中，专门用于监督微调（SFT）的Trainer类是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`Trainer`"
+      },
+      {
+        "key": "B",
+        "text": "`SFTTrainer`"
+      },
+      {
+        "key": "C",
+        "text": "`PPOTrainer`"
+      },
+      {
+        "key": "D",
+        "text": "`DPOTrainer`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1101-002",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在进行模型推理时，为了防止计算梯度占用显存，通常使用 `with torch.________():` 上下文管理器。",
+    "options": [],
+    "correct_answer": "`no_grad`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB11-ST1100-003",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-00",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个库最直接用于训练配置中的分布式加速？",
+    "options": [
+      {
+        "key": "A",
+        "text": "accelerate"
+      },
+      {
+        "key": "B",
+        "text": "flask"
+      },
+      {
+        "key": "C",
+        "text": "requests"
+      },
+      {
+        "key": "D",
+        "text": "sqlite3"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "accelerate 用于简化设备与分布式训练配置。",
+    "explanation": "accelerate 用于简化设备与分布式训练配置。"
+  },
+  {
+    "question_id": "Q-KB1101-005",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：将加载的模型移动到 GPU 上（如果可用），并使用 `torch.float16` 半精度加载以节省显存。",
+    "options": [],
+    "correct_answer": "```python\nimport torch\nfrom transformers import AutoModelForCausalLM\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"gpt2\",\n    torch_dtype=torch.float16,\n    device_map=device\n)\n```\n\n---",
+    "hint": "```python\nimport torch\nfrom transformers import AutoModelForCausalLM\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"gpt2\",\n    torch_dtype=torch.float16,\n    device_map=device\n)\n```\n\n---",
+    "explanation": "```python\nimport torch\nfrom transformers import AutoModelForCausalLM\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"gpt2\",\n    torch_dtype=torch.float16,\n    device_map=device\n)\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB1103-005",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-03",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：在 `SFTTrainer` 训练完成后，保存微调后的 LoRA 适配器权重到 `./final_lora_adapter` 目录。",
+    "options": [],
+    "correct_answer": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
+    "hint": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
+    "explanation": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---"
+  }
+]

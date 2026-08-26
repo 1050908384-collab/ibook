@@ -37,12 +37,19 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_BASE: str = "https://api.deepseek.com"
     DEEPSEEK_MODEL: str = "deepseek-chat"
+    DEEPSEEK_TEMPERATURE: float = 0.7
+    DEEPSEEK_TOP_P: float = 0.95
+    DEEPSEEK_MAX_TOKENS: int = 8192
     DEEPSEEK_PROXY_URL: str = ""
     DEEPSEEK_FALLBACK_IPS: str = ""
     # 云端推理偶发长时间排队或先输出 reasoning_content；答疑需要比默认 HTTP
     # 超时更长的读取窗口，并由客户端对可恢复错误做有限重试。
     DEEPSEEK_TIMEOUT_SECONDS: float = 180.0
     DEEPSEEK_MAX_RETRIES: int = 2
+    # Ollama 本地生成参数（用于可替换性测试时对比云端模型参数）
+    OLLAMA_TEMPERATURE: float = 0.7
+    OLLAMA_TOP_P: float = 0.95
+    OLLAMA_MAX_TOKENS: int = 8192
     # Use the configured cloud model by default. When the cloud DeepSeek call
     # fails, automatically fall back to the local Ollama model
     # (deepseek-r1:7b by default, see OLLAMA_MODEL). Set this to "" to disable

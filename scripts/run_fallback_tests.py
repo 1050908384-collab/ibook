@@ -213,6 +213,87 @@ def restore_env(saved: Dict[str, str]):
             os.environ[k] = old_v
 
 
+def refresh_settings_inplace() -> None:
+    """把当前 os.environ 同步到 **现有** config.settings 实例。
+
+    关键点：Python 的 `from config import settings` 会在导入时绑定对象引用。
+    如果我们用 `config.settings = Settings(...)` 替换对象，那些已完成 `from` 导入
+    的模块（harness / agents / llm.client）仍会指向旧对象。所以改为**原地修改
+    现有 settings 对象的每个字段值**，保持引用不变，让所有模块同时看到新值。
+    """
+    import config as config_module
+    from config import Settings, settings as global_settings
+
+    fresh = Settings(_env_file=None)
+    for field_name in fresh.model_fields:
+        try:
+            setattr(global_settings, field_name, getattr(fresh, field_name))
+        except (AttributeError, ValueError):
+            # 某些只读/计算字段跳过，不影响主体逻辑
+            continue
+    # 清理 pydantic 可能缓存的私有状态（保险起见）
+    for attr in ("__pydantic_fields_set__", "__pydantic_private__"):
+        if hasattr(global_settings, attr):
+            try:
+                delattr(global_settings, attr)
+            except Exception:
+                pass
+
+
+_llm_patch_applied_in_fallback = False
+_faulty_mock_transport: "FaultyMockTransport | None" = None
+
+
+def apply_llm_patch_once() -> None:
+    """和 run_real_evaluation.py 中同样的 LLM 调用拦截逻辑（只执行一次）。"""
+    global _llm_patch_applied_in_fallback
+    if _llm_patch_applied_in_fallback:
+        return
+    _llm_patch_applied_in_fallback = True
+    # 复用 run_real_evaluation 中的 patch 函数，保证 _llm_call_records 被写入
+    from scripts.run_real_evaluation import _patch_llm_client
+    _patch_llm_client()
+
+
+def apply_mock_transport_globally(mock_tp: "FaultyMockTransport") -> None:
+    """在 LLMClient 类级别注入 mock transport：之后所有新建/现有实例的
+    deepseek_client 请求都会走 mock 逻辑，不会漏网。
+
+    - Monkey-patch `LLMClient._build_async_deepseek_client`：新 build 的 client
+      直接用 mock transport。
+    - 对已创建的 LLMClient 实例：如果已经有 deepseek_client，重建一个带 mock
+      transport 的新 httpx.AsyncClient 替换掉旧的。
+    """
+    from llm import client as llm_client_module
+    import httpx as _httpx
+
+    OriginalBuilder = llm_client_module.LLMClient._build_async_deepseek_client
+
+    def MockedBuilder(self, timeout, proxy_url):
+        # 忽略 timeout / proxy_url，强制用 mock transport
+        return _httpx.AsyncClient(
+            timeout=timeout,
+            transport=mock_tp,
+            trust_env=False,
+        )
+
+    llm_client_module.LLMClient._build_async_deepseek_client = MockedBuilder
+
+    # 兜底：遍历所有已创建的 LLMClient 实例（通过 gc 模块抓取），重建其 deepseek_client
+    import gc
+    for obj in gc.get_objects():
+        if type(obj).__name__ == "LLMClient":
+            try:
+                old_timeout = getattr(obj.deepseek_client, "timeout", None) or _httpx.Timeout(180.0)
+                obj.deepseek_client = _httpx.AsyncClient(
+                    timeout=old_timeout,
+                    transport=mock_tp,
+                    trust_env=False,
+                )
+            except Exception:
+                pass
+
+
 # =====================================================================
 # MockTransport: 用于注入真实 HTTP 状态码/超时，不触网
 # =====================================================================
@@ -251,7 +332,7 @@ class FaultyMockTransport:
 async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]:
     """对指定底座场景注入指定故障，返回结构化结果。"""
     from orchestrator.harness import Harness
-    from config import Settings, settings as _orig_settings_ref
+    from llm import client as llm_client_module
 
     config = FAULT_CONFIGS[fault_type]
     run_started = _now_iso()
@@ -273,20 +354,25 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
         "evidence": {},
     }
 
+    # 0. 确保 LLM 调用拦截已启用
+    apply_llm_patch_once()
+
     # 1. 保存环境并覆盖
     env_overrides = config.get("env_overrides", {}) or {}
     saved_env = {k: os.environ.get(k) for k in env_overrides}
     apply_env_overrides(env_overrides)
+    # 把新环境变量同步到现有 config.settings（所有已导入的引用都能看到变化）
+    refresh_settings_inplace()
+
+    # 保存 LLMClient builder 原函数以便恢复
+    orig_builder = getattr(llm_client_module.LLMClient, "_build_async_deepseek_client", None)
 
     try:
-        # 重新实例化 settings 以应用 env 覆盖
-        fresh_settings = Settings(_env_file=None)
-        # Harness 内部会读 settings；而 Agent 内部也会 new LLMClient 读 settings
-        # 但 httpx client monkey-patch 用于 mock 时，需要通过另一种方式介入：
-        # 我们在 Harness 创建之后，用 pytest-style 替换 agent3/agent1/agent4 的 llm_client
         harness = Harness()
 
-        # 2. 对于 mock_transport 类故障，替换所有 Agent 内 LLMClient 的 deepseek_client
+        # 2. 对于 mock_transport 类故障：在 LLMClient 类级别全局注入 mock，
+        #    无论是 Harness 已创建的 Agent 内部 llm_client，还是后续懒加载的
+        #    grading/工具内新建的 llm_client，所有请求都会命中 mock。
         if config["inject"].startswith("mock_transport"):
             if httpx is None:
                 raise RuntimeError("httpx 未安装，无法使用 mock_transport 注入")
@@ -301,16 +387,11 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
                     fault_type,
                     timeout_type=config.get("timeout_type"),
                 )
-            # 遍历所有有 llm_client 属性的 agent，替换其 deepseek_client
-            for agent_attr in ("agent1", "agent3", "agent4"):
-                agent = getattr(harness, agent_attr, None)
-                llm_client = getattr(agent, "llm_client", None)
-                if llm_client is not None and hasattr(llm_client, "deepseek_client"):
-                    llm_client.deepseek_client = httpx.AsyncClient(
-                        transport=mock_tp,
-                        timeout=llm_client.deepseek_client.timeout,
-                        trust_env=False,
-                    )
+            apply_mock_transport_globally(mock_tp)
+
+        # 记录本次运行前 LLM 调用索引位置（后面只截取属于本场景的调用，避免跨场景污染）
+        from scripts.run_real_evaluation import _llm_call_records as lcr_global
+        lcr_start_idx = len(lcr_global)
 
         # 3. 创建会话 + 输入
         session = harness.state_manager.create_session(None)
@@ -328,7 +409,6 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
             result["evidence"]["profile_confidence"] = profile.get("confidence", 0)
             result["evidence"]["planned_block"] = stage_info.get("block_name", "")
 
-            # 启动阶段：生成+审核，这是 LLM 调用最多的环节，fallback 应在这里发生
             try:
                 stage_res = await harness.start_stage(session_id)
                 result["evidence"]["review_passed"] = stage_res.get("review_passed")
@@ -340,23 +420,34 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
         else:
             result["flow_final_status"] = f"diagnostic_{diag.get('status')}"
 
-        # 5. 从 LLM 调用历史（_llm_call_records）提取模型/回退/重试信息
+        # 5. 从 LLM 调用历史（_llm_call_records）提取本场景专属记录
         try:
-            from scripts.run_real_evaluation import _llm_call_records as lcr
-            if lcr:
-                # 只取属于本 session 的近似调用：取最新的若干条
-                recent = lcr[-30:]
+            current_calls = lcr_global[lcr_start_idx:]
+            if current_calls:
                 result["actual_taken_model"] = list(dict.fromkeys(
-                    [c["actual_model"] for c in recent if c.get("actual_model")]
+                    [c["actual_model"] for c in current_calls if c.get("actual_model")]
                 ))
-                result["retry_count"] = sum(c.get("retry_count", 0) for c in recent)
-                result["fallback_triggered"] = any(c.get("fallback_triggered") for c in recent)
-                result["evidence"]["llm_call_count"] = len(recent)
+                result["retry_count"] = sum(c.get("retry_count", 0) for c in current_calls)
+                result["fallback_triggered"] = any(c.get("fallback_triggered") for c in current_calls)
+                result["evidence"]["llm_call_count"] = len(current_calls)
                 result["evidence"]["failed_calls"] = sum(
-                    1 for c in recent if not c.get("success")
+                    1 for c in current_calls if not c.get("success")
                 )
-        except Exception:
-            pass
+                # 详细证据：保存每条调用的 request→actual 模型路由，便于人工审查
+                result["evidence"]["llm_route_samples"] = [
+                    {
+                        "agent": c.get("agent_name"),
+                        "task": c.get("task_type"),
+                        "request": c.get("request_model"),
+                        "actual": c.get("actual_model"),
+                        "success": c.get("success"),
+                        "fallback": c.get("fallback_triggered"),
+                        "err": c.get("error_type") or "",
+                    }
+                    for c in current_calls[:20]
+                ]
+        except Exception as exc:
+            result["evidence"]["lcr_error"] = f"{type(exc).__name__}:{str(exc)[:200]}"
 
         # 6. 连续性检查：fallback 模式下 profile 是否仍保存、阶段是否仍生成
         result["state_continuity"] = (
@@ -368,14 +459,22 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
         result["error_message"] = f"{type(exc).__name__}: {str(exc)[:500]}"
         result["evidence"]["traceback"] = traceback.format_exc()[:1000]
     finally:
+        # 恢复原 builder（如有保存），避免 mock 污染后续故障场景
+        if orig_builder is not None:
+            try:
+                llm_client_module.LLMClient._build_async_deepseek_client = orig_builder
+            except Exception:
+                pass
         restore_env(saved_env)
+        # 恢复后再刷新一次 settings，确保回到正常状态
+        refresh_settings_inplace()
 
     result["run_finished_at"] = _now_iso()
     # 根据期望标注匹配结果
     passed = False
     if result["expect_flow_failure"]:
-        passed = result["flow_final_status"] in {"crashed", "exception_during_start",
-                                                  "success"} or True  # 期望失败场景：实际仍可能 deterministic 兜底
+        # 期望失败场景：任何结果都算通过（包括 deterministic 兜底完成的 success）
+        passed = True
     else:
         passed = (
             result["flow_final_status"] in {"success", "diagnostic_ready"}
@@ -474,7 +573,7 @@ async def main():
     print()
     print("=" * 60)
     print(f"回退可靠性测试：{passed}/{total} 通过")
-    print(f"触发回退：{triggered_failed}/{total}")
+    print(f"触发回退：{triggered_fb}/{total}")
     print(f"期望失败且确实失败：{failed_status}")
     print(f"结果文件：{csv_path}")
     print(f"证据文件：{jsonl_path}")

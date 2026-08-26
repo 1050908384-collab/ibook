@@ -2,384 +2,645 @@
 
 ## 块 1
 
-**本块学习检查**（动手验证，约2分钟）  
-打开你的代码编辑器，新建一个文件，输入一行文字（比如 `print("hello")`），保存为 `.py` 文件。然后思考：如果电脑里没有Python解释器，双击这个文件会发生什么？——答案是：它只是一堆文本，电脑看不懂，什么也不会发生。这个检查帮你确认：**解释器是让代码“活”起来的翻译官**。
+## 一、LoRA训练后保存的是什么？
+
+### 1.1 LoRA不是直接修改基础模型
+
+先明确一个关键点：**LoRA训练过程中，基础模型是被冻结的**。真正被训练的是额外的Adapter参数。
+
+训练时的结构是这样的：
+
+```text
+基础模型（冻结） + LoRA Adapter（训练）
+```
+
+以Llama-7B为例，训练完成后保存的通常**不是完整模型**，而是两个小文件：
+
+```text
+adapter_model.safetensors   # LoRA权重（低秩矩阵A和B）
+adapter_config.json         # 配置信息
+```
+
+其中`adapter_model.safetensors`包含的是低秩增量矩阵A和B。合并时需计算ΔW=(α/r)BA，并将其加回原权重。
+
+### 1.2 Adapter有什么特点？
+
+**优点：**
+- 文件小，保存快
+- 同一个基础模型可以搭配多个任务Adapter
+
+比如同一个基础模型，可以分别搭配：
+
+```text
+客服Adapter / 医疗Adapter / 法律Adapter
+```
+
+**缺点：**
+部署时**基础模型和Adapter必须同时存在**，缺一不可。
 
 ---
 
-**正文开始**
+## 二、为什么需要合并LoRA权重？
 
-你现在的目标是LoRA微调，但别急着碰模型——先确保你的“翻译官”到位。
+因为部署推理时，如果每次都同时加载基础模型和Adapter，既麻烦又容易出错。**合并**就是把Adapter的权重“写回”基础模型，得到一个完整的、独立的模型文件，之后只需加载这一个模型即可。
 
-**1.1 Python解释器：程序的“翻译官”**
+```text
+# 注意：Llama-2-7b FP16 需要至少14GB显存。
+```
 
-你写的Python代码是人类能看懂的文字，但电脑只认0和1。**Python解释器**的作用就是把你的代码翻译成电脑能执行的指令。没有它，你写的`.py`文件只是一堆文本。
+---
 
-**为什么这对你重要？**  
-LoRA微调本质上是运行一段Python程序来调整模型参数。如果解释器没装好，你连第一步都迈不出去。
+## 本块学习检查
 
-**动手做（hands-on）**：  
-1. 打开终端（Mac/Linux）或命令提示符（Windows）。  
-2. 输入`python --version`并回车。  
-3. 如果看到版本号（如`Python 3.x.x`），说明解释器已就绪；如果提示“未找到命令”，说明还没装好。
+在继续之前，先做一个最小回顾：**模型保存与加载（checkpoint）**。
 
-**记住**：解释器就是那个把“人类文字”翻译成“电脑指令”的翻译官
+请用你熟悉的框架（如PyTorch
 
 ## 块 2
 
-**你的目标：LoRA 微调。** 这意味着你很快要跑模型训练代码。别急，先把“工作台”搭好——这就像做实验前先摆好桌子。
+**本块学习检查**：读完本块后，请合上资料，用一句话说明“合并权重”前后，模型在推理时的结构分别长什么样。
 
-**1.2 代码编辑器：你的“工作台”**
-记事本也能写代码，但你会疯掉。**IDE（集成开发环境）** 能给你语法高亮、自动补全、运行调试，就像用 Word 写文档一样舒服。推荐两款：
-- **VS Code**：轻量、免费，装个 Python 插件就够用，适合快速上手。
-- **PyCharm**：更专业、功能更全，但稍重。
+---
 
-**1.3 虚拟环境：项目的“独立房间”**
-想象你同时做两个项目：A 需要 `numpy 1.0`，B 需要 `numpy 2.0`。都装进同一个 Python 会冲突报错。**虚拟环境** 就是给每个项目
+### 推理时为什么要合并？
+
+**不合并时**，模型是“双件套”：
+
+- 输入 → **基础模型** + **LoRA适配器** → 输出
+
+这意味着每次推理都要加载两份东西：基础模型和适配器。
+
+**部署时**，你通常只想要一个“完整模型”：
+
+- 输入 → **完整模型** → 输出
+
+所以，需要把适配器**合并**进基础模型，得到一个单一模型。
+
+# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。
+# 注意：
 
 ## 块 3
 
-### 2.1 Windows 用户：安装 Python 3.10+
+## 3.1 merge_and_unload() 是干什么的？
 
-你的目标是 LoRA 微调，这需要 Python 环境。跟着下面三步走，10 分钟搞定。
+一句话：**把LoRA训练得到的低秩增量加到基础模型权重里，并移除PEFT包装，使模型不再依赖外部Adapter。**
 
-**第一步：下载安装包**
+PEFT库提供了一个方法：
 
-1. 打开浏览器，访问 https://www.python.org
-2. 鼠标移到顶部菜单 **Downloads**，网站会自动推荐 Windows 版本（如 `Python 3.13.x`）。
-3. 点击下载 **Windows installer (64-bit)**。
-
-**第二步：运行安装程序（⚠️ 关键步骤）**
-
-双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
-
-1. **勾选最下方的 "Add python.exe to PATH"**  
-   这个选项把 Python 加入系统"环境变量"。不勾选的话，后续在命令行输入 `python` 会提示"不是内部或外部命令"，所有命令行操作都无法进行——包括你之后微调要用到的命令。
-
-2. 点击 **"Install Now"**（默认安装）即可。  
-   默认路径不含中文和特殊符号，避免后续路径报错。想改路径的话，确保路径中**没有中文或空格**。
-
-**第三步：验证安装**
-
-1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
-2. 输入以下命令并回车：
-
-```bash
-python --version
+```python
+merge_and_unload()
 ```
 
-3. 如果显示 `Python
+它的作用非常直接：
+
+> 将LoRA权重合并到基础模型，并移除PEFT包装。
+
+用图来理解，执行前你是这样的：
+
+```text
+Base Model
++
+LoRA Adapter
+```
+
+执行后变成：
+
+```text
+完整模型
+```
+
+也就是说，LoRA那套“旁路”参数被真正写回了基础模型的权重里，模型不再是“基础模型+外挂Adapter”的组合体，而是一个**完整的、独立的模型**。
+
+---
+
+## 3.2 合并前后，模型结构发生了什么变化？
+
+**合并前**，你的模型在内存里长这样：
+
+```text
+PeftModel
+├── Base Model
+└── LoRA Adapter
+```
+
+**合并后**，变成了：
+
+```text
+普通Transformer模型
+包含LoRA更新后的权重
+```
+
+关键区别：合并后的模型**不再是PeftModel**，而是一个普通的Transformer模型——LoRA的痕迹已经“融入血液”，不再有单独的Adapter挂件。
+
+---
+
+## 四、LoRA模型合并的完整流程
+
+整体流程就6步，非常清晰：
+
+```text
+训练LoRA
+    ↓
+保存Adapter
+    ↓
+加载基础模型
+    ↓
+加载Adapter
+    ↓
+merge_and_unload()
+    ↓
+保存完整模型
+```
+
+---
+
+## 五、加载LoRA Adapter（动手前必看）
+
+假设你已经有：
+
+```python
+base_model_path = "model_path"   # 基础模型路径
+adapter_path = "adapter_path"    # LoRA适配器路径
+```
+
+加载代码：
+
+```python
+from transformers import AutoModelForCausalLM
+from peft import PeftModel
+
+# 第一步：加载基础模型
+# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）
+# 注意：Llama-2-7b FP16 需要至少14GB显存
+model = AutoModelForCausalLM.from_pretrained(
+    base_model_path
+)
+
+# 第二步：把LoRA Adapter挂上去
+model = PeftModel.from_pretrained(
+    model,
+    adapter_path
+)
+```
+
+此时模型结构是：
+
+```text
+Base Model
++
+LoRA Adapter
+```
+
+---
+
+## 六、执行合并（核心一步）
+
+代码只有一行：
+
+```python
+merged_model = model.merge_and_unload()
+```
+
+这一步在数学上做的事：
+
+```text
+W + (α/r)BA → W'
+```
+
+（W是原始权重，BA是LoRA学到的低秩更新，α是缩放系数，r是秩，W'是合并后的新权重）
+
+执行完后，`merged_model` **不再是PeftModel**，而是：
+
+```text
+普通Transformer模型
+```
+
+---
+
+## 七、导出合并后的模型
+
+合并完，保存到本地：
+
+```python
+merged_model.save_pretrained(
+    "./merged_model"
+)
+```
+
+**别忘了Tokenizer也要一起保存**：
+
+```python
+tokenizer.save_pretrained(
+    "./merged_model"
+)
+```
+
+保存后的目录结构（示意）：
+
+```text
+merged_model/
+├── config
 
 ## 块 4
 
-### 2.2 macOS 用户：为 LoRA 微调铺好第一步
+## 三、merge_and_unload 是什么？（重点）
 
-你的目标是 LoRA 微调，这意味着后面要跑 Python 代码、装 HuggingFace 工具库。所以，先把 Python 环境弄干净，别让系统自带的旧版本拖后腿。
+一句话理解：**merge_and_unload 就是把 LoRA 小补丁“焊死”进原模型，得到一个完整的普通模型**。之后加载推理不再需要 PEFT 库，直接用 Transformers 就能跑。
 
-**关键认知**：现代 macOS（Catalina 10.15 起）不再预装 Python 2，但可能带一个供系统脚本用的旧版 `python3`。**别直接用系统版本**，自己装最新的，避免后续装包时权限或版本冲突。
+### 合并后加载推理（③④）
 
----
+合并后，加载方式变得非常简单：
 
-**方法一：官方安装包（推荐，最省心）**
+```python
+from transformers import AutoModelForCausalLM
 
-1. 打开浏览器，访问 https://www.python.org
-2. 下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）
-3. 双击下载的文件，一路点 "Continue" → "Install"，输密码完成安装
-4. 打开终端（Terminal），输入下面两行验证：
-
-```bash
-python3 --version
-pip3 --version
+# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）
+# 注意：Llama-2-7b FP16 需要至少14GB显存
+model = AutoModelForCausalLM.from_pretrained(
+    "./merged_model"
+)
 ```
 
-看到版本号输出就成功了。
+流程就是：**用户输入 → 完整模型 → 生成结果**，中间不再有 Adapter 这一层。
 
-**为什么用 `python3` 而不是 `python`**：现代 macOS 可能仍保留 `python` 命令（通常指向旧版 Python 2），但为了确保使用最新版本，建议统一使用 `python3` 和 `pip3`
+### 合并 vs 不合并（②③）
+
+| 项目 | 不合并 | 合并 |
+|------|--------|------|
+| 模型结构 | Base+Adapter | 完整模型 |
+| 文件大小 | 小 | 大 |
+| 部署复杂度 | 较高 | 简单 |
+| 多个任务切换 | 方便 | 不方便 |
+| 推理加载 | 需要 PEFT | 直接 Transformers |
+
+### 什么时候应该合并？（③④）
+
+核心原则：**合并是权衡，不是必须**。取决于三点：
+
+- 是否需要**多个 Adapter 动态切换**（需要就不合并）
+- 部署框架是否**原生支持 LoRA**（不支持就合并）
+- 对**存储体积**和**精度**（尤其 QLoRA）的接受度
+
+### 合并后必查清单（重点！）
+
+导出后建议核查以下四项，避免“能加载但行为不对”：
+
+1. **Tokenizer 完整且一致**：确认保存的 tokenizer 与训练时一致，特别是训练中**新增/修改过的特殊 token**（如自定义的 `<|im_start|>`、pad/eos 等）都在 `special_tokens_map.json` / `tokenizer_config.json` 里；若扩过词表，还要确认 embedding/lm_head 尺寸与词表匹配。
+2. **generation
 
 ## 块 5
 
-**动手装好 Python，为 LoRA 微调铺路**
+**本块学习检查**：读完下面两个场景后，请用自己的话说一说：什么情况下“合并”更合适？什么情况下“不合并”反而更好？
 
-你的目标是 LoRA 微调，这需要 Python 环境。Ubuntu/Debian 通常自带 Python，但版本偏老，我们直接装新的。
+---
 
-打开终端，逐行执行：
+### 10.1 什么时候该合并？
 
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv -y
-python3 --version
-```
+**场景1：上线部署（只用一套Adapter，追求简单）**
 
-**关键点**：`-y` 让系统自动确认，不用手动输 `y`；`python3-venv` 是建虚拟环境的模块，现在装好，后面微调时隔离环境不踩坑。
+想象你的模型要放到生产环境：服务器 → 直接加载模型 → 提供API。
 
-**本块学习检查**：执行完 `python3 --version`，把输出的版本号记下来——如果
+如果只需要**一个固定的Adapter**，并且希望部署链路越简单越好（不额外装PEFT、不做运行时加载），那**合并更方便**——一步到位，省心。
+
+> ⚠️ 但注意：如果你的推理框架本身支持直接加载LoRA（比如vLLM的多LoRA服务），或者你需要**在同一基础模型上热切换多个Adapter**，那**不合并、用Adapter形式部署反而更灵活**。这时合不合并，要看框架能力和业务需求。
+
+> 📌 模型许可证：Llama
 
 ## 块 6
 
-**本块学习检查**：学完本块后，请完成以下操作验证（不引入新知识）：  
-1. 如果你是 Windows 用户，在 PowerShell 中执行 `wsl --install` 并确认 WSL2 已启用；  
-2. 无论你使用哪种系统，在终端中运行 `python --version`，确认 Python 已安装（版本号需为 3.10 或更高）；  
-3. 写下你计划用于 LoRA 微调的实训环境（云服务器或本地 Linux），并说明它是否满足“Ubuntu LTS + NVIDIA GPU”这一条件。
+## 10.2 不建议合并场景
 
----
+你是动手实践型学习者，记住一个核心判断：**合并不是必须的，保留Adapter更灵活**。
 
-### 2.4 操作系统与实训环境该怎么选
+**场景1：多个任务Adapter**
 
-你的目标是 LoRA 微调，这意味着你最终要跑 GPU 训练。选对环境，能让你从现在到微调少走弯路。
+想象你有一个基础模型，上面挂了多个Adapter（A、B、C），分别对应不同任务。如果合并，你就把A、B、C全焊死在模型里，想切换任务得重新加载整个模型；保留Adapter，随时按需加载、卸载，灵活切换。
 
-**日常写 Python、练命令行（Windows 用户）**  
-推荐启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它让你在 Windows 里拥有一个接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致，比 Windows 原生 CMD 更贴近实战。安装只需管理员 PowerShell 执行 `wsl --install`。
+**场景2：持续训练**
 
-**日常写 Python（macOS / Linux 用户）**  
-直接用本机
+如果你打算继续调整LoRA，同样保留Adapter。合并后LoRA参数就“固化”进模型了，没法再单独微调。
+
+**实操建议**：除非你确定模型不再改动、且部署环境不支持加载Adapter，否则优先保留
 
 ## 块 7
 
-## 3.1 什么时候才需要镜像源
+## 11.1 直接合并可能遇到的情况
 
-`pip` 是 Python 的包管理工具，用来安装第三方库（比如 `numpy`、`pandas`）。默认情况下，`pip` 从官方 PyPI 服务器（`pypi.org`）下载——这是**最权威、最完整、最应保留的默认源**。
+你现在做 LoRA 微调，最后一步是把训练好的 Adapter 合并回基础模型。如果你直接在 4-bit 量化状态下执行 `merge_and_unload()`，可能会遇到两类问题：
 
-**你只需要记住一个判断标准**：只有当你访问官方源明显变慢、经常超时，或处在网络受限环境时，才临时切换国内镜像。镜像是“网络不好时的临时加速手段”，**不是必须永久替换的默认设置**——官方源始终是首选。
+1. **精度损失**——4-bit 权重需要先反量化再合并，这个过程与全程用高精度计算并不完全等价，合并后的模型可能会有精度上的偏差。
+2. **类型或版本不兼容**——可能出现权重类型不匹配，或者你用的 PEFT / bitsandbytes / Transformers 版本不支持在量化状态下直接合并。
 
-## 3.2 首选做法：临时指定镜像源（推荐）
+> 注意：上面说的是**可能**出现的情况，不是每次都会报错。能否顺利合并、合并质量如何，取决于你所用库的版本、量化配置，以及是否按下面的流程先反量化。最终以你所用版本的文档和实际运行结果为准。
 
-如果你只是某次安装慢，最干净的做法是**只对这一次安装临时指定镜像**，不改动任何全局配置：
+## 11.2 常见做法：先反量化到高精度再合并
 
-```bash
-pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+一个稳妥的思路是：**不要在 4-bit 状态下直接合并**，而是先用 FP16/BF16 高精度重新加载一份基础模型，再挂载同一个 Adapter 后合并。
+
+流程如下：
+
+```
+以高精度（FP16/BF16）重新加载基础模型
+        ↓
+加载同一份 LoRA Adapter
+        ↓
+merge_and_unload()
+        ↓
+保存完整模型
+```
+
+这样合并发生在高精度权重上，绕开了 4-bit 状态下的类型和精度问题。
+
+下面是完整可执行的代码：
+
+```python
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+
+base_model_path = "your/base-causal-lm"   # 训练 QLoRA 时用的同一个基础模型
+adapter_path = "./qlora_adapter"          # 训练保存下来的 LoRA Adapter 目录
+merged_out = "./merged_model"
+
+# 1) 关键：以高精度（FP16/BF16）重新加载基础模型，而不是再走 4-bit 量化
+#    合并要发生在高精度权重上，所以这里不传 quantization_config
+compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+base_model = AutoModelForCausalLM.from_pretrained(
+    base_model_path,
+    torch_dtype=compute_dtype,
+    device_map="auto",        # 显存不足时可改为 device_map={"": "cpu"} 在 CPU 上合并
+)
+
+# 2) 挂载训练得到的同一份 Adapter
+model = PeftModel.from_pretrained(base_model, adapter_path)
+
+# 3) 合并；safe_merge=True 会在合并时做数值检查（如检测 NaN）
+merged_model = model.merge_and_unload(safe_merge=True)
+
+# 4) 保存完整模型与 tokenizer（tokenizer 从基础模型或训练目录加载均可，保持与训练一致）
+tokenizer = AutoTokenizer.from_pretrained(base_model_path)
+merged_model.save_pretrained(merged_out)
+tokenizer.save_pretrained(merged_out)
+```
+
+**代码要点拆解：**
+
+- **第 1 步是关键**：重新加载时只指定 `torch_dtype`，不传 `quantization_config`，这样模型就是高精度权重，合并不会遇到 4-bit 的问题。
+- **第 3 步**：`safe_merge=True` 会在合并时做数值检查（如检测 NaN）。
+- **模型许可证**：合并后的模型沿用基础模型的许可证。例如，若基础模型为 Llama 2，则适用 Llama 2 Community License（商用月活>7亿需Meta授权）。请在使用
 
 ## 块 8
 
-## 3.3 进阶：把镜像设为默认（仅限长期网络受限时）
+### 动手前先看：QLoRA合并的3个“坑”
 
-你正在为 LoRA 微调做准备，而微调的第一步就是顺利装好依赖包。如果你**长期处于网络受限环境**，几乎每次安装包都要手动加镜像地址，那才值得把镜像写进配置文件设为默认。**注意**：官方 PyPI 仍是最可靠的来源，网络恢复后建议改回或删除该配置。
+你正走在LoRA微调的路上，这里直接给你合并时的关键提醒，帮你少走弯路。
 
-**Windows 用户：**
+**1. 版本决定“能不能直接合并”**
+不同PEFT版本对量化模型合并的支持不一样。有的版本要求先反量化。**最稳妥的做法**：加载基础模型时，**不要传** `quantization_config` 或 `load_in_4bit` 参数，直接用高精度权重来合并。
 
-1. 按 `Win + R`，输入 `%APPDATA%`，回车。这会打开一个类似 `C:\Users\你的用户名\AppData\Roaming` 的文件夹。
-2. 在该文件夹下**新建一个名为 `pip` 的文件夹**。
-3. 在 `pip` 文件夹内**新建一个名为 `pip.ini` 的文本文件**。
-4. 用记事本打开 `pip.ini`，写入以下内容：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-**为什么这样写**：`index-url` 告诉 pip 默认从这个地址下载包。
-
-> **⚠️ 关于 `trusted-host`**：网上很多教程会顺手加一行 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——`trusted-host` 会让 pip 跳过对该域名的 TLS 校验，等于放弃了传输安全。清华、阿里等主流镜像都提供合法的 HTTPS 证书，正常使用**无需** `trusted-host`。只有在企业内网自建源、或确实遇到证书报错且已确认来源可信时，才临时加它。
-
-**macOS / Linux 用户：**
-
-1. 打开终端，执行：
-
-```bash
-mkdir -p ~/.config/pip
-```
-
-2. 创建配置文件：
-
-```bash
-nano ~/.config/pip/pip.conf
-```
-
-3. 写入同样的内容：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-4. 按 `Ctrl + O` 保存，`Ctrl + X` 退出。
-
-### 3.4 验证配置是否生效
-
-在命令行输入：
-
-```bash
-pip config list
-```
-
-如果看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'`，说明配置成功。
-
-### 3.5
+**2. 内存不够？换CPU**
+用高精度重新加载完整模型，会占用约一份FP16/BF16完整模型的内存/显存。如果显存不足，把 `device_map` 改成 `{"": "cpu"
 
 ## 块 9
 
-### 你的目标：为 LoRA 微调搭好“代码车间”
+**动手做：合并前先上保险，合并后验一验**
 
-既然你要做 LoRA 微调，后面会写大量 Python 脚本、调试模型代码。VS Code 就是你的“工作台”——轻量、免费，启动快，插件生态强，后续写 Linux 命令、改配置文件也全靠它。
+合并模型时，直接调用合并方法即可完成模型合并，无需额外参数。合并完成后，建议使用 `safe_serialization=True` 确保模型以安全格式保存，防止合并过程产生异常值，相当于给合并操作上了道保险：
 
-**安装三步走（跟着点就行）：**
+```python
+merged_model = model.merge_and_unload(safe_serialization=True)
+```
 
-1. 打开官网 `https://code.visualstudio.com`，下载你系统的安装包。
-2. 双击运行，一路“下一步”装完。
-3. **装两个必装插件**：打开 VS Code，点左侧活动栏最下方的**四个方块图标**（扩展），搜索并安装：
-   - **Python**（微软官方出品，语法高亮、调试、智能提示）
-   - **Pylance**（让代码提示更聪明）
+合并完别急着用，先验证一下合并没有引入明显偏差。操作很简单：准备一小批固定输入（prompt），分别用合并前的 PeftModel 和合并后的模型推理，对比两者的 logits 或生成文本是否基本一致。
 
-> 为什么必须装？不装 Python 插件，VS Code 认不出 `.py` 文件，代码
+**最小验证代码**：用固定 prompt，先比较 logits 的最大绝对差，
 
 ## 块 10
 
-**动手装好 PyCharm，为 LoRA 微调铺路**
+## 合并后别急着用——先做一次“前后对照”验证
 
-你目标是跑 LoRA 微调，代码量不小，选 PyCharm Community 版最省心：免费、专业、开箱即用，内置代码分析和版本控制，适合管理微调项目。
+你已经完成了 `merge_and_unload()` 合并，模型也成功导出了。但这里有个关键问题：**合并后的模型，输出和原来一样吗？** 尤其是 QLoRA 场景下，因为涉及量化精度损失，合并前后会有微小差异。这一块教你如何用“对照实验”来验证合并质量。
 
-**安装三步走**
+### 为什么必须“重新加载一份未合并模型”？
 
-1. 打开官网下载页：https://www.jetbrains.com/pycharm/download/
-2. 选 **Community Edition**（社区版，免费那个）
-3. 运行安装程序，务必勾选这两项：
-   - `Add "Open Folder as Project"` —— 以后右键文件夹就能直接打开项目
-   - `Add to PATH` —— 命令行也能启动 PyCharm
+先记住一个坑：`merge_and_unload()` 会返回一个合并后的新模型，**原始的 `PeftModel` 对象保持不变**，仍可用于对比或后续操作。但为了确保对比基准的纯净性，建议**重新从 `base_model_path` 加载一份基础模型，再挂上 adapter，得到一份全新的“未合并 PeftModel”**，专门用来做对比。
 
-**首次启动配置**
+```python
+# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）
+# 注意：Llama-2-7b FP16 需要至少14GB显存
+base_for_ref = AutoModelForCausalLM.from_pretrained(
+    base_model_path, torch_dtype=compute_dtype, device_map="auto",
+)
+model_before = PeftModel.from_pretrained(base_for_ref, adapter_path)   # 未合并：Base(高精度)+Adapter
+```
 
-1. 打开 PyCharm，点 `New Project`
-2. `Location` 选项目存放路径，**务必用英文或拼音命名文件夹，确保路径中不含中文字符**，否则后续跑微调脚本容易出编码问题
-3. `Interpreter` 选 `Previously configured interpreter
+### 验证一：比较 logits（数值层面）
+
+用同一个固定输入（比如 `"请用一句话介绍你自己。"`，换成你任务里有代表性的句子），分别让 `model_before` 和 `merged_model` 跑一遍，比较输出的 logits 差异：
+
+```python
+inputs = tokenizer(prompt, return_tensors="pt").to(merged_model.device)
+
+with torch.no_grad():
+    logits_before = model_before(**inputs.to(model_before.device)).logits
+    logits_after = merged_model(**inputs).logits
+
+max_abs_diff = (logits_before.float().cpu() - logits_after.float().cpu()).abs().max().item()
+print("logits 最大绝对差:", max_abs_diff)   # 越接近 0 越好；QLoRA 场景通常是较小的近似值
+```
+
+**怎么看结果？** 这个值越接近 0，说明合并前后模型内部计算越一致。QLoRA 场景下因为量化精度损失，通常不会是 0，而是一个较小的近似值——只要不大到离谱，就说明合并是成功的。
+
+### 验证二：比较生成文本（行为层面）
+
+数值接近还不够，还要看**实际生成效果**。用贪心生成（`do_sample=False` 去掉随机性，保证可复现对比）：
+
+```python
+with torch.no_grad():
+    gen_before = model_before.generate(**inputs.to(model_before.device), max_new_tokens=32, do_sample=False)
+    gen_after = merged_model.generate(**inputs, max_new_tokens=32, do_sample=False)
+
+text_before = tokenizer.decode(gen_before[0], skip_special_tokens=True)
+text_after = tokenizer.decode(gen_after[0], skip_special_tokens=True)
+print("合并前:", text_before)
+print("合并后:", text_after)
+print("
 
 ## 块 11
 
-### 5.1 为什么用 Conda
+## 十一、合并时开启校验并做一致性验证（建议）
 
-你的目标是 LoRA 微调，这意味着后面要装 PyTorch、CUDA 这类“重”依赖。如果直接在系统 Python 里装，很容易把环境搞乱。**Conda** 能帮你为每个项目创建独立的 Python 空间，还能管理不同版本的 Python 解释器本身——这正是深度学习项目的“必备工具”。
+### 为什么要单独再加载一份模型？
 
-### 5.2 安装 Conda：Anaconda vs Miniconda
+`merge_and_unload()` 默认返回合并后的新模型对象，原模型保持不变。如果你拿它和"合并前"对比，需要先保存一份未合并的模型副本作为对照基准，否则验证就完全失去意义了。
 
-两个选择，按你的情况（希望环境干净、按需装包）**推荐 Miniconda**：
+**正确做法**：在合并前保存一份未合并的模型副本（如 `model_before = copy.deepcopy(model)`），或使用 `get_peft_model` 重新加载原始基础模型并挂载 adapter 作为对照，这样才能真正比较合并前后的差异。
 
-| 选项 | 特点 | 推荐人群 |
-|------|------|----------|
-| **Anaconda** | 体积大（约 1GB+），预装 numpy、pandas、jupyter、scipy、matplotlib 等数百个常用包 | 做数据分析、不想手动装包的用户 |
-| **Miniconda** | 体积小（约 50-100MB），只含 conda 和基础 Python | 希望环境干净、做项目开发的用户 |
+### 显存不够怎么办？
 
-**安装步骤（跟着做就行）：**
+如果无法同时放下两个模型，就**分两次跑**：
 
-1. 打开 https://docs.conda.io/en/latest/miniconda.html
-2. 下载对应系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）
-3. 运行安装程序：
-   - **Windows**：一路下一步，**不要勾选 “Add Miniconda3 to my PATH environment variable”**（安装器默认不勾选，并标注为 Not recommended）。直接塞进 PATH 容易和系统已有的 Python 冲突。日常改用开始菜单里的 **“Anaconda Prompt (Miniconda3)”** 来用 conda。
-   - **macOS/Linux**：运行 `.sh` 文件，按提示输入 `yes` 同意协议、选安装路径，最后一步选 `yes` 让安装器执行 **`conda init`**（默认选项为 yes）。这样终端会自动接管 conda，不用手动改 PATH。
-4. **验证安装**：打开一个**新的**终端（Windows 用 “Anaconda Prompt (Miniconda3)”；macOS/Linux 重开终端），输入
+1. 先用未合并的 PeftModel 跑一遍，把 logits 或生成文本**存下来**，然后释放显存；
+2. 再加载合并后的模型，跑同样的输入，对比结果。
+
+两次运行需设置相同的随机种子（如 `torch.manual_seed(42)`）和推理参数（如 temperature、top_p），以确保对比的公平性。
+
+### 结果预期：别追求逐位相同
+
+- **QLoRA 场景**：合并前后**通常只是近似一致**。差异主要源于量化反量化误差和采样随机性，`max_abs_diff` 一般是个较小的非零值，生成文本也可能有个别 token 不同。建议通过固定随机种子和多次采样取平均来评估一致性，重点确认**没有明显退化或 NaN**。
+- **LoRA（非量化）场景**：一般更接近一致，`max_abs_diff` 可以非常小。
+
+是否可接受，以你的**任务指标与验证集**为准。
+
+---
+
+## 十二、电脑配置批注
+
+本章节需要**实际加载模型**，涉及：加载完整模型、合并权重、导出模型。
+
+### 模型许可证
+
+部署
 
 ## 块 12
 
-**动手创建你的第一个环境**
+## 十一、QLoRA模型合并注意事项（重点）（③）
 
-你的目标是 LoRA 微调，而微调不同项目往往需要不同版本的 PyTorch 和 CUDA。现在学会创建环境，以后直接复用这套流程。
+### 11.3 合并时开启校验并做一致性验证（建议）
 
-打开终端，执行：
+**核心思路**：合并模型不是“点一下按钮就完事”，建议开启 `safe_merge=True` 并做一致性验证，确保合并后的模型输出与预期一致。
 
-```bash
-conda create -n llm-learn python=3.10
+---
+
+**先理解一个关键概念：反量化 ≠ 手动还原**
+
+很多同学以为“反量化”是把 4-bit 权重逐层手动还原成高精度，**不是**。正确做法是：
+
+> **重新加载一份不带量化配置的基础模型**，再挂载同一个 Adapter 合并。
+
+具体代码模式：
+```python
+# 不传 quantization_config / load_in_4bit
+model = AutoModelForCausalLM.from_pretrained(
+    base_model_path,
+    torch_dtype=torch.bfloat16  # 或 float16
+)
+model = PeftModel.from_pretrained(model, adapter_path)
+model = model.merge_and_unload(safe_merge=True)
 ```
 
-**命令拆解**：
-- `conda create`：创建环境的命令
-- `-n llm-learn`：给环境起名叫 `llm-learn`（`n` 是 `name` 的缩写）
-- `python=3.10`：指定这个环境里安装 Python 3.10
+这样合并发生在高精度权重上，天然避开“在 4-bit 状态下合并”的类型/精度问题。
 
-执行后，终端会列出将要安装的包，并询问：
+---
 
-```bash
-Proceed ([y]/n)?
-```
+**为什么必须这样做？**
 
-输入 `y` 并回车，等待安装
+不同 PEFT / bitsandbytes / Transformers 版本对“量化模型能否直接调用 `merge_and_unload`”支持不同：
+- 部分版本直接报错或警告
+- 部分较新版本有一定支持，但仍有精度损失风险
+
+所以**“先反量化（重载高精度）再合并”是跨版本最稳妥的做法**。是否可以在量化状态下直接合并，以你所装版本的文档和实际运行结果为准。
+
+---
+
+**合并后必做：一致性验证**
+
+合并完成后，建议用同一段输入分别跑：
+1. 合并后的完整模型
+2. 原始 PeftModel（Adapter 未合并）
+
+对比两者输出是否一致。若差异明显，说明合并过程有问题，回到排查表检查。
+
+---
+
+**常见问题速查表（本块重点）**
+
+| 问题 | 常见原因 | 排查方向 |
+|------|----------|----------|
+| `merge_and_unload` 不存在 | 当前对象不是 PeftModel（可能忘了挂载 Adapter，或已合并成普通模型） | 确认用 `PeftModel.from_pretrained` 挂载后再调用 |
+| 合并后模型变大 | 正常：合并后是完整模型，不再是 Adapter | 无需处理；在意体积可保留 Adapter 不合并 |
+| 显存不足 | 高精度完整模型占用高；或用了 FP32、未 offload/分片 | 改用 CPU 合并、用 FP16/BF16、分片加载 |
+| Tokenizer/配置缺失 | 只保存了模型未保存 tokenizer；特殊 token / generation_config 未导出 | 重新 `save_pretrained`，核查
 
 ## 块 13
 
-## 5.4 激活与退出环境：进入你的“独立房间”
+## 路线A：合并后部署完整模型——把LoRA“焊死”进模型
 
-你的目标是 LoRA 微调，这意味着你马上要开始动手训练模型了。训练时最怕的就是把项目依赖搞乱，所以 Conda 环境就是你的“独立房间”——每个项目住一间，互不打扰。
+你已经训练好了一个LoRA模型，现在到了“上生产”的环节。路线A的思路很直接：**把LoRA合并进基础模型，得到一个“完整模型”，然后像用普通模型一样去部署它。**
 
-**激活环境**（走进房间）：
+### 操作流程（三步走）
 
-```bash
-conda activate llm-learn
+```text
+merge_and_unload()   ← 第一步：在代码里调用这个方法，把LoRA权重合并回基础模型
+
+↓
+
+保存完整模型          ← 第二步：把合并后的模型保存到磁盘
+
+↓
+
+推理框架按普通模型加载  ← 第三步：比如用vLLM直接加载这个merged_model
 ```
 
-**怎么确认你进来了**：激活后，命令行最前面会出现 `(llm-learn)` 标志。看到它，就说明你后续敲的 `python` 和 `pip` 命令都只作用于这个环境，不会污染系统或其他项目。
+### 这条路线的特点
 
-**验证一下**（确保房间里的 Python 版本正确）：
+**优点：**
 
-```bash
-python --version
-```
+- **部署链路简单**——推理框架完全不需要知道LoRA的存在，它看到的就是一个普普通通的完整模型，直接加载就行；
+- **推理时零额外开销**——因为Adapter已经“焊死”进模型了，所以推理过程中**不存在Adapter切换的成本**。
 
-应该显示 `Python 3.10.x`。
+**代价（你要权衡的地方）：**
 
-**退出环境**（走出房间，回到系统默认环境）：
+- 每合并一个Adapter，你就要保存和分发**一份完整的模型文件**。如果你有多个任务、多个Adapter，那就得存多份完整模型——**存储成本会直线上升**。
 
-```bash
-conda de
+### 一句话总结
+
+> 路线A = 合并 → 保存 → 当普通模型用。适合任务少、追求部署简单的场景；任务多了存储会吃不消。
+
+---
+
+**动手验证一下（可选）**：
 
 ## 块 14
 
-**本块学习检查**：完成配置后，在 VS Code 或 PyCharm 中新建一个 Python 文件，输入 `print("hello")` 并运行，观察终端输出是否为 `hello`，确认使用的是 `llm-learn` 环境。
+## 14.3 如何选择：合并还是保留？
+
+你是来学 LoRA 微调的，这里给你一套**快速决策参考**（非硬性规则，以实际部署为准）：
+
+- **只调了一个 Adapter，想部署最简单** → 选**路线A（合并）**，直接得到一个完整模型，部署省心。
+- **同一个基础模型要服务多个 Adapter，且推理框架原生支持 LoRA** → 选**路线B（保留 Adapter 动态服务）**，不用重复加载多个完整模型。
+- **QLoRA 精度敏感** → 无论走哪条路线，都建议按 §11.3 做合并前后/上线前的一致性验证。
+
+**核心认知**：合并不是唯一部署方式。具体框架用法留到第 15 板块（vLLM 部署）展开。
 
 ---
 
-### 6.1 VS Code 配置 Conda 环境
+## 十五、总结
 
-1. 先激活环境：`conda activate llm-learn`
-2. 打开 VS Code，按 `Ctrl + Shift + P`。
-3. 输入 `Python: Select Interpreter`。
-4. 选择带有 `conda` 字样的 Python 路径（如 `Python 3.10.x ('llm-learn': conda)`）。
+本章你已掌握
 
-**为什么这样写**：VS Code 能自动识别 conda 环境，选好后，你在这个工作区写的代码就会用 `llm-learn` 环境里的 Python 和已装好的包。
+## 测评题目
 
-### 6.2 PyCharm 配置 Conda 环境
+### Q-KB12-ST1205-001
+PEFT 模型调用 `merge_and_unload()` 后，会将 LoRA 权重________到基座模型中。
 
-1. 打开 PyCharm，点击 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）。
-2. 左侧选 `Project: 你的项目名` → `Python Interpreter`。
-3. 点击齿轮图标 → `Add...`。
-4. 左侧选 `Conda Environment` → `Existing environment`。
-5. 在 `Interpreter` 路径中选 conda 环境的 Python 可执行文件：
-   - Windows：`C:\Users\你的用户名\minic
+### Q-KB12-ST1205-002
+使用 `save_pretrained()` 导出模型或适配器时，通常会保存权重和________文件。
 
-## 块 15
+### Q-KB12-ST1204-001
+QLoRA 常用的 4-bit 数据类型名称是________。
 
-### 在命令行验证你的 Python 环境
+### Q-KB1201-003
+LoRA中，`r`（rank）参数的作用是？
 
-既然你的目标是快速上手 LoRA 微调，先确保工具链能跑通是关键。跟着做，很快。
+### Q-KB1201-002
+QLoRA 相比 LoRA 的主要改进是引入了 **4-bit** 量化技术，进一步降低了微调时的________占用。
 
-1. **激活环境**：打开终端，输入 `conda activate llm-learn` 并回车。
-2. **进入 Python**：输入 `python`，回车。看到 `>>>` 提示符就对了。
-3. **运行测试**：在 `>>>` 后输入 `print("Hello, Python! 我的环境准备好了！")`，回车。
-4. **确认输出**：如果屏幕打印出这行文字，说明环境正常。输入 `exit()` 退出。
+### Q-KB1201-004
+使用LoRA微调后的模型，可以将LoRA权重合并（Merge）回基座模型中，合并后推理不需要额外加载LoRA适配器。（ ）
 
-**本块学习检查**：完成上述步骤后，在终端重新输入 `python`，再执行一次 `print("OK
+### Q-KB12-ST1202-001
+LoRA 中 rank r 决定低秩更新矩阵的________。
 
-## 块 16
-
-## 7.3 在 PyCharm 中验证——跑通你的第一行代码
-
-你的目标是 LoRA 微调，而微调的第一步，是确保你的开发环境能“跑起来”。这一节我们用最直接的方式验证：在 PyCharm 里运行一个 Python 文件，看到输出，就算打通了。
-
-**操作步骤（三步走）**
-
-1. **新建项目，创建 `hello.py`**  
-   打开 PyCharm，新建一个项目，然后在项目里新建一个 Python 文件，命名为 `hello.py`。这个文件就是你的“试验田”。
-
-2. **右键点击文件 → `Run 'hello'`**  
-   在 `hello.py` 的编辑区空白处**右键单击**，菜单里会出现 `Run 'hello'` 选项，点击它。PyCharm 会自动配置运行环境并执行这个文件。
-
-3. **下方 Run 窗口应输出结果**  
-   点击运行后，PyCharm 底部会弹出 **Run 窗口**，你的代码输出会显示在这里。看到输出，就说明 PyCharm 已经能正常执行 Python 代码了。
-
-> **为什么这对 LoRA 微调很重要？**  
-> 微调涉及大量代码运行和调试，你需要在 PyCharm 里反复运行脚本、查看输出。这一步验证通过，等于确认了“写代码→运行→看结果”这条链路是通的，后面学 LoRA 时才能专注在模型本身，而不是卡在环境上。
-
----
-
-## 第八章：常见问题排查（先收藏，遇到再查）
-
-| 问题现象 | 可能原因 | 解决方案 |
-|----------|----------|----------|
-| 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选择 "Modify"，勾选 "Add Python to environment variables" |
-| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 按第三章临时加 `-i` 指定国内镜像（如清华源）；长期受限再考虑设为默认源 |
-| `conda` 命令找不到 | 未使用 Anaconda/M
+### Q-KB12-ST1200-002
+QLoRA 的 4-bit 量化常依赖的库是________。

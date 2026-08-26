@@ -1,1 +1,135 @@
-[]
+[
+  {
+    "question_id": "Q-KB08-ST0800-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "不计算梯度地执行前向推理，常使用 PyTorch 的 `torch.________()` 上下文。",
+    "options": [],
+    "correct_answer": "no_grad ||| no_grad()",
+    "hint": "no_grad 可减少推理阶段的显存开销。",
+    "explanation": "no_grad 可减少推理阶段的显存开销。"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "用 `AutoModel.from_pretrained()` 加载模型时，模型权重通常来自名称对应的预训练________。",
+    "options": [],
+    "correct_answer": "检查点 ||| checkpoint ||| 模型仓库",
+    "hint": "from_pretrained 会下载或读取预训练检查点。",
+    "explanation": "from_pretrained 会下载或读取预训练检查点。"
+  },
+  {
+    "question_id": "Q-KB0801-005",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请简述 Encoder-Decoder 架构中，交叉注意力（Cross-Attention）层的 Query、Key、Value 分别来自哪里？",
+    "options": [],
+    "correct_answer": "*   **Query (Q):** 来自解码器（Decoder）上一层的输出。\n*   **Key (K) 和 Value (V):** 来自编码器（Encoder）的最终输出。\n*   **作用:** 使得解码器在生成当前词时，能够“关注”并提取编码器输入序列中的相关信息。\n\n---",
+    "hint": "*   **Query (Q):** 来自解码器（Decoder）上一层的输出。\n*   **Key (K) 和 Value (V):** 来自编码器（Encoder）的最终输出。\n*   **作用:** 使得解码器在生成当前词时，能够“关注”并提取编码器输入序列中的相关信息。\n\n---",
+    "explanation": "*   **Query (Q):** 来自解码器（Decoder）上一层的输出。\n*   **Key (K) 和 Value (V):** 来自编码器（Encoder）的最终输出。\n*   **作用:** 使得解码器在生成当前词时，能够“关注”并提取编码器输入序列中的相关信息。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0801-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个模型是典型的 **Encoder-only** 架构？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPT-3"
+      },
+      {
+        "key": "B",
+        "text": "BERT"
+      },
+      {
+        "key": "C",
+        "text": "T5"
+      },
+      {
+        "key": "D",
+        "text": "LLaMA"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> BERT是双向编码器；GPT和LLaMA是Decoder-only；T5是Encoder-Decoder。",
+    "explanation": "> BERT是双向编码器；GPT和LLaMA是Decoder-only；T5是Encoder-Decoder。"
+  },
+  {
+    "question_id": "Q-KB0806-005",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-06",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请简述 PagedAttention（vLLM的核心技术）是如何解决KV Cache显存碎片化问题的。",
+    "options": [],
+    "correct_answer": "PagedAttention 借鉴了操作系统中的虚拟内存分页机制。它将 KV Cache 分割成固定大小的块（Blocks），这些块在物理显存中不需要连续存储。通过一个块表（Block Table）将逻辑上连续的 KV Cache 映射到物理上不连续的显存块上，从而彻底消除了显存碎片，极大提高了显存利用率和并发吞吐量。\n\n---",
+    "hint": "PagedAttention 借鉴了操作系统中的虚拟内存分页机制。它将 KV Cache 分割成固定大小的块（Blocks），这些块在物理显存中不需要连续存储。通过一个块表（Block Table）将逻辑上连续的 KV Cache 映射到物理上不连续的显存块上，从而彻底消除了显存碎片，极大提高了显存利用率和并发吞吐量。\n\n---",
+    "explanation": "PagedAttention 借鉴了操作系统中的虚拟内存分页机制。它将 KV Cache 分割成固定大小的块（Blocks），这些块在物理显存中不需要连续存储。通过一个块表（Block Table）将逻辑上连续的 KV Cache 映射到物理上不连续的显存块上，从而彻底消除了显存碎片，极大提高了显存利用率和并发吞吐量。\n\n---"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "加载 GPT-2 等预训练模型进行前向实验，最直接的目的是什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "验证模型与输入张量可正常前向计算"
+      },
+      {
+        "key": "B",
+        "text": "立即完成微调"
+      },
+      {
+        "key": "C",
+        "text": "删除词表"
+      },
+      {
+        "key": "D",
+        "text": "关闭 CUDA 驱动"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该实验用于验证加载和前向流程。",
+    "explanation": "该实验用于验证加载和前向流程。"
+  },
+  {
+    "question_id": "Q-KB0806-004",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-06",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "FlashAttention 的核心思想是通过分块（Tiling）和重计算（Recomputation）来减少HBM（显存）的读写次数，从而加速并降低显存占用。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB08-ST0807-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-07",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "推理时将模型切换到评估模式，应调用 `model.________()`。",
+    "options": [],
+    "correct_answer": "eval ||| eval()",
+    "hint": "eval 模式会调整 dropout 等层的行为。",
+    "explanation": "eval 模式会调整 dropout 等层的行为。"
+  }
+]

@@ -1,38 +1,36 @@
 {
-  "stage_id": "660db297-616a-5ea2-a83f-d2c4e40fe469",
+  "stage_id": "73d75d89-d8be-55d5-8ae1-5bb9d4b67262",
   "stage_num": 1,
-  "block_id": "KB-01",
-  "block_name": "Linux环境与命令行操作",
+  "block_id": "KB-02",
+  "block_name": "Python编程基础",
   "block_ids": [
-    "KB-01"
+    "KB-02"
   ],
-  "subtopic_id": "KBS-01-00",
-  "subtopic_name": "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）",
+  "subtopic_id": "KBS-02-00",
+  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
   "subtopic_ids": [
-    "KBS-01-00",
-    "KBS-01-01"
+    "KBS-02-00"
   ],
   "subtopic_names": [
-    "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）",
-    "常用Shell命令（cd/ls/mkdir/cp/mv）"
+    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
   ],
-  "estimated_hours": 1.0,
+  "estimated_hours": 0.5,
   "gap_skill": "LoRA",
   "prerequisites": [],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习环境准备：安装Linux系统（或WSL2/云服务器）",
-  "description": "围绕环境准备：安装Linux系统（或WSL2/云服务器）完成一次可执行的阶段学习与练习。",
+  "title": "学习环境准备：安装Python 3.10+",
+  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解环境准备：安装Linux系统（或WSL2/云服务器）的基本概念",
-    "掌握环境准备：安装Linux系统（或WSL2/云服务器）的核心技术",
-    "能够独立完成环境准备：安装Linux系统（或WSL2/云服务器）相关任务"
+    "理解环境准备：安装Python 3.10+的基本概念",
+    "掌握环境准备：安装Python 3.10+的核心技术",
+    "能够独立完成环境准备：安装Python 3.10+相关任务"
   ],
   "difficulty": "初级",
-  "recommended_daily_hours": 1.0,
+  "recommended_daily_hours": 0.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Linux系统（或WSL2/云服务器）",
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Python 3.10+",
   "hardware_notes": "",
-  "personalization_summary": "预计0.0小时完成 | 建议分1天学习 | 每天1.0小时 | 综合型学习风格"
+  "personalization_summary": "预计0.7小时完成 | 建议分1天学习 | 每天1.0小时 | 综合型学习风格"
 }

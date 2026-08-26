@@ -1,36 +1,38 @@
 {
-  "stage_id": "fa58cee9-6510-58fa-86b5-70e447e2a141",
+  "stage_id": "6149c0b7-33ca-56d6-b1e4-d2bf12d07c57",
   "stage_num": 1,
-  "block_id": "KB-02",
-  "block_name": "Python编程基础",
+  "block_id": "KB-04",
+  "block_name": "深度学习框架PyTorch基础",
   "block_ids": [
-    "KB-02"
+    "KB-04"
   ],
-  "subtopic_id": "KBS-02-00",
-  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
+  "subtopic_id": "KBS-04-03",
+  "subtopic_name": "torch.nn模块",
   "subtopic_ids": [
-    "KBS-02-00"
+    "KBS-04-03"
   ],
   "subtopic_names": [
-    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
+    "torch.nn模块"
   ],
-  "estimated_hours": 0.5,
+  "estimated_hours": 1.5,
   "gap_skill": "LoRA",
-  "prerequisites": [],
+  "prerequisites": [
+    "KBS-04-02"
+  ],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习环境准备：安装Python 3.10+",
-  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
+  "title": "学习torch.nn模块",
+  "description": "围绕torch.nn模块完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解环境准备：安装Python 3.10+的基本概念",
-    "掌握环境准备：安装Python 3.10+的核心技术",
-    "能够独立完成环境准备：安装Python 3.10+相关任务"
+    "理解torch.nn模块的基本概念",
+    "掌握torch.nn模块的核心技术",
+    "能够独立完成torch.nn模块相关任务"
   ],
-  "difficulty": "初级",
-  "recommended_daily_hours": 0.5,
-  "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Python 3.10+",
+  "difficulty": "中级",
+  "recommended_daily_hours": 1.0,
+  "suggested_study_days": 2,
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习torch.nn模块",
   "hardware_notes": "",
-  "personalization_summary": "预计0.0小时完成 | 建议分1天学习 | 每天1.0小时 | 综合型学习风格"
+  "personalization_summary": "预计2.2小时完成 | 建议分2天学习 | 每天1.0小时 | 综合型学习风格"
 }

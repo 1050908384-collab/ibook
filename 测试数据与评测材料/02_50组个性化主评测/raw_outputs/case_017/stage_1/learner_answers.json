@@ -1,1 +1,66 @@
-[]
+[
+  {
+    "question_id": "Q-KB0403-004",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-001",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0402-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nx1 = torch.tensor(2.0, requires_grad=True)\nx2 = torch.tensor(3.0, requires_grad=True)\nx3 = torch.tensor(4.0, requires_grad=True)\n\ny = x1 * x2 + x3\ny.backward()\n\nprint(x1.grad)  # dy/dx1 = x2 = 3\nprint(x2.grad)  # dy/dx2 = x1 = 2\nprint(x3.grad)  # dy/dx3 = 1\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0402-001",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-005",
+    "submitted_answer": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0406-004",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

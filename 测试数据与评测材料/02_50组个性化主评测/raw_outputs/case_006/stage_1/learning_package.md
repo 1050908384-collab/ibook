@@ -2,400 +2,617 @@
 
 ## 块 1
 
-### 1.1 Python 解释器：程序的"翻译官"
+**本块学习检查**  
+在开始前，请先完成一个最小回顾：在已激活的 `pytorch` conda 环境中，确认 `transformers` 库是否已安装（若未安装，执行 `pip install transformers`）。然后运行以下代码，加载 GPT-2 并执行一次前向传播：
 
-你写的 Python 代码是人类能看懂的文字，但电脑只认 0 和 1。**Python 解释器**的作用，就是把你的代码翻译成电脑能执行的指令。没有它，你写的 `.py` 文件只是一堆文本。
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+inputs = tokenizer("Hello", return_tensors="pt")
+outputs = model(**inputs, output_attentions=True)
+print(outputs.logits.shape)
+```
 
-**为什么你要先懂这个？** 因为你后面装环境时，装的就是这个"翻译官"。搞清楚它的角色，你就不会在安装时一脸茫然。
+能解释 `from_pretrained()` 和 `AutoTokenizer` 的用法，并看到 logits 输出形状，再继续本块。
 
-**动手验证一下（30秒）**：打开你的记事本，写一行 `print("hello")`，保存为 `test.py`。先双击运行——大概率没反应或闪退。这就是因为没有"翻译官"来翻译它。等你装好解释器后，再在命令行运行 `python test.py`，就能看到输出了。这个对比，能让你直观感受到解释器的存在价值。
+---
 
-记住：你写代码是给人看的，解释器负责把它变成机器能跑的东西。后面所有配置，都是为了让这个"翻译官"好好工作。
+## 一、安装与验证 transformers
+
+### 1.1 快速安装
+
+如果你已完成第七板块的学习，`transformers` 库应该已经安装。如果尚未安装，在已有的 `pytorch` conda 环境中执行：
+
+```bash
+conda activate pytorch
+pip install transformers
+```
+
+若需要同时安装 PyTorch 后端依赖，可使用 `pip install 'transformers[torch]'`。
+
+**本地运行配置要求**：`transformers` 库本身体积通常在数 MB 至十余 MB 之间，安装过程需要联网。CPU 即可执行，内存建议 ≥ 4GB。
+
+**模型许可证**：本块加载的 GPT-2 模型采用 MIT 许可证，可自由使用。
+
+**显存要求**：GPT-2 模型（约 124M 参数）在 FP32 下推理约需 1GB 显存，CPU 运行则无显存要求。
+
+安装完成后，建议立即验证：运行上述最小示例，确认模型能成功加载并输出 logits。这一步能确保环境就绪，为后续观察 GPT-2 的 hidden_states 做准备。
 
 ## 块 2
 
-好的，我们直接进入正题。你的目标是理解Transformer架构，但工欲善其事，必先利其器。这一节，我们就把“工作台”搭好。
+### 1.2 动手验证：让 transformers 跑起来
 
-**1.2 代码编辑器（IDE）：你的“工作台”**
+安装完成后，我们立刻用一个小实验来确认环境没问题。打开你的 Python 环境，输入下面这段代码：
 
-用记事本写代码效率太低。我们使用**IDE（集成开发环境）**，它提供语法高亮、自动补全、运行调试等功能，让你写代码更舒服。推荐两款：**VS Code**（轻量免费）和 **PyCharm**（专业强大）。你可以根据喜好选择。
+```python
+from transformers import pipeline
+result = pipeline('sentiment-analysis')('we love you')
+print(result)
+```
 
-**1.3 虚拟环境：项目的“独立房间”**
+这段代码会加载一个预训练的情感分析模型，然后判断 "we love you" 这句话的情感倾向。运行后，你会看到类似这样的输出（具体内容取决于你的 transformers 和模型版本）：
 
-想象你同时做两个项目：A项目需要 `numpy 1.0`，B项目需要 `numpy 2.0`。都装到同一个Python里会
+```python
+[{'label': 'POSITIVE', 'score': 0.9998...}]
+```
+
+看到 `POSITIVE` 和接近 1 的分数，就说明安装成功了！如果没看到，别急，先看下面的常见问题。
+
+### 1.3 常见问题速查表
+
+| 症状 | 可能原因 | 解决方案 |
+|---|---|---|
+| `Failed building wheel for tokenizers` | 缺少 Rust 编译工具链 | 用 `conda install -c huggingface transformers` 安装，或尝试安装特定版本 |
+| `urllib3.exceptions.SSLError` | `urllib3` 版本过高 | 执行 `pip install urllib3==1.25.11` |
+| 无法连接 HuggingFace Hub | 网络限制 | 参考第四节"离线配置"或设置镜像源 |
+
+### 二、加载 GPT-2 模型
+
+验证通过后，我们来加载一个小型模型做实验。GPT-2 是 OpenAI 发布的因果语言模型，有多个尺寸：
+
+| 模型 checkpoint | 参数量 | 大小（约） | 运行要求 |
+|---|---|---|---|
+| `gpt2` | 124M | ~500MB | CPU / 4GB 内存通常即可 |
+| `openai-community/gpt2-medium` | 355M | ~1.5GB | # 注意：加载模型时请确保显存充足，例如 Llama-
 
 ## 块 3
 
-### 2.1 Windows 用户：安装 Python 3.10+
+### 2.1 使用 pipeline 快速体验
 
-你正为理解 Transformer 架构做准备，动手搭建环境是第一步。跟着下面三步走，快速搞定。
+`pipeline` 是 transformers 库的高级 API，让你用一行代码就能加载 GPT-2 并体验文本生成。这对你理解 Transformer 的 Decoder-Only 架构很有帮助——模型接收输入后，逐个预测下一个 token，直到达到设定的长度。
 
-**第一步：下载安装包**
+**操作步骤：**
 
-1. 打开浏览器，访问 `https://www.python.org`。
-2. 鼠标移到顶部菜单 **Downloads**，网站会自动推荐 Windows 版本（如 `Python 3.13.x`）。
-3. 点击下载 **Windows installer (64-bit)**。
+```python
+from transformers import pipeline
 
-**第二步：运行安装程序（⚠️ 关键步骤）**
+# 创建文本生成 pipeline，device=-1 表示使用 CPU
+# 模型许可证：MIT License
+# 注意：GPT-2 模型 FP16 推理需要至少 4GB 显存（CPU 模式无显存要求）
+generator = pipeline("text-generation", model="openai-community/gpt2", device=-1)
 
-双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
+result = generator("Hello, I'm a language model", max_new_tokens=20)
+print(result)
+```
 
-1. **勾选最下方的 "Add python.exe to PATH"**  
-   这个选项会把 Python 添加到系统的"环境变量"中。如果不勾选，你打开命令行输入 `python` 时，系统会提示"不是内部或外部命令"，后续所有命令行操作都无法进行。
-
-2. 点击 **"Install Now"**（默认安装）即可。  
-   默认安装路径在 `C:\Users\你的用户名\AppData\Local\Programs\Python\Python3xx`，不含中文和特殊符号，避免后续路径报错。进阶用户如果想改路径，务必确保路径中**没有中文或空格**。
-
-**第三步：验证安装**
-
-1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
-2. 输入以下命令并回车：
-
-```bash
-python --
+**运行前须知：**
+- 首次运行会自动从 HuggingFace Hub 下载 GPT-2 模型文件（约 550MB），**需要联网**。
+- 下载后缓存到本地，后续运行无需重复下载。
+- 内存建议 ≥ 4GB，CPU
 
 ## 块 4
 
-### 2.2 macOS 用户：装好 Python，马上动手
+**个人化教学正文**
 
-你的目标是理解 Transformer，而动手跑代码是最好的路径。但第一步，得先把 Python 环境弄干净。macOS 从 Monterey 12.3 起不再预装 Python 2，系统可能带旧版 `python3`，但别直接用——**强烈建议自己装最新版**，避免依赖系统版本。
+你正处在理解 Transformer 架构的路上，这次我们用“动手拆解”的方式，通过底层 API 手动加载 GPT-2，亲眼看看它的核心配置。这比一键加载更能看清内部结构。
 
-**方法一：官方安装包（推荐，省心）**
+**加载分词器与模型**
 
-1. 打开 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
-2. 双击运行，一路点 "Continue" → "Install"。
-3. 打开终端（Terminal），输入：
+```python
+from transformers import AutoTokenizer, GPT2LMHeadModel
 
-```bash
-python3 --version
-pip3 --version
+tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+model = GPT2LMHeadModel.from_pretrained("openai-community/gpt2")
+
+# 模型许可证：MIT License（GPT-2 开源许可）
+# 注意：GPT-2 模型 FP16 推理约需 2GB 显存，训练或长序列需更多
+# GPT-2 默认没有 pad_token，手动设为 eos_token，避免 batch 处理报错
+tokenizer.pad_token = tokenizer.eos_token
 ```
 
-看到版本号就成功了。
+**查看模型配置**
 
-**为什么用 `python3` 而不是 `python`**：现代 macOS 默认**没有** `python` 命令（早期版本曾指向 Python 2，现已移除）。系统统一用 `python3` / `pip3`，所以请始终这么敲，避免"命令不存在"或误用系统版本的坑。
-
-**方法二：Homebrew（如果你已有它）**
-
-在终端执行：
-
-```bash
-brew install python
+```python
+print(f"词表大小: {model.config.vocab_size}")
+print(f"最大序列长度: {model.config.n_positions}")
+print(f"隐藏层维度: {model.config.n_embd}")
+print(f"层数: {model.config.n_layer}")
+print(f"注意力头数: {model.config.n_head}")
 ```
 
-装完同样用 `python3 --version` 验证。
+**这些数字对应 Transformer 的核心超参数**：`n_embd` 是隐藏层维度，`n_layer` 是 Transformer Block 的堆叠层数，`n_head` 是多头注意力中的头数。后续课程会逐一拆解这些组件的内部机制。
 
 ---
 
-**本块学习检查**：打开终端，输入 `python3 --version` 并截图或记下输出
+**本块学习检查**
+
+运行上述代码后，记录你看到的 `n_layer` 和 `n_head` 数值，并思考：这两个参数分别对应 Transformer 架构中的哪两个核心组件？
 
 ## 块 5
 
-**动手装：Ubuntu/Debian 上安装 Python 3**
+**动手跑通 GPT-2 前向传播**
 
-你的系统可能自带 Python，但版本偏旧。直接跑下面三行命令，一次搞定安装和验证：
+你已有 PyTorch 基础，这里直接上手。我们分三步观察 GPT-2 内部输出。
 
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv -y
-python3 --version
+**第一步：准备输入**
+
+```python
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# 模型许可证：GPT-2 采用 MIT 许可证，可自由商用
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+model = AutoModelForCausalLM.from_pretrained('gpt2')
+
+text = "Hello, my dog is cute"
+inputs = tokenizer(text, return_tensors="pt")
+
+print(f"input_ids 形状: {inputs['input_ids'].shape}")
 ```
 
-**命令拆解**：  
-- `sudo apt update`：刷新软件源，让系统知道有哪些新版本可装。  
-- 第二条命令一口气装三样：`python3`（解释器）、`python3-pip`（装第三方库的工具）、`python3-venv`（建虚拟环境用）。  
-- 结尾的 `-y` 是“自动确认”，省得你手动敲
+`tokenizer` 把文本转成数字 ID，`return_tensors="pt"` 表示返回 PyTorch 张量。打印出的形状是 `[1, 6]`——1 个句子，6 个 token。
+
+**第二步：执行前向传播**
+
+```python
+# 注意：GPT-2 模型 FP16 推理至少需要 2GB 显存
+with torch.no_grad():
+    outputs = model(
+        **inputs,
+        output_hidden_states=True,   # 返回每层的隐藏状态
+        output_attentions=True       # 返回每层的注意力权重
+    )
+```
+
+`torch.no_grad()` 关闭梯度计算，省内存。两个 `output_*` 参数让模型额外返回中间结果。
+
+**第三步：观察输出**
+
+```python
+print(f"\nlogits 形状: {outputs.logits.shape}")
+print(f"hidden
 
 ## 块 6
 
-## 2.4 操作系统与实训环境该怎么选
+我们直接上手，用代码“看”GPT-2 是怎么预测下一个词的。
 
-你的目标是理解 Transformer 架构，最终要上手跑 GPU 实训。那环境选择就直接影响你后面能不能顺利跑起来，这里给你一条最省力的路线。
+**第一步：预测下一个词**
 
-**日常写 Python、练命令行（Windows 用户）**
+先加载模型和分词器，并让模型处理一段输入文本。注意，为了让模型返回注意力权重，需要在调用时加上 `output_attentions=True`。
 
-别在 Windows 原生 CMD 里练命令，那和真实服务器差距太大。推荐启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它给你一个接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致，练完直接无缝迁移到云端。安装很简单：管理员 PowerShell 里执行 `wsl --install` 即可。
+```python
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-**日常写 Python（macOS / Linux 用户）**
+# 模型许可证：GPT-2 采用 MIT License，可自由使用（商用需注明版权与许可声明）。
+# 注意：GPT-2 模型 FP16 推理约需 3GB 显存，请确保环境满足要求。
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+model = AutoModelForCausalLM.from_pretrained('gpt2')
 
-直接用本机终端，本身就是类 Unix 环境，不用额外折腾。
+inputs = tokenizer('Hello', return_tensors='pt')
+outputs = model(**inputs, output_attentions=True)
+```
 
-**GPU 实训（LoRA / QLoRA 微调、vLLM 部署）**
+模型处理完你输入的文本后，`outputs.logits` 里存着每个位置对所有候选词的打分。我们只关心**最后一个位置**——因为我们要预测的是“下一个”词。
 
-这是你后面要碰的核心场景。用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态支持最成熟、文档最全，遇到问题搜得到答案。
+```python
+# 取最后一个位置的 logits，预测下一个词
+next_token_logits = outputs.logits[0, -1, :]
+next_token_id = torch.argmax(next_token_logits).item()
+next_token = tokenizer.decode(next_token_id)
 
-**⚠️ 避坑提醒**
+print(f"模型预测的下一个词: '{next_token}'")
+```
 
-别把 **"CentOS + VirtualBox
+`argmax` 就是挑分数最高的那个词，`decode` 把词 ID 变回文字。
+
+**第二步：验证“看不见未来”**
+
+GPT-2 是 Decoder-Only 模型，它有个铁律：**每个 token 只能看自己和它前面的 token**，绝不能偷看后面的。这个机制叫“因果注意力”（causal attention）。我们直接检查注意力权重矩阵，眼见为实：
+
+```python
+# 取第一层的注意力权重
+# 形状: [batch=1, n_head=12, seq_len, seq_len]
+attn = outputs.attentions[0]
+
+# 查看第一个注意力头的权重矩阵
+attn
 
 ## 块 7
 
-**本块学习检查**：在终端执行 `pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple`，观察是否成功安装，并确认官方源仍是默认设置。
+## 3.4 用 labels 算损失：让模型自己当“考官”
 
----
+你已经知道 GPT-2 是预测“下一个词”的。训练时，**labels 就是 input_ids 本身**——因为模型要预测的是“当前位置的下一个词”，所以目标就是输入序列向后移一位。好消息是，**transformers 内部自动处理这个偏移**，你完全不用手动操作。
 
-**3.1 什么时候才需要镜像源**
+直接看代码，训练模式下这样写：
 
-`pip` 是 Python 的包管理工具，用来装第三方库（比如 `numpy`、`pandas`）。默认情况下，它从官方 PyPI 服务器（`pypi.org`）下载，这是最权威、最完整、最应保留的默认源。
+```python
+# 训练模式：传入 labels 会自动计算语言建模损失
+outputs = model(**inputs, labels=inputs["input_ids"])
 
-**只有**当你处在网络受限环境、访问官方源明显变慢或经常超时时，才考虑临时切换到国内镜像。镜像是“网络不好时的临时加速手段”，不是必须永久替换的默认设置——官方源始终应作为首选。
+print(f"Loss: {outputs.loss.item():.4f}")
+```
 
-**3.2 首选做法：临时指定镜像源（推荐）**
-
-如果只是某次安装慢，最干净的做法是**只对这一次安装临时指定镜像
+**关键点**：`GPT2LMHeadModel` 内部已经把 labels 做了**左移一位**处理——预测第 i 个词时，目标其实是第 i+1 个
 
 ## 块 8
 
-## 3.3 进阶：把镜像设为默认（仅限长期网络受限）
+### 模型缓存目录：你的模型都藏在这里
 
-如果你只是偶尔下载慢，**不要**做这一步。只有当你的网络环境长期受限、几乎每次装包都需要镜像时，才值得把镜像写进配置文件作为默认源。配置后请记住：**官方 PyPI 永远是最可靠的来源**，等网络恢复正常后，建议改回或删除该配置。
+每次从 HuggingFace Hub 下载模型，它默认会存到电脑的缓存文件夹里。不同系统位置不一样：
 
-### Windows 用户操作
+- **Linux/macOS**：`~/.cache/huggingface/hub`
+- **Windows**：`C:\Users\你的用户名\.cache\huggingface\hub`
 
-1. 按 `Win + R`，输入 `%APPDATA%` 并回车，会打开类似 `C:\Users\你的用户名\AppData\Roaming` 的文件夹。
-2. 在该文件夹下**新建一个名为 `pip` 的文件夹**。
-3. 在 `pip` 文件夹内**新建一个名为 `pip.ini` 的文本文件**。
-4. 用记事本打开 `pip.ini`，写入以下内容：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-**为什么这样写**：`index-url` 告诉 pip 默认从这个地址下载包。
-
-> **⚠️ 关于 `trusted-host`**：网上很多教程会顺手加一行 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——`trusted-host` 会让 pip 跳过对该域名的 TLS 校验，等于放弃了传输安全。清华、阿里等主流镜像都提供合法的 HTTPS 证书，正常使用**无需** `trusted-host`。只有在企业内网自建源、或确实遇到证书报错且已确认来源可信时，才临时加它。
-
-### macOS / Linux 用户操作
-
-1. 打开终端，执行：
+想改存放位置？用环境变量指定新路径，推荐第一种：
 
 ```bash
-mkdir -p ~/.config/pip
+# 方法 1：设置 HF_HOME（推荐）
+export HF_HOME="/path/to/your/cache"
+
+# 方法 2：设置 TRANSFORMERS_CACHE
+export TRANSFORMERS_CACHE="/path/to/your/cache"
 ```
 
-2. 创建配置文件：
-
-```bash
-nano ~/.config/pip/pip.conf
-```
-
-3. 写入同样的内容：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-4. 按 `Ctrl + O` 保存，`Ctrl + X` 退出。
-
-### 验证配置是否生效
-
-在命令行输入：
-
-```bash
-pip config list
-```
-
-如果看到 `global.index-url='https://pypi.tuna
+**动手试试**：打开终端，输入 `echo $HF_HOME`
 
 ## 块 9
 
-### 4.1 方案一：VS Code（轻量、免费、推荐）
+## 4.2 离线运行：没有网络也能跑 GPT-2
 
-**为什么选它**：VS Code 是微软出品的免费编辑器，启动快、插件丰富。你正在学 Transformer，后续调试 Python 代码、查看训练脚本时，它都能派上用场。
+你在防火墙或内网环境里，没法直接访问 Hugging Face 下载模型，这时需要开启离线模式。做法很简单，设置两个环境变量：
 
-**安装步骤**：
+```bash
+export TRANSFORMERS_OFFLINE=1
+export HF_DATASETS_OFFLINE=1
+```
 
-1. 访问 https://code.visualstudio.com，下载对应系统的安装包。
-2. 运行安装程序，一路下一步即可。
+第一个告诉 transformers 库不要尝试联网，第二个告诉 datasets 库同样离线。设置好后，加载模型时直接指向本地缓存目录：
 
-**必装插件**：打开 VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并安装：
-- **Python**（Microsoft 官方出品，提供语法高亮、调试、智能提示）
-- **Pylance**（Python 语言服务器，让代码提示更智能）
+```python
+tokenizer = AutoTokenizer.from_pretrained("/local/path/to/gpt2", local_files_only=True)
+model = GPT2LMHeadModel.from_pretrained("/local/path/to/gpt2", local_files_only=True)
+```
 
-安装后，VS Code 才能识别 `.py` 文件，提供代码补全、错误提示和一键运行功能。
+注意这里的路径是你自己机器上的实际路径，不是模型名称。**关键一步**：你需要提前在有网环境中把模型下载好并保存到本地。方法是先用 `from_pretrained()` 正常下载，再用 `save_pretrained("./local/path")` 把模型和分词器保存到指定目录，之后就能离线加载了。在 `from_pretrained()` 中设置 `local_files_only=True` 可确保只从本地加载，不触发任何网络请求。
 
-**配置 Python 解释器**：
+**模型许可证说明**：GPT-2 采用 MIT 许可证，允许自由使用、修改和商用，无用户规模限制。
 
-1. 按 `Ctrl + Shift + P`（Mac 是 `Cmd + Shift + P`）。
-2. 输入 `Python: Select
+## 常见问题速查
+
+| 症状 | 可能原因 | 解决方案 |
+|---|---|---|
+| `OSError: Can't load tokenizer` | 本地路径缺少必要的配置文件 | 确保本地目录包含完整的分词器文件 |
+| `RuntimeError: Expected all tensors on same device` | 模型和数据不在同一设备 | 确保 `model.to(device)` 和数据 `.to(device)` 一致 |
+| GPT-2 padding 报错 | 默认没有 `pad_token` | 手动设置 `tokenizer.pad_token = tokenizer.eos_token` |
+| 下载速度极慢 | 网络问题 | 配置镜像源（如 `HF_ENDPOINT=https://hf-mirror.com`） |
+| 显存不足（OOM） | 加载了过大的模型 | 换用 `openai-community/gpt2`，或尝试 `load_in_8bit=True` |
+
+## 总结
+
+到这里，你已经掌握了 transformers 库的安装验证、用 `pipeline` 和 `AutoModel` 两种方式加载 GPT-2、执行完整前向传播、理解 `logits`、`hidden_states`、`attentions` 的含义、观察因果注意力掩码效果、用 `labels` 计算语言建模损失，以及模型缓存和离线运行方法。
+
+**本块学习检查**：请你在本地完成一次完整的离线加载流程——先在有网环境下载 GPT-2 并保存到本地目录，然后设置 `TRANSFORMERS_OFFLINE` 和 `HF_DATASETS_OFFLINE` 环境变量，最后用 `local_files_only=True` 从本地路径加载模型和分词
 
 ## 块 10
 
-**动手装好 PyCharm，开始你的 Transformer 项目**
+## 三、Encoder 的层次结构（①）——Multi-Head Self-Attention
 
-你正在学习 Transformer 架构，接下来要写代码验证注意力机制。工欲善其事，必先利其器——我们选用 **PyCharm Community**（社区版，免费）作为开发工具，它专为 Python 设计，内置代码分析、版本控制等功能，适合你后续搭建和调试 Transformer 模型。
+### 3.1 多头自注意力：让模型“多角度”看句子
 
-**安装三步走：**
+你已经通过 GPT-2 实验见过 Self-Attention 的核心：每个 token 都会“关注”序列中其他 token，并据此更新自己的表示。但**单个注意力**有一个局限——它只能从一种“视角”去计算 token 之间的关系。
 
-1. 打开官网下载页：`https://www.jetbrains.com/pycharm/download/`
-2. 选择 **Community Edition**（社区版）下载
-3. 运行安装程序，务必勾选这两项：
-   - `Add "Open Folder as Project"`（以后右键文件夹就能用 PyCharm 打开）
-   - `Add to PATH`（命令行可直接启动）
+**Multi-Head Self-Attention（多头自注意力）** 解决了这个问题。它的思路很直观：**与其只做一次注意力计算，不如并行做多次**，每次用不同的“头”去关注输入序列的不同方面，最后再把所有头的结果拼起来。
 
-**首次启动配置：**
+打个比方：读一句话时，一个“头”可能关注语法关系（谁修饰谁），另一个“头”可能关注指代关系（“它”指什么），还有一个“头”可能关注位置远近。多个头各司其职，模型就能捕捉更丰富的语义信息。
 
-1. 打开 PyCharm，点击 `New Project`
-2. 在 `Location` 设置项目路径——**路径中不要包含中文**，避免后续编码问题
-3. `Interpreter` 选择 `Previously configured interpreter`，然后点击右侧 `...` 按钮，在弹出的窗口中浏览
+在 Encoder 的每一层中，Multi-Head Self-Attention 是第一个子层。它的输入是上一层的输出（第一层时就是输入序列的嵌入表示）。由于 Encoder 是**双向**的，每个 token 在计算注意力时，可以同时看到**完整的输入序列**——包括它自己、它前面的 token 和它后面的 token。
+
+**关键点回顾**：
+- Encoder 的 Self-Attention 是**双向**的（无掩码），与 Decoder 中带因果掩码的 Self-Attention 形成对比。
+- 多头机制让模型从多个子空间并行捕捉不同维度的依赖关系。
+
+---
+
+**本块学习检查**（动手验证，约 3 分钟）：
+
+请用一句话回答：Encoder 的 Multi-Head Self-Attention 与你在 GPT-2
 
 ## 块 11
 
-### 5.1 为什么用 Conda
+## 三、Encoder 的层次结构（①）——Multi-Head Self-Attention
 
-你已经知道虚拟环境能为每个项目创建独立的 Python 空间。**Conda** 是目前最主流的虚拟环境管理工具，它不仅能创建虚拟环境，还能管理不同版本的 Python 解释器本身。对于你接下来要学习的 Transformer（需要 PyTorch、CUDA 等复杂依赖），conda 几乎是必备工具——它能帮你把每个项目的依赖“关在各自的房间里”，互不干扰。
+先看整体图：输入经过 Embedding 和位置编码后，进入 Encoder。Encoder 有 **6 层**，每一层内部结构相同。本块聚焦第一层里的第一个子层：**Multi-Head Self-Attention**。
 
-### 5.2 安装 Conda：Anaconda vs Miniconda
+### 3.1 Multi-Head Self-Attention 是什么
 
-有两个选择：
+一句话：**让每个位置聚合整个输入序列的上下文信息**。
 
-| 选项 | 特点 | 推荐人群 |
-|------|------|----------|
-| **Anaconda** | 体积大（安装包约 500MB-1GB，安装后占用数 GB 空间），预装了大量数据科学库（numpy、pandas、jupyter 等） | 做数据分析、不想手动装包的用户 |
-| **Miniconda** | 体积小（安装包约 50-80MB，安装后占用空间约 400MB），只包含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发的用户 |
+比如输入是“猫 喜欢 鱼”，处理“喜欢”这个词时，Self-Attention 会让它同时“看到”前面的“猫”和后面的“鱼”，从而理解“谁喜欢谁”。这就是“聚合上下文”。
 
-**本文推荐 Miniconda**，因为环境更干净，后续需要什么装什么——这正好符合你“动手实践”的风格，装包过程本身就是理解依赖关系的好机会。
+### 三个关键点
 
-**安装步骤：**
+1. **Q/K/V 来源**：都来自 Encoder **前一层**的输出。注意：第一层 Encoder 的“前一层”就是输入 Embedding + 位置编码的结果。Q、K、V 不是外部传入的，而是同一个输入通过不同变换得到的。
 
-1. 访问 https://docs.conda.io/en/latest/miniconda.html。
-2. 下载对应系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）。
-3. 运行安装程序：
-   - **Windows**：一路下一步，**保持默认、不要勾选 "Add Miniconda3 to my PATH environment variable"**（该选项被安装器标为"不推荐"）。把 Miniconda 直接塞进系统 PATH 容易和系统已有的 Python / 其他工具冲突，导致 `python`、`pip` 指向不明。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 来使用 conda 即可。
-   - **macOS/Linux**：若使用 `.sh` 文件，按提示输入 `yes` 同意协议
+2. **Mask**：**无因果 mask**。这意味着**双向**——序列中所有位置互相可见，每个词都能看到完整句子。但批处理时通常仍有 padding/attention mask 来处理变长序列（这是工程细节，不影响核心理解）。
+
+3. **作用**：每个位置都能聚合整个输入序列的信息，而不是只看局部窗口。
+
+### 动手验证（hands-on 小任务）
+
+拿一句话“我 爱 学习 Transformer”，在纸上画出 5 个位置。问自己：
+
+- 处理第 3 个词“学习”时，它能“看到”哪些词？
+- 如果加了因果 mask，它还能看到“Transformer”吗？
+
+**答案**：不加 mask 时能看到全部 5 个词；加因果 mask 后只能看到前 3 个（“我 爱 学习”）。这正是 Encoder 和 Decoder 的关键区别——Decoder 的 Self-Attention 带因果 mask，而 Encoder 不带。
+
+### 记住这个结构
+
+每个子层（包括 Self-Attention）后面都跟着 **Add & Norm**——残差连接（Add）
 
 ## 块 12
 
-**动手创建你的第一个虚拟环境**
+### 3.2 Position-wise Feed-Forward Network (FFN)
 
-你正在为理解 Transformer 架构打基础，而大模型项目常需要不同版本的 PyTorch 和 CUDA。现在学会创建隔离环境，以后就能直接复用这套流程，避免版本冲突。
+这一层是**逐位置**的两层全连接网络，对序列中每个位置的向量独立做相同变换，中间用 ReLU 激活：
 
-打开终端，执行下面这条命令：
+$$\text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2$$
 
-```bash
-conda create -n llm-learn python=3.10
-```
+维度先**放大**再**还原**：$d_{\text{model}}=512 \to d_{ff}=2048 \to d_{\text{model}}=512$。放大到 2048 让网络有更多参数学习复杂特征，再压回 512 以匹配后续层。
 
-**这条命令在做什么？** 拆开看：
+### 3.3 残差连接 + Layer Normalization
 
-- `conda create`：告诉 Conda 你要新建一个环境
-- `-n llm-learn`：给这个环境起名 `llm-learn`（`n` 是 `name` 的缩写）
-- `python=3.10`：指定环境内安装 Python 3.10 版本
+每个子层（注意力或 FFN）输出后都接：
 
-执行后，终端会列出准备安装的包，
+$$\text{LayerNorm}(x + \text{Sublayer}(x))$$
+
+**残差连接**（$x + \text{Sublayer}(x)$）让梯度能直接流过，缓解深层训练困难；**LayerNorm** 稳定每层输出分布。
+
+**Encoder 完整数据流**：
+
+$$
+\begin{aligned}
+x_1 &= \text{Embedding}(input) + \text{PositionalEncoding} \\
+x_2 &= \text{LayerNorm}(x_1 + \text{MultiHeadAttention}(
 
 ## 块 13
 
-### 5.4 激活与退出环境：进入你的“独立房间”
+**目标：让 Decoder 只看“过去”，不看“未来”**
 
-你正在为理解Transformer架构搭建环境，这个环境就像你的专属工作台。**激活环境**就是走进这个房间：
+想象你在写句子，每写一个词，只能参考已经写好的词，不能偷看后面的词。Masked Multi-Head Self-Attention 就是干这个的。
 
-```bash
-conda create -n llm-learn python=3.10
-conda activate llm-learn
-```
+**Q/K/V 从哪来？** 都来自 Decoder 前一层的输出。也就是说，Decoder 用自己的历史输出，去查询和匹配自己。
 
-激活后，命令行前面会出现 `(llm-learn)` 标志——这是你的“门牌号”，表示后续所有 `python` 和 `pip` 命令都只作用于这个环境，不会干扰系统或其他项目。
+**Mask 是什么？** 因果掩码（Causal Mask）。在计算注意力分数时，把“未来位置”的分数直接设为 **-∞**。公式里，当 `j > i`（后面的位置）时，分数就是负无穷。
 
-**快速验证**：运行 `python --version`，应显示 `Python 3.10.x`，确认你已站在正确的“楼层”。
-
-**退出环境**（回到系统默认环境）：
-
-```bash
-conda deactivate
-```
-
-### 5.5 查看和管理环境
-
-**查看所有环境**：
-
-```bash
-conda env list
-```
-
-带 `*` 号的就是当前激活的环境。
-
-**
+**效果呢？** 经过 Softmax 后，负无穷对应的权重会变成 **0**。这样，每个位置只能关注到自己和之前的位置，保持了
 
 ## 块 14
 
-## 6.1 VS Code 配置 Conda 环境
+**动手理解 Cross-Attention：Decoder 的“输入桥梁”**
 
-先激活环境：`conda activate llm-learn`。打开 VS Code，按 `Ctrl + Shift + P`，输入 `Python: Select Interpreter`，选择带有 `conda` 字样的路径（如 `Python 3.10.x ('llm-learn': conda)`）。VS Code 会自动识别 conda 环境，选好后，工作区代码就会用 `llm-learn` 里的 Python 和已装包运行。
+你现在是初学者，目标是快速掌握 Transformer 架构。我们直接切入重点，用“谁在看谁”的视角来理解。
 
-## 6.2 PyCharm 配置 Conda 环境
+**核心三问（记住这个框架）**
 
-打开 PyCharm，点击 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）。左侧选 `Project: 你的项目名` → `Python Interpreter`，点齿轮图标 → `Add...`，左侧选 `Conda Environment` → `Existing environment`。在 `Interpreter` 路径中选 conda 环境的 Python 可执行文件：
-- Windows：`%USERPROFILE%\miniconda3\envs\llm-learn\python.exe`
-- macOS/Linux：`$HOME/miniconda3/envs/llm-learn/bin/python`
-
-请根据你的实际安装路径调整上述路径。
-
-## 第七章：验证——运行你的第一行代码
-
-环境搭好后，必须验证一遍，确保每个环节都通。
-
-**本块学习检查**：在 VS Code 中新建一个 `.py` 文件，输入 `import torch; print(torch.__version__)`，运行。若输出版本
+1. **Q（查询）从哪来？** 来自 Decoder 自己的**前一层**输出。它代表“我（Decoder）现在想找什么信息”。
+2. **K 和 V（键和值）从哪来？** 都来自 **Encoder 的输出**（记作 $\mathbf{z}$）。它代表“输入序列提供了什么信息”。
+3. **能用 Mask 吗？** 这里**没有**因果 mask——Decoder 能看到**完整**的输入句子，因为
 
 ## 块 15
 
-**动手验证：让 Python 说“你好”**
+## Decoder 的 Feed-Forward Network（FFN）
 
-你的目标是理解 Transformer，但先别急——任何模型都跑在能工作的环境里。咱们用最快的方式确认环境没问题。
+### 一、FFN 是什么？
 
-**步骤 1：激活环境**
-在命令行输入：
-```bash
-conda activate llm-learn
+Decoder 里的 **FFN（前馈网络）** 和 Encoder 里的 FFN **结构相同，但参数独立**。你可以把它理解成每个位置上的“独立思考层”——它不关心位置之间的关系，而是对每个位置的表示做一次非线性变换，增强模型的表达能力。
+
+在 Decoder 的数据流中，FFN 出现在第二个注意力（Cross-Attention）之后：
+
+```
+y4 = LayerNorm(y3 + FFN(y3))
 ```
 
-**步骤 2：进入 Python 交互模式**
-输入 `python` 并回车，看到 `>>>` 提示符就说明成功了。
+也就是说，Decoder 每一层都由三个子层组成：**Masked Self-Attention → Cross-Attention → FFN**，每个子层后面都跟着残差连接和 LayerNorm。
 
-**步骤 3：运行你的第一行代码**
-在 `>>>` 后输入：
-```python
-print("Hello, Python! 我的环境准备好了！")
+---
+
+### 二、Decoder 完整数据流（一次前向传播）
+
+假设你已经有了：
+- `output`：Decoder 的输入（已嵌入的 token 序列）
+- `z`：Encoder 的最终输出（作为 Cross-Attention 的 K 和 V）
+
+那么 Decoder 的完整计算过程如下：
+
 ```
-回车后，如果看到同样的文字打印出来，环境就验证通过了。最后输入 `exit()` 退出。
+x = Embedding(output) + PositionalEncoding
+y1 = LayerNorm(x + MultiHeadAttention(Q=x, K=x, V=x, mask=causal))
+y2 = LayerNorm(y1 + MultiHeadAttention(Q=y1, K=z, V=z))
+y3 = LayerNorm(y2 + FFN(y2))
+...重复N次（如6层）...
+logits = Linear(y_final)
+probs = Softmax(logits)
+```
 
-**本块学习检查**
-在命令行中重复步骤 1-3
+**注意**：这个流程会重复 **N 次**（如 base 模型为 6 层），每一层都做同样的三个子层操作。FFN 内部通常包含两个线性层和一个激活函数。
+
+---
+
+### 三、三种 Attention 对比（面试常考）
+
+三种 Attention 的公式都是同一个：
+
+```
+Attention(Q, K, V) = softmax(QK^T / √d_k) V
+```
+
+**区别只在于 Q/K/V 的来源不同**，作用也因此完全不同：
+
+| Attention 类型 | 位置 | Q 来源 | K 来源 | V 来源 | Mask | 作用 |
+|---|---|---|---|---|---|---|
+| **Encoder Self-Attention** | Encoder 每层 | 输入嵌入或前一层输出 | 输入嵌入或前一层输出 | 输入嵌入或前一层输出 | 无因果 mask | 编码输入序列的上下文 |
+| **Decoder Masked Self-Attention** | Decoder 每层 | 输入嵌入或前一层输出 | 输入嵌入或前一层输出 | 输入嵌入或前一层输出 | **因果 mask** | 自回归生成，防止“看到未来” |
+| **Decoder Cross-Attention** | Decoder 每层 | Decoder 前
 
 ## 块 16
 
-## 7.3 在 PyCharm 中验证
+## Decoder 里的“小工坊”：Feed-Forward Network
 
-你的目标是理解 Transformer 架构，但在此之前，先把“地基”踩实——确保代码能跑起来。这一步不涉及模型原理，只关乎工具链是否通畅。
+前面我们看了 Decoder 的层数怎么打印，现在聚焦每一层里的一个关键部件——**前馈网络（FFN）**。你可以把它想成每个 Decoder 层自带的一个“小工坊”：注意力机制负责“收集信息”，而 FFN 负责“加工信息”。
 
-**操作步骤（跟着做，3分钟搞定）：**
+在刚才打印的模型结构里，你会在每个 Decoder 层内部看到类似 `T5Block` 的结构，其中就包含 `T5LayerFF` 这样的子模块——这就是 FFN 的实体。它的作用是对注意力层输出的每个位置向量，独立地做两次线性变换加一次激活函数，相当于对每个词的表征做一次“深加工”。
 
-1. 打开 PyCharm，新建一个项目（路径不要包含中文或空格）。
-2. 在项目中创建文件 `hello.py`。
-3. 在文件中输入一行最简单的代码：`print("hello")`。
-4. 右键点击文件 → 选择 `Run 'hello'`。
-5. 观察下方弹出的 **Run 窗口**——如果看到输出了 `hello`，说明你的开发环境完全正常，可以继续往下走。
+**动手验证一下**：运行下面的代码，看看 FFN 到底长什么样：
 
-**如果没跑通，先查这张表：**
+```python
+# 取第一个 Decoder 层，看它的子模块
+decoder_layer = model.decoder.block[0]
+print(decoder_layer)
+```
 
-| 问题现象 | 可能原因 | 解决方案 |
-|----------|----------|----------|
-| 输入 `python` 提示“不是内部或外部命令” | 安装时未勾选 “Add to PATH” | 重新运行 Python 安装程序，选择 “Modify”，勾选 “Add Python to environment variables” |
-| PyCharm 提示“未选择 Python 解释器” | 未配置解释器路径 | 进入 `File` → `Settings` → `Project` → `Python Interpreter`，手动选择解释器 |
-| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 使用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
+你会看到 `T5LayerFF`
 
-**本章完成后，你的电脑应具备：**
+## 块 17
 
-| 组件 | 状态 | 验证命令 |
-|------|------|----------|
-| Python 3.10+ | ✅ 已安装 | `python --version` |
-| PyCharm | ✅ 已安装 | 打开软件确认 |
-| Miniconda / Anaconda | ✅ 已安装 | `conda --version` |
-| Conda 虚拟环境 `llm-learn` | ✅ 已创建 | `conda env list` |
+## 6.1 亲手跑一次：观察 Encoder-Decoder 的前向传播
 
-**养成的好习惯（对你后续学 Transformer 尤其重要）：**
+既然你偏好动手实践，我们直接通过代码来“看见”Transformer 内部发生了什么。下面这段代码演示了如何让一个训练好的翻译模型（Encoder-Decoder 结构）处理一句英文，并观察它内部各部分的输出形状。
 
-1. **一个项目一个 conda 环境**，不要在 `base` 环境里乱装包——Transformer 相关的 PyTorch 等依赖很多，环境隔离能避免版本冲突。
-2. 安装第三方库前先 `conda
+```python
+import torch
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+# 加载模型和分词器（以 t5-small 为例）
+# 注意：t5-small 约 60M 参数，FP32 推理约需 1GB 显存，CPU 运行需内存 ≥ 4GB
+tokenizer = AutoTokenizer.from_pretrained('t5-small')
+model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')
+
+# 输入文本
+input_text = "translate English to German: The house is wonderful."
+inputs = tokenizer(input_text, return_tensors="pt")
+
+# 构造 Decoder 输入（翻译任务中，Decoder 的输入是目标语言的前缀）
+decoder_input_ids = tokenizer("Das Haus", return_tensors="pt").input_ids
+
+# 前向传播
+with torch.no_grad():
+    outputs = model(
+        input_ids=inputs["input_ids"],
+        attention_mask=inputs["attention_mask"],
+        decoder_input_ids=decoder_input_ids,
+        output_attentions=True,
+        output_hidden_states=True
+    )
+
+# 观察各输出形状
+print(f"Encoder 最后一层隐藏状态形状: {outputs.encoder_last_hidden_state.shape}")
+print(f"Decoder 最后一层隐藏状态形状: {outputs.decoder_hidden_states[-1].shape}")
+print(f"Cross-Attention 层数: {len(outputs.cross_attentions)}")
+print(f"每层 Cross-Attention 形状: {outputs.cross_attentions[0].shape}")
+```
+
+**动手验证任务**：运行这段代码，把打印出的四个形状记录下来。重点看最后一行——`cross_attentions[0].shape` 的最后两个维度。
+
+**关键观察**：`cross_attentions[0].shape` 的最后两个维度通常是 `[decoder_len, encoder_len]`，说明 Decoder 的每个位置都在关注 Encoder 的所有位置。这正是 Cross-Attention 的作用。上述输出会随 transformers 版本和模型版本变化，实际以运行结果为准。
+
+> **本地运行配置要求**：此代码纯 CPU 运行即可，内存 ≥ 4GB。
+
+---
+
+## 七、架构演化：为什么后续模型“拆分”了 Encoder-Decoder？
+
+理解了完整的 Encoder-Decoder 结构后，一个自然的问题是：为什么 GPT-2、Llama、Qwen 这些大模型**只保留了 Decoder**？
+
+这个问题留给你思考——结合你刚观察到的 Cross-Attention 形状，想一想
+
+## 块 18
+
+**动手理解：为什么 BERT 只用 Encoder？**
+
+你已知道 Transformer 原本是 Encoder-Decoder 结构。现在看它的第一个“拆分”方向：**只用 Encoder**，也就是 BERT（2018）。
+
+**核心思路**：把 Decoder 整个去掉，只保留 Encoder 部分。
+
+**它怎么学习？** 用 **Masked Language Model（MLM）**——训练时随机遮住一些词，让模型根据上下文猜被遮住的词。因为能看到左右两侧的词，所以是**双向上下文**。
+
+**适合做什么？** 理解类任务：分类、问答、命名实体识别（NER）。
+
+**不适合做什么？** 生成任务（比如写文章、对话），因为它没有 Decoder 来逐词产出。
+
+**动手验证（不引入新知识）**：对比一下，如果让你设计一个“只做情感分类”的模型，用 Encoder-only 还是 Decoder-only
+
+## 块 19
+
+### 7.3 Encoder-Decoder 仍在这些任务里发光发热
+
+你可能已经知道，现在像 GPT 这样的通用大模型主流是 Decoder-only（只用解码器）。但别急着下结论说 Encoder-Decoder 就过时了——它在**特定任务**里依然是主力选手，而且在某些条件下效果可能更好。
+
+来看几个你以后会经常碰到的例子：
+
+- **机器翻译**：比如 `google-t5/t5-small`、`facebook/mbart-large-50`，这类模型天生就是干"把一种语言换成另一种语言"的活。
+- **语音识别**：比如 `openai/whisper-base`，它要把声音波形转成文字，输入和输出是两种完全不同的形态。
+- **多模态**：比如 `OFA` 这类模型，它要同时理解图片和文字，再生成回答。
+
+这些任务的共同点是：**输入和输出的"形态"或"结构"差异很大**。Encoder 先把输入"看懂"（双向编码），Decoder 再一步步"说出来"（自回归生成），这种分工在结构不对称的任务里特别顺手。
+
+> 那为什么 GPT 去掉 Encoder 还能干活？下一章会揭晓答案——核心就一句话：**把输入和输出拼接在一起，用统一的 Causal Mask（因果掩码）处理**。先记住这个结论，后面我们拆开揉碎讲。
+
+---
+
+### 常见问题速查表
+
+学到这里，你可能会踩几个坑，先给你打预防针：
+
+| 症状 | 可能原因 | 解决方案 |
+|---|---|---|
+| 混淆三种 Attention 的 Q/K/V 来源 | 没有系统对比 | 记住核心区别：Self-Attention 的 Q/K/V **同源**，Cross-Attention 的 K/V **来自 Encoder** |
+| 不理解为什么 Decoder 需要 Mask | 忽略了自回归性质 | 生成任务中，模型不能"偷看"未来的正确标签 |
+| 以为 Encoder 输出只送到 Decoder 第一层 | 对数据流理解不深入 | Encoder 输出送到**每一层** Decoder 的 Cross-Attention |
+| Cross-Attention 的 K 和 V 能否只用其一 | 对 Attention 机制理解不深入 | K 用于计算相似度，V 用于加权求和，**缺一不可** |
+
+---
+
+### 总结：你已掌握的核心要点
+
+到这里，Transformer 的 Encoder-Decoder 结构你已经通关了，现在你应该能：
+
+- ✅ 说清 Encoder
+
+## 测评题目
+
+### Q-KB08-ST0800-002
+不计算梯度地执行前向推理，常使用 PyTorch 的 `torch.________()` 上下文。
+
+### Q-KB08-ST0800-001
+用 `AutoModel.from_pretrained()` 加载模型时，模型权重通常来自名称对应的预训练________。
+
+### Q-KB0801-005
+请简述 Encoder-Decoder 架构中，交叉注意力（Cross-Attention）层的 Query、Key、Value 分别来自哪里？
+
+### Q-KB0801-003
+以下哪个模型是典型的 **Encoder-only** 架构？
+
+### Q-KB0806-005
+请简述 PagedAttention（vLLM的核心技术）是如何解决KV Cache显存碎片化问题的。
+
+### Q-KB08-ST0800-003
+加载 GPT-2 等预训练模型进行前向实验，最直接的目的是什么？
+
+### Q-KB0806-004
+FlashAttention 的核心思想是通过分块（Tiling）和重计算（Recomputation）来减少HBM（显存）的读写次数，从而加速并降低显存占用。（ ）
+
+### Q-KB08-ST0807-002
+推理时将模型切换到评估模式，应调用 `model.________()`。

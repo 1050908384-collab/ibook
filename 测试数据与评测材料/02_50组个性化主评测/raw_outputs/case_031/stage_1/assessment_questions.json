@@ -1,1 +1,166 @@
-[]
+[
+  {
+    "question_id": "Q-KB15-ST1503-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-03",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "PagedAttention 的主要收益是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "更高效地管理 KV Cache 显存"
+      },
+      {
+        "key": "B",
+        "text": "取消所有注意力计算"
+      },
+      {
+        "key": "C",
+        "text": "让模型不需要权重"
+      },
+      {
+        "key": "D",
+        "text": "只支持单个请求"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "它通过块化管理改善显存利用。",
+    "explanation": "它通过块化管理改善显存利用。"
+  },
+  {
+    "question_id": "Q-KB15-ST1503-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "vLLM 的 PagedAttention 用分页方式管理注意力计算所需的 KV________。",
+    "options": [],
+    "correct_answer": "Cache ||| cache ||| 缓存",
+    "hint": "分页管理减少 KV Cache 碎片和浪费。",
+    "explanation": "分页管理减少 KV Cache 碎片和浪费。"
+  },
+  {
+    "question_id": "Q-KB1504-006",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "模型量化（Quantization）的主要目的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "提高模型精度"
+      },
+      {
+        "key": "B",
+        "text": "减小模型体积和显存占用，加速推理"
+      },
+      {
+        "key": "C",
+        "text": "增加训练数据"
+      },
+      {
+        "key": "D",
+        "text": "改变模型架构"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-013",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "在部署大模型服务时，为什么要关注“首字延迟（TTFT）”和“生成吞吐量（Tokens/s）”这两个指标？",
+    "options": [],
+    "correct_answer": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---",
+    "hint": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---",
+    "explanation": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---"
+  },
+  {
+    "question_id": "Q-KB1504-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "请写出使用 vLLM 的 `LLM` 类加载 `meta-llama/Llama-2-7b-chat-hf` 模型并生成文本的代码。",
+    "options": [],
+    "correct_answer": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
+    "hint": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
+    "explanation": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```"
+  },
+  {
+    "question_id": "Q-KB1504-014",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "Docker 的主要作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "训练模型"
+      },
+      {
+        "key": "B",
+        "text": "将应用及其依赖打包成容器，确保环境一致性，便于部署"
+      },
+      {
+        "key": "C",
+        "text": "编写代码"
+      },
+      {
+        "key": "D",
+        "text": "标注数据"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB15-ST1501-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-01",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "与贪心搜索相比，束搜索的典型代价是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "计算量和显存开销更高"
+      },
+      {
+        "key": "B",
+        "text": "无法生成文本"
+      },
+      {
+        "key": "C",
+        "text": "不需要模型"
+      },
+      {
+        "key": "D",
+        "text": "不能设置长度限制"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "多条候选路径需要更多计算和存储。",
+    "explanation": "多条候选路径需要更多计算和存储。"
+  },
+  {
+    "question_id": "Q-KB15-ST1500-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "部署 vLLM 前应确保 CUDA、PyTorch 与 vLLM 三者的________兼容。",
+    "options": [],
+    "correct_answer": "版本 ||| 版本号",
+    "hint": "版本不兼容会导致安装或运行失败。",
+    "explanation": "版本不兼容会导致安装或运行失败。"
+  }
+]

@@ -9,214 +9,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在'QLoRA 微调会用到很多库'处截断，未完成虚拟环境（独立房间）的说明，导致技术信息不完整。",
-            "evidence": "原文以'QLoRA 微调会用到很多库'结尾，缺少后续关于虚拟环境作用、创建方法等必要内容。",
-            "suggestion": "补充虚拟环境的完整介绍，包括其作用（隔离依赖、避免版本冲突）、创建方法（如conda create或python -m venv）以及激活方式。",
-            "error_id": "a77c4eaf2f58_r1",
-            "canonical_error_id": "a77c4eaf2f58",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C002",
-            "content_chunk_id": "LOCAL-KBS-02-00-C002",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "version_inconsistency",
-            "severity": "minor",
-            "location": null,
-            "description": "教程目标为Python 3.10+，但示例下载版本为Python 3.13.x，未明确说明3.13是否满足3.10+要求，可能造成用户困惑。",
-            "evidence": "原文：'你的目标是QLoRA微调'、'网站会自动推荐适合你Windows系统的版本（比如 Python 3.13.x）'。Python 3.13.x 满足3.10+，但未明确说明，建议补充说明。",
-            "suggestion": "明确说明Python 3.13.x满足3.10+要求，或统一为'Python 3.10或更高版本'。",
-            "error_id": "5a4dd6ad74cc_r1",
-            "canonical_error_id": "5a4dd6ad74cc",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称现代 macOS（Catalina 10.15 起）已不预装 Python 2，但实际 macOS Catalina 10.15 仍预装 Python 2.7，直到 macOS Monterey 12.3 才移除 Python 2。",
-            "evidence": "Apple 官方文档及社区记录显示，macOS Catalina 10.15 仍包含 Python 2.7，macOS Monterey 12.3 起不再预装 Python 2。",
-            "suggestion": "修改为：macOS Monterey 12.3 起不再预装 Python 2，系统可能只有旧版 python3。",
-            "error_id": "a07bb908f61e_r1",
-            "canonical_error_id": "a07bb908f61e",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤未提及安装后可能需要运行 'pip3 install --upgrade pip' 或处理 PATH 配置，可能导致用户后续使用 pip 时遇到版本过旧或命令找不到的问题。",
-            "evidence": "官方安装包安装后，pip3 可能为旧版本，且若用户未将 Python 安装目录加入 PATH，可能无法直接使用 python3/pip3。",
-            "suggestion": "在验证命令后补充：若提示 pip 版本过旧，可运行 'pip3 install --upgrade pip'；若命令找不到，请检查 PATH 配置。",
-            "error_id": "bda84a4aad2e_r1",
-            "canonical_error_id": "bda84a4aad2e",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_content",
-            "severity": "critical",
-            "location": null,
-            "description": "待审核内容块不完整，在'配置 Python 解释器（让 VS Code 知道用哪个 Python）'后内容被截断，缺少后续步骤和完整说明。",
-            "evidence": "内容块以'1.'结尾，未提供完整的配置步骤，无法进行技术正确性审核。",
-            "suggestion": "补充完整的配置 Python 解释器的步骤，确保内容块完整。",
-            "error_id": "cf3d3e75c154_r1",
-            "canonical_error_id": "cf3d3e75c154",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C009",
-            "content_chunk_id": "LOCAL-KBS-02-00-C009",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "PyCharm Community Edition 安装过程中并不存在 'Add \"Open Folder as Project\"' 这一选项。该选项是 JetBrains 其他 IDE（如 IntelliJ IDEA）或特定版本中的功能，PyCharm 安装向导中通常没有此选项。",
-            "evidence": "PyCharm 官方安装向导选项通常包括 'Add launchers dir to the PATH'、'Create Desktop Shortcut'、'Update PATH variable (restart needed)' 等，但未包含 'Add \"Open Folder as Project\"'。",
-            "suggestion": "删除该选项或替换为 PyCharm 实际存在的选项，如 'Add launchers dir to the PATH' 或 'Create Desktop Shortcut'。",
-            "error_id": "aa1d0e4baa46_r1",
-            "canonical_error_id": "aa1d0e4baa46",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "PyCharm 安装时勾选 'Add to PATH' 后，命令行启动命令是 'charm' 而非 'pycharm'。PyCharm 官方文档明确说明，在命令行中使用 'charm' 命令启动 PyCharm。",
-            "evidence": "JetBrains 官方文档（https://www.jetbrains.com/help/pycharm/working-with-the-ide-features-from-command-line.html）指出，安装时勾选 'Add launchers dir to the PATH' 后，可使用 'charm' 命令启动 PyCharm。",
-            "suggestion": "将 'pycharm' 改为 'charm'，或说明不同操作系统下的启动命令差异。",
-            "error_id": "fe5b00172d9d_r1",
-            "canonical_error_id": "fe5b00172d9d",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤中关于Windows安装Miniconda时'千万别勾选Add Miniconda3 to my PATH'的建议与官方推荐做法不符。官方安装程序默认不勾选该选项，但若用户不勾选，conda命令将无法在普通终端中使用，必须依赖Anaconda Prompt。官方文档建议勾选该选项以便在任意终端使用conda，但需注意与系统Python的潜在冲突。此处建议'千万别勾'可能导致用户困惑，且与官方推荐相悖。",
-            "evidence": "Miniconda官方安装文档（docs.conda.io）建议在Windows安装时勾选'Add Miniconda3 to my PATH'选项，以便在任意终端使用conda命令。官方安装程序默认不勾选，但推荐勾选。",
-            "suggestion": "建议修改为：'Windows安装时，建议勾选Add Miniconda3 to my PATH选项，以便在任意终端使用conda命令。若担心与系统Python冲突，可保持默认不勾选，但需使用Anaconda Prompt。'",
-            "error_id": "2e58f038a789_r1",
-            "canonical_error_id": "2e58f038a789",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "critical",
-            "location": null,
-            "description": "内容块在6.2节PyCharm配置步骤中意外截断，Windows路径示例不完整，导致指令无法执行。",
-            "evidence": "原文在'Windows：'处截断，未提供完整的路径示例。",
-            "suggestion": "补全Windows路径示例，例如：C:\\Users\\<用户名>\\anaconda3\\envs\\llm-learn\\python.exe。",
-            "error_id": "68a80b5f97f8_r1",
-            "canonical_error_id": "68a80b5f97f8",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C014",
-            "content_chunk_id": "LOCAL-KBS-02-00-C014",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "description": "与来源块 LOCAL-KBS-04-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C001，heading_path=自动求导机制 > 二、计算图：Autograd 的\"地图\"（①） > 2.1 什么是计算图？（①），lines=1-58",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "4f2417703c9b_r1",
-            "canonical_error_id": "4f2417703c9b",
+            "error_id": "6d27256efa90_r1",
+            "canonical_error_id": "6d27256efa90",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-02-C001"
             ],
             "change_request": {
               "required": false,
@@ -224,21 +26,111 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_chunk_id": "LOCAL-KBS-04-02-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-58"
           },
           {
-            "error_type": "missing_content",
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，缺少必要的导入语句和变量定义，且代码在print语句处被截断，无法独立运行。",
+            "evidence": "代码块以`y = w * x + b`开始，但未定义w、x、b，也未导入torch；且`print`语句不完整，缺少右括号和后续内容。",
+            "suggestion": "补充完整的代码示例，包括导入torch、定义w、x、b（并设置requires_grad），并补全print语句。",
+            "error_id": "9578734bb725_r1",
+            "canonical_error_id": "9578734bb725",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C004",
+            "content_chunk_id": "LOCAL-KBS-04-02-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code_block",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，缺少结束的```围栏，导致代码示例被截断，无法完整展示detach()的用法。",
+            "evidence": "内容块末尾的代码块以'# z 不再连接到计算'结尾，缺少闭合的```，且代码逻辑不完整。",
+            "suggestion": "补全代码块，例如：\n```python\nx = torch.tensor([2.0, 3.0], requires_grad=True)\ny = x ** 2\ny_detached = y.detach()\nz = y_detached * 3\nprint(z.requires_grad)  # False\n```",
+            "error_id": "5d2c86bfdb8b_r1",
+            "canonical_error_id": "5d2c86bfdb8b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C006",
+            "content_chunk_id": "LOCAL-KBS-04-02-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'核心区别一句话'处被截断，未完成对比说明，且表格中'detach()'的'该张量后续不构建'表述不准确，应为'该张量后续不参与梯度计算'。",
+            "evidence": "原文：'**核心区别一句话**：`no_grad()` 管的是“这段代码'，内容不完整；表格中'detach()'描述为'该张量后续不构建'，实际detach()是返回一个新的张量，与计算图分离，但原张量仍可能参与梯度计算。",
+            "suggestion": "补全被截断的内容，并修正'detach()'的描述为'该张量后续不参与梯度计算'。",
+            "error_id": "9601e7f51152_r1",
+            "canonical_error_id": "9601e7f51152",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C007",
+            "content_chunk_id": "LOCAL-KBS-04-02-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "description": "与来源块 LOCAL-KBS-04-02-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-02-C008，heading_path=自动求导机制 > 五、叶子节点与非叶子节点（③） > 5.1 核心区别，lines=209-270",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "e3101af6d348_r1",
+            "canonical_error_id": "e3101af6d348",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:209-270"
+          },
+          {
+            "error_type": "code_error",
             "severity": "critical",
             "location": null,
-            "description": "待审核内容块在'给你的排查建议'处被截断，内容不完整，无法进行完整的技术审核。",
-            "evidence": "内容块以'QLoRA 微调依赖大量第三方'结尾，句子未结束，明显缺失后续内容。",
-            "suggestion": "请提供完整的内容块，确保所有技术陈述和代码示例完整无缺。",
-            "error_id": "4c6a2d2e703f_r1",
-            "canonical_error_id": "4c6a2d2e703f",
+            "description": "训练循环代码中引用了未定义的变量 x 和 y，且缺少数据加载部分，导致代码无法运行。",
+            "evidence": "代码块中 for epoch in range(100): 循环体内直接使用 pred = model(x) 和 loss = criterion(pred, y)，但 x 和 y 未在代码块中定义，也未提供数据加载代码。",
+            "suggestion": "在训练循环前添加数据加载代码，例如：x = torch.randn(64, 10); y = torch.randn(64, 1)。",
+            "error_id": "ba1f7d9ebf14_r1",
+            "canonical_error_id": "ba1f7d9ebf14",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -247,8 +139,98 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块不完整，缺少w2的梯度计算和手动推导的完整输出，且手动推导部分被截断。",
+            "evidence": "代码块中y.backward()后没有打印梯度，手动推导部分在'dh/dw1 = x ='处截断，未完成。",
+            "suggestion": "补全代码，添加print(w1.grad, w2.grad, x.grad)等输出，并完成手动推导。",
+            "error_id": "6088007ee462_r1",
+            "canonical_error_id": "6088007ee462",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C009",
+            "content_chunk_id": "LOCAL-KBS-04-02-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "description": "与来源块 LOCAL-KBS-04-02-C011 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C011，heading_path=自动求导机制 > 七、综合实战演练（①+③+④+⑤） > 场景 3：detach 冻结中间结果，lines=318-368",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "300f52ed75da_r1",
+            "canonical_error_id": "300f52ed75da",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:318-368"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "代码示例中 z1.backward() 后 x.grad 应为 12.0，但注释写为 12.0，实际计算正确；但 detach 示例中 y_detached = y.detach() 后 z2 = y_detached * 3，z2.requires_grad 为 False，调用 z2.backward() 会报错，但注释说 '会报错'，实际确实会报错，但错误信息并非 'z2 不需要梯度'，而是 'element 0 of tensors does not require grad and does not have a grad_fn'，描述不准确。",
+            "evidence": "PyTorch 文档：对 requires_grad=False 的张量调用 backward() 会抛出 RuntimeError，错误信息为 'element 0 of tensors does not require grad and does not have a grad_fn'。",
+            "suggestion": "修正错误信息描述，改为 'RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn'。",
+            "error_id": "fe221eb9b704_r1",
+            "canonical_error_id": "fe221eb9b704",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "常见问题速查表格最后一行 'pred.numpy() 报错 | Tensor' 内容不完整，缺少可能原因和解决方案。",
+            "evidence": "表格最后一行只有症状和部分原因，解决方案缺失。",
+            "suggestion": "补全该行内容，例如：症状 'pred.numpy() 报错'，可能原因 'Tensor 在 GPU 上或需要梯度'，解决方案 '先 .detach().cpu().numpy()'。",
+            "error_id": "c86644815f2c_r1",
+            "canonical_error_id": "c86644815f2c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
             "content_version": 1,
             "in_chunk_position": null
           }
@@ -261,214 +243,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在'QLoRA 微调会用到很多库'处截断，未完成虚拟环境（独立房间）的说明，导致技术信息不完整。",
-            "evidence": "原文以'QLoRA 微调会用到很多库'结尾，缺少后续关于虚拟环境作用、创建方法等必要内容。",
-            "suggestion": "补充虚拟环境的完整介绍，包括其作用（隔离依赖、避免版本冲突）、创建方法（如conda create或python -m venv）以及激活方式。",
-            "error_id": "a77c4eaf2f58_r1",
-            "canonical_error_id": "a77c4eaf2f58",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C002",
-            "content_chunk_id": "LOCAL-KBS-02-00-C002",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "version_inconsistency",
-            "severity": "minor",
-            "location": null,
-            "description": "教程目标为Python 3.10+，但示例下载版本为Python 3.13.x，未明确说明3.13是否满足3.10+要求，可能造成用户困惑。",
-            "evidence": "原文：'你的目标是QLoRA微调'、'网站会自动推荐适合你Windows系统的版本（比如 Python 3.13.x）'。Python 3.13.x 满足3.10+，但未明确说明，建议补充说明。",
-            "suggestion": "明确说明Python 3.13.x满足3.10+要求，或统一为'Python 3.10或更高版本'。",
-            "error_id": "5a4dd6ad74cc_r1",
-            "canonical_error_id": "5a4dd6ad74cc",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称现代 macOS（Catalina 10.15 起）已不预装 Python 2，但实际 macOS Catalina 10.15 仍预装 Python 2.7，直到 macOS Monterey 12.3 才移除 Python 2。",
-            "evidence": "Apple 官方文档及社区记录显示，macOS Catalina 10.15 仍包含 Python 2.7，macOS Monterey 12.3 起不再预装 Python 2。",
-            "suggestion": "修改为：macOS Monterey 12.3 起不再预装 Python 2，系统可能只有旧版 python3。",
-            "error_id": "a07bb908f61e_r1",
-            "canonical_error_id": "a07bb908f61e",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤未提及安装后可能需要运行 'pip3 install --upgrade pip' 或处理 PATH 配置，可能导致用户后续使用 pip 时遇到版本过旧或命令找不到的问题。",
-            "evidence": "官方安装包安装后，pip3 可能为旧版本，且若用户未将 Python 安装目录加入 PATH，可能无法直接使用 python3/pip3。",
-            "suggestion": "在验证命令后补充：若提示 pip 版本过旧，可运行 'pip3 install --upgrade pip'；若命令找不到，请检查 PATH 配置。",
-            "error_id": "bda84a4aad2e_r1",
-            "canonical_error_id": "bda84a4aad2e",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_content",
-            "severity": "critical",
-            "location": null,
-            "description": "待审核内容块不完整，在'配置 Python 解释器（让 VS Code 知道用哪个 Python）'后内容被截断，缺少后续步骤和完整说明。",
-            "evidence": "内容块以'1.'结尾，未提供完整的配置步骤，无法进行技术正确性审核。",
-            "suggestion": "补充完整的配置 Python 解释器的步骤，确保内容块完整。",
-            "error_id": "cf3d3e75c154_r1",
-            "canonical_error_id": "cf3d3e75c154",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C009",
-            "content_chunk_id": "LOCAL-KBS-02-00-C009",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "PyCharm Community Edition 安装过程中并不存在 'Add \"Open Folder as Project\"' 这一选项。该选项是 JetBrains 其他 IDE（如 IntelliJ IDEA）或特定版本中的功能，PyCharm 安装向导中通常没有此选项。",
-            "evidence": "PyCharm 官方安装向导选项通常包括 'Add launchers dir to the PATH'、'Create Desktop Shortcut'、'Update PATH variable (restart needed)' 等，但未包含 'Add \"Open Folder as Project\"'。",
-            "suggestion": "删除该选项或替换为 PyCharm 实际存在的选项，如 'Add launchers dir to the PATH' 或 'Create Desktop Shortcut'。",
-            "error_id": "aa1d0e4baa46_r1",
-            "canonical_error_id": "aa1d0e4baa46",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "PyCharm 安装时勾选 'Add to PATH' 后，命令行启动命令是 'charm' 而非 'pycharm'。PyCharm 官方文档明确说明，在命令行中使用 'charm' 命令启动 PyCharm。",
-            "evidence": "JetBrains 官方文档（https://www.jetbrains.com/help/pycharm/working-with-the-ide-features-from-command-line.html）指出，安装时勾选 'Add launchers dir to the PATH' 后，可使用 'charm' 命令启动 PyCharm。",
-            "suggestion": "将 'pycharm' 改为 'charm'，或说明不同操作系统下的启动命令差异。",
-            "error_id": "fe5b00172d9d_r1",
-            "canonical_error_id": "fe5b00172d9d",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤中关于Windows安装Miniconda时'千万别勾选Add Miniconda3 to my PATH'的建议与官方推荐做法不符。官方安装程序默认不勾选该选项，但若用户不勾选，conda命令将无法在普通终端中使用，必须依赖Anaconda Prompt。官方文档建议勾选该选项以便在任意终端使用conda，但需注意与系统Python的潜在冲突。此处建议'千万别勾'可能导致用户困惑，且与官方推荐相悖。",
-            "evidence": "Miniconda官方安装文档（docs.conda.io）建议在Windows安装时勾选'Add Miniconda3 to my PATH'选项，以便在任意终端使用conda命令。官方安装程序默认不勾选，但推荐勾选。",
-            "suggestion": "建议修改为：'Windows安装时，建议勾选Add Miniconda3 to my PATH选项，以便在任意终端使用conda命令。若担心与系统Python冲突，可保持默认不勾选，但需使用Anaconda Prompt。'",
-            "error_id": "2e58f038a789_r1",
-            "canonical_error_id": "2e58f038a789",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "critical",
-            "location": null,
-            "description": "内容块在6.2节PyCharm配置步骤中意外截断，Windows路径示例不完整，导致指令无法执行。",
-            "evidence": "原文在'Windows：'处截断，未提供完整的路径示例。",
-            "suggestion": "补全Windows路径示例，例如：C:\\Users\\<用户名>\\anaconda3\\envs\\llm-learn\\python.exe。",
-            "error_id": "68a80b5f97f8_r1",
-            "canonical_error_id": "68a80b5f97f8",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C014",
-            "content_chunk_id": "LOCAL-KBS-02-00-C014",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "description": "与来源块 LOCAL-KBS-04-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C001，heading_path=自动求导机制 > 二、计算图：Autograd 的\"地图\"（①） > 2.1 什么是计算图？（①），lines=1-58",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "4f2417703c9b_r1",
-            "canonical_error_id": "4f2417703c9b",
+            "error_id": "6d27256efa90_r1",
+            "canonical_error_id": "6d27256efa90",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-02-C001"
             ],
             "change_request": {
               "required": false,
@@ -476,21 +260,111 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_chunk_id": "LOCAL-KBS-04-02-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-58"
           },
           {
-            "error_type": "missing_content",
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，缺少必要的导入语句和变量定义，且代码在print语句处被截断，无法独立运行。",
+            "evidence": "代码块以`y = w * x + b`开始，但未定义w、x、b，也未导入torch；且`print`语句不完整，缺少右括号和后续内容。",
+            "suggestion": "补充完整的代码示例，包括导入torch、定义w、x、b（并设置requires_grad），并补全print语句。",
+            "error_id": "9578734bb725_r1",
+            "canonical_error_id": "9578734bb725",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C004",
+            "content_chunk_id": "LOCAL-KBS-04-02-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code_block",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，缺少结束的```围栏，导致代码示例被截断，无法完整展示detach()的用法。",
+            "evidence": "内容块末尾的代码块以'# z 不再连接到计算'结尾，缺少闭合的```，且代码逻辑不完整。",
+            "suggestion": "补全代码块，例如：\n```python\nx = torch.tensor([2.0, 3.0], requires_grad=True)\ny = x ** 2\ny_detached = y.detach()\nz = y_detached * 3\nprint(z.requires_grad)  # False\n```",
+            "error_id": "5d2c86bfdb8b_r1",
+            "canonical_error_id": "5d2c86bfdb8b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C006",
+            "content_chunk_id": "LOCAL-KBS-04-02-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'核心区别一句话'处被截断，未完成对比说明，且表格中'detach()'的'该张量后续不构建'表述不准确，应为'该张量后续不参与梯度计算'。",
+            "evidence": "原文：'**核心区别一句话**：`no_grad()` 管的是“这段代码'，内容不完整；表格中'detach()'描述为'该张量后续不构建'，实际detach()是返回一个新的张量，与计算图分离，但原张量仍可能参与梯度计算。",
+            "suggestion": "补全被截断的内容，并修正'detach()'的描述为'该张量后续不参与梯度计算'。",
+            "error_id": "9601e7f51152_r1",
+            "canonical_error_id": "9601e7f51152",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C007",
+            "content_chunk_id": "LOCAL-KBS-04-02-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "description": "与来源块 LOCAL-KBS-04-02-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-02-C008，heading_path=自动求导机制 > 五、叶子节点与非叶子节点（③） > 5.1 核心区别，lines=209-270",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "e3101af6d348_r1",
+            "canonical_error_id": "e3101af6d348",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:209-270"
+          },
+          {
+            "error_type": "code_error",
             "severity": "critical",
             "location": null,
-            "description": "待审核内容块在'给你的排查建议'处被截断，内容不完整，无法进行完整的技术审核。",
-            "evidence": "内容块以'QLoRA 微调依赖大量第三方'结尾，句子未结束，明显缺失后续内容。",
-            "suggestion": "请提供完整的内容块，确保所有技术陈述和代码示例完整无缺。",
-            "error_id": "4c6a2d2e703f_r1",
-            "canonical_error_id": "4c6a2d2e703f",
+            "description": "训练循环代码中引用了未定义的变量 x 和 y，且缺少数据加载部分，导致代码无法运行。",
+            "evidence": "代码块中 for epoch in range(100): 循环体内直接使用 pred = model(x) 和 loss = criterion(pred, y)，但 x 和 y 未在代码块中定义，也未提供数据加载代码。",
+            "suggestion": "在训练循环前添加数据加载代码，例如：x = torch.randn(64, 10); y = torch.randn(64, 1)。",
+            "error_id": "ba1f7d9ebf14_r1",
+            "canonical_error_id": "ba1f7d9ebf14",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -499,8 +373,98 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块不完整，缺少w2的梯度计算和手动推导的完整输出，且手动推导部分被截断。",
+            "evidence": "代码块中y.backward()后没有打印梯度，手动推导部分在'dh/dw1 = x ='处截断，未完成。",
+            "suggestion": "补全代码，添加print(w1.grad, w2.grad, x.grad)等输出，并完成手动推导。",
+            "error_id": "6088007ee462_r1",
+            "canonical_error_id": "6088007ee462",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C009",
+            "content_chunk_id": "LOCAL-KBS-04-02-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "description": "与来源块 LOCAL-KBS-04-02-C011 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C011，heading_path=自动求导机制 > 七、综合实战演练（①+③+④+⑤） > 场景 3：detach 冻结中间结果，lines=318-368",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "300f52ed75da_r1",
+            "canonical_error_id": "300f52ed75da",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:318-368"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "代码示例中 z1.backward() 后 x.grad 应为 12.0，但注释写为 12.0，实际计算正确；但 detach 示例中 y_detached = y.detach() 后 z2 = y_detached * 3，z2.requires_grad 为 False，调用 z2.backward() 会报错，但注释说 '会报错'，实际确实会报错，但错误信息并非 'z2 不需要梯度'，而是 'element 0 of tensors does not require grad and does not have a grad_fn'，描述不准确。",
+            "evidence": "PyTorch 文档：对 requires_grad=False 的张量调用 backward() 会抛出 RuntimeError，错误信息为 'element 0 of tensors does not require grad and does not have a grad_fn'。",
+            "suggestion": "修正错误信息描述，改为 'RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn'。",
+            "error_id": "fe221eb9b704_r1",
+            "canonical_error_id": "fe221eb9b704",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "常见问题速查表格最后一行 'pred.numpy() 报错 | Tensor' 内容不完整，缺少可能原因和解决方案。",
+            "evidence": "表格最后一行只有症状和部分原因，解决方案缺失。",
+            "suggestion": "补全该行内容，例如：症状 'pred.numpy() 报错'，可能原因 'Tensor 在 GPU 上或需要梯度'，解决方案 '先 .detach().cpu().numpy()'。",
+            "error_id": "c86644815f2c_r1",
+            "canonical_error_id": "c86644815f2c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
             "content_version": 1,
             "in_chunk_position": null
           }
@@ -520,14 +484,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "description": "与来源块 LOCAL-KBS-04-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C001，heading_path=自动求导机制 > 二、计算图：Autograd 的\"地图\"（①） > 2.1 什么是计算图？（①），lines=1-58",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "4f2417703c9b_r2",
-            "canonical_error_id": "4f2417703c9b",
+            "error_id": "6d27256efa90_r2",
+            "canonical_error_id": "6d27256efa90",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-02-C001"
             ],
             "change_request": {
               "required": false,
@@ -535,11 +499,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_chunk_id": "LOCAL-KBS-04-02-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-58"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "description": "与来源块 LOCAL-KBS-04-02-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-02-C008，heading_path=自动求导机制 > 五、叶子节点与非叶子节点（③） > 5.1 核心区别，lines=209-270",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "e3101af6d348_r2",
+            "canonical_error_id": "e3101af6d348",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:209-270"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "description": "与来源块 LOCAL-KBS-04-02-C011 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C011，heading_path=自动求导机制 > 七、综合实战演练（①+③+④+⑤） > 场景 3：detach 冻结中间结果，lines=318-368",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "300f52ed75da_r2",
+            "canonical_error_id": "300f52ed75da",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:318-368"
           }
         ],
         "personalization_errors": [],
@@ -552,14 +564,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "description": "与来源块 LOCAL-KBS-04-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C001，heading_path=自动求导机制 > 二、计算图：Autograd 的\"地图\"（①） > 2.1 什么是计算图？（①），lines=1-58",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "4f2417703c9b_r2",
-            "canonical_error_id": "4f2417703c9b",
+            "error_id": "6d27256efa90_r2",
+            "canonical_error_id": "6d27256efa90",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-02-C001"
             ],
             "change_request": {
               "required": false,
@@ -567,11 +579,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_chunk_id": "LOCAL-KBS-04-02-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-58"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "description": "与来源块 LOCAL-KBS-04-02-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-02-C008，heading_path=自动求导机制 > 五、叶子节点与非叶子节点（③） > 5.1 核心区别，lines=209-270",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "e3101af6d348_r2",
+            "canonical_error_id": "e3101af6d348",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:209-270"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "description": "与来源块 LOCAL-KBS-04-02-C011 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C011，heading_path=自动求导机制 > 七、综合实战演练（①+③+④+⑤） > 场景 3：detach 冻结中间结果，lines=318-368",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "300f52ed75da_r2",
+            "canonical_error_id": "300f52ed75da",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:318-368"
           }
         ],
         "personalization_errors": [],
@@ -589,14 +649,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "description": "与来源块 LOCAL-KBS-04-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C001，heading_path=自动求导机制 > 二、计算图：Autograd 的\"地图\"（①） > 2.1 什么是计算图？（①），lines=1-58",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "4f2417703c9b_r3",
-            "canonical_error_id": "4f2417703c9b",
+            "error_id": "6d27256efa90_r2",
+            "canonical_error_id": "6d27256efa90",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-02-C001"
             ],
             "change_request": {
               "required": false,
@@ -604,11 +664,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_chunk_id": "LOCAL-KBS-04-02-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-58"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "description": "与来源块 LOCAL-KBS-04-02-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-02-C008，heading_path=自动求导机制 > 五、叶子节点与非叶子节点（③） > 5.1 核心区别，lines=209-270",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "e3101af6d348_r3",
+            "canonical_error_id": "e3101af6d348",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
             "content_version": 3,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:209-270"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "description": "与来源块 LOCAL-KBS-04-02-C011 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C011，heading_path=自动求导机制 > 七、综合实战演练（①+③+④+⑤） > 场景 3：detach 冻结中间结果，lines=318-368",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "300f52ed75da_r3",
+            "canonical_error_id": "300f52ed75da",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:318-368"
           }
         ],
         "personalization_errors": [],
@@ -621,14 +729,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "description": "与来源块 LOCAL-KBS-04-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C001，heading_path=自动求导机制 > 二、计算图：Autograd 的\"地图\"（①） > 2.1 什么是计算图？（①），lines=1-58",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "4f2417703c9b_r3",
-            "canonical_error_id": "4f2417703c9b",
+            "error_id": "6d27256efa90_r2",
+            "canonical_error_id": "6d27256efa90",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-02-C001"
             ],
             "change_request": {
               "required": false,
@@ -636,11 +744,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_5c69aad0-e9fd-4528-b184-f0431a1cd6fd_6542ef8e-98a4-51b4-8dc3-758ec5692a87_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C001",
+            "content_chunk_id": "LOCAL-KBS-04-02-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-58"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "description": "与来源块 LOCAL-KBS-04-02-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-02-C008，heading_path=自动求导机制 > 五、叶子节点与非叶子节点（③） > 5.1 核心区别，lines=209-270",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "e3101af6d348_r3",
+            "canonical_error_id": "e3101af6d348",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C008",
+            "content_chunk_id": "LOCAL-KBS-04-02-C008",
             "content_version": 3,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:209-270"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "description": "与来源块 LOCAL-KBS-04-02-C011 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-02-C011，heading_path=自动求导机制 > 七、综合实战演练（①+③+④+⑤） > 场景 3：detach 冻结中间结果，lines=318-368",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "300f52ed75da_r3",
+            "canonical_error_id": "300f52ed75da",
+            "source_refs": [
+              "src_LOCAL-KBS-04-02-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_block_id": "cb_1e10d5f6-2827-436c-abc4-0bc71d71834a_dde20b1d-88ba-56e9-b437-8da48aade870_LOCAL-KBS-04-02-C011",
+            "content_chunk_id": "LOCAL-KBS-04-02-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:318-368"
           }
         ],
         "personalization_errors": [],

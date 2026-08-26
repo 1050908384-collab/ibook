@@ -1,36 +1,38 @@
 {
-  "stage_id": "c6c00678-c78f-5d2e-bff1-f8bcc3375f21",
+  "stage_id": "57d1510d-d8e4-5ab5-86b7-bf8e26baec70",
   "stage_num": 1,
-  "block_id": "KB-02",
-  "block_name": "Python编程基础",
+  "block_id": "KB-11",
+  "block_name": "HuggingFace生态工具链",
   "block_ids": [
-    "KB-02"
+    "KB-11"
   ],
-  "subtopic_id": "KBS-02-00",
-  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
+  "subtopic_id": "KBS-11-02",
+  "subtopic_name": "datasets库的数据处理（map/filter/shuffle）",
   "subtopic_ids": [
-    "KBS-02-00"
+    "KBS-11-02"
   ],
   "subtopic_names": [
-    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
+    "datasets库的数据处理（map/filter/shuffle）"
   ],
-  "estimated_hours": 0.5,
+  "estimated_hours": 1.5,
   "gap_skill": "LoRA",
-  "prerequisites": [],
+  "prerequisites": [
+    "KBS-11-01"
+  ],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习环境准备：安装Python 3.10+",
-  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
+  "title": "学习datasets库的数据处理（map/filter/shuf...",
+  "description": "围绕datasets库的数据处理（map/filter/shuf...完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解环境准备：安装Python 3.10+的基本概念",
-    "掌握环境准备：安装Python 3.10+的核心技术",
-    "能够独立完成环境准备：安装Python 3.10+相关任务"
+    "理解datasets库的数据处理（map/filter/shuf...的基本概念",
+    "掌握datasets库的数据处理（map/filter/shuf...的核心技术",
+    "能够独立完成datasets库的数据处理（map/filter/shuf...相关任务"
   ],
-  "difficulty": "初级",
-  "recommended_daily_hours": 0.5,
+  "difficulty": "中级",
+  "recommended_daily_hours": 1.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Python 3.10+",
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习datasets库的数据处理（map/filter/shuf...",
   "hardware_notes": "",
-  "personalization_summary": "预计0.0小时完成 | 建议分1天学习 | 每天1.5小时 | 综合型学习风格"
+  "personalization_summary": "预计2.2小时完成 | 建议分1天学习 | 每天1.5小时 | 综合型学习风格"
 }

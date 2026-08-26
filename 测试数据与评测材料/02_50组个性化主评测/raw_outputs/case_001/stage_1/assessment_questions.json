@@ -1,46 +1,132 @@
 [
   {
-    "question_id": "Q-KB01-ST0101-004",
-    "block_id": "KB-01",
-    "subtopic_id": "KBS-01-01",
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
     "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0201-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nfor i in range(5):\n    if i == 3:\n        continue\n    print(i, end=\" \")\n```",
+    "options": [],
+    "correct_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "hint": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "explanation": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。"
+  },
+  {
+    "question_id": "Q-KB0201-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Python中，`type(3.14)` 的返回结果是________；`type(\"3.14\")` 的返回结果是________。",
+    "options": [],
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0201-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "`cp -r source_dir/ dest_dir/` 中 `-r` 参数的含义是？",
+    "question_text": "以下代码的输出是？\n```python\nx = 10\ny = 3\nprint(x // y, x % y, x ** y)\n```",
     "options": [
       {
         "key": "A",
-        "text": "只复制文件不复制目录"
+        "text": "`3.33 1 1000`"
       },
       {
         "key": "B",
-        "text": "递归复制整个目录树"
+        "text": "`3 1 1000`"
       },
       {
         "key": "C",
-        "text": "覆盖时不提示"
+        "text": "`3 0 30`"
       },
       {
         "key": "D",
-        "text": "保留文件属性"
+        "text": "`3.33 0 1000`"
       }
     ],
     "correct_answer": "B",
-    "hint": "`-r`（recursive）递归复制目录及其所有子目录和文件。",
-    "explanation": "`-r`（recursive）递归复制目录及其所有子目录和文件。"
+    "hint": "> `//` 整除得3，`%` 取余得1，`**` 幂运算 10³=1000。",
+    "explanation": "> `//` 整除得3，`%` 取余得1，`**` 幂运算 10³=1000。"
   },
   {
-    "question_id": "Q-KB01-ST0101-005",
-    "block_id": "KB-01",
-    "subtopic_id": "KBS-01-01",
+    "question_id": "Q-KB0205-007",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "写一个函数 `count_words(text)`，接收一段英文字符串，返回一个字典，统计每个单词出现的次数（忽略大小写）。",
+    "options": [],
+    "correct_answer": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```",
+    "hint": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```",
+    "explanation": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```"
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
     "difficulty": "中级",
-    "question_type": "true_false",
-    "question_text": "`mv` 命令只能用于移动文件，不能用于重命名文件。（ ）",
+    "question_type": "single_choice",
+    "question_text": "以下代码中，`finally` 块在什么情况下执行？\n```python\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print(\"除零错误\")\nfinally:\n    print(\"清理完成\")\n```",
     "options": [
-      "正确",
-      "错误"
+      {
+        "key": "A",
+        "text": "仅在无异常时"
+      },
+      {
+        "key": "B",
+        "text": "仅在捕获异常后"
+      },
+      {
+        "key": "C",
+        "text": "无论是否有异常都执行"
+      },
+      {
+        "key": "D",
+        "text": "仅在未捕获异常时"
+      }
     ],
-    "correct_answer": "错误",
-    "hint": "`mv` 既可以移动文件/目录到另一个路径，也可以在同一目录下重命名文件（本质是移动）。",
-    "explanation": "`mv` 既可以移动文件/目录到另一个路径，也可以在同一目录下重命名文件（本质是移动）。"
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0205-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\ndef my_decorator(func):\n    def wrapper():\n        print(\"Before\")\n        func()\n        print(\"After\")\n    return wrapper\n\n@my_decorator\ndef say_hello():\n    print(\"Hello!\")\n\nsay_hello()\n```",
+    "options": [],
+    "correct_answer": "```\nBefore\nHello!\nAfter\n```",
+    "hint": "```\nBefore\nHello!\nAfter\n```",
+    "explanation": "```\nBefore\nHello!\nAfter\n```"
   }
 ]

@@ -1,5 +1,5 @@
 {
-  "session_id": "b64eba08-d9ac-4674-80ba-d3423ebbcf8e",
+  "session_id": "9b2dfd91-2d0e-4450-bd97-6ec4f3ac0ec2",
   "user_id": "local-user",
   "grade": "",
   "skill_tags": [],
@@ -9,15 +9,8 @@
       "skill": "Transformer",
       "block_id": "KB-08",
       "block_name": "Transformer架构（Decoder-Only）",
-      "target_subtopic_ids": [
-        "KBS-08-01",
-        "KBS-08-02",
-        "KBS-08-03",
-        "KBS-08-04",
-        "KBS-08-05",
-        "KBS-08-06"
-      ],
-      "mapping_confidence": 1.0,
+      "target_subtopic_ids": [],
+      "mapping_confidence": 0.792,
       "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
@@ -31,7 +24,7 @@
   "daily_hours": 0.5,
   "learning_style": "hands-on",
   "learning_rhythm": "fast",
-  "confidence_index": 0.2,
+  "confidence_index": 0.8,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

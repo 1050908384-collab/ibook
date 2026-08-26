@@ -1,5 +1,5 @@
 {
-  "session_id": "1e48e467-87e0-4e1f-8cbd-e74c8079b5db",
+  "session_id": "b0ddb287-b4dc-426b-ada7-1148a605161f",
   "user_id": "local-user",
   "grade": "",
   "skill_tags": [],
@@ -30,7 +30,7 @@
   "daily_hours": 2.0,
   "learning_style": "hands-on",
   "learning_rhythm": "fast",
-  "confidence_index": 0.2,
+  "confidence_index": 0.65,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

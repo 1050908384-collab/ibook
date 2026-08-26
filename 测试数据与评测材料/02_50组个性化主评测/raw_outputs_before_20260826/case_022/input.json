@@ -1,0 +1,15 @@
+{
+  "case_id": "case_022",
+  "background": "16GB卡，想深入LoRA rank/alpha参数设计",
+  "existing_skills": "KB-08|KB-11|KB-13",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "2.5",
+  "learning_style": "理论结合实操",
+  "hardware": "RTX 4060 Ti 16GB",
+  "expected_target_blocks": "KB-12",
+  "expected_difficulty": "中级",
+  "expected_strategy": "advance",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "high",
+  "user_input_text": "我的学习背景：16GB卡，想深入LoRA rank/alpha参数设计\n已掌握技能：KB-08|KB-11|KB-13\n我的学习目标：LoRA微调\n我每天能学：2.5小时\n我喜欢怎么学：理论结合实操\n我的硬件条件：RTX 4060 Ti 16GB"
+}

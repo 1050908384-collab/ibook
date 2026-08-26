@@ -1,5 +1,5 @@
 {
-  "session_id": "8b576c81-f0fd-469a-88be-11301854b6f5",
+  "session_id": "51655649-e5fb-4c75-aba8-52be1c53bf98",
   "user_id": "local-user",
   "grade": "",
   "skill_tags": [],
@@ -10,11 +10,8 @@
       "block_id": "KB-15",
       "block_name": "模型推理部署（vLLM）",
       "target_subtopic_ids": [
-        "KBS-15-00",
-        "KBS-15-01",
         "KBS-15-02",
-        "KBS-15-03",
-        "KBS-15-04"
+        "KBS-15-03"
       ],
       "mapping_confidence": 1.0,
       "level": "advanced",
@@ -27,7 +24,7 @@
   "daily_hours": 3.0,
   "learning_style": "hands-on",
   "learning_rhythm": "fast",
-  "confidence_index": 0.2,
+  "confidence_index": 0.725,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

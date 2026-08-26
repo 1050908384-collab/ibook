@@ -1,0 +1,15 @@
+{
+  "case_id": "case_041",
+  "background": "阶段1中等正确率，验证是否增加针对性练习",
+  "existing_skills": "KB-04|KB-08",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "2.0",
+  "learning_style": "实操型",
+  "hardware": "RTX 4060 8GB",
+  "expected_target_blocks": "KB-12",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "True",
+  "answer_script_stage_1": "medium",
+  "user_input_text": "我的学习背景：阶段1中等正确率，验证是否增加针对性练习\n已掌握技能：KB-04|KB-08\n我的学习目标：LoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：实操型\n我的硬件条件：RTX 4060 8GB"
+}

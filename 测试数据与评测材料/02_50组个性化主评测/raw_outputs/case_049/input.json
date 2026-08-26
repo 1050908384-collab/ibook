@@ -1,15 +1,18 @@
 {
   "case_id": "case_049",
+  "primary_category": "异常与边界输入",
+  "tags": "异常与边界输入|LoRA微调|理论型|iPad/手机（无CUDA）",
   "background": "只有手机/平板，想学大模型微调",
-  "existing_skills": "",
+  "existing_skills": "无Python、深度学习与大模型相关基础",
   "learning_goal": "LoRA微调",
   "daily_hours": "1.0",
   "learning_style": "理论型",
   "hardware": "iPad/手机（无CUDA）",
   "expected_target_blocks": "KB-12",
+  "expected_first_stage": "KB-12",
   "expected_difficulty": "初级",
   "expected_strategy": "simplify",
   "run_stage_2": "False",
-  "answer_script_stage_1": "low",
-  "user_input_text": "我的学习背景：只有手机/平板，想学大模型微调\n我的学习目标：LoRA微调\n我每天能学：1.0小时\n我喜欢怎么学：理论型\n我的硬件条件：iPad/手机（无CUDA）"
+  "answer_script_stage_1": "{\"answer_behavior\":\"low\",\"target_accuracy_range\":[0.4,0.59],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"simplify\"}",
+  "user_input_text": "我的学习背景：只有手机/平板，想学大模型微调\n已掌握技能：无Python、深度学习与大模型相关基础\n我的学习目标：LoRA微调\n我每天能学：1.0小时\n我喜欢怎么学：理论型\n我的硬件条件：iPad/手机（无CUDA）"
 }

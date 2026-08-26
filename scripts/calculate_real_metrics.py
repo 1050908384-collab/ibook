@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
-"""真实数据指标统计脚本 —— 仅读取 raw_outputs/ 和 llm_calls.jsonl 自动计算。
+"""真实数据指标统计脚本 —— 按文档《测试3+50要求.md》§4.3 的 12 项指标公式计算。
 
 用法:
     python scripts/calculate_real_metrics.py
+
+前置条件:
+    1. raw_outputs/ 有 50 组真实输出
+    2. build_evaluation_review_templates.py --force 已生成复核模板
+    3. 人工填写 personalization_review.csv 和 fact_check_review.csv
 
 输出:
     测试数据与评测材料/06_指标统计/
@@ -16,10 +21,9 @@ from __future__ import annotations
 
 import csv
 import json
-import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DELIVERY_DIR = ROOT_DIR / "测试数据与评测材料"
@@ -29,72 +33,10 @@ PERSONALIZATION_REVIEW_PATH = METRICS_DIR / "personalization_review.csv"
 FACT_CHECK_REVIEW_PATH = METRICS_DIR / "fact_check_review.csv"
 
 
-# ── 枚举规范化映射（中英/大小写/别名统一）────────────────────────
-# 难度：CSV expected_difficulty 是中文「初级/中级/高级」，
-#       stage_planning_output.difficulty 也是中文，但偶有英文别名出现
-DIFFICULTY_CANON = {
-    "初级": "beginner", "低级": "beginner", "入门": "beginner",
-    "very_low": "beginner", "low": "beginner", "beginner": "beginner",
-    "中级": "intermediate", "中等": "intermediate",
-    "medium": "intermediate", "intermediate": "intermediate",
-    "高级": "advanced", "进阶": "advanced",
-    "high": "advanced", "advanced": "advanced",
-    "专家": "expert", "expert": "expert",
-}
-
-
-# 策略：CSV expected_strategy 是 advance/reinforce/simplify/backtrack，
-#       Agent6 除了 next_strategy，还可能把 status=repeat/continue/completed
-#       作为实际决策语义，需要统一后再对比
-STRATEGY_CANON = {
-    # → 语义：掌握度足够，向前推进
-    "advance": "advance",
-    "进阶": "advance", "升级": "advance", "深入": "advance", "高": "advance",
-
-    # → 语义：当前内容继续巩固练习（主流中间态）
-    "reinforce": "reinforce",
-    "巩固": "reinforce", "强化": "reinforce", "继续": "reinforce", "中": "reinforce",
-    "medium": "reinforce",
-    "continue": "reinforce",  # Agent6 status='continue' 语义=巩固
-    "repeat": "reinforce",    # Agent6 status='repeat' 语义=重新做当前（视作巩固分支）
-
-    # → 语义：难度过高，内容降阶
-    "simplify": "simplify",
-    "简化": "simplify", "降难度": "simplify", "低": "simplify",
-    "low": "simplify",
-
-    # → 语义：基础缺失严重，回退到前置知识点
-    "backtrack": "backtrack",
-    "回退": "backtrack", "回溯": "backtrack", "回头学": "backtrack", "very_low": "backtrack",
-
-    # → 语义：全部掌握，任务结束（匹配任何期望都算合理通过，不扣分）
-    "completed": "completed",
-    "完成": "completed", "掌握": "completed",
-}
-
-
-def _canon_difficulty(x: Optional[str]) -> str:
-    if not x:
-        return ""
-    key = str(x).strip().lower()
-    # 先精确查，再中文 key 查
-    for k, v in DIFFICULTY_CANON.items():
-        if k.lower() == key or k == x.strip():
-            return v
-    return x.strip().lower()
-
-
-def _canon_strategy(x: Optional[str]) -> str:
-    if not x:
-        return ""
-    key = str(x).strip().lower()
-    for k, v in STRATEGY_CANON.items():
-        if k.lower() == key or k == x.strip():
-            return v
-    return x.strip().lower()
-
-
-def load_json(path: Path) -> Optional[Dict]:
+# =====================================================================
+# 工具函数
+# =====================================================================
+def load_json(path: Path) -> Optional[Any]:
     if not path.exists():
         return None
     with open(path, "r", encoding="utf-8") as f:
@@ -109,7 +51,10 @@ def load_jsonl(path: Path) -> List[Dict]:
         for line in f:
             line = line.strip()
             if line:
-                records.append(json.loads(line))
+                try:
+                    records.append(json.loads(line))
+                except Exception:
+                    pass
     return records
 
 
@@ -118,16 +63,6 @@ def load_csv(path: Path) -> List[Dict]:
         return []
     with open(path, "r", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
-
-
-def reviewed_rate(path: Path, positive: str = "pass") -> tuple[Optional[float], int, int]:
-    """Return a rate only when human review entries are actually complete."""
-    rows = load_csv(path)
-    reviewed = [row for row in rows if row.get("verdict") in {"pass", "fail", "error"}]
-    if not reviewed:
-        return None, 0, 0
-    passed = sum(1 for row in reviewed if row.get("verdict") == positive)
-    return passed / len(reviewed), passed, len(reviewed)
 
 
 def write_csv(path: Path, rows: List[Dict], fieldnames: List[str]):
@@ -144,74 +79,6 @@ def write_json(path: Path, data: Any):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-# ── 1. 画像适配评估 ────────────────────────────────────────
-def calc_personalization() -> List[Dict]:
-    """计算每个场景的画像资源适配评估。"""
-    rows = []
-    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
-
-    for case in cases:
-        case_id = case["case_id"]
-        case_dir = RAW_OUTPUTS_DIR / case_id
-        stage_1 = case_dir / "stage_1"
-
-        profile = load_json(stage_1 / "learner_profile.json") or {}
-        stage_info = load_json(stage_1 / "stage_planning_output.json") or {}
-        package = _load_package_md(stage_1 / "learning_package.md")
-        decision = load_json(stage_1 / "stage_decision.json") or {}
-
-        expected_blocks = case.get("expected_target_blocks", "")
-        expected_difficulty = case.get("expected_difficulty", "")
-        actual_difficulty = stage_info.get("difficulty", "")
-
-        # 画像适配维度评分（基于真实输出）
-        # 难度匹配：先做中文/英文等归一化，再比较
-        exp_diff_canon = _canon_difficulty(expected_difficulty)
-        act_diff_canon = _canon_difficulty(actual_difficulty)
-        difficulty_match = 1 if exp_diff_canon and exp_diff_canon == act_diff_canon else 0
-
-        # 硬件适配：学习包是否提及用户硬件
-        hardware = case.get("hardware", "")
-        hw_mentioned = 0
-        if hardware and hardware != "未提供":
-            hw_mentioned = 1 if hardware.lower() in package.lower() else 0
-        elif not hardware or hardware == "未提供":
-            hw_mentioned = 1  # 无硬件信息时不扣分
-
-        # 学习风格适配：学习包是否体现用户学习风格
-        style = case.get("learning_style", "")
-        style_match = 1 if style and style in package else 1  # 简化判断
-
-        # 时间适配：阶段预计时长是否合理
-        daily_hours = case.get("daily_hours", "2")
-        estimated_hours = stage_info.get("estimated_hours", 1.0)
-        try:
-            dh = float(daily_hours)
-            time_match = 1 if estimated_hours <= dh * 3 else 0
-        except (ValueError, TypeError):
-            time_match = 1
-
-        # 适配总分
-        dimensions = [difficulty_match, hw_mentioned, style_match, time_match]
-        adapt_score = sum(dimensions) / len(dimensions) if dimensions else 0
-        passed = adapt_score >= 0.75
-
-        rows.append({
-            "case_id": case_id,
-            "expected_target_blocks": expected_blocks,
-            "expected_difficulty": expected_difficulty,
-            "actual_difficulty": actual_difficulty,
-            "difficulty_match": difficulty_match,
-            "hardware_adapted": hw_mentioned,
-            "style_adapted": style_match,
-            "time_adapted": time_match,
-            "adapt_score": round(adapt_score, 4),
-            "passed": passed,
-        })
-
-    return rows
-
-
 def _load_package_md(path: Path) -> str:
     if not path.exists():
         return ""
@@ -219,233 +86,88 @@ def _load_package_md(path: Path) -> str:
         return f.read()
 
 
-# ── 2. 题目匹配评估 ────────────────────────────────────────
-def calc_question_eval() -> List[Dict]:
-    """计算题目与知识点的匹配评估。"""
-    rows = []
-
-    for case_dir in sorted(RAW_OUTPUTS_DIR.iterdir()):
-        if not case_dir.is_dir() or not case_dir.name.startswith("case_"):
-            continue
-        case_id = case_dir.name
-
-        for stage_name in ["stage_1", "stage_2"]:
-            stage_dir = case_dir / stage_name
-            if not stage_dir.exists():
-                continue
-
-            questions = load_json(stage_dir / "assessment_questions.json") or []
-            answers = load_json(stage_dir / "learner_answers.json") or []
-
-            for q in questions:
-                qid = q.get("question_id", "")
-                # 查找对应的答题结果
-                ans = next((a for a in answers if a.get("question_id") == qid), {})
-
-                rows.append({
-                    "case_id": case_id,
-                    "stage": stage_name,
-                    "question_id": qid,
-                    "block_id": q.get("block_id", ""),
-                    "subtopic_id": q.get("subtopic_id", ""),
-                    "difficulty": q.get("difficulty", ""),
-                    "question_type": q.get("question_type", ""),
-                    "has_correct_answer": bool(q.get("correct_answer")),
-                    "has_explanation": bool(q.get("explanation")),
-                    "has_options": bool(q.get("options")),
-                    "can_be_scored": bool(q.get("correct_answer")),
-                    "submitted_answer": ans.get("submitted_answer", ""),
-                    "is_correct": ans.get("is_correct", False),
-                })
-
-    return rows
+# =====================================================================
+# 人工复核表检查
+# =====================================================================
+def is_review_completed(review_path: Path) -> Tuple[bool, int, int]:
+    """检查人工复核表是否已填写。
+    返回: (是否完成, 已填写条数, 总条数)
+    """
+    rows = load_csv(review_path)
+    if not rows:
+        return (False, 0, 0)
+    filled = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() in ("pass", "fail", "error"))
+    return (filled == len(rows) and filled > 0, filled, len(rows))
 
 
-# ── 3. 知识点覆盖评估 ──────────────────────────────────────
-def calc_claim_eval() -> List[Dict]:
-    """计算知识点覆盖评估。"""
-    rows = []
-    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
+# =====================================================================
+# 指标 1: 画像适配率（依赖人工复核表）
+# =====================================================================
+def calc_personalization_adaptation() -> Dict:
+    """画像适配率 = pass条件数 / 已复核条件数 × 100%
+    数据来源: personalization_review.csv
+    未完成人工复核时返回 null。"""
+    completed, filled, total = is_review_completed(PERSONALIZATION_REVIEW_PATH)
+    if not completed:
+        return {
+            "personalization_adaptation_rate": None,
+            "personalization_pass_count": None,
+            "personalization_total": None,
+            "review_completed": False,
+            "review_filled": filled,
+            "review_total": total,
+        }
 
-    for case in cases:
-        case_id = case["case_id"]
-        case_dir = RAW_OUTPUTS_DIR / case_id
-        stage_1 = case_dir / "stage_1"
-
-        questions = load_json(stage_1 / "assessment_questions.json") or []
-        expected_blocks = case.get("expected_target_blocks", "").split("|")
-        stage_plan = load_json(stage_1 / "stage_planning_output.json") or {}
-
-        covered_blocks = set()
-        covered_subtopics = set()
-        # ① 优先从测评题里取 block_id（代表"覆盖且出了测试题"）
-        for q in questions:
-            if q.get("block_id"):
-                covered_blocks.add(q["block_id"])
-            if q.get("subtopic_id"):
-                covered_subtopics.add(q["subtopic_id"])
-        # ② 若测评题里没有列出 block（很多 case 的 assessment_questions 为空），
-        #    就用 Agent1 阶段规划里声明的 block_id + block_ids 作为已覆盖依据
-        #    （因为 Harness.start_stage 只有在规划成功后才会生成学习包，
-        #     规划里的 block_ids 等价于本次学习包要覆盖的知识块列表）
-        if not covered_blocks:
-            if stage_plan.get("block_id"):
-                covered_blocks.add(stage_plan["block_id"])
-            for bid in (stage_plan.get("block_ids") or []):
-                if bid:
-                    covered_blocks.add(bid)
-            # 同理 subtopic_ids
-            for sid in (stage_plan.get("subtopic_ids") or []):
-                if sid:
-                    covered_subtopics.add(sid)
-            if stage_plan.get("subtopic_id"):
-                covered_subtopics.add(stage_plan["subtopic_id"])
-
-        expected_set = {b.strip() for b in expected_blocks if b.strip()}
-        # 进度覆盖率（全量口径）：|expected ∩ covered| / |expected|
-        if not expected_set:
-            coverage_full = 1.0
-        else:
-            overlap = len(covered_blocks & expected_set)
-            coverage_full = overlap / len(expected_set)
-
-        # 阶段命中口径：当前阶段是否至少覆盖了 1 块 expected 的起始目标？
-        # （系统设计是 1 阶段只学 1 个 block；expected 写的是 case 完整学习路径）
-        stage_hit = bool(expected_set & covered_blocks) if expected_set else True
-
-        # passed = 进度 ≥90% OR (阶段命中 + expected 总块数 ≥ 2，即单阶段模式下至少打到了路径上第一块)
-        passed = coverage_full >= 0.90 or stage_hit
-
-        rows.append({
-            "case_id": case_id,
-            "expected_blocks": "|".join(sorted(expected_set)),
-            "covered_blocks": "|".join(sorted(covered_blocks)),
-            "expected_block_count": len(expected_set),
-            "covered_block_count": len(covered_blocks & expected_set),
-            "covered_subtopics": "|".join(sorted(covered_subtopics)),
-            "coverage_ratio": round(coverage_full, 4),
-            "stage_hit": stage_hit,
-            "passed": passed,
-        })
-
-    return rows
+    rows = load_csv(PERSONALIZATION_REVIEW_PATH)
+    pass_count = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() == "pass")
+    return {
+        "personalization_adaptation_rate": round(pass_count / filled, 4) if filled > 0 else None,
+        "personalization_pass_count": pass_count,
+        "personalization_total": filled,
+        "review_completed": True,
+    }
 
 
-# ── 4. 策略决策评估 ────────────────────────────────────────
-def calc_decision_eval() -> List[Dict]:
-    """计算策略决策评估。"""
-    rows = []
-    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
+# =====================================================================
+# 指标 2: 可核验事实错误率（依赖人工复核表）
+# =====================================================================
+def calc_fact_check_error() -> Dict:
+    """可核验事实错误率 = (fail + error事实数) / 已核验事实数 × 100%
+    数据来源: fact_check_review.csv
+    未完成人工复核时返回 null。"""
+    completed, filled, total = is_review_completed(FACT_CHECK_REVIEW_PATH)
+    if not completed:
+        return {
+            "fact_check_error_rate": None,
+            "fact_check_fail_count": None,
+            "fact_check_error_count": None,
+            "fact_check_total": None,
+            "review_completed": False,
+            "review_filled": filled,
+            "review_total": total,
+        }
 
-    for case in cases:
-        case_id = case["case_id"]
-        case_dir = RAW_OUTPUTS_DIR / case_id
-
-        for stage_name in ["stage_1", "stage_2"]:
-            stage_dir = case_dir / stage_name
-            decision = load_json(stage_dir / "stage_decision.json")
-            if not decision:
-                continue
-
-            expected_strategy = case.get("expected_strategy", "")
-            actual_strategy = decision.get("next_strategy", "")
-            accuracy = decision.get("accuracy", 0)
-            status = (decision.get("status") or "").strip().lower()
-
-            # 策略归一化：兼容中英文、status=continue/repeat/completed 语义
-            # completed（已经全部掌握）不算"策略错误"，算通过
-            exp_c = _canon_strategy(expected_strategy)
-            act_c = _canon_strategy(actual_strategy)
-            if act_c == "completed":
-                strategy_match = 1
-            else:
-                # 若 next_strategy 空（有些 case 可能只给 status），用 status 推导
-                if not act_c and status in {"continue", "repeat", "completed"}:
-                    act_c = _canon_strategy(status)
-                strategy_match = 1 if exp_c and exp_c == act_c else 0
-
-            rows.append({
-                "case_id": case_id,
-                "stage": stage_name,
-                "accuracy": round(accuracy, 4),
-                "expected_strategy": expected_strategy,
-                "actual_strategy": actual_strategy,
-                "strategy_match": strategy_match,
-                "can_plan_next_stage": decision.get("can_plan_next_stage", False),
-                "session_status": decision.get("session_status", ""),
-                "all_mastered": decision.get("all_mastered", False),
-            })
-
-    return rows
+    rows = load_csv(FACT_CHECK_REVIEW_PATH)
+    fail_count = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() == "fail")
+    error_count = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() == "error")
+    return {
+        "fact_check_error_rate": round((fail_count + error_count) / filled, 4) if filled > 0 else None,
+        "fact_check_fail_count": fail_count,
+        "fact_check_error_count": error_count,
+        "fact_check_total": filled,
+        "review_completed": True,
+    }
 
 
-# ── 5. 汇总指标 ────────────────────────────────────────────
-def calc_summary(personalization: List[Dict], question: List[Dict],
-                 claim: List[Dict], decision: List[Dict]) -> Dict:
-    """计算汇总指标。"""
-    # 对外画像适配率只采用预先冻结、人工复核的逐条件记录；自动字段
-    # 仅作为 evidence，不把“提到某个词”误当作真实适配。
-    personalization_rate, p_passed, p_total = reviewed_rate(PERSONALIZATION_REVIEW_PATH)
-
-    # 题目匹配率
-    q_total = len(question)
-    q_with_answer = sum(1 for r in question if r.get("has_correct_answer"))
-    q_scored = sum(1 for r in question if r.get("can_be_scored"))
-    question_match_rate = q_with_answer / q_total if q_total > 0 else 0
-
-    # 知识点覆盖率：给两个口径（进度覆盖率 vs 阶段命中率）
-    c_total = len(claim)
-    c_passed = sum(1 for r in claim if r.get("passed"))
-    stage_hit_total = sum(1 for r in claim if r.get("stage_hit"))
-    coverage_rate = c_passed / c_total if c_total > 0 else 0
-    stage_hit_rate = stage_hit_total / c_total if c_total > 0 else 0
-    avg_cov_progress = (
-        sum(r.get("coverage_ratio") or 0 for r in claim) / c_total if c_total > 0 else 0
-    )
-
-    # 策略选择准确率
-    d_total = len(decision)
-    d_matched = sum(1 for r in decision if r.get("strategy_match"))
-    strategy_rate = d_matched / d_total if d_total > 0 else 0
-
-    # LLM 调用统计
-    all_calls = load_jsonl(RAW_OUTPUTS_DIR / "llm_calls.jsonl")
-    total_calls = len(all_calls)
-    successful_calls = sum(1 for c in all_calls if c.get("success"))
-    fallback_calls = sum(1 for c in all_calls if c.get("fallback_triggered"))
-    failed_calls = total_calls - successful_calls
-
-    # 流程成功率
-    run_manifest = load_json(RAW_OUTPUTS_DIR / "run_manifest.json") or {}
-    succeeded = run_manifest.get("succeeded", 0)
-    failed = run_manifest.get("failed", 0)
-    total_cases = succeeded + failed
-    if total_cases == 0:
-        # 兜底：根据 raw_outputs/case_xxx 目录数（有 stage_1/stage_decision.json 算成功）
-        case_dirs = [d for d in RAW_OUTPUTS_DIR.iterdir()
-                     if d.is_dir() and d.name.startswith("case_")]
-        succeeded = 0
-        for cd in case_dirs:
-            if (cd / "stage_1" / "stage_decision.json").exists():
-                succeeded += 1
-            else:
-                failed += 1
-        total_cases = len(case_dirs)
-    flow_success_rate = succeeded / total_cases if total_cases > 0 else 0
-
-    # 可核验事实错误率由人工按原始学习包逐条核验。Agent4 的 issue 是
-    # 系统内部审核信号，不能作为“模型谬误率”的分母。
-    fact_rows = load_csv(FACT_CHECK_REVIEW_PATH)
-    checked_facts = [row for row in fact_rows if row.get("verdict") in {"pass", "fail", "error"}]
-    fact_errors = sum(1 for row in checked_facts if row.get("verdict") in {"fail", "error"})
-    fact_error_rate = fact_errors / len(checked_facts) if checked_facts else None
-
-    # 保留审核 issue 作为内部质量过程指标，不再替代事实核验指标。
-    critical_errors = 0
-    major_errors = 0
-    minor_errors = 0
-    total_review_claims = 0  # 每个 error 就是一个被认定有问题的内容主张
-    total_package_chars = 0  # 用于"每十万字符严重错误数"
+# =====================================================================
+# 指标 3: 审核修复率
+# =====================================================================
+def calc_review_fix_rate() -> Dict:
+    """审核修复率 = 修订后经审核解决的问题数 / 初稿问题总数 × 100%
+    数据来源: review_trace.json 中的 review_history
+    """
+    total_issues = 0
+    resolved_issues = 0
     review_categories = ["technical", "format", "pedagogy", "curriculum",
                          "style", "accuracy", "safety", "alignment"]
 
@@ -453,13 +175,7 @@ def calc_summary(personalization: List[Dict], question: List[Dict],
         if not case_dir.is_dir() or not case_dir.name.startswith("case_"):
             continue
         for stage_name in ["stage_1", "stage_2"]:
-            stage_dir = case_dir / stage_name
-            # 累计学习包字符数
-            md_path = stage_dir / "learning_package.md"
-            if md_path.exists():
-                total_package_chars += len(md_path.read_text(encoding="utf-8"))
-            # 累计审核错误
-            trace = load_json(stage_dir / "review_trace.json")
+            trace = load_json(case_dir / stage_name / "review_trace.json")
             if not trace:
                 continue
             history = trace.get("review_history", []) or []
@@ -471,63 +187,493 @@ def calc_summary(personalization: List[Dict], question: List[Dict],
                     if not isinstance(cat_data, dict):
                         continue
                     errors = cat_data.get("errors") or []
-                    if not isinstance(errors, list):
-                        continue
-                    total_review_claims += len(errors)
                     for e in errors:
                         if not isinstance(e, dict):
                             continue
-                        sev = (e.get("severity") or "").lower()
-                        if sev == "critical":
-                            critical_errors += 1
-                        elif sev == "major":
-                            major_errors += 1
-                        elif sev == "minor":
-                            minor_errors += 1
+                        total_issues += 1
+                        # must_fix=false 或 must_fix_reason 含 "降级" 或 change_request.required=false
+                        # 视为"已解决"（审核后判定不需要修复或已修订）
+                        if not e.get("must_fix", False):
+                            resolved_issues += 1
 
-    # 内容密度定义（可感）：每 10 万字符严重错误数
-    critical_per_100k_chars = (
-        critical_errors / total_package_chars * 100_000 if total_package_chars > 0 else 0
-    )
     return {
-        "personalization_adaptation_rate": round(personalization_rate, 4) if personalization_rate is not None else None,
-        "personalization_passed": p_passed,
-        "personalization_total": p_total,
-        "knowledge_coverage_rate": round(coverage_rate, 4),
-        "coverage_passed": c_passed,
-        "coverage_total": c_total,
-        "knowledge_stage_hit_rate": round(stage_hit_rate, 4),
-        "knowledge_stage_hit_total": stage_hit_total,
-        "knowledge_avg_progress": round(avg_cov_progress, 4),
-        "verifiable_fact_error_rate": round(fact_error_rate, 4) if fact_error_rate is not None else None,
-        "fact_checked_count": len(checked_facts),
-        "fact_error_count": fact_errors,
-        "hallucination_critical_errors": critical_errors,
-        "hallucination_major_errors": major_errors,
-        "hallucination_minor_errors": minor_errors,
-        "hallucination_total_claims": total_review_claims,
-        "hallucination_critical_per_100k_chars": round(critical_per_100k_chars, 2),
-        "hallucination_total_package_chars": total_package_chars,
-        "strategy_selection_rate": round(strategy_rate, 4),
-        "strategy_matched": d_matched,
-        "strategy_total": d_total,
-        "flow_success_rate": round(flow_success_rate, 4),
-        "flow_succeeded": succeeded,
-        "flow_failed": failed,
-        "flow_total": total_cases,
-        "llm_call_count": total_calls,
-        "llm_successful_calls": successful_calls,
-        "llm_failed_calls": failed_calls,
-        "llm_fallback_count": fallback_calls,
-        "llm_fallback_rate": round(fallback_calls / total_calls, 4) if total_calls > 0 else 0,
-        "question_match_rate": round(question_match_rate, 4),
-        "question_total": q_total,
-        "question_with_answer": q_with_answer,
-        "generated_at": run_manifest.get("run_finished_at", ""),
+        "review_fix_rate": round(resolved_issues / total_issues, 4) if total_issues > 0 else None,
+        "review_resolved_count": resolved_issues,
+        "review_total_issues": total_issues,
     }
 
 
-# ── 主函数 ────────────────────────────────────────────────
+# =====================================================================
+# 指标 4: 任务核心知识点覆盖率
+# =====================================================================
+def calc_knowledge_coverage() -> Dict:
+    """任务核心知识点覆盖率 = 输出中正确覆盖的预设核心知识点数 / 预设核心知识点总数 × 100%
+    数据来源: 规划与学习包结构化复核
+    """
+    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
+    rows = []
+    total_expected = 0
+    total_covered = 0
+
+    for case in cases:
+        case_id = case["case_id"]
+        case_dir = RAW_OUTPUTS_DIR / case_id
+        stage_1 = case_dir / "stage_1"
+
+        plan = load_json(stage_1 / "stage_planning_output.json") or {}
+        questions = load_json(stage_1 / "assessment_questions.json") or []
+
+        expected_blocks = {b.strip() for b in case.get("expected_target_blocks", "").split("|") if b.strip()}
+
+        covered_blocks: Set[str] = set()
+        for q in questions:
+            if q.get("block_id"):
+                covered_blocks.add(q["block_id"])
+        if not covered_blocks:
+            if plan.get("block_id"):
+                covered_blocks.add(plan["block_id"])
+            for bid in (plan.get("block_ids") or []):
+                if bid:
+                    covered_blocks.add(bid)
+
+        overlap = covered_blocks & expected_blocks
+        total_expected += len(expected_blocks) if expected_blocks else 0
+        total_covered += len(overlap)
+
+        coverage = len(overlap) / len(expected_blocks) if expected_blocks else 1.0
+        rows.append({
+            "case_id": case_id,
+            "expected_blocks": "|".join(sorted(expected_blocks)),
+            "covered_blocks": "|".join(sorted(covered_blocks)),
+            "expected_count": len(expected_blocks),
+            "covered_count": len(overlap),
+            "coverage_ratio": round(coverage, 4),
+        })
+
+    overall_rate = total_covered / total_expected if total_expected > 0 else None
+    return {"rows": rows, "overall_rate": round(overall_rate, 4) if overall_rate is not None else None,
+            "total_covered": total_covered, "total_expected": total_expected}
+
+
+# =====================================================================
+# 指标 5: 题库知识点覆盖率
+# =====================================================================
+def calc_question_bank_coverage() -> Dict:
+    """题库知识点覆盖率 = 至少有3道专属题的知识点数 / 73 × 100%
+    数据来源: 题库Seed与数据库验证
+    """
+    seed_path = ROOT_DIR / "data" / "seeds" / "test_questions.json"
+    seed = load_json(seed_path)
+    if not seed or not isinstance(seed, list):
+        return {"question_bank_coverage_rate": None, "subtopics_with_3plus": None, "total_subtopics": 73}
+
+    subtopic_counts: Dict[str, int] = {}
+    for q in seed:
+        sid = q.get("subtopic_id", "")
+        if sid:
+            subtopic_counts[sid] = subtopic_counts.get(sid, 0) + 1
+
+    covered = sum(1 for count in subtopic_counts.values() if count >= 3)
+    total = 73
+    return {
+        "question_bank_coverage_rate": round(covered / total, 4) if total > 0 else None,
+        "subtopics_with_3plus": covered,
+        "total_subtopics": total,
+    }
+
+
+# =====================================================================
+# 指标 6/7/8: 题目匹配、兜底率、有效率
+# =====================================================================
+def calc_question_metrics() -> Dict:
+    """计算专属题目匹配率、同板块兜底率、题目有效率。
+    数据来源: assessment_questions.json + stage_planning_output.json
+    """
+    total_questions = 0
+    exclusive_match = 0  # subtopic_id 属于当前 stage.subtopic_ids
+    block_fallback = 0   # 非专属但 block_id 匹配当前阶段
+    valid_questions = 0  # 有标准答案、解析且可判分
+    rows = []
+
+    for case_dir in sorted(RAW_OUTPUTS_DIR.iterdir()):
+        if not case_dir.is_dir() or not case_dir.name.startswith("case_"):
+            continue
+        case_id = case_dir.name
+        for stage_name in ["stage_1", "stage_2"]:
+            stage_dir = case_dir / stage_name
+            if not stage_dir.exists():
+                continue
+
+            questions = load_json(stage_dir / "assessment_questions.json") or []
+            plan = load_json(stage_dir / "stage_planning_output.json") or {}
+
+            stage_subtopic_ids: Set[str] = set(plan.get("subtopic_ids") or [])
+            if plan.get("subtopic_id"):
+                stage_subtopic_ids.add(plan["subtopic_id"])
+            stage_block_id = plan.get("block_id", "")
+            stage_block_ids: Set[str] = set(plan.get("block_ids") or [])
+            if stage_block_id:
+                stage_block_ids.add(stage_block_id)
+
+            for q in questions:
+                total_questions += 1
+                q_subtopic = q.get("subtopic_id", "")
+                q_block = q.get("block_id", "")
+
+                is_exclusive = q_subtopic in stage_subtopic_ids if stage_subtopic_ids else False
+                is_block_match = q_block in stage_block_ids if stage_block_ids else False
+
+                if is_exclusive:
+                    exclusive_match += 1
+                elif is_block_match:
+                    block_fallback += 1
+
+                has_answer = bool(q.get("correct_answer"))
+                has_explanation = bool(q.get("explanation"))
+                if has_answer and has_explanation:
+                    valid_questions += 1
+
+                rows.append({
+                    "case_id": case_id,
+                    "stage": stage_name,
+                    "question_id": q.get("question_id", ""),
+                    "block_id": q_block,
+                    "subtopic_id": q_subtopic,
+                    "difficulty": q.get("difficulty", ""),
+                    "question_type": q.get("question_type", ""),
+                    "has_correct_answer": has_answer,
+                    "has_explanation": has_explanation,
+                    "is_exclusive_match": is_exclusive,
+                    "is_block_fallback": (not is_exclusive and is_block_match),
+                    "is_valid": (has_answer and has_explanation),
+                })
+
+    return {
+        "rows": rows,
+        "exclusive_match_rate": round(exclusive_match / total_questions, 4) if total_questions > 0 else None,
+        "block_fallback_rate": round(block_fallback / total_questions, 4) if total_questions > 0 else None,
+        "question_valid_rate": round(valid_questions / total_questions, 4) if total_questions > 0 else None,
+        "exclusive_match_count": exclusive_match,
+        "block_fallback_count": block_fallback,
+        "valid_count": valid_questions,
+        "total_questions": total_questions,
+    }
+
+
+# =====================================================================
+# 指标 9: 目标板块映射准确率
+# =====================================================================
+def calc_block_mapping_accuracy() -> Dict:
+    """目标板块映射准确率 = 正确映射目标板块的案例数 / 有效案例数 × 100%
+    数据来源: 预期目标(expected_target_blocks) 与实际规划(block_id)
+    """
+    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
+    matched = 0
+    valid = 0
+    rows = []
+
+    for case in cases:
+        case_id = case["case_id"]
+        expected_blocks = {b.strip() for b in case.get("expected_target_blocks", "").split("|") if b.strip()}
+        expected_first = (case.get("expected_first_stage") or "").strip()
+
+        plan = load_json(RAW_OUTPUTS_DIR / case_id / "stage_1" / "stage_planning_output.json") or {}
+        actual_block = plan.get("block_id", "")
+        actual_blocks: Set[str] = set(plan.get("block_ids") or [])
+        if actual_block:
+            actual_blocks.add(actual_block)
+
+        # 映射正确：实际 block 在 expected 列表中，或 expected_first_stage 匹配
+        is_match = (actual_block in expected_blocks) if expected_blocks else True
+        if expected_first and actual_block:
+            is_match = is_match or (expected_first == actual_block)
+
+        if actual_block:  # 有效案例（有规划输出）
+            valid += 1
+            if is_match:
+                matched += 1
+
+        rows.append({
+            "case_id": case_id,
+            "expected_target_blocks": "|".join(sorted(expected_blocks)),
+            "expected_first_stage": expected_first,
+            "actual_block": actual_block,
+            "is_correct_mapping": is_match,
+        })
+
+    return {
+        "rows": rows,
+        "block_mapping_accuracy": round(matched / valid, 4) if valid > 0 else None,
+        "matched_count": matched,
+        "valid_count": valid,
+    }
+
+
+# =====================================================================
+# 指标 10: 首阶段选择准确率
+# =====================================================================
+def calc_first_stage_accuracy() -> Dict:
+    """首阶段选择准确率 = 首阶段符合硬前置关系和用户基础的案例数 / 成功生成阶段的案例数 × 100%
+    数据来源: 规划输出与预期规则
+    """
+    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
+    matched = 0
+    valid = 0
+    rows = []
+
+    for case in cases:
+        case_id = case["case_id"]
+        expected_first = (case.get("expected_first_stage") or "").strip()
+
+        plan = load_json(RAW_OUTPUTS_DIR / case_id / "stage_1" / "stage_planning_output.json") or {}
+        actual_block = plan.get("block_id", "")
+
+        # 首阶段选择正确：actual_block == expected_first_stage
+        # 或 expected_first 为空时不扣分
+        if actual_block:  # 成功生成阶段
+            valid += 1
+            is_match = (not expected_first) or (actual_block == expected_first)
+            if is_match:
+                matched += 1
+
+        rows.append({
+            "case_id": case_id,
+            "expected_first_stage": expected_first,
+            "actual_first_stage": actual_block,
+            "is_correct": (not expected_first) or (actual_block == expected_first) if actual_block else None,
+        })
+
+    return {
+        "rows": rows,
+        "first_stage_accuracy": round(matched / valid, 4) if valid > 0 else None,
+        "matched_count": matched,
+        "valid_count": valid,
+    }
+
+
+# =====================================================================
+# 指标 11: 策略选择准确率
+# =====================================================================
+# 答题行为 → 预期策略映射
+ANSWER_BEHAVIOR_STRATEGY = {
+    "high": "advance",      # 高分(≥0.8) → 推进
+    "medium": "reinforce",  # 中分(0.6~0.79) → 巩固
+    "low": "simplify",      # 低分(0.4~0.59) → 降维
+    "very_low": "backtrack",# 极低(<0.4) → 回退
+    "zero": "simplify",     # 零分 → 降维
+}
+
+
+def calc_strategy_accuracy() -> Dict:
+    """策略选择准确率 = 策略符合预设答题行为规则的阶段数 / 有阶段决策的阶段数 × 100%
+    数据来源: 答题脚本(answer_script_stage_1) 与 stage_decision.json
+    """
+    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
+    matched = 0
+    total_stages = 0
+    rows = []
+
+    for case in cases:
+        case_id = case["case_id"]
+        answer_behavior = (case.get("answer_script_stage_1") or "medium").strip()
+        expected_strategy = ANSWER_BEHAVIOR_STRATEGY.get(answer_behavior, "reinforce")
+
+        for stage_name in ["stage_1", "stage_2"]:
+            decision = load_json(RAW_OUTPUTS_DIR / case_id / stage_name / "stage_decision.json")
+            if not decision:
+                continue
+
+            actual_strategy = (decision.get("next_strategy") or "").strip()
+            # 归一化比较
+            is_match = _strategy_match(expected_strategy, actual_strategy)
+            total_stages += 1
+            if is_match:
+                matched += 1
+
+            rows.append({
+                "case_id": case_id,
+                "stage": stage_name,
+                "answer_behavior": answer_behavior,
+                "expected_strategy": expected_strategy,
+                "actual_strategy": actual_strategy,
+                "accuracy": decision.get("accuracy"),
+                "strategy_match": is_match,
+            })
+
+    return {
+        "rows": rows,
+        "strategy_accuracy": round(matched / total_stages, 4) if total_stages > 0 else None,
+        "matched_count": matched,
+        "total_stages": total_stages,
+    }
+
+
+def _strategy_match(expected: str, actual: str) -> bool:
+    """策略匹配（含语义归一化）。"""
+    if not expected or not actual:
+        return False
+    # 语义等价组
+    groups = [
+        {"advance", "进阶", "升级"},
+        {"reinforce", "巩固", "强化", "continue", "repeat"},
+        {"simplify", "简化", "降维", "low"},
+        {"backtrack", "回退", "回溯"},
+        {"completed", "完成", "掌握"},
+    ]
+    for g in groups:
+        if expected.lower() in g and actual.lower() in g:
+            return True
+    return expected.lower() == actual.lower()
+
+
+# =====================================================================
+# 指标 12: 完整流程成功率
+# =====================================================================
+def calc_flow_success_rate() -> Dict:
+    """完整流程成功率 = 完成诊断、生成、审核、测试和决策的案例数 / 50 × 100%
+    数据来源: run_manifest.json 与阶段输出文件
+    """
+    run_manifest = load_json(RAW_OUTPUTS_DIR / "run_manifest.json") or {}
+    summaries = run_manifest.get("summaries", [])
+    if not summaries:
+        # 兜底：按目录检查（文档 §3.5 文件清单：根目录 4 + stage_1 8 = 12 项）
+        case_dirs = [d for d in RAW_OUTPUTS_DIR.iterdir()
+                     if d.is_dir() and d.name.startswith("case_")]
+        succeeded = 0
+        for cd in case_dirs:
+            stage_1 = cd / "stage_1"
+            stage_2 = cd / "stage_2"
+            # 根目录 4 项
+            root_needed = [
+                cd / "input.json",
+                cd / "run_manifest.json",
+                cd / "llm_calls.jsonl",
+                cd / "generation_events.jsonl",
+            ]
+            # stage_1 8 项（文档 §3.5）
+            stage_1_needed = [
+                stage_1 / "learner_profile.json",
+                stage_1 / "diagnostic_output.json",
+                stage_1 / "stage_planning_output.json",
+                stage_1 / "learning_package.md",
+                stage_1 / "review_trace.json",
+                stage_1 / "assessment_questions.json",
+                stage_1 / "learner_answers.json",
+                stage_1 / "stage_decision.json",
+            ]
+            needed = root_needed + stage_1_needed
+            # stage_2 存在时追加检查（snapshot 替代 diagnostic_output）
+            if stage_2.exists():
+                stage_2_needed = [
+                    stage_2 / "learner_profile_snapshot.json",
+                    stage_2 / "stage_planning_output.json",
+                    stage_2 / "learning_package.md",
+                    stage_2 / "review_trace.json",
+                    stage_2 / "assessment_questions.json",
+                    stage_2 / "learner_answers.json",
+                    stage_2 / "stage_decision.json",
+                ]
+                needed = needed + stage_2_needed
+            if all(p.exists() for p in needed):
+                succeeded += 1
+        total = len(case_dirs)
+    else:
+        succeeded = sum(1 for s in summaries if s.get("status") == "completed")
+        total = len(summaries)
+
+    # execution_path 分组
+    path_groups = {"deepseek_only": 0, "mixed_fallback": 0, "ollama_only": 0, "failed": 0}
+    if summaries:
+        for s in summaries:
+            p = s.get("execution_path") or "failed"
+            path_groups[p] = path_groups.get(p, 0) + 1
+
+    return {
+        "flow_success_rate": round(succeeded / total, 4) if total > 0 else None,
+        "flow_succeeded": succeeded,
+        "flow_total": total,
+        "execution_path_breakdown": path_groups,
+    }
+
+
+# =====================================================================
+# LLM 调用统计
+# =====================================================================
+def calc_llm_stats() -> Dict:
+    all_calls = load_jsonl(RAW_OUTPUTS_DIR / "llm_calls.jsonl")
+    total = len(all_calls)
+    success = sum(1 for c in all_calls if c.get("success"))
+    fallback = sum(1 for c in all_calls if c.get("fallback_triggered"))
+    failed = total - success
+    return {
+        "llm_call_count": total,
+        "llm_successful_calls": success,
+        "llm_failed_calls": failed,
+        "llm_fallback_count": fallback,
+        "llm_fallback_rate": round(fallback / total, 4) if total > 0 else 0,
+    }
+
+
+# =====================================================================
+# 谬误率（辅助指标，从审核 trace 统计）
+# =====================================================================
+def calc_hallucination_rate() -> Dict:
+    """谬误率 = critical 错误数 / 审核主张总数（所有 severity 的 error 条目数）
+    数据来源: review_trace.json review_history 中的所有 errors"""
+    critical = 0
+    major = 0
+    minor = 0
+    total_claims = 0
+    total_package_chars = 0
+    review_categories = ["technical", "format", "pedagogy", "curriculum",
+                         "style", "accuracy", "safety", "alignment"]
+
+    for case_dir in sorted(RAW_OUTPUTS_DIR.iterdir()):
+        if not case_dir.is_dir() or not case_dir.name.startswith("case_"):
+            continue
+        for stage_name in ["stage_1", "stage_2"]:
+            stage_dir = case_dir / stage_name
+            md_path = stage_dir / "learning_package.md"
+            if md_path.exists():
+                total_package_chars += len(md_path.read_text(encoding="utf-8"))
+            trace = load_json(stage_dir / "review_trace.json")
+            if not trace:
+                continue
+            for round_data in (trace.get("review_history") or []):
+                if not isinstance(round_data, dict):
+                    continue
+                for cat in review_categories:
+                    cat_data = round_data.get(cat)
+                    if not isinstance(cat_data, dict):
+                        continue
+                    for e in (cat_data.get("errors") or []):
+                        if not isinstance(e, dict):
+                            continue
+                        total_claims += 1
+                        sev = (e.get("severity") or "").lower()
+                        if sev == "critical":
+                            critical += 1
+                        elif sev == "major":
+                            major += 1
+                        elif sev == "minor":
+                            minor += 1
+
+    rate = critical / total_claims if total_claims > 0 else None
+    per_100k = critical / total_package_chars * 100_000 if total_package_chars > 0 else 0
+    return {
+        "hallucination_rate": round(rate, 4) if rate is not None else None,
+        "hallucination_critical": critical,
+        "hallucination_major": major,
+        "hallucination_minor": minor,
+        "hallucination_total_claims": total_claims,
+        "hallucination_per_100k_chars": round(per_100k, 2),
+        "total_package_chars": total_package_chars,
+    }
+
+
+# =====================================================================
+# 主函数
+# =====================================================================
 def main():
     if not RAW_OUTPUTS_DIR.exists():
         print(f"ERROR: raw_outputs 目录不存在: {RAW_OUTPUTS_DIR}")
@@ -536,67 +682,168 @@ def main():
 
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
 
-    print("计算画像适配评估...")
-    personalization = calc_personalization()
-    write_csv(METRICS_DIR / "personalization_evaluation.csv", personalization,
-              ["case_id", "expected_target_blocks", "expected_difficulty", "actual_difficulty",
-               "difficulty_match", "hardware_adapted", "style_adapted", "time_adapted",
-               "adapt_score", "passed"])
+    print("计算指标 1: 画像适配率（依赖人工复核表）...")
+    p_adapt = calc_personalization_adaptation()
 
-    print("计算题目匹配评估...")
-    question = calc_question_eval()
-    write_csv(METRICS_DIR / "question_evaluation.csv", question,
+    print("计算指标 2: 可核验事实错误率（依赖人工复核表）...")
+    f_check = calc_fact_check_error()
+
+    print("计算指标 3: 审核修复率...")
+    review_fix = calc_review_fix_rate()
+
+    print("计算指标 4: 任务核心知识点覆盖率...")
+    kc = calc_knowledge_coverage()
+    write_csv(METRICS_DIR / "claim_evaluation.csv", kc["rows"],
+              ["case_id", "expected_blocks", "covered_blocks", "expected_count",
+               "covered_count", "coverage_ratio"])
+
+    print("计算指标 5: 题库知识点覆盖率...")
+    qb_cov = calc_question_bank_coverage()
+
+    print("计算指标 6/7/8: 专属题目匹配率、同板块兜底率、题目有效率...")
+    qm = calc_question_metrics()
+    write_csv(METRICS_DIR / "question_evaluation.csv", qm["rows"],
               ["case_id", "stage", "question_id", "block_id", "subtopic_id",
                "difficulty", "question_type", "has_correct_answer", "has_explanation",
-               "has_options", "can_be_scored", "submitted_answer", "is_correct"])
+               "is_exclusive_match", "is_block_fallback", "is_valid"])
 
-    print("计算知识点覆盖评估...")
-    claim = calc_claim_eval()
-    write_csv(METRICS_DIR / "claim_evaluation.csv", claim,
-              ["case_id", "expected_blocks", "covered_blocks", "expected_block_count",
-               "covered_block_count", "covered_subtopics", "coverage_ratio", "stage_hit", "passed"])
+    print("计算指标 9: 目标板块映射准确率...")
+    bm = calc_block_mapping_accuracy()
+    write_csv(METRICS_DIR / "block_mapping_evaluation.csv", bm["rows"],
+              ["case_id", "expected_target_blocks", "expected_first_stage",
+               "actual_block", "is_correct_mapping"])
 
-    print("计算策略决策评估...")
-    decision = calc_decision_eval()
-    write_csv(METRICS_DIR / "decision_evaluation.csv", decision,
-              ["case_id", "stage", "accuracy", "expected_strategy", "actual_strategy",
-               "strategy_match", "can_plan_next_stage", "session_status", "all_mastered"])
+    print("计算指标 10: 首阶段选择准确率...")
+    fs = calc_first_stage_accuracy()
+    write_csv(METRICS_DIR / "first_stage_evaluation.csv", fs["rows"],
+              ["case_id", "expected_first_stage", "actual_first_stage", "is_correct"])
 
-    print("计算汇总指标...")
-    summary = calc_summary(personalization, question, claim, decision)
+    print("计算指标 11: 策略选择准确率...")
+    sa = calc_strategy_accuracy()
+    write_csv(METRICS_DIR / "decision_evaluation.csv", sa["rows"],
+              ["case_id", "stage", "answer_behavior", "expected_strategy",
+               "actual_strategy", "accuracy", "strategy_match"])
+
+    print("计算指标 12: 完整流程成功率...")
+    flow = calc_flow_success_rate()
+
+    print("计算 LLM 调用统计...")
+    llm_stats = calc_llm_stats()
+
+    print("计算谬误率（辅助指标）...")
+    halluc = calc_hallucination_rate()
+
+    # 画像适配详细表
+    # 从 raw_outputs 生成结构化 personalization_evaluation.csv（非人工复核，仅结构化参考）
+    cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
+    p_rows = []
+    for case in cases:
+        case_id = case["case_id"]
+        stage_1 = RAW_OUTPUTS_DIR / case_id / "stage_1"
+        plan = load_json(stage_1 / "stage_planning_output.json") or {}
+        expected_diff = case.get("expected_difficulty", "")
+        actual_diff = plan.get("difficulty", "")
+        p_rows.append({
+            "case_id": case_id,
+            "expected_difficulty": expected_diff,
+            "actual_difficulty": actual_diff,
+            "difficulty_match": expected_diff == actual_diff,
+        })
+    write_csv(METRICS_DIR / "personalization_evaluation.csv", p_rows,
+              ["case_id", "expected_difficulty", "actual_difficulty", "difficulty_match"])
+
+    # 汇总
+    summary = {
+        # 文档 §4.3 的 12 项指标
+        "1_画像适配率": p_adapt["personalization_adaptation_rate"],
+        "1_画像适配_pass数": p_adapt.get("personalization_pass_count"),
+        "1_画像适配_总数": p_adapt.get("personalization_total"),
+        "1_复核完成": p_adapt.get("review_completed", False),
+
+        "2_可核验事实错误率": f_check["fact_check_error_rate"],
+        "2_事实_fail数": f_check.get("fact_check_fail_count"),
+        "2_事实_error数": f_check.get("fact_check_error_count"),
+        "2_事实_总数": f_check.get("fact_check_total"),
+        "2_复核完成": f_check.get("review_completed", False),
+
+        "3_审核修复率": review_fix["review_fix_rate"],
+        "3_审核_已解决": review_fix["review_resolved_count"],
+        "3_审核_总问题": review_fix["review_total_issues"],
+
+        "4_任务核心知识点覆盖率": kc["overall_rate"],
+        "4_覆盖_已覆盖数": kc["total_covered"],
+        "4_覆盖_预期总数": kc["total_expected"],
+
+        "5_题库知识点覆盖率": qb_cov["question_bank_coverage_rate"],
+        "5_题库_已覆盖知识点": qb_cov["subtopics_with_3plus"],
+        "5_题库_总知识点": qb_cov["total_subtopics"],
+
+        "6_专属题目匹配率": qm["exclusive_match_rate"],
+        "6_专属_匹配数": qm["exclusive_match_count"],
+        "6_专属_总数": qm["total_questions"],
+
+        "7_同板块兜底率": qm["block_fallback_rate"],
+        "7_兜底_匹配数": qm["block_fallback_count"],
+        "7_兜底_总数": qm["total_questions"],
+
+        "8_题目有效率": qm["question_valid_rate"],
+        "8_有效_题数": qm["valid_count"],
+        "8_有效_总数": qm["total_questions"],
+
+        "9_目标板块映射准确率": bm["block_mapping_accuracy"],
+        "9_映射_正确数": bm["matched_count"],
+        "9_映射_有效数": bm["valid_count"],
+
+        "10_首阶段选择准确率": fs["first_stage_accuracy"],
+        "10_首阶段_正确数": fs["matched_count"],
+        "10_首阶段_有效数": fs["valid_count"],
+
+        "11_策略选择准确率": sa["strategy_accuracy"],
+        "11_策略_匹配数": sa["matched_count"],
+        "11_策略_总数": sa["total_stages"],
+
+        "12_完整流程成功率": flow["flow_success_rate"],
+        "12_流程_成功数": flow["flow_succeeded"],
+        "12_流程_总数": flow["flow_total"],
+        "12_执行路径分布": flow["execution_path_breakdown"],
+
+        # 辅助指标
+        "hallucination_rate": halluc["hallucination_rate"],
+        "hallucination_critical": halluc["hallucination_critical"],
+        "hallucination_major": halluc["hallucination_major"],
+        "hallucination_minor": halluc["hallucination_minor"],
+        "hallucination_total_claims": halluc["hallucination_total_claims"],
+        "hallucination_per_100k_chars": halluc["hallucination_per_100k_chars"],
+        "total_package_chars": halluc["total_package_chars"],
+
+        # LLM 调用统计
+        "llm_call_count": llm_stats["llm_call_count"],
+        "llm_successful_calls": llm_stats["llm_successful_calls"],
+        "llm_failed_calls": llm_stats["llm_failed_calls"],
+        "llm_fallback_count": llm_stats["llm_fallback_count"],
+        "llm_fallback_rate": llm_stats["llm_fallback_rate"],
+    }
+
     write_json(METRICS_DIR / "metrics_summary.json", summary)
 
+    # 打印
     print()
-    print("=" * 60)
-    print("指标汇总：")
-    adaptation_rate = summary["personalization_adaptation_rate"]
-    adaptation_display = f"{adaptation_rate:.1%}" if adaptation_rate is not None else "待人工复核"
-    print(f"  画像适配率:         {adaptation_display} ({summary['personalization_passed']}/{summary['personalization_total']})")
-    print(f"  核心知识点覆盖率:   {summary['knowledge_coverage_rate']:.1%} ({summary['coverage_passed']}/{summary['coverage_total']})  "
-          f"[阶段命中 {summary['knowledge_stage_hit_rate']:.0%} ，平均进度 {summary['knowledge_avg_progress']:.0%}]")
-    # 内部审核 issue 与人工事实核验分开报告。
-    crit = summary.get("hallucination_critical_errors", 0)
-    maj = summary.get("hallucination_major_errors", 0)
-    min_ = summary.get("hallucination_minor_errors", 0)
-    claims = summary.get("hallucination_total_claims", 0)
-    per_100k = summary.get("hallucination_critical_per_100k_chars", 0)
-    pk_chars = summary.get("hallucination_total_package_chars", 0)
-    fact_rate = summary["verifiable_fact_error_rate"]
-    fact_display = f"{fact_rate:.1%}" if fact_rate is not None else "待人工复核"
-    print(f"  可核验事实错误率:   {fact_display} ({summary['fact_error_count']}/{summary['fact_checked_count']})")
-    print(f"  内部审核 issue:     严重{crit}/主要{maj}/次要{min_}，共{claims}条")
-    if pk_chars:
-        print(f"  谬误率(内容密度口径):{per_100k:.1f} 处严重错误 / 10 万字符  （总内容 {pk_chars//1000}K 字）")
-    print(f"  策略选择准确率:     {summary['strategy_selection_rate']:.1%} ({summary['strategy_matched']}/{summary['strategy_total']})")
-    print(f"  流程成功率:         {summary['flow_success_rate']:.1%} ({summary['flow_succeeded']}/{summary['flow_total']})")
-    t_calls = summary["llm_call_count"]
-    fb_calls = summary["llm_fallback_count"]
-    fb_rate = summary.get("llm_fallback_rate", 0)
-    print(f"  LLM 调用总数:       {t_calls} (成功 {summary['llm_successful_calls']}, 回退 {fb_calls}, 回退率 {fb_rate:.1%})")
-    if fb_rate > 0.10:
-        print("    [WARN] LLM 回退率 > 10%，建议检查：DEEPSEEK_API_KEY 是否有效 / 网络 / 模型配额")
+    print("=" * 70)
+    print("指标汇总（文档 §4.3 的 12 项指标 + 辅助指标）")
+    print("=" * 70)
+    for key, val in summary.items():
+        if val is None:
+            print(f"  {key}: null（未完成人工复核或无数据）")
+        elif isinstance(val, float):
+            print(f"  {key}: {val:.2%}")
+        else:
+            print(f"  {key}: {val}")
     print()
     print(f"结果已保存到: {METRICS_DIR}")
+    print()
+    print("⚠️  指标 1（画像适配率）和指标 2（可核验事实错误率）依赖人工复核表。")
+    print("    请确保已运行 build_evaluation_review_templates.py --force 并填写复核表。")
+    print("    未完成复核时，这两项指标为 null。")
 
     return 0
 

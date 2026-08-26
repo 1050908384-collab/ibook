@@ -1,0 +1,877 @@
+{
+  "review_passed": true,
+  "iterations": 3,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在介绍虚拟环境时被截断，句子以“本文用 cond”结尾，未完成对conda或虚拟环境使用的说明，导致信息不完整。",
+            "evidence": "原文最后一句为“本文用 **cond”，明显不完整，缺少后续内容。",
+            "suggestion": "补全该句，例如“本文用 conda 创建和管理虚拟环境”，并确保虚拟环境的概念和使用方法得到完整说明。",
+            "error_id": "f33d3ccb5937_r1",
+            "canonical_error_id": "f33d3ccb5937",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在验证安装步骤中截断，未完成第三步的完整说明，缺少验证成功后的后续指导。",
+            "evidence": "原文在'如果显示 `Python 3.13.x`（或'处截断，未提供完整的验证结果说明和后续步骤。",
+            "suggestion": "补全第三步验证安装的完整内容，包括验证成功后的提示和下一步操作指引。",
+            "error_id": "cb5973ef605b_r1",
+            "canonical_error_id": "cb5973ef605b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_truncation",
+            "severity": "critical",
+            "location": null,
+            "description": "方法二中的命令被截断，显示为 'python3 --'，不完整，无法执行。",
+            "evidence": "原文末尾出现 'python3 --'，缺少后续参数，属于命令截断。",
+            "suggestion": "补全命令，例如 'python3 --version' 和 'pip3 --version'。",
+            "error_id": "1f6443db8f20_r1",
+            "canonical_error_id": "1f6443db8f20",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "version_requirement_mismatch",
+            "severity": "major",
+            "location": null,
+            "description": "内容要求安装 Python 3.10+，但命令 `sudo apt install python3` 在 Ubuntu/Debian 上默认安装的是发行版自带的 Python 版本（如 Ubuntu 22.04 为 3.10，Ubuntu 24.04 为 3.12），无法保证安装到 3.10+ 的特定版本，且未提供安装指定版本的方法（如 deadsnakes PPA 或源码编译）。",
+            "evidence": "Ubuntu/Debian 的 apt 包管理器默认安装系统仓库中的 python3 包，其版本取决于发行版，不保证为 3.10+；且命令未指定版本号，无法确保满足后续 vLLM 部署对 Python 3.10+ 的要求。",
+            "suggestion": "建议补充安装指定版本 Python 的方法，例如使用 deadsnakes PPA：`sudo add-apt-repository ppa:deadsnakes/ppa && sudo apt update && sudo apt install python3.10 python3.10-venv python3.10-pip`，或明确说明如何验证版本并升级。",
+            "error_id": "78b954d9aa53_r1",
+            "canonical_error_id": "78b954d9aa53",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护，且 CentOS 7 于 2024 年 6 月 30 日 EOL。表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 于 2021 年 12 月 31 日 EOL，CentOS Stream 8 维护至 2024 年 5 月 31 日，CentOS 7 于 2024 年 6 月 30 日 EOL。",
+            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 也于 2024 年停止维护，建议使用 Ubuntu LTS 等活跃维护的发行版”。",
+            "error_id": "8084fd82ff2c_r1",
+            "canonical_error_id": "8084fd82ff2c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“VirtualBox 这类桌面虚拟机默认无法直通 NVIDIA GPU”，但 VirtualBox 从 6.1 版本开始支持 NVIDIA GPU 直通（需要硬件和配置支持），并非“默认无法直通”。",
+            "evidence": "VirtualBox 6.1 及更高版本支持 PCI 直通，包括 NVIDIA GPU，但需要硬件支持（Intel VT-d/AMD-Vi）和特定配置。",
+            "suggestion": "建议改为“VirtualBox 等桌面虚拟机对 NVIDIA GPU 直通支持有限，配置复杂且性能损耗大，不建议作为主力方案”。",
+            "error_id": "32f37847196c_r1",
+            "canonical_error_id": "32f37847196c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在3.5节处被截断，缺少完整的改回官方源的操作步骤。",
+            "evidence": "原文在'### 3.5 改回官方源'后只有'如果你想恢复默认的'，没有后续内容。",
+            "suggestion": "补充完整的改回官方源操作步骤，包括删除或修改pip.ini/pip.conf中index-url的说明。",
+            "error_id": "2bc0233f54d4_r1",
+            "canonical_error_id": "2bc0233f54d4",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C008",
+            "content_chunk_id": "LOCAL-KBS-02-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'配置 Python 解释器'步骤处被截断，未完成该步骤的说明，导致内容不完整。",
+            "evidence": "原文以'输入 `Python: Select Inter'结尾，缺少后续步骤和完整说明。",
+            "suggestion": "补全'配置 Python 解释器'的完整步骤，包括选择解释器、验证配置等。",
+            "error_id": "df5ad1e2f78f_r1",
+            "canonical_error_id": "df5ad1e2f78f",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "major",
+            "location": null,
+            "description": "内容块末尾的'这确保 vLL'语句不完整，导致关键指令（确保vLLM部署兼容性）被截断，学习者无法获得完整指导。",
+            "evidence": "原文末尾为'这确保 vLL'，缺少后续内容，属于明显的截断错误。",
+            "suggestion": "补全该句，例如：'这确保 vLLM 部署时能正确识别 Python 环境。'",
+            "error_id": "4ece99a3f63d_r1",
+            "canonical_error_id": "4ece99a3f63d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块标题为“5.1 为什么用 Conda”，但实际内容包含 5.1 和 5.2 两个小节，且 5.2 的安装步骤在“验证安装”处被截断，内容不完整。",
+            "evidence": "原文包含“### 5.1 为什么用 Conda”和“### 5.2 安装 Conda：Anaconda vs Miniconda”两个标题，且 5.2 的步骤 4 在“macOS/L”处截断。",
+            "suggestion": "将内容块拆分为两个独立块，或补全 5.2 的安装步骤。",
+            "error_id": "2cf426391587_r1",
+            "canonical_error_id": "2cf426391587",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "安装步骤第 4 步“验证安装”在“macOS/L”处截断，缺少 macOS/Linux 的验证命令和 Windows 的完整验证说明。",
+            "evidence": "原文最后一句为“打开**新的**终端（Windows 用 \"Anaconda Prompt (Miniconda3)\"；macOS/L”，未完整结束。",
+            "suggestion": "补全验证安装的完整步骤，例如 macOS/Linux 运行 `conda --version`，Windows 在 Anaconda Prompt 中运行 `conda --version`。",
+            "error_id": "ade05cee3dad_r1",
+            "canonical_error_id": "ade05cee3dad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "安装步骤中建议 Windows 用户不要勾选“Add Miniconda3 to my PATH environment variable”，但未说明如果不勾选，如何在普通终端中使用 conda 命令，可能造成用户困惑。",
+            "evidence": "原文仅说明“日常用开始菜单里的 \"Anaconda Prompt (Miniconda3)\" 来操作 conda”，未提供替代方案。",
+            "suggestion": "补充说明：如果不将 conda 加入 PATH，用户只能在 Anaconda Prompt 中使用 conda 命令，或手动将 conda 的 Scripts 目录加入 PATH。",
+            "error_id": "b1dd8d436cc0_r1",
+            "canonical_error_id": "b1dd8d436cc0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'应该显示 Python 3.'处被截断，未完成'python --version'命令的预期输出说明，导致技术信息不完整。",
+            "evidence": "原文以'应该显示 `Python 3.'结尾，缺少完整的版本号示例和后续说明。",
+            "suggestion": "补全该句，例如：'应该显示 `Python 3.10.12` 或类似版本号，具体取决于你的环境。'并确保内容完整。",
+            "error_id": "19441f0fb289_r1",
+            "canonical_error_id": "19441f0fb289",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C013",
+            "content_chunk_id": "LOCAL-KBS-02-00-C013",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_code_block",
+            "severity": "major",
+            "location": null,
+            "description": "内容块末尾的验证命令未使用代码块围栏包裹，且命令不完整（缺少右引号），可能导致学习者复制执行时出错。",
+            "evidence": "原文：'打开终端运行 `python -c \"import sys; print(sys.executable)`'，命令缺少闭合引号，且未使用代码块格式。",
+            "suggestion": "将命令完整包裹在代码块中，并补全引号：```python -c \"import sys; print(sys.executable)\"```",
+            "error_id": "e4aeb52280ea_r1",
+            "canonical_error_id": "e4aeb52280ea",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "b7242a6f5809_r1",
+            "canonical_error_id": "b7242a6f5809",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容块在'Conda 虚拟环境 `llm'处被截断，内容不完整，无法进行完整的技术审核。",
+            "evidence": "内容块以'Conda 虚拟环境 `llm'结尾，缺少后续内容。",
+            "suggestion": "请提供完整的内容块，确保所有表格和段落完整。",
+            "error_id": "58fae2ec5835_r1",
+            "canonical_error_id": "58fae2ec5835",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在介绍虚拟环境时被截断，句子以“本文用 cond”结尾，未完成对conda或虚拟环境使用的说明，导致信息不完整。",
+            "evidence": "原文最后一句为“本文用 **cond”，明显不完整，缺少后续内容。",
+            "suggestion": "补全该句，例如“本文用 conda 创建和管理虚拟环境”，并确保虚拟环境的概念和使用方法得到完整说明。",
+            "error_id": "f33d3ccb5937_r1",
+            "canonical_error_id": "f33d3ccb5937",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在验证安装步骤中截断，未完成第三步的完整说明，缺少验证成功后的后续指导。",
+            "evidence": "原文在'如果显示 `Python 3.13.x`（或'处截断，未提供完整的验证结果说明和后续步骤。",
+            "suggestion": "补全第三步验证安装的完整内容，包括验证成功后的提示和下一步操作指引。",
+            "error_id": "cb5973ef605b_r1",
+            "canonical_error_id": "cb5973ef605b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_truncation",
+            "severity": "critical",
+            "location": null,
+            "description": "方法二中的命令被截断，显示为 'python3 --'，不完整，无法执行。",
+            "evidence": "原文末尾出现 'python3 --'，缺少后续参数，属于命令截断。",
+            "suggestion": "补全命令，例如 'python3 --version' 和 'pip3 --version'。",
+            "error_id": "1f6443db8f20_r1",
+            "canonical_error_id": "1f6443db8f20",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "version_requirement_mismatch",
+            "severity": "major",
+            "location": null,
+            "description": "内容要求安装 Python 3.10+，但命令 `sudo apt install python3` 在 Ubuntu/Debian 上默认安装的是发行版自带的 Python 版本（如 Ubuntu 22.04 为 3.10，Ubuntu 24.04 为 3.12），无法保证安装到 3.10+ 的特定版本，且未提供安装指定版本的方法（如 deadsnakes PPA 或源码编译）。",
+            "evidence": "Ubuntu/Debian 的 apt 包管理器默认安装系统仓库中的 python3 包，其版本取决于发行版，不保证为 3.10+；且命令未指定版本号，无法确保满足后续 vLLM 部署对 Python 3.10+ 的要求。",
+            "suggestion": "建议补充安装指定版本 Python 的方法，例如使用 deadsnakes PPA：`sudo add-apt-repository ppa:deadsnakes/ppa && sudo apt update && sudo apt install python3.10 python3.10-venv python3.10-pip`，或明确说明如何验证版本并升级。",
+            "error_id": "78b954d9aa53_r1",
+            "canonical_error_id": "78b954d9aa53",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护，且 CentOS 7 于 2024 年 6 月 30 日 EOL。表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 于 2021 年 12 月 31 日 EOL，CentOS Stream 8 维护至 2024 年 5 月 31 日，CentOS 7 于 2024 年 6 月 30 日 EOL。",
+            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 也于 2024 年停止维护，建议使用 Ubuntu LTS 等活跃维护的发行版”。",
+            "error_id": "8084fd82ff2c_r1",
+            "canonical_error_id": "8084fd82ff2c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“VirtualBox 这类桌面虚拟机默认无法直通 NVIDIA GPU”，但 VirtualBox 从 6.1 版本开始支持 NVIDIA GPU 直通（需要硬件和配置支持），并非“默认无法直通”。",
+            "evidence": "VirtualBox 6.1 及更高版本支持 PCI 直通，包括 NVIDIA GPU，但需要硬件支持（Intel VT-d/AMD-Vi）和特定配置。",
+            "suggestion": "建议改为“VirtualBox 等桌面虚拟机对 NVIDIA GPU 直通支持有限，配置复杂且性能损耗大，不建议作为主力方案”。",
+            "error_id": "32f37847196c_r1",
+            "canonical_error_id": "32f37847196c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在3.5节处被截断，缺少完整的改回官方源的操作步骤。",
+            "evidence": "原文在'### 3.5 改回官方源'后只有'如果你想恢复默认的'，没有后续内容。",
+            "suggestion": "补充完整的改回官方源操作步骤，包括删除或修改pip.ini/pip.conf中index-url的说明。",
+            "error_id": "2bc0233f54d4_r1",
+            "canonical_error_id": "2bc0233f54d4",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C008",
+            "content_chunk_id": "LOCAL-KBS-02-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'配置 Python 解释器'步骤处被截断，未完成该步骤的说明，导致内容不完整。",
+            "evidence": "原文以'输入 `Python: Select Inter'结尾，缺少后续步骤和完整说明。",
+            "suggestion": "补全'配置 Python 解释器'的完整步骤，包括选择解释器、验证配置等。",
+            "error_id": "df5ad1e2f78f_r1",
+            "canonical_error_id": "df5ad1e2f78f",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "major",
+            "location": null,
+            "description": "内容块末尾的'这确保 vLL'语句不完整，导致关键指令（确保vLLM部署兼容性）被截断，学习者无法获得完整指导。",
+            "evidence": "原文末尾为'这确保 vLL'，缺少后续内容，属于明显的截断错误。",
+            "suggestion": "补全该句，例如：'这确保 vLLM 部署时能正确识别 Python 环境。'",
+            "error_id": "4ece99a3f63d_r1",
+            "canonical_error_id": "4ece99a3f63d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块标题为“5.1 为什么用 Conda”，但实际内容包含 5.1 和 5.2 两个小节，且 5.2 的安装步骤在“验证安装”处被截断，内容不完整。",
+            "evidence": "原文包含“### 5.1 为什么用 Conda”和“### 5.2 安装 Conda：Anaconda vs Miniconda”两个标题，且 5.2 的步骤 4 在“macOS/L”处截断。",
+            "suggestion": "将内容块拆分为两个独立块，或补全 5.2 的安装步骤。",
+            "error_id": "2cf426391587_r1",
+            "canonical_error_id": "2cf426391587",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "安装步骤第 4 步“验证安装”在“macOS/L”处截断，缺少 macOS/Linux 的验证命令和 Windows 的完整验证说明。",
+            "evidence": "原文最后一句为“打开**新的**终端（Windows 用 \"Anaconda Prompt (Miniconda3)\"；macOS/L”，未完整结束。",
+            "suggestion": "补全验证安装的完整步骤，例如 macOS/Linux 运行 `conda --version`，Windows 在 Anaconda Prompt 中运行 `conda --version`。",
+            "error_id": "ade05cee3dad_r1",
+            "canonical_error_id": "ade05cee3dad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "安装步骤中建议 Windows 用户不要勾选“Add Miniconda3 to my PATH environment variable”，但未说明如果不勾选，如何在普通终端中使用 conda 命令，可能造成用户困惑。",
+            "evidence": "原文仅说明“日常用开始菜单里的 \"Anaconda Prompt (Miniconda3)\" 来操作 conda”，未提供替代方案。",
+            "suggestion": "补充说明：如果不将 conda 加入 PATH，用户只能在 Anaconda Prompt 中使用 conda 命令，或手动将 conda 的 Scripts 目录加入 PATH。",
+            "error_id": "b1dd8d436cc0_r1",
+            "canonical_error_id": "b1dd8d436cc0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'应该显示 Python 3.'处被截断，未完成'python --version'命令的预期输出说明，导致技术信息不完整。",
+            "evidence": "原文以'应该显示 `Python 3.'结尾，缺少完整的版本号示例和后续说明。",
+            "suggestion": "补全该句，例如：'应该显示 `Python 3.10.12` 或类似版本号，具体取决于你的环境。'并确保内容完整。",
+            "error_id": "19441f0fb289_r1",
+            "canonical_error_id": "19441f0fb289",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C013",
+            "content_chunk_id": "LOCAL-KBS-02-00-C013",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_code_block",
+            "severity": "major",
+            "location": null,
+            "description": "内容块末尾的验证命令未使用代码块围栏包裹，且命令不完整（缺少右引号），可能导致学习者复制执行时出错。",
+            "evidence": "原文：'打开终端运行 `python -c \"import sys; print(sys.executable)`'，命令缺少闭合引号，且未使用代码块格式。",
+            "suggestion": "将命令完整包裹在代码块中，并补全引号：```python -c \"import sys; print(sys.executable)\"```",
+            "error_id": "e4aeb52280ea_r1",
+            "canonical_error_id": "e4aeb52280ea",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "b7242a6f5809_r1",
+            "canonical_error_id": "b7242a6f5809",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容块在'Conda 虚拟环境 `llm'处被截断，内容不完整，无法进行完整的技术审核。",
+            "evidence": "内容块以'Conda 虚拟环境 `llm'结尾，缺少后续内容。",
+            "suggestion": "请提供完整的内容块，确保所有表格和段落完整。",
+            "error_id": "58fae2ec5835_r1",
+            "canonical_error_id": "58fae2ec5835",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "b7242a6f5809_r2",
+            "canonical_error_id": "b7242a6f5809",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "b7242a6f5809_r2",
+            "canonical_error_id": "b7242a6f5809",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "b7242a6f5809_r3",
+            "canonical_error_id": "b7242a6f5809",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "b7242a6f5809_r3",
+            "canonical_error_id": "b7242a6f5809",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_d6fe7b1f-710c-4333-9943-34f6e4645418_f5e8cc2c-c8ae-5081-87b2-729ab9a1ff10_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

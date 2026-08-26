@@ -1,0 +1,15 @@
+{
+  "case_id": "case_035",
+  "background": "大模型方向初学者，掌握Python无DL经验，每天1小时，理论+简单实操",
+  "existing_skills": "KB-02",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "1.0",
+  "learning_style": "理论解释结合简单实操",
+  "hardware": "无独立GPU或8GB显存",
+  "expected_target_blocks": "KB-04|KB-08|KB-11|KB-12",
+  "expected_difficulty": "初级",
+  "expected_strategy": "simplify",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "low",
+  "user_input_text": "我的学习背景：大模型方向初学者，掌握Python无DL经验，每天1小时，理论+简单实操\n已掌握技能：KB-02\n我的学习目标：LoRA微调\n我每天能学：1.0小时\n我喜欢怎么学：理论解释结合简单实操\n我的硬件条件：无独立GPU或8GB显存"
+}

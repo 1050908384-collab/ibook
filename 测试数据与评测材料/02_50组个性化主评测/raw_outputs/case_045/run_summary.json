@@ -1,0 +1,21 @@
+{
+  "case_id": "case_045",
+  "status": "completed",
+  "error": null,
+  "stage_1_completed": true,
+  "stage_2_completed": true,
+  "llm_call_count": 382,
+  "execution_path": "mixed_fallback",
+  "stage_1_accuracy": 0.75,
+  "stage_1_question_count": 8,
+  "stage_1_strategy": "advance",
+  "stage_1_expected_strategy": "reinforce",
+  "stage_1_accuracy_within_range": true,
+  "stage_1_strategy_match": false,
+  "stage_2_accuracy": 0.75,
+  "stage_2_question_count": 8,
+  "stage_2_strategy": "advance",
+  "stage_2_expected_strategy": "reinforce",
+  "stage_2_accuracy_within_range": true,
+  "stage_2_strategy_match": false
+}

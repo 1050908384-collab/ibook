@@ -2,400 +2,635 @@
 
 ## 块 1
 
-**本块学习检查**：读完本节能用自己的话说出“为什么没有解释器，`.py` 文件就只是一堆文本？”并写下来。
+## 环境准备：根据 CUDA 版本安装 PyTorch
 
----
+> **本块定位**：你的目标是 LoRA 微调，而 PyTorch 是它的地基。本块只做一件事——装好 PyTorch 并验证 GPU 可用。你已学过 conda 管理，我们直接快进。
 
-你现在的目标是 **LoRA 微调**，但别急着碰模型——所有微调代码都要靠 Python 跑起来，而**解释器**就是让代码活过来的第一步。
+### 一、前置检查：30 秒确认环境
 
-**一句话理解**：你写的 Python 代码是给人看的文字，电脑只懂 0 和 1。**Python 解释器**就是那个“翻译官”，把你的代码翻译成电脑能执行的指令。
+你之前已经配好 conda，这里只做快速确认，不重复教学：
 
-**动手验证一下**（不用装任何东西，先建立直觉）：
+```bash
+conda --version
+# 预期输出：conda 24.x.x
+```
 
-1. 打开记事本，输入 `print("hello")`，保存为 `test.py`。
-2. 双击这个文件——大概率没反应，或者一闪而过。
-3. 原因：没有解释器，电脑不知道这堆文字是“程序”，它只是一份普通文本。
+如果报错，回到“conda/pip 虚拟环境管理”章节排查；如果正常，继续往下。
 
-**关键点**：解释器不是“编辑器”，编辑器只是写字的工具；解释器才是真正“读懂”并执行代码的引擎。后面你安装 Python，装的核心就是它。
+### 二、核心操作：装 PyTorch（GPU 版 / CPU 版二选一）
 
-**为什么这对 LoRA 重要**：微调时你会在终端敲 `python train.py`，这个 `python` 命令调用的就是解释器。环境没配好，代码写得再对也跑不起来。
+**先判断你的情况**：
 
-现在你清楚“在装什么”了，下一步就是把它装好。
+- **有 NVIDIA 显卡** → 走 GPU 版（推荐，LoRA 微调需要）
+- **没有显卡** → 走 CPU 版（代码能跑，只是慢）
+
+**GPU 版安装命令**（以 CUDA 12.1 为例）：
+
+```bash
+conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+```
+
+> 注意：CUDA 版本必须和你的驱动匹配。用 `nvidia-smi` 查看驱动支持的 CUDA 版本，再选择对应的 PyTorch 安装命令（将 `pytorch-cuda=12.1` 中的版本号改为你驱动对应的版本）。版本不匹配是常见坑。
+
+**CPU 版安装命令**：
+
+```bash
 
 ## 块 2
 
-你正奔着 LoRA 微调去，但先别急着碰模型——**你的"工作台"没搭好，后面会处处卡壳**。这一步的目标很简单：让你写代码时像用 Word 一样顺手，而不是在记事本里受罪。
+## 1.2 确认 nvidia-smi 有输出
 
-**IDE 怎么选？** 记住两个名字就够了：
-- **VS Code**：轻量、免费，启动快，插件丰富。适合你这种想快速上手、边学边试的风格。
-- **PyCharm**：功能更全、更"重"，专业项目常用。但对你当前 LoRA 微调的目标来说，VS Code 完全够用，而且更省心。
+你的目标是 **LoRA 微调**，这意味着你马上要跑 GPU 训练。在装 PyTorch 之前，先花 30 秒确认你的显卡驱动是通的。
 
-**别忽略虚拟环境**——这是你最容易踩的坑。想象你同时做两个项目：一个要 `numpy 1.0`，另一个要 `numpy 2.0`，全装一起必冲突。**虚拟环境**就是给每个项目一个独立 Python 空间，互不
+打开终端，执行：
+
+```bash
+nvidia-smi
+```
+
+**看结果，分两种情况：**
+
+- **有正常输出**：能看到显卡型号、驱动版本、右上角有 `CUDA Version` 字样——说明驱动没问题，直接跳到**第二节**，搞清楚版本关系后装 PyTorch。
+- **报错 `command not found`**：当前环境没识别到 NVIDIA 驱动。先看下面 **1.3 节**决定要不要装驱动，或者干脆装 **CPU 版 PyTorch**（但 LoRA 微调强烈建议用 GPU，否则训练慢到怀疑人生）。
+
+---
+
+## 1.3 （如需要）安装 NVIDIA 显卡驱动
+
+**先判断你的场景：**
+
+- **云服务器 GPU 实例**：通常**已预装驱动**，直接跳过本节。
+- **本地物理机（双系统 / 独立 Linux）**：`nvidia-smi` 报错才需要手动装。
+- **WSL2**：Windows 主机的驱动会自动穿透到 WSL2，**一般不需要在 WSL2 内部单独装**。
+
+**Linux 本地物理机装驱动（两条路）：**
+
+**路线 A：NVIDIA 官方驱动（不推荐新手）**
+
+1. 访问 https://www.nvidia.com/Download/index.aspx
+2. 选你的显卡型号 + Linux 64-bit，下载 `.run` 文件
+3. 按官方说明安装。**注意**：不要直接复制执行 `.run` 命令；禁用 nouveau、切换图形界面等步骤因发行版而异，操作不当可能进不了图形界面。
+
+**路线 B：Ubuntu 附加驱动工具（推荐，省心）**
+
+```bash
+ubuntu-drivers devices          # 查看推荐驱动
+sudo ubuntu-drivers autoinstall # 自动安装推荐驱动
+```
+
+装完**重启系统**，再跑 `nvidia-smi` 验证。
+
+---
+
+## 二、显卡、驱动、CUDA、PyTorch 四者关系
+
+这是装 PyTorch 最容易踩坑的地方。很多人装完跑 `torch.cuda.is_available()` 返回 `False`，就是没搞清这四者的关系。看这张依赖链：
+
+```
+显卡硬件（如 RTX 4060）
+    ↓ 决定支持的驱动版本上限
+NVIDIA 显卡驱动（Driver）
+    ↓ nvidia-smi 右上角显示的 CUDA Version =
 
 ## 块 3
 
-### 2.1 Windows 用户：安装 Python 3.10+
+## 一、读图：你的显卡在说什么？
 
-你的目标是 LoRA 微调，这需要 Python 环境。我们直接动手，按三步走。
+刚才你运行 `nvidia-smi` 后，应该看到了一张类似下面的表。别被一堆数字吓到，我们只抓重点：
 
-**第一步：下载安装包**
-
-1. 打开浏览器，访问 https://www.python.org
-2. 鼠标移到顶部菜单 **Downloads**，网站会自动推荐 Windows 版本（如 `Python 3.13.x`）。
-3. 点击下载 **Windows installer (64-bit)**。
-
-**第二步：运行安装程序（⚠️ 关键步骤）**
-
-双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
-
-1. **勾选最下方的 "Add python.exe to PATH"**  
-   这个选项把 Python 添加到系统"环境变量"。不勾选的话，你打开命令行输入 `python`，系统会提示"不是内部或外部命令"，后续所有命令行操作都无法进行。
-
-2. 点击 **"Install Now"**（默认安装）即可。  
-   默认安装路径通常为 `C:\Users\<用户名>\AppData\Local\Programs\Python\Python313`，若用户名含中文或空格，建议自定义安装路径为纯英文无空格目录。
-
-**第三步：验证安装**
-
-1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
-2. 输入以下命令并回车：
-
-```bash
-python --version
+```
+NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2
++-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
++=========================================+======================+======================+
+|   0  NVIDIA GeForce RTX 3060        Off | 00000000:01:00.0 Off |                  N/A |
+|  0%   45C    P8              15W / 170W|    256MiB / 12288MiB |      0%      Default |
++-----------------------------------------+----------------------+----------------------+
 ```
 
-3. 如果显示 `Python
+**右上角 `CUDA Version: 12.2` 是今天的主角。** 它表示当前驱动兼容的 CUDA 运行时版本。记住这个数字，下一步装 PyTorch 时，你选的 CUDA 版本**不能超过 12.2**，以确保驱动兼容。
+
+> 如果 `nvidia-smi` 报错，或者你根本没有 NVIDIA 显卡，直接跳到**第五节（CPU 版安装）**，别在这里卡住。
+
+## 二、创建 PyTorch 专用环境
+
+这一步在"conda/pip 虚拟环境管理"章节已经练过，我们快速过一遍：
+
+```bash
+# 创建名为 pytorch 的虚拟环境，Python 版本 3.10
+conda create -n pytorch python=3.10 -y
+
+# 激活环境
+conda activate pytorch
+```
+
+激活成功后，命令行提示符前面会从 `(base)` 变成 `(pytorch)`。
+
+**为什么选 Python 3.10？** PyTorch 2.x 对 Python 3.8~3.12 都支持，而 3.10 是目前生态兼容性最好的版本，绝大多数深度学习库都已适配。选它最省心。
+
+## 三、安装 PyTorch（核心步骤）
+
+现在到了最关键的一步。打开 PyTorch 官网的安装命令生成器，选择你的系统、包管理器（conda 或 pip）、CUDA 版本——**注意，这里要选 12.1**，因为你的驱动支持 12.2，而 PyTorch 官方目前提供的最高 CU
 
 ## 块 4
 
-### macOS 用户：安装 Python 3.10+
+好的，我们直接进入正题。你的目标是搞定 LoRA 微调，而这一切的第一步，就是让 PyTorch 能在你的 NVIDIA 显卡上跑起来。别担心，这个过程比你想的简单，我们直接上手操作。
 
-你的目标是 LoRA 微调，这需要扎实的 Python 环境。macOS 上别依赖系统自带的 Python——macOS 12.3 起不再预装 Python 2，系统自带的 `python3` 版本可能过旧，不适合做开发。**强烈建议自己装最新版**。
+核心就一句话：**你安装的 PyTorch CUDA 版本，不能高于你显卡驱动支持的版本**。
 
-#### 方法一：官方安装包（推荐，最省心）
+怎么知道驱动支持多少？打开终端，输入 `nvidia-smi`，看右上角的 “CUDA Version”。比如显示 `12.2`，那你就装 CUDA 12.1 或 11.8 的 PyTorch，只要数字小于等于 12.2 就行。
 
-1. 打开浏览器，访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
-2. 双击下载的文件，一路点 "Continue" → "Install" 完成安装。
-3. 打开终端（Terminal），输入下面两条命令验证是否成功：
+最稳妥、最不容易出错的方法，是去 PyTorch 官网自动生成安装命令。打开这个页面：`https://pytorch.org/get-started/locally/`，然后按下面的选：
+
+- **PyTorch Build**: 选 `Stable`（稳定版）
+- **Your OS**: 选你的系统，比如 `Linux`
+- **Package**: 选 `Pip`（推荐，版本更灵活）
+- **Language**: 选 `Python`
+- **Compute Platform**: 选你驱动支持的 CUDA 版本（就是刚才 `nvidia-smi` 看到的那个，或者比它低一点的）
+
+选完，页面就会自动生成一条安装命令，直接复制到终端运行就行。
+
+举个例子，假设 `nvidia-smi` 显示 `CUDA Version: 12.2`，你可以选择 CUDA 12.1 的版本，命令长这样：
 
 ```bash
-python3 --version
-pip3 --version
+# CUDA 12.1 版本（适合驱动支持 CUDA 12.x 的用户）
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cu121
 ```
 
-看到版本号输出就说明装好了。
+如果你的显卡比较老，驱动只支持 CUDA 11.8，那就用这个：
 
-**关键提醒**：在 macOS 上，命令行默认**没有** `python` 命令（早期版本曾指向 Python 2，现已移除）。系统统一使用 `python3`。所以**始终用 `python3` 和 `pip3`**，别用 `python`，否则会报"命令不存在"或误用系统旧版本。
+```bash
+# CUDA 11.8 版本（适合旧显卡或驱动较旧的用户）
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cu118
+```
 
-#### 方法二：Homebrew（如果你已装过）
+**怎么选 cu121 还是 cu118？** 简单记一下：
 
-如果你已经有 Homebrew（macOS 的包管理器），在终端执行一条
+- `nvidia-smi` 显示 CUDA Version **≥ 12.1** → 用 `cu121`
+- `nvidia-smi` 显示 CUDA Version 在 **11.8 ~ 12.0** 之间 → 用 `cu118`
+- 不确定？优先选 `cu121`，因为
 
 ## 块 5
 
-你的目标是快速上手 LoRA 微调，而动手第一步就是装好 Python。Linux（Ubuntu/Debian）通常自带 Python，但版本可能偏老，不够用。跟着下面三步走，直接搞定：
+你的电脑没有 NVIDIA 显卡（比如用虚拟机、WSL2 或 Mac），装 CPU 版 PyTorch 就够了。它能正常跑通张量操作、自动求导和神经网络搭建这些 API，和 GPU 版几乎没差别，只是训练速度慢。
+
+安装命令如下（直接复制执行）：
 
 ```bash
-# 1. 更新软件源，确保能装到最新包
-sudo apt update
-
-# 2. 安装 Python 3、pip 和虚拟环境模块
-sudo apt install python3 python3-pip python3-venv -y
-
-# 3. 验证安装成功
-python3 --version
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cpu
 ```
 
-**关键点**：`-y` 参数让系统自动确认安装，省去手动输入 `y` 的麻烦。`python3-venv` 是创建隔离环境（
+**本块学习检查**：运行 `python -c "import torch; print(torch.__version__)"`，看到 `2.5.1` 即安装成功。后续学 LoRA 微调时，CPU 版跑大模型会非常慢，
 
 ## 块 6
 
-## 2.4 操作系统与实训环境该怎么选
+### 安装过程说明（针对 LoRA 微调目标）
 
-你的目标是跑通 LoRA 微调，那环境选择直接决定你能不能顺利走到 GPU 训练那一步。按你的情况，分两条线来看：
+你的目标是 LoRA 微调，这意味着 PyTorch 必须能调用 GPU，否则后续训练会非常慢。安装包约 2~3GB，下载需几分钟到十几分钟，看到进度条在走就耐心等待。
 
-**日常写 Python、练命令（Windows 用户）**
+**关键提醒（国内网络）**：若下载慢，先按第三节配置好全局 pip 国内镜像源，然后执行：
 
-启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。为什么不用 Windows 自带的 CMD？因为 WSL2 给你的是一个接近真实生产的 Linux 环境，命令、路径、包管理的方式都和后续的服务器一致——你在这里练熟了，后面上云服务器不会懵。安装很简单，管理员 PowerShell 里执行 `wsl --install` 就行。
+```bash
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cu121
+```
 
-**macOS / Linux 用户**：直接用自己的终端，本身就是类 Unix 环境，不用额外折腾。
-
----
-
-**LoRA / QLoRA 微调、vLLM 部署这类 GPU 实训**
-
-用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器**，或者**本地实体 Linux（Ubuntu LTS）机器**。原因很直接：这类任务依赖 NVIDIA 驱动、CUDA 和显卡直通，Ubuntu LTS 对深度学习生态的支持最成熟、文档最全。你后面做 LoRA 微调，跑起来最稳的就是这条路。
-
----
-
-**⚠️ 一个坑，别踩**：不要把 **"
+**千万别踩的坑**：PyTorch 的 CUDA 版本包**必须**从官方 `download.pytorch.org` 下载，**不要**叠加 `-i` 或 `--extra-index-url` 指定其他镜像源。命令中的 `--index-url` 会覆盖全局镜像源，pip 只会从官方源拉取包，不会从镜像源拉到 CPU 版或版本不匹配的包，因此无需担心 `torch.cuda
 
 ## 块 7
 
-### 3.1 什么时候才需要镜像源
+**快速验证：你的 PyTorch 装对了吗？**
 
-`pip` 是 Python 的包管理工具，用来安装第三方库（比如 `numpy`、`pandas`）。默认情况下，`pip` 从官方 PyPI 服务器（`pypi.org`）下载——这是**最权威、最完整、应保留的默认源**。
-
-**什么时候才用镜像？** 只有当你网络受限、访问官方源明显变慢或经常超时时，才临时切换到国内镜像。记住：**镜像是"网络不好时的临时加速手段"，不是永久替换**——官方源始终是首选。
-
-### 3.2 首选做法：临时指定镜像源（推荐）
-
-如果只是某次安装慢，最干净的做法是**只对这一次安装临时指定镜像**，不改任何全局配置：
+装完 PyTorch 后，别急着开始 LoRA 微调，先花 1 分钟确认环境没问题。打开终端，逐行复制下面这段代码并回车：
 
 ```bash
-pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+python -c "
+import torch
+print('PyTorch 版本:', torch.__version__)
+print('CUDA 是否可用:', torch.cuda.is_available())
+if torch.cuda.is_available():
+    print('PyTorch 内置 CUDA 版本:', torch.version.cuda)
+    print('GPU 数量:', torch.cuda.device_count())
+    print('GPU 型号:', torch.cuda.get_device_name(0))
+else:
+    print('当前使用 CPU 模式')
+"
 ```
 
-**为什么推荐这种方式**：它不影响
+**怎么看结果？**
+
+如果你有 NVIDIA GPU 且驱动正常，会看到类似：
+
+```
+PyTorch 版本: 2.5.1+cu121
+CUDA 是否可用: True
+PyTorch 内置 CUDA 版本: 12.1
+GPU 数量: 1
+GPU 型号: NVIDIA GeForce RTX 3060
+```
+
+如果没 GPU 或没装好，会看到：
+
+```
+PyTorch 版本:
 
 ## 块 8
 
-## 3.3 进阶：把镜像设为默认（长期网络受限才做）
+### 6.2 运行一个简单的张量运算（①）
 
-你的目标是 LoRA 微调，后面会频繁用 pip 装 PyTorch、Transformers 等大包。如果网络长期不稳，每次手动加 `-i` 太烦，那就直接写进配置文件，一劳永逸。
+你已经装好了 PyTorch，现在我们来亲手“摸”一下它，确认核心功能真的能跑起来。这一步很关键，因为后面做 LoRA 微调时，所有模型和数据的计算都建立在张量运算之上。
 
-**但先记住**：官方 PyPI 永远是最可靠的。网络恢复后，建议改回或删掉配置。
-
----
-
-### Windows 操作
-
-1. 按 `Win + R`，输入 `%APPDATA%`，回车，打开 `C:\Users\你的用户名\AppData\Roaming` 文件夹。
-2. 新建文件夹，命名为 `pip`。
-3. 进入 `pip` 文件夹，新建文本文件，命名为 `pip.ini`。
-4. 用记事本打开，写入：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-`index-url` 就是告诉 pip：默认从清华镜像下载。
-
----
-
-### macOS / Linux 操作
-
-打开终端，依次执行：
+打开终端，输入下面这段 Python 代码（直接复制整段，回车执行）：
 
 ```bash
-mkdir -p ~/.config/pip
-nano ~/.config/pip/pip.conf
+python -c "
+import torch
+
+# 创建一个 2x3 的随机张量
+x = torch.rand(2, 3)
+print('CPU 张量:')
+print(x)
+
+# 如果有 GPU，把张量移到 GPU 上
+if torch.cuda.is_available():
+    x_gpu = x.cuda()
+    print('\nGPU 张量:')
+    print(x_gpu)
+    print('\n张量运算结果（GPU）:')
+    print(x_gpu * 2)
+else:
+    print('\n张量运算结果（CPU）:')
+    print(x * 2)
+"
 ```
 
-写入同样内容：
+**这段代码在做什么？** 简单说，它创建了一个 2 行 3 列的随机数表格（张量），然后把它乘以 2。如果 PyTorch 检测到你的电脑有可用的 GPU，它会把计算放到 GPU 上执行；如果没有，就在 CPU 上执行。
 
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
+**你该看到什么？** 屏幕上会打印出两到三组数字：先是 CPU 上的原始张量，然后（如果有 GPU）是 GPU 上的张量，最后是乘以 2 之后的结果。只要这些数字能正常打印出来，就说明 PyTorch 环境完全就绪，可以开始后续的学习了。
 
-按 `Ctrl + O` 保存，`Ctrl + X` 退出。
+**小提示**：如果你看到 `torch.cuda.is_available()` 返回 `False`，别慌，这不一定是装错了。可能是你装的是 CPU 版 PyTorch，或者电脑没有 NVIDIA 显卡。后面的“常见问题”表格里会帮你排查。对你来说，即使只有 CPU 也能先跑通 LoRA 的基础流程，只是速度慢一些。
 
----
-
-### ⚠️ 别乱加 `trusted-host`
-
-网上很多教程会让你顺手加一行 `trusted-host = ...`。**除非镜像真的报 HTTPS 证书错误，否则不要加**——它会跳过 TLS 校验，等于放弃传输安全。清华、阿里等主流镜像都有合法证书，正常用**不需要**。只有企业内网自建源、确认可信时才临时加。
-
----
-
-### 验证配置是否生效
-
-命令行输入：
-
-```bash
-pip config list
-```
-
-看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'` 就说明成功了。
-
----
-
-### 改回官方源
-
-删除 `pip.ini` / `pip.conf` 文件，或执行：
-
-```bash
-pip config unset global.index-url
-```
-
----
-
-**本块学习检查**：动手做一遍——按你的系统完成配置，然后运行 `pip config list` 确认输出。再执行 `pip config unset global.index-url` 改回官方源，最后
+**动手验证一下**：执行完
 
 ## 块 9
 
-**本块学习检查**：完成 VS Code 安装与 Python 插件配置后，打开命令面板（`Ctrl + Shift + P` 或 `Cmd + Shift + P`），输入并执行 `Python: Select Interpreter`，确认你能看到并选中已安装的 Python 版本（如 `Python 3.13.x`）。若成功，说明你的开发工作台已就绪，可以开始后续 LoRA 微调实战。
+## 二、张量创建与基本属性（②）
 
----
+### 2.1 创建张量（②）
 
-**为什么选 VS Code**：你的目标是 LoRA 微调，核心操作是写 Python 脚本、调试代码。VS Code 启动快、插件丰富，且免费轻量，后续写训练脚本、改配置文件时都能用上，是性价比最高的选择。
+咱们的目标是LoRA微调，而LoRA微调的第一步，就是得先学会“造”出模型参数张量。别担心，这一步和NumPy几乎一模一样，你很快就能上手。
 
-**安装三步走**：
+先确保环境已激活：
 
-1. 访问 `https://code.visualstudio.com`，下载对应你系统的安装包。
-2. 运行安装程序，一路“下一步”即可，无需额外设置。
-3. **关键一步**：打开 VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并
+```bash
+conda activate pytorch
+```
+
+然后，咱们直接开干。下面这几种创建方式，是后续微调中最常用的“地基”：
+
+**1. 从列表直接创建**
+
+这是最直观的方式，把Python列表“翻译”成张量：
+
+```python
+import torch
+
+# 从列表创建
+a = torch.tensor([[1, 2], [3, 4]])
+```
+
+`a` 就是一个2行2列的张量，里面的值就是列表里的数字。
+
+**2. 创建全0 / 全1张量**
+
+在LoRA中，我们经常需要初始化权重矩阵，全0和全1就是最常用的“起点”：
+
+```python
+zeros = torch.zeros((2, 3))      # 2行3列，值全为0
+ones = torch.ones((3, 2))        # 3行2列，值全为1
+```
+
+注意看，`zeros` 和 `ones` 接收的是一个**元组** `(行, 列)`，用来指定形状。
+
+**3. 随机张量**
+
+模型初始化时，随机权重是标配。这里有两种最常见的随机分布：
+
+```python
+rand = torch.rand((2, 2))        # [0, 1) 均匀分布
+normal = torch.randn(2, 3)        # 标准正态分布
+```
+
+- `rand`：生成0到1之间（不含1）的均匀分布随机数。
+- `randn`：生成均值为0、标准差为1的标准正态分布随机数。
+
+**4. 整数随机张量**
+
+如果你想生成指定范围内的随机
 
 ## 块 10
 
-**动手装 PyCharm，为 LoRA 微调搭好“工作台”**  
-你马上要跑 LoRA 微调，代码会越来越长、项目文件也多，PyCharm 正好帮你管住这些。它免费、轻量，适合学习。
+## 2.2 查看张量属性（②）
 
-**安装三步走**  
-1. 打开官网下载页：`https://www.jetbrains.com/pycharm/download/`  
-2. 选 **Community Edition**（社区版，免费）下载。  
-3. 运行安装程序，务必勾选这两项：  
-   - `Add "Open Folder as Project"`（以后右键文件夹就能直接打开）  
-   - Windows 上勾选 `Add to PATH`（命令行也能启动 PyCharm；macOS/Linux 无此选项）
+在动手写 LoRA 代码前，先学会“体检”你的张量。创建完张量后，用下面四个属性快速确认它的状态：
 
-**首次启动，这样配**  
-1. 打开 PyCharm，点 `New Project`。  
-2. `Location` 选项目存放路径——**路径别带中文**，避免
+```python
+x = torch.randn(3, 4, dtype=torch.float32)
+
+print(x.shape)           # torch.Size([3, 4])  ——形状
+print(x.dtype)           # torch.float32        ——数据类型
+print(x.ndim)            # 2                    ——维度数
+print(x.device)          # cpu                  ——所在设备
+```
+
+| 属性 | 含义 | 示例值 |
+|---|---|---|
+| `.shape` / `.size()` | 各维度大小 | `torch.Size([3, 4])` |
+| `.ndim` | 维度数 | `2` |
+| `.dtype` | 数据类型 | `torch.float32` |
+| `.device` | 所在设备 | `cpu` 或 `cuda:0` |
+
+> **注意**：PyTorch 默认数据类型是 `torch.float32`。神经网络训练时通常用这个类型，但某些场景需要 `torch.long`（如分类标签）。
+
+---
+
+## 三、索引与切片（①+②）
+
+张量的索引规则与 NumPy 几乎完全一致：**先行后列**，支持整数索引、范围切片、布尔索引和列表索引。
+
+```python
+data = torch.randint(0, 10, (4,
 
 ## 块 11
 
-## 5.1 为什么用 Conda
+`reshape()` 只改变“看待数据的方式”，不碰数据本身。你正为LoRA微调打基础，先掌握这个最安全的形状变换。
 
-你要做 LoRA 微调，后面会用到 PyTorch、CUDA 这些依赖，它们之间版本关系很敏感。Conda 是目前最主流的虚拟环境管理工具，它不仅能创建虚拟环境，还能管理不同版本的 Python 解释器本身——这意味着你可以为 LoRA 项目单独建一个环境，装好配套的 Python 和 PyTorch，不污染系统里其他项目。对深度学习来说，conda 几乎是必备工具。
+```python
+t1 = torch.arange(12)      # 1维，12个元素
+t2 = t1.reshape(3, 4)      # 变为3行4列
+print(t2.shape)            # torch.Size([3, 4])
 
-## 5.2 安装 Conda：Anaconda vs Miniconda
+t3 = t1.reshape(2, -1)     # 2行6列，-1自动算出为6
+print(t3.shape)            # torch.Size([2, 6])
+```
 
-两个选择：
-
-| 选项 | 特点 | 推荐人群 |
-|------|------|----------|
-| **Anaconda** | 安装包约 500MB，安装后占用空间可达数 GB，预装了大量数据科学库（numpy、pandas、jupyter 等） | 做数据分析、不想手动装包的用户 |
-| **Miniconda** | 安装包约 50MB，安装后占用空间约 400MB，只包含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发的用户 |
-
-**推荐 Miniconda**——你的目标是 LoRA 微调，环境越干净越好，需要什么装什么，避免一堆用不到的库干扰排查。
-
-**安装步骤：**
-
-1. 访问 https://docs.conda.io/en/latest/miniconda.html
-2. 下载对应系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）
-3. 运行安装程序：
-   - **Windows**：一路下一步，**保持默认、不要勾选 "Add Miniconda3 to my PATH environment variable"**（安装器标为"不推荐"）。直接塞进系统 PATH 容易和已有 Python / 其他工具冲突，导致 `python`、`pip` 指向不明。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 使用 conda。
-   - **macOS/Linux**：运行 `.sh` 文件后，按提示输入 `yes` 同意协议、选择安装路径，最后
+**关键规则**：元素总数必须一致——3×4=12，2×6=12。`-
 
 ## 块 12
 
-**创建你的第一个虚拟环境**
+**目标**：LoRA微调前，先搞懂`view()`和`reshape()`的区别——这决定了你改模型权重时会不会踩内存坑。
 
-你正在为 LoRA 微调做准备，不同项目需要不同版本的 PyTorch 和 CUDA，所以现在学会隔离环境，以后直接复用这套流程。
+**核心区别**（记住这一条就够）：
+- `reshape()`：**不挑食**，张量内存连续不连续都能用。
+- `view()`：**有洁癖**，只认连续内存的张量，不连续就报错。
 
-在终端中执行：
+**动手验证**（跟着敲）：
+```python
+t1 = torch.arange(6).reshape(2, 3)
+print(t1.is_contiguous())     # True
 
-```bash
-conda create -n llm-learn python=3.10
-```
-
-**命令拆解**：
-- `conda create`：创建环境的命令
-- `-n llm-learn`：给环境起名叫 `llm-learn`（`n` 是 `name` 的缩写）
-- `python=3.10`：指定这个环境里安装 Python 3.10
-
-执行后，终端会列出将要安装的包，并询问：
-
-```bash
-Proceed ([y]/n)?
-```
-
-输入 `y` 并回车，等待安装完成
+# 连续张量：view 和 reshape 都能用
+t2 = t1.view(3, 2)            # ✅ 正常
 
 ## 块 13
 
-## 5.4 激活与退出环境
+## 4.3 为什么 transpose/permute 后 view 会报错？
 
-你的目标是 LoRA 微调，而微调项目最怕“污染”——不同项目依赖的包版本互相冲突。Conda 环境就是给每个项目一个“独立房间”。
+你在做 LoRA 微调时，经常要操作权重矩阵的维度，比如把 `(out_features, in_features)` 转成 `(in_features, out_features)`。这时如果直接用 `view()`，很可能就报错了。
 
-**激活环境**（进入这个“独立房间”）：
+**根本原因**：`transpose()` 和 `permute()` **不会拷贝数据**，只是改变维度的“查看方式”，这会导致张量在内存中不再连续。而 `view()` 要求张量必须是连续的。
 
-```bash
-conda activate llm-learn
+动手验证一下：
+
+```python
+t1 = torch.arange(6).reshape(2, 3)
+print(t1.is_contiguous())     # True
+
+# 转置后
+t2 = t1.transpose(0, 1)
+print(t2.is_contiguous())     # False  ← 不连续了！
+
+# t2.view(6)                  # ❌ 报错！因为 t2 非连续，view 要求连续
+t3 = t2.contiguous().view(6)  # ✅ 先调用 contiguous() 恢复连续，再 view
+t4 = t2.reshape(6)            # ✅ reshape 会自动处理连续性（内部先 contiguous 再 view）
 ```
 
-**为什么这样写**：激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。这对你后续跑 LoRA 微调脚本至关重要——装错版本的 PyTorch 会导致训练直接报错。
+**实操建议**：不确定时用 `reshape()`，它更宽容；追求极致性能且确认连续时用 `view()`。
 
-**验证当前环境的 Python 版本**：
+---
 
-```bash
-python --version
-```
+## 五、升维与降维：squeeze 与 unsqueeze
 
-应该显示 `Python 3.10.x`。
+在 LoRA 微调中，你经常需要给张量加一个 batch 维度或删掉多余的维度。比如把 `(3, 224, 224)` 的图像升为 `(1, 3, 224, 224)` 来模拟 batch 维度。
 
-**退出环境**（回到系统默认环境）：
+```python
+t1 = torch.randn(3, 1, 2, 1)
+print(t1.shape)               # torch.Size([3, 1, 2, 1])
 
-```bash
-conda deactivate
-```
-
-### 5.5 查看和管理环境
-
-**查看所有已创建
+# squeeze：删除所有大小为 1 的维度
+t2 = torch.squeeze(t1)
+print(t2.shape)               # torch.Size([3,
 
 ## 块 14
 
-**本块学习检查**：完成配置后，在 VS Code 或 PyCharm 中新建一个 Python 文件，输入 `print("hello")` 并运行，观察终端输出是否正常。
+## 6.1 transpose：交换两个维度
 
----
+你的目标是 LoRA 微调，在操作 HuggingFace 模型时经常要调整张量维度。`transpose(dim0, dim1)` 就是**交换两个指定维度**，其他维度保持不变。
 
-你的目标是 LoRA 微调，这需要先有一个能跑 PyTorch 的“工作台”。本块教你如何把 VS Code 和 PyCharm 指向你刚创建的 `llm-learn` 环境，确保代码用的是这个环境里的 Python 和包。
+```python
+t1 = torch.randn(2, 3, 4)
+print(t1.shape)               # torch.Size([2, 3, 4])
 
-**VS Code 配置（推荐，更轻量）**
+# 交换第 0 维和第 1 维
+t2 = t1.transpose(0, 1)
+print(t2.shape)               # torch.Size([3, 2, 4])
+```
 
-1. 先激活环境：在终端运行 `conda activate llm-learn`。
-2. 打开 VS Code，按 `Ctrl + Shift + P` 打开命令面板。
-3. 输入并选择 `Python: Select Interpreter`。
-4. 在列表里选带有 `conda` 字样的项，例如 `Python 3.10.x ('llm-learn': conda)`。
+**动手试一下**：把上面的代码跑一遍，观察形状变化。再试试 `t1.transpose(1, 2)`，看看结果是什么形状？
 
-> 为什么这样写：VS Code 会自动识别 conda 环境。选中后，你在这个工作区写的所有代码都会使用 `llm-learn` 里的 Python 和已装好的包，不会“跑错环境”。
+## 6.2 permute：任意重排所有维度
 
-**PyCharm 配置（如果你用这个）**
+`permute(dims)` 更灵活，一次性指定**所有维度**的新顺序：
 
-1. 打开 PyCharm，点击 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）。
-2. 左侧选 `Project: 你的项目名` → `Python Interpreter`。
-3. 点齿轮
+```python
+t1 = torch.randn(2, 3, 4)
+print(t1.shape)               # torch.Size([2, 3, 4])
+
+# 新顺序：原第2维 → 新第0维，原第0维 → 新第1维，原第1维 → 新第2维
+t2 = t1.permute(2, 0, 1)
+print(t2.shape)               # torch.Size([4, 2, 3])
+```
+
+**动手试一下**：把 `permute(2, 0, 1)`
 
 ## 块 15
 
-**本块学习检查**：完成下方两步验证后，在终端输入 `exit()` 退出。
+### 元素级运算与矩阵乘法：为LoRA微调打基础
 
-你的目标是 LoRA 微调，动手前先确认环境能跑通。跟着做：
+你正为LoRA微调做准备，核心是理解张量如何运算。这里聚焦两种最常用的操作。
 
-1. **命令行验证**：激活环境后输入 `python`，看到 `>>>` 提示符，粘贴运行：
-   ```python
-   print("Hello, Python! 我的环境准备好了！")
-   ```
-   正确打印即通过。
+**元素级运算**：两个张量形状相同，对应位置直接计算。
 
-2. **VS Code 验证**：新建 `my-first-project` 文件夹，用 VS Code 打开，新建 `hello.py`，输入 `print("Hello from VS Code!")`，点右上角小三角或按 `Ctrl + F5`，下方终端输出 `Hello from VS Code!` 即成功。
+```python
+a = torch.tensor([1., 2., 3.])
+b = torch.tensor([4., 5., 6.])
 
-**检查**
+print(a + b)          # tensor([5., 7., 9.])
+print(a * b)          # tensor([ 4., 10., 18.])
+print(torch.sqrt(a))  # tensor([1., 1.4142, 1.7321])
+```
+
+`*` 是逐元素相乘，不是矩阵乘法。
+
+**矩阵乘法**：线性代数中的点积
 
 ## 块 16
 
-好的，我们直接进入正题。你的目标是搞定 LoRA 微调，而这一切都建立在你的开发环境能正常跑起来的基础上。既然你偏好动手实践，我们就用最快的方式，在 PyCharm 里跑通第一行代码，完成环境验证。
+## 7.3 广播机制（②）
 
-### 7.3 在 PyCharm 中验证
+你的LoRA微调中，权重矩阵形状常不一致，广播能自动对齐形状完成运算，省去手动扩展。
 
-打开 PyCharm，我们直接新建一个项目。在项目里创建一个新的 Python 文件，命名为 `hello.py`。
-
-在 `hello.py` 里，输入一行最简单的代码：
+看例子：`a`形状是(3,1)，`b`形状是(3,)，直接相加得到(3,3)：
 
 ```python
-print("Hello, LoRA!")
+a = torch.tensor([[1], [2], [3]])   # shape (3, 1)
+b = torch.tensor([10, 20, 30])      # shape (3,)
+
+print(a + b)
+# tensor([[11, 21, 31],
+#         [12, 22, 32],
+#         [13, 23, 33]])
 ```
 
-然后，在文件编辑区**点击鼠标右键**，在弹出的菜单里找到并点击 **`Run 'hello'`**。
+规则：从尾部维度对齐，尺寸为1的维度自动扩展，缺失维度补1。
 
-这时，PyCharm 窗口**下方**会打开一个 **Run** 面板。如果一切正常，你会在这个面板里看到程序运行的结果：`Hello, LoRA!`。
+## 7
 
-看到这行输出，就说明你的 Python 解释器、项目环境都已经配置好了，可以开始后续的代码学习。
+## 块 17
+
+## 8.1 布尔掩码：用条件筛选数据
+
+在LoRA微调中，你经常需要从大量参数中筛选出符合条件的部分。PyTorch的布尔掩码就是为此设计的——用一个条件表达式生成“真假面具”，再据此挑选数据。
+
+```python
+x = torch.tensor([1, 2, 3, 4, 5])
+mask = x > 3          # 生成布尔掩码：tensor([False, False, False, True, True])
+print(x[mask])        # tensor([4, 5])  ← 只保留满足条件的元素
+```
+
+**核心理解**：`x > 3` 返回一个与 `x` 形状相同的布尔张量，`True` 表示该位置满足条件。用这个掩码索引原张量，就能筛出符合条件的元素。
 
 ---
 
-### 本章小结
+## 8.2 clone：创建独立副本
 
-完成本章后，你的电脑上应该具备以下基础：Python 开发环境已安装并配置完毕，能够在 PyCharm 中新建项目、创建 Python 文件并成功运行。通过 `
+微调LoRA时，你可能需要保留一份原始权重作为基准，再在副本上做修改。这时必须用 `clone()`：
+
+```python
+a = torch.tensor([1, 2, 3])
+b = a.clone()         # 深拷贝，b 和 a 不共享内存
+b[0] = 100
+print(a)              # tensor([1, 2, 3])  ← a 没变，安全！
+```
+
+> **关键区别**：直接写 `b = a` 只是让 `b` 指向 `a` 的同一块内存，修改 `b` 会连带修改 `a`。需要独立副本时，务必用 `.clone()`。
+
+---
+
+## 九、张量与NumPy互转：默认共享内存
+
+PyTorch张量和NumPy数组可以无缝转换，但**默认共享内存**——修改一个，另一个也会变。
+
+```python
+import numpy as np
+
+# Tensor → NumPy
+x = torch.tensor([1, 2
+
+## 块 18
+
+## 综合实战：图像预处理流程（张量操作串联）
+
+你的目标是LoRA微调，而LoRA微调的第一步，就是**把数据喂给模型之前，先把数据整理成模型认识的形状**。图像预处理就是最典型的张量操作实战场景——你会在里面看到`unsqueeze`、`permute`、`reshape`、`to(device)`这些操作如何配合使用。
+
+### 场景：模拟一张图像从原始数据到可训练输入
+
+假设你拿到一张3通道、224×224的图像，PyTorch里它就是一个形状为`(3, 224, 224)`的张量：
+
+```python
+import torch
+
+# 1. 模拟一张 3通道 224x224 的图像数据
+image = torch.randn(3, 224, 224)
+print(f"原始图像形状: {image.shape}")   # torch.Size([3, 224, 224])
+```
+
+**第一步：升维加batch。** 模型训练时一次处理一批数据，所以需要加一个batch维度，放在最前面。`unsqueeze(0)`就是在第0维插入一个大小为1的维度：
+
+```python
+# 2. 升维：添加 batch 维度 → (1, 3, 224, 224)
+image_batch = image.unsqueeze(0)
+print(f"添加batch后: {image_batch.shape}")  # torch.Size([1, 3, 224, 224])
+```
+
+**第二步：维度重排。** 有些框架（比如TensorFlow）要求数据格式是`(B, H, W, C)`——通道在最后。PyTorch默认是`(B, C, H, W)`，所以用`permute`把维度顺序换一下。`permute(0, 2, 3, 1)`的意思是：第0维不动，第1维挪到最后：
+
+```python
+# 3. 维度重排：从 (B, C, H, W) 转为 (B, H, W, C)
+image_nhwc = image_batch.permute(0, 2, 3, 1)
+print(f"维度重排后: {image_nhwc.shape}")    # torch.Size([1, 224, 224, 3])
+```
+
+**第三步：标准化。** 图像预处理通常要按通道减均值、除标准差。注意这里用的是`torch.randn`生成的数据，它本身不在`[0, 1]`范围，所以这个
+
+## 块 19
+
+## 十三、总结与后续学习路线（①+②+④）
+
+恭喜你完成了 PyTorch 张量操作章节的学习！你现在应该掌握了：
+
+- ✅ 张量创建：`torch.tensor`、`torch.zeros`、`torch.ones`、`torch.rand`、`torch.arange`
+- ✅ 张量属性：`shape`、`dtype`、`ndim`、`device`
+- ✅ 索引切片：基础索引、范围切片、列表索引、布尔索引
+- ✅ 形状变换：`reshape`（安全）、`view`（需连续）、`squeeze`/`unsqueeze`（升降维）
+- ✅ 维度交换：`transpose`（交换两个维度）、`permute`（任意重排）、`contiguous`（恢复连续）
+- ✅ 张量运算：元素级运算、矩阵乘法（`@`）、广播机制、聚合统计
+- ✅ 条件筛选：布尔掩码、独立拷贝（`clone`）
+- ✅ NumPy 互转：`numpy()`、`from_numpy()`（共享内存）
+- ✅ 设备切换：`.to(device)`、`.cuda()`、`.cpu()`
+
+> **下一步预告**：在下一节 **"自动求导机制"** 中，我们将学习 PyTorch 最核心的特性之一 —— **Autograd**。你将了解 `requires_grad`、`backward()`、梯度计算图
+
+## 测评题目
+
+### Q-KB04-ST0400-002
+在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。
+
+### Q-KB04-ST0400-003
+下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？
+
+### Q-KB0401-001
+以下哪个命令可以创建一个全为0的3x3张量？
+
+### Q-KB0401-003
+请将以下两个张量按**列方向**（dim=1）拼接：
+```python
+a = torch.tensor([[1, 2], [3, 4]])
+b = torch.tensor([[5], [6]])
+```
+
+### Q-KB0407-002
+加载模型参数时，需要先________模型结构，然后调用________方法加载参数字典。
+
+### Q-KB0403-001
+以下哪个是PyTorch中定义**线性层**（全连接层）的类？
+
+### Q-KB0405-003
+请写代码：为模型 `model` 创建 `AdamW` 优化器，学习率 `1e-4`，权重衰减 `1e-2`。
+
+### Q-KB0407-004
+加载checkpoint时，`map_location` 参数的作用是？

@@ -1,15 +1,18 @@
 {
   "case_id": "case_050",
+  "primary_category": "异常与边界输入",
+  "tags": "异常与边界输入|LoRA微调|理论型|RTX 3060 12GB",
   "background": "只说\"我想学AI\"，无具体方向",
-  "existing_skills": "",
+  "existing_skills": "未提供，系统应先追问学习基础",
   "learning_goal": "LoRA微调",
   "daily_hours": "1.0",
   "learning_style": "理论型",
   "hardware": "RTX 3060 12GB",
   "expected_target_blocks": "KB-08|KB-12",
+  "expected_first_stage": "KB-08",
   "expected_difficulty": "中级",
   "expected_strategy": "reinforce",
   "run_stage_2": "False",
-  "answer_script_stage_1": "medium",
-  "user_input_text": "我的学习背景：只说\"我想学AI\"，无具体方向\n我的学习目标：LoRA微调\n我每天能学：1.0小时\n我喜欢怎么学：理论型\n我的硬件条件：RTX 3060 12GB"
+  "answer_script_stage_1": "{\"answer_behavior\":\"medium\",\"target_accuracy_range\":[0.6,0.79],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"reinforce\"}",
+  "user_input_text": "我的学习背景：只说\"我想学AI\"，无具体方向\n已掌握技能：未提供，系统应先追问学习基础\n我的学习目标：LoRA微调\n我每天能学：1.0小时\n我喜欢怎么学：理论型\n我的硬件条件：RTX 3060 12GB"
 }

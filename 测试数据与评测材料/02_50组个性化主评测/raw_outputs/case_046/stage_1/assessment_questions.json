@@ -1,1 +1,115 @@
-[]
+[
+  {
+    "question_id": "Q-KB12-ST1200-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "使用 Hugging Face PEFT 实现 LoRA 时，需要安装的库名称是________。",
+    "options": [],
+    "correct_answer": "peft",
+    "hint": "PEFT 提供 LoraConfig 等参数高效微调接口。",
+    "explanation": "PEFT 提供 LoraConfig 等参数高效微调接口。"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
+    "options": [],
+    "correct_answer": "lora_dropout",
+    "hint": "该参数用于适配器分支的 dropout。",
+    "explanation": "该参数用于适配器分支的 dropout。"
+  },
+  {
+    "question_id": "Q-KB12-ST1204-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-04",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
+    "options": [],
+    "correct_answer": "显存 ||| 内存 ||| 存储",
+    "hint": "Double Quantization 降低量化状态的存储开销。",
+    "explanation": "Double Quantization 降低量化状态的存储开销。"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "LoraConfig 中用于指定注入 LoRA 层模块名列表的参数是________。",
+    "options": [],
+    "correct_answer": "target_modules",
+    "hint": "target_modules 决定哪些线性层被适配。",
+    "explanation": "target_modules 决定哪些线性层被适配。"
+  },
+  {
+    "question_id": "Q-KB1201-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "LoRA（Low-Rank Adaptation）的核心思想是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "冻结预训练模型的所有参数，仅训练新增的低秩分解矩阵"
+      },
+      {
+        "key": "B",
+        "text": "训练模型的所有参数"
+      },
+      {
+        "key": "C",
+        "text": "删除模型的部分层"
+      },
+      {
+        "key": "D",
+        "text": "仅训练Embedding层"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB12-ST1200-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "QLoRA 的 4-bit 量化常依赖的库是________。",
+    "options": [],
+    "correct_answer": "bitsandbytes",
+    "hint": "bitsandbytes 提供低比特量化与优化器支持。",
+    "explanation": "bitsandbytes 提供低比特量化与优化器支持。"
+  },
+  {
+    "question_id": "Q-KB12-ST1204-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-04",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "QLoRA 常用的 4-bit 数据类型名称是________。",
+    "options": [],
+    "correct_answer": "NF4 ||| NormalFloat4",
+    "hint": "NF4 为正态分布权重设计的 4-bit 格式。",
+    "explanation": "NF4 为正态分布权重设计的 4-bit 格式。"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-05",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "使用 `save_pretrained()` 导出模型或适配器时，通常会保存权重和________文件。",
+    "options": [],
+    "correct_answer": "配置 ||| config ||| 配置文件",
+    "hint": "配置文件用于后续正确加载模型。",
+    "explanation": "配置文件用于后续正确加载模型。"
+  }
+]

@@ -1,1 +1,135 @@
-[]
+[
+  {
+    "question_id": "Q-KB08-ST0807-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-07",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "模型前向传播得到的 logits 通常在经过________后可转换为词表上的概率分布。",
+    "options": [],
+    "correct_answer": "softmax",
+    "hint": "softmax 将 logits 归一化为概率。",
+    "explanation": "softmax 将 logits 归一化为概率。"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-07",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "前向实验中 `input_ids` 通常表示？",
+    "options": [
+      {
+        "key": "A",
+        "text": "Tokenizer 输出的 token 整数编号"
+      },
+      {
+        "key": "B",
+        "text": "模型损失值"
+      },
+      {
+        "key": "C",
+        "text": "GPU 温度"
+      },
+      {
+        "key": "D",
+        "text": "训练轮数"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "input_ids 是送入模型的离散 token ID。",
+    "explanation": "input_ids 是送入模型的离散 token ID。"
+  },
+  {
+    "question_id": "Q-KB08-ST0804-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "Transformer 中的 FFN 通常对序列中的每个 token 位置________地应用同一组参数。",
+    "options": [],
+    "correct_answer": "独立 ||| 分别 ||| position-wise",
+    "hint": "FFN 不直接混合不同位置的信息。",
+    "explanation": "FFN 不直接混合不同位置的信息。"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-07",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "推理时将模型切换到评估模式，应调用 `model.________()`。",
+    "options": [],
+    "correct_answer": "eval ||| eval()",
+    "hint": "eval 模式会调整 dropout 等层的行为。",
+    "explanation": "eval 模式会调整 dropout 等层的行为。"
+  },
+  {
+    "question_id": "Q-KB08-ST0802-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "GPT、Llama、Qwen 等自回归语言模型通常使用________架构。",
+    "options": [],
+    "correct_answer": "Decoder-Only ||| decoder only ||| 仅解码器",
+    "hint": "这些模型按自回归方式预测下一个 token。",
+    "explanation": "这些模型按自回归方式预测下一个 token。"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "加载 GPT-2 等预训练模型进行前向实验，最直接的目的是什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "验证模型与输入张量可正常前向计算"
+      },
+      {
+        "key": "B",
+        "text": "立即完成微调"
+      },
+      {
+        "key": "C",
+        "text": "删除词表"
+      },
+      {
+        "key": "D",
+        "text": "关闭 CUDA 驱动"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该实验用于验证加载和前向流程。",
+    "explanation": "该实验用于验证加载和前向流程。"
+  },
+  {
+    "question_id": "Q-KB0801-004",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-01",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "在Transformer解码器（Decoder）中，为了防止模型在生成时“偷看”到未来的词，通常会使用因果掩码（Causal Mask）。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "hint": "> 因果掩码（Causal Mask）或下三角掩码（Lower-triangular Mask）确保位置 $i$ 的预测只能依赖于位置 $1$ 到 $i-1$ 的输出。",
+    "explanation": "> 因果掩码（Causal Mask）或下三角掩码（Lower-triangular Mask）确保位置 $i$ 的预测只能依赖于位置 $1$ 到 $i-1$ 的输出。"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "用 `AutoModel.from_pretrained()` 加载模型时，模型权重通常来自名称对应的预训练________。",
+    "options": [],
+    "correct_answer": "检查点 ||| checkpoint ||| 模型仓库",
+    "hint": "from_pretrained 会下载或读取预训练检查点。",
+    "explanation": "from_pretrained 会下载或读取预训练检查点。"
+  }
+]

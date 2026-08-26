@@ -9,170 +9,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "incomplete_command",
-            "severity": "critical",
-            "location": null,
-            "description": "验证安装的命令不完整，只写了 'python --'，缺少后续参数（如 --version），导致命令无效。",
-            "evidence": "原文第三步验证安装中命令为 'python --'，缺少版本参数，无法执行。",
-            "suggestion": "将命令改为 'python --version' 或 'python -V'。",
-            "error_id": "1628c825a661_r1",
-            "canonical_error_id": "1628c825a661",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“现代 macOS（Catalina 10.15 起）不再预装 Python 2”，但 macOS Catalina 10.15 及后续版本（包括 Big Sur、Monterey 等）仍预装 Python 2.7（位于 /usr/bin/python），直到 macOS 12.3 才移除 Python 2。因此该陈述不准确。",
-            "evidence": "Apple 官方文档及社区资料显示，macOS 12.3 之前系统仍自带 Python 2.7，Catalina 10.15 并未移除 Python 2。",
-            "suggestion": "建议修改为“macOS 12.3 起不再预装 Python 2，系统自带的 python3 版本旧且不可控，建议自行安装最新版”。",
-            "error_id": "c5a50e6f140b_r1",
-            "canonical_error_id": "c5a50e6f140b",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在解释 python3-venv 的作用时被截断，句子未完成，导致信息不完整。",
-            "evidence": "原文最后一句为“python3-venv：创建虚拟环境的核心模块，现在”，缺少后续内容。",
-            "suggestion": "补充完整解释，例如：“python3-venv：创建虚拟环境的核心模块，现在用于隔离项目依赖。”",
-            "error_id": "ec1118c2698e_r1",
-            "canonical_error_id": "ec1118c2698e",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C005",
-            "content_chunk_id": "LOCAL-KBS-02-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "CentOS 8 已停止维护的表述不准确。CentOS 8 于2021年12月31日停止维护，但 CentOS Stream 8 继续维护至2024年5月31日。原文未区分 CentOS 8 与 CentOS Stream 8，可能误导用户。",
-            "evidence": "CentOS 8 EOL 日期为2021-12-31，CentOS Stream 8 EOL 为2024-05-31。",
-            "suggestion": "建议明确说明 CentOS 8 已于2021年12月31日停止维护，并提及 CentOS Stream 8 的维护状态。",
-            "error_id": "0c42e1d08c0a_r1",
-            "canonical_error_id": "0c42e1d08c0a",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C006",
-            "content_chunk_id": "LOCAL-KBS-02-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "truncated_content",
-            "severity": "critical",
-            "location": null,
-            "description": "内容块在'官方 Py'处被截断，句子不完整，导致信息缺失。",
-            "evidence": "原文末尾为'官方 Py'，未完成句子。",
-            "suggestion": "补全被截断的内容，确保句子完整。",
-            "error_id": "74fb3e21cb23_r1",
-            "canonical_error_id": "74fb3e21cb23",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C007",
-            "content_chunk_id": "LOCAL-KBS-02-00-C007",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "配置Python解释器步骤中，Python版本号被截断为'Python 3.13'，缺少后续内容，导致指令不完整。",
-            "evidence": "原文：'选择你刚安装的Python版本（如`Python 3.13'，句子未结束，缺少右括号和句号。",
-            "suggestion": "补全为'选择你刚安装的Python版本（如`Python 3.13`）'，确保指令完整。",
-            "error_id": "9ef2abbcaa83_r1",
-            "canonical_error_id": "9ef2abbcaa83",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C009",
-            "content_chunk_id": "LOCAL-KBS-02-00-C009",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在第七章验证部分被截断，句子不完整，缺少运行结果和后续说明。",
-            "evidence": "原文末尾为'若输出版本号，'，句子未结束，缺少后续内容。",
-            "suggestion": "补充完整句子，例如'若输出版本号，则说明环境配置成功。'并继续完成验证步骤的说明。",
-            "error_id": "c8ff4accc4a0_r1",
-            "canonical_error_id": "c8ff4accc4a0",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C014",
-            "content_chunk_id": "LOCAL-KBS-02-00-C014",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "description": "与来源块 LOCAL-KBS-04-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-04-C001，heading_path=Dataset/DataLoader 数据装载 > 二、Dataset：定义你的数据集（①+②+③） > 2.1 自定义 Dataset 模板（①+③），lines=1-50",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5dde03707335_r1",
-            "canonical_error_id": "5dde03707335",
+            "error_id": "45c5c14dcbe0_r1",
+            "canonical_error_id": "45c5c14dcbe0",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-04-C001"
             ],
             "change_request": {
               "required": false,
@@ -180,21 +26,21 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_chunk_id": "LOCAL-KBS-04-04-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-50"
           },
           {
-            "error_type": "factual_error",
-            "severity": "minor",
+            "error_type": "code_truncation",
+            "severity": "critical",
             "location": null,
-            "description": "PyCharm 中切换解释器的快捷键错误。原文称按 Ctrl+Shift+P（macOS 为 Cmd+Shift+P）打开命令面板，但 PyCharm 中该快捷键是 Ctrl+Shift+A（macOS 为 Cmd+Shift+A），Ctrl+Shift+P 在 PyCharm 中默认无此功能。",
-            "evidence": "PyCharm 官方文档及默认键位映射：Find Action 命令面板的默认快捷键为 Ctrl+Shift+A（Windows/Linux）和 Cmd+Shift+A（macOS）。Ctrl+Shift+P 是 VS Code 的命令面板快捷键，原文将其误用于 PyCharm。",
-            "suggestion": "将快捷键改为 Ctrl+Shift+A（macOS 为 Cmd+Shift+A），或直接说明通过菜单 View → Tool Windows → Python Packages 或 Settings → Project → Python Interpreter 选择解释器。",
-            "error_id": "d6c57774ff15_r1",
-            "canonical_error_id": "d6c57774ff15",
+            "description": "代码块在打印 dataset[4] 时被截断，缺少右括号和结束引号，导致代码不完整且无法运行。",
+            "evidence": "代码块末尾为 'print(dataset[4])            # (tensor(4.), tensor'，缺少 ')' 和 ')'，且注释未闭合。",
+            "suggestion": "补全代码：print(dataset[4])            # (tensor(4.), tensor(0))",
+            "error_id": "d465b790f1f7_r1",
+            "canonical_error_id": "d465b790f1f7",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -203,8 +49,660 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C003",
+            "content_chunk_id": "LOCAL-KBS-04-04-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'pin_memory'参数说明处截断，未完成该参数的解释，且缺少后续参数（如drop_last、collate_fn）的说明，导致内容不完整。",
+            "evidence": "原文在'pin_memory：GPU 训练时'处结束，未给出完整解释。",
+            "suggestion": "补全pin_memory的说明，并继续解释drop_last和collate_fn参数。",
+            "error_id": "b99ecb3b6412_r1",
+            "canonical_error_id": "b99ecb3b6412",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C004",
+            "content_chunk_id": "LOCAL-KBS-04-04-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "description": "与来源块 LOCAL-KBS-04-04-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C005，heading_path=Dataset/DataLoader 数据装载 > 三、DataLoader：批量加载数据（①+②+⑥） > 3.2 使用示例（①+②），lines=146-172",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ead04df57bbe_r1",
+            "canonical_error_id": "ead04df57bbe",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_chunk_id": "LOCAL-KBS-04-04-C005",
+            "content_version": 1,
+            "in_chunk_position": "lines:146-172"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "BatchSampler 描述不准确：BatchSampler 并不包装 SequentialSampler、RandomSampler 等采样器，而是接受一个 Sampler 作为参数，并在此基础上按 batch size 生成批次索引。原文称“把上面几种包装成 batch”可能误导读者认为 BatchSampler 直接包装这些采样器，实际上它需要显式传入一个 sampler 参数。",
+            "evidence": "PyTorch 官方文档：BatchSampler(sampler, batch_size, drop_last) 接受一个 sampler 参数，而不是自动包装多种采样器。",
+            "suggestion": "建议修改为：BatchSampler 接受一个 Sampler 对象（如 SequentialSampler 或 RandomSampler）作为参数，并按 batch_size 生成批次索引，DataLoader 内部默认使用 BatchSampler 来组织批次。",
+            "error_id": "c5aad3832ee0_r1",
+            "canonical_error_id": "c5aad3832ee0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C006",
+            "content_chunk_id": "LOCAL-KBS-04-04-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": "代码块",
+            "description": "代码块中未捕获异常，涉及数据加载和随机操作，可能因IO或数据问题导致程序崩溃。",
+            "evidence": "代码中直接调用NumberDataset和random.shuffle，未使用try-except包裹。",
+            "suggestion": "建议在数据加载和划分操作周围添加try-except，捕获异常并记录日志。",
+            "error_id": "a837df04e145_r1",
+            "canonical_error_id": "a837df04e145",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C007",
+            "content_chunk_id": "LOCAL-KBS-04-04-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "description": "与来源块 LOCAL-KBS-04-04-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C008，heading_path=Dataset/DataLoader 数据装载 > 四、Sampler：控制采样策略（①+④） > 4.3 实战：类别不平衡时的加权采样（①+④），lines=207-240",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f439684b3b2d_r1",
+            "canonical_error_id": "f439684b3b2d",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:207-240"
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "major",
+            "location": null,
+            "description": "代码中使用了Dataset和DataLoader，但未导入，会导致NameError。",
+            "evidence": "代码块中直接使用Dataset和DataLoader，但导入语句只有from torch.utils.data import WeightedRandomSampler。",
+            "suggestion": "添加导入语句：from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler",
+            "error_id": "482d8959d39a_r1",
+            "canonical_error_id": "482d8959d39a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_sentence",
+            "severity": "minor",
+            "location": null,
+            "description": "关键点拆解中'这样少数类被抽中的概率'句子不完整，影响理解。",
+            "evidence": "原文结尾为'这样少数类被抽中的概率'，缺少后续内容。",
+            "suggestion": "补全句子，例如'这样少数类被抽中的概率更高，从而平衡每个batch中的类别分布。'",
+            "error_id": "1a7ee9006864_r1",
+            "canonical_error_id": "1a7ee9006864",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "code_truncation",
+            "severity": "critical",
+            "location": null,
+            "description": "代码示例在DataLoader构造处被截断，缺少collate_fn参数和后续代码，导致示例不完整且无法运行。",
+            "evidence": "代码块以'loader = DataLoader(dataset, batch_size=2, collate_fn=coll'结尾，缺少右括号和后续内容。",
+            "suggestion": "补全代码：loader = DataLoader(dataset, batch_size=2, collate_fn=collate_fn_pad)",
+            "error_id": "b6a2600b4949_r1",
+            "canonical_error_id": "b6a2600b4949",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C009",
+            "content_chunk_id": "LOCAL-KBS-04-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在解释 train=True/False 时被截断，句子不完整，缺少对 train=False 的说明，导致信息不完整。",
+            "evidence": "原文结尾为 'train=True/False：True拿训练集，False拿'，句子未结束。",
+            "suggestion": "补全句子，例如：'train=True/False：True拿训练集，False拿测试集。'",
+            "error_id": "d48da097f9a3_r1",
+            "canonical_error_id": "d48da097f9a3",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C010",
+            "content_chunk_id": "LOCAL-KBS-04-04-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了Dataset类，但未导入。在自定义Dataset类定义前缺少from torch.utils.data import Dataset。",
+            "evidence": "代码块中class LocalImageDataset(Dataset)引用了Dataset，但文件开头仅导入os和PIL.Image，未导入torch.utils.data.Dataset。",
+            "suggestion": "在代码开头添加from torch.utils.data import Dataset。",
+            "error_id": "dff954814001_r1",
+            "canonical_error_id": "dff954814001",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C012",
+            "content_chunk_id": "LOCAL-KBS-04-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "读取图片和标签文件时未捕获异常，可能导致程序崩溃。",
+            "evidence": "open(label_file)和Image.open(img_path)均为IO操作，未使用try-except捕获异常，违反OWASP ML Top 10 2023 ML06要求。",
+            "suggestion": "使用try-except包裹文件读取和图片加载操作，捕获FileNotFoundError、OSError等异常并给出友好提示。",
+            "error_id": "fb256235ed0c_r1",
+            "canonical_error_id": "fb256235ed0c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C012",
+            "content_chunk_id": "LOCAL-KBS-04-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了Dataset类，但未导入。在自定义Dataset类定义前缺少from torch.utils.data import Dataset。",
+            "evidence": "代码块中class LocalImageDataset(Dataset)引用了Dataset，但文件开头仅导入os和PIL.Image，未导入torch.utils.data.Dataset。",
+            "suggestion": "在代码开头添加from torch.utils.data import Dataset。",
+            "error_id": "dff954814001_r1_1",
+            "canonical_error_id": "dff954814001",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C012",
+            "content_chunk_id": "LOCAL-KBS-04-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "description": "与来源块 LOCAL-KBS-04-04-C013 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-04-C013，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=398-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "18650abbb155_r1",
+            "canonical_error_id": "18650abbb155",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 1,
+            "in_chunk_position": "lines:398-475"
+          },
+          {
+            "error_type": "syntax_error",
+            "severity": "critical",
+            "location": null,
+            "description": "训练循环代码块中print语句缺少右括号，导致语法错误，代码无法运行。",
+            "evidence": "代码片段：print(f\"Epoch {epoch}, Batch {batch_idx}: {images.shape 缺少闭合的右括号。",
+            "suggestion": "补全print语句的右括号，例如：print(f\"Epoch {epoch}, Batch {batch_idx}: {images.shape}\")",
+            "error_id": "9822ca80f159_r1",
+            "canonical_error_id": "9822ca80f159",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "description": "与来源块 LOCAL-KBS-04-04-C014 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-04-C014，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=477-502",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ce4af7a2c626_r1",
+            "canonical_error_id": "ce4af7a2c626",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C014"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 1,
+            "in_chunk_position": "lines:477-502"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'每个 epoch 数据顺序相同'的解决方案为'训练集的 DataLoader 必须设置 shuffle=True'，但未区分验证集/测试集，且未说明 shuffle=True 仅适用于训练集，验证/测试集应设置 shuffle=False。该表述可能误导用户对所有数据集设置 shuffle=True。",
+            "evidence": "原文表格中'每个 epoch 数据顺序相同'的解决方案为'训练集的 DataLoader 必须设置 shuffle=True'，但未区分验证集/测试集，且未说明 shuffle=True 仅适用于训练集，验证/测试集应设置 shuffle=False。该表述可能误导用户对所有数据集设置 shuffle=True。",
+            "suggestion": "建议修改为：'训练集的 DataLoader 应设置 shuffle=True，验证集和测试集应设置 shuffle=False'，并补充说明原因。",
+            "error_id": "35952ae06d4c_r1",
+            "canonical_error_id": "35952ae06d4c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "description": "与来源块 LOCAL-KBS-04-05-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-05-C001，heading_path=优化器（如 AdamW）与损失函数 > 二、常用损失函数（①+⑥） > 2.1 L1Loss：平均绝对误差（MAE）（①+⑥），lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f7931a3d05ec_r1",
+            "canonical_error_id": "f7931a3d05ec",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "L1Loss对异常值不敏感的描述不准确。L1Loss对异常值的鲁棒性体现在其梯度为常数（±1），不会像MSE那样因误差增大而梯度爆炸，但损失值本身仍随异常值线性增长，并非'不敏感'。",
+            "evidence": "L1Loss的梯度为sign(pred-target)，恒为±1，因此对异常值的梯度影响是恒定的，但损失值仍线性增加。MSE的梯度与误差成正比，异常值会导致梯度爆炸。",
+            "suggestion": "建议修改为：'L1Loss对异常值的梯度影响是恒定的（梯度为±1），不会像MSE那样因误差增大而梯度爆炸，因此对异常值更鲁棒。'",
+            "error_id": "8629aa02ab07_r1",
+            "canonical_error_id": "8629aa02ab07",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "MSELoss 的 reduction='none' 返回的损失形状与输入形状相同，但实际是去掉 reduction 维度后的形状（例如输入形状为 (N, d) 时，输出形状为 (N, d)，若输入为 (N,) 则输出为 (N,)）。原文表述'形状与输入相同'不够准确，可能误导。",
+            "evidence": "PyTorch 官方文档：reduction='none' 时返回逐元素损失，形状与输入相同（但会移除 reduction 维度）。",
+            "suggestion": "建议改为：'不聚合，返回每个样本的损失，形状与输入相同（若输入有额外维度则保留）'。",
+            "error_id": "bb87b50365c8_r1",
+            "canonical_error_id": "bb87b50365c8",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C002",
+            "content_chunk_id": "LOCAL-KBS-04-05-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'Adam'处截断，未完成对Adam优化器的完整介绍，缺少后续内容。",
+            "evidence": "内容块以'> **Adam'结尾，明显不完整。",
+            "suggestion": "补充完整内容，确保Adam优化器的介绍完整。",
+            "error_id": "8b035e489392_r1",
+            "canonical_error_id": "8b035e489392",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C005",
+            "content_chunk_id": "LOCAL-KBS-04-05-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在实践建议处截断，句子不完整，缺少对Transformer类模型使用AdamW的具体建议。",
+            "evidence": "原文末尾为'在 Transformer 类模型（如 BERT、GPT）和'，句子未结束。",
+            "suggestion": "补全该句，例如：'在 Transformer 类模型（如 BERT、GPT）和微调任务中，推荐使用 AdamW 并设置 weight_decay=0.01，以获得更稳定的正则效果。'",
+            "error_id": "935d6ea52e2c_r1",
+            "canonical_error_id": "935d6ea52e2c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C006",
+            "content_chunk_id": "LOCAL-KBS-04-05-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "表格内容在'Transformer、大多数'处截断，未完成适用场景描述，且缺少后续内容。",
+            "evidence": "内容块以'Transformer、大多数'结尾，表格单元格未闭合，明显不完整。",
+            "suggestion": "补全表格内容，明确AdamW的适用场景，并确保表格完整。",
+            "error_id": "74d780f6cedf_r1",
+            "canonical_error_id": "74d780f6cedf",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C007",
+            "content_chunk_id": "LOCAL-KBS-04-05-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "description": "与来源块 LOCAL-KBS-04-05-C009 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-04-05-C009，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=219-311",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "74b5b59bbe74_r1",
+            "canonical_error_id": "74b5b59bbe74",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:219-311"
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "代码中模型加载和训练循环未使用try-except捕获异常，涉及IO和模型加载操作，存在未捕获异常风险。",
+            "evidence": "代码中`datasets.CIFAR10`下载、`model.to(device)`、`optimizer.step()`等操作均未包裹try-except，违反规则2中'未捕获异常'错误模式。",
+            "suggestion": "在关键IO和模型加载操作（如数据集下载、模型加载）外层添加try-except，捕获异常并记录日志。",
+            "error_id": "d15d8c0ca2c9_r1",
+            "canonical_error_id": "d15d8c0ca2c9",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_vram_note",
+            "severity": "minor",
+            "location": null,
+            "description": "部署文档未标注CIFAR10训练和模型推理的显存要求，可能影响用户环境准备。",
+            "evidence": "代码中未提及显存需求，行业标准规则2.1要求部署文档必须包含显存标注。",
+            "suggestion": "在代码注释或说明中补充显存要求，例如'训练CIFAR10需至少4GB显存'。",
+            "error_id": "55e3af4df69e_r1",
+            "canonical_error_id": "55e3af4df69e",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "description": "与来源块 LOCAL-KBS-04-05-C010 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-05-C010，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=313-339",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "01221ba5223a_r1",
+            "canonical_error_id": "01221ba5223a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:313-339"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "调度器调用时机描述不准确：scheduler.step() 应在每个 optimizer.step() 之后调用，而非每个 epoch 结束时调用。对于 StepLR 等基于 epoch 的调度器，通常在每个 epoch 结束后调用；但对于 CosineAnnealingLR 等基于 step 的调度器，应在每个 optimizer.step() 后调用。原文笼统表述为'每个 epoch 结束时调用'，可能误导用户。",
+            "evidence": "PyTorch 官方文档：scheduler.step() 应在 optimizer.step() 之后调用，具体调用频率取决于调度器类型（基于 epoch 或基于 step）。",
+            "suggestion": "建议修改为：'调度器的调用时机在优化器更新之后，具体调用频率取决于调度器类型：基于 epoch 的调度器（如 StepLR）在每个 epoch 结束后调用 scheduler.step()；基于 step 的调度器（如 CosineAnnealingLR）在每个 optimizer.step() 后调用。'",
+            "error_id": "7d1973c93a26_r1",
+            "canonical_error_id": "7d1973c93a26",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'训练循环四步口诀：前向 → 清零 → 反向 → 更新'顺序不准确。标准训练循环顺序应为：前向 → 反向 → 清零 → 更新（即 forward, backward, zero_grad, step）。原文将'清零'放在'反向'之前，可能导致用户误解梯度清零的时机。",
+            "evidence": "PyTorch 官方训练循环示例：optimizer.zero_grad() 在 loss.backward() 之前调用，但通常写作 forward -> loss -> zero_grad -> backward -> step。原文顺序'前向 → 清零 → 反向 → 更新'将 zero_grad 置于 backward 之前，虽不致命但易混淆。",
+            "suggestion": "建议修改为：'训练循环四步口诀：前向 → 反向 → 清零 → 更新'，并注明 zero_grad 应在 backward 之前调用。",
+            "error_id": "3e1390b99ee5_r1",
+            "canonical_error_id": "3e1390b99ee5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "常见问题速查表中'损失值不下降'的解决方案建议'尝试 lr=0.001（Adam/AdamW）或 lr=0.01（SGD）'，但未说明这些是初始学习率的常见默认值，且未提及学习率调度器的影响。可能误导用户认为固定学习率即可。",
+            "evidence": "深度学习实践：Adam 默认学习率通常为 0.001，SGD 常用 0.01，但实际需根据任务调整，且学习率调度器会动态改变学习率。",
+            "suggestion": "建议补充说明：'这些是常见初始学习率，实际需根据任务调整，并配合学习率调度器使用。'",
+            "error_id": "14887ab643dd_r1",
+            "canonical_error_id": "14887ab643dd",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
             "content_version": 1,
             "in_chunk_position": null
           }
@@ -217,170 +715,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "incomplete_command",
-            "severity": "critical",
-            "location": null,
-            "description": "验证安装的命令不完整，只写了 'python --'，缺少后续参数（如 --version），导致命令无效。",
-            "evidence": "原文第三步验证安装中命令为 'python --'，缺少版本参数，无法执行。",
-            "suggestion": "将命令改为 'python --version' 或 'python -V'。",
-            "error_id": "1628c825a661_r1",
-            "canonical_error_id": "1628c825a661",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“现代 macOS（Catalina 10.15 起）不再预装 Python 2”，但 macOS Catalina 10.15 及后续版本（包括 Big Sur、Monterey 等）仍预装 Python 2.7（位于 /usr/bin/python），直到 macOS 12.3 才移除 Python 2。因此该陈述不准确。",
-            "evidence": "Apple 官方文档及社区资料显示，macOS 12.3 之前系统仍自带 Python 2.7，Catalina 10.15 并未移除 Python 2。",
-            "suggestion": "建议修改为“macOS 12.3 起不再预装 Python 2，系统自带的 python3 版本旧且不可控，建议自行安装最新版”。",
-            "error_id": "c5a50e6f140b_r1",
-            "canonical_error_id": "c5a50e6f140b",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在解释 python3-venv 的作用时被截断，句子未完成，导致信息不完整。",
-            "evidence": "原文最后一句为“python3-venv：创建虚拟环境的核心模块，现在”，缺少后续内容。",
-            "suggestion": "补充完整解释，例如：“python3-venv：创建虚拟环境的核心模块，现在用于隔离项目依赖。”",
-            "error_id": "ec1118c2698e_r1",
-            "canonical_error_id": "ec1118c2698e",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C005",
-            "content_chunk_id": "LOCAL-KBS-02-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "CentOS 8 已停止维护的表述不准确。CentOS 8 于2021年12月31日停止维护，但 CentOS Stream 8 继续维护至2024年5月31日。原文未区分 CentOS 8 与 CentOS Stream 8，可能误导用户。",
-            "evidence": "CentOS 8 EOL 日期为2021-12-31，CentOS Stream 8 EOL 为2024-05-31。",
-            "suggestion": "建议明确说明 CentOS 8 已于2021年12月31日停止维护，并提及 CentOS Stream 8 的维护状态。",
-            "error_id": "0c42e1d08c0a_r1",
-            "canonical_error_id": "0c42e1d08c0a",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C006",
-            "content_chunk_id": "LOCAL-KBS-02-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "truncated_content",
-            "severity": "critical",
-            "location": null,
-            "description": "内容块在'官方 Py'处被截断，句子不完整，导致信息缺失。",
-            "evidence": "原文末尾为'官方 Py'，未完成句子。",
-            "suggestion": "补全被截断的内容，确保句子完整。",
-            "error_id": "74fb3e21cb23_r1",
-            "canonical_error_id": "74fb3e21cb23",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C007",
-            "content_chunk_id": "LOCAL-KBS-02-00-C007",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "配置Python解释器步骤中，Python版本号被截断为'Python 3.13'，缺少后续内容，导致指令不完整。",
-            "evidence": "原文：'选择你刚安装的Python版本（如`Python 3.13'，句子未结束，缺少右括号和句号。",
-            "suggestion": "补全为'选择你刚安装的Python版本（如`Python 3.13`）'，确保指令完整。",
-            "error_id": "9ef2abbcaa83_r1",
-            "canonical_error_id": "9ef2abbcaa83",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C009",
-            "content_chunk_id": "LOCAL-KBS-02-00-C009",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在第七章验证部分被截断，句子不完整，缺少运行结果和后续说明。",
-            "evidence": "原文末尾为'若输出版本号，'，句子未结束，缺少后续内容。",
-            "suggestion": "补充完整句子，例如'若输出版本号，则说明环境配置成功。'并继续完成验证步骤的说明。",
-            "error_id": "c8ff4accc4a0_r1",
-            "canonical_error_id": "c8ff4accc4a0",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C014",
-            "content_chunk_id": "LOCAL-KBS-02-00-C014",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "description": "与来源块 LOCAL-KBS-04-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-04-C001，heading_path=Dataset/DataLoader 数据装载 > 二、Dataset：定义你的数据集（①+②+③） > 2.1 自定义 Dataset 模板（①+③），lines=1-50",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5dde03707335_r1",
-            "canonical_error_id": "5dde03707335",
+            "error_id": "45c5c14dcbe0_r1",
+            "canonical_error_id": "45c5c14dcbe0",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-04-C001"
             ],
             "change_request": {
               "required": false,
@@ -388,21 +732,21 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_chunk_id": "LOCAL-KBS-04-04-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-50"
           },
           {
-            "error_type": "factual_error",
-            "severity": "minor",
+            "error_type": "code_truncation",
+            "severity": "critical",
             "location": null,
-            "description": "PyCharm 中切换解释器的快捷键错误。原文称按 Ctrl+Shift+P（macOS 为 Cmd+Shift+P）打开命令面板，但 PyCharm 中该快捷键是 Ctrl+Shift+A（macOS 为 Cmd+Shift+A），Ctrl+Shift+P 在 PyCharm 中默认无此功能。",
-            "evidence": "PyCharm 官方文档及默认键位映射：Find Action 命令面板的默认快捷键为 Ctrl+Shift+A（Windows/Linux）和 Cmd+Shift+A（macOS）。Ctrl+Shift+P 是 VS Code 的命令面板快捷键，原文将其误用于 PyCharm。",
-            "suggestion": "将快捷键改为 Ctrl+Shift+A（macOS 为 Cmd+Shift+A），或直接说明通过菜单 View → Tool Windows → Python Packages 或 Settings → Project → Python Interpreter 选择解释器。",
-            "error_id": "d6c57774ff15_r1",
-            "canonical_error_id": "d6c57774ff15",
+            "description": "代码块在打印 dataset[4] 时被截断，缺少右括号和结束引号，导致代码不完整且无法运行。",
+            "evidence": "代码块末尾为 'print(dataset[4])            # (tensor(4.), tensor'，缺少 ')' 和 ')'，且注释未闭合。",
+            "suggestion": "补全代码：print(dataset[4])            # (tensor(4.), tensor(0))",
+            "error_id": "d465b790f1f7_r1",
+            "canonical_error_id": "d465b790f1f7",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -411,8 +755,660 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C003",
+            "content_chunk_id": "LOCAL-KBS-04-04-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'pin_memory'参数说明处截断，未完成该参数的解释，且缺少后续参数（如drop_last、collate_fn）的说明，导致内容不完整。",
+            "evidence": "原文在'pin_memory：GPU 训练时'处结束，未给出完整解释。",
+            "suggestion": "补全pin_memory的说明，并继续解释drop_last和collate_fn参数。",
+            "error_id": "b99ecb3b6412_r1",
+            "canonical_error_id": "b99ecb3b6412",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C004",
+            "content_chunk_id": "LOCAL-KBS-04-04-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "description": "与来源块 LOCAL-KBS-04-04-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C005，heading_path=Dataset/DataLoader 数据装载 > 三、DataLoader：批量加载数据（①+②+⑥） > 3.2 使用示例（①+②），lines=146-172",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ead04df57bbe_r1",
+            "canonical_error_id": "ead04df57bbe",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_chunk_id": "LOCAL-KBS-04-04-C005",
+            "content_version": 1,
+            "in_chunk_position": "lines:146-172"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "BatchSampler 描述不准确：BatchSampler 并不包装 SequentialSampler、RandomSampler 等采样器，而是接受一个 Sampler 作为参数，并在此基础上按 batch size 生成批次索引。原文称“把上面几种包装成 batch”可能误导读者认为 BatchSampler 直接包装这些采样器，实际上它需要显式传入一个 sampler 参数。",
+            "evidence": "PyTorch 官方文档：BatchSampler(sampler, batch_size, drop_last) 接受一个 sampler 参数，而不是自动包装多种采样器。",
+            "suggestion": "建议修改为：BatchSampler 接受一个 Sampler 对象（如 SequentialSampler 或 RandomSampler）作为参数，并按 batch_size 生成批次索引，DataLoader 内部默认使用 BatchSampler 来组织批次。",
+            "error_id": "c5aad3832ee0_r1",
+            "canonical_error_id": "c5aad3832ee0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C006",
+            "content_chunk_id": "LOCAL-KBS-04-04-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": "代码块",
+            "description": "代码块中未捕获异常，涉及数据加载和随机操作，可能因IO或数据问题导致程序崩溃。",
+            "evidence": "代码中直接调用NumberDataset和random.shuffle，未使用try-except包裹。",
+            "suggestion": "建议在数据加载和划分操作周围添加try-except，捕获异常并记录日志。",
+            "error_id": "a837df04e145_r1",
+            "canonical_error_id": "a837df04e145",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C007",
+            "content_chunk_id": "LOCAL-KBS-04-04-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "description": "与来源块 LOCAL-KBS-04-04-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C008，heading_path=Dataset/DataLoader 数据装载 > 四、Sampler：控制采样策略（①+④） > 4.3 实战：类别不平衡时的加权采样（①+④），lines=207-240",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f439684b3b2d_r1",
+            "canonical_error_id": "f439684b3b2d",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:207-240"
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "major",
+            "location": null,
+            "description": "代码中使用了Dataset和DataLoader，但未导入，会导致NameError。",
+            "evidence": "代码块中直接使用Dataset和DataLoader，但导入语句只有from torch.utils.data import WeightedRandomSampler。",
+            "suggestion": "添加导入语句：from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler",
+            "error_id": "482d8959d39a_r1",
+            "canonical_error_id": "482d8959d39a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_sentence",
+            "severity": "minor",
+            "location": null,
+            "description": "关键点拆解中'这样少数类被抽中的概率'句子不完整，影响理解。",
+            "evidence": "原文结尾为'这样少数类被抽中的概率'，缺少后续内容。",
+            "suggestion": "补全句子，例如'这样少数类被抽中的概率更高，从而平衡每个batch中的类别分布。'",
+            "error_id": "1a7ee9006864_r1",
+            "canonical_error_id": "1a7ee9006864",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "code_truncation",
+            "severity": "critical",
+            "location": null,
+            "description": "代码示例在DataLoader构造处被截断，缺少collate_fn参数和后续代码，导致示例不完整且无法运行。",
+            "evidence": "代码块以'loader = DataLoader(dataset, batch_size=2, collate_fn=coll'结尾，缺少右括号和后续内容。",
+            "suggestion": "补全代码：loader = DataLoader(dataset, batch_size=2, collate_fn=collate_fn_pad)",
+            "error_id": "b6a2600b4949_r1",
+            "canonical_error_id": "b6a2600b4949",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C009",
+            "content_chunk_id": "LOCAL-KBS-04-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在解释 train=True/False 时被截断，句子不完整，缺少对 train=False 的说明，导致信息不完整。",
+            "evidence": "原文结尾为 'train=True/False：True拿训练集，False拿'，句子未结束。",
+            "suggestion": "补全句子，例如：'train=True/False：True拿训练集，False拿测试集。'",
+            "error_id": "d48da097f9a3_r1",
+            "canonical_error_id": "d48da097f9a3",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C010",
+            "content_chunk_id": "LOCAL-KBS-04-04-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了Dataset类，但未导入。在自定义Dataset类定义前缺少from torch.utils.data import Dataset。",
+            "evidence": "代码块中class LocalImageDataset(Dataset)引用了Dataset，但文件开头仅导入os和PIL.Image，未导入torch.utils.data.Dataset。",
+            "suggestion": "在代码开头添加from torch.utils.data import Dataset。",
+            "error_id": "dff954814001_r1",
+            "canonical_error_id": "dff954814001",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C012",
+            "content_chunk_id": "LOCAL-KBS-04-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "读取图片和标签文件时未捕获异常，可能导致程序崩溃。",
+            "evidence": "open(label_file)和Image.open(img_path)均为IO操作，未使用try-except捕获异常，违反OWASP ML Top 10 2023 ML06要求。",
+            "suggestion": "使用try-except包裹文件读取和图片加载操作，捕获FileNotFoundError、OSError等异常并给出友好提示。",
+            "error_id": "fb256235ed0c_r1",
+            "canonical_error_id": "fb256235ed0c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C012",
+            "content_chunk_id": "LOCAL-KBS-04-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了Dataset类，但未导入。在自定义Dataset类定义前缺少from torch.utils.data import Dataset。",
+            "evidence": "代码块中class LocalImageDataset(Dataset)引用了Dataset，但文件开头仅导入os和PIL.Image，未导入torch.utils.data.Dataset。",
+            "suggestion": "在代码开头添加from torch.utils.data import Dataset。",
+            "error_id": "dff954814001_r1_1",
+            "canonical_error_id": "dff954814001",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C012",
+            "content_chunk_id": "LOCAL-KBS-04-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "description": "与来源块 LOCAL-KBS-04-04-C013 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-04-C013，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=398-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "18650abbb155_r1",
+            "canonical_error_id": "18650abbb155",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 1,
+            "in_chunk_position": "lines:398-475"
+          },
+          {
+            "error_type": "syntax_error",
+            "severity": "critical",
+            "location": null,
+            "description": "训练循环代码块中print语句缺少右括号，导致语法错误，代码无法运行。",
+            "evidence": "代码片段：print(f\"Epoch {epoch}, Batch {batch_idx}: {images.shape 缺少闭合的右括号。",
+            "suggestion": "补全print语句的右括号，例如：print(f\"Epoch {epoch}, Batch {batch_idx}: {images.shape}\")",
+            "error_id": "9822ca80f159_r1",
+            "canonical_error_id": "9822ca80f159",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "description": "与来源块 LOCAL-KBS-04-04-C014 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-04-C014，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=477-502",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ce4af7a2c626_r1",
+            "canonical_error_id": "ce4af7a2c626",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C014"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 1,
+            "in_chunk_position": "lines:477-502"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'每个 epoch 数据顺序相同'的解决方案为'训练集的 DataLoader 必须设置 shuffle=True'，但未区分验证集/测试集，且未说明 shuffle=True 仅适用于训练集，验证/测试集应设置 shuffle=False。该表述可能误导用户对所有数据集设置 shuffle=True。",
+            "evidence": "原文表格中'每个 epoch 数据顺序相同'的解决方案为'训练集的 DataLoader 必须设置 shuffle=True'，但未区分验证集/测试集，且未说明 shuffle=True 仅适用于训练集，验证/测试集应设置 shuffle=False。该表述可能误导用户对所有数据集设置 shuffle=True。",
+            "suggestion": "建议修改为：'训练集的 DataLoader 应设置 shuffle=True，验证集和测试集应设置 shuffle=False'，并补充说明原因。",
+            "error_id": "35952ae06d4c_r1",
+            "canonical_error_id": "35952ae06d4c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "description": "与来源块 LOCAL-KBS-04-05-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-05-C001，heading_path=优化器（如 AdamW）与损失函数 > 二、常用损失函数（①+⑥） > 2.1 L1Loss：平均绝对误差（MAE）（①+⑥），lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f7931a3d05ec_r1",
+            "canonical_error_id": "f7931a3d05ec",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "L1Loss对异常值不敏感的描述不准确。L1Loss对异常值的鲁棒性体现在其梯度为常数（±1），不会像MSE那样因误差增大而梯度爆炸，但损失值本身仍随异常值线性增长，并非'不敏感'。",
+            "evidence": "L1Loss的梯度为sign(pred-target)，恒为±1，因此对异常值的梯度影响是恒定的，但损失值仍线性增加。MSE的梯度与误差成正比，异常值会导致梯度爆炸。",
+            "suggestion": "建议修改为：'L1Loss对异常值的梯度影响是恒定的（梯度为±1），不会像MSE那样因误差增大而梯度爆炸，因此对异常值更鲁棒。'",
+            "error_id": "8629aa02ab07_r1",
+            "canonical_error_id": "8629aa02ab07",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "MSELoss 的 reduction='none' 返回的损失形状与输入形状相同，但实际是去掉 reduction 维度后的形状（例如输入形状为 (N, d) 时，输出形状为 (N, d)，若输入为 (N,) 则输出为 (N,)）。原文表述'形状与输入相同'不够准确，可能误导。",
+            "evidence": "PyTorch 官方文档：reduction='none' 时返回逐元素损失，形状与输入相同（但会移除 reduction 维度）。",
+            "suggestion": "建议改为：'不聚合，返回每个样本的损失，形状与输入相同（若输入有额外维度则保留）'。",
+            "error_id": "bb87b50365c8_r1",
+            "canonical_error_id": "bb87b50365c8",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C002",
+            "content_chunk_id": "LOCAL-KBS-04-05-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'Adam'处截断，未完成对Adam优化器的完整介绍，缺少后续内容。",
+            "evidence": "内容块以'> **Adam'结尾，明显不完整。",
+            "suggestion": "补充完整内容，确保Adam优化器的介绍完整。",
+            "error_id": "8b035e489392_r1",
+            "canonical_error_id": "8b035e489392",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C005",
+            "content_chunk_id": "LOCAL-KBS-04-05-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在实践建议处截断，句子不完整，缺少对Transformer类模型使用AdamW的具体建议。",
+            "evidence": "原文末尾为'在 Transformer 类模型（如 BERT、GPT）和'，句子未结束。",
+            "suggestion": "补全该句，例如：'在 Transformer 类模型（如 BERT、GPT）和微调任务中，推荐使用 AdamW 并设置 weight_decay=0.01，以获得更稳定的正则效果。'",
+            "error_id": "935d6ea52e2c_r1",
+            "canonical_error_id": "935d6ea52e2c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C006",
+            "content_chunk_id": "LOCAL-KBS-04-05-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "表格内容在'Transformer、大多数'处截断，未完成适用场景描述，且缺少后续内容。",
+            "evidence": "内容块以'Transformer、大多数'结尾，表格单元格未闭合，明显不完整。",
+            "suggestion": "补全表格内容，明确AdamW的适用场景，并确保表格完整。",
+            "error_id": "74d780f6cedf_r1",
+            "canonical_error_id": "74d780f6cedf",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C007",
+            "content_chunk_id": "LOCAL-KBS-04-05-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "description": "与来源块 LOCAL-KBS-04-05-C009 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-04-05-C009，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=219-311",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "74b5b59bbe74_r1",
+            "canonical_error_id": "74b5b59bbe74",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:219-311"
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "代码中模型加载和训练循环未使用try-except捕获异常，涉及IO和模型加载操作，存在未捕获异常风险。",
+            "evidence": "代码中`datasets.CIFAR10`下载、`model.to(device)`、`optimizer.step()`等操作均未包裹try-except，违反规则2中'未捕获异常'错误模式。",
+            "suggestion": "在关键IO和模型加载操作（如数据集下载、模型加载）外层添加try-except，捕获异常并记录日志。",
+            "error_id": "d15d8c0ca2c9_r1",
+            "canonical_error_id": "d15d8c0ca2c9",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_vram_note",
+            "severity": "minor",
+            "location": null,
+            "description": "部署文档未标注CIFAR10训练和模型推理的显存要求，可能影响用户环境准备。",
+            "evidence": "代码中未提及显存需求，行业标准规则2.1要求部署文档必须包含显存标注。",
+            "suggestion": "在代码注释或说明中补充显存要求，例如'训练CIFAR10需至少4GB显存'。",
+            "error_id": "55e3af4df69e_r1",
+            "canonical_error_id": "55e3af4df69e",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "description": "与来源块 LOCAL-KBS-04-05-C010 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-05-C010，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=313-339",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "01221ba5223a_r1",
+            "canonical_error_id": "01221ba5223a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:313-339"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "调度器调用时机描述不准确：scheduler.step() 应在每个 optimizer.step() 之后调用，而非每个 epoch 结束时调用。对于 StepLR 等基于 epoch 的调度器，通常在每个 epoch 结束后调用；但对于 CosineAnnealingLR 等基于 step 的调度器，应在每个 optimizer.step() 后调用。原文笼统表述为'每个 epoch 结束时调用'，可能误导用户。",
+            "evidence": "PyTorch 官方文档：scheduler.step() 应在 optimizer.step() 之后调用，具体调用频率取决于调度器类型（基于 epoch 或基于 step）。",
+            "suggestion": "建议修改为：'调度器的调用时机在优化器更新之后，具体调用频率取决于调度器类型：基于 epoch 的调度器（如 StepLR）在每个 epoch 结束后调用 scheduler.step()；基于 step 的调度器（如 CosineAnnealingLR）在每个 optimizer.step() 后调用。'",
+            "error_id": "7d1973c93a26_r1",
+            "canonical_error_id": "7d1973c93a26",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'训练循环四步口诀：前向 → 清零 → 反向 → 更新'顺序不准确。标准训练循环顺序应为：前向 → 反向 → 清零 → 更新（即 forward, backward, zero_grad, step）。原文将'清零'放在'反向'之前，可能导致用户误解梯度清零的时机。",
+            "evidence": "PyTorch 官方训练循环示例：optimizer.zero_grad() 在 loss.backward() 之前调用，但通常写作 forward -> loss -> zero_grad -> backward -> step。原文顺序'前向 → 清零 → 反向 → 更新'将 zero_grad 置于 backward 之前，虽不致命但易混淆。",
+            "suggestion": "建议修改为：'训练循环四步口诀：前向 → 反向 → 清零 → 更新'，并注明 zero_grad 应在 backward 之前调用。",
+            "error_id": "3e1390b99ee5_r1",
+            "canonical_error_id": "3e1390b99ee5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "常见问题速查表中'损失值不下降'的解决方案建议'尝试 lr=0.001（Adam/AdamW）或 lr=0.01（SGD）'，但未说明这些是初始学习率的常见默认值，且未提及学习率调度器的影响。可能误导用户认为固定学习率即可。",
+            "evidence": "深度学习实践：Adam 默认学习率通常为 0.001，SGD 常用 0.01，但实际需根据任务调整，且学习率调度器会动态改变学习率。",
+            "suggestion": "建议补充说明：'这些是常见初始学习率，实际需根据任务调整，并配合学习率调度器使用。'",
+            "error_id": "14887ab643dd_r1",
+            "canonical_error_id": "14887ab643dd",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
             "content_version": 1,
             "in_chunk_position": null
           }
@@ -432,14 +1428,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "description": "与来源块 LOCAL-KBS-04-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-04-C001，heading_path=Dataset/DataLoader 数据装载 > 二、Dataset：定义你的数据集（①+②+③） > 2.1 自定义 Dataset 模板（①+③），lines=1-50",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5dde03707335_r2",
-            "canonical_error_id": "5dde03707335",
+            "error_id": "45c5c14dcbe0_r2",
+            "canonical_error_id": "45c5c14dcbe0",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-04-C001"
             ],
             "change_request": {
               "required": false,
@@ -447,11 +1443,179 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_chunk_id": "LOCAL-KBS-04-04-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-50"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "description": "与来源块 LOCAL-KBS-04-04-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C005，heading_path=Dataset/DataLoader 数据装载 > 三、DataLoader：批量加载数据（①+②+⑥） > 3.2 使用示例（①+②），lines=146-172",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ead04df57bbe_r2",
+            "canonical_error_id": "ead04df57bbe",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_chunk_id": "LOCAL-KBS-04-04-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:146-172"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "description": "与来源块 LOCAL-KBS-04-04-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C008，heading_path=Dataset/DataLoader 数据装载 > 四、Sampler：控制采样策略（①+④） > 4.3 实战：类别不平衡时的加权采样（①+④），lines=207-240",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f439684b3b2d_r2",
+            "canonical_error_id": "f439684b3b2d",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:207-240"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "description": "与来源块 LOCAL-KBS-04-04-C013 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-04-C013，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=398-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "18650abbb155_r2",
+            "canonical_error_id": "18650abbb155",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 2,
+            "in_chunk_position": "lines:398-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "description": "与来源块 LOCAL-KBS-04-04-C014 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-04-C014，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=477-502",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ce4af7a2c626_r2",
+            "canonical_error_id": "ce4af7a2c626",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C014"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 2,
+            "in_chunk_position": "lines:477-502"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "description": "与来源块 LOCAL-KBS-04-05-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-05-C001，heading_path=优化器（如 AdamW）与损失函数 > 二、常用损失函数（①+⑥） > 2.1 L1Loss：平均绝对误差（MAE）（①+⑥），lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f7931a3d05ec_r2",
+            "canonical_error_id": "f7931a3d05ec",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "description": "与来源块 LOCAL-KBS-04-05-C009 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-04-05-C009，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=219-311",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "74b5b59bbe74_r2",
+            "canonical_error_id": "74b5b59bbe74",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:219-311"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "description": "与来源块 LOCAL-KBS-04-05-C010 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-05-C010，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=313-339",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "01221ba5223a_r2",
+            "canonical_error_id": "01221ba5223a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:313-339"
           }
         ],
         "personalization_errors": [],
@@ -464,14 +1628,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "description": "与来源块 LOCAL-KBS-04-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-04-C001，heading_path=Dataset/DataLoader 数据装载 > 二、Dataset：定义你的数据集（①+②+③） > 2.1 自定义 Dataset 模板（①+③），lines=1-50",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5dde03707335_r2",
-            "canonical_error_id": "5dde03707335",
+            "error_id": "45c5c14dcbe0_r2",
+            "canonical_error_id": "45c5c14dcbe0",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-04-C001"
             ],
             "change_request": {
               "required": false,
@@ -479,11 +1643,179 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_chunk_id": "LOCAL-KBS-04-04-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-50"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "description": "与来源块 LOCAL-KBS-04-04-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C005，heading_path=Dataset/DataLoader 数据装载 > 三、DataLoader：批量加载数据（①+②+⑥） > 3.2 使用示例（①+②），lines=146-172",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ead04df57bbe_r2",
+            "canonical_error_id": "ead04df57bbe",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_chunk_id": "LOCAL-KBS-04-04-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:146-172"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "description": "与来源块 LOCAL-KBS-04-04-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C008，heading_path=Dataset/DataLoader 数据装载 > 四、Sampler：控制采样策略（①+④） > 4.3 实战：类别不平衡时的加权采样（①+④），lines=207-240",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f439684b3b2d_r2",
+            "canonical_error_id": "f439684b3b2d",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:207-240"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "description": "与来源块 LOCAL-KBS-04-04-C013 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-04-C013，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=398-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "18650abbb155_r2",
+            "canonical_error_id": "18650abbb155",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 2,
+            "in_chunk_position": "lines:398-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "description": "与来源块 LOCAL-KBS-04-04-C014 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-04-C014，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=477-502",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ce4af7a2c626_r2",
+            "canonical_error_id": "ce4af7a2c626",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C014"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 2,
+            "in_chunk_position": "lines:477-502"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "description": "与来源块 LOCAL-KBS-04-05-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-05-C001，heading_path=优化器（如 AdamW）与损失函数 > 二、常用损失函数（①+⑥） > 2.1 L1Loss：平均绝对误差（MAE）（①+⑥），lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f7931a3d05ec_r2",
+            "canonical_error_id": "f7931a3d05ec",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "description": "与来源块 LOCAL-KBS-04-05-C009 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-04-05-C009，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=219-311",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "74b5b59bbe74_r2",
+            "canonical_error_id": "74b5b59bbe74",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:219-311"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "description": "与来源块 LOCAL-KBS-04-05-C010 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-05-C010，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=313-339",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "01221ba5223a_r2",
+            "canonical_error_id": "01221ba5223a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:313-339"
           }
         ],
         "personalization_errors": [],
@@ -501,14 +1833,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "description": "与来源块 LOCAL-KBS-04-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-04-C001，heading_path=Dataset/DataLoader 数据装载 > 二、Dataset：定义你的数据集（①+②+③） > 2.1 自定义 Dataset 模板（①+③），lines=1-50",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5dde03707335_r3",
-            "canonical_error_id": "5dde03707335",
+            "error_id": "45c5c14dcbe0_r2",
+            "canonical_error_id": "45c5c14dcbe0",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-04-C001"
             ],
             "change_request": {
               "required": false,
@@ -516,11 +1848,179 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_chunk_id": "LOCAL-KBS-04-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-50"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "description": "与来源块 LOCAL-KBS-04-04-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C005，heading_path=Dataset/DataLoader 数据装载 > 三、DataLoader：批量加载数据（①+②+⑥） > 3.2 使用示例（①+②），lines=146-172",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ead04df57bbe_r2",
+            "canonical_error_id": "ead04df57bbe",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_chunk_id": "LOCAL-KBS-04-04-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:146-172"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "description": "与来源块 LOCAL-KBS-04-04-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C008，heading_path=Dataset/DataLoader 数据装载 > 四、Sampler：控制采样策略（①+④） > 4.3 实战：类别不平衡时的加权采样（①+④），lines=207-240",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f439684b3b2d_r3",
+            "canonical_error_id": "f439684b3b2d",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
             "content_version": 3,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:207-240"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "description": "与来源块 LOCAL-KBS-04-04-C013 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-04-C013，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=398-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "18650abbb155_r3",
+            "canonical_error_id": "18650abbb155",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 3,
+            "in_chunk_position": "lines:398-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "description": "与来源块 LOCAL-KBS-04-04-C014 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-04-C014，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=477-502",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ce4af7a2c626_r3",
+            "canonical_error_id": "ce4af7a2c626",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C014"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 3,
+            "in_chunk_position": "lines:477-502"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "description": "与来源块 LOCAL-KBS-04-05-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-05-C001，heading_path=优化器（如 AdamW）与损失函数 > 二、常用损失函数（①+⑥） > 2.1 L1Loss：平均绝对误差（MAE）（①+⑥），lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f7931a3d05ec_r3",
+            "canonical_error_id": "f7931a3d05ec",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "description": "与来源块 LOCAL-KBS-04-05-C009 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-04-05-C009，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=219-311",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "74b5b59bbe74_r3",
+            "canonical_error_id": "74b5b59bbe74",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:219-311"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "description": "与来源块 LOCAL-KBS-04-05-C010 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-05-C010，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=313-339",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "01221ba5223a_r3",
+            "canonical_error_id": "01221ba5223a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:313-339"
           }
         ],
         "personalization_errors": [],
@@ -533,14 +2033,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "description": "与来源块 LOCAL-KBS-04-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-04-C001，heading_path=Dataset/DataLoader 数据装载 > 二、Dataset：定义你的数据集（①+②+③） > 2.1 自定义 Dataset 模板（①+③），lines=1-50",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5dde03707335_r3",
-            "canonical_error_id": "5dde03707335",
+            "error_id": "45c5c14dcbe0_r2",
+            "canonical_error_id": "45c5c14dcbe0",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-04-04-C001"
             ],
             "change_request": {
               "required": false,
@@ -548,11 +2048,179 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_723a9377-c88b-4595-9dbe-e04f98672926_001a78b6-fb79-5d4b-943e-02a8f9edfc90_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C001",
+            "content_chunk_id": "LOCAL-KBS-04-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-50"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "description": "与来源块 LOCAL-KBS-04-04-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C005，heading_path=Dataset/DataLoader 数据装载 > 三、DataLoader：批量加载数据（①+②+⑥） > 3.2 使用示例（①+②），lines=146-172",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ead04df57bbe_r2",
+            "canonical_error_id": "ead04df57bbe",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C005",
+            "content_chunk_id": "LOCAL-KBS-04-04-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:146-172"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "description": "与来源块 LOCAL-KBS-04-04-C008 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-04-04-C008，heading_path=Dataset/DataLoader 数据装载 > 四、Sampler：控制采样策略（①+④） > 4.3 实战：类别不平衡时的加权采样（①+④），lines=207-240",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f439684b3b2d_r3",
+            "canonical_error_id": "f439684b3b2d",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C008",
+            "content_chunk_id": "LOCAL-KBS-04-04-C008",
             "content_version": 3,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:207-240"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "description": "与来源块 LOCAL-KBS-04-04-C013 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-04-C013，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=398-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "18650abbb155_r3",
+            "canonical_error_id": "18650abbb155",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C013",
+            "content_chunk_id": "LOCAL-KBS-04-04-C013",
+            "content_version": 3,
+            "in_chunk_position": "lines:398-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "description": "与来源块 LOCAL-KBS-04-04-C014 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-04-C014，heading_path=Dataset/DataLoader 数据装载 > 七、综合实战演练（①+②+⑤） > 场景：构建一个完整的图像分类数据管道，lines=477-502",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ce4af7a2c626_r3",
+            "canonical_error_id": "ce4af7a2c626",
+            "source_refs": [
+              "src_LOCAL-KBS-04-04-C014"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-04-C014",
+            "content_chunk_id": "LOCAL-KBS-04-04-C014",
+            "content_version": 3,
+            "in_chunk_position": "lines:477-502"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "description": "与来源块 LOCAL-KBS-04-05-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-05-C001，heading_path=优化器（如 AdamW）与损失函数 > 二、常用损失函数（①+⑥） > 2.1 L1Loss：平均绝对误差（MAE）（①+⑥），lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f7931a3d05ec_r3",
+            "canonical_error_id": "f7931a3d05ec",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C001",
+            "content_chunk_id": "LOCAL-KBS-04-05-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "description": "与来源块 LOCAL-KBS-04-05-C009 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-04-05-C009，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=219-311",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "74b5b59bbe74_r3",
+            "canonical_error_id": "74b5b59bbe74",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C009",
+            "content_chunk_id": "LOCAL-KBS-04-05-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:219-311"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "description": "与来源块 LOCAL-KBS-04-05-C010 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-04-05-C010，heading_path=优化器（如 AdamW）与损失函数 > 四、学习率调度器：让学习率\"动\"起来（⑥） > 4.3 使用方式（⑥），lines=313-339",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "01221ba5223a_r3",
+            "canonical_error_id": "01221ba5223a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-05-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_block_id": "cb_163a7c3c-4e90-48f7-9e98-64b87431bb36_399ee6a1-68be-530a-9e4d-474752692153_LOCAL-KBS-04-05-C010",
+            "content_chunk_id": "LOCAL-KBS-04-05-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:313-339"
           }
         ],
         "personalization_errors": [],

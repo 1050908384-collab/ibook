@@ -1,6 +1,6 @@
 {
   "review_passed": true,
-  "iterations": 3,
+  "iterations": 2,
   "review_history": [
     {
       "iteration": 1,
@@ -9,170 +9,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块声称“主流库（含 vLLM 依赖）均已兼容” Python 3.10+，但 vLLM 官方要求 Python 3.8-3.12，且部分依赖（如某些 CUDA 版本）可能不支持 Python 3.13。该表述过于绝对，可能误导用户选择过高的 Python 版本。",
-            "evidence": "vLLM 官方文档要求 Python 3.8-3.12，且部分依赖（如某些 CUDA 版本）可能不支持 Python 3.13。",
-            "suggestion": "建议改为“建议使用 Python 3.10 或 3.11，因为 vLLM 官方支持 Python 3.8-3.12，且 3.10/3.11 兼容性最佳”。",
-            "error_id": "a750e012b9cd_r1",
-            "canonical_error_id": "a750e012b9cd",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C002",
-            "content_chunk_id": "LOCAL-KBS-02-00-C002",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称默认安装路径不含中文和特殊符号，但实际Windows用户目录可能包含中文用户名，导致默认安装路径包含中文。",
-            "evidence": "Windows系统默认用户目录为C:\\Users\\<用户名>，若用户名为中文，则默认安装路径包含中文。",
-            "suggestion": "建议明确提示用户检查默认安装路径是否包含中文，若包含则需手动修改为纯英文路径。",
-            "error_id": "11746f365115_r1",
-            "canonical_error_id": "11746f365115",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块末尾被截断，'如果 python' 之后内容缺失，导致指令不完整。",
-            "evidence": "原文以'如果 python'结尾，未完成句子，缺少后续内容。",
-            "suggestion": "补全被截断的内容，例如：'如果 python3 --version 或 pip3 --version 报错，请检查安装步骤或重新安装。'",
-            "error_id": "e9eb62ff17cc_r1",
-            "canonical_error_id": "e9eb62ff17cc",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护，且 CentOS 7 于 2024 年 6 月 30 日 EOL。表述不准确，可能误导用户。",
-            "evidence": "CentOS 8 官方 EOL 日期为 2021-12-31，CentOS Stream 8 支持至 2024-05-31，CentOS 7 支持至 2024-06-30。",
-            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 也于 2024 年停止维护，建议使用 Ubuntu LTS 等活跃维护的发行版”。",
-            "error_id": "8084fd82ff2c_r1",
-            "canonical_error_id": "8084fd82ff2c",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C006",
-            "content_chunk_id": "LOCAL-KBS-02-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "major",
-            "location": null,
-            "description": "首次启动配置步骤不完整，内容在'点击 New Project'处截断，未提供后续配置指引。",
-            "evidence": "原文在'点击 New Project'后无任何后续内容，导致用户无法完成首次启动配置。",
-            "suggestion": "补充完整的首次启动配置步骤，例如：选择项目类型、配置解释器、创建项目等。",
-            "error_id": "560a8fc6ede4_r1",
-            "canonical_error_id": "560a8fc6ede4",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "Miniconda 体积描述不准确：官方 Miniconda 安装包约 50-80MB，但安装后占用空间约 400MB 以上，且实际体积因版本和平台而异。原文称'约50MB'可能误导用户。",
-            "evidence": "Miniconda 官方文档显示安装包约 50-80MB，但安装后占用空间约 400MB 以上。",
-            "suggestion": "建议改为'安装包约 50-80MB，安装后占用空间约 400MB 以上'，或注明'安装包体积小'。",
-            "error_id": "e01341b5f8a1_r1",
-            "canonical_error_id": "e01341b5f8a1",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤第4步'验证安装'内容不完整，缺少实际验证命令（如 conda --version），导致用户无法完成验证。",
-            "evidence": "原文在'输入'后截断，未提供任何验证命令。",
-            "suggestion": "补充验证命令，例如：conda --version 或 conda info。",
-            "error_id": "6c445301c54a_r1",
-            "canonical_error_id": "6c445301c54a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "28ba0d7bfee6_r1",
-            "canonical_error_id": "28ba0d7bfee6",
+            "error_id": "9416a8805c2c_r1",
+            "canonical_error_id": "9416a8805c2c",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -180,33 +26,201 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-44"
           },
           {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块标题为'7.3 在 PyCharm 中验证'，但正文中出现了'第八章：常见问题排查'的标题，章节编号与标题路径不符，可能造成内容混淆。",
-            "evidence": "标题路径为'环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证'，但内容块中出现了'### 第八章：常见问题排查'，章节编号不一致。",
-            "suggestion": "将'第八章：常见问题排查'改为'第七章：常见问题排查'，或调整标题路径以匹配实际内容。",
-            "error_id": "b115f820bfcb_r1",
-            "canonical_error_id": "b115f820bfcb",
-            "source_refs": [],
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "11b9b725eaa8_r1",
+            "canonical_error_id": "11b9b725eaa8",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C005"
+            ],
             "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
+              "required": false,
+              "action": "review_suggestion"
             },
             "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 1,
+            "in_chunk_position": "lines:88-111"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ba7cf899e68e_r1",
+            "canonical_error_id": "ba7cf899e68e",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C018"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 1,
+            "in_chunk_position": "lines:349-389"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C019",
+            "content_chunk_id": "LOCAL-KBS-15-03-C019",
             "content_version": 1,
             "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "description": "与来源块 LOCAL-KBS-15-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-15-04-C001，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第一章：vLLM 推理部署的定位——从\"能跑\"到\"能服务\" > 1.1 为什么需要专门的部署配置？，lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6be8018aa5ed_r1",
+            "canonical_error_id": "6be8018aa5ed",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_chunk_id": "LOCAL-KBS-15-04-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "description": "与来源块 LOCAL-KBS-15-04-C004 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-04-C004，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第二章：显存规划——部署前的必修课 > 2.2 模型规模与显存对照表（①），lines=94-109",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3b072810c924_r1",
+            "canonical_error_id": "3b072810c924",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C004"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_chunk_id": "LOCAL-KBS-15-04-C004",
+            "content_version": 1,
+            "in_chunk_position": "lines:94-109"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "description": "与来源块 LOCAL-KBS-15-04-C011 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-15-04-C011，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.1 最小可用启动（②），lines=242-277",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "938fedb8ec5a_r1",
+            "canonical_error_id": "938fedb8ec5a",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_chunk_id": "LOCAL-KBS-15-04-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:242-277"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "description": "与来源块 LOCAL-KBS-15-04-C012 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-15-04-C012，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.3 显存紧张时的降配配置思路示例（⑥），lines=278-302",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "c7bcf17d32ff_r1",
+            "canonical_error_id": "c7bcf17d32ff",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_chunk_id": "LOCAL-KBS-15-04-C012",
+            "content_version": 1,
+            "in_chunk_position": "lines:278-302"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "description": "与来源块 LOCAL-KBS-15-04-C020 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-15-04-C020，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第六章：电脑配置批注 > 6.3 多卡部署的硬件要求，lines=450-491",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "82937b5edc60_r1",
+            "canonical_error_id": "82937b5edc60",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C020"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_chunk_id": "LOCAL-KBS-15-04-C020",
+            "content_version": 1,
+            "in_chunk_position": "lines:450-491"
           }
         ],
         "personalization_errors": [],
@@ -217,170 +231,16 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块声称“主流库（含 vLLM 依赖）均已兼容” Python 3.10+，但 vLLM 官方要求 Python 3.8-3.12，且部分依赖（如某些 CUDA 版本）可能不支持 Python 3.13。该表述过于绝对，可能误导用户选择过高的 Python 版本。",
-            "evidence": "vLLM 官方文档要求 Python 3.8-3.12，且部分依赖（如某些 CUDA 版本）可能不支持 Python 3.13。",
-            "suggestion": "建议改为“建议使用 Python 3.10 或 3.11，因为 vLLM 官方支持 Python 3.8-3.12，且 3.10/3.11 兼容性最佳”。",
-            "error_id": "a750e012b9cd_r1",
-            "canonical_error_id": "a750e012b9cd",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C002",
-            "content_chunk_id": "LOCAL-KBS-02-00-C002",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称默认安装路径不含中文和特殊符号，但实际Windows用户目录可能包含中文用户名，导致默认安装路径包含中文。",
-            "evidence": "Windows系统默认用户目录为C:\\Users\\<用户名>，若用户名为中文，则默认安装路径包含中文。",
-            "suggestion": "建议明确提示用户检查默认安装路径是否包含中文，若包含则需手动修改为纯英文路径。",
-            "error_id": "11746f365115_r1",
-            "canonical_error_id": "11746f365115",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C003",
-            "content_chunk_id": "LOCAL-KBS-02-00-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块末尾被截断，'如果 python' 之后内容缺失，导致指令不完整。",
-            "evidence": "原文以'如果 python'结尾，未完成句子，缺少后续内容。",
-            "suggestion": "补全被截断的内容，例如：'如果 python3 --version 或 pip3 --version 报错，请检查安装步骤或重新安装。'",
-            "error_id": "e9eb62ff17cc_r1",
-            "canonical_error_id": "e9eb62ff17cc",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C004",
-            "content_chunk_id": "LOCAL-KBS-02-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护，且 CentOS 7 于 2024 年 6 月 30 日 EOL。表述不准确，可能误导用户。",
-            "evidence": "CentOS 8 官方 EOL 日期为 2021-12-31，CentOS Stream 8 支持至 2024-05-31，CentOS 7 支持至 2024-06-30。",
-            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 也于 2024 年停止维护，建议使用 Ubuntu LTS 等活跃维护的发行版”。",
-            "error_id": "8084fd82ff2c_r1",
-            "canonical_error_id": "8084fd82ff2c",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C006",
-            "content_chunk_id": "LOCAL-KBS-02-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "major",
-            "location": null,
-            "description": "首次启动配置步骤不完整，内容在'点击 New Project'处截断，未提供后续配置指引。",
-            "evidence": "原文在'点击 New Project'后无任何后续内容，导致用户无法完成首次启动配置。",
-            "suggestion": "补充完整的首次启动配置步骤，例如：选择项目类型、配置解释器、创建项目等。",
-            "error_id": "560a8fc6ede4_r1",
-            "canonical_error_id": "560a8fc6ede4",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C010",
-            "content_chunk_id": "LOCAL-KBS-02-00-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "Miniconda 体积描述不准确：官方 Miniconda 安装包约 50-80MB，但安装后占用空间约 400MB 以上，且实际体积因版本和平台而异。原文称'约50MB'可能误导用户。",
-            "evidence": "Miniconda 官方文档显示安装包约 50-80MB，但安装后占用空间约 400MB 以上。",
-            "suggestion": "建议改为'安装包约 50-80MB，安装后占用空间约 400MB 以上'，或注明'安装包体积小'。",
-            "error_id": "e01341b5f8a1_r1",
-            "canonical_error_id": "e01341b5f8a1",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_instruction",
-            "severity": "minor",
-            "location": null,
-            "description": "安装步骤第4步'验证安装'内容不完整，缺少实际验证命令（如 conda --version），导致用户无法完成验证。",
-            "evidence": "原文在'输入'后截断，未提供任何验证命令。",
-            "suggestion": "补充验证命令，例如：conda --version 或 conda info。",
-            "error_id": "6c445301c54a_r1",
-            "canonical_error_id": "6c445301c54a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C011",
-            "content_chunk_id": "LOCAL-KBS-02-00-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "28ba0d7bfee6_r1",
-            "canonical_error_id": "28ba0d7bfee6",
+            "error_id": "9416a8805c2c_r1",
+            "canonical_error_id": "9416a8805c2c",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -388,33 +248,201 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-44"
           },
           {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块标题为'7.3 在 PyCharm 中验证'，但正文中出现了'第八章：常见问题排查'的标题，章节编号与标题路径不符，可能造成内容混淆。",
-            "evidence": "标题路径为'环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证'，但内容块中出现了'### 第八章：常见问题排查'，章节编号不一致。",
-            "suggestion": "将'第八章：常见问题排查'改为'第七章：常见问题排查'，或调整标题路径以匹配实际内容。",
-            "error_id": "b115f820bfcb_r1",
-            "canonical_error_id": "b115f820bfcb",
-            "source_refs": [],
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "11b9b725eaa8_r1",
+            "canonical_error_id": "11b9b725eaa8",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C005"
+            ],
             "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
+              "required": false,
+              "action": "review_suggestion"
             },
             "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 1,
+            "in_chunk_position": "lines:88-111"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ba7cf899e68e_r1",
+            "canonical_error_id": "ba7cf899e68e",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C018"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 1,
+            "in_chunk_position": "lines:349-389"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C019",
+            "content_chunk_id": "LOCAL-KBS-15-03-C019",
             "content_version": 1,
             "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "description": "与来源块 LOCAL-KBS-15-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-15-04-C001，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第一章：vLLM 推理部署的定位——从\"能跑\"到\"能服务\" > 1.1 为什么需要专门的部署配置？，lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6be8018aa5ed_r1",
+            "canonical_error_id": "6be8018aa5ed",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_chunk_id": "LOCAL-KBS-15-04-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "description": "与来源块 LOCAL-KBS-15-04-C004 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-04-C004，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第二章：显存规划——部署前的必修课 > 2.2 模型规模与显存对照表（①），lines=94-109",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3b072810c924_r1",
+            "canonical_error_id": "3b072810c924",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C004"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_chunk_id": "LOCAL-KBS-15-04-C004",
+            "content_version": 1,
+            "in_chunk_position": "lines:94-109"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "description": "与来源块 LOCAL-KBS-15-04-C011 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-15-04-C011，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.1 最小可用启动（②），lines=242-277",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "938fedb8ec5a_r1",
+            "canonical_error_id": "938fedb8ec5a",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_chunk_id": "LOCAL-KBS-15-04-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:242-277"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "description": "与来源块 LOCAL-KBS-15-04-C012 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-15-04-C012，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.3 显存紧张时的降配配置思路示例（⑥），lines=278-302",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "c7bcf17d32ff_r1",
+            "canonical_error_id": "c7bcf17d32ff",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_chunk_id": "LOCAL-KBS-15-04-C012",
+            "content_version": 1,
+            "in_chunk_position": "lines:278-302"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "description": "与来源块 LOCAL-KBS-15-04-C020 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-15-04-C020，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第六章：电脑配置批注 > 6.3 多卡部署的硬件要求，lines=450-491",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "82937b5edc60_r1",
+            "canonical_error_id": "82937b5edc60",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C020"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_chunk_id": "LOCAL-KBS-15-04-C020",
+            "content_version": 1,
+            "in_chunk_position": "lines:450-491"
           }
         ],
         "personalization_errors": [],
@@ -432,14 +460,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "28ba0d7bfee6_r2",
-            "canonical_error_id": "28ba0d7bfee6",
+            "error_id": "9416a8805c2c_r2",
+            "canonical_error_id": "9416a8805c2c",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -447,11 +475,201 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
+            "in_chunk_position": "lines:1-44"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "11b9b725eaa8_r2",
+            "canonical_error_id": "11b9b725eaa8",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C005"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:88-111"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "ba7cf899e68e_r2",
+            "canonical_error_id": "ba7cf899e68e",
+            "source_refs": [
+              "src_LOCAL-KBS-15-03-C018"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 2,
+            "in_chunk_position": "lines:349-389"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C019",
+            "content_chunk_id": "LOCAL-KBS-15-03-C019",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "description": "与来源块 LOCAL-KBS-15-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-15-04-C001，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第一章：vLLM 推理部署的定位——从\"能跑\"到\"能服务\" > 1.1 为什么需要专门的部署配置？，lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6be8018aa5ed_r2",
+            "canonical_error_id": "6be8018aa5ed",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_chunk_id": "LOCAL-KBS-15-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "description": "与来源块 LOCAL-KBS-15-04-C004 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-04-C004，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第二章：显存规划——部署前的必修课 > 2.2 模型规模与显存对照表（①），lines=94-109",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3b072810c924_r2",
+            "canonical_error_id": "3b072810c924",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C004"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_chunk_id": "LOCAL-KBS-15-04-C004",
+            "content_version": 2,
+            "in_chunk_position": "lines:94-109"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "description": "与来源块 LOCAL-KBS-15-04-C011 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-15-04-C011，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.1 最小可用启动（②），lines=242-277",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "938fedb8ec5a_r2",
+            "canonical_error_id": "938fedb8ec5a",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_chunk_id": "LOCAL-KBS-15-04-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:242-277"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "description": "与来源块 LOCAL-KBS-15-04-C012 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-15-04-C012，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.3 显存紧张时的降配配置思路示例（⑥），lines=278-302",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "c7bcf17d32ff_r2",
+            "canonical_error_id": "c7bcf17d32ff",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_chunk_id": "LOCAL-KBS-15-04-C012",
+            "content_version": 2,
+            "in_chunk_position": "lines:278-302"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "description": "与来源块 LOCAL-KBS-15-04-C020 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-15-04-C020，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第六章：电脑配置批注 > 6.3 多卡部署的硬件要求，lines=450-491",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "82937b5edc60_r2",
+            "canonical_error_id": "82937b5edc60",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C020"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_chunk_id": "LOCAL-KBS-15-04-C020",
+            "content_version": 2,
+            "in_chunk_position": "lines:450-491"
           }
         ],
         "personalization_errors": [],
@@ -464,14 +682,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "description": "与来源块 LOCAL-KBS-15-03-C001 相似度 0.69 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.69，chunk=LOCAL-KBS-15-03-C001，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？ > 1.1 传统 KV Cache 管理的两大浪费，lines=1-44",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "28ba0d7bfee6_r2",
-            "canonical_error_id": "28ba0d7bfee6",
+            "error_id": "9416a8805c2c_r2",
+            "canonical_error_id": "9416a8805c2c",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C001"
             ],
             "change_request": {
               "required": false,
@@ -479,36 +697,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C001",
+            "content_chunk_id": "LOCAL-KBS-15-03-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:421-460"
-          }
-        ],
-        "personalization_errors": [],
-        "review_details": null,
-        "scores": null
-      },
-      "passed": false
-    },
-    {
-      "iteration": 3,
-      "technical": {
-        "reviewer": "technical",
-        "passed": false,
-        "errors": [
+            "in_chunk_position": "lines:1-44"
+          },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "description": "与来源块 LOCAL-KBS-15-03-C005 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-15-03-C005，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第二章：PagedAttention 核心原理——块、块表与按需分配 > 2.2 Block Table——逻辑到物理的映射（②③），lines=88-111",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "28ba0d7bfee6_r3",
-            "canonical_error_id": "28ba0d7bfee6",
+            "error_id": "11b9b725eaa8_r2",
+            "canonical_error_id": "11b9b725eaa8",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C005"
             ],
             "change_request": {
               "required": false,
@@ -516,31 +721,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
-            "content_version": 3,
-            "in_chunk_position": "lines:421-460"
-          }
-        ],
-        "personalization_errors": [],
-        "review_details": null
-      },
-      "quality": {
-        "reviewer": "quality",
-        "passed": false,
-        "errors": [
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C005",
+            "content_chunk_id": "LOCAL-KBS-15-03-C005",
+            "content_version": 2,
+            "in_chunk_position": "lines:88-111"
+          },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "description": "与来源块 LOCAL-KBS-15-03-C018 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-15-03-C018，heading_path=理解vLLM的PagedAttention与Continuous Batching机制 > 第六章：电脑配置批注 > 6.3 关键参数与吞吐关系，lines=349-389",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "28ba0d7bfee6_r3",
-            "canonical_error_id": "28ba0d7bfee6",
+            "error_id": "ba7cf899e68e_r2",
+            "canonical_error_id": "ba7cf899e68e",
             "source_refs": [
-              "src_LOCAL-KBS-02-00-C016"
+              "src_LOCAL-KBS-15-03-C018"
             ],
             "change_request": {
               "required": false,
@@ -548,11 +745,153 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_block_id": "cb_c10f9a1e-8723-47a4-9a69-77a1a8897573_7f0a0f2d-3f9b-5333-a7ad-9e12d02383d0_LOCAL-KBS-02-00-C016",
-            "content_chunk_id": "LOCAL-KBS-02-00-C016",
-            "content_version": 3,
-            "in_chunk_position": "lines:421-460"
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C018",
+            "content_chunk_id": "LOCAL-KBS-15-03-C018",
+            "content_version": 2,
+            "in_chunk_position": "lines:349-389"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-03-C019",
+            "content_chunk_id": "LOCAL-KBS-15-03-C019",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "description": "与来源块 LOCAL-KBS-15-04-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-15-04-C001，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第一章：vLLM 推理部署的定位——从\"能跑\"到\"能服务\" > 1.1 为什么需要专门的部署配置？，lines=1-45",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6be8018aa5ed_r2",
+            "canonical_error_id": "6be8018aa5ed",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C001",
+            "content_chunk_id": "LOCAL-KBS-15-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-45"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "description": "与来源块 LOCAL-KBS-15-04-C004 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-04-C004，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第二章：显存规划——部署前的必修课 > 2.2 模型规模与显存对照表（①），lines=94-109",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3b072810c924_r2",
+            "canonical_error_id": "3b072810c924",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C004"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C004",
+            "content_chunk_id": "LOCAL-KBS-15-04-C004",
+            "content_version": 2,
+            "in_chunk_position": "lines:94-109"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "description": "与来源块 LOCAL-KBS-15-04-C011 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-15-04-C011，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.1 最小可用启动（②），lines=242-277",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "938fedb8ec5a_r2",
+            "canonical_error_id": "938fedb8ec5a",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C011",
+            "content_chunk_id": "LOCAL-KBS-15-04-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:242-277"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "description": "与来源块 LOCAL-KBS-15-04-C012 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-15-04-C012，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第四章：启动 vLLM 服务——从最小可用到生产配置 > 4.3 显存紧张时的降配配置思路示例（⑥），lines=278-302",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "c7bcf17d32ff_r2",
+            "canonical_error_id": "c7bcf17d32ff",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C012",
+            "content_chunk_id": "LOCAL-KBS-15-04-C012",
+            "content_version": 2,
+            "in_chunk_position": "lines:278-302"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "description": "与来源块 LOCAL-KBS-15-04-C020 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-15-04-C020，heading_path=能够使用vLLM加载模型并配置gpu_memory_utilization等关键参数进行推理部署 > 第六章：电脑配置批注 > 6.3 多卡部署的硬件要求，lines=450-491",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "82937b5edc60_r2",
+            "canonical_error_id": "82937b5edc60",
+            "source_refs": [
+              "src_LOCAL-KBS-15-04-C020"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_block_id": "cb_aebbbe86-c331-40cc-bf7e-f51a9095f69b_bf415275-4415-5870-a09e-e217e53ba543_LOCAL-KBS-15-04-C020",
+            "content_chunk_id": "LOCAL-KBS-15-04-C020",
+            "content_version": 2,
+            "in_chunk_position": "lines:450-491"
           }
         ],
         "personalization_errors": [],

@@ -2,381 +2,313 @@
 
 ## 块 1
 
-**本块学习检查**：请用自己的话解释“为什么没有 Python 解释器，你写的 `.py` 文件就只是一堆文本？”（提示：结合“翻译官”的比喻，说清楚电脑和人类语言的差异即可。）
+```markdown
+# KV Cache 机制
 
----
+## 一、为什么需要 KV Cache？
 
-### 1.1 Python 解释器：程序的“翻译官”
+### 1.1 自回归生成的重复计算
 
-你的目标是部署 vLLM，但别急着碰模型——先花2分钟搞懂这个地基。你写的Python代码是给人看的文字，电脑只认0和1。**Python解释器**就是那个“翻译官”，把你的代码逐句翻译成电脑能执行的指令。
+在大语言模型（LLM）的自回归生成过程中，每个新生成的token都依赖于之前所有已生成的token。假设已经生成了$t-1$个token，现在需要生成第$t$个token。如果不使用任何缓存机制，模型需要将完整的序列$[x_1, x_2, \ldots, x_{t-1}, x_t]$重新输入，计算每一层的Attention：
 
-**关键点**：没有解释器，你写的 `.py` 文件对电脑来说就是一堆无意义的文本，它根本不知道你想让它干什么。
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
-**动手验证（30秒）**：随便新建一个 `test.py` 文件，里面写 `print("hello")`，然后双击运行——你会发现它要么闪退，要么报错。这就是因为系统还没装“翻译官”，电脑读不懂这堆文字。
+其中$Q, K, V$都是长度为$t$的序列。这意味着第$t$步的计算复杂度为$O(t^2)$（因为$QK^T$是$t \times t$的矩阵）。
 
-**记住这个逻辑**：你写代码 → 解释器翻译 → 电脑执行。后面安装Python，装的就是这个“翻译官”。装好了，你的 `.py` 文件才能被“听懂”。
+随着序列长度$t$的增长，计算量呈平方级爆炸：
+
+| 已生成长度 | 当前步复杂度 | 累计复杂度 |
+|-----------|------------|-----------|
+| 1 | $O(1)$ | $O(1)$ |
+| 10 | $O(100)$ | $O(385)$ |
+| 100 | $O(10^4)$ | $O(3.3 \times 10^5)$ |
+| 1000 | $O(10^6
 
 ## 块 2
 
-**IDE 是你的“工作台”**  
-记事本也能写代码，但效率极低。IDE（集成开发环境）提供语法高亮、自动补全、运行调试，让你写代码像用 Word 写文档一样舒服。推荐两款：**VS Code**（轻量免费）和 **PyCharm**（专业强大）。
+### 1.2 关键观察：历史 token 的 K 和 V 是不变的
 
-**虚拟环境：项目的“独立房间”**  
-假设你同时做两个项目：A 需要 `numpy 1.0`，B 需要 `numpy 2.0`，都装进同一个 Python 会冲突报错。虚拟环境为每个项目创建独立 Python 空间，互不影响。可以用 **conda** 或 Python 自带的 **venv** 来管理，conda
+在 Decoder 的 Causal Self-Attention 中，由于**因果掩码**（causal mask）的存在，每个 token 只能看到它自己及之前的 token，看不到未来的 token。（权威①）
+
+这意味着：**已经生成的前 $t-1$ 个 token，它们的 Key 和 Value 向量不会受到后续生成的影响**。无论后面生成什么新 token，$k_1, k_2, \ldots, k_{t-1}$ 和 $v_1, v_2, \ldots, v_{t-1}$ 都保持不变。（①）
+
+因此，我们可以将历史 token 的 K 和 V 缓存起来，避免重复计算。
+
+## 二、KV Cache 的核心原理
+
+（个性化提示：学习风格：hands-on）
 
 ## 块 3
 
-**Windows 上装好 Python，为 vLLM 部署铺路**
+### 2.1 KV 缓存机制
 
-你的目标是部署 vLLM，这需要扎实的 Python 环境。别担心，跟着下面三步走，10分钟搞定。
+在 Transformer 模型中，KV 缓存用于优化注意力机制的计算效率。具体来说，KV 缓存存储的是**每一层 TransformerDecoder 中所有历史 token 的 Key 矩阵和 Value 矩阵**。通过缓存这些信息，模型可以避免重复计算，从而显著提升生成速度。
 
-**第一步：下载安装包**
-
-打开浏览器，访问 `https://www.python.org`。鼠标移到顶部菜单 **Downloads**，网站会自动推荐适合你系统的 Windows 版本（如 `Python 3.13.x`）。点击下载 **Windows installer (64-bit)**。
-
-**第二步：运行安装程序（⚠️ 关键步骤）**
-
-双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
-
-1. **勾选最下方的 "Add python.exe to PATH"**  
-   这个选项会把 Python 添加到系统的"环境变量"中。如果不勾选，你打开命令行输入 `python` 时，系统会提示"不是内部或外部命令"，后续所有命令行操作都无法进行。**这是新手最容易踩的坑，一定要勾上。**
-
-2. 点击 **"Install Now"**（默认安装）即可。  
-   默认安装路径在 `C:\Users\你的用户名\AppData\Local\Programs\Python\Python3xx`，不含中文和特殊符号，避免后续路径报错。如果你想改路径，务必确保路径中**没有中文或空格**。
-
-**第三步：验证安装**
-
-1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
-2. 输入以下命令并回车：
+#### 为什么需要 KV 缓存？
+1. **不缓存 Query**：每个新 token 的 Query 是全新的，无法从缓存中直接获取，因此需要重新计算。
+2. **不缓存 Attention 输出**：Attention 输出
 
 ## 块 4
 
-你的目标是快速把 vLLM 部署跑起来，而这一步的关键是先把 Python 环境准备好。macOS 上有个常见坑：**系统自带的 Python 别直接用**。现代 macOS（Catalina 10.15 起）不再预装 Python 2，但系统自带的 `python3` 是 Apple 提供的，版本通常较旧，直接依赖它，后面装 vLLM 依赖时容易出问题。应使用官方安装包或 Homebrew 安装最新版 Python。
+### 2.3 为什么只缓存 K 和 V？
 
-**方法一：官方安装包（推荐你，省事）**
+这是初学者最常见的困惑。让我们从 Attention 的计算逻辑来理解：
 
-1. 打开 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
-2. 双击运行，一路点 "Continue" → "Install" 搞定。
-3. 打开终端（Terminal），验证：
+- **Query** $q_t$：代表"当前 token 在问什么"，每个新 token 的问题都不同，必须重新计算
+- **Key** $k_i$：代表"第 $i$ 个 token 回答什么主题"，一旦生成就不再改变
+- **Value** $v_i$：代表"第 $i$ 个 token 的实际内容"，一旦生成就不再改变
 
-```bash
-python3 --version
-pip3 --version
-```
+Attention 的本质是"用当前的问题（Q）去匹配历史的主题（K），然后提取历史的内容（V）"。历史和主题不会变，所以 K 和 V 可以缓存；但每个新 token 的问题不同，所以 Q 必须重新计算。（①）
 
-**注意**：macOS 命令行默认**没有** `python` 命令，统一用 `python3`。以后所有命令都写 `python3` / `pip3`，别省那个 `3`，否则会报"命令不存在"或误用系统版本。如果 `pip3` 不存在，可运行 `python3 -m ensurepip` 或 `python3 -m pip install --upgrade pip`。
+## 三、内存开销分析
 
-**方法
+KV Cache 的引入以**空间换时间**。理解它的内存占用，是分析 LLM 推理显存瓶颈的基础。（①）
+
+（个性化提示：学习风格：hands-on）
 
 ## 块 5
 
-**目标**：在 Ubuntu/Debian 上装好 Python 3，为 vLLM 部署铺路。
+# KV缓存机制的内存开销分析
 
-**三步走**（打开终端，逐条执行）：
+## 3.1 通用计算公式
 
-1. **更新软件源**  
-   ```bash
-   sudo apt update
-   ```
-   让系统知道有哪些新软件包可用。
+在标准多头注意力（MHA）中，KV缓存的内存占用可以通过以下公式计算：
 
-2. **安装 Python 3 全家桶**  
-   ```bash
-   sudo apt install python3 python3-pip python3-venv -y
-   ```
-   - `python3`：解释器本体  
-   - `python3-pip`：装第三方库（vLLM 靠它装）  
-   - `python3-venv`：建虚拟环境，隔离项目依赖  
-   - `-y`
+$$\text{Memory}_{\text{per layer}} = \text{batch\_size} \times \text{seq\_len} \times \text{num\_key\_value\_heads} \times \text{head\_dim} \times 2 \times \text{bytes\_per\_elem}$$
+
+其中：
+- $\text{batch\_size}$ 表示一批样本的数量
+- $\text{seq\_len}$ 表示序列长度
+- $\text{num\_key\_value\_heads}$ 表
 
 ## 块 6
 
-**本块学习检查**：学完后，请用一句话回答：你的 GPU 实训环境应该选哪种操作系统？为什么？
+### 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力）
 
----
+以 `meta-llama/Llama-2-7b` 为例（标准多头注意力，`num_key_value_heads = num_heads = 32`，FP16，即 2 bytes/参数）：（①）
 
-### 2.4 操作系统与实训环境该怎么选
+- $L = 32$ 层
+- `num_key_value_heads = 32`，`head_dim = 128`，即 $d_{\text{model}} = 4096$
+- 每 token 每层 K+V：$32 \times 128 \times 2\ \text{bytes} \times 2 = 16\ \text{KB}$
+- 每 token 全部层：$32 \times 16\ \text{KB} = 512\ \text{KB}$
 
-你的目标是 vLLM 部署，这是 GPU 实训，环境选择直接决定你能否顺利跑通。记住一条主线：**命令练习和 GPU 实训，都往 Linux 靠拢**。
+当 `batch_size = 64`，`seq_len = 2048` 时：
 
-**如果你是 Windows 用户**，日常写 Python、练命令行时，别用 CMD，启用 **WSL2 + Ubuntu LTS**（如 22.04/24.04）。它让你在 Windows 里获得接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致。安装只需管理员 PowerShell 执行 `wsl --install`。
+$$\text{Memory} = 64 \times 2048 \times 512\ \text{KB} = 64\ \text{GB}$$
 
-**如果你是 macOS / Linux 用户**，直接使用本机终端即可，本身就是类 Unix 环境。
+而 `meta-llama/Llama-2-7b` 的模型参数本身仅占约 14 GB（FP16）。这意味着**KV Cache 的内存占用可以达到模型参数量的数倍**，是长上下文、大 batch 推理时的主要显存瓶颈。（①）
 
-**关键一步——GPU 实训（你的 vLLM 部署）**：必须使用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态支持最成熟、文档最全。
+> **直观理解**：在 NVIDIA A100 40GB 显卡上，如果 batch_size=1、seq_len=4096，KV Cache 约需 2 GB，这看起来不多；但当 batch_size=16、seq_len=8192 时，KV Cache 就需要约 64 GB，远超单卡容量。
 
-**⚠️ 避坑提醒**：别把 **"CentOS + VirtualBox 虚拟机"当最佳方案**。CentOS
+## 四、极简代码实现
+
+以下是一个接近 Hugging Face Transformers 风格的极简实现，支持 MHA、GQA 和 MQA，帮助你理解 KV Cache 在代码中如何工作。（①）
+
+（个性化提示：学习风格：hands-on）
 
 ## 块 7
 
-### 3.1 什么时候才需要镜像源
+```markdown
+# KeyValue 缓存机制在标准多头注意力模型中的实现
 
-`pip` 是 Python 的包管理工具，用来安装第三方库（比如 `numpy`、`pandas`）。默认情况下，它从官方 PyPI 服务器（`pypi.org`）下载——这是最权威、最完整、应保留的默认源。
+## 1. KeyValue 缓存机制的重要性
 
-**你现在的目标（vLLM 部署）会装不少大体积依赖，如果网络卡顿，下载会非常折磨。** 但记住：只有网络受限、官方源明显变慢或经常超时时，才临时切到国内镜像。镜像只是“网络不好时的临时加速手段”，不是永久替换——官方源始终是首选。
+KeyValue 缓存机制在模型推理中扮演着关键角色，尤其是在多头注意力机制中。通过缓存历史输入的 K 和 V，可以显著提升模型的推理效率。以下是 KeyValue 缓存机制的核心实现步骤。
 
-### 3.2 首选做法：临时指定镜像源（推荐）
+## 2. KeyValue 缓存机制的实现
 
-如果某次安装慢，最干净
+### 2.1 KeyValue 缓存的扩展
+
+在标准多头注意力模型中，KeyValue 缓存机制通过扩展 K 和 V 的维度，将有限的 KV 头扩展到与 Q 头数相同的数量。具体实现如下：
+
+```python
+def repeat_kv(hidden_states, n_rep):
+    """
+    将 K/V 从 [batch, num_kv_heads, seq_len, head_dim] 
+    重复扩展到 [batch, num_heads, seq_len, head_dim]，
+    用于 GQA/MQA 场景。
+    """
+    batch, num_kv_heads, slen, head_dim = hidden_states.shape
+    if n_rep == 1:
+        return hidden_states
+    # 先扩展维度，再 reshape
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
+    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
+```
+
+### 2.2 多头注意力的计算
+
+通过扩展后的 K 和 V，多头注意力的计算过程如下：
+
+```python
+class DecoderLayerWithKVCache(nn.Module):
+    def __init__(self, d_model, n_heads, num_key_value_heads=None):
+        super().__init__()
+        self.n_heads = n_heads
+        self.num_key_value_heads = num_key_value_heads or n_heads
+        self.head_dim = d_model // n_heads
+        
+        # GQA/MQA 要求 n_heads 能被 num_key_value_heads 整除
+        assert n_heads % self.num_key_value_heads == 0, \
+            f"n_heads ({n_heads}) 必须能被 num_key_value_heads ({self.num_key_value_heads}) 整除"
+        self.n_rep = n_heads // self.num_key_value_heads
+        
+        self.Wq = nn.Linear(d_model, d_model)
+        # GQA/MQA 中 Wk/Wv 的输出维度按实际 KV 头数计算
+        kv_dim = self.num_key_value_heads * self.head_dim
+        self.Wk = nn.Linear(d_model, kv_dim)
+        self.Wv = nn.Linear(d_model, kv_dim)
+        self.Wo = nn.Linear(d_model, d_model)
+        
+    def forward(self, x, past_kv=None):
+        """
+        x: [batch_size, seq_len, d_model]
+        past_kv: tuple of (K, V), 每个 [batch_size, num_kv_heads, past_len, head_dim]
+        """
+        batch_size, seq_len, _ = x.shape
+        
+        # 计算当前输入的 Q, K, V
+        q = self.Wq(x)  # [batch, seq, d_model]
+        k = self.Wk(x)  # [batch, seq, kv_dim]
+        v = self.Wv(x)  # [batch, seq, kv_dim]
 
 ## 块 8
 
-**本节目标**：把清华镜像设为 pip 默认源，并学会验证与还原。仅当你长期网络受限、每次都要手动加 `-i` 时才做这一步。
+### 4.1 关键代码解读
 
-**为什么值得做**：你的目标是 vLLM 部署，后续要装大量依赖包。网络不稳时，默认源能省下反复敲参数的时间。但请记住：官方 PyPI 最可靠，网络恢复后建议改回。
+1. **`repeat_kv` 函数**：GQA/MQA 的核心。将 K/V 从 `num_kv_heads` 通过维度扩展+reshape 重复到 `num_heads`，使 Q/K/V 头数对齐以计算 Attention。计算完成后，缓存中仍保存未扩展的 K/V，保持显存节省效果。
+2. **`past_kv` 参数**：接收上一层的 `(K, V)` 缓存，形状为 `[batch, num_kv_heads, past_len, head_dim]`。
+3. **`torch.cat` 拼接**：将历史 K/V 与当前新 token 的 K/V 沿序列长度维度拼接。
+4. **Causal Mask**：`q` 中第 `i` 个 token 只能看到 `k` 中前 `past_len + i + 1` 个位置。当 `past_len=0` 时退化为标准下三角 mask；当 `seq_len=1`（逐 token 解码）时，当前 token 可看到全部历史位置。
+5. **Prefill vs Decoding**：Prefill 阶段输入完整 prompt，Decoding 阶段每步只输入 1 个新 token。
 
----
+## 五、工业级挑战：KV Cache 内存管理
 
-**Windows 操作（三步）**
+KV Cache 虽然降低了计算复杂度，但引入了巨大的**内存管理挑战**。在生产环境中，这甚至比计算本身更棘手。（权威②）
 
-1. 按 `Win + R`，输入 `%APPDATA%` 回车，打开配置目录（类似 `C:\Users\你的用户名\AppData\Roaming`）。
-2. 新建文件夹 `pip`，在里面新建文本文件 `pip.ini`。
-3. 用记事本打开，写入：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-`index-url` 就是告诉 pip 默认从哪下载。
-
-**macOS / Linux 操作（三步）**
-
-1. 终端执行 `mkdir -p ~/.config/pip`。
-2. 执行 `nano ~/.config/pip/pip.conf`。
-3. 写入同样的两行内容，按 `Ctrl + O` 保存，`Ctrl + X` 退出。
-
----
-
-**⚠️ 别乱加 `trusted-host`**：网上教程常让你加一行 `trusted-host = ...`，但除非镜像 HTTPS 证书验证失败，否则不要加——它会跳过 TLS 校验，放弃传输安全。清华、阿里等主流镜像都有合法证书，正常用不上。只有企业内网自建源或确认来源可信时才临时加。
-
----
-
-**验证配置**：命令行输入 `pip config list`，看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'` 即成功。
-
-**改回官方源**：删除 `pip.ini` / `pip.conf` 文件，或执行 `pip config unset global.index-url`。
-
----
-
-**本块学习检查**：动手做一遍——按你的系统完成配置，运行 `pip config list` 确认输出，再执行 `pip config unset global.index-url` 还原，最后再次运行 `pip config list` 确认配置已清除。全程约 3 分钟，能帮你把命令记牢。
+（个性化提示：学习风格：hands-on）
 
 ## 块 9
 
-**目标对齐**：你正为 vLLM 部署做准备，而 VS Code 是你写推理脚本、调试代码的“主战场”。本块只讲一件事：装好它，并让它认得出 Python。
+### 5.1 现有系统的内存浪费
 
-**为什么选 VS Code**：免费、启动快、插件多。你之后写 Python 脚本、改配置文件、敲 Linux 命令，都用得上它。
+传统推理系统（如 FasterTransformer）为每个请求**预分配一段连续的 GPU 内存**，大小为该请求的最大可能序列长度（如 2048 tokens）。（权威②）
 
-**安装步骤（3 步）**：
-1. 打开 https://code.visualstudio.com，下载对应你系统的安装包。
-2. 运行安装程序，一路“下一步”完成。
-3. **装插件（关键）**：打开 VS Code，点左侧最下方的四个方块图标（扩展），搜索并安装：
-   - **Python**（微软官方，提供语法高亮、调试、智能提示）
-   - **Pylance**（让代码提示更聪明）
+这导致三种内存浪费：
 
-装完这两个，VS Code 才能识别 `.py` 文件，给你代码补全、报错提示和“一键运行”。
+| 浪费类型 | 原因 | 后果 |
+|---------|------|------|
+| **Reserved（预留）** | 为未来 token 预留的槽位，在请求结束前不能被其他请求使用 | 占用大量空闲内存 |
+| **Internal Fragmentation（内部碎片）** | 请求实际长度远小于最大长度，预分配的空间大部分未使用 | 内存利用率低 |
+| **External Fragmentation（外部碎片）** | 不同请求预分配大小不同，释放后留下不连续的小块 | 无法分配给新请求 |
 
-**配置 Python 解释器（2 步）**：
-1. 按 `Ctrl + Shift + P`（Mac 用 `Cmd + Shift + P
+根据 vLLM 论文（权威②）在 NVIDIA A10G GPU、OPT-13B 模型、ShareGPT 数据集上的测试，现有系统中**实际有效内存利用率低至 20.4% - 38.2%**，超过 60% 的 KV Cache 内存被浪费。（权威②）
+
+（个性化提示：学习风格：hands-on）
 
 ## 块 10
 
-personalization_action: explain
-personalization_reason: 学习目标为vLLM部署，需快速搭建专业IDE；hands-on风格要求步骤精简、可操作。
-fact_source_chunk_ids: ["KB-15-04-02"]
+### 5.2 PagedAttention：类比操作系统的虚拟内存
 
----
+vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定大小的块（block），非连续存储，类比 OS 的虚拟内存分页**。（权威②）
 
-## 4.2 方案二：PyCharm Community（专业、开箱即用）
+核心设计：
 
-**为什么选它**：PyCharm 是 JetBrains 出品的 Python 专用 IDE，社区版完全免费。内置代码分析、版本控制、数据库工具，适合大型项目开发——vLLM 部署涉及多文件工程，正合适。
+1. **KV Block**：每个块包含固定数量 token 的 K 和 V（默认 16 个 token）
+2. **逻辑块 vs 物理块**：请求的 KV Cache 是逻辑上连续的块序列，但物理上可以映射到 GPU 上任意空闲的物理块
+3. **Block Table**：维护每个请求的逻辑块到物理块的映射表
+4. **按需分配**：新 token 生成时才分配新物理块，而不是一开始就预分配最大长度
 
-**安装步骤**：
-1. 访问 https://www.jetbrains.com/pycharm/download/。
-2. 下载 **PyCharm Community Edition**（社区版，免费）。
-3. 运行安装程序，勾选：
-   - `Add "Open Folder as Project"`（右键快速打开文件夹）
-   - `Add to PATH`（命令行直接启动）
+这带来了三个好处：（权威②）
 
-**首次启动配置**：
-1. 打开 PyCharm，选 `New Project`。
-2. `Location` 选项目保存路径。
-3. 在 `
+- **消除内部碎片**：只分配实际需要的块，最后一块可能有少量浪费（最多 15 个 token）
+- **消除外部碎片**：所有块大小相同，释放后可以被任意请求复用
+- **支持内存共享**：通过引用计数和 Copy-on-Write，实现并行采样、束搜索等场景下的 KV Cache 共享
+
+（个性化提示：学习风格：hands-on）
 
 ## 块 11
 
-### 5.1 为什么用 Conda
+### 5.3 Copy-on-Write 与内存共享
 
-你的目标是部署 vLLM，这意味着后面要面对 PyTorch、CUDA 这些“重依赖”。Conda 的价值在于：它不只是管 Python 包，还能直接管 Python 解释器版本。每个项目一个独立环境，互不干扰，这是深度学习项目的基本盘。
+在并行采样（一个 prompt 生成多个候选答案）时，所有候选共享相同的 prompt 部分的 KV Cache。vLLM 通过以下机制实现：（权威②）
 
-### 5.2 安装 Conda：选 Miniconda
+1. Prompt 的 KV Block 被多个序列**共享**，引用计数 > 1
+2. 当某个序列需要写入新 token 到共享块时，触发 **Copy-on-Write**：复制该块到新物理块，再写入
+3. 原块的引用计数减 1
 
-两个发行版二选一：
+在束搜索（Beam Search）中，不同 beam 候选可以共享大部分前缀。根据 vLLM 论文（权威②）在相同测试条件下的实验，这可以节省 **37.6% - 55.2%** 的内存。（权威②）
 
-- **Anaconda**：500MB+，预装 numpy、pandas 等一堆库。适合数据分析、不想手动装包的人。
-- **Miniconda**：约 50MB，只带 conda 和基础 Python，要什么装什么。**推荐你选这个**——环境干净，部署 vLLM 时依赖关系更清晰。
+### 5.4 调度与抢占
 
-### 安装步骤（跟着做）
+当 GPU 内存不足时，vLLM 支持两种策略将部分请求的 KV Cache 移出 GPU：（权威②）
 
-1. 打开 https://docs.conda.io/en/latest/miniconda.html
-2. 下载对应系统的安装包：Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`
-3. 运行安装程序，注意系统差异：
-   - **Windows**：一路下一步，**勾选** "Add Miniconda3 to my PATH environment variable"，以便在命令行中直接使用 conda。若担心与系统已有 Python 冲突，可仅使用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 来敲 conda 命令。
-   - **macOS/Linux**：运行 `.sh` 文件，输入 `yes` 同意协议、选安装路径，最后一步**必须选 `yes`** 让安装器执行 `conda init`。这样终端每次打开都会自动被 conda 接管，不用手动改 PATH。
-4. **验证安装**：打开一个**新的**终端（Windows 用 Anaconda Prompt 或普通命令行；macOS/Linux 关掉终端重开），输入：
+- **Swapping（交换）**：将 KV Block 复制到 CPU 内存，需要时再搬回
+- **Recomputation（重计算）**：直接丢弃 KV Cache，需要时重新计算（利用已生成的 token 作为新 prompt 快速重算）
 
-```bash
-conda --version
-```
+## 六、其他优化方向
 
-看到类似 `conda 24.x.x` 的输出，就成了。
+除了 PagedAttention，工业界还从多个角度优化 KV Cache：（①）
 
----
-
-**本块学习检查**：打开新终端，运行 `conda --version`，把输出结果记下来。如果提示 `conda:
+（个性化提示：学习风格：hands-on）
 
 ## 块 12
 
-**动手创建你的第一个虚拟环境**
+### 6.1 Multi-Query Attention (MQA)
 
-你的目标是部署 vLLM，而大模型项目常需要不同版本的 PyTorch 和 CUDA。现在学会创建环境，以后直接复用这套流程。
+所有 Query 头**共享同一组 K 和 V**。KV Cache 大小降为原来的 $1/\text{num\_heads}$。PaLM 系列（《PaLM: Scaling Language Modeling with Pathways》）、`tiiuae/falcon-7b` 等模型采用，在特定条件下可提升推理速度，但可能带来轻微质量损失。（①）
 
-打开终端，执行：
+### 6.2 Grouped-Query Attention (GQA)
 
-```bash
-conda create -n llm-learn python=3.10
-```
+将 Query 头分组，每组共享一个 K、V 头。这是 MQA 和标准多头注意力的折中。不同模型的 GQA 配置差异较大，需以具体模型的 `config.json` 为准：（①）
 
-**命令拆解**：
-- `conda create`：创建环境的命令
-- `-n llm-learn`：给环境起名叫 `llm-learn`（`n` 是 `name` 的缩写）
-- `python=3.10`：指定这个环境里安装 Python 3.10
+- `meta-llama/Llama-2-7b`：`num_heads=32`，`num_key_value_heads=32`（标准多头注意力，**非 GQA**）
+- `meta-llama/Llama-2-70b`：`num_heads=64`，`num_key_value_heads=8`（GQA，缓存大小降至 $1/8$）
+- `meta-llama/Llama-3-8B`：`num_heads=32`，`num_key_value_heads=8`（GQA，缓存大小降至 $1/4$）
 
-执行后，终端会列出将要安装的包，并询问：
-
-```bash
-Proceed ([y]/n)?
-```
-
-输入 `y` 并回车，等待安装完成
+（个性化提示：学习风格：hands-on）
 
 ## 块 13
 
-### 5.4 激活与退出环境
+```markdown
+# KV Cache 量化
 
-**激活环境**（进入这个“独立房间”）：
+## 什么是 KV Cache 量化？
 
-```bash
-conda activate llm-learn
-```
+在模型推理中，为了减少显存占用，我们可以通过 **量化** 技术对 KV Cache 进行优化。量化通过将高精度的权重和激活值转换为低精度表示（如 INT8、INT4 或 INT16），可以显著降低模型的显存占用。研究表明，在特定条件下，量化可以减少 50% 到 75% 的缓存占用，同时保持生成质量的可接受性（①）。
 
-**为什么这样写**：激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。
+### 量化的作用
+- **减少显存占用**：通过降低数据精度，模型在推理过程中所需的运行时内存（RAM）大幅减少。
+- **提升运行效率**：低精度计算虽然不如浮点数计算精确，但在大多数应用场景下可以满足生成质量的要求（①）。
 
-**验证当前环境的 Python 版本**：
+### 量化方法
+- **INT8 量化**：将 32 位浮点数转换为 8 位整数，占用更少的内存。
+- **INT4 量化**：进一步降低精度，占用更少的内存，但可能会影响
 
-```bash
-python --version
-```
+## 测评题目
 
-应该显示 `Python 3.10.x`。
+### Q-KB0806-003
+以下哪种技术不是用于推理加速的？
 
-**退出环境**（回到系统默认环境）：
+### Q-KB0806-004
+FlashAttention 的核心思想是通过分块（Tiling）和重计算（Recomputation）来减少HBM（显存）的读写次数，从而加速并降低显存占用。（ ）
 
-```bash
-conda deactivate
-```
+### Q-KB0805-003
+以下哪种位置编码是**可学习**的（Learnable）？
 
-### 5.5 查看和管理环境
+### Q-KB0806-001
+在自回归生成过程中，KV Cache的主要作用是？
 
-**查看所有已创建的环境**：
+### Q-KB0805-001
+为什么Transformer需要引入位置编码（Positional Encoding）？
 
-```bash
-conda env list
-```
+### Q-KB08-ST0807-002
+推理时将模型切换到评估模式，应调用 `model.________()`。
 
-带 `*` 的就是当前激活的环境。
+### Q-KB0805-004
+RoPE（旋转位置编码）通过将Query和Key向量进行旋转操作，使得注意力分数仅依赖于Token之间的**相对距离**。（ ）
 
-**删除环境**（如果以后需要清理）：
-
-```bash
-conda remove -n llm-learn --all
-```
-
----
-
-## 第六章：在 VS Code / PyCharm 中使用 Conda
-
-## 块 14
-
-### 6.1 VS Code 配置 Conda 环境
-
-你的目标是部署 vLLM，所以环境必须干净、可控。跟着做，别跳步：
-
-1. **激活环境**：在终端运行 `conda activate llm-learn`。这是前提，不激活后面全白搭。
-2. **打开命令面板**：在 VS Code 里按 `Ctrl + Shift + P`。
-3. **选择解释器**：输入 `Python: Select Interpreter` 并回车。
-4. **挑带 conda 的**：在列表里选带有 `conda` 字样的路径，比如 `Python 3.10.x ('llm-learn': conda)`。
-
-**为什么这么做**：VS Code 会自动识别 conda 环境。选完后，你在这个工作区写的所有代码，都会用 `llm-learn` 里的 Python 和已装好的包——包括你后面要用的 vLLM 依赖。选错环境，代码跑不起来，别在这上面浪费时间。
-
-### 6.2 PyCharm 配置 Conda 环境
-
-如果你用 PyCharm，流程类似：
-
-1. 打开 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）。
-2. 左侧选 `Project: 你的项目名` → `Python Interpreter`。
-3. 点齿轮图标 → `
-
-## 块 15
-
-### 7.1 在命令行验证
-
-你的目标是部署 vLLM，但任何部署都从“环境能跑通”开始。先激活环境：
-
-```bash
-conda activate llm-learn
-```
-
-输入 `python` 进入交互模式，看到 `>>>` 提示符后，敲入：
-
-```python
-print("Hello, Python! 我的环境准备好了！")
-```
-
-回车，若正确打印文字，说明 Python 解释器工作正常。按 `exit()` 退出。
-
-### 7.2 在 VS Code 中验证
-
-命令行验证通过后，再用编辑器走一遍流程：新建文件夹 `my-first-project`，用 VS Code 打开，新建 `hello.py`，输入：
-
-```python
-print("Hello from VS Code!")
-```
-
-点击右上角小三角
-
-## 块 16
-
-### 7.3 在 PyCharm 中验证
-
-环境装好了，现在用最直接的方式确认它真的能用——在 PyCharm 里跑通第一行代码。三步走：
-
-1. **新建项目**：打开 PyCharm，创建一个新项目，然后在项目里新建一个文件，命名为 `hello.py`。
-2. **运行文件**：在左侧文件列表中，**右键点击** `hello.py`，在弹出的菜单中选择 `Run 'hello'`。
-3. **查看结果**：看 PyCharm 底部的 **Run 窗口**，如果代码正确，这里会输出你写的内容。
-
-> **动手试试**：在 `hello.py` 里输入 `print("Hello, vLLM!")`，然后运行。看到 Run 窗口输出这行字，就说明你的开发工作台已经打通了。
-
----
-
-### 第八章：常见问题排查
-
-跑代码时如果卡住，先对照这张表自查：
-
-| 问题现象 | 可能原因 | 解决方案 |
-|----------|----------|----------|
-| 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选 "Modify"，勾选 "Add Python to environment variables" |
-| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 按第三章临时加 `-i` 指定国内镜像（如清华源）；长期受限再考虑设为默认源 |
-| `conda` 命令找不到 | 未使用 Anaconda/Miniconda Prompt（Windows）/ 未执行 `conda init`（macOS/Linux） | Windows 用户用开始菜单的 `Anaconda Prompt (Miniconda3)`；macOS/Linux 运行 `conda init` 后重开终端 |
-| VS Code 提示"未选择 Python 解释器" | 未配置解释器路径 | 按 `Ctrl + Shift + P` → `Python: Select Interpreter` 手动选择 |
-| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
-| pip 安装后，Python 里 `import`
+### Q-KB08-ST0807-003
+前向实验中 `input_ids` 通常表示？

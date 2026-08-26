@@ -1,1 +1,166 @@
-[]
+[
+  {
+    "question_id": "Q-KB0104-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "想要**每2秒自动刷新**GPU状态，应使用哪个命令？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nvidia-smi -l 2`"
+      },
+      {
+        "key": "B",
+        "text": "`nvidia-smi --refresh 2`"
+      },
+      {
+        "key": "C",
+        "text": "`watch -n 2 nvidia-smi`"
+      },
+      {
+        "key": "D",
+        "text": "A和C都可以"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。",
+    "explanation": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。"
+  },
+  {
+    "question_id": "Q-KB0104-005",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，仅查看GPU的**显存使用量**（以MB为单位），不显示其他信息。",
+    "options": [],
+    "correct_answer": "nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits",
+    "hint": "```bash\nnvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits\n```\n> 输出示例：`2048, 8192`\n\n---",
+    "explanation": "```bash\nnvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits\n```\n> 输出示例：`2048, 8192`\n\n---"
+  },
+  {
+    "question_id": "Q-KB0103-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`pip install -i https://pypi.tuna.tsinghua.edu.cn/simple torch` 中 `-i` 参数的作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "忽略依赖"
+      },
+      {
+        "key": "B",
+        "text": "指定安装路径"
+      },
+      {
+        "key": "C",
+        "text": "指定pip镜像源地址"
+      },
+      {
+        "key": "D",
+        "text": "交互式安装"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> `-i`（--index-url）用于指定PyPI镜像源，加速国内下载。",
+    "explanation": "> `-i`（--index-url）用于指定PyPI镜像源，加速国内下载。"
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出将 `/usr/local/cuda/bin` 永久添加到 `PATH` 环境变量的完整步骤（以bash为例）。",
+    "options": [],
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "hint": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```",
+    "explanation": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```"
+  },
+  {
+    "question_id": "Q-KB0101-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个命令用于**切换当前工作目录**？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`ls`"
+      },
+      {
+        "key": "B",
+        "text": "`cd`"
+      },
+      {
+        "key": "C",
+        "text": "`mkdir`"
+      },
+      {
+        "key": "D",
+        "text": "`pwd`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+    "explanation": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。"
+  },
+  {
+    "question_id": "Q-KB0100-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
+    "options": [],
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+    "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。",
+    "options": [],
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0104-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "`nvidia-smi` 输出中，`Memory-Usage: 2048MiB / 8192MiB` 表示什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPU总内存8GB，已使用2GB"
+      },
+      {
+        "key": "B",
+        "text": "CPU内存使用情况"
+      },
+      {
+        "key": "C",
+        "text": "磁盘空间"
+      },
+      {
+        "key": "D",
+        "text": "网络带宽"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "case_id": "case_050",
+  "background": "只说\"我想学AI\"，无具体方向",
+  "existing_skills": "",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "1.0",
+  "learning_style": "理论型",
+  "hardware": "RTX 3060 12GB",
+  "expected_target_blocks": "KB-08|KB-12",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "medium",
+  "user_input_text": "我的学习背景：只说\"我想学AI\"，无具体方向\n我的学习目标：LoRA微调\n我每天能学：1.0小时\n我喜欢怎么学：理论型\n我的硬件条件：RTX 3060 12GB"
+}

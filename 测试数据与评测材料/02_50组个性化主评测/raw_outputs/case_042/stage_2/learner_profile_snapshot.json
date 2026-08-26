@@ -1,5 +1,5 @@
 {
-  "session_id": "f349ac2f-0113-48b1-9073-153b80200ed2",
+  "session_id": "30092352-6229-4963-a5ca-ae0b5755f6a0",
   "user_id": "local-user",
   "grade": "",
   "skill_tags": [],
@@ -15,7 +15,7 @@
       "mapping_confidence": 1.0,
       "level": "beginner",
       "status": "学习中",
-      "progress": 0.0,
+      "progress": 0.857,
       "prerequisites": [
         "HuggingFace生态工具链"
       ]
@@ -25,7 +25,7 @@
   "daily_hours": 1.5,
   "learning_style": "hands-on",
   "learning_rhythm": "fast",
-  "confidence_index": 0.2,
+  "confidence_index": 0.35,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 3

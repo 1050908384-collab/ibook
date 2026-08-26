@@ -1,1 +1,98 @@
-[]
+[
+  {
+    "question_id": "Q-KB0104-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "请在终端执行以下命令，验证NVIDIA驱动和GPU是否可用，将输出粘贴作答：\n```bash\nnvidia-smi\n```",
+    "options": [],
+    "correct_answer": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+    "hint": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+    "explanation": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。"
+  },
+  {
+    "question_id": "Q-KB0104-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。",
+    "options": [],
+    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0103-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-03",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "激活conda虚拟环境 `myenv` 的命令是________；退出当前虚拟环境的命令是________。",
+    "options": [],
+    "correct_answer": "`conda activate myenv`；`conda deactivate`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出将 `/usr/local/cuda/bin` 永久添加到 `PATH` 环境变量的完整步骤（以bash为例）。",
+    "options": [],
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "hint": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```",
+    "explanation": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```"
+  },
+  {
+    "question_id": "Q-KB0103-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-03",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出以下操作的完整命令序列：\n1. 创建名为 `llm_train` 的conda环境（Python 3.10）\n2. 激活该环境\n3. 用pip安装 `torch` 包\n4. 查看已安装包列表\n5. 导出环境配置到 `environment.yml`",
+    "options": [],
+    "correct_answer": "conda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml",
+    "hint": "```bash\nconda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml\n```",
+    "explanation": "```bash\nconda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml\n```"
+  },
+  {
+    "question_id": "Q-KB0101-006",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请完成以下操作并截图/粘贴输出：\n1. 在 `/tmp` 下创建目录 `practice`\n2. 进入该目录，创建文件 `note.txt` 并写入 \"Hello Linux\"\n3. 查看文件内容\n4. 复制为 `note_backup.txt`\n5. 列出目录下所有文件",
+    "options": [],
+    "correct_answer": "mkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la",
+    "hint": "```bash\nmkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la\n```",
+    "explanation": "```bash\nmkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la\n```"
+  },
+  {
+    "question_id": "Q-KB0101-005",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，将 `/tmp/test_dir` 下所有 `.txt` 文件复制到 `/tmp/backup/` 目录中（如目录不存在则先创建）。",
+    "options": [],
+    "correct_answer": "mkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/",
+    "hint": "```bash\nmkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/\n```\n\n---",
+    "explanation": "```bash\nmkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0104-005",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，仅查看GPU的**显存使用量**（以MB为单位），不显示其他信息。",
+    "options": [],
+    "correct_answer": "nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits",
+    "hint": "```bash\nnvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits\n```\n> 输出示例：`2048, 8192`\n\n---",
+    "explanation": "```bash\nnvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits\n```\n> 输出示例：`2048, 8192`\n\n---"
+  }
+]

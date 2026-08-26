@@ -1,0 +1,15 @@
+{
+  "case_id": "case_023",
+  "background": "10GB卡，想用小模型做QLoRA",
+  "existing_skills": "KB-04|KB-08",
+  "learning_goal": "QLoRA微调",
+  "daily_hours": "2.0",
+  "learning_style": "边学边做",
+  "hardware": "RTX 3080 10GB",
+  "expected_target_blocks": "KB-12",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "medium",
+  "user_input_text": "我的学习背景：10GB卡，想用小模型做QLoRA\n已掌握技能：KB-04|KB-08\n我的学习目标：QLoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：边学边做\n我的硬件条件：RTX 3080 10GB"
+}
