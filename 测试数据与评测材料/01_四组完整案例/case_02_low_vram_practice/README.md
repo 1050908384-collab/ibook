@@ -1,11 +1,11 @@
 # 完整展示案例 B
 
-来源：真实主评测场景 case_018
+来源：真实主评测场景 case_016
 run_id：run_20260826_124854
-抽取时间：2026-08-26T10:09:33.890961+00:00
+抽取时间：2026-08-26T12:37:33.342454+00:00
 
 ## 说明
-- 本案例所有文件从 `02_50组个性化主评测/raw_outputs/case_018/` 中抽取。
+- 本案例所有文件从 `02_50组个性化主评测/raw_outputs/case_016/` 中抽取。
 - `01_learner_profile.json` - 真实 Agent1 学情画像
 - `02_diagnostic_output.json` - 诊断结果
 - `03_stage_planning_output.json` - 阶段规划

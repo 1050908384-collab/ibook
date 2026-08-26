@@ -1,12 +1,12 @@
 {
   "run_id": "run_20260826_124854",
-  "case_id": "case_040",
+  "case_id": "case_042",
   "evaluation_schema_version": "2026-08-26-final",
   "code_commit": "6591cd17b33f",
   "knowledge_base_version": "b7688878fe33",
   "prompt_version": "c90f91500cf4",
   "skill_version": "c90f91500cf4",
-  "database_sha256": "e6a610b81872",
+  "database_sha256": "1d696fda68d4",
   "hardware_info": {
     "cpu_model": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
     "cpu_cores_physical": 14,
@@ -40,8 +40,8 @@
     "top_p": 0.95,
     "max_tokens": 8192
   },
-  "run_started_at": "2026-08-26T07:39:27.816629+00:00",
-  "run_finished_at": "2026-08-26T07:43:38.698166+00:00",
+  "run_started_at": "2026-08-26T07:47:22.772814+00:00",
+  "run_finished_at": "2026-08-26T07:51:15.776201+00:00",
   "status": "completed",
   "error": null,
   "execution_path": "deepseek_only"

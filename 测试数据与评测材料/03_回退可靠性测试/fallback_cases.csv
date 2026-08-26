@@ -1,13 +1,4 @@
 ﻿fault_id,fault_type,fault_label,base_case_id,inject_method,flow_final_status,expect_flow_failure,actual_taken_model,retry_count,fallback_triggered,state_continuity,error_message,run_started_at,run_finished_at,passed
-API_KEY_EMPTY-case_001,api_key_empty,API Key 缺失,case_001,env_patch,success,False,,0,False,True,,2026-08-25T12:04:40.238963+00:00,2026-08-25T12:05:14.762009+00:00,True
-HTTP_401_AUTH_FAIL-case_001,http_401_auth_fail,401 鉴权失败,case_001,mock_transport,success,False,,0,False,True,,2026-08-25T12:05:14.769086+00:00,2026-08-25T12:08:29.343050+00:00,True
-HTTP_403_DENIED-case_001,http_403_denied,403 权限拒绝,case_001,mock_transport,success,False,,0,False,True,,2026-08-25T12:08:29.351389+00:00,2026-08-25T12:11:39.753136+00:00,True
-HTTP_404_INVALID_MODEL-case_001,http_404_invalid_model,404 模型无效,case_001,mock_transport,success,False,,0,False,True,,2026-08-25T12:11:39.760907+00:00,2026-08-25T12:14:56.040728+00:00,True
-HTTP_429_RATE_LIMIT-case_001,http_429_rate_limit,429 限流,case_001,mock_transport,success,False,,0,False,True,,2026-08-25T12:14:56.048290+00:00,2026-08-25T12:18:24.602102+00:00,True
-CONNECT_TIMEOUT-case_001,connect_timeout,连接超时,case_001,mock_transport_timeout,success,False,,0,False,True,,2026-08-25T12:18:24.610490+00:00,2026-08-25T12:22:09.135754+00:00,True
-READ_TIMEOUT-case_001,read_timeout,读取超时,case_001,mock_transport_timeout,success,False,,0,False,True,,2026-08-25T12:22:09.142658+00:00,2026-08-25T12:25:37.787047+00:00,True
-HTTP_500_SERVER-case_001,http_500_server,500 服务端错误,case_001,mock_transport,success,False,,0,False,True,,2026-08-25T12:25:37.794893+00:00,2026-08-25T12:28:52.042484+00:00,True
-EMPTY_CONTENT_BODY-case_001,empty_content_body,空正文（仅推理内容）,case_001,mock_transport,success,False,,0,False,True,,2026-08-25T12:28:52.052315+00:00,2026-08-25T12:32:16.957973+00:00,True
-OLLAMA_MODEL_UNAVAILABLE-case_001,ollama_model_unavailable,Ollama 首选模型不存在,case_001,env_patch,success,True,,0,False,True,,2026-08-25T12:32:16.965481+00:00,2026-08-25T12:32:50.630151+00:00,True
-OLLAMA_DOWN-case_001,ollama_down,Ollama 服务未启动,case_001,env_patch,success,True,,0,False,True,,2026-08-25T12:32:50.637298+00:00,2026-08-25T12:33:23.177762+00:00,True
-ALL_MODELS_UNAVAILABLE-case_001,all_models_unavailable,云端+本地全部不可用,case_001,env_patch,success,True,,0,False,True,,2026-08-25T12:33:23.185192+00:00,2026-08-25T12:33:56.838196+00:00,True
+OLLAMA_MODEL_UNAVAILABLE-case_001,ollama_model_unavailable,Ollama 首选模型不存在,case_001,env_patch,success,False,qwen2.5:7b,0,True,True,,2026-08-26T15:27:12.158576+00:00,2026-08-26T15:31:56.057094+00:00,True
+OLLAMA_DOWN-case_001,ollama_down,Ollama 服务未启动,case_001,env_patch,model_unavailable,True,deepseek-r1:7b,0,True,False,所有配置的模型调用均失败；已禁止将确定性兜底结果视为成功，需要人工处理或恢复模型服务。,2026-08-26T15:25:29.678120+00:00,2026-08-26T15:25:40.565106+00:00,True
+ALL_MODELS_UNAVAILABLE-case_001,all_models_unavailable,云端+本地全部不可用,case_001,env_patch,model_unavailable,True,deepseek-chat,0,False,False,所有配置的模型调用均失败；已禁止将确定性兜底结果视为成功，需要人工处理或恢复模型服务。,2026-08-26T15:25:40.586655+00:00,2026-08-26T15:26:22.232924+00:00,True

@@ -1,9 +1,9 @@
 {
   "status": "planned",
-  "session_id": "e8fd66ac-16d6-423d-8e54-3c724186f6a1",
+  "session_id": "30092352-6229-4963-a5ca-ae0b5755f6a0",
   "next_stage": {
-    "stage_id": "empty-e8fd66ac-16d6-423d-8e54-3c724186f6a1-2",
-    "stage_num": 2,
+    "stage_id": "empty-30092352-6229-4963-a5ca-ae0b5755f6a0-1",
+    "stage_num": 1,
     "block_id": "KB-12",
     "block_name": "LoRA",
     "block_ids": [],
@@ -28,7 +28,7 @@
     "personalization_summary": null
   },
   "updated_profile": {
-    "session_id": "e8fd66ac-16d6-423d-8e54-3c724186f6a1",
+    "session_id": "30092352-6229-4963-a5ca-ae0b5755f6a0",
     "user_id": "local-user",
     "grade": "",
     "skill_tags": [],
@@ -51,15 +51,15 @@
       }
     ],
     "goal": "LoRA微调",
-    "daily_hours": 2.0,
+    "daily_hours": 1.5,
     "learning_style": "hands-on",
     "learning_rhythm": "fast",
-    "confidence_index": 0.725,
+    "confidence_index": 0.35,
     "confusion_markers": [],
     "confidence": 0.95,
     "version": 3
   },
-  "planning_notes": "本阶段（1）已达标，推进到下一阶段",
+  "planning_notes": "本阶段（1）正确率不足 70%，重试当前阶段",
   "session_status": "active",
   "phase": "next_stage_ready",
   "available_actions": [

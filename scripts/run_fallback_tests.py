@@ -165,12 +165,13 @@ FAULT_CONFIGS: Dict[str, Dict[str, Any]] = {
         "inject": "env_patch",
         "env_overrides": {
             "LLM_PROVIDER": "ollama",
-            "LLM_FALLBACK_PROVIDER": "",
+            "LLM_FALLBACK_PROVIDER": "ollama",
             "OLLAMA_MODEL": "nonexistent-model:999b",
+            "OLLAMA_FALLBACK_MODELS": "qwen2.5:7b",
             "DEEPSEEK_API_KEY": "",
         },
-        "expect_fallback_to_ollama": False,
-        "expect_flow_failure": True,
+        "expect_fallback_to_ollama": True,
+        "expect_flow_failure": False,
     },
     "ollama_down": {
         "label": "Ollama 服务未启动",
@@ -224,7 +225,9 @@ def refresh_settings_inplace() -> None:
     import config as config_module
     from config import Settings, settings as global_settings
 
-    fresh = Settings(_env_file=None)
+    # 保留 backend/.env 中冻结的本地模型链，同时允许本测试的 os.environ
+    # 覆盖故障注入字段。
+    fresh = Settings(_env_file=BACKEND_DIR / ".env")
     for field_name in fresh.model_fields:
         try:
             setattr(global_settings, field_name, getattr(fresh, field_name))
@@ -282,7 +285,9 @@ def apply_mock_transport_globally(mock_tp: "FaultyMockTransport") -> None:
     # 兜底：遍历所有已创建的 LLMClient 实例（通过 gc 模块抓取），重建其 deepseek_client
     import gc
     for obj in gc.get_objects():
-        if type(obj).__name__ == "LLMClient":
+        # run_real_evaluation 会把 LLMClient 替换为 InstrumentedLLMClient，
+        # 因此不能只按精确类名筛选，否则 Harness 已创建的客户端仍会访问云端。
+        if isinstance(obj, llm_client_module.LLMClient):
             try:
                 old_timeout = getattr(obj.deepseek_client, "timeout", None) or _httpx.Timeout(180.0)
                 obj.deepseek_client = _httpx.AsyncClient(
@@ -331,7 +336,6 @@ class FaultyMockTransport:
 # =====================================================================
 async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]:
     """对指定底座场景注入指定故障，返回结构化结果。"""
-    from orchestrator.harness import Harness
     from llm import client as llm_client_module
 
     config = FAULT_CONFIGS[fault_type]
@@ -356,6 +360,9 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
 
     # 0. 确保 LLM 调用拦截已启用
     apply_llm_patch_once()
+    # 必须在安装拦截器后导入 Harness。Harness 的 Agent 会在导入时绑定
+    # LLMClient；反过来会导致故障测试实际运行却没有路由日志。
+    from orchestrator.harness import Harness
 
     # 1. 保存环境并覆盖
     env_overrides = config.get("env_overrides", {}) or {}
@@ -446,12 +453,31 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
                     }
                     for c in current_calls[:20]
                 ]
+                # 保存完整、无提示词的调用证据，供回退测试人工复核。
+                result["evidence"]["llm_calls"] = current_calls
+                successful_models = list(dict.fromkeys(
+                    [c.get("actual_model") for c in current_calls
+                     if c.get("success") and c.get("actual_model")]
+                ))
+                result["evidence"]["successful_models"] = successful_models
+                # Deterministic content may still let the harness finish after
+                # all model calls fail. That is not a model-flow success.
+                if result["expect_flow_failure"] and not successful_models:
+                    result["flow_final_status"] = "model_unavailable"
+                    result["error_message"] = (
+                        "所有配置的模型调用均失败；已禁止将确定性兜底结果视为成功，"
+                        "需要人工处理或恢复模型服务。"
+                    )
         except Exception as exc:
             result["evidence"]["lcr_error"] = f"{type(exc).__name__}:{str(exc)[:200]}"
 
         # 6. 连续性检查：fallback 模式下 profile 是否仍保存、阶段是否仍生成
-        result["state_continuity"] = (
-            result.get("evidence", {}).get("profile_confidence", 0) > 0
+        evidence = result.get("evidence", {})
+        result["state_continuity"] = bool(
+            evidence.get("profile_confidence", 0) > 0
+            and evidence.get("planned_block")
+            and evidence.get("review_passed") is True
+            and result.get("flow_final_status") == "success"
         )
 
     except Exception as exc:
@@ -473,12 +499,22 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
     # 根据期望标注匹配结果
     passed = False
     if result["expect_flow_failure"]:
-        # 期望失败场景：任何结果都算通过（包括 deterministic 兜底完成的 success）
-        passed = True
+        # 本地模型不可用时必须明确失败，不能用确定性内容伪造成功。
+        passed = result["flow_final_status"] not in {"success", "diagnostic_ready"}
     else:
+        actual_models = result.get("actual_taken_model") or []
+        used_ollama = any(
+            str(model).lower() == "ollama"
+            or "ollama" in str(model).lower()
+            or "deepseek-r1" in str(model).lower()
+            or "qwen" in str(model).lower()
+            for model in actual_models
+        )
         passed = (
-            result["flow_final_status"] in {"success", "diagnostic_ready"}
-            or result["fallback_triggered"]
+            result["flow_final_status"] == "success"
+            and result["fallback_triggered"]
+            and used_ollama
+            and result["state_continuity"]
         )
     result["passed"] = passed
     return result
@@ -538,6 +574,33 @@ async def main():
         print(f"  -> {rec.get('flow_final_status')} passed={rec.get('passed')} "
               f"fallback={rec.get('fallback_triggered')}")
         records.append(rec)
+
+    # 筛选运行只更新指定故障，保留已有其他真实证据；完整运行仍覆盖重建。
+    if args.types != "all":
+        existing_by_id = {}
+        csv_path_existing = FALLBACK_DIR / "fallback_cases.csv"
+        if csv_path_existing.exists():
+            try:
+                with open(csv_path_existing, "r", encoding="utf-8-sig", newline="") as f:
+                    for row in csv.DictReader(f):
+                        if row.get("fault_id"):
+                            existing_by_id[row["fault_id"]] = row
+            except Exception:
+                pass
+        jsonl_path_existing = FALLBACK_DIR / "fallback_traces.jsonl"
+        if jsonl_path_existing.exists():
+            try:
+                with open(jsonl_path_existing, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.strip():
+                            item = json.loads(line)
+                            if item.get("fault_id"):
+                                existing_by_id[item["fault_id"]] = item
+            except Exception:
+                pass
+        for old in existing_by_id.values():
+            if not any(r.get("fault_id") == old.get("fault_id") for r in records):
+                records.append(old)
 
     # 保存 fallback_cases.csv
     csv_path = FALLBACK_DIR / "fallback_cases.csv"

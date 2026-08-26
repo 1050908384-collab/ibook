@@ -97,19 +97,28 @@ def _patch_llm_client():
                 result = await super().complete(
                     prompt, system_prompt, max_tokens, temperature, json_mode
                 )
-                # 判断实际使用的模型
-                if had_credentials:
-                    actual_model = settings.DEEPSEEK_MODEL
+                # complete() 内部可能在云端失败后返回 Ollama 的成功结果。
+                # 必须读取客户端最终路由，不能以“是否配置了云端 Key”推断实际模型。
+                provider_used = (getattr(self, "last_provider", None) or "").lower()
+                # In provider-pinned Ollama runs the client may return an error
+                # before setting last_provider; preserve the configured route
+                # in the evidence instead of mislabelling it as DeepSeek.
+                if not provider_used and str(getattr(settings, "LLM_PROVIDER", "")).lower() == "ollama":
+                    provider_used = "ollama"
+                fallback_reason = getattr(self, "last_fallback_reason", None)
+                if provider_used == "ollama":
+                    actual_model = getattr(self, "last_model", None) or settings.OLLAMA_MODEL
+                    fallback_triggered = bool(had_credentials or fallback_reason)
+                    error_type = str(fallback_reason or "")
                 else:
-                    actual_model = settings.OLLAMA_MODEL
-                    fallback_triggered = True
+                    actual_model = settings.DEEPSEEK_MODEL
 
                 if result and not result.startswith("Error:"):
                     success = True
                 else:
                     error_type = "empty_or_error_response"
-                    # 检查是否回退到 Ollama
-                    if had_credentials and self._can_fallback_to_ollama():
+                    # 空正文等异常响应也可能已经触发本地回退。
+                    if provider_used == "ollama" or (had_credentials and self._can_fallback_to_ollama()):
                         fallback_triggered = True
                         actual_model = settings.OLLAMA_MODEL
 

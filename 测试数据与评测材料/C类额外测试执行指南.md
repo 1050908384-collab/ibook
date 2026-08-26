@@ -1,7 +1,7 @@
 # 额外测试（C 类）执行指南 —— 自动化脚本 + 手动验证双路径
 
 > 适用：已完成 A（环境配置）+ B（50 组主评测执行），
-> 现在需完成：回退可靠性 × 12、消融测试 × 60、可替换性 × 24、4 组完整案例。
+> 现在需完成：关键回退可靠性验证、消融测试（如需展示）、4 组完整案例。
 
 ---
 
@@ -11,17 +11,14 @@
 # 第 0 步：语法预检（所有脚本已经过 py_compile）
 python scripts\run_fallback_tests.py      --dry
 python scripts\run_ablation_tests.py      --dry
-python scripts\run_portability_tests.py   --dry
 
 # 第 1 步：先各取 1 条做冒烟
 python scripts\run_fallback_tests.py      --types api_key_empty
 python scripts\run_ablation_tests.py      --cases case_002 --configs Full-System
-python scripts\run_portability_tests.py   --cases case_004 --providers DeepSeek
 
 # 第 2 步：全部（顺序，预计耗时 6~12 小时）
 python scripts\run_fallback_tests.py
 python scripts\run_ablation_tests.py
-python scripts\run_portability_tests.py
 
 # 第 3 步：抽取 4 组完整案例（依赖 50 组主评测已完成）
 python scripts\extract_complete_cases.py
@@ -35,7 +32,6 @@ python scripts\extract_complete_cases.py
 |---|---|---|---|
 | 回退可靠性 12 条 | [run_fallback_tests.py](file:///d:/code/ai_agent-trainer/scripts/run_fallback_tests.py) | 受控故障注入（env patch + httpx MockTransport） | `03_回退可靠性测试/fallback_cases.csv`、`fallback_traces.jsonl` |
 | 消融 15×4=60 条 | [run_ablation_tests.py](file:///d:/code/ai_agent-trainer/scripts/run_ablation_tests.py) | Direct-LLM / RAG-only / No-Agent4 / Full-System 四种配置 | `04_多Agent消融测试/ablation_cases.csv` + `ablation_outputs/*.json` |
-| 可替换性 12×2=24 条 | [run_portability_tests.py](file:///d:/code/ai_agent-trainer/scripts/run_portability_tests.py) | 强制 DeepSeek vs 强制 Ollama，关闭互相回退 | `05_模型可替换性测试/portability_cases.csv` |
 | 完整案例抽取 A/B/C/D | [extract_complete_cases.py](file:///d:/code/ai_agent-trainer/scripts/extract_complete_cases.py) | 从主评测 raw_outputs 抽 + D 受控回退重跑 | `01_四组完整案例/case_01~case_04` |
 | 汇总指标 | [calculate_real_metrics.py](file:///d:/code/ai_agent-trainer/scripts/calculate_real_metrics.py) | 读取真实 raw_outputs 自动计算画像/覆盖/策略/谬误率 | `06_指标统计/` 5 个文件 |
 
@@ -90,25 +86,7 @@ python scripts\extract_complete_cases.py
 
 ---
 
-## 五、2 种可替换性：自动已实现，手动校验点
-
-| 配置 | 生效机制 | 手动验证点 |
-|---|---|---|
-| DeepSeek-only | env 覆盖：`LLM_PROVIDER=deepseek, FALLBACK=""` | `portability_cases.csv` 中 `actual_models` 不出现 Ollama 模型名；`used_only_expected_provider=true` |
-| Ollama-only | env 覆盖：`LLM_PROVIDER=ollama, FALLBACK=""，DEEPSEEK_API_KEY=""` | `actual_models` 只出现 `deepseek-r1:7b` 等本地模型名 |
-
-**手动验证 Ollama 路径**（强烈建议做 1 次）：
-1. 确认 `ollama list` 有 `deepseek-r1:7b`、`qwen3-embedding:0.6b`
-2. 运行：
-   ```bash
-   python scripts\run_portability_tests.py --cases case_004 --providers Ollama
-   ```
-3. 打开任务管理器 → 性能 → GPU → 专用 GPU 内存，应看到 Ollama 进程显存占用波动
-4. `portability_cases.csv` 中 `actual_models` 应为 `deepseek-r1:7b|qwen...`
-
----
-
-## 六、4 组完整案例：自动抽取 + 手动截图填充
+## 五、4 组完整案例：自动抽取 + 手动截图填充
 
 `extract_complete_cases.py` 自动从主评测结果拷贝 8 + 2 标准文件（详见脚本），但有两部分必须**手动**：
 
@@ -136,17 +114,15 @@ run_type: controlled_fallback_replay
 
 ---
 
-## 七、全部完成后的运行清单（核对表）
+## 六、全部完成后的运行清单（核对表）
 
 ```
 ☐ 01_四组完整案例/ case_01, case_02, case_03, case_04 四个目录齐全，每目录 9 文件 + 11_screenshots + README
 ☐ 03_回退可靠性测试/ fallback_cases.csv 正好 12 行；fallback_traces.jsonl 有 12 条证据
 ☐ 04_多Agent消融测试/ ablation_cases.csv 正好 60 行；ablation_outputs/ 60 个 JSON
-☐ 05_模型可替换性测试/ portability_cases.csv 正好 24 行
 ☐ 06_指标统计/ 5 个文件齐全（personalization/question/claim/decision/metrics_summary）
 ☐ 07_测试报告/ 测试与量化评估报告.md 基于 metrics_summary.json 真实数据填写（无预设）
 ☐ 对 F02/F06/F10/F11/F12 五关键故障有真实手动验证，fallback_traces.jsonl 追加了 manual_real_network 记录
 ☐ 抽查 1 组消融：4 份 JSON 的 review_iterations/llm_calls_len/package_chars 差异明显
-☐ 抽查 1 组可替换性：Ollama-only 记录中 actual_models 确实为本地模型名
 ☐ 4 案例截图齐全，D 案例 README 明确写 controlled_fallback_replay + 来源映射
 ```

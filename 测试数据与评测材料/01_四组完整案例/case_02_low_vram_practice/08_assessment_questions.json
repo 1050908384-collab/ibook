@@ -1,27 +1,39 @@
 [
   {
-    "question_id": "Q-KB1201-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB0402-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-02",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nx = torch.tensor(2.0, requires_grad=True)\ny = x ** 2\nz = y * 3\nz.backward()\nprint(x.grad)\n```",
+    "options": [],
+    "correct_answer": "`tensor(12.)`\n> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
+    "hint": "> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
+    "explanation": "> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。"
+  },
+  {
+    "question_id": "Q-KB0402-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-02",
     "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "LoRA（Low-Rank Adaptation）的核心思想是？",
+    "question_text": "PyTorch中，用于**反向传播**计算梯度的方法是？",
     "options": [
       {
         "key": "A",
-        "text": "冻结预训练模型的所有参数，仅训练新增的低秩分解矩阵"
+        "text": "`.backward()`"
       },
       {
         "key": "B",
-        "text": "训练模型的所有参数"
+        "text": "`.forward()`"
       },
       {
         "key": "C",
-        "text": "删除模型的部分层"
+        "text": "`.grad()`"
       },
       {
         "key": "D",
-        "text": "仅训练Embedding层"
+        "text": "`.optimize()`"
       }
     ],
     "correct_answer": "A",
@@ -29,104 +41,126 @@
     "explanation": ""
   },
   {
-    "question_id": "Q-KB1201-005",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "请使用 `peft` 库，为 `model` 配置 LoRA，要求 `r=16`，`lora_alpha=32`，目标模块为所有线性层（`all-linear`），`lora_dropout=0.05`。",
-    "options": [],
-    "correct_answer": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---",
-    "hint": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---",
-    "explanation": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---"
-  },
-  {
-    "question_id": "Q-KB12-ST1202-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
+    "question_id": "Q-KB0403-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "LoRA 中 alpha 通常用于对低秩更新进行________。",
+    "question_text": "`nn.Linear(in_features=10, out_features=5)` 表示输入维度为________，输出维度为________。",
     "options": [],
-    "correct_answer": "缩放 ||| scaling ||| 放缩",
-    "hint": "常见实现使用 alpha/r 缩放更新。",
-    "explanation": "常见实现使用 alpha/r 缩放更新。"
+    "correct_answer": "10；5",
+    "hint": null,
+    "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1202-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoRA 中 rank r 决定低秩更新矩阵的________。",
-    "options": [],
-    "correct_answer": "秩 ||| rank ||| 维度",
-    "hint": "r 越大，可训练适配器容量通常越大。",
-    "explanation": "r 越大，可训练适配器容量通常越大。"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中用于指定注入 LoRA 层模块名列表的参数是________。",
-    "options": [],
-    "correct_answer": "target_modules",
-    "hint": "target_modules 决定哪些线性层被适配。",
-    "explanation": "target_modules 决定哪些线性层被适配。"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
-    "options": [],
-    "correct_answer": "lora_dropout",
-    "hint": "该参数用于适配器分支的 dropout。",
-    "explanation": "该参数用于适配器分支的 dropout。"
-  },
-  {
-    "question_id": "Q-KB12-ST1204-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
-    "options": [],
-    "correct_answer": "显存 ||| 内存 ||| 存储",
-    "hint": "Double Quantization 降低量化状态的存储开销。",
-    "explanation": "Double Quantization 降低量化状态的存储开销。"
-  },
-  {
-    "question_id": "Q-KB12-ST1204-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
+    "question_id": "Q-KB0402-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-02",
+    "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "分页优化器的主要目标是？",
+    "question_text": "以下哪个操作会**断开**计算图，使后续操作不追踪梯度？",
     "options": [
       {
         "key": "A",
-        "text": "缓解训练时显存峰值"
+        "text": "`x.detach()`"
       },
       {
         "key": "B",
-        "text": "增加词表"
+        "text": "`x.data`"
       },
       {
         "key": "C",
-        "text": "替代数据集"
+        "text": "`x.clone()`"
       },
       {
         "key": "D",
-        "text": "关闭反向传播"
+        "text": "A和B"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> `detach()` 和 `.data` 都返回与原张量共享数据但不追踪梯度的新张量；`clone()` 会保留计算图。",
+    "explanation": "> `detach()` 和 `.data` 都返回与原张量共享数据但不追踪梯度的新张量；`clone()` 会保留计算图。"
+  },
+  {
+    "question_id": "Q-KB0405-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是**交叉熵损失**函数？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nn.MSELoss`"
+      },
+      {
+        "key": "B",
+        "text": "`nn.CrossEntropyLoss`"
+      },
+      {
+        "key": "C",
+        "text": "`nn.L1Loss`"
+      },
+      {
+        "key": "D",
+        "text": "`nn.BCELoss`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0401-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个命令可以创建一个全为0的3x3张量？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`torch.zeros(3, 3)`"
+      },
+      {
+        "key": "B",
+        "text": "`torch.ones(3, 3)`"
+      },
+      {
+        "key": "C",
+        "text": "`torch.empty(3, 3)`"
+      },
+      {
+        "key": "D",
+        "text": "`torch.rand(3, 3)`"
       }
     ],
     "correct_answer": "A",
-    "hint": "分页策略可避免部分优化器状态引发的显存峰值。",
-    "explanation": "分页策略可避免部分优化器状态引发的显存峰值。"
+    "hint": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。",
+    "explanation": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。"
+  },
+  {
+    "question_id": "Q-KB0401-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请将以下两个张量按**列方向**（dim=1）拼接：\n```python\na = torch.tensor([[1, 2], [3, 4]])\nb = torch.tensor([[5], [6]])\n```",
+    "options": [],
+    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "hint": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "explanation": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```"
+  },
+  {
+    "question_id": "Q-KB0407-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：从 `checkpoint.pth` 加载模型和优化器状态，并恢复训练。",
+    "options": [],
+    "correct_answer": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "hint": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "explanation": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---"
   }
 ]

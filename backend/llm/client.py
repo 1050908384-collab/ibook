@@ -105,6 +105,7 @@ class LLMClient:
         self.deepseek_client = self._build_async_deepseek_client(timeout, proxy_url)
         self.last_done_reason: Optional[str] = None
         self.last_provider: Optional[str] = None
+        self.last_model: Optional[str] = None
         self.last_fallback_reason: Optional[str] = None
 
     def _deepseek_fallback_ips(self) -> list[str]:
@@ -261,6 +262,7 @@ class LLMClient:
 
                 if cleaned_response:
                     self.last_provider = "deepseek"
+                    self.last_model = self.deepseek_model
                     logger.info(
                         "DeepSeek response accepted: attempt=%d finish_reason=%s content_chars=%d reasoning_chars=%d",
                         attempt, self.last_done_reason, len(cleaned_response), reasoning_length,
@@ -319,6 +321,7 @@ class LLMClient:
     ) -> str:
         self.last_done_reason = None
         self.last_provider = None
+        self.last_model = None
         self.last_fallback_reason = None
         if not self._has_deepseek_credentials():
             if self._can_fallback_to_ollama():
@@ -391,6 +394,7 @@ class LLMClient:
                 content = self._clean_response(str(message.get("content") or ""))
                 if content:
                     self.last_provider = "ollama"
+                    self.last_model = model
                     logger.info("Ollama response accepted from model=%s", model)
                     return content
                 thinking = str(message.get("thinking") or "")
@@ -410,6 +414,7 @@ class LLMClient:
     async def chat(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
         self.last_done_reason = None
         self.last_provider = None
+        self.last_model = None
         self.last_fallback_reason = None
         if not self._has_deepseek_credentials():
             if self._can_fallback_to_ollama():

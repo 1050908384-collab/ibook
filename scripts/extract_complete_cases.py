@@ -5,8 +5,8 @@
     A 初学者低分简化 + 第二阶段   <- case_040（真实主评测结果，多阶段）
     B 低显存 QLoRA 实操            <- case_018（RTX 4060 8GB 下的资源适配）
     C 工程部署进阶                <- case_026（24GB，权重合并+vLLM）
-    D 自动回退案例                <- 对 A/B/C 任一来源场景做受控故障注入重跑
-                                      （默认选 case_018，标注来源映射）
+    D 自动回退案例                <- case_044 的受控故障注入重跑
+                                      （与 A/B/C 保持为第四个独立画像）
 
 用法:
     # 必须先运行过 02_50组 主评测
@@ -211,6 +211,10 @@ async def extract_D_fallback(source_case_id: str, fault_type: str) -> Dict[str, 
     # fallback_trace.jsonl
     with open(dst / "fallback_trace.jsonl", "w", encoding="utf-8") as f:
         f.write(json.dumps(fault_res, ensure_ascii=False, default=str) + "\n")
+    # D 的调用日志必须来自本次受控回退重跑，不能沿用底座案例或留空。
+    with open(dst / "05_llm_calls.jsonl", "w", encoding="utf-8") as f:
+        for call in (fault_res.get("evidence", {}).get("llm_calls") or []):
+            f.write(json.dumps(call, ensure_ascii=False, default=str) + "\n")
     # README：必须明确写明受控故障注入，不能说是自然发生
     readme = f"""# 完整展示案例 D：自动回退
 
@@ -291,7 +295,7 @@ async def main():
     parser.add_argument("--A", default="case_040", help="A 初学者低分简化来源 case（默认 case_040）")
     parser.add_argument("--B", default="case_018", help="B 低显存 QLoRA 实操来源 case（默认 case_018）")
     parser.add_argument("--C", default="case_026", help="C 工程部署进阶来源 case（默认 case_026）")
-    parser.add_argument("--D-source", default="case_018", help="D 回退重跑来源 case（默认 case_018）")
+    parser.add_argument("--D-source", default="case_044", help="D 回退重跑来源 case（默认 case_044，第四个独立画像）")
     parser.add_argument("--D-fault", default="connect_timeout", help="D 注入故障类型（默认 connect_timeout，见 run_fallback_tests 的 12 类）")
     args = parser.parse_args()
 

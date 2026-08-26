@@ -1,5 +1,5 @@
 {
-  "session_id": "e8fd66ac-16d6-423d-8e54-3c724186f6a1",
+  "session_id": "30092352-6229-4963-a5ca-ae0b5755f6a0",
   "user_id": "local-user",
   "grade": "",
   "skill_tags": [],
@@ -22,10 +22,10 @@
     }
   ],
   "goal": "LoRA微调",
-  "daily_hours": 2.0,
+  "daily_hours": 1.5,
   "learning_style": "hands-on",
   "learning_rhythm": "fast",
-  "confidence_index": 0.5,
+  "confidence_index": 0.575,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

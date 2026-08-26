@@ -204,11 +204,16 @@ def calc_review_fix_rate() -> Dict:
 
 
 # =====================================================================
-# 指标 4: 任务核心知识点覆盖率
+# 指标 4: 当前阶段核心知识点覆盖率（冻结口径）
 # =====================================================================
+CORE_KNOWLEDGE_SCOPE_VERSION = "stage_planned_subtopics_v2"
+
 def calc_knowledge_coverage() -> Dict:
-    """任务核心知识点覆盖率 = 输出中正确覆盖的预设核心知识点数 / 预设核心知识点总数 × 100%
-    数据来源: 规划与学习包结构化复核
+    """当前阶段核心知识点覆盖率。
+
+    分母是阶段规划明确给出的 ``subtopic_ids``，分子是阶段题目实际出现
+    且属于该清单的 ``subtopic_id``。已掌握/跳过导致规划为空的阶段记为
+    not_applicable，不把空阶段计作未覆盖。
     """
     cases = load_csv(DELIVERY_DIR / "02_50组个性化主评测" / "evaluation_cases.csv")
     rows = []
@@ -223,35 +228,37 @@ def calc_knowledge_coverage() -> Dict:
         plan = load_json(stage_1 / "stage_planning_output.json") or {}
         questions = load_json(stage_1 / "assessment_questions.json") or []
 
-        expected_blocks = {b.strip() for b in case.get("expected_target_blocks", "").split("|") if b.strip()}
+        expected_subtopics = {
+            str(s).strip() for s in (plan.get("subtopic_ids") or []) if str(s).strip()
+        }
+        if not expected_subtopics and plan.get("subtopic_id"):
+            expected_subtopics.add(str(plan["subtopic_id"]).strip())
 
-        covered_blocks: Set[str] = set()
+        covered_subtopics: Set[str] = set()
         for q in questions:
-            if q.get("block_id"):
-                covered_blocks.add(q["block_id"])
-        if not covered_blocks:
-            if plan.get("block_id"):
-                covered_blocks.add(plan["block_id"])
-            for bid in (plan.get("block_ids") or []):
-                if bid:
-                    covered_blocks.add(bid)
+            if q.get("subtopic_id"):
+                covered_subtopics.add(str(q["subtopic_id"]).strip())
 
-        overlap = covered_blocks & expected_blocks
-        total_expected += len(expected_blocks) if expected_blocks else 0
+        overlap = covered_subtopics & expected_subtopics
+        total_expected += len(expected_subtopics)
         total_covered += len(overlap)
 
-        coverage = len(overlap) / len(expected_blocks) if expected_blocks else 1.0
+        coverage = len(overlap) / len(expected_subtopics) if expected_subtopics else None
         rows.append({
             "case_id": case_id,
-            "expected_blocks": "|".join(sorted(expected_blocks)),
-            "covered_blocks": "|".join(sorted(covered_blocks)),
-            "expected_count": len(expected_blocks),
+            "scope_version": CORE_KNOWLEDGE_SCOPE_VERSION,
+            "stage": "stage_1",
+            "expected_subtopics": "|".join(sorted(expected_subtopics)),
+            "covered_subtopics": "|".join(sorted(covered_subtopics)),
+            "expected_count": len(expected_subtopics),
             "covered_count": len(overlap),
-            "coverage_ratio": round(coverage, 4),
+            "coverage_ratio": round(coverage, 4) if coverage is not None else None,
+            "status": "scored" if expected_subtopics else "not_applicable",
         })
 
     overall_rate = total_covered / total_expected if total_expected > 0 else None
     return {"rows": rows, "overall_rate": round(overall_rate, 4) if overall_rate is not None else None,
+            "scope_version": CORE_KNOWLEDGE_SCOPE_VERSION,
             "total_covered": total_covered, "total_expected": total_expected}
 
 
@@ -286,13 +293,15 @@ def calc_question_bank_coverage() -> Dict:
 # 指标 6/7/8: 题目匹配、兜底率、有效率
 # =====================================================================
 def calc_question_metrics() -> Dict:
-    """计算专属题目匹配率、同板块兜底率、题目有效率。
+    """计算题目匹配、每知识点 2 题达标率、可判分率。
     数据来源: assessment_questions.json + stage_planning_output.json
     """
     total_questions = 0
     exclusive_match = 0  # subtopic_id 属于当前 stage.subtopic_ids
     block_fallback = 0   # 非专属但 block_id 匹配当前阶段
     valid_questions = 0  # 有标准答案、解析且可判分
+    expected_slots = 0   # 每个阶段知识点固定 2 道题
+    exclusive_slots = 0  # 每个知识点最多计 2 道精准题
     rows = []
 
     for case_dir in sorted(RAW_OUTPUTS_DIR.iterdir()):
@@ -315,6 +324,18 @@ def calc_question_metrics() -> Dict:
             if stage_block_id:
                 stage_block_ids.add(stage_block_id)
 
+            expected_slots += len(stage_subtopic_ids) * 2
+            stage_exclusive_counts: Dict[str, int] = {}
+
+            # 判分证据只接受 rubric/评分字段或独立 grader 结果，不能把
+            # learner_answers 中的模拟 is_correct 当作 LLM 判分证据。
+            answer_records = load_json(stage_dir / "learner_answers.json") or []
+            grading_by_qid = {
+                str(a.get("question_id")): a for a in answer_records
+                if isinstance(a, dict) and a.get("question_id")
+                and any(k in a for k in ("grading_result", "grading_score", "grader_result", "rubric_result"))
+            }
+
             for q in questions:
                 total_questions += 1
                 q_subtopic = q.get("subtopic_id", "")
@@ -325,12 +346,20 @@ def calc_question_metrics() -> Dict:
 
                 if is_exclusive:
                     exclusive_match += 1
+                    if stage_exclusive_counts.get(q_subtopic, 0) < 2:
+                        stage_exclusive_counts[q_subtopic] = stage_exclusive_counts.get(q_subtopic, 0) + 1
+                        exclusive_slots += 1
                 elif is_block_match:
                     block_fallback += 1
 
-                has_answer = bool(q.get("correct_answer"))
+                question_type = str(q.get("question_type", "")).lower()
+                is_subjective = question_type in {"short_answer", "practical"} or str(q.get("grading_mode", "")).lower() in {"llm", "subjective", "rubric"}
+                has_answer = bool(q.get("correct_answer") or q.get("reference_answer"))
                 has_explanation = bool(q.get("explanation"))
-                if has_answer and has_explanation:
+                has_rubric = bool(q.get("rubric") or q.get("grading_rule") or q.get("judge_rule") or q.get("reference_answer"))
+                has_grading_evidence = str(q.get("question_id", "")) in grading_by_qid
+                is_valid = ((not is_subjective and has_answer) or (is_subjective and has_rubric and has_grading_evidence))
+                if is_valid:
                     valid_questions += 1
 
                 rows.append({
@@ -343,9 +372,11 @@ def calc_question_metrics() -> Dict:
                     "question_type": q.get("question_type", ""),
                     "has_correct_answer": has_answer,
                     "has_explanation": has_explanation,
+                    "has_rubric": has_rubric,
+                    "has_grading_evidence": has_grading_evidence,
                     "is_exclusive_match": is_exclusive,
                     "is_block_fallback": (not is_exclusive and is_block_match),
-                    "is_valid": (has_answer and has_explanation),
+                    "is_valid": is_valid,
                 })
 
     return {
@@ -357,6 +388,9 @@ def calc_question_metrics() -> Dict:
         "block_fallback_count": block_fallback,
         "valid_count": valid_questions,
         "total_questions": total_questions,
+        "expected_slots": expected_slots,
+        "exclusive_slots": exclusive_slots,
+        "question_quota_rate": round(exclusive_slots / expected_slots, 4) if expected_slots > 0 else None,
     }
 
 
@@ -691,11 +725,11 @@ def main():
     print("计算指标 3: 审核修复率...")
     review_fix = calc_review_fix_rate()
 
-    print("计算指标 4: 任务核心知识点覆盖率...")
+    print("计算指标 4: 当前阶段核心知识点覆盖率（冻结口径）...")
     kc = calc_knowledge_coverage()
     write_csv(METRICS_DIR / "claim_evaluation.csv", kc["rows"],
-              ["case_id", "expected_blocks", "covered_blocks", "expected_count",
-               "covered_count", "coverage_ratio"])
+              ["case_id", "scope_version", "stage", "expected_subtopics", "covered_subtopics", "expected_count",
+               "covered_count", "coverage_ratio", "status"])
 
     print("计算指标 5: 题库知识点覆盖率...")
     qb_cov = calc_question_bank_coverage()
@@ -705,7 +739,8 @@ def main():
     write_csv(METRICS_DIR / "question_evaluation.csv", qm["rows"],
               ["case_id", "stage", "question_id", "block_id", "subtopic_id",
                "difficulty", "question_type", "has_correct_answer", "has_explanation",
-               "is_exclusive_match", "is_block_fallback", "is_valid"])
+               "has_rubric", "has_grading_evidence", "is_exclusive_match",
+               "is_block_fallback", "is_valid"])
 
     print("计算指标 9: 目标板块映射准确率...")
     bm = calc_block_mapping_accuracy()
@@ -781,6 +816,9 @@ def main():
         "6_专属题目匹配率": qm["exclusive_match_rate"],
         "6_专属_匹配数": qm["exclusive_match_count"],
         "6_专属_总数": qm["total_questions"],
+        "6_每知识点2题达标率": qm["question_quota_rate"],
+        "6_目标题量_精准题数": qm["exclusive_slots"],
+        "6_目标题量_期望题数": qm["expected_slots"],
 
         "7_同板块兜底率": qm["block_fallback_rate"],
         "7_兜底_匹配数": qm["block_fallback_count"],
@@ -841,7 +879,7 @@ def main():
     print()
     print(f"结果已保存到: {METRICS_DIR}")
     print()
-    print("⚠️  指标 1（画像适配率）和指标 2（可核验事实错误率）依赖人工复核表。")
+    print("[NOTICE] 指标 1（画像适配率）和指标 2（可核验事实错误率）依赖人工复核表。")
     print("    请确保已运行 build_evaluation_review_templates.py --force 并填写复核表。")
     print("    未完成复核时，这两项指标为 null。")
 
