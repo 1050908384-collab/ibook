@@ -31,6 +31,7 @@ RAW_OUTPUTS_DIR = DELIVERY_DIR / "02_50组个性化主评测" / "raw_outputs"
 METRICS_DIR = DELIVERY_DIR / "06_指标统计"
 PERSONALIZATION_REVIEW_PATH = METRICS_DIR / "personalization_review.csv"
 FACT_CHECK_REVIEW_PATH = METRICS_DIR / "fact_check_review.csv"
+STRATEGY_REVIEW_PATH = METRICS_DIR / "strategy_review.csv"
 SUBJECTIVE_GRADING_PATH = METRICS_DIR / "subjective_agent6_grading.jsonl"
 
 
@@ -114,16 +115,11 @@ def is_review_completed(review_path: Path) -> Tuple[bool, int, int]:
 # 指标 1: 画像适配率（依赖人工复核表）
 # =====================================================================
 def calc_personalization_adaptation() -> Dict:
-    """Agent1/3 画像-资源难度适配率，明确排除 Agent6 动态策略。"""
+    """画像适配率 = pass条件数 / 已复核条件数 × 100%。"""
     rows = load_csv(PERSONALIZATION_REVIEW_PATH)
-    adaptation_rows = [r for r in rows if r.get("condition_id") != "stage_strategy"]
-    strategy_rows = [r for r in rows if r.get("condition_id") == "stage_strategy"]
-    filled = sum(1 for r in adaptation_rows if (r.get("verdict") or "").strip().lower() in ("pass", "fail", "error"))
-    total = len(adaptation_rows)
-    strategy_filled = sum(1 for r in strategy_rows if (r.get("verdict") or "").strip().lower() in ("pass", "fail", "error"))
-    strategy_total = len(strategy_rows)
+    filled = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() in ("pass", "fail", "error"))
+    total = len(rows)
     completed = filled == total and total > 0
-    strategy_completed = strategy_filled == strategy_total and strategy_total > 0
     if not completed:
         return {
             "personalization_adaptation_rate": None,
@@ -132,23 +128,13 @@ def calc_personalization_adaptation() -> Dict:
             "review_completed": False,
             "review_filled": filled,
             "review_total": total,
-            "strategy_reasonableness_rate": None,
-            "strategy_review_completed": strategy_completed,
-            "strategy_review_filled": strategy_filled,
-            "strategy_review_total": strategy_total,
         }
-    pass_count = sum(1 for r in adaptation_rows if (r.get("verdict") or "").strip().lower() == "pass")
-    strategy_pass_count = sum(1 for r in strategy_rows if (r.get("verdict") or "").strip().lower() == "pass")
+    pass_count = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() == "pass")
     return {
         "personalization_adaptation_rate": round(pass_count / filled, 4) if filled > 0 else None,
         "personalization_pass_count": pass_count,
         "personalization_total": filled,
         "review_completed": True,
-        "strategy_reasonableness_rate": round(strategy_pass_count / strategy_filled, 4) if strategy_completed and strategy_filled else None,
-        "strategy_pass_count": strategy_pass_count if strategy_completed else None,
-        "strategy_review_completed": strategy_completed,
-        "strategy_review_filled": strategy_filled,
-        "strategy_review_total": strategy_total,
     }
 
 
@@ -179,6 +165,28 @@ def calc_fact_check_error() -> Dict:
         "fact_check_fail_count": fail_count,
         "fact_check_error_count": error_count,
         "fact_check_total": filled,
+        "review_completed": True,
+    }
+
+
+def calc_strategy_reasonableness() -> Dict:
+    """人工核验 Agent6 阶段后策略是否适合当前学习状态。"""
+    completed, filled, total = is_review_completed(STRATEGY_REVIEW_PATH)
+    if not completed:
+        return {
+            "strategy_reasonableness_rate": None,
+            "strategy_pass_count": None,
+            "strategy_total": None,
+            "review_completed": False,
+            "review_filled": filled,
+            "review_total": total,
+        }
+    rows = load_csv(STRATEGY_REVIEW_PATH)
+    passed = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() == "pass")
+    return {
+        "strategy_reasonableness_rate": round(passed / filled, 4) if filled else None,
+        "strategy_pass_count": passed,
+        "strategy_total": filled,
         "review_completed": True,
     }
 
@@ -809,6 +817,7 @@ def main():
     write_csv(METRICS_DIR / "decision_evaluation.csv", sa["rows"],
               ["case_id", "stage", "answer_behavior", "expected_strategy",
                "actual_strategy", "accuracy", "strategy_match"])
+    strategy_review = calc_strategy_reasonableness()
 
     print("计算指标 12: 完整流程成功率...")
     flow = calc_flow_success_rate()
@@ -845,11 +854,6 @@ def main():
         "1_画像适配_pass数": p_adapt.get("personalization_pass_count"),
         "1_画像适配_总数": p_adapt.get("personalization_total"),
         "1_复核完成": p_adapt.get("review_completed", False),
-        "1_画像适配口径": "Agent1/Agent3 的 8 个画像-资源难度适配条件；不含 Agent6 stage_strategy",
-        "11_人工策略合理率": p_adapt.get("strategy_reasonableness_rate"),
-        "11_人工策略_pass数": p_adapt.get("strategy_pass_count"),
-        "11_人工策略_总数": p_adapt.get("strategy_review_total"),
-        "11_人工策略复核完成": p_adapt.get("strategy_review_completed", False),
 
         "2_可核验事实错误率": f_check["fact_check_error_rate"],
         "2_事实_fail数": f_check.get("fact_check_fail_count"),
@@ -895,6 +899,10 @@ def main():
         "11_策略选择准确率": sa["strategy_accuracy"],
         "11_策略_匹配数": sa["matched_count"],
         "11_策略_总数": sa["total_stages"],
+        "11_人工策略合理率": strategy_review["strategy_reasonableness_rate"],
+        "11_人工策略_pass数": strategy_review.get("strategy_pass_count"),
+        "11_人工策略_总数": strategy_review.get("strategy_total"),
+        "11_人工策略复核完成": strategy_review.get("review_completed", False),
 
         "12_完整流程成功率": flow["flow_success_rate"],
         "12_流程_成功数": flow["flow_succeeded"],
