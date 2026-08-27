@@ -520,6 +520,69 @@ async def run_single_fault(fault_type: str, base_case_id: str) -> Dict[str, Any]
     return result
 
 
+def load_persisted_records() -> Dict[str, Dict[str, Any]]:
+    """Load prior records so an interrupted batch can resume without loss."""
+    by_id: Dict[str, Dict[str, Any]] = {}
+    csv_path = FALLBACK_DIR / "fallback_cases.csv"
+    if csv_path.exists():
+        try:
+            with open(csv_path, "r", encoding="utf-8-sig", newline="") as handle:
+                for row in csv.DictReader(handle):
+                    if row.get("fault_id"):
+                        row["actual_taken_model"] = [
+                            x for x in row.get("actual_taken_model", "").split("|") if x
+                        ]
+                        for key in ("expect_flow_failure", "fallback_triggered", "state_continuity", "passed"):
+                            if key in row:
+                                row[key] = str(row[key]).lower() == "true"
+                        try:
+                            row["retry_count"] = int(row.get("retry_count", 0))
+                        except (TypeError, ValueError):
+                            row["retry_count"] = 0
+                        by_id[row["fault_id"]] = row
+        except Exception:
+            pass
+    jsonl_path = FALLBACK_DIR / "fallback_traces.jsonl"
+    if jsonl_path.exists():
+        try:
+            with open(jsonl_path, "r", encoding="utf-8") as handle:
+                for line in handle:
+                    if line.strip():
+                        item = json.loads(line)
+                        if item.get("fault_id"):
+                            by_id[item["fault_id"]] = item
+        except Exception:
+            pass
+    return by_id
+
+
+def persist_records(records: List[Dict[str, Any]]) -> None:
+    """Persist CSV and full JSONL evidence after every completed fault."""
+    by_id = load_persisted_records()
+    for record in records:
+        by_id[record["fault_id"]] = record
+    ordered = list(by_id.values())
+    csv_path = FALLBACK_DIR / "fallback_cases.csv"
+    fieldnames = [
+        "fault_id", "fault_type", "fault_label", "base_case_id",
+        "inject_method", "flow_final_status", "expect_flow_failure",
+        "actual_taken_model", "retry_count", "fallback_triggered",
+        "state_continuity", "error_message",
+        "run_started_at", "run_finished_at", "passed",
+    ]
+    with open(csv_path, "w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for record in ordered:
+            row = dict(record)
+            row["actual_taken_model"] = "|".join(record.get("actual_taken_model") or [])
+            writer.writerow(row)
+    jsonl_path = FALLBACK_DIR / "fallback_traces.jsonl"
+    with open(jsonl_path, "w", encoding="utf-8") as handle:
+        for record in ordered:
+            handle.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+
+
 # =====================================================================
 # 主流程
 # =====================================================================
@@ -574,62 +637,21 @@ async def main():
         print(f"  -> {rec.get('flow_final_status')} passed={rec.get('passed')} "
               f"fallback={rec.get('fallback_triggered')}")
         records.append(rec)
+        # Checkpoint immediately: a later model timeout must not discard
+        # already completed fault cases.
+        persist_records(records)
 
-    # 筛选运行只更新指定故障，保留已有其他真实证据；完整运行仍覆盖重建。
-    if args.types != "all":
-        existing_by_id = {}
-        csv_path_existing = FALLBACK_DIR / "fallback_cases.csv"
-        if csv_path_existing.exists():
-            try:
-                with open(csv_path_existing, "r", encoding="utf-8-sig", newline="") as f:
-                    for row in csv.DictReader(f):
-                        if row.get("fault_id"):
-                            existing_by_id[row["fault_id"]] = row
-            except Exception:
-                pass
-        jsonl_path_existing = FALLBACK_DIR / "fallback_traces.jsonl"
-        if jsonl_path_existing.exists():
-            try:
-                with open(jsonl_path_existing, "r", encoding="utf-8") as f:
-                    for line in f:
-                        if line.strip():
-                            item = json.loads(line)
-                            if item.get("fault_id"):
-                                existing_by_id[item["fault_id"]] = item
-            except Exception:
-                pass
-        for old in existing_by_id.values():
-            if not any(r.get("fault_id") == old.get("fault_id") for r in records):
-                records.append(old)
-
-    # 保存 fallback_cases.csv
+    # Final checkpoint and merge with any prior records.
+    persist_records(records)
+    persisted = list(load_persisted_records().values())
     csv_path = FALLBACK_DIR / "fallback_cases.csv"
-    fieldnames = [
-        "fault_id", "fault_type", "fault_label", "base_case_id",
-        "inject_method", "flow_final_status", "expect_flow_failure",
-        "actual_taken_model", "retry_count", "fallback_triggered",
-        "state_continuity", "error_message",
-        "run_started_at", "run_finished_at", "passed",
-    ]
-    with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
-        writer.writeheader()
-        for r in records:
-            row = dict(r)
-            row["actual_taken_model"] = "|".join(r.get("actual_taken_model") or [])
-            writer.writerow(row)
-
-    # 保存 jsonl 证据
     jsonl_path = FALLBACK_DIR / "fallback_traces.jsonl"
-    with open(jsonl_path, "w", encoding="utf-8") as f:
-        for r in records:
-            f.write(json.dumps(r, ensure_ascii=False, default=str) + "\n")
 
     # 打印摘要
-    total = len(records)
-    passed = sum(1 for r in records if r.get("passed"))
-    triggered_fb = sum(1 for r in records if r.get("fallback_triggered"))
-    failed_status = sum(1 for r in records
+    total = len(persisted)
+    passed = sum(1 for r in persisted if r.get("passed") is True or str(r.get("passed")).lower() == "true")
+    triggered_fb = sum(1 for r in persisted if r.get("fallback_triggered") is True or str(r.get("fallback_triggered")).lower() == "true")
+    failed_status = sum(1 for r in persisted
                         if r.get("expect_flow_failure") and
                         r.get("flow_final_status") in {"crashed", "exception_during_start"})
 
