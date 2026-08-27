@@ -43,12 +43,15 @@ def main() -> int:
     for case in read_cases():
         case_id = case["case_id"]
         conditions = [
-            ("target_path", "阶段 block_id/subtopic_ids 应命中 expected_target_blocks 的当前起始学习路径", "stage_1/stage_planning_output.json"),
-            ("difficulty", f"阶段难度应与预期 {case['expected_difficulty']} 一致或有明确、合理的前置补偿理由", "stage_1/stage_planning_output.json"),
-            ("time_budget", f"计划应适配每日 {case['daily_hours']} 小时的时间预算", "stage_1/stage_planning_output.json"),
-            ("hardware", f"学习包或阶段说明应回应硬件约束：{case['hardware']}", "stage_1/stage_planning_output.json; stage_1/learning_package.md"),
-            ("learning_style", f"学习包的内容组织应体现偏好：{case['learning_style']}", "stage_1/learning_package.md"),
-            ("stage_strategy", "阶段决策应与该案例的答题行为、实际 accuracy 和预期下一阶段策略一致", "stage_1/stage_decision.json; evaluation_cases.csv"),
+            ("stage_target_path", "Agent1 选择的 block_id/subtopic_ids 应匹配用户目标、已有基础与 expected_target_blocks", "stage_1/diagnostic_output.json; stage_1/stage_planning_output.json"),
+            ("stage_prerequisites", "Agent1 不得跳过硬前置知识；若补前置，应给出合理原因", "stage_1/diagnostic_output.json; stage_1/stage_planning_output.json"),
+            ("stage_difficulty", f"Agent1 阶段难度应适配预期 {case['expected_difficulty']} 或有明确前置补偿理由", "stage_1/stage_planning_output.json"),
+            ("stage_time_budget", f"Agent1 计划时长应适配每日 {case['daily_hours']} 小时预算", "stage_1/stage_planning_output.json"),
+            ("package_difficulty", "Agent3 学习包的讲解、代码和练习难度应与当前阶段及学习者基础一致", "stage_1/stage_planning_output.json; stage_1/learning_package.md"),
+            ("package_hardware", f"Agent3 给出的模型、参数、命令和实操方案应可在硬件条件下执行：{case['hardware']}", "stage_1/learning_package.md"),
+            ("package_learning_style", f"Agent3 的资源组织和练习方式应体现学习偏好：{case['learning_style']}", "stage_1/learning_package.md"),
+            ("package_practice_feasibility", "Agent3 的实训步骤应具备可执行前置、明确输入输出和安全边界", "stage_1/learning_package.md"),
+            ("stage_strategy", "Agent6 阶段后策略应与实际 accuracy、掌握状态、迭代历史及测试用例预期策略一致", "stage_1/stage_decision.json; evaluation_cases.csv"),
         ]
         for condition_id, expected_rule, evidence_path in conditions:
             personalization_rows.append({
