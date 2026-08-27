@@ -34,6 +34,10 @@ def needs_upgrade(conn: sqlite3.Connection) -> bool:
         item["subtopic_id"]
         for item in json.loads((SEEDS_DIR / "knowledge_subtopics.json").read_text(encoding="utf-8"))
     }
+    expected_question_ids = {
+        item["question_id"]
+        for item in json.loads((SEEDS_DIR / "test_questions.json").read_text(encoding="utf-8"))
+    }
     if not table_exists(conn, "knowledge_blocks") or not table_exists(conn, "knowledge_subtopics"):
         return True
     actual_blocks = {row[0] for row in conn.execute("SELECT block_id FROM knowledge_blocks")}
@@ -42,6 +46,18 @@ def needs_upgrade(conn: sqlite3.Connection) -> bool:
     # force a destructive re-upgrade merely because an old learner record
     # still references a retired topic.
     if not expected_blocks.issubset(actual_blocks) or not expected_subtopics.issubset(actual_subtopics):
+        return True
+
+    # The question bank is versioned through the seed file as well. Older
+    # runtime databases may have all current knowledge nodes but still miss
+    # newly added assessment questions. Sync the authoritative catalog before
+    # the read-only health check rejects such a database.
+    if not table_exists(conn, "test_questions"):
+        return True
+    actual_question_ids = {
+        row[0] for row in conn.execute("SELECT question_id FROM test_questions")
+    }
+    if not expected_question_ids.issubset(actual_question_ids):
         return True
 
     if table_exists(conn, "learning_package_claims"):

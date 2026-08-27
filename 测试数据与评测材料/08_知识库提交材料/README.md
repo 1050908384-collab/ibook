@@ -1,27 +1,15 @@
-# 知识库比赛提交材料
+# 知识库提交材料
 
-本目录是由 `scripts/build_knowledge_submission_materials.py` 从项目现有数据生成的可审计材料，不替代原始知识文章和运行数据库。
+本目录与 `data/知识库原始数据/` 一起构成比赛数据包中的知识库材料。73 篇 Markdown 是知识库正文；本目录保留来源、映射、事实核验、Hash、授权脱敏和人工审核证据。
 
-## 数量口径
+## 保留材料
 
-- `data/知识库原始数据/` 下有 73 篇按知识点组织的 Markdown 原始文章，作为知识内容与参考网址的第一来源。
-- `data/seeds/knowledge_subtopics.json` 有 73 个知识点，用于知识图谱、阶段规划和题目映射。
-- `data/seeds/knowledge_docs.json` 有 68 条运行时资料索引，是从知识内容整理出的派生资料，不等于知识点数量。
-- `data/seeds/test_questions.json` 有 323 道题，覆盖 73 个知识点。
+- `知识库提交总说明.md`：版本、数量、来源、映射、事实核验、Hash、授权、引用和脱敏总说明。
+- `知识库切片提交说明.md`：说明 73 篇文章如何满足比赛要求的垂直领域知识库切片。
+- `知识库人工处理简表.md`：人工审核操作说明。
+- `knowledge_source_registry.csv`：文章参考来源登记表。
+- `knowledge_subtopic_article_video_question_map.csv`：73 个知识点到文章、视频资源和题目的回溯表。
+- `knowledge_article_review.csv`：73 篇文章的一行一条人工审核记录。
+- `knowledge_submission_checklist.md`：提交前核验清单。
 
-## 文件说明
-
-- `knowledge_subtopic_catalog.csv`：73 个知识点、前置关系、原始文章路径、运行资料数和题量。
-- `knowledge_document_catalog.csv`：68 条运行时资料与原始文章的对应关系。
-- `knowledge_source_registry.csv`：从 73 篇原始文章提取的参考网址。作者未在原文明确写出的，统一标记为“原文未声明”，不得自行补写。
-- `knowledge_question_coverage.csv`：每个知识点的题量和题型覆盖。
-- `knowledge_submission_manifest.json`：数量和映射完整性摘要。
-- `knowledge_submission_checklist.md`：提交前人工核验清单。
-
-## 证据链
-
-评委应能按以下链路回溯：
-
-`知识点 -> 原始 Markdown -> 参考网址 -> 运行资料 -> 知识块/向量库 -> 题目 -> 个性化学习包 -> Agent4 审核`
-
-本目录中的 CSV 是索引和审计材料；正文、图谱、向量库、题库和运行日志仍应从提交包的对应目录提供。
+关键事实的人工核验记录仍使用 `测试数据与评测材料/06_指标统计/fact_check_review.csv`。数据库、图谱和向量库文件仍在 `data/` 中，Hash 已写入总说明。

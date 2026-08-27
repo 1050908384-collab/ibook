@@ -12,17 +12,20 @@ from docx.shared import Inches, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "作品设计实现方案.md"
-OUTPUT = ROOT / "作品设计实现方案_Word底稿.docx"
+OUTPUT = ROOT / "作品设计实现方案_Word底稿_黑白含目录_v2.docx"
 
-BLUE = "2E74B5"
-DARK_BLUE = "1F4D78"
-LIGHT_BLUE = "E8EEF5"
-LIGHT_GRAY = "F4F6F9"
-MUTED = "666666"
+BLACK = "000000"
+BLUE = BLACK
+DARK_BLUE = BLACK
+LIGHT_BLUE = None
+LIGHT_GRAY = None
+MUTED = BLACK
 FONT = "Microsoft YaHei"
 
 
 def set_cell_shading(cell, fill):
+    if not fill:
+        return
     tc_pr = cell._tc.get_or_add_tcPr()
     shd = tc_pr.find(qn("w:shd"))
     if shd is None:
@@ -210,17 +213,28 @@ def add_cover(doc, lines):
     doc.add_page_break()
 
 
-def add_toc(doc):
+def add_toc(doc, lines):
     p = doc.add_paragraph()
     r = p.add_run("目录")
     set_run_font(r, size=20, bold=True, color=BLUE)
     p.paragraph_format.space_after = Pt(12)
     p = doc.add_paragraph()
-    fld = OxmlElement("w:fldSimple")
-    fld.set(qn("w:instr"), 'TOC \\o "1-3" \\h \\z \\u')
-    p._p.append(fld)
-    r = p.add_run("（打开 Word 后右键目录并选择“更新域”）")
+    r = p.add_run("章节索引")
     set_run_font(r, size=9, italic=True, color=MUTED)
+    p.paragraph_format.space_after = Pt(8)
+    for line in lines:
+        match = re.match(r"^(#{1,2})\s+(.*)$", line)
+        if not match:
+            continue
+        level = len(match.group(1))
+        text = match.group(2).strip()
+        if text in ("作品设计实现方案", "面向大模型微调与推理部署的个性化实训多智能体协同系统"):
+            continue
+        p = doc.add_paragraph()
+        p.paragraph_format.left_indent = Inches(0.28 if level == 2 else 0)
+        p.paragraph_format.first_line_indent = Inches(-0.18 if level == 2 else 0)
+        p.paragraph_format.space_after = Pt(2)
+        add_inline(p, text, size=10.2 if level == 1 else 9.6, color=BLACK)
     doc.add_page_break()
 
 
@@ -250,7 +264,7 @@ def build():
     doc = Document()
     configure_document(doc)
     add_cover(doc, lines)
-    add_toc(doc)
+    add_toc(doc, lines)
 
     i = 2
     in_code = False
@@ -267,12 +281,8 @@ def build():
                 p.paragraph_format.space_before = Pt(3)
                 p.paragraph_format.space_after = Pt(7)
                 p.paragraph_format.line_spacing = 1.05
-                pPr = p._p.get_or_add_pPr()
-                shd = OxmlElement("w:shd")
-                shd.set(qn("w:fill"), "F2F4F7")
-                pPr.append(shd)
                 run = p.add_run("\n".join(code_lines))
-                set_run_font(run, size=8.5, color="263238")
+                set_run_font(run, size=8.5, color=BLACK)
                 code_lines = []
                 in_code = False
             else:
@@ -314,10 +324,6 @@ def build():
             p.paragraph_format.right_indent = Inches(0.15)
             p.paragraph_format.space_before = Pt(4)
             p.paragraph_format.space_after = Pt(7)
-            pPr = p._p.get_or_add_pPr()
-            shd = OxmlElement("w:shd")
-            shd.set(qn("w:fill"), LIGHT_GRAY)
-            pPr.append(shd)
             add_inline(p, stripped[1:].strip(), size=9.5, color=MUTED)
             i += 1
             continue
