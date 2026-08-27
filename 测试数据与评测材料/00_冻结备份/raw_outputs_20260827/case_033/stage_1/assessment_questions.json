@@ -1,0 +1,183 @@
+[
+  {
+    "question_id": "Q-KB15-ST1500-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "vLLM 推理服务通常需要 NVIDIA GPU 及足够的________。",
+    "options": [],
+    "correct_answer": "显存 ||| GPU 显存",
+    "hint": "模型权重与 KV Cache 都占用显存。",
+    "explanation": "模型权重与 KV Cache 都占用显存。"
+  },
+  {
+    "question_id": "Q-KB1504-006",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "模型量化（Quantization）的主要目的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "提高模型精度"
+      },
+      {
+        "key": "B",
+        "text": "减小模型体积和显存占用，加速推理"
+      },
+      {
+        "key": "C",
+        "text": "增加训练数据"
+      },
+      {
+        "key": "D",
+        "text": "改变模型架构"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB15-ST1500-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-00",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "安装 vLLM 前，最需要优先检查的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPU、驱动、CUDA 与 PyTorch 兼容性"
+      },
+      {
+        "key": "B",
+        "text": "浏览器主题颜色"
+      },
+      {
+        "key": "C",
+        "text": "Excel 版本"
+      },
+      {
+        "key": "D",
+        "text": "是否删除 tokenizer"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "运行环境兼容性是部署前提。",
+    "explanation": "运行环境兼容性是部署前提。"
+  },
+  {
+    "question_id": "Q-KB1504-009",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "vLLM 和 TGI（Text Generation Inference）都是用于什么目的的框架？",
+    "options": [
+      {
+        "key": "A",
+        "text": "模型训练"
+      },
+      {
+        "key": "B",
+        "text": "大模型高性能推理服务部署"
+      },
+      {
+        "key": "C",
+        "text": "数据标注"
+      },
+      {
+        "key": "D",
+        "text": "模型微调"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-008",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "AWQ 和 GPTQ 属于哪种量化方式？",
+    "options": [
+      {
+        "key": "A",
+        "text": "训练后量化（PTQ）"
+      },
+      {
+        "key": "B",
+        "text": "量化感知训练（QAT）"
+      },
+      {
+        "key": "C",
+        "text": "动态量化"
+      },
+      {
+        "key": "D",
+        "text": "二值化"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": ">",
+    "explanation": ">"
+  },
+  {
+    "question_id": "Q-KB1504-010",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "vLLM 的核心技术优势是________，它极大提升了显存利用率和吞吐量。",
+    "options": [],
+    "correct_answer": "PagedAttention",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-004",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写出启动 vLLM OpenAI 兼容 API 服务器的命令行指令（模型为 `Qwen/Qwen2-7B-Instruct`，端口 8000）。",
+    "options": [],
+    "correct_answer": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```",
+    "hint": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```",
+    "explanation": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```"
+  },
+  {
+    "question_id": "Q-KB1504-017",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "FastAPI 相比 Flask 在大模型 API 开发中的主要优势是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "语法更复杂"
+      },
+      {
+        "key": "B",
+        "text": "原生支持异步（Async），性能更高，自动生成文档"
+      },
+      {
+        "key": "C",
+        "text": "不支持 JSON"
+      },
+      {
+        "key": "D",
+        "text": "只能运行在 Windows 上"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  }
+]

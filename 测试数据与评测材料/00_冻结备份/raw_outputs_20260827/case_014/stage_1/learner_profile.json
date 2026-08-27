@@ -1,0 +1,35 @@
+{
+  "session_id": "8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8",
+  "user_id": "local-user",
+  "grade": "",
+  "skill_tags": [],
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "DeepSpeed",
+      "block_id": "KB-14",
+      "block_name": "分布式训练（DeepSpeed）",
+      "target_subtopic_ids": [
+        "KBS-14-00",
+        "KBS-14-01",
+        "KBS-14-02",
+        "KBS-14-03"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "advanced",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "PyTorch进阶训练技巧"
+      ]
+    }
+  ],
+  "goal": "DeepSpeed分布式训练",
+  "daily_hours": 3.0,
+  "learning_style": "hands-on",
+  "learning_rhythm": "fast",
+  "confidence_index": 0.725,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

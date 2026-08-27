@@ -1,0 +1,18 @@
+{
+  "case_id": "case_012",
+  "primary_category": "已掌握知识识别与跳过",
+  "tags": "已掌握知识识别与跳过|理解Transformer架构|理论型|RTX 3060 12GB",
+  "background": "熟悉Tokenizer和BPE算法，想深入Transformer",
+  "existing_skills": "KB-07",
+  "learning_goal": "理解Transformer架构",
+  "daily_hours": "2.0",
+  "learning_style": "理论型",
+  "hardware": "RTX 3060 12GB",
+  "expected_target_blocks": "KB-08",
+  "expected_first_stage": "KB-08",
+  "expected_difficulty": "中级",
+  "expected_strategy": "advance",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "{\"answer_behavior\":\"high\",\"target_accuracy_range\":[0.8,1.0],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"advance\"}",
+  "user_input_text": "我的学习背景：熟悉Tokenizer和BPE算法，想深入Transformer\n已掌握技能：KB-07\n我的学习目标：理解Transformer架构\n我每天能学：2.0小时\n我喜欢怎么学：理论型\n我的硬件条件：RTX 3060 12GB"
+}

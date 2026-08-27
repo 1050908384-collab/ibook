@@ -90,15 +90,30 @@ class _DeepSeekSyncNetworkBackend(httpcore.NetworkBackend):
 
 class LLMClient:
     def __init__(self):
-        self.deepseek_api_key = settings.DEEPSEEK_API_KEY
-        self.deepseek_api_base = settings.DEEPSEEK_API_BASE.rstrip("/")
-        self.deepseek_model = settings.DEEPSEEK_MODEL
+        self.cloud_provider = settings.LLM_PROVIDER.lower().strip()
+        self._uses_openai_compatible_cloud = self.cloud_provider in {
+            "openai", "openai_compatible", "custom_openai_compatible",
+        }
+        # Keep the historic attribute names because integrations and tests use
+        # them, but bind them to the selected cloud provider at runtime.
+        self.deepseek_api_key = (
+            settings.OPENAI_COMPATIBLE_API_KEY if self._uses_openai_compatible_cloud
+            else settings.DEEPSEEK_API_KEY
+        )
+        self.deepseek_api_base = (
+            settings.OPENAI_COMPATIBLE_API_BASE if self._uses_openai_compatible_cloud
+            else settings.DEEPSEEK_API_BASE
+        ).rstrip("/")
+        self.deepseek_model = (
+            settings.OPENAI_COMPATIBLE_MODEL if self._uses_openai_compatible_cloud
+            else settings.DEEPSEEK_MODEL
+        )
         self.ollama_base_url = settings.OLLAMA_BASE_URL.rstrip("/")
         self.ollama_model = settings.OLLAMA_MODEL
         self.ollama_fallback_models = settings.OLLAMA_FALLBACK_MODELS
         timeout = httpx.Timeout(
-            settings.DEEPSEEK_TIMEOUT_SECONDS,
-            connect=min(20.0, settings.DEEPSEEK_TIMEOUT_SECONDS),
+            self._cloud_timeout_seconds(),
+            connect=min(20.0, self._cloud_timeout_seconds()),
         )
         self.client = httpx.AsyncClient(timeout=timeout, trust_env=False)
         proxy_url = settings.DEEPSEEK_PROXY_URL.strip() or None
@@ -114,6 +129,20 @@ class LLMClient:
             for value in settings.DEEPSEEK_FALLBACK_IPS.split(",")
             if value.strip()
         ]
+
+    def _cloud_timeout_seconds(self) -> float:
+        return (
+            settings.OPENAI_COMPATIBLE_TIMEOUT_SECONDS
+            if self._uses_openai_compatible_cloud
+            else settings.DEEPSEEK_TIMEOUT_SECONDS
+        )
+
+    def _cloud_max_retries(self) -> int:
+        return (
+            settings.OPENAI_COMPATIBLE_MAX_RETRIES
+            if self._uses_openai_compatible_cloud
+            else settings.DEEPSEEK_MAX_RETRIES
+        )
 
     def _build_async_deepseek_client(
         self, timeout: httpx.Timeout, proxy_url: Optional[str]
@@ -133,7 +162,7 @@ class LLMClient:
         proxy_url = settings.DEEPSEEK_PROXY_URL.strip() or None
         if proxy_url:
             return httpx.Client(
-                timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
+                timeout=self._cloud_timeout_seconds(),
                 proxy=proxy_url,
                 trust_env=False,
             )
@@ -145,7 +174,7 @@ class LLMClient:
                 hostname, fallback_ips
             )
         return httpx.Client(
-            timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
+            timeout=self._cloud_timeout_seconds(),
             transport=transport,
         )
 
@@ -177,7 +206,7 @@ class LLMClient:
         }
         normalized = (self.deepseek_api_key or "").strip().strip('"').strip("'").lower()
         return (
-            settings.LLM_PROVIDER.lower() == "deepseek"
+            self.cloud_provider in {"deepseek", "openai", "openai_compatible", "custom_openai_compatible"}
             and bool(self.deepseek_api_key)
             and normalized not in placeholder_tokens
             and not normalized.startswith("your-")
@@ -241,7 +270,7 @@ class LLMClient:
         usable answer. Retry it once with an explicit concise-answer instruction
         instead of allowing 个性化学习资源生成 Agent's legacy fallback to expose prompt context.
         """
-        attempts = max(1, settings.DEEPSEEK_MAX_RETRIES + 1)
+        attempts = max(1, self._cloud_max_retries() + 1)
         last_error = ""
         retry_payload = payload
 
@@ -261,7 +290,7 @@ class LLMClient:
                 reasoning_length = len(str(message.get("reasoning_content") or ""))
 
                 if cleaned_response:
-                    self.last_provider = "deepseek"
+                    self.last_provider = self.cloud_provider
                     self.last_model = self.deepseek_model
                     logger.info(
                         "DeepSeek response accepted: attempt=%d finish_reason=%s content_chars=%d reasoning_chars=%d",
@@ -479,7 +508,7 @@ class LLMClient:
                     str((choice.get("message") or {}).get("content") or "")
                 )
             if content:
-                self.last_provider = "deepseek"
+                self.last_provider = self.cloud_provider
                 logger.info(
                     "DeepSeek sync response accepted: finish_reason=%s content_chars=%d",
                     choice.get("finish_reason"), len(content),
@@ -532,7 +561,7 @@ class LLMClient:
                 }
                 if json_mode:
                     payload["format"] = "json"
-                with httpx.Client(timeout=settings.DEEPSEEK_TIMEOUT_SECONDS, trust_env=False) as client:
+                with httpx.Client(timeout=self._cloud_timeout_seconds(), trust_env=False) as client:
                     resp = client.post(f"{self.ollama_base_url}/api/chat", json=payload)
                     resp.raise_for_status()
                     result = resp.json()

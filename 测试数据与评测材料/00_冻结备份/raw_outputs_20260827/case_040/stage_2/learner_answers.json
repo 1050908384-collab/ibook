@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB1201-002",
+    "submitted_answer": "显存（GPU Memory）",
+    "is_correct": true,
+    "correct_answer": "显存（GPU Memory）",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1202-001",
+    "submitted_answer": "秩 ||| rank ||| 维度",
+    "is_correct": true,
+    "correct_answer": "秩 ||| rank ||| 维度",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-001",
+    "submitted_answer": "合并 ||| merge ||| 融合",
+    "is_correct": true,
+    "correct_answer": "合并 ||| merge ||| 融合",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-002",
+    "submitted_answer": "配置 ||| config ||| 配置文件",
+    "is_correct": true,
+    "correct_answer": "配置 ||| config ||| 配置文件",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "peft",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1201-004",
+    "submitted_answer": "正确",
+    "is_correct": true,
+    "correct_answer": "正确",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

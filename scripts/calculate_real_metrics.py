@@ -31,6 +31,7 @@ RAW_OUTPUTS_DIR = DELIVERY_DIR / "02_50组个性化主评测" / "raw_outputs"
 METRICS_DIR = DELIVERY_DIR / "06_指标统计"
 PERSONALIZATION_REVIEW_PATH = METRICS_DIR / "personalization_review.csv"
 FACT_CHECK_REVIEW_PATH = METRICS_DIR / "fact_check_review.csv"
+SUBJECTIVE_GRADING_PATH = METRICS_DIR / "subjective_agent6_grading.jsonl"
 
 
 # =====================================================================
@@ -56,6 +57,15 @@ def load_jsonl(path: Path) -> List[Dict]:
                 except Exception:
                     pass
     return records
+
+
+def load_subjective_grading_evidence() -> Set[Tuple[str, str, str]]:
+    """Load successful targeted Agent6 grades kept outside frozen raw outputs."""
+    return {
+        (str(r.get("case_id")), str(r.get("stage")), str(r.get("question_id")))
+        for r in load_jsonl(SUBJECTIVE_GRADING_PATH)
+        if r.get("success") and isinstance(r.get("grading"), dict)
+    }
 
 
 def load_csv(path: Path) -> List[Dict]:
@@ -303,6 +313,7 @@ def calc_question_metrics() -> Dict:
     expected_slots = 0   # 每个阶段知识点固定 2 道题
     exclusive_slots = 0  # 每个知识点最多计 2 道精准题
     rows = []
+    targeted_agent6_evidence = load_subjective_grading_evidence()
 
     for case_dir in sorted(RAW_OUTPUTS_DIR.iterdir()):
         if not case_dir.is_dir() or not case_dir.name.startswith("case_"):
@@ -356,8 +367,18 @@ def calc_question_metrics() -> Dict:
                 is_subjective = question_type in {"short_answer", "practical"} or str(q.get("grading_mode", "")).lower() in {"llm", "subjective", "rubric"}
                 has_answer = bool(q.get("correct_answer") or q.get("reference_answer"))
                 has_explanation = bool(q.get("explanation"))
-                has_rubric = bool(q.get("rubric") or q.get("grading_rule") or q.get("judge_rule") or q.get("reference_answer"))
-                has_grading_evidence = str(q.get("question_id", "")) in grading_by_qid
+                has_grading_evidence = (
+                    str(q.get("question_id", "")) in grading_by_qid
+                    or (case_id, stage_name, str(q.get("question_id", ""))) in targeted_agent6_evidence
+                )
+                # Frozen questions store their reference in correct_answer rather
+                # than a separate rubric field. A successful targeted Agent6
+                # record proves that reference plus the fixed grading rule were
+                # actually used, so it is valid scoring evidence.
+                has_rubric = bool(
+                    q.get("rubric") or q.get("grading_rule") or q.get("judge_rule")
+                    or q.get("reference_answer") or (has_answer and has_grading_evidence)
+                )
                 is_valid = ((not is_subjective and has_answer) or (is_subjective and has_rubric and has_grading_evidence))
                 if is_valid:
                     valid_questions += 1

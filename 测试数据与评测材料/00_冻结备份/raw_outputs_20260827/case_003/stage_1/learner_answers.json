@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB11-ST1100-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "datasets",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB11-ST1100-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1101-001",
+    "submitted_answer": "```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1101-004",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB11-ST1102-001",
+    "submitted_answer": "转换 ||| 处理 ||| 映射",
+    "is_correct": true,
+    "correct_answer": "转换 ||| 处理 ||| 映射",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1103-004",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1101-003",
+    "submitted_answer": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```",
+    "is_correct": true,
+    "correct_answer": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1103-002",
+    "submitted_answer": "对话（Messages / Chat）",
+    "is_correct": true,
+    "correct_answer": "对话（Messages / Chat）",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

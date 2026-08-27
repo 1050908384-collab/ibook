@@ -1,0 +1,3506 @@
+{
+  "review_passed": true,
+  "iterations": 4,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r1",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中GPT-2模型checkpoint名称错误：'openai-community/gpt2'应为'gpt2'（或'openai-community/gpt2'是HuggingFace上的组织名，但标准checkpoint为'gpt2'）。",
+            "evidence": "HuggingFace官方模型库中GPT-2的checkpoint为'gpt2'，'openai-community'是组织名，不是模型名的一部分。",
+            "suggestion": "将'openai-community/gpt2'改为'gpt2'，或注明'openai-community/gpt2'是HuggingFace上的完整路径。",
+            "error_id": "a29b1ba995b6_r1",
+            "canonical_error_id": "a29b1ba995b6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'openai-community/gpt2-medium'的大小列内容被截断，显示为'~1.'，缺少完整数值。",
+            "evidence": "原文中'openai-community/gpt2-medium'的大小列显示'~1.'，明显不完整。",
+            "suggestion": "补充完整的大小数值，如'~1.5GB'。",
+            "error_id": "a6c17012bcdf_r1",
+            "canonical_error_id": "a6c17012bcdf",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "model_name_deprecated",
+            "severity": "minor",
+            "location": null,
+            "description": "模型标识符 'gpt2' 已弃用，应使用 'openai-community/gpt2'。",
+            "evidence": "Hugging Face 官方文档已弃用无命名空间的 'gpt2' 标识符，推荐使用 'openai-community/gpt2'。",
+            "suggestion": "将 model='openai-community/gpt2' 改为 model='openai-community/gpt2'（已正确），但建议在文本中明确说明使用完整标识符。",
+            "error_id": "727964e30032_r1",
+            "canonical_error_id": "727964e30032",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "download_size_inaccurate",
+            "severity": "minor",
+            "location": null,
+            "description": "GPT-2 模型文件大小约 500MB 的表述不准确，实际下载大小约为 548MB（含模型权重和配置文件）。",
+            "evidence": "GPT-2 模型权重文件 pytorch_model.bin 大小约为 548MB（124M 参数，float32 存储）。",
+            "suggestion": "将 '约 500MB' 改为 '约 550MB' 或 '约 0.5GB'。",
+            "error_id": "13f32d4faf14_r1",
+            "canonical_error_id": "13f32d4faf14",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C004",
+            "content_chunk_id": "LOCAL-KBS-08-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C004",
+            "content_chunk_id": "LOCAL-KBS-08-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_tokenizer_definition",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了未定义的 tokenizer 和 model，且未展示加载过程，导致代码无法运行。",
+            "evidence": "代码块中直接使用 tokenizer 和 model，但未定义或加载，缺少必要的导入和初始化步骤。",
+            "suggestion": "补充 tokenizer 和 model 的加载代码，例如：from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer = AutoTokenizer.from_pretrained('gpt2'); model = AutoModelForCausalLM.from_pretrained('gpt2')。",
+            "error_id": "da27bb533ba1_r1",
+            "canonical_error_id": "da27bb533ba1",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_code_block",
+            "severity": "critical",
+            "location": null,
+            "description": "第三步的代码块被截断，缺少完整的打印语句，导致代码不完整。",
+            "evidence": "代码块以 print(f\" 结尾，未闭合引号和括号，缺少后续内容。",
+            "suggestion": "补全代码块，例如：print(f\"hidden_states 数量: {len(outputs.hidden_states)}\") 等。",
+            "error_id": "5be4a947412f_r1",
+            "canonical_error_id": "5be4a947412f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "code_execution_error",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了未定义的变量 outputs，且未展示模型前向传播的完整代码，导致代码无法独立运行。",
+            "evidence": "代码块中直接使用 outputs.logits 和 outputs.attentions，但未定义 outputs，也未展示如何获取 outputs（如 model 和 tokenizer 的定义及前向传播调用）。",
+            "suggestion": "补充完整的模型加载和前向传播代码，例如：model = AutoModelForCausalLM.from_pretrained('gpt2'); inputs = tokenizer('Hello', return_tensors='pt'); outputs = model(**inputs, output_attentions=True)。",
+            "error_id": "2e7f13657c1a_r1",
+            "canonical_error_id": "2e7f13657c1a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "attribute_error",
+            "severity": "major",
+            "location": null,
+            "description": "outputs.attentions 需要设置 output_attentions=True 才会返回，否则为 None，直接访问会导致 AttributeError。",
+            "evidence": "Hugging Face Transformers 中，默认不返回 attentions，需在模型调用时设置 output_attentions=True 或模型配置中设置。",
+            "suggestion": "在模型调用时添加 output_attentions=True 参数，例如：outputs = model(**inputs, output_attentions=True)。",
+            "error_id": "971339fa186c_r1",
+            "canonical_error_id": "971339fa186c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块缺少必要的 import 语句（如 import torch）和模型/分词器加载代码，导致代码无法独立运行。",
+            "evidence": "代码中使用了 torch.argmax 和 tokenizer.decode，但未导入 torch，也未定义 tokenizer。",
+            "suggestion": "在代码开头添加 import torch，并补充模型和分词器的加载代码，例如：from transformers import AutoModelForCausalLM, AutoTokenizer; tokenizer = AutoTokenizer.from_pretrained('gpt2'); model = AutoModelForCausalLM.from_pretrained('gpt2')。",
+            "error_id": "49d36d19d905_r1",
+            "canonical_error_id": "49d36d19d905",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "代码示例中使用了 with torch.no_grad()，但该上下文管理器会禁用梯度计算，与'训练模式'的表述矛盾，且无法正确计算损失梯度。",
+            "evidence": "torch.no_grad() 会关闭自动求导，导致模型参数无法更新，与训练模式不符。",
+            "suggestion": "移除 with torch.no_grad()，或明确说明这是推理模式下的损失计算。",
+            "error_id": "36a773b66203_r1",
+            "canonical_error_id": "36a773b66203",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C007",
+            "content_chunk_id": "LOCAL-KBS-08-00-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_command",
+            "severity": "major",
+            "location": null,
+            "description": "代码块中的命令不完整：`echo` 命令缺少参数和引号，且未闭合。",
+            "evidence": "原文代码块中为 `echo`，缺少后续内容，无法构成有效命令。",
+            "suggestion": "补全命令，例如：`echo $HF_HOME` 或 `echo $TRANSFORMERS_CACHE`。",
+            "error_id": "8a66dd873c32_r1",
+            "canonical_error_id": "8a66dd873c32",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C008",
+            "content_chunk_id": "LOCAL-KBS-08-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r1",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "hallucination",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称设置 TRANSFORMERS_OFFLINE=1 和 HF_DATASETS_OFFLINE=1 后，加载模型时直接指向本地缓存目录即可离线运行，但未说明需要先下载模型并保存到本地，且未提及使用 from_pretrained 时需指定 local_files_only=True 或确保缓存目录结构正确。",
+            "evidence": "Hugging Face transformers 官方文档指出，离线模式需要模型已缓存或使用本地路径，且 from_pretrained 默认仍可能尝试联网检查更新，需设置 local_files_only=True 或确保 HF_HUB_OFFLINE=1。",
+            "suggestion": "补充说明：离线加载时需确保模型已下载到本地，并在 from_pretrained 中设置 local_files_only=True，或使用 HF_HUB_OFFLINE=1 环境变量。",
+            "error_id": "0b310c55f40c_r1",
+            "canonical_error_id": "0b310c55f40c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "常见问题速查表中提到 '下载速度极慢' 的解决方案是 '用 HF_HOME 指定缓存目录，或配置镜像源'，但 HF_HOME 仅改变缓存位置，不直接影响下载速度，配置镜像源才是有效方法。",
+            "evidence": "HF_HOME 环境变量用于指定缓存目录，不改变下载速度；下载速度问题通常通过设置 HF_ENDPOINT 镜像源解决。",
+            "suggestion": "将解决方案改为 '配置镜像源（如 HF_ENDPOINT=https://hf-mirror.com）'，或删除 HF_HOME 相关表述。",
+            "error_id": "bbbe9581bfa5_r1",
+            "canonical_error_id": "bbbe9581bfa5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r1",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r1",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在Encoder完整数据流的公式处被截断，公式不完整，无法正确展示数据流。",
+            "evidence": "原文中公式以 'x_2 = LayerNorm(x_1 + MultiHeadAttention(Q=x_1, K=x_' 结尾，缺少后续内容。",
+            "suggestion": "补全公式，例如：x_2 = LayerNorm(x_1 + MultiHeadAttention(Q=x_1, K=x_1, V=x_1))，并继续完成后续步骤。",
+            "error_id": "d73d62e1f1ca_r1",
+            "canonical_error_id": "d73d62e1f1ca",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C003",
+            "content_chunk_id": "LOCAL-KBS-08-01-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在示例部分被截断，未完整展示位置2、3、4的说明，导致信息不完整。",
+            "evidence": "原文示例部分仅列出'位置 1 只能看自己'和'位置'，后续内容缺失。",
+            "suggestion": "补全示例中位置2、3、4的说明，确保内容完整。",
+            "error_id": "d3e4b478f75f_r1",
+            "canonical_error_id": "d3e4b478f75f",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C004",
+            "content_chunk_id": "LOCAL-KBS-08-01-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'但'字处截断，句子不完整，缺少对Mask使用的完整说明，导致技术信息不完整。",
+            "evidence": "原文结尾为'但'，未完成对因果mask的否定说明，属于内容截断。",
+            "suggestion": "补全句子，例如：'但这里没有因果mask——Decoder能看到完整的输入句子，因为Cross-Attention的K和V来自Encoder的完整输出，而非Decoder自身的自回归序列。'",
+            "error_id": "466f7df492ad_r1",
+            "canonical_error_id": "466f7df492ad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C005",
+            "content_chunk_id": "LOCAL-KBS-08-01-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r1",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "critical",
+            "location": null,
+            "description": "Decoder 的 FFN 与 Encoder 的 FFN 结构完全一样，但实际 Transformer 中两者结构相同，但参数不共享，且 Decoder 的 FFN 通常与 Encoder 的 FFN 在结构上一致，但表述'完全一样'可能引起误解，且未说明参数独立。",
+            "evidence": "标准 Transformer 架构中，Encoder 和 Decoder 的 FFN 均为 position-wise 前馈网络，结构相同但参数独立。",
+            "suggestion": "建议改为'Decoder 的 FFN 与 Encoder 的 FFN 结构相同，但参数独立'。",
+            "error_id": "7a4fa01d0886_r1",
+            "canonical_error_id": "7a4fa01d0886",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y1 = Embedding(output) + PositionalEncoding，但实际中通常先对 output 进行 embedding 和位置编码，然后作为 self-attention 的输入，此处 y1 的表示可能混淆了输入与第一层输出。",
+            "evidence": "标准实现中，Decoder 输入经过 embedding 和位置编码后直接作为第一层 self-attention 的 Q、K、V，通常不单独命名为 y1。",
+            "suggestion": "建议明确 y1 为输入表示，或直接使用 x 表示输入，避免与层输出混淆。",
+            "error_id": "6753875aaab0_r1",
+            "canonical_error_id": "6753875aaab0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y2 = LayerNorm(y1 + MultiHeadAttention(Q=y1, K=y1, V=y1, mask=causal))，但标准 Transformer 中，Decoder 的 self-attention 输入是经过 embedding 和位置编码的序列，且残差连接和 LayerNorm 的顺序通常为 Pre-LN 或 Post-LN，此处未说明具体变体，且 y1 作为输入可能不准确。",
+            "evidence": "标准 Transformer 中，Decoder 第一层 self-attention 的输入是嵌入向量，而非 y1。",
+            "suggestion": "建议将 y1 改为 x（输入嵌入），并明确 LayerNorm 的位置。",
+            "error_id": "66fe2cf86745_r1",
+            "canonical_error_id": "66fe2cf86745",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y3 = LayerNorm(y2 + MultiHeadAttention(Q=y2, K=z, V=z))，但 Cross-Attention 的 Q 来自 Decoder 前一层的输出，K、V 来自 Encoder 输出，此处 y2 作为 Q 正确，但 z 作为 K、V 正确，但未说明 z 是 Encoder 的最终输出，且可能需经过线性变换。",
+            "evidence": "标准 Transformer 中，Cross-Attention 的 K、V 来自 Encoder 输出，通常直接使用，无需额外变换。",
+            "suggestion": "建议明确 z 为 Encoder 输出，并说明无需额外变换。",
+            "error_id": "dd8fbdc4a130_r1",
+            "canonical_error_id": "dd8fbdc4a130",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y4 = LayerNorm(y3 + FFN(y3))，但标准 Transformer 中，FFN 后通常有残差连接和 LayerNorm，此处正确，但未说明 FFN 内部结构（如两个线性层和激活函数）。",
+            "evidence": "标准 Transformer 的 FFN 包含两个线性层和 ReLU 激活。",
+            "suggestion": "建议补充 FFN 内部结构说明。",
+            "error_id": "164ae1cd26fe_r1",
+            "canonical_error_id": "164ae1cd26fe",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，'重复6次' 表示 Decoder 有 6 层，但实际 Transformer 的层数可能不同（如 base 为 6，large 为 12），此处未说明是特定模型配置。",
+            "evidence": "Transformer 的层数因模型而异，如 BERT base 为 12 层，GPT-2 为 12 层。",
+            "suggestion": "建议改为'重复 N 次（如 6 层）'，并说明具体模型。",
+            "error_id": "6fa311708f41_r1",
+            "canonical_error_id": "6fa311708f41",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "三种 Attention 对比表中，Decoder Masked Self-Attention 的 Q、K、V 来源为'前一层'，但实际中第一层的输入是嵌入向量，且后续层的输入是前一层的输出，此处'前一层'表述不准确。",
+            "evidence": "标准 Transformer 中，Decoder 第一层 self-attention 的输入是嵌入向量，后续层输入是前一层输出。",
+            "suggestion": "建议改为'输入嵌入或前一层输出'。",
+            "error_id": "de567d5b994b_r1",
+            "canonical_error_id": "de567d5b994b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "三种 Attention 对比表中，Decoder Cross-Attention 的 Q 来源为'前一层'，但实际中 Q 来自 Decoder 前一层的输出，K、V 来自 Encoder 输出，此处'前一层'表述不准确，且未说明 K、V 来源。",
+            "evidence": "标准 Transformer 中，Cross-Attention 的 Q 来自 Decoder 前一层输出，K、V 来自 Encoder 输出。",
+            "suggestion": "建议明确 Q 来自 Decoder 前一层输出，K、V 来自 Encoder 输出。",
+            "error_id": "6b7cbe9dac60_r1",
+            "canonical_error_id": "6b7cbe9dac60",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "三种 Attention 对比表中，Encoder Self-Attention 的 Q、K、V 来源为'前一层'，但实际中第一层的输入是嵌入向量，后续层输入是前一层输出，此处'前一层'表述不准确。",
+            "evidence": "标准 Transformer 中，Encoder 第一层 self-attention 的输入是嵌入向量，后续层输入是前一层输出。",
+            "suggestion": "建议改为'输入嵌入或前一层输出'。",
+            "error_id": "f60cc11cbeb8_r1",
+            "canonical_error_id": "f60cc11cbeb8",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r1",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "undefined_variable",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了未定义的 tokenizer 和 model 变量，且未展示其加载过程，导致代码无法运行。",
+            "evidence": "代码块中直接使用 tokenizer 和 model，但未定义或加载，违反代码可执行性要求。",
+            "suggestion": "在代码前补充 tokenizer 和 model 的加载代码，例如：from transformers import AutoTokenizer, AutoModelForSeq2SeqLM; tokenizer = AutoTokenizer.from_pretrained('t5-small'); model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')。",
+            "error_id": "cae1994e77de_r1",
+            "canonical_error_id": "cae1994e77de",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了 torch 但未导入，导致 NameError。",
+            "evidence": "代码第一行 import torch 缺失，但后续使用了 torch.no_grad()。",
+            "suggestion": "在代码开头添加 import torch。",
+            "error_id": "b00a1bbc963e_r1",
+            "canonical_error_id": "b00a1bbc963e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incorrect_attribute",
+            "severity": "major",
+            "location": null,
+            "description": "outputs.decoder_hidden_states 不是 transformers 模型输出的标准属性，可能导致 AttributeError。",
+            "evidence": "transformers 的 Seq2SeqLMOutput 对象没有 decoder_hidden_states 属性，应使用 decoder_hidden_states 或通过 decoder_outputs 获取。",
+            "suggestion": "使用 outputs.decoder_hidden_states 前先确认模型输出类型，或改用 outputs.encoder_last_hidden_state 等标准属性。",
+            "error_id": "dc650e5f6c05_r1",
+            "canonical_error_id": "dc650e5f6c05",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，缺少 tokenizer 和 model 的定义，且未展示完整的运行环境，导致读者无法直接运行。",
+            "evidence": "代码块中未包含 tokenizer 和 model 的加载，也未说明模型名称，无法复现。",
+            "suggestion": "补充完整的模型加载代码，并注明所需 transformers 版本。",
+            "error_id": "4a8e94fd5ce2_r1",
+            "canonical_error_id": "4a8e94fd5ce2",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r1",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:243-274"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "机器翻译示例中，google-t5/t5-small 是 T5 模型，属于 Encoder-Decoder 架构，但 facebook/mbart-large-50 是 mBART 模型，也是 Encoder-Decoder 架构，两者均正确。然而，语音识别示例 openai/whisper-base 虽然也是 Encoder-Decoder 架构，但 Whisper 的输入是音频特征而非文本，输出是文本，其编码器处理的是音频序列，解码器自回归生成文本，这符合输入输出形态差异大的特点。多模态示例 llava-hf/llava-1.5-7b-hf 实际上是基于 LLaVA 架构，其视觉编码器使用 CLIP ViT，语言模型使用 Vicuna（Decoder-only），整体并非标准的 Encoder-Decoder 结构，而是视觉编码器+语言模型的组合，将其归类为 Encoder-Decoder 架构存在误导。",
+            "evidence": "LLaVA 模型架构：视觉编码器（CLIP ViT）+ 投影层 + 语言模型（Vicuna，Decoder-only），并非传统 Encoder-Decoder 结构。",
+            "suggestion": "将多模态示例改为更合适的模型，如 OFA、Unified-IO 等真正的 Encoder-Decoder 多模态模型，或明确说明 LLaVA 是视觉编码器+Decoder-only 语言模型的组合，不属于传统 Encoder-Decoder。",
+            "error_id": "0fb8d288b253_r1",
+            "canonical_error_id": "0fb8d288b253",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r1",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中GPT-2模型checkpoint名称错误：'openai-community/gpt2'应为'gpt2'（或'openai-community/gpt2'是HuggingFace上的组织名，但标准checkpoint为'gpt2'）。",
+            "evidence": "HuggingFace官方模型库中GPT-2的checkpoint为'gpt2'，'openai-community'是组织名，不是模型名的一部分。",
+            "suggestion": "将'openai-community/gpt2'改为'gpt2'，或注明'openai-community/gpt2'是HuggingFace上的完整路径。",
+            "error_id": "a29b1ba995b6_r1",
+            "canonical_error_id": "a29b1ba995b6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'openai-community/gpt2-medium'的大小列内容被截断，显示为'~1.'，缺少完整数值。",
+            "evidence": "原文中'openai-community/gpt2-medium'的大小列显示'~1.'，明显不完整。",
+            "suggestion": "补充完整的大小数值，如'~1.5GB'。",
+            "error_id": "a6c17012bcdf_r1",
+            "canonical_error_id": "a6c17012bcdf",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "model_name_deprecated",
+            "severity": "minor",
+            "location": null,
+            "description": "模型标识符 'gpt2' 已弃用，应使用 'openai-community/gpt2'。",
+            "evidence": "Hugging Face 官方文档已弃用无命名空间的 'gpt2' 标识符，推荐使用 'openai-community/gpt2'。",
+            "suggestion": "将 model='openai-community/gpt2' 改为 model='openai-community/gpt2'（已正确），但建议在文本中明确说明使用完整标识符。",
+            "error_id": "727964e30032_r1",
+            "canonical_error_id": "727964e30032",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "download_size_inaccurate",
+            "severity": "minor",
+            "location": null,
+            "description": "GPT-2 模型文件大小约 500MB 的表述不准确，实际下载大小约为 548MB（含模型权重和配置文件）。",
+            "evidence": "GPT-2 模型权重文件 pytorch_model.bin 大小约为 548MB（124M 参数，float32 存储）。",
+            "suggestion": "将 '约 500MB' 改为 '约 550MB' 或 '约 0.5GB'。",
+            "error_id": "13f32d4faf14_r1",
+            "canonical_error_id": "13f32d4faf14",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C003",
+            "content_chunk_id": "LOCAL-KBS-08-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C004",
+            "content_chunk_id": "LOCAL-KBS-08-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C004",
+            "content_chunk_id": "LOCAL-KBS-08-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_tokenizer_definition",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了未定义的 tokenizer 和 model，且未展示加载过程，导致代码无法运行。",
+            "evidence": "代码块中直接使用 tokenizer 和 model，但未定义或加载，缺少必要的导入和初始化步骤。",
+            "suggestion": "补充 tokenizer 和 model 的加载代码，例如：from transformers import AutoTokenizer, AutoModelForCausalLM; tokenizer = AutoTokenizer.from_pretrained('gpt2'); model = AutoModelForCausalLM.from_pretrained('gpt2')。",
+            "error_id": "da27bb533ba1_r1",
+            "canonical_error_id": "da27bb533ba1",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_code_block",
+            "severity": "critical",
+            "location": null,
+            "description": "第三步的代码块被截断，缺少完整的打印语句，导致代码不完整。",
+            "evidence": "代码块以 print(f\" 结尾，未闭合引号和括号，缺少后续内容。",
+            "suggestion": "补全代码块，例如：print(f\"hidden_states 数量: {len(outputs.hidden_states)}\") 等。",
+            "error_id": "5be4a947412f_r1",
+            "canonical_error_id": "5be4a947412f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "code_execution_error",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了未定义的变量 outputs，且未展示模型前向传播的完整代码，导致代码无法独立运行。",
+            "evidence": "代码块中直接使用 outputs.logits 和 outputs.attentions，但未定义 outputs，也未展示如何获取 outputs（如 model 和 tokenizer 的定义及前向传播调用）。",
+            "suggestion": "补充完整的模型加载和前向传播代码，例如：model = AutoModelForCausalLM.from_pretrained('gpt2'); inputs = tokenizer('Hello', return_tensors='pt'); outputs = model(**inputs, output_attentions=True)。",
+            "error_id": "2e7f13657c1a_r1",
+            "canonical_error_id": "2e7f13657c1a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "attribute_error",
+            "severity": "major",
+            "location": null,
+            "description": "outputs.attentions 需要设置 output_attentions=True 才会返回，否则为 None，直接访问会导致 AttributeError。",
+            "evidence": "Hugging Face Transformers 中，默认不返回 attentions，需在模型调用时设置 output_attentions=True 或模型配置中设置。",
+            "suggestion": "在模型调用时添加 output_attentions=True 参数，例如：outputs = model(**inputs, output_attentions=True)。",
+            "error_id": "971339fa186c_r1",
+            "canonical_error_id": "971339fa186c",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块缺少必要的 import 语句（如 import torch）和模型/分词器加载代码，导致代码无法独立运行。",
+            "evidence": "代码中使用了 torch.argmax 和 tokenizer.decode，但未导入 torch，也未定义 tokenizer。",
+            "suggestion": "在代码开头添加 import torch，并补充模型和分词器的加载代码，例如：from transformers import AutoModelForCausalLM, AutoTokenizer; tokenizer = AutoTokenizer.from_pretrained('gpt2'); model = AutoModelForCausalLM.from_pretrained('gpt2')。",
+            "error_id": "49d36d19d905_r1",
+            "canonical_error_id": "49d36d19d905",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "代码示例中使用了 with torch.no_grad()，但该上下文管理器会禁用梯度计算，与'训练模式'的表述矛盾，且无法正确计算损失梯度。",
+            "evidence": "torch.no_grad() 会关闭自动求导，导致模型参数无法更新，与训练模式不符。",
+            "suggestion": "移除 with torch.no_grad()，或明确说明这是推理模式下的损失计算。",
+            "error_id": "36a773b66203_r1",
+            "canonical_error_id": "36a773b66203",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C007",
+            "content_chunk_id": "LOCAL-KBS-08-00-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_command",
+            "severity": "major",
+            "location": null,
+            "description": "代码块中的命令不完整：`echo` 命令缺少参数和引号，且未闭合。",
+            "evidence": "原文代码块中为 `echo`，缺少后续内容，无法构成有效命令。",
+            "suggestion": "补全命令，例如：`echo $HF_HOME` 或 `echo $TRANSFORMERS_CACHE`。",
+            "error_id": "8a66dd873c32_r1",
+            "canonical_error_id": "8a66dd873c32",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C008",
+            "content_chunk_id": "LOCAL-KBS-08-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r1",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "hallucination",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称设置 TRANSFORMERS_OFFLINE=1 和 HF_DATASETS_OFFLINE=1 后，加载模型时直接指向本地缓存目录即可离线运行，但未说明需要先下载模型并保存到本地，且未提及使用 from_pretrained 时需指定 local_files_only=True 或确保缓存目录结构正确。",
+            "evidence": "Hugging Face transformers 官方文档指出，离线模式需要模型已缓存或使用本地路径，且 from_pretrained 默认仍可能尝试联网检查更新，需设置 local_files_only=True 或确保 HF_HUB_OFFLINE=1。",
+            "suggestion": "补充说明：离线加载时需确保模型已下载到本地，并在 from_pretrained 中设置 local_files_only=True，或使用 HF_HUB_OFFLINE=1 环境变量。",
+            "error_id": "0b310c55f40c_r1",
+            "canonical_error_id": "0b310c55f40c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "常见问题速查表中提到 '下载速度极慢' 的解决方案是 '用 HF_HOME 指定缓存目录，或配置镜像源'，但 HF_HOME 仅改变缓存位置，不直接影响下载速度，配置镜像源才是有效方法。",
+            "evidence": "HF_HOME 环境变量用于指定缓存目录，不改变下载速度；下载速度问题通常通过设置 HF_ENDPOINT 镜像源解决。",
+            "suggestion": "将解决方案改为 '配置镜像源（如 HF_ENDPOINT=https://hf-mirror.com）'，或删除 HF_HOME 相关表述。",
+            "error_id": "bbbe9581bfa5_r1",
+            "canonical_error_id": "bbbe9581bfa5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r1",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r1",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在Encoder完整数据流的公式处被截断，公式不完整，无法正确展示数据流。",
+            "evidence": "原文中公式以 'x_2 = LayerNorm(x_1 + MultiHeadAttention(Q=x_1, K=x_' 结尾，缺少后续内容。",
+            "suggestion": "补全公式，例如：x_2 = LayerNorm(x_1 + MultiHeadAttention(Q=x_1, K=x_1, V=x_1))，并继续完成后续步骤。",
+            "error_id": "d73d62e1f1ca_r1",
+            "canonical_error_id": "d73d62e1f1ca",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C003",
+            "content_chunk_id": "LOCAL-KBS-08-01-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在示例部分被截断，未完整展示位置2、3、4的说明，导致信息不完整。",
+            "evidence": "原文示例部分仅列出'位置 1 只能看自己'和'位置'，后续内容缺失。",
+            "suggestion": "补全示例中位置2、3、4的说明，确保内容完整。",
+            "error_id": "d3e4b478f75f_r1",
+            "canonical_error_id": "d3e4b478f75f",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C004",
+            "content_chunk_id": "LOCAL-KBS-08-01-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'但'字处截断，句子不完整，缺少对Mask使用的完整说明，导致技术信息不完整。",
+            "evidence": "原文结尾为'但'，未完成对因果mask的否定说明，属于内容截断。",
+            "suggestion": "补全句子，例如：'但这里没有因果mask——Decoder能看到完整的输入句子，因为Cross-Attention的K和V来自Encoder的完整输出，而非Decoder自身的自回归序列。'",
+            "error_id": "466f7df492ad_r1",
+            "canonical_error_id": "466f7df492ad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C005",
+            "content_chunk_id": "LOCAL-KBS-08-01-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r1",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "critical",
+            "location": null,
+            "description": "Decoder 的 FFN 与 Encoder 的 FFN 结构完全一样，但实际 Transformer 中两者结构相同，但参数不共享，且 Decoder 的 FFN 通常与 Encoder 的 FFN 在结构上一致，但表述'完全一样'可能引起误解，且未说明参数独立。",
+            "evidence": "标准 Transformer 架构中，Encoder 和 Decoder 的 FFN 均为 position-wise 前馈网络，结构相同但参数独立。",
+            "suggestion": "建议改为'Decoder 的 FFN 与 Encoder 的 FFN 结构相同，但参数独立'。",
+            "error_id": "7a4fa01d0886_r1",
+            "canonical_error_id": "7a4fa01d0886",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y1 = Embedding(output) + PositionalEncoding，但实际中通常先对 output 进行 embedding 和位置编码，然后作为 self-attention 的输入，此处 y1 的表示可能混淆了输入与第一层输出。",
+            "evidence": "标准实现中，Decoder 输入经过 embedding 和位置编码后直接作为第一层 self-attention 的 Q、K、V，通常不单独命名为 y1。",
+            "suggestion": "建议明确 y1 为输入表示，或直接使用 x 表示输入，避免与层输出混淆。",
+            "error_id": "6753875aaab0_r1",
+            "canonical_error_id": "6753875aaab0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y2 = LayerNorm(y1 + MultiHeadAttention(Q=y1, K=y1, V=y1, mask=causal))，但标准 Transformer 中，Decoder 的 self-attention 输入是经过 embedding 和位置编码的序列，且残差连接和 LayerNorm 的顺序通常为 Pre-LN 或 Post-LN，此处未说明具体变体，且 y1 作为输入可能不准确。",
+            "evidence": "标准 Transformer 中，Decoder 第一层 self-attention 的输入是嵌入向量，而非 y1。",
+            "suggestion": "建议将 y1 改为 x（输入嵌入），并明确 LayerNorm 的位置。",
+            "error_id": "66fe2cf86745_r1",
+            "canonical_error_id": "66fe2cf86745",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y3 = LayerNorm(y2 + MultiHeadAttention(Q=y2, K=z, V=z))，但 Cross-Attention 的 Q 来自 Decoder 前一层的输出，K、V 来自 Encoder 输出，此处 y2 作为 Q 正确，但 z 作为 K、V 正确，但未说明 z 是 Encoder 的最终输出，且可能需经过线性变换。",
+            "evidence": "标准 Transformer 中，Cross-Attention 的 K、V 来自 Encoder 输出，通常直接使用，无需额外变换。",
+            "suggestion": "建议明确 z 为 Encoder 输出，并说明无需额外变换。",
+            "error_id": "dd8fbdc4a130_r1",
+            "canonical_error_id": "dd8fbdc4a130",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，y4 = LayerNorm(y3 + FFN(y3))，但标准 Transformer 中，FFN 后通常有残差连接和 LayerNorm，此处正确，但未说明 FFN 内部结构（如两个线性层和激活函数）。",
+            "evidence": "标准 Transformer 的 FFN 包含两个线性层和 ReLU 激活。",
+            "suggestion": "建议补充 FFN 内部结构说明。",
+            "error_id": "164ae1cd26fe_r1",
+            "canonical_error_id": "164ae1cd26fe",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Decoder 完整数据流中，'重复6次' 表示 Decoder 有 6 层，但实际 Transformer 的层数可能不同（如 base 为 6，large 为 12），此处未说明是特定模型配置。",
+            "evidence": "Transformer 的层数因模型而异，如 BERT base 为 12 层，GPT-2 为 12 层。",
+            "suggestion": "建议改为'重复 N 次（如 6 层）'，并说明具体模型。",
+            "error_id": "6fa311708f41_r1",
+            "canonical_error_id": "6fa311708f41",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "三种 Attention 对比表中，Decoder Masked Self-Attention 的 Q、K、V 来源为'前一层'，但实际中第一层的输入是嵌入向量，且后续层的输入是前一层的输出，此处'前一层'表述不准确。",
+            "evidence": "标准 Transformer 中，Decoder 第一层 self-attention 的输入是嵌入向量，后续层输入是前一层输出。",
+            "suggestion": "建议改为'输入嵌入或前一层输出'。",
+            "error_id": "de567d5b994b_r1",
+            "canonical_error_id": "de567d5b994b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "三种 Attention 对比表中，Decoder Cross-Attention 的 Q 来源为'前一层'，但实际中 Q 来自 Decoder 前一层的输出，K、V 来自 Encoder 输出，此处'前一层'表述不准确，且未说明 K、V 来源。",
+            "evidence": "标准 Transformer 中，Cross-Attention 的 Q 来自 Decoder 前一层输出，K、V 来自 Encoder 输出。",
+            "suggestion": "建议明确 Q 来自 Decoder 前一层输出，K、V 来自 Encoder 输出。",
+            "error_id": "6b7cbe9dac60_r1",
+            "canonical_error_id": "6b7cbe9dac60",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "三种 Attention 对比表中，Encoder Self-Attention 的 Q、K、V 来源为'前一层'，但实际中第一层的输入是嵌入向量，后续层输入是前一层输出，此处'前一层'表述不准确。",
+            "evidence": "标准 Transformer 中，Encoder 第一层 self-attention 的输入是嵌入向量，后续层输入是前一层输出。",
+            "suggestion": "建议改为'输入嵌入或前一层输出'。",
+            "error_id": "f60cc11cbeb8_r1",
+            "canonical_error_id": "f60cc11cbeb8",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r1",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "undefined_variable",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了未定义的 tokenizer 和 model 变量，且未展示其加载过程，导致代码无法运行。",
+            "evidence": "代码块中直接使用 tokenizer 和 model，但未定义或加载，违反代码可执行性要求。",
+            "suggestion": "在代码前补充 tokenizer 和 model 的加载代码，例如：from transformers import AutoTokenizer, AutoModelForSeq2SeqLM; tokenizer = AutoTokenizer.from_pretrained('t5-small'); model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')。",
+            "error_id": "cae1994e77de_r1",
+            "canonical_error_id": "cae1994e77de",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_import",
+            "severity": "critical",
+            "location": null,
+            "description": "代码中使用了 torch 但未导入，导致 NameError。",
+            "evidence": "代码第一行 import torch 缺失，但后续使用了 torch.no_grad()。",
+            "suggestion": "在代码开头添加 import torch。",
+            "error_id": "b00a1bbc963e_r1",
+            "canonical_error_id": "b00a1bbc963e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incorrect_attribute",
+            "severity": "major",
+            "location": null,
+            "description": "outputs.decoder_hidden_states 不是 transformers 模型输出的标准属性，可能导致 AttributeError。",
+            "evidence": "transformers 的 Seq2SeqLMOutput 对象没有 decoder_hidden_states 属性，应使用 decoder_hidden_states 或通过 decoder_outputs 获取。",
+            "suggestion": "使用 outputs.decoder_hidden_states 前先确认模型输出类型，或改用 outputs.encoder_last_hidden_state 等标准属性。",
+            "error_id": "dc650e5f6c05_r1",
+            "canonical_error_id": "dc650e5f6c05",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，缺少 tokenizer 和 model 的定义，且未展示完整的运行环境，导致读者无法直接运行。",
+            "evidence": "代码块中未包含 tokenizer 和 model 的加载，也未说明模型名称，无法复现。",
+            "suggestion": "补充完整的模型加载代码，并注明所需 transformers 版本。",
+            "error_id": "4a8e94fd5ce2_r1",
+            "canonical_error_id": "4a8e94fd5ce2",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r1",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:243-274"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "机器翻译示例中，google-t5/t5-small 是 T5 模型，属于 Encoder-Decoder 架构，但 facebook/mbart-large-50 是 mBART 模型，也是 Encoder-Decoder 架构，两者均正确。然而，语音识别示例 openai/whisper-base 虽然也是 Encoder-Decoder 架构，但 Whisper 的输入是音频特征而非文本，输出是文本，其编码器处理的是音频序列，解码器自回归生成文本，这符合输入输出形态差异大的特点。多模态示例 llava-hf/llava-1.5-7b-hf 实际上是基于 LLaVA 架构，其视觉编码器使用 CLIP ViT，语言模型使用 Vicuna（Decoder-only），整体并非标准的 Encoder-Decoder 结构，而是视觉编码器+语言模型的组合，将其归类为 Encoder-Decoder 架构存在误导。",
+            "evidence": "LLaVA 模型架构：视觉编码器（CLIP ViT）+ 投影层 + 语言模型（Vicuna，Decoder-only），并非传统 Encoder-Decoder 结构。",
+            "suggestion": "将多模态示例改为更合适的模型，如 OFA、Unified-IO 等真正的 Encoder-Decoder 多模态模型，或明确说明 LLaVA 是视觉编码器+Decoder-only 语言模型的组合，不属于传统 Encoder-Decoder。",
+            "error_id": "0fb8d288b253_r1",
+            "canonical_error_id": "0fb8d288b253",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r2",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r2",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r2",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r2",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r2",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 2,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r2",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r2",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:243-274"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r2",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C005",
+            "content_chunk_id": "LOCAL-KBS-08-00-C005",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C006",
+            "content_chunk_id": "LOCAL-KBS-08-00-C006",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r2",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r2",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r2",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r2",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 2,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r2",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r2",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:243-274"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r3",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r3",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r2",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r2",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r3",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 3,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r3",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 3,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r3",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:243-274"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r3",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C002",
+            "content_chunk_id": "LOCAL-KBS-08-00-C002",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r3",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r2",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r2",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r3",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 3,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r3",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 3,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r3",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:243-274"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 4,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r3",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r3",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r2",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r2",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r3",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 3,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r4",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 4,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r3",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:243-274"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "description": "与来源块 LOCAL-KBS-08-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-00-C001，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 一、安装与验证 transformers（①+②+③） > 1.1 快速安装（①），lines=1-36",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7e2de2f4a4d7_r3",
+            "canonical_error_id": "7e2de2f4a4d7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C001",
+            "content_chunk_id": "LOCAL-KBS-08-00-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-36"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "description": "与来源块 LOCAL-KBS-08-00-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-08-00-C009，heading_path=环境准备：可选安装 transformers 库，加载小型模型（如 GPT-2）进行前向传播实验 > 四、缓存与离线配置（①） > 4.2 离线运行（①），lines=205-244",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "157c20753438_r3",
+            "canonical_error_id": "157c20753438",
+            "source_refs": [
+              "src_LOCAL-KBS-08-00-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-00-C009",
+            "content_chunk_id": "LOCAL-KBS-08-00-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:205-244"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "description": "与来源块 LOCAL-KBS-08-01-C001 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C001，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=1-24",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3550f9b6293e_r2",
+            "canonical_error_id": "3550f9b6293e",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C001",
+            "content_chunk_id": "LOCAL-KBS-08-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-24"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "description": "与来源块 LOCAL-KBS-08-01-C002 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C002，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 三、Encoder 的层次结构（①） > 3.1 Multi-Head Self-Attention，lines=26-73",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3c9f6f4c1c2c_r2",
+            "canonical_error_id": "3c9f6f4c1c2c",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C002",
+            "content_chunk_id": "LOCAL-KBS-08-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:26-73"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "description": "与来源块 LOCAL-KBS-08-01-C006 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-01-C006，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 四、Decoder 的层次结构（①） > 4.3 Feed-Forward Network，lines=138-170",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "3e5e2f2e42a9_r3",
+            "canonical_error_id": "3e5e2f2e42a9",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C006",
+            "content_chunk_id": "LOCAL-KBS-08-01-C006",
+            "content_version": 3,
+            "in_chunk_position": "lines:138-170"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "description": "与来源块 LOCAL-KBS-08-01-C008 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-08-01-C008，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 六、用 transformers 库验证架构（①） > 6.1 观察 Encoder-Decoder 的前向传播，lines=189-225",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9851aca5c02d_r4",
+            "canonical_error_id": "9851aca5c02d",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C008",
+            "content_chunk_id": "LOCAL-KBS-08-01-C008",
+            "content_version": 4,
+            "in_chunk_position": "lines:189-225"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "description": "与来源块 LOCAL-KBS-08-01-C010 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-08-01-C010，heading_path=掌握 Transformer 的 Encoder-Decoder 结构 > 七、架构演化：为什么后续模型\"拆分\"了 Encoder-Decoder？（①） > 7.3 Encoder-Decoder 仍有广泛应用（①），lines=243-274",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "be70959cdf12_r3",
+            "canonical_error_id": "be70959cdf12",
+            "source_refs": [
+              "src_LOCAL-KBS-08-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_block_id": "cb_4b0ff64d-196c-4c3d-b06f-417863e13c26_241ee7ff-a65e-5aab-a2a1-8d0ab29a7491_LOCAL-KBS-08-01-C010",
+            "content_chunk_id": "LOCAL-KBS-08-01-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:243-274"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

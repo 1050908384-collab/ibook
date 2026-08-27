@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB08-ST0807-001",
+    "submitted_answer": "softmax",
+    "is_correct": true,
+    "correct_answer": "softmax",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0804-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "独立 ||| 分别 ||| position-wise",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "eval ||| eval()",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0802-002",
+    "submitted_answer": "Decoder-Only ||| decoder only ||| 仅解码器",
+    "is_correct": true,
+    "correct_answer": "Decoder-Only ||| decoder only ||| 仅解码器",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0801-004",
+    "submitted_answer": "错误",
+    "is_correct": false,
+    "correct_answer": "正确",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-001",
+    "submitted_answer": "检查点 ||| checkpoint ||| 模型仓库",
+    "is_correct": true,
+    "correct_answer": "检查点 ||| checkpoint ||| 模型仓库",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

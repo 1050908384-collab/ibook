@@ -1,0 +1,436 @@
+{
+  "review_passed": true,
+  "iterations": 2,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "description": "与来源块 LOCAL-KBS-08-06-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-06-C001，heading_path=KV Cache 机制 > 一、为什么需要 KV Cache？ > 1.1 自回归生成的重复计算，lines=1-41",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "da8a6c55fed7_r1",
+            "canonical_error_id": "da8a6c55fed7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_chunk_id": "LOCAL-KBS-08-06-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-41"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "description": "与来源块 LOCAL-KBS-08-06-C006 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-08-06-C006，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=128-147",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "829bfb37cb24_r1",
+            "canonical_error_id": "829bfb37cb24",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_chunk_id": "LOCAL-KBS-08-06-C006",
+            "content_version": 1,
+            "in_chunk_position": "lines:128-147"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "description": "与来源块 LOCAL-KBS-08-06-C007 相似度 0.68 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.68，chunk=LOCAL-KBS-08-06-C007，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=149-292",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "78796d20f6f0_r1",
+            "canonical_error_id": "78796d20f6f0",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_chunk_id": "LOCAL-KBS-08-06-C007",
+            "content_version": 1,
+            "in_chunk_position": "lines:149-292"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "description": "与来源块 LOCAL-KBS-08-06-C013 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-08-06-C013，heading_path=KV Cache 机制 > 六、其他优化方向 > 6.3 KV Cache 量化，lines=370-399",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "dd67d0024601_r1",
+            "canonical_error_id": "dd67d0024601",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_chunk_id": "LOCAL-KBS-08-06-C013",
+            "content_version": 1,
+            "in_chunk_position": "lines:370-399"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "description": "与来源块 LOCAL-KBS-08-06-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-06-C001，heading_path=KV Cache 机制 > 一、为什么需要 KV Cache？ > 1.1 自回归生成的重复计算，lines=1-41",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "da8a6c55fed7_r1",
+            "canonical_error_id": "da8a6c55fed7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_chunk_id": "LOCAL-KBS-08-06-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-41"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "description": "与来源块 LOCAL-KBS-08-06-C006 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-08-06-C006，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=128-147",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "829bfb37cb24_r1",
+            "canonical_error_id": "829bfb37cb24",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_chunk_id": "LOCAL-KBS-08-06-C006",
+            "content_version": 1,
+            "in_chunk_position": "lines:128-147"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "description": "与来源块 LOCAL-KBS-08-06-C007 相似度 0.68 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.68，chunk=LOCAL-KBS-08-06-C007，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=149-292",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "78796d20f6f0_r1",
+            "canonical_error_id": "78796d20f6f0",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_chunk_id": "LOCAL-KBS-08-06-C007",
+            "content_version": 1,
+            "in_chunk_position": "lines:149-292"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "description": "与来源块 LOCAL-KBS-08-06-C013 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-08-06-C013，heading_path=KV Cache 机制 > 六、其他优化方向 > 6.3 KV Cache 量化，lines=370-399",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "dd67d0024601_r1",
+            "canonical_error_id": "dd67d0024601",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_chunk_id": "LOCAL-KBS-08-06-C013",
+            "content_version": 1,
+            "in_chunk_position": "lines:370-399"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "description": "与来源块 LOCAL-KBS-08-06-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-06-C001，heading_path=KV Cache 机制 > 一、为什么需要 KV Cache？ > 1.1 自回归生成的重复计算，lines=1-41",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "da8a6c55fed7_r2",
+            "canonical_error_id": "da8a6c55fed7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_chunk_id": "LOCAL-KBS-08-06-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-41"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "description": "与来源块 LOCAL-KBS-08-06-C006 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-08-06-C006，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=128-147",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "829bfb37cb24_r2",
+            "canonical_error_id": "829bfb37cb24",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_chunk_id": "LOCAL-KBS-08-06-C006",
+            "content_version": 2,
+            "in_chunk_position": "lines:128-147"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "description": "与来源块 LOCAL-KBS-08-06-C007 相似度 0.68 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.68，chunk=LOCAL-KBS-08-06-C007，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=149-292",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "78796d20f6f0_r2",
+            "canonical_error_id": "78796d20f6f0",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_chunk_id": "LOCAL-KBS-08-06-C007",
+            "content_version": 2,
+            "in_chunk_position": "lines:149-292"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "description": "与来源块 LOCAL-KBS-08-06-C013 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-08-06-C013，heading_path=KV Cache 机制 > 六、其他优化方向 > 6.3 KV Cache 量化，lines=370-399",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "dd67d0024601_r2",
+            "canonical_error_id": "dd67d0024601",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_chunk_id": "LOCAL-KBS-08-06-C013",
+            "content_version": 2,
+            "in_chunk_position": "lines:370-399"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "description": "与来源块 LOCAL-KBS-08-06-C001 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-08-06-C001，heading_path=KV Cache 机制 > 一、为什么需要 KV Cache？ > 1.1 自回归生成的重复计算，lines=1-41",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "da8a6c55fed7_r2",
+            "canonical_error_id": "da8a6c55fed7",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C001",
+            "content_chunk_id": "LOCAL-KBS-08-06-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-41"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "description": "与来源块 LOCAL-KBS-08-06-C006 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-08-06-C006，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=128-147",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "829bfb37cb24_r2",
+            "canonical_error_id": "829bfb37cb24",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C006"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C006",
+            "content_chunk_id": "LOCAL-KBS-08-06-C006",
+            "content_version": 2,
+            "in_chunk_position": "lines:128-147"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "description": "与来源块 LOCAL-KBS-08-06-C007 相似度 0.68 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.68，chunk=LOCAL-KBS-08-06-C007，heading_path=KV Cache 机制 > 三、内存开销分析 > 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力），lines=149-292",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "78796d20f6f0_r2",
+            "canonical_error_id": "78796d20f6f0",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C007",
+            "content_chunk_id": "LOCAL-KBS-08-06-C007",
+            "content_version": 2,
+            "in_chunk_position": "lines:149-292"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "description": "与来源块 LOCAL-KBS-08-06-C013 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-08-06-C013，heading_path=KV Cache 机制 > 六、其他优化方向 > 6.3 KV Cache 量化，lines=370-399",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "dd67d0024601_r2",
+            "canonical_error_id": "dd67d0024601",
+            "source_refs": [
+              "src_LOCAL-KBS-08-06-C013"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_block_id": "cb_6533d476-db61-4cf5-b048-b217e6aab41e_7a9222aa-81cc-5270-a3f1-db6cec39fd1b_LOCAL-KBS-08-06-C013",
+            "content_chunk_id": "LOCAL-KBS-08-06-C013",
+            "content_version": 2,
+            "in_chunk_position": "lines:370-399"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

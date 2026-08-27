@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB15-ST1500-002",
+    "submitted_answer": "显存 ||| GPU 显存",
+    "is_correct": true,
+    "correct_answer": "显存 ||| GPU 显存",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1504-006",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB15-ST1500-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1504-009",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1504-008",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1504-010",
+    "submitted_answer": "PagedAttention",
+    "is_correct": true,
+    "correct_answer": "PagedAttention",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1504-004",
+    "submitted_answer": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```",
+    "is_correct": true,
+    "correct_answer": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1504-017",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

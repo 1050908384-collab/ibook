@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB11-ST1102-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB11-ST1102-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "转换 ||| 处理 ||| 映射",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1101-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB11-ST1100-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1103-001",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1103-004",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1103-003",
+    "submitted_answer": "```python\nfrom trl import SFTTrainer, SFTConfig\n\ntraining_args = SFTConfig(\n    output_dir=\"./sft_output\",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    logging_steps=10,\n    save_strategy=\"epoch\"\n)\n\ntrainer = SFTTrainer(\n    model=model,\n    args=training_args,\n    train_dataset=train_dataset,\n    data_collator=data_collator,\n)\n\ntrainer.train()\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom trl import SFTTrainer, SFTConfig\n\ntraining_args = SFTConfig(\n    output_dir=\"./sft_output\",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    logging_steps=10,\n    save_strategy=\"epoch\"\n)\n\ntrainer = SFTTrainer(\n    model=model,\n    args=training_args,\n    train_dataset=train_dataset,\n    data_collator=data_collator,\n)\n\ntrainer.train()\n```",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB1101-004",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

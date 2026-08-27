@@ -1,0 +1,38 @@
+{
+  "session_id": "4b0ff64d-196c-4c3d-b06f-417863e13c26",
+  "user_id": "local-user",
+  "grade": "",
+  "skill_tags": [],
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "Transformer",
+      "block_id": "KB-08",
+      "block_name": "Transformer架构（Decoder-Only）",
+      "target_subtopic_ids": [
+        "KBS-08-01",
+        "KBS-08-02",
+        "KBS-08-03",
+        "KBS-08-04",
+        "KBS-08-05",
+        "KBS-08-06"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "beginner",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "深度学习框架PyTorch基础",
+        "注意力机制"
+      ]
+    }
+  ],
+  "goal": "理解Transformer架构",
+  "daily_hours": 1.0,
+  "learning_style": "hands-on",
+  "learning_rhythm": "fast",
+  "confidence_index": 0.8,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

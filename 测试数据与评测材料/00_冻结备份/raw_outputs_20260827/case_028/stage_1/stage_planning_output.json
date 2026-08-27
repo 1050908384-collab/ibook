@@ -1,0 +1,38 @@
+{
+  "stage_id": "e5562f46-9dc9-51ef-9e3b-e2b99cba4222",
+  "stage_num": 1,
+  "block_id": "KB-15",
+  "block_name": "模型推理部署（vLLM）",
+  "block_ids": [
+    "KB-15"
+  ],
+  "subtopic_id": "KBS-15-02",
+  "subtopic_name": "Top-p/Top-k采样、Temperature温度系数",
+  "subtopic_ids": [
+    "KBS-15-02"
+  ],
+  "subtopic_names": [
+    "Top-p/Top-k采样、Temperature温度系数"
+  ],
+  "estimated_hours": 1.0,
+  "gap_skill": "vLLM",
+  "prerequisites": [
+    "KBS-15-01"
+  ],
+  "status": "pending",
+  "accuracy": null,
+  "strategy_used": null,
+  "title": "学习Top-p/Top-k采样、Temperature温度系数",
+  "description": "围绕Top-p/Top-k采样、Temperature温度系数完成一次可执行的阶段学习与练习。",
+  "objectives": [
+    "理解Top-p/Top-k采样、Temperature温度系数的基本概念",
+    "掌握Top-p/Top-k采样、Temperature温度系数的核心技术",
+    "能够独立完成Top-p/Top-k采样、Temperature温度系数相关任务"
+  ],
+  "difficulty": "高级",
+  "recommended_daily_hours": 1.0,
+  "suggested_study_days": 1,
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习Top-p/Top-k采样、Temperature温度系数",
+  "hardware_notes": "",
+  "personalization_summary": "预计0.9小时完成 | 建议分1天学习 | 每天3.0小时 | 综合型学习风格"
+}

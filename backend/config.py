@@ -46,6 +46,14 @@ class Settings(BaseSettings):
     # 超时更长的读取窗口，并由客户端对可恢复错误做有限重试。
     DEEPSEEK_TIMEOUT_SECONDS: float = 180.0
     DEEPSEEK_MAX_RETRIES: int = 2
+    # Any provider exposing the OpenAI Chat Completions contract can be used
+    # without changing application code.  The historic DEEPSEEK_* variables
+    # remain the defaults for backwards compatibility.
+    OPENAI_COMPATIBLE_API_KEY: str = ""
+    OPENAI_COMPATIBLE_API_BASE: str = ""
+    OPENAI_COMPATIBLE_MODEL: str = ""
+    OPENAI_COMPATIBLE_TIMEOUT_SECONDS: float = 180.0
+    OPENAI_COMPATIBLE_MAX_RETRIES: int = 2
     # Ollama 本地生成参数（用于可替换性测试时对比云端模型参数）
     OLLAMA_TEMPERATURE: float = 0.7
     OLLAMA_TOP_P: float = 0.95

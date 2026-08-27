@@ -1,0 +1,43 @@
+{
+  "stage_id": "034f52d5-c83d-5339-ba71-d5509ddf535b",
+  "stage_num": 1,
+  "block_id": "KB-12",
+  "block_name": "参数高效微调（LoRA与QLoRA）",
+  "block_ids": [
+    "KB-12"
+  ],
+  "subtopic_id": "KBS-12-01",
+  "subtopic_name": "理解LoRA的低秩分解原理",
+  "subtopic_ids": [
+    "KBS-12-01",
+    "KBS-12-02",
+    "KBS-12-03"
+  ],
+  "subtopic_names": [
+    "理解LoRA的低秩分解原理",
+    "Rank/Alpha参数作用",
+    "掌握PEFT库的LoraConfig配置（target_modules、r、lora_alpha、lora_dropout）"
+  ],
+  "estimated_hours": 3.0,
+  "gap_skill": "LoRA",
+  "prerequisites": [
+    "KBS-04-03",
+    "KBS-11-03"
+  ],
+  "status": "pending",
+  "accuracy": null,
+  "strategy_used": null,
+  "title": "学习理解LoRA的低秩分解原理",
+  "description": "围绕理解LoRA的低秩分解原理完成一次可执行的阶段学习与练习。",
+  "objectives": [
+    "理解理解LoRA的低秩分解原理的基本概念",
+    "掌握理解LoRA的低秩分解原理的核心技术",
+    "能够独立完成理解LoRA的低秩分解原理相关任务"
+  ],
+  "difficulty": "高级",
+  "recommended_daily_hours": 3.0,
+  "suggested_study_days": 1,
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习理解LoRA的低秩分解原理",
+  "hardware_notes": "",
+  "personalization_summary": "预计1.8小时完成 | 建议分1天学习 | 每天3.0小时 | 综合型学习风格"
+}

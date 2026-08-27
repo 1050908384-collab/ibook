@@ -1,0 +1,2330 @@
+{
+  "review_passed": true,
+  "iterations": 4,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r1",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'3.2 为什么不用普通INT4？'处截断，未完成该小节，导致技术解释不完整。",
+            "evidence": "内容块以'普通INT'结尾，明显不完整，无法评估该小节的技术正确性。",
+            "suggestion": "补充完整3.2小节内容，说明普通INT4的局限（如精度损失、无量化感知等）及NF4的优势。",
+            "error_id": "19100de59520_r1",
+            "canonical_error_id": "19100de59520",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C003",
+            "content_chunk_id": "LOCAL-KBS-12-04-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'映射到最接近的码'处截断，未完成对NF4量化过程的完整描述，缺少后续关键信息（如码本映射的具体步骤、归一化方法等），导致技术解释不完整。",
+            "evidence": "原文以'映射到最接近的码'结尾，句子未结束，明显被截断。",
+            "suggestion": "补充完整内容，确保对NF4量化原理的阐述完整、连贯。",
+            "error_id": "a8011c360317_r1",
+            "canonical_error_id": "a8011c360317",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C004",
+            "content_chunk_id": "LOCAL-KBS-12-04-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'注意：不要把它理解成\"'处截断，句子不完整，导致分页优化器的关键澄清说明缺失，影响内容完整性和可理解性。",
+            "evidence": "原文末尾为'**注意**：不要把它理解成\"'，未闭合引号且无后续内容，明显为截断。",
+            "suggestion": "补充完整该句，例如'不要把它理解成简单的显存溢出后手动迁移，而是由统一内存自动管理页迁移。'，并确保内容块完整。",
+            "error_id": "a2a15d9534bc_r1",
+            "canonical_error_id": "a2a15d9534bc",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C007",
+            "content_chunk_id": "LOCAL-KBS-12-04-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r1",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "7.1节声称'NF4下只占0.5字节'，但NF4是4位量化，每个权重占4位即0.5字节，该表述正确。然而7.1节标题为'4-bit量化'，内容却将FP16与NF4对比，未提及双重量化（7.2节）和分页优化器（7.3节）属于三大显存优化技术，但7.1节内容仅描述4-bit量化，未明确说明这是三大技术之一，结构上可能引起混淆，但技术内容本身无误。",
+            "evidence": "NF4为4位量化，每个权重占4位=0.5字节，FP16占2字节，压缩4倍，表述正确。",
+            "suggestion": "无需修改。",
+            "error_id": "a98c866a36bc_r1",
+            "canonical_error_id": "a98c866a36bc",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "7.2节描述双重量化'把这些scale再量化一次'，但未明确说明双重量化是对scale进行二次量化，且未提及具体方法（如NF4量化scale），表述不够精确但方向正确。",
+            "evidence": "QLoRA双重量化确实是对量化常数（scale）进行二次量化，以减少内存占用。",
+            "suggestion": "可补充说明双重量化是对scale进行二次量化，例如使用NF4量化scale。",
+            "error_id": "ff90f486877b_r1",
+            "canonical_error_id": "ff90f486877b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "7.3节描述分页优化器'GPU显存不够时，自动把部分数据交换到CPU内存'，但未提及具体机制（如统一内存分页），表述正确但可更精确。",
+            "evidence": "QLoRA分页优化器利用CUDA统一内存，在显存不足时将优化器状态分页到CPU内存。",
+            "suggestion": "可补充说明分页优化器基于CUDA统一内存技术。",
+            "error_id": "8f5df103ffe4_r1",
+            "canonical_error_id": "8f5df103ffe4",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第八章对比表中'显存'一栏LoRA为'较低'，QLoRA为'通常更低'，但未说明具体差异，且未提及QLoRA在推理时需反量化，可能增加计算开销，但显存节省是主要优势，表述基本正确。",
+            "evidence": "QLoRA通过4-bit量化显著降低显存占用，通常比LoRA更低。",
+            "suggestion": "无需修改。",
+            "error_id": "42df00a198c5_r1",
+            "canonical_error_id": "42df00a198c5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r1",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在解释 bnb_4bit_compute_dtype 时被截断，句子以“为什么通常选`tor”结尾，未完成论述，导致技术解释不完整。",
+            "evidence": "原文末尾为“**为什么通常选`tor”，明显截断，缺少后续内容。",
+            "suggestion": "补全该段内容，完整解释为什么通常选择 bfloat16 或 float16 作为计算精度。",
+            "error_id": "0e65381bd69a_r1",
+            "canonical_error_id": "0e65381bd69a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r1",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "api_deprecated",
+            "severity": "major",
+            "location": null,
+            "description": "TrainingArguments 中使用了 'processing_class' 参数，该参数是较新版本 transformers 的写法，旧版本使用 'tokenizer' 参数。代码注释中虽提到旧版本用 tokenizer，但未明确版本兼容性，可能导致用户使用旧版本时报错。",
+            "evidence": "transformers 的 TrainingArguments 在较新版本中引入了 processing_class 参数，旧版本仅支持 tokenizer 参数。代码中同时注释了两种写法，但未说明版本要求，存在 API 兼容性风险。",
+            "suggestion": "建议明确标注 transformers 版本要求，或使用兼容写法：trainer = Trainer(model=model, args=training_args, train_dataset=train_dataset, data_collator=data_collator, tokenizer=tokenizer) 并注明新版本可用 processing_class。",
+            "error_id": "f009184107b6_r1",
+            "canonical_error_id": "f009184107b6",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "模型加载和训练代码未包含 try-except 异常处理，涉及网络下载、文件读取等IO操作，可能因网络问题或文件缺失导致程序崩溃。",
+            "evidence": "代码中 AutoModelForCausalLM.from_pretrained 和 trainer.train() 均未包裹 try-except，违反 OWASP ML Top 10 2023 ML06 对敏感操作配套异常处理的要求。",
+            "suggestion": "建议对模型加载和训练过程添加 try-except 捕获异常，并记录日志，例如：try: model = AutoModelForCausalLM.from_pretrained(...) except Exception as e: logger.error(e); raise",
+            "error_id": "f342ef89f347_r1",
+            "canonical_error_id": "f342ef89f347",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r1",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": "lines:803-898"
+          },
+          {
+            "error_type": "lora_mechanism_error",
+            "severity": "critical",
+            "location": null,
+            "description": "第2步将 prepare_model_for_kbit_training() 描述为'把部分层转成计算精度、开启输入梯度以支持梯度检查点'，但该函数的核心作用是冻结量化模型的参数并准备 kbit 训练，而非'把部分层转成计算精度'。",
+            "evidence": "Hugging Face PEFT 文档：prepare_model_for_kbit_training 主要用于冻结模型参数、启用梯度检查点（若设置）等，不负责转换层精度。",
+            "suggestion": "修改为：'该函数会冻结量化模型的参数，并启用输入梯度以支持梯度检查点等训练适配。'",
+            "error_id": "883ac4b50382_r1",
+            "canonical_error_id": "883ac4b50382",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第4步声称梯度检查点要'两头都开'，且'只开一边会出问题'，但实际只需在 TrainingArguments 中设置 gradient_checkpointing=True，prepare_model_for_kbit_training 的 use_gradient_checkpointing 参数并非必须，且不存在'必须对应开启'的硬性要求。",
+            "evidence": "PEFT 文档与常见实践：prepare_model_for_kbit_training 的 use_gradient_checkpointing 参数默认为 False，且仅在需要时开启；TrainingArguments 中的 gradient_checkpointing 是主要开关。",
+            "suggestion": "修改为：'在 TrainingArguments 中设置 gradient_checkpointing=True 即可启用梯度检查点；若使用 prepare_model_for_kbit_training，可同时设置 use_gradient_checkpointing=True 以保持一致性，但并非强制。'",
+            "error_id": "3c403a616341_r1",
+            "canonical_error_id": "3c403a616341",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第5步将 paged_adamw_8bit 描述为'把显存不够的部分临时挪到 CPU 内存'，但分页优化器的核心机制是使用统一内存分页，允许在 GPU 显存不足时利用 CPU 内存，但并非简单的'临时挪到 CPU'，且主要针对优化器状态而非任意显存。",
+            "evidence": "QLoRA 论文与 bitsandbytes 文档：分页优化器使用统一内存管理，在 GPU 显存不足时自动将优化器状态分页到 CPU 内存，以减少峰值显存。",
+            "suggestion": "修改为：'该设置启用分页优化器，通过统一内存管理在 GPU 显存不足时将优化器状态分页到 CPU 内存，从而缓解峰值显存压力。'",
+            "error_id": "ea7309a5ea07_r1",
+            "canonical_error_id": "ea7309a5ea07",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r1",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'3.2 为什么不用普通INT4？'处截断，未完成该小节，导致技术解释不完整。",
+            "evidence": "内容块以'普通INT'结尾，明显不完整，无法评估该小节的技术正确性。",
+            "suggestion": "补充完整3.2小节内容，说明普通INT4的局限（如精度损失、无量化感知等）及NF4的优势。",
+            "error_id": "19100de59520_r1",
+            "canonical_error_id": "19100de59520",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C003",
+            "content_chunk_id": "LOCAL-KBS-12-04-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'映射到最接近的码'处截断，未完成对NF4量化过程的完整描述，缺少后续关键信息（如码本映射的具体步骤、归一化方法等），导致技术解释不完整。",
+            "evidence": "原文以'映射到最接近的码'结尾，句子未结束，明显被截断。",
+            "suggestion": "补充完整内容，确保对NF4量化原理的阐述完整、连贯。",
+            "error_id": "a8011c360317_r1",
+            "canonical_error_id": "a8011c360317",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C004",
+            "content_chunk_id": "LOCAL-KBS-12-04-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'注意：不要把它理解成\"'处截断，句子不完整，导致分页优化器的关键澄清说明缺失，影响内容完整性和可理解性。",
+            "evidence": "原文末尾为'**注意**：不要把它理解成\"'，未闭合引号且无后续内容，明显为截断。",
+            "suggestion": "补充完整该句，例如'不要把它理解成简单的显存溢出后手动迁移，而是由统一内存自动管理页迁移。'，并确保内容块完整。",
+            "error_id": "a2a15d9534bc_r1",
+            "canonical_error_id": "a2a15d9534bc",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C007",
+            "content_chunk_id": "LOCAL-KBS-12-04-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r1",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "7.1节声称'NF4下只占0.5字节'，但NF4是4位量化，每个权重占4位即0.5字节，该表述正确。然而7.1节标题为'4-bit量化'，内容却将FP16与NF4对比，未提及双重量化（7.2节）和分页优化器（7.3节）属于三大显存优化技术，但7.1节内容仅描述4-bit量化，未明确说明这是三大技术之一，结构上可能引起混淆，但技术内容本身无误。",
+            "evidence": "NF4为4位量化，每个权重占4位=0.5字节，FP16占2字节，压缩4倍，表述正确。",
+            "suggestion": "无需修改。",
+            "error_id": "a98c866a36bc_r1",
+            "canonical_error_id": "a98c866a36bc",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "7.2节描述双重量化'把这些scale再量化一次'，但未明确说明双重量化是对scale进行二次量化，且未提及具体方法（如NF4量化scale），表述不够精确但方向正确。",
+            "evidence": "QLoRA双重量化确实是对量化常数（scale）进行二次量化，以减少内存占用。",
+            "suggestion": "可补充说明双重量化是对scale进行二次量化，例如使用NF4量化scale。",
+            "error_id": "ff90f486877b_r1",
+            "canonical_error_id": "ff90f486877b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "7.3节描述分页优化器'GPU显存不够时，自动把部分数据交换到CPU内存'，但未提及具体机制（如统一内存分页），表述正确但可更精确。",
+            "evidence": "QLoRA分页优化器利用CUDA统一内存，在显存不足时将优化器状态分页到CPU内存。",
+            "suggestion": "可补充说明分页优化器基于CUDA统一内存技术。",
+            "error_id": "8f5df103ffe4_r1",
+            "canonical_error_id": "8f5df103ffe4",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第八章对比表中'显存'一栏LoRA为'较低'，QLoRA为'通常更低'，但未说明具体差异，且未提及QLoRA在推理时需反量化，可能增加计算开销，但显存节省是主要优势，表述基本正确。",
+            "evidence": "QLoRA通过4-bit量化显著降低显存占用，通常比LoRA更低。",
+            "suggestion": "无需修改。",
+            "error_id": "42df00a198c5_r1",
+            "canonical_error_id": "42df00a198c5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r1",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在解释 bnb_4bit_compute_dtype 时被截断，句子以“为什么通常选`tor”结尾，未完成论述，导致技术解释不完整。",
+            "evidence": "原文末尾为“**为什么通常选`tor”，明显截断，缺少后续内容。",
+            "suggestion": "补全该段内容，完整解释为什么通常选择 bfloat16 或 float16 作为计算精度。",
+            "error_id": "0e65381bd69a_r1",
+            "canonical_error_id": "0e65381bd69a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r1",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "api_deprecated",
+            "severity": "major",
+            "location": null,
+            "description": "TrainingArguments 中使用了 'processing_class' 参数，该参数是较新版本 transformers 的写法，旧版本使用 'tokenizer' 参数。代码注释中虽提到旧版本用 tokenizer，但未明确版本兼容性，可能导致用户使用旧版本时报错。",
+            "evidence": "transformers 的 TrainingArguments 在较新版本中引入了 processing_class 参数，旧版本仅支持 tokenizer 参数。代码中同时注释了两种写法，但未说明版本要求，存在 API 兼容性风险。",
+            "suggestion": "建议明确标注 transformers 版本要求，或使用兼容写法：trainer = Trainer(model=model, args=training_args, train_dataset=train_dataset, data_collator=data_collator, tokenizer=tokenizer) 并注明新版本可用 processing_class。",
+            "error_id": "f009184107b6_r1",
+            "canonical_error_id": "f009184107b6",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "模型加载和训练代码未包含 try-except 异常处理，涉及网络下载、文件读取等IO操作，可能因网络问题或文件缺失导致程序崩溃。",
+            "evidence": "代码中 AutoModelForCausalLM.from_pretrained 和 trainer.train() 均未包裹 try-except，违反 OWASP ML Top 10 2023 ML06 对敏感操作配套异常处理的要求。",
+            "suggestion": "建议对模型加载和训练过程添加 try-except 捕获异常，并记录日志，例如：try: model = AutoModelForCausalLM.from_pretrained(...) except Exception as e: logger.error(e); raise",
+            "error_id": "f342ef89f347_r1",
+            "canonical_error_id": "f342ef89f347",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r1",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": "lines:803-898"
+          },
+          {
+            "error_type": "lora_mechanism_error",
+            "severity": "critical",
+            "location": null,
+            "description": "第2步将 prepare_model_for_kbit_training() 描述为'把部分层转成计算精度、开启输入梯度以支持梯度检查点'，但该函数的核心作用是冻结量化模型的参数并准备 kbit 训练，而非'把部分层转成计算精度'。",
+            "evidence": "Hugging Face PEFT 文档：prepare_model_for_kbit_training 主要用于冻结模型参数、启用梯度检查点（若设置）等，不负责转换层精度。",
+            "suggestion": "修改为：'该函数会冻结量化模型的参数，并启用输入梯度以支持梯度检查点等训练适配。'",
+            "error_id": "883ac4b50382_r1",
+            "canonical_error_id": "883ac4b50382",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第4步声称梯度检查点要'两头都开'，且'只开一边会出问题'，但实际只需在 TrainingArguments 中设置 gradient_checkpointing=True，prepare_model_for_kbit_training 的 use_gradient_checkpointing 参数并非必须，且不存在'必须对应开启'的硬性要求。",
+            "evidence": "PEFT 文档与常见实践：prepare_model_for_kbit_training 的 use_gradient_checkpointing 参数默认为 False，且仅在需要时开启；TrainingArguments 中的 gradient_checkpointing 是主要开关。",
+            "suggestion": "修改为：'在 TrainingArguments 中设置 gradient_checkpointing=True 即可启用梯度检查点；若使用 prepare_model_for_kbit_training，可同时设置 use_gradient_checkpointing=True 以保持一致性，但并非强制。'",
+            "error_id": "3c403a616341_r1",
+            "canonical_error_id": "3c403a616341",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第5步将 paged_adamw_8bit 描述为'把显存不够的部分临时挪到 CPU 内存'，但分页优化器的核心机制是使用统一内存分页，允许在 GPU 显存不足时利用 CPU 内存，但并非简单的'临时挪到 CPU'，且主要针对优化器状态而非任意显存。",
+            "evidence": "QLoRA 论文与 bitsandbytes 文档：分页优化器使用统一内存管理，在 GPU 显存不足时自动将优化器状态分页到 CPU 内存，以减少峰值显存。",
+            "suggestion": "修改为：'该设置启用分页优化器，通过统一内存管理在 GPU 显存不足时将优化器状态分页到 CPU 内存，从而缓解峰值显存压力。'",
+            "error_id": "ea7309a5ea07_r1",
+            "canonical_error_id": "ea7309a5ea07",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r2",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r2",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r2",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r2",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r2",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 2,
+            "in_chunk_position": "lines:803-898"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r2",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r2",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r2",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r2",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r2",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 2,
+            "in_chunk_position": "lines:803-898"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r2",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r3",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r3",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r3",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r3",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 3,
+            "in_chunk_position": "lines:803-898"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r2",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r3",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r3",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r3",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r3",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 3,
+            "in_chunk_position": "lines:803-898"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 4,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r2",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r3",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r4",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 4,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r3",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r3",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 3,
+            "in_chunk_position": "lines:803-898"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "description": "与来源块 LOCAL-KBS-12-04-C001 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-12-04-C001，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 一、为什么需要QLoRA？（①④） > 1.1 LoRA仍然需要加载完整模型，lines=1-74",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "86672a0205a2_r2",
+            "canonical_error_id": "86672a0205a2",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C001",
+            "content_chunk_id": "LOCAL-KBS-12-04-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-74"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C002",
+            "content_chunk_id": "LOCAL-KBS-12-04-C002",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "description": "与来源块 LOCAL-KBS-12-04-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C009，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 七、QLoRA三大显存优化技术总结（①） > 7.1 4-bit量化，lines=577-653",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "9ce43664dec1_r3",
+            "canonical_error_id": "9ce43664dec1",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C009",
+            "content_chunk_id": "LOCAL-KBS-12-04-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:577-653"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "description": "与来源块 LOCAL-KBS-12-04-C010 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C010，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > load_in_4bit，lines=654-713",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "04af99739072_r4",
+            "canonical_error_id": "04af99739072",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C010",
+            "content_chunk_id": "LOCAL-KBS-12-04-C010",
+            "content_version": 4,
+            "in_chunk_position": "lines:654-713"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "description": "与来源块 LOCAL-KBS-12-04-C011 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-12-04-C011，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=714-801",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "0749ddd00644_r3",
+            "canonical_error_id": "0749ddd00644",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C011",
+            "content_chunk_id": "LOCAL-KBS-12-04-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:714-801"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "description": "与来源块 LOCAL-KBS-12-04-C012 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-12-04-C012，heading_path=QLoRA原理详解：4-bit量化（NF4、双重量化）与分页优化器机制（最终版） > 九、bitsandbytes中的QLoRA配置（③） > 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架），lines=803-898",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a0cb9108310a_r3",
+            "canonical_error_id": "a0cb9108310a",
+            "source_refs": [
+              "src_LOCAL-KBS-12-04-C012"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_block_id": "cb_dc03030f-2054-427f-9ffa-05571680d0e7_2ff95713-621f-5cfd-a1ba-b672e7861893_LOCAL-KBS-12-04-C012",
+            "content_chunk_id": "LOCAL-KBS-12-04-C012",
+            "content_version": 3,
+            "in_chunk_position": "lines:803-898"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

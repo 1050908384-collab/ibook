@@ -1,0 +1,18 @@
+{
+  "case_id": "case_047",
+  "primary_category": "异常与边界输入",
+  "tags": "异常与边界输入|LoRA微调|理论型|RTX 4060 8GB",
+  "background": "目标是LoRA，但用户深入追问RLHF实现细节（目录外）",
+  "existing_skills": "KB-08|KB-10",
+  "learning_goal": "LoRA微调",
+  "daily_hours": "2.0",
+  "learning_style": "理论型",
+  "hardware": "RTX 4060 8GB",
+  "expected_target_blocks": "KB-12",
+  "expected_first_stage": "KB-12",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "{\"answer_behavior\":\"medium\",\"target_accuracy_range\":[0.6,0.79],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"reinforce\"}",
+  "user_input_text": "我的学习背景：目标是LoRA，但用户深入追问RLHF实现细节（目录外）\n已掌握技能：KB-08|KB-10\n我的学习目标：LoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：理论型\n我的硬件条件：RTX 4060 8GB"
+}

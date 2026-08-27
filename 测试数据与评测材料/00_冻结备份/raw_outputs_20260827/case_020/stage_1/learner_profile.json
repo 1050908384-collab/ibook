@@ -1,0 +1,54 @@
+{
+  "session_id": "163a7c3c-4e90-48f7-9e98-64b87431bb36",
+  "user_id": "local-user",
+  "grade": "",
+  "skill_tags": [],
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01",
+        "KBS-12-02",
+        "KBS-12-03",
+        "KBS-12-04",
+        "KBS-12-05"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "advanced",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    },
+    {
+      "skill": "vLLM",
+      "block_id": "KB-15",
+      "block_name": "模型推理部署（vLLM）",
+      "target_subtopic_ids": [
+        "KBS-15-01",
+        "KBS-15-02",
+        "KBS-15-03",
+        "KBS-15-04"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "advanced",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "LoRA微调+权重合并+vLLM部署",
+  "daily_hours": 3.0,
+  "learning_style": "hands-on",
+  "learning_rhythm": "fast",
+  "confidence_index": 0.725,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

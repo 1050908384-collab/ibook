@@ -1,0 +1,1597 @@
+{
+  "review_passed": true,
+  "iterations": 3,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "description": "与来源块 LOCAL-KBS-11-03-C001 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-11-03-C001，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 一、为什么需要Trainer训练器？（①②） > 1.1 大模型训练流程回顾，lines=1-100",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "357eb2995026_r1",
+            "canonical_error_id": "357eb2995026",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_chunk_id": "LOCAL-KBS-11-03-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-100"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'对应关系'表格处截断，仅列出model、args、train_dataset三行，缺少eval_dataset和tokenizer的说明，且未提供完整代码示例。",
+            "evidence": "原文表格仅有三行，与上文列出的五个参数不一致。",
+            "suggestion": "补充eval_dataset和tokenizer的说明，并确保代码示例完整。",
+            "error_id": "ed8bbfaaf150_r1",
+            "canonical_error_id": "ed8bbfaaf150",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C002",
+            "content_chunk_id": "LOCAL-KBS-11-03-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "安装依赖的验证代码块中，import语句未使用try-except捕获异常，若依赖缺失或环境异常，将直接抛出未处理的ImportError，影响后续操作。",
+            "evidence": "代码块中直接执行import transformers和import datasets，未包裹try-except。",
+            "suggestion": "建议在import语句外层增加try-except，捕获ImportError并给出友好提示，例如：try: import transformers; import datasets except ImportError as e: print('依赖安装失败，请检查pip源或Python版本'); raise",
+            "error_id": "9d8e85363912_r1",
+            "canonical_error_id": "9d8e85363912",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C003",
+            "content_chunk_id": "LOCAL-KBS-11-03-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C004",
+            "content_chunk_id": "LOCAL-KBS-11-03-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C004",
+            "content_chunk_id": "LOCAL-KBS-11-03-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "模型加载代码块未使用try-except捕获异常，涉及网络/IO操作，存在未捕获异常风险。",
+            "evidence": "代码块直接调用AutoModelForSequenceClassification.from_pretrained，未包裹try-except，违反规则2未捕获异常模式。",
+            "suggestion": "建议使用try-except包裹from_pretrained调用，捕获OSError等异常并记录日志。",
+            "error_id": "1e24fc832b31_r1",
+            "canonical_error_id": "1e24fc832b31",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C004",
+            "content_chunk_id": "LOCAL-KBS-11-03-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块标题为'5.3 Tokenizer处理'，但实际内容包含'六、TrainingArguments详解'和'七、常用TrainingArguments参数'，与标题不符，且'六'和'七'的编号与所属知识点路径'五、准备训练模型和数据'不一致。",
+            "evidence": "内容块标题为'## 5.3 Tokenizer处理：为DeepSpeed训练铺路'，但后续出现'## 六、TrainingArguments详解'和'## 七、常用TrainingArguments参数'，章节编号跳跃，且'六'和'七'不属于'五'的子章节。",
+            "suggestion": "将'TrainingArguments'相关内容移至独立的章节，或调整编号使其与所属知识点路径一致。",
+            "error_id": "dad50afef402_r1",
+            "canonical_error_id": "dad50afef402",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C005",
+            "content_chunk_id": "LOCAL-KBS-11-03-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块末尾的'本块学习检查'部分不完整，句子在'这能'处截断，缺少后续内容。",
+            "evidence": "原文末尾为'这能'，没有后续内容，句子不完整。",
+            "suggestion": "补全该句，例如'这能帮助你验证数据划分是否正确。'",
+            "error_id": "2b12e2a96816_r1",
+            "canonical_error_id": "2b12e2a96816",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C005",
+            "content_chunk_id": "LOCAL-KBS-11-03-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "description": "与来源块 LOCAL-KBS-11-03-C007 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-11-03-C007，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.2 num_train_epochs，lines=366-431",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "64c9387cd184_r1",
+            "canonical_error_id": "64c9387cd184",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 1,
+            "in_chunk_position": "lines:366-431"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在7.4 learning_rate部分被截断，'scheduler'相关说明不完整，影响技术内容完整性。",
+            "evidence": "原文末尾为'**scheduler**：`lr_scheduler'，句子未结束，缺少后续内容。",
+            "suggestion": "补充完整的scheduler说明，包括常见调度器类型（如linear、cosine）及其与学习率的配合建议。",
+            "error_id": "bb20ccd7a69d_r1",
+            "canonical_error_id": "bb20ccd7a69d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "description": "与来源块 LOCAL-KBS-11-03-C008 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-11-03-C008，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.5 logging_steps，lines=432-584",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d36a75fe14_r1",
+            "canonical_error_id": "a6d36a75fe14",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:432-584"
+          },
+          {
+            "error_type": "api_deprecated",
+            "severity": "major",
+            "location": null,
+            "description": "使用已弃用的参数 evaluation_strategy，新版本中应使用 eval_strategy。",
+            "evidence": "Transformers 新版本中 evaluation_strategy 已更名为 eval_strategy，旧写法会触发警告或错误。",
+            "suggestion": "将 evaluation_strategy 改为 eval_strategy。",
+            "error_id": "29bd0d0752b5_r1",
+            "canonical_error_id": "29bd0d0752b5",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "api_deprecated",
+            "severity": "major",
+            "location": null,
+            "description": "Trainer 构造中使用了旧参数 tokenizer，新版本中应使用 processing_class。",
+            "evidence": "Transformers 新版本中 tokenizer 参数已迁移为 processing_class，旧写法仍可用但会告警。",
+            "suggestion": "将 tokenizer=tokenizer 改为 processing_class=tokenizer。",
+            "error_id": "ee2bc2e672ca_r1",
+            "canonical_error_id": "ee2bc2e672ca",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "description": "与来源块 LOCAL-KBS-11-03-C009 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-03-C009，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=585-644",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7548931d5fe7_r1",
+            "canonical_error_id": "7548931d5fe7",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_chunk_id": "LOCAL-KBS-11-03-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:585-644"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "description": "与来源块 LOCAL-KBS-11-03-C010 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-03-C010，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=646-754",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6b42033619ad_r1",
+            "canonical_error_id": "6b42033619ad",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:646-754"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "示例中两个句子'I love this'和'I hate this'在BERT tokenizer下长度不同，但实际这两个句子长度相同（均为3个单词），且BERT tokenizer对常见单词通常不会拆分为多个token，因此示例不准确。",
+            "evidence": "BERT tokenizer对'I love this'和'I hate this'的tokenization结果长度相同（均为3个token），不存在示例所称的长度差异。",
+            "suggestion": "更换为长度确实不同的示例，例如'I love this'和'I hate this movie'，或使用更长的句子。",
+            "error_id": "618f1645ce46_r1",
+            "canonical_error_id": "618f1645ce46",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "description": "与来源块 LOCAL-KBS-11-03-C011 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-03-C011，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=756-865",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1a38604c22dd_r1",
+            "canonical_error_id": "1a38604c22dd",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:756-865"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'如果你只传了eval_dataset，但没设置eval_strategy=\"epoch\"（或\"steps\"配合eval_steps），Trainer不会自动跑评估'，但Hugging Face Trainer在未设置eval_strategy时，若提供了eval_dataset，默认会在训练结束时评估一次（eval_strategy默认值为'no'，但Trainer仍会在train结束后调用evaluate）。因此该表述不准确。",
+            "evidence": "Hugging Face官方文档：TrainingArguments中eval_strategy默认值为'no'，但Trainer在训练结束时仍会执行评估（如果提供了eval_dataset）。",
+            "suggestion": "建议修改为：'如果未设置eval_strategy，Trainer默认不会在训练过程中定期评估，但会在训练结束后评估一次。若需周期性评估，请设置eval_strategy=\"epoch\"或\"steps\"。'",
+            "error_id": "bc3b58659429_r1",
+            "canonical_error_id": "bc3b58659429",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'新版本用processing_class=传分词器，旧版本用tokenizer=（后者仍可用但逐步弃用）'，但Hugging Face Trainer的TrainingArguments中并没有processing_class参数，该参数是DataCollator或tokenizer相关类中的用法，并非Trainer的标准参数。",
+            "evidence": "Hugging Face官方文档：Trainer的初始化参数中，tokenizer参数用于传递分词器，没有processing_class参数。",
+            "suggestion": "建议修改为：'Trainer的tokenizer参数用于传递分词器，新版本中部分组件（如DataCollator）可能使用processing_class，但Trainer本身仍使用tokenizer参数。'",
+            "error_id": "4c2e8104c33b_r1",
+            "canonical_error_id": "4c2e8104c33b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "description": "与来源块 LOCAL-KBS-11-03-C001 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-11-03-C001，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 一、为什么需要Trainer训练器？（①②） > 1.1 大模型训练流程回顾，lines=1-100",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "357eb2995026_r1",
+            "canonical_error_id": "357eb2995026",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_chunk_id": "LOCAL-KBS-11-03-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-100"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'对应关系'表格处截断，仅列出model、args、train_dataset三行，缺少eval_dataset和tokenizer的说明，且未提供完整代码示例。",
+            "evidence": "原文表格仅有三行，与上文列出的五个参数不一致。",
+            "suggestion": "补充eval_dataset和tokenizer的说明，并确保代码示例完整。",
+            "error_id": "ed8bbfaaf150_r1",
+            "canonical_error_id": "ed8bbfaaf150",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C002",
+            "content_chunk_id": "LOCAL-KBS-11-03-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "安装依赖的验证代码块中，import语句未使用try-except捕获异常，若依赖缺失或环境异常，将直接抛出未处理的ImportError，影响后续操作。",
+            "evidence": "代码块中直接执行import transformers和import datasets，未包裹try-except。",
+            "suggestion": "建议在import语句外层增加try-except，捕获ImportError并给出友好提示，例如：try: import transformers; import datasets except ImportError as e: print('依赖安装失败，请检查pip源或Python版本'); raise",
+            "error_id": "9d8e85363912_r1",
+            "canonical_error_id": "9d8e85363912",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C003",
+            "content_chunk_id": "LOCAL-KBS-11-03-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C004",
+            "content_chunk_id": "LOCAL-KBS-11-03-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C004",
+            "content_chunk_id": "LOCAL-KBS-11-03-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_exception_handler",
+            "severity": "major",
+            "location": null,
+            "description": "模型加载代码块未使用try-except捕获异常，涉及网络/IO操作，存在未捕获异常风险。",
+            "evidence": "代码块直接调用AutoModelForSequenceClassification.from_pretrained，未包裹try-except，违反规则2未捕获异常模式。",
+            "suggestion": "建议使用try-except包裹from_pretrained调用，捕获OSError等异常并记录日志。",
+            "error_id": "1e24fc832b31_r1",
+            "canonical_error_id": "1e24fc832b31",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C004",
+            "content_chunk_id": "LOCAL-KBS-11-03-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块标题为'5.3 Tokenizer处理'，但实际内容包含'六、TrainingArguments详解'和'七、常用TrainingArguments参数'，与标题不符，且'六'和'七'的编号与所属知识点路径'五、准备训练模型和数据'不一致。",
+            "evidence": "内容块标题为'## 5.3 Tokenizer处理：为DeepSpeed训练铺路'，但后续出现'## 六、TrainingArguments详解'和'## 七、常用TrainingArguments参数'，章节编号跳跃，且'六'和'七'不属于'五'的子章节。",
+            "suggestion": "将'TrainingArguments'相关内容移至独立的章节，或调整编号使其与所属知识点路径一致。",
+            "error_id": "dad50afef402_r1",
+            "canonical_error_id": "dad50afef402",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C005",
+            "content_chunk_id": "LOCAL-KBS-11-03-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块末尾的'本块学习检查'部分不完整，句子在'这能'处截断，缺少后续内容。",
+            "evidence": "原文末尾为'这能'，没有后续内容，句子不完整。",
+            "suggestion": "补全该句，例如'这能帮助你验证数据划分是否正确。'",
+            "error_id": "2b12e2a96816_r1",
+            "canonical_error_id": "2b12e2a96816",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C005",
+            "content_chunk_id": "LOCAL-KBS-11-03-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "description": "与来源块 LOCAL-KBS-11-03-C007 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-11-03-C007，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.2 num_train_epochs，lines=366-431",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "64c9387cd184_r1",
+            "canonical_error_id": "64c9387cd184",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 1,
+            "in_chunk_position": "lines:366-431"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在7.4 learning_rate部分被截断，'scheduler'相关说明不完整，影响技术内容完整性。",
+            "evidence": "原文末尾为'**scheduler**：`lr_scheduler'，句子未结束，缺少后续内容。",
+            "suggestion": "补充完整的scheduler说明，包括常见调度器类型（如linear、cosine）及其与学习率的配合建议。",
+            "error_id": "bb20ccd7a69d_r1",
+            "canonical_error_id": "bb20ccd7a69d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "description": "与来源块 LOCAL-KBS-11-03-C008 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-11-03-C008，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.5 logging_steps，lines=432-584",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d36a75fe14_r1",
+            "canonical_error_id": "a6d36a75fe14",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:432-584"
+          },
+          {
+            "error_type": "api_deprecated",
+            "severity": "major",
+            "location": null,
+            "description": "使用已弃用的参数 evaluation_strategy，新版本中应使用 eval_strategy。",
+            "evidence": "Transformers 新版本中 evaluation_strategy 已更名为 eval_strategy，旧写法会触发警告或错误。",
+            "suggestion": "将 evaluation_strategy 改为 eval_strategy。",
+            "error_id": "29bd0d0752b5_r1",
+            "canonical_error_id": "29bd0d0752b5",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "api_deprecated",
+            "severity": "major",
+            "location": null,
+            "description": "Trainer 构造中使用了旧参数 tokenizer，新版本中应使用 processing_class。",
+            "evidence": "Transformers 新版本中 tokenizer 参数已迁移为 processing_class，旧写法仍可用但会告警。",
+            "suggestion": "将 tokenizer=tokenizer 改为 processing_class=tokenizer。",
+            "error_id": "ee2bc2e672ca_r1",
+            "canonical_error_id": "ee2bc2e672ca",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "description": "与来源块 LOCAL-KBS-11-03-C009 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-03-C009，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=585-644",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7548931d5fe7_r1",
+            "canonical_error_id": "7548931d5fe7",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_chunk_id": "LOCAL-KBS-11-03-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:585-644"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "description": "与来源块 LOCAL-KBS-11-03-C010 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-03-C010，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=646-754",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6b42033619ad_r1",
+            "canonical_error_id": "6b42033619ad",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:646-754"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "示例中两个句子'I love this'和'I hate this'在BERT tokenizer下长度不同，但实际这两个句子长度相同（均为3个单词），且BERT tokenizer对常见单词通常不会拆分为多个token，因此示例不准确。",
+            "evidence": "BERT tokenizer对'I love this'和'I hate this'的tokenization结果长度相同（均为3个token），不存在示例所称的长度差异。",
+            "suggestion": "更换为长度确实不同的示例，例如'I love this'和'I hate this movie'，或使用更长的句子。",
+            "error_id": "618f1645ce46_r1",
+            "canonical_error_id": "618f1645ce46",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "description": "与来源块 LOCAL-KBS-11-03-C011 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-03-C011，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=756-865",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1a38604c22dd_r1",
+            "canonical_error_id": "1a38604c22dd",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 1,
+            "in_chunk_position": "lines:756-865"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'如果你只传了eval_dataset，但没设置eval_strategy=\"epoch\"（或\"steps\"配合eval_steps），Trainer不会自动跑评估'，但Hugging Face Trainer在未设置eval_strategy时，若提供了eval_dataset，默认会在训练结束时评估一次（eval_strategy默认值为'no'，但Trainer仍会在train结束后调用evaluate）。因此该表述不准确。",
+            "evidence": "Hugging Face官方文档：TrainingArguments中eval_strategy默认值为'no'，但Trainer在训练结束时仍会执行评估（如果提供了eval_dataset）。",
+            "suggestion": "建议修改为：'如果未设置eval_strategy，Trainer默认不会在训练过程中定期评估，但会在训练结束后评估一次。若需周期性评估，请设置eval_strategy=\"epoch\"或\"steps\"。'",
+            "error_id": "bc3b58659429_r1",
+            "canonical_error_id": "bc3b58659429",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'新版本用processing_class=传分词器，旧版本用tokenizer=（后者仍可用但逐步弃用）'，但Hugging Face Trainer的TrainingArguments中并没有processing_class参数，该参数是DataCollator或tokenizer相关类中的用法，并非Trainer的标准参数。",
+            "evidence": "Hugging Face官方文档：Trainer的初始化参数中，tokenizer参数用于传递分词器，没有processing_class参数。",
+            "suggestion": "建议修改为：'Trainer的tokenizer参数用于传递分词器，新版本中部分组件（如DataCollator）可能使用processing_class，但Trainer本身仍使用tokenizer参数。'",
+            "error_id": "4c2e8104c33b_r1",
+            "canonical_error_id": "4c2e8104c33b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "description": "与来源块 LOCAL-KBS-11-03-C001 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-11-03-C001，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 一、为什么需要Trainer训练器？（①②） > 1.1 大模型训练流程回顾，lines=1-100",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "357eb2995026_r2",
+            "canonical_error_id": "357eb2995026",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_chunk_id": "LOCAL-KBS-11-03-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-100"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "description": "与来源块 LOCAL-KBS-11-03-C007 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-11-03-C007，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.2 num_train_epochs，lines=366-431",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "64c9387cd184_r2",
+            "canonical_error_id": "64c9387cd184",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 2,
+            "in_chunk_position": "lines:366-431"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "description": "与来源块 LOCAL-KBS-11-03-C008 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-11-03-C008，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.5 logging_steps，lines=432-584",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d36a75fe14_r2",
+            "canonical_error_id": "a6d36a75fe14",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:432-584"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "description": "与来源块 LOCAL-KBS-11-03-C009 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-03-C009，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=585-644",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7548931d5fe7_r2",
+            "canonical_error_id": "7548931d5fe7",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_chunk_id": "LOCAL-KBS-11-03-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:585-644"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "description": "与来源块 LOCAL-KBS-11-03-C010 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-03-C010，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=646-754",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6b42033619ad_r2",
+            "canonical_error_id": "6b42033619ad",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:646-754"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "description": "与来源块 LOCAL-KBS-11-03-C011 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-03-C011，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=756-865",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1a38604c22dd_r2",
+            "canonical_error_id": "1a38604c22dd",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:756-865"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "description": "与来源块 LOCAL-KBS-11-03-C001 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-11-03-C001，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 一、为什么需要Trainer训练器？（①②） > 1.1 大模型训练流程回顾，lines=1-100",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "357eb2995026_r2",
+            "canonical_error_id": "357eb2995026",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_chunk_id": "LOCAL-KBS-11-03-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-100"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "description": "与来源块 LOCAL-KBS-11-03-C007 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-11-03-C007，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.2 num_train_epochs，lines=366-431",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "64c9387cd184_r2",
+            "canonical_error_id": "64c9387cd184",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 2,
+            "in_chunk_position": "lines:366-431"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "description": "与来源块 LOCAL-KBS-11-03-C008 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-11-03-C008，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.5 logging_steps，lines=432-584",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d36a75fe14_r2",
+            "canonical_error_id": "a6d36a75fe14",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:432-584"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "description": "与来源块 LOCAL-KBS-11-03-C009 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-03-C009，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=585-644",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7548931d5fe7_r2",
+            "canonical_error_id": "7548931d5fe7",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_chunk_id": "LOCAL-KBS-11-03-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:585-644"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "description": "与来源块 LOCAL-KBS-11-03-C010 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-03-C010，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=646-754",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6b42033619ad_r2",
+            "canonical_error_id": "6b42033619ad",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:646-754"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "description": "与来源块 LOCAL-KBS-11-03-C011 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-03-C011，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=756-865",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1a38604c22dd_r2",
+            "canonical_error_id": "1a38604c22dd",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 2,
+            "in_chunk_position": "lines:756-865"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "description": "与来源块 LOCAL-KBS-11-03-C001 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-11-03-C001，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 一、为什么需要Trainer训练器？（①②） > 1.1 大模型训练流程回顾，lines=1-100",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "357eb2995026_r2",
+            "canonical_error_id": "357eb2995026",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_chunk_id": "LOCAL-KBS-11-03-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-100"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "description": "与来源块 LOCAL-KBS-11-03-C007 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-11-03-C007，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.2 num_train_epochs，lines=366-431",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "64c9387cd184_r3",
+            "canonical_error_id": "64c9387cd184",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 3,
+            "in_chunk_position": "lines:366-431"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "description": "与来源块 LOCAL-KBS-11-03-C008 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-11-03-C008，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.5 logging_steps，lines=432-584",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d36a75fe14_r3",
+            "canonical_error_id": "a6d36a75fe14",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 3,
+            "in_chunk_position": "lines:432-584"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "description": "与来源块 LOCAL-KBS-11-03-C009 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-03-C009，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=585-644",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7548931d5fe7_r2",
+            "canonical_error_id": "7548931d5fe7",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_chunk_id": "LOCAL-KBS-11-03-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:585-644"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "description": "与来源块 LOCAL-KBS-11-03-C010 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-03-C010，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=646-754",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6b42033619ad_r3",
+            "canonical_error_id": "6b42033619ad",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:646-754"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "description": "与来源块 LOCAL-KBS-11-03-C011 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-03-C011，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=756-865",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1a38604c22dd_r3",
+            "canonical_error_id": "1a38604c22dd",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:756-865"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "description": "与来源块 LOCAL-KBS-11-03-C001 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-11-03-C001，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 一、为什么需要Trainer训练器？（①②） > 1.1 大模型训练流程回顾，lines=1-100",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "357eb2995026_r2",
+            "canonical_error_id": "357eb2995026",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C001",
+            "content_chunk_id": "LOCAL-KBS-11-03-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-100"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "description": "与来源块 LOCAL-KBS-11-03-C007 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-11-03-C007，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.2 num_train_epochs，lines=366-431",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "64c9387cd184_r3",
+            "canonical_error_id": "64c9387cd184",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C007"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C007",
+            "content_chunk_id": "LOCAL-KBS-11-03-C007",
+            "content_version": 3,
+            "in_chunk_position": "lines:366-431"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "description": "与来源块 LOCAL-KBS-11-03-C008 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-11-03-C008，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 七、常用TrainingArguments参数（参考文章⑥） > 7.5 logging_steps，lines=432-584",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d36a75fe14_r3",
+            "canonical_error_id": "a6d36a75fe14",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C008",
+            "content_chunk_id": "LOCAL-KBS-11-03-C008",
+            "content_version": 3,
+            "in_chunk_position": "lines:432-584"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "description": "与来源块 LOCAL-KBS-11-03-C009 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-03-C009，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=585-644",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7548931d5fe7_r2",
+            "canonical_error_id": "7548931d5fe7",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C009",
+            "content_chunk_id": "LOCAL-KBS-11-03-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:585-644"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "description": "与来源块 LOCAL-KBS-11-03-C010 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-03-C010，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=646-754",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "6b42033619ad_r3",
+            "canonical_error_id": "6b42033619ad",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C010",
+            "content_chunk_id": "LOCAL-KBS-11-03-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:646-754"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "description": "与来源块 LOCAL-KBS-11-03-C011 相似度 0.77 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-03-C011，heading_path=Hugging Face Trainer训练器详解：掌握Trainer使用方法与TrainingArguments参数配置（最终版） > 十一、DataCollator数据整理器（参考文章⑤） > 11.1 为什么需要DataCollator？，lines=756-865",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1a38604c22dd_r3",
+            "canonical_error_id": "1a38604c22dd",
+            "source_refs": [
+              "src_LOCAL-KBS-11-03-C011"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_block_id": "cb_8a28cc0d-9dd8-45ba-ad57-6d02a5477cd8_060229eb-1a78-5503-ac60-58c522853b3c_LOCAL-KBS-11-03-C011",
+            "content_chunk_id": "LOCAL-KBS-11-03-C011",
+            "content_version": 3,
+            "in_chunk_position": "lines:756-865"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

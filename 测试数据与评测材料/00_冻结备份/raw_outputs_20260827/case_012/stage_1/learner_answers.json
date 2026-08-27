@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB08-ST0804-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0804-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "激活 ||| activation",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0805-002",
+    "submitted_answer": "正弦（sine）；余弦（cosine）",
+    "is_correct": true,
+    "correct_answer": "正弦（sine）；余弦（cosine）",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0805-003",
+    "submitted_answer": "D",
+    "is_correct": true,
+    "correct_answer": "D",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-002",
+    "submitted_answer": "eval ||| eval()",
+    "is_correct": true,
+    "correct_answer": "eval ||| eval()",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0806-001",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0806-003",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB08-ST0803-002",
+    "submitted_answer": "均值 ||| 平均值",
+    "is_correct": true,
+    "correct_answer": "均值 ||| 平均值",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

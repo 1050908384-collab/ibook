@@ -1,0 +1,175 @@
+[
+  {
+    "question_id": "Q-KB1504-014",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "Docker 的主要作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "训练模型"
+      },
+      {
+        "key": "B",
+        "text": "将应用及其依赖打包成容器，确保环境一致性，便于部署"
+      },
+      {
+        "key": "C",
+        "text": "编写代码"
+      },
+      {
+        "key": "D",
+        "text": "标注数据"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "请写出使用 vLLM 的 `LLM` 类加载 `meta-llama/Llama-2-7b-chat-hf` 模型并生成文本的代码。",
+    "options": [],
+    "correct_answer": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
+    "hint": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
+    "explanation": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```"
+  },
+  {
+    "question_id": "Q-KB1504-006",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "模型量化（Quantization）的主要目的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "提高模型精度"
+      },
+      {
+        "key": "B",
+        "text": "减小模型体积和显存占用，加速推理"
+      },
+      {
+        "key": "C",
+        "text": "增加训练数据"
+      },
+      {
+        "key": "D",
+        "text": "改变模型架构"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "vLLM 是一个主要用于大模型________的框架。",
+    "options": [
+      {
+        "key": "A",
+        "text": "预训练"
+      },
+      {
+        "key": "B",
+        "text": "监督微调"
+      },
+      {
+        "key": "C",
+        "text": "高性能推理与服务部署"
+      },
+      {
+        "key": "D",
+        "text": "数据清洗"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB1504-011",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "GPTQ 量化算法通常需要少量校准数据（Calibration Data）来计算权重的缩放因子。（ ）",
+    "options": [
+      {
+        "key": "A",
+        "text": "正确"
+      },
+      {
+        "key": "B",
+        "text": "错误"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB15-ST1501-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-01",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "与贪心搜索相比，束搜索的典型代价是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "计算量和显存开销更高"
+      },
+      {
+        "key": "B",
+        "text": "无法生成文本"
+      },
+      {
+        "key": "C",
+        "text": "不需要模型"
+      },
+      {
+        "key": "D",
+        "text": "不能设置长度限制"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "多条候选路径需要更多计算和存储。",
+    "explanation": "多条候选路径需要更多计算和存储。"
+  },
+  {
+    "question_id": "Q-KB1504-004",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写出启动 vLLM OpenAI 兼容 API 服务器的命令行指令（模型为 `Qwen/Qwen2-7B-Instruct`，端口 8000）。",
+    "options": [],
+    "correct_answer": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```",
+    "hint": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```",
+    "explanation": "```bash\npython -m vllm.entrypoints.openai.api_server \\\n    --model Qwen/Qwen2-7B-Instruct \\\n    --port 8000\n```"
+  },
+  {
+    "question_id": "Q-KB15-ST1501-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-01",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "束搜索会同时保留多个候选序列，保留数量由 beam________控制。",
+    "options": [],
+    "correct_answer": "width ||| size ||| 宽度",
+    "hint": "beam width 决定保留的候选路径数。",
+    "explanation": "beam width 决定保留的候选路径数。"
+  }
+]

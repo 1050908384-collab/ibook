@@ -1,0 +1,15 @@
+{
+  "answer_behavior": "medium",
+  "target_accuracy_range": [
+    0.6,
+    0.79
+  ],
+  "wrong_answer_strategy": "fixed_by_question_id",
+  "expected_next_strategy": "reinforce",
+  "actual_accuracy_from_learner": 0.5,
+  "actual_accuracy_from_decision": 0.5,
+  "accuracy_within_range": false,
+  "actual_next_strategy": "simplify",
+  "strategy_match": false,
+  "discrepancy_reason": "脚本期望「reinforce」 vs 系统实际「simplify」"
+}

@@ -48,6 +48,7 @@ def main() -> int:
             ("time_budget", f"计划应适配每日 {case['daily_hours']} 小时的时间预算", "stage_1/stage_planning_output.json"),
             ("hardware", f"学习包或阶段说明应回应硬件约束：{case['hardware']}", "stage_1/stage_planning_output.json; stage_1/learning_package.md"),
             ("learning_style", f"学习包的内容组织应体现偏好：{case['learning_style']}", "stage_1/learning_package.md"),
+            ("stage_strategy", "阶段决策应与该案例的答题行为、实际 accuracy 和预期下一阶段策略一致", "stage_1/stage_decision.json; evaluation_cases.csv"),
         ]
         for condition_id, expected_rule, evidence_path in conditions:
             personalization_rows.append({

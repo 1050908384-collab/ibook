@@ -1,0 +1,18 @@
+{
+  "case_id": "case_034",
+  "primary_category": "时间与学习风格适配",
+  "tags": "时间与学习风格适配|理解Transformer架构|理论型|无独立GPU",
+  "background": "每天只有0.5小时，理论型，想理解Transformer",
+  "existing_skills": "KB-02",
+  "learning_goal": "理解Transformer架构",
+  "daily_hours": "0.5",
+  "learning_style": "理论型",
+  "hardware": "无独立GPU",
+  "expected_target_blocks": "KB-08|KB-09|KB-10",
+  "expected_first_stage": "KB-08",
+  "expected_difficulty": "中级",
+  "expected_strategy": "reinforce",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "{\"answer_behavior\":\"medium\",\"target_accuracy_range\":[0.6,0.79],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"reinforce\"}",
+  "user_input_text": "我的学习背景：每天只有0.5小时，理论型，想理解Transformer\n已掌握技能：KB-02\n我的学习目标：理解Transformer架构\n我每天能学：0.5小时\n我喜欢怎么学：理论型\n我的硬件条件：无独立GPU"
+}

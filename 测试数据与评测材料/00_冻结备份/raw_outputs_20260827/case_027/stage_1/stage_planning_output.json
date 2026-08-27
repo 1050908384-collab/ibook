@@ -1,0 +1,41 @@
+{
+  "stage_id": "4779a461-ba00-5027-b1e7-7814d4298c32",
+  "stage_num": 1,
+  "block_id": "KB-15",
+  "block_name": "模型推理部署（vLLM）",
+  "block_ids": [
+    "KB-15"
+  ],
+  "subtopic_id": "KBS-15-00",
+  "subtopic_name": "（环境准备：安装vLLM库，注意其PyTorch版本兼容性，GPU显存建议≥16GB；安装前需确保CUDA环境正确）",
+  "subtopic_ids": [
+    "KBS-15-00",
+    "KBS-15-01"
+  ],
+  "subtopic_names": [
+    "（环境准备：安装vLLM库，注意其PyTorch版本兼容性，GPU显存建议≥16GB；安装前需确保CUDA环境正确）",
+    "掌握模型生成策略（贪心搜索、束搜索）"
+  ],
+  "estimated_hours": 1.5,
+  "gap_skill": "vLLM",
+  "prerequisites": [
+    "KBS-01-03",
+    "KBS-04-00"
+  ],
+  "status": "pending",
+  "accuracy": null,
+  "strategy_used": null,
+  "title": "学习环境准备：安装vLLM库",
+  "description": "围绕环境准备：安装vLLM库完成一次可执行的阶段学习与练习。",
+  "objectives": [
+    "理解环境准备：安装vLLM库的基本概念",
+    "掌握环境准备：安装vLLM库的核心技术",
+    "能够独立完成环境准备：安装vLLM库相关任务"
+  ],
+  "difficulty": "高级",
+  "recommended_daily_hours": 1.5,
+  "suggested_study_days": 1,
+  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装vLLM库",
+  "hardware_notes": "",
+  "personalization_summary": "预计0.5小时完成 | 建议分1天学习 | 每天2.0小时 | 综合型学习风格"
+}

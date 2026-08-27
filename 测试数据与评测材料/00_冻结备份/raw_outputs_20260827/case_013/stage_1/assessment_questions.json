@@ -1,0 +1,166 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "options": [],
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
+  },
+  {
+    "question_id": "Q-KB0401-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个命令可以创建一个全为0的3x3张量？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`torch.zeros(3, 3)`"
+      },
+      {
+        "key": "B",
+        "text": "`torch.ones(3, 3)`"
+      },
+      {
+        "key": "C",
+        "text": "`torch.empty(3, 3)`"
+      },
+      {
+        "key": "D",
+        "text": "`torch.rand(3, 3)`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。",
+    "explanation": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。"
+  },
+  {
+    "question_id": "Q-KB0401-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请将以下两个张量按**列方向**（dim=1）拼接：\n```python\na = torch.tensor([[1, 2], [3, 4]])\nb = torch.tensor([[5], [6]])\n```",
+    "options": [],
+    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "hint": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "explanation": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```"
+  },
+  {
+    "question_id": "Q-KB0407-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "加载模型参数时，需要先________模型结构，然后调用________方法加载参数字典。",
+    "options": [],
+    "correct_answer": "实例化；`load_state_dict()`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0403-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是PyTorch中定义**线性层**（全连接层）的类？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nn.Conv2d`"
+      },
+      {
+        "key": "B",
+        "text": "`nn.Linear`"
+      },
+      {
+        "key": "C",
+        "text": "`nn.ReLU`"
+      },
+      {
+        "key": "D",
+        "text": "`nn.Softmax`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0405-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：为模型 `model` 创建 `AdamW` 优化器，学习率 `1e-4`，权重衰减 `1e-2`。",
+    "options": [],
+    "correct_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "hint": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "explanation": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```"
+  },
+  {
+    "question_id": "Q-KB0407-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "加载checkpoint时，`map_location` 参数的作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "指定保存路径"
+      },
+      {
+        "key": "B",
+        "text": "将模型加载到指定设备（如CPU或GPU）"
+      },
+      {
+        "key": "C",
+        "text": "映射层名称"
+      },
+      {
+        "key": "D",
+        "text": "设置学习率"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  }
+]
