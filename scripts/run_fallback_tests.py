@@ -318,7 +318,7 @@ class FaultyMockTransport:
         self.body = body
         self.timeout_type = timeout_type
 
-    def handle_async_request(self, request):
+    async def handle_async_request(self, request):
         if self.timeout_type == "connect":
             raise httpx.ConnectTimeout("Mocked connect timeout")
         if self.timeout_type == "read":
