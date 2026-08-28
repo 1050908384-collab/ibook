@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 import asyncio
 import httpcore
 import httpx
@@ -122,6 +122,22 @@ class LLMClient:
         self.last_provider: Optional[str] = None
         self.last_model: Optional[str] = None
         self.last_fallback_reason: Optional[str] = None
+        # Optional orchestration hook. It is intentionally process-local and
+        # is used to adapt concurrency after a runtime cloud failure.
+        self._fallback_listener: Optional[Callable[[str], None]] = None
+
+    def set_fallback_listener(self, listener: Optional[Callable[[str], None]]) -> None:
+        """Notify the owning pipeline when a cloud call falls back locally."""
+        self._fallback_listener = listener
+
+    def _notify_fallback(self, reason: str) -> None:
+        listener = self._fallback_listener
+        if listener is None:
+            return
+        try:
+            listener(reason)
+        except Exception:
+            logger.exception("Fallback listener failed")
 
     def _deepseek_fallback_ips(self) -> list[str]:
         return [
@@ -374,6 +390,7 @@ class LLMClient:
         response = await self._complete_deepseek(payload)
         if response.startswith("Error:") and self._can_fallback_to_ollama():
             self.last_fallback_reason = response
+            self._notify_fallback(response)
             logger.info("Falling back to local Ollama after DeepSeek failure: %s", response)
             return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
         return response

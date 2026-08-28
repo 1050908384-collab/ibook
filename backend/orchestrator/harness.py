@@ -47,6 +47,47 @@ def resolve_block_concurrency(execution_mode: str, provider: str) -> int:
     return max(1, settings.BLOCK_CONCURRENCY_CLOUD)
 
 
+class AdaptiveConcurrencyLimiter:
+    """Async limiter whose cap can shrink while queued work is waiting.
+
+    A cap reduction never cancels requests already in flight. Once they
+    release their slots, queued work is admitted only below the new cap.
+    """
+
+    def __init__(self, limit: int):
+        self.limit = max(1, int(limit))
+        self.active = 0
+        self._condition = asyncio.Condition()
+
+    def _schedule_notify(self) -> None:
+        # set_limit/release are synchronous so they can be called by the LLM
+        # client callback; notification itself must acquire the condition.
+        try:
+            asyncio.create_task(self._notify_waiters())
+        except RuntimeError:
+            # The limiter is process-local and normally lives inside a loop.
+            # Ignore cleanup-time calls after that loop has closed.
+            pass
+
+    async def _notify_waiters(self) -> None:
+        async with self._condition:
+            self._condition.notify_all()
+
+    def set_limit(self, limit: int) -> None:
+        self.limit = max(1, int(limit))
+        self._schedule_notify()
+
+    async def acquire(self) -> None:
+        async with self._condition:
+            while self.active >= self.limit:
+                await self._condition.wait()
+            self.active += 1
+
+    def release(self) -> None:
+        self.active = max(0, self.active - 1)
+        self._schedule_notify()
+
+
 @dataclass
 class BlockState:
     """块级流水线中单个内容块的运行态（可变、不落库）。
@@ -1166,8 +1207,8 @@ class Harness:
         source_chunk: Dict[str, Any],
         block_index: int,
         round_index: int,
-        generation_sem: asyncio.Semaphore,
-        review_sem: asyncio.Semaphore,
+        generation_sem: AdaptiveConcurrencyLimiter,
+        review_sem: AdaptiveConcurrencyLimiter,
     ) -> tuple[Any, TechnicalReviewResult]:
         """单块生产/消费：个性化学习资源生成 Agent 生成后立即提交 专业知识与教学质量审核 Agent 审核。
 
@@ -1316,10 +1357,13 @@ class Harness:
         ]
 
     @staticmethod
-    async def _run_capped(sem: asyncio.Semaphore, coro_factory):
-        """并发上限原语：持有 sem 期间执行一个协程（生成/修改两阶段共用）。"""
-        async with sem:
+    async def _run_capped(sem: AdaptiveConcurrencyLimiter, coro_factory):
+        """并发上限原语：支持运行中收缩上限。"""
+        await sem.acquire()
+        try:
             return await coro_factory()
+        finally:
+            sem.release()
 
     async def _recheck_block(
         self,
@@ -1407,8 +1451,25 @@ class Harness:
             "pipeline:phaseA_start",
             f"chunks={len(source_chunks)}, cap={block_concurrency}, provider={settings.LLM_PROVIDER}",
         )
-        gen_sem = asyncio.Semaphore(block_concurrency)
-        review_sem = asyncio.Semaphore(block_concurrency)
+        gen_sem = AdaptiveConcurrencyLimiter(block_concurrency)
+        review_sem = AdaptiveConcurrencyLimiter(block_concurrency)
+        runtime_limiters = [gen_sem, review_sem]
+
+        llm_client = getattr(self.agent3, "llm_client", None)
+        fallback_listener = getattr(llm_client, "set_fallback_listener", None)
+        if callable(fallback_listener):
+            def _on_runtime_fallback(reason: str) -> None:
+                # Both Agent3 generation and any subsequent block work use the
+                # local-model budget after the first confirmed cloud failure.
+                local_cap = max(1, settings.BLOCK_CONCURRENCY_LOCAL)
+                for limiter in runtime_limiters:
+                    limiter.set_limit(local_cap)
+                self._log(
+                    session_id,
+                    "pipeline:runtime_fallback_concurrency",
+                    f"cap={local_cap}, reason={reason[:120]}",
+                )
+            fallback_listener(_on_runtime_fallback)
         pairs = await asyncio.gather(*[
             self._generate_and_review_block(
                 session_id, stage, profile, practice_profile, learning_evidence, chunk, idx, round_index=1,
@@ -1490,7 +1551,8 @@ class Harness:
                     package_status = "approved"
                 break
 
-            modify_sem = asyncio.Semaphore(block_concurrency)
+            modify_sem = AdaptiveConcurrencyLimiter(gen_sem.limit)
+            runtime_limiters.append(modify_sem)
             # 收集本轮各块辩论产物，供统一落库（_persist_debate_round）
             round_debate: List[Dict[str, Any]] = []
 
