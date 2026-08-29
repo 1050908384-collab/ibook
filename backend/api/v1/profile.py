@@ -119,6 +119,22 @@ async def confirm_profile(
                 from models.profile import UserProfile
                 user_profile = UserProfile.model_validate(profile)
 
+                goal_supported = bool(harness.agent1.get_goal_blocks(user_profile.goal))
+                if goal_supported and not user_profile.knowledge_gaps:
+                    sm.update_field(session_id, "phase", "goal_already_mastered")
+                    sm.update_field(session_id, "available_actions", ["edit_profile", "create_goal"])
+                    sm.update_field(session_id, "profile_modified", False)
+                    return {
+                        "profile_id": f"profile_{session_id[:8]}",
+                        "session_id": session_id,
+                        "status": "confirmed",
+                        "phase": "goal_already_mastered",
+                        "next_step": "创建新的学习目标",
+                        "stage_generated": False,
+                        "stage_info": None,
+                        "message": "画像已确认，你已经掌握该学习目标下的全部知识点，不会生成学习阶段或学习包。",
+                    }
+
                 try:
                     stage_output = await harness.agent1.generate_stage(
                         StagePlanningInput(

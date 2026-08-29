@@ -49,6 +49,8 @@ class FoundationSubmitResponse(BaseModel):
     profile: Optional[dict] = None
     stage: Optional[dict] = None
     followup_questions: list[str] = Field(default_factory=list)
+    all_mastered: bool = False
+    assistant_message: str = ""
 
 
 UNSUPPORTED_GOAL_MESSAGE = "该学习目标不在当前 15 个知识板块的教学范围内，请修改为大模型微调（LoRA/QLoRA）、推理部署（vLLM）及其相关基础方向。"
@@ -105,13 +107,36 @@ async def submit_diagnosis_message(
         
         # 如果已有 profile，且置信度足够，直接生成阶段
         existing_profile = session.get("profile")
-        if existing_profile and existing_profile.get("goal") and existing_profile.get("confidence", 0) >= 0.7:
+        # Reuse an existing profile only when this is a continuation of the
+        # same goal. A new goal must go through fresh diagnosis; otherwise an
+        # old stage (for example HuggingFace) can be generated for Linux.
+        existing_goal = str((existing_profile or {}).get("goal") or "").strip()
+        request_goal = request.content.strip()
+        same_goal = bool(existing_goal and request_goal and (
+            request_goal == existing_goal
+            or existing_goal in request_goal
+            or request_goal in existing_goal
+        ))
+        if existing_profile and same_goal and existing_profile.get("goal") and existing_profile.get("confidence", 0) >= 0.7:
             print(f"[API] Profile already exists with confidence {existing_profile.get('confidence')}")
             
             from models.contracts import StagePlanningInput
             from models.profile import UserProfile
             
             user_profile = UserProfile.model_validate(existing_profile)
+
+            if not user_profile.knowledge_gaps:
+                sm = harness.state_manager
+                sm.update_field(session_id, "phase", "goal_already_mastered")
+                sm.update_field(session_id, "available_actions", ["edit_profile", "create_goal"])
+                return {
+                    "status": "profile_ready",
+                    "assistant_message": "你已经掌握该学习目标下的全部知识点，不会生成学习阶段或学习包。",
+                    "missing_fields": [],
+                    "followup_questions": [],
+                    "profile_draft": existing_profile,
+                    "confidence": existing_profile.get("confidence", 0.8),
+                }
             
             # 如果还没有阶段，生成阶段
             if not session.get("stage_info"):
@@ -168,7 +193,17 @@ async def submit_diagnosis_message(
         
         status = result.get("status", "needs_more_info")
         
-        if status == "ready":
+        if status == "all_mastered":
+            response = {
+                "status": "all_mastered",
+                "assistant_message": "你已经掌握该学习目标下的全部知识点，不会生成学习阶段或学习包。",
+                "missing_fields": [],
+                "followup_questions": [],
+                "profile_draft": result.get("profile") or {},
+                "confidence": (result.get("profile") or {}).get("confidence", 0.8),
+                "all_mastered": True,
+            }
+        elif status == "ready":
             response = {
                 "status": "profile_ready",
                 "assistant_message": "诊断完成，画像已生成。",
@@ -298,7 +333,8 @@ async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        if not harness.agent1.get_goal_blocks(request.goal):
+        goal_blocks = harness.agent1.get_goal_blocks(request.goal)
+        if not goal_blocks:
             raise HTTPException(status_code=422, detail=UNSUPPORTED_GOAL_MESSAGE)
 
         user_id = harness.state_manager.db_client.get_session_user_id(session_id)
@@ -321,6 +357,22 @@ async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
             learning_style=request.learning_style,
         )
         profile = diagnostic.profile
+        # Scope gaps to the blocks matched by this goal. LLM/semantic recall
+        # may return adjacent blocks (e.g. HuggingFace for a Linux goal), but
+        # those must never create a stage for the current target.
+        target_block_ids = {str(block.get("block_id")) for block in goal_blocks if block.get("block_id")}
+        target_subtopic_ids = {
+            str(topic.get("subtopic_id"))
+            for block in goal_blocks
+            for topic in (block.get("subtopics") or [])
+            if topic.get("subtopic_id")
+        }
+        profile = profile.model_copy(update={
+            "knowledge_gaps": [
+                gap for gap in profile.knowledge_gaps
+                if gap.block_id in target_block_ids
+            ]
+        })
         if request.reuse_user_profile and existing_user_profile:
             profile = profile.model_copy(update={
                 "user_id": user_id,
@@ -339,6 +391,23 @@ async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
                 "profile": profile.model_dump(mode="json"),
                 "stage": None,
                 "followup_questions": diagnostic.followup_questions,
+                "all_mastered": False,
+                "assistant_message": "需要更多信息来完善您的画像。",
+            }
+
+        # No remaining gaps means the requested target is already mastered.
+        # Do not create a synthetic stage or learning package in this case.
+        mastered_for_goal = bool(target_subtopic_ids) and target_subtopic_ids.issubset(set(mastered_subtopic_ids or []))
+        if goal_blocks and (mastered_for_goal or not profile.knowledge_gaps):
+            harness.state_manager.update_field(session_id, "phase", "goal_already_mastered")
+            harness.state_manager.update_field(session_id, "available_actions", ["edit_profile", "create_goal"])
+            return {
+                "status": "all_mastered",
+                "profile": profile.model_dump(mode="json"),
+                "stage": None,
+                "followup_questions": [],
+                "all_mastered": True,
+                "assistant_message": "你已经掌握该学习目标下的全部知识点，不会生成学习阶段或学习包。",
             }
 
         # 生成第一个学习阶段
@@ -356,6 +425,8 @@ async def submit_foundation(session_id: str, request: FoundationSubmitRequest):
             "profile": profile.model_dump(mode="json"),
             "stage": stage_output.stage.model_dump(mode="json"),
             "followup_questions": [],
+            "all_mastered": False,
+            "assistant_message": "画像已完善，学习阶段已生成。",
         }
     except HTTPException:
         raise

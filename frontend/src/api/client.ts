@@ -107,6 +107,7 @@ export type DiagnosisResponse = {
   followup_questions: string[];
   profile_draft: ApiProfile;
   confidence: number;
+  all_mastered?: boolean;
 };
 
 export type GoalBlock = {
@@ -133,6 +134,8 @@ export type FoundationResponse = {
   profile?: ApiProfile | null;
   stage?: ApiStage | null;
   followup_questions?: string[];
+  all_mastered?: boolean;
+  assistant_message?: string;
 };
 
 export type AssessmentAttempt = {
@@ -297,6 +300,37 @@ export type DashboardResponse = {
   average_accuracy: number | null;
   stage_history: ApiStage[];
   [key: string]: unknown;
+};
+
+export type WrongQuestion = {
+  attempt_id: string;
+  question_id: string;
+  sequence_index?: number;
+  subtopic_id?: string;
+  question_type?: string;
+  question_text: string;
+  options?: Array<string | { key?: string; text?: string }> | null;
+  user_answer?: string;
+  correct_answer?: string;
+  explanation?: string;
+  time_spent?: number;
+  submitted_at?: string;
+};
+
+export type WrongQuestionStage = {
+  stage_id?: string;
+  stage_num?: number;
+  block_name?: string;
+  accuracy?: number | null;
+  submitted_at?: string;
+  wrong_count: number;
+  questions: WrongQuestion[];
+};
+
+export type WrongQuestionsResponse = {
+  session_id: string;
+  wrong_count: number;
+  stages: WrongQuestionStage[];
 };
 
 export const apiClient = {
@@ -566,6 +600,13 @@ export const apiClient = {
 
   getDashboard: async (sessionId: string) => {
     const response = await axios.get<DashboardResponse>(`${BASE_URL}/sessions/${sessionId}/dashboard`);
+    return response.data;
+  },
+
+  getWrongQuestions: async (sessionId: string) => {
+    const response = await axios.get<WrongQuestionsResponse>(
+      `${BASE_URL}/sessions/${sessionId}/wrong-questions`
+    );
     return response.data;
   },
 

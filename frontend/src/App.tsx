@@ -14,6 +14,7 @@ import {
   Brain,
   CalendarDays,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -58,7 +59,8 @@ import {
   type ApiStage,
   type AssessmentAttempt,
   type GoalBlock,
-  type SessionListItem
+  type SessionListItem,
+  type WrongQuestionsResponse
 } from './api/client';
 import { findKnowledgeGraphBlock, knowledgeGraphBlocks, type KnowledgeGraphBlock } from './data/knowledgeGraph';
 import FoundationPickerModal from './components/FoundationPickerModal';
@@ -83,7 +85,7 @@ import {
 import { filterProjectsForDashboard, formatProjectCreatedDate, sortProjectsForDashboard } from './utils/learningProjects';
 import { isHistoricalStageReview, resolveStageResultActionMode } from './utils/stageResultActions';
 
-type View = 'chat' | 'learn' | 'settings' | 'result';
+type View = 'chat' | 'learn' | 'wrongbook' | 'settings' | 'result';
 
 function toKnowledgeGraphBlocks(blocks: GoalBlock[]): KnowledgeGraphBlock[] {
   return blocks.map((block) => ({
@@ -607,6 +609,7 @@ function Sidebar({
 }) {
   const nav = [
     { id: 'learn' as View, label: '学习仪表盘', icon: LayoutDashboard },
+    { id: 'wrongbook' as View, label: '错题本', icon: FileQuestion },
     { id: 'chat' as View, label: '学习对话', icon: MessageCircle },
     { id: 'settings' as View, label: '设置', icon: Settings }
   ];
@@ -2495,13 +2498,15 @@ function ProjectSwitcherModal({
   );
 }
 
-function ProfileDetailModal({ project, onClose }: { project: LearningProject; onClose: () => void }) {
+function ProfileDetailModal({ project, stageAccuracy, onClose }: { project: LearningProject; stageAccuracy?: number | null; onClose: () => void }) {
   const item = project.profile;
   const foundations = (item?.skill_tags || []).filter(Boolean);
   const gapNames = (item?.knowledge_gaps || []).map((gap) => gap.skill).filter(Boolean);
   const targetDailyHours = project.targetDailyHours || item?.daily_hours || 2;
   const currentStage = project.stages?.find((stage) => stage.stage_num === project.stageNum)
     || project.stages?.[project.stages.length - 1];
+  const currentStageAccuracy = stageAccuracy ?? currentStage?.accuracy ?? null;
+  const learningStyle = styleText[item?.learning_style || ''] || item?.learning_style || '混合型';
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -2543,15 +2548,23 @@ function ProfileDetailModal({ project, onClose }: { project: LearningProject; on
               <strong>{targetDailyHours} 小时/阶段</strong>
             </div>
           </section>
+          <section className="profile-overview-item profile-overview-metric learning-style">
+            <span className="profile-overview-icon"><Brain size={18} /></span>
+            <div>
+              <span className="profile-overview-label">学习风格</span>
+              <strong>{learningStyle}</strong>
+              <p>当前画像偏好的学习方式</p>
+            </div>
+          </section>
           <section className="profile-overview-item profile-overview-metric accuracy">
             <span className="profile-overview-icon"><Gauge size={18} /></span>
             <div>
               <span className="profile-overview-label">正确率</span>
               <strong>
-                {project.averageAccuracy == null ? '--' : pct(project.averageAccuracy)}
-                {project.averageAccuracy != null && <small>%</small>}
+                {currentStageAccuracy == null ? '--' : pct(currentStageAccuracy)}
+                {currentStageAccuracy != null && <small>%</small>}
               </strong>
-              <p>{project.averageAccuracy == null ? '完成测试后生成' : '全部阶段平均'}</p>
+              <p>{currentStageAccuracy == null ? '完成本阶段测试后生成' : `第 ${currentStage?.stage_num ?? project.stageNum} 阶段测试结果`}</p>
             </div>
           </section>
         </div>
@@ -2901,6 +2914,178 @@ function LearningDashboardView({
   );
 }
 
+function WrongQuestionBookView({
+  projects,
+  currentSessionId
+}: {
+  projects: LearningProject[];
+  currentSessionId: string | null;
+}) {
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(currentSessionId);
+  const [review, setReview] = useState<WrongQuestionsResponse | null>(null);
+  const [loadingReview, setLoadingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [openStageKeys, setOpenStageKeys] = useState<Set<string>>(new Set());
+  const selectedProject = projects.find((project) => project.sessionId === selectedSessionId) || null;
+
+  useEffect(() => {
+    if (selectedSessionId && projects.some((project) => project.sessionId === selectedSessionId)) return;
+    setSelectedSessionId(currentSessionId || projects[0]?.sessionId || null);
+  }, [currentSessionId, projects, selectedSessionId]);
+
+  useEffect(() => {
+    if (!selectedSessionId || isLocalSessionId(selectedSessionId)) {
+      setReview({ session_id: selectedSessionId || '', wrong_count: 0, stages: [] });
+      setReviewError(null);
+      setOpenStageKeys(new Set());
+      return;
+    }
+    let cancelled = false;
+    setLoadingReview(true);
+    setReviewError(null);
+    setReview(null);
+    setOpenStageKeys(new Set());
+    void apiClient.getWrongQuestions(selectedSessionId)
+      .then((response) => {
+        if (!cancelled) setReview(response);
+      })
+      .catch((caught) => {
+        if (!cancelled) setReviewError(getErrorMessage(caught));
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingReview(false);
+      });
+    return () => { cancelled = true; };
+  }, [selectedSessionId]);
+
+  const toggleStage = (stageKey: string) => {
+    setOpenStageKeys((previous) => {
+      const next = new Set(previous);
+      if (next.has(stageKey)) next.delete(stageKey);
+      else next.add(stageKey);
+      return next;
+    });
+  };
+
+  return (
+    <div className="page-shell">
+      <Topbar title="错题本" subtitle="按学习目标和阶段回顾已提交的错题" loading={loadingReview} error={reviewError} />
+      <main className="all-profiles-page wrongbook-page">
+        <section className="wrongbook-goal-section" aria-labelledby="wrongbook-goal-title">
+          <header>
+            <div>
+              <span>学习目标</span>
+              <h2 id="wrongbook-goal-title">选择需要复盘的目标</h2>
+            </div>
+            <strong>{projects.length} 个目标</strong>
+          </header>
+          <div className="wrongbook-goal-list" role="list">
+            {projects.map((project) => {
+              const selected = project.sessionId === selectedSessionId;
+              return (
+                <button
+                  type="button"
+                  className={selected ? 'selected' : ''}
+                  key={project.sessionId}
+                  onClick={() => setSelectedSessionId(project.sessionId)}
+                  aria-pressed={selected}
+                >
+                  <span className="wrongbook-goal-icon"><Target size={18} /></span>
+                  <span className="wrongbook-goal-copy">
+                    <b>{project.goal}</b>
+                    <small>当前第 {project.stageNum} 阶段 · 已生成 {project.stages?.length || 0} 个阶段</small>
+                  </span>
+                  <ChevronRight size={18} />
+                </button>
+              );
+            })}
+            {projects.length === 0 && <p className="wrongbook-empty">暂无学习目标，完成阶段测试后会在这里保留错题记录。</p>}
+          </div>
+        </section>
+
+        {selectedProject && (
+          <section className="wrongbook-review-section" aria-live="polite">
+            <header className="wrongbook-review-header">
+              <div>
+                <span>当前目标</span>
+                <h2>{selectedProject.goal}</h2>
+              </div>
+              <div className="wrongbook-total">
+                <strong>{review?.wrong_count ?? '--'}</strong>
+                <span>道错题</span>
+              </div>
+            </header>
+
+            {loadingReview && <div className="wrongbook-state"><Loader2 className="spin" size={18} />正在整理阶段错题</div>}
+            {!loadingReview && reviewError && (
+              <div className="wrongbook-state error">
+                <AlertTriangle size={18} />
+                <span>错题记录暂时无法读取，请稍后重新进入此页面。</span>
+              </div>
+            )}
+            {!loadingReview && !reviewError && review?.stages.length === 0 && (
+              <div className="wrongbook-state empty"><Check size={20} />该学习目标暂时没有已提交的错题。</div>
+            )}
+            {!loadingReview && !reviewError && review?.stages.map((stage) => {
+              const stageKey = stage.stage_id || `stage-${stage.stage_num || 0}`;
+              const expanded = openStageKeys.has(stageKey);
+              return (
+                <article className={`wrongbook-stage ${expanded ? 'expanded' : ''}`} key={stageKey}>
+                  <button type="button" className="wrongbook-stage-summary" onClick={() => toggleStage(stageKey)} aria-expanded={expanded}>
+                    <span className="wrongbook-stage-index">{stage.stage_num || '-'}</span>
+                    <span className="wrongbook-stage-copy">
+                      <b>{stage.block_name || `阶段 ${stage.stage_num || ''}`}</b>
+                      <small>测试正确率 {stage.accuracy == null ? '--' : `${pct(stage.accuracy)}%`}</small>
+                    </span>
+                    <span className="wrongbook-count">{stage.wrong_count} 道错题</span>
+                    {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                  {expanded && (
+                    <div className="wrongbook-question-list">
+                      {stage.questions.map((question, index) => (
+                        <article className="wrongbook-question" key={`${question.attempt_id}-${question.question_id}-${index}`}>
+                          <div className="wrongbook-question-head">
+                            <span>第 {(question.sequence_index ?? index) + 1} 题 · {question.question_type || '测试题'}</span>
+                            {question.subtopic_id && <small>{question.subtopic_id}</small>}
+                          </div>
+                          <h3>{question.question_text}</h3>
+                          <div className="wrongbook-answers">
+                            <div><span>你的答案</span><b>{question.user_answer || '未作答'}</b></div>
+                            <div><span>正确答案</span><b>{question.correct_answer || '未提供'}</b></div>
+                          </div>
+                          {question.explanation && <p><span>解析</span>{question.explanation}</p>}
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function GoalAlreadyMasteredModal({ goal, onClose }: { goal: string; onClose: () => void }) {
+  const displayGoal = goal.trim() || '当前学习目标';
+  return (
+    <div className="stage-delete-modal-overlay goal-completion-overlay" role="dialog" aria-modal="true" aria-labelledby="goal-mastered-title">
+      <section className="goal-completion-modal goal-mastered-modal">
+        <button type="button" className="goal-completion-close" onClick={onClose} aria-label="关闭提示"><X size={19} /></button>
+        <div className="goal-completion-emblem" aria-hidden><CheckCircle2 size={42} strokeWidth={1.9} /></div>
+        <div className="goal-completion-copy">
+          <span className="goal-completion-eyebrow"><Check size={14} /> KNOWLEDGE MASTERED</span>
+          <h2 id="goal-mastered-title">“{displayGoal}”已掌握</h2>
+          <p>你已经掌握该目标下的全部知识点，本次不会生成学习阶段或学习包。</p>
+        </div>
+        <div className="goal-completion-actions"><button type="button" className="primary" onClick={onClose}>知道了</button></div>
+      </section>
+    </div>
+  );
+}
+
 function DashboardView({
   profile,
   stage,
@@ -3073,7 +3258,7 @@ function ResultView({
   const needsWork = gaps.filter((gap) => gap.status !== '已掌握' && (gap.progress ?? 0) < 1);
   const canPlanNext = result?.can_plan_next_stage ?? result?.available_actions?.includes('plan_next_stage') ?? false;
   const needsReinforcement = hasAssessment && (accuracy ?? 0) < 0.7;
-  const [networkZoom, setNetworkZoom] = useState(1.0);
+  const [networkZoom, setNetworkZoom] = useState(0.7);
   const [networkMode, setNetworkMode] = useState<'overview' | 'focus'>('overview');
   // A later stage may already be underway, not merely waiting in next_stage.
   // In either case this summary must never offer to generate a duplicate.
@@ -3161,7 +3346,7 @@ function ResultView({
             </div>
             <div className="feedback-knowledge-columns">
               <div><span>已掌握知识点</span><p>{mastered.map((gap) => gap.skill).join('、') || '本阶段暂无新增完全掌握项'}</p></div>
-              <div><span>仍需加强</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
+              <div><span>仍需学习的知识点</span><p>{needsWork.map((gap) => gap.skill).join('、') || '当前目标知识点已全部掌握'}</p></div>
             </div>
             <div className="feedback-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{result?.stage_summary || '本阶段记录已完成。建议根据薄弱知识点继续学习。'}</ReactMarkdown></div>
             {hasAssessmentReview && (
@@ -3380,6 +3565,7 @@ export default function App() {
   }>({ open: false, goal: '', blockName: '' });
   const [result, setResult] = useState<StageResult | null>(null);
   const [goalCompletionOpen, setGoalCompletionOpen] = useState(false);
+  const [goalAlreadyMasteredOpen, setGoalAlreadyMasteredOpen] = useState(false);
   const [plannedStage, setPlannedStage] = useState<StageInfo | null>(null);
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({ attemptId: null, questions: [] });
   const [assessmentReview, setAssessmentReview] = useState<AssessmentReview | null>(null);
@@ -3400,6 +3586,7 @@ export default function App() {
   const [foundationPickerContext, setFoundationPickerContext] = useState<'onboarding' | 'settings' | null>(null);
   const [foundationPickerBlocks, setFoundationPickerBlocks] = useState<KnowledgeGraphBlock[]>(knowledgeGraphBlocks);
   const [foundationSubtopicIds, setFoundationSubtopicIds] = useState<string[]>([]);
+  const [masteredKnowledgeNames, setMasteredKnowledgeNames] = useState<string[]>([]);
   const [foundationConfirmed, setFoundationConfirmed] = useState(false);
   const [foundationPickerLoading, setFoundationPickerLoading] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -3613,6 +3800,10 @@ export default function App() {
     setProfileCheckError(null);
     try {
       const userProfile = await apiClient.getUserProfile();
+      const knowledgeNetwork = await apiClient.getKnowledgeNetwork();
+      setMasteredKnowledgeNames(knowledgeNetwork.blocks.flatMap((block) => block.subtopics)
+        .filter((topic) => topic.status === 1)
+        .map((topic) => topic.subtopic_name || topic.subtopic_id));
       setStoredUserProfile({
         grade: userProfile.grade,
         skill_tags: userProfile.skill_tags,
@@ -3985,6 +4176,12 @@ export default function App() {
         } as Profile;
         setProfile(nextProfile);
         setOnboardingForm(formDataFromProfile(nextProfile));
+        if (response.all_mastered || response.status === 'all_mastered') {
+          setGoalAlreadyMasteredOpen(true);
+          setWorkflow('onboarding');
+          finishAgentRun(['agent1'], true);
+          return;
+        }
         if (!reuseUserProfile) {
           await apiClient.updateUserProfile({
             grade: nextProfile.grade,
@@ -4059,6 +4256,14 @@ export default function App() {
             role: 'assistant',
             content: `我还需要补充一点信息：\n${(response.followup_questions || []).join('\n')}`,
             note: '需要追问'
+          }]);
+        } else if (response.all_mastered || response.status === 'all_mastered') {
+          setGoalAlreadyMasteredOpen(true);
+          setMessages((prev) => [...prev, {
+            id: shortId(),
+            role: 'assistant',
+            content: '你已经掌握该学习目标下的全部知识点，不会生成学习阶段或学习包。',
+            note: '目标已掌握'
           }]);
         } else {
           if (response.profile_draft) {
@@ -4653,9 +4858,22 @@ export default function App() {
     setView('chat');
   };
 
-  const cancelCreateLearningGoal = () => {
+  const cancelCreateLearningGoal = async () => {
     if (!newGoalReturnState) return;
     const previous = newGoalReturnState;
+    const temporarySessionId = sessionId;
+    // Cancelled goal creation must not leave a half-created project or stage
+    // in the remote project list and conversation navigation.
+    if (temporarySessionId && temporarySessionId !== previous.sessionId && !isLocalSessionId(temporarySessionId)) {
+      try {
+        await apiClient.deleteSession(temporarySessionId);
+      } catch (caught) {
+        console.warn('[goal creation] failed to delete cancelled session', caught);
+      }
+      setLearningProjects((projects) => projects.filter((project) => project.sessionId !== temporarySessionId));
+      setStageConversations((conversations) => conversations.filter((conversation) => conversation.sessionId !== temporarySessionId));
+      forgetOwnedSessionId(temporarySessionId);
+    }
     setSessionId(previous.sessionId);
     if (previous.sessionId) localStorage.setItem(SESSION_STORAGE_KEY, previous.sessionId);
     setProfile(previous.profile);
@@ -5081,8 +5299,10 @@ export default function App() {
     [onboardingForm.skill_tags]
   );
   const settingsFoundationNames = useMemo(
-    () => (settingsProfile?.skill_tags || []).filter(Boolean),
-    [settingsProfile?.skill_tags]
+    () => masteredKnowledgeNames.length
+      ? masteredKnowledgeNames
+      : (settingsProfile?.skill_tags || []).filter(Boolean),
+    [masteredKnowledgeNames, settingsProfile?.skill_tags]
   );
   const stageSubtopics = useMemo(
     () => resolveStageSubtopics(workspaceProfile, workspaceStage),
@@ -5209,6 +5429,12 @@ export default function App() {
           error={error}
         />
       )}
+      {view === 'wrongbook' && (
+        <WrongQuestionBookView
+          projects={learningProjects}
+          currentSessionId={sessionId}
+        />
+      )}
       {settingsProfile && view === 'settings' && <SettingsView profile={settingsProfile} loading={loading} error={error} onClear={clearLocalSession} onSave={saveProfileSettings} foundationNames={settingsFoundationNames} onOpenFoundation={() => void openFoundationPicker('settings')} />}
       <FoundationPickerModal
         open={foundationPickerContext !== null}
@@ -5246,6 +5472,9 @@ export default function App() {
       {assessmentReview && assessmentReviewOpen && <AssessmentReviewModal review={assessmentReview} onClose={() => setAssessmentReviewOpen(false)} />}
       {goalCompletionOpen && result?.all_mastered && (
         <GoalCompletionModal goal={workspaceProfile.goal || ''} onClose={() => setGoalCompletionOpen(false)} />
+      )}
+      {goalAlreadyMasteredOpen && (
+        <GoalAlreadyMasteredModal goal={onboardingForm.goal || profile?.goal || ''} onClose={() => setGoalAlreadyMasteredOpen(false)} />
       )}
       {noQuestionsDialog.open && (
         <div className="stage-delete-modal-overlay" role="dialog" aria-modal="true">
@@ -5305,6 +5534,7 @@ export default function App() {
             profile,
             stages: stage ? [stage] : []
           }}
+          stageAccuracy={result?.accuracy ?? stage?.accuracy ?? null}
           onClose={() => setProfileModalOpen(false)}
         />
       )}

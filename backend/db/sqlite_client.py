@@ -2825,6 +2825,79 @@ class SQLiteClient:
             """), {"session_id": session_id}).mappings().all()
         return [dict(row) for row in rows]
 
+    def get_wrong_questions_by_stage(self, session_id: str) -> list[dict]:
+        """Read submitted incorrect answers grouped by stage for the wrong-question book.
+
+        This is deliberately read-only. It uses the frozen assessment snapshot so
+        historical reviews remain stable even when the source question bank changes.
+        """
+        with self.Session() as session:
+            rows = session.execute(text("""
+                SELECT
+                    attempt.attempt_id,
+                    attempt.stage_id,
+                    attempt.stage_num,
+                    attempt.accuracy,
+                    attempt.submitted_at,
+                    progress.block_name,
+                    question.question_id,
+                    question.sequence_index,
+                    question.subtopic_id,
+                    question.question_type,
+                    question.question_text,
+                    question.options,
+                    question.correct_answer,
+                    question.explanation,
+                    answer.user_answer,
+                    answer.time_spent
+                FROM assessment_attempts AS attempt
+                JOIN assessment_attempt_questions AS question
+                    ON question.attempt_id = attempt.attempt_id
+                JOIN assessment_answers AS answer
+                    ON answer.attempt_id = attempt.attempt_id
+                    AND answer.question_id = question.question_id
+                LEFT JOIN stage_progress AS progress
+                    ON progress.session_id = attempt.session_id
+                    AND (
+                        (attempt.stage_id IS NOT NULL AND progress.stage_id = attempt.stage_id)
+                        OR (attempt.stage_id IS NULL AND progress.stage_num = attempt.stage_num)
+                    )
+                WHERE attempt.session_id = :session_id
+                    AND attempt.status = 'submitted'
+                    AND answer.is_correct = 0
+                ORDER BY attempt.stage_num DESC, attempt.submitted_at DESC, question.sequence_index ASC
+            """), {"session_id": session_id}).mappings().all()
+
+        stages: dict[str, dict] = {}
+        for row in rows:
+            item = dict(row)
+            stage_key = str(item.get("stage_id") or f"stage-{item.get('stage_num') or 0}")
+            stage = stages.setdefault(stage_key, {
+                "stage_id": item.get("stage_id"),
+                "stage_num": item.get("stage_num"),
+                "block_name": item.get("block_name") or f"阶段 {item.get('stage_num') or ''}".strip(),
+                "accuracy": item.get("accuracy"),
+                "submitted_at": item.get("submitted_at"),
+                "wrong_count": 0,
+                "questions": [],
+            })
+            stage["wrong_count"] += 1
+            stage["questions"].append({
+                "attempt_id": item.get("attempt_id"),
+                "question_id": item.get("question_id"),
+                "sequence_index": item.get("sequence_index"),
+                "subtopic_id": item.get("subtopic_id"),
+                "question_type": item.get("question_type"),
+                "question_text": item.get("question_text"),
+                "options": json.loads(item["options"]) if item.get("options") else None,
+                "user_answer": item.get("user_answer"),
+                "correct_answer": item.get("correct_answer"),
+                "explanation": item.get("explanation"),
+                "time_spent": item.get("time_spent") or 0,
+                "submitted_at": item.get("submitted_at"),
+            })
+        return list(stages.values())
+
     # ========================================================================
     # 仪表盘聚合查询（专业知识与教学质量审核 Agent6_API接口任务说明.md 第 4 节）
     # 后端直接从 user_profiles / stage_progress / subtopic_status /

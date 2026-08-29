@@ -10,7 +10,12 @@ if not exist "%PS%" (
 )
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0_launcher.ps1"
 set "RC=%ERRORLEVEL%"
-if "%RC%"=="0" exit /b 0
+if "%RC%"=="0" (
+echo.
+echo   Launcher completed. Backend and frontend logs are in their separate cmd windows.
+pause
+exit /b 0
+)
 echo.
 echo   Launcher returned error code %RC%.
 echo   Scroll UP to see the [ERROR] lines above, fix the issue, then double-click again.

@@ -85,7 +85,7 @@ export default function KnowledgeNetwork({
   const ZOOM_MIN = 0.5;
   const ZOOM_MAX = 1.6;
   const ZOOM_STEP = 0.1;
-  const [zoom, setZoomState] = useState(1.0);
+  const [zoom, setZoomState] = useState(0.7);
   const zoomValue = externalZoom ?? zoom;
   const setZoom = (nextZoom: number) => {
     const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +nextZoom.toFixed(2)));

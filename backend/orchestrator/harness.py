@@ -338,6 +338,52 @@ class Harness:
                 "profile": diagnostic.profile.model_dump(mode="json"),
             }
 
+        # Apply persisted mastery to the current goal before planning. This is
+        # required for the chat diagnosis path as well as foundation flow.
+        goal_blocks = self.agent1.get_goal_blocks(diagnostic.profile.goal)
+        target_block_ids = {str(block.get("block_id")) for block in goal_blocks if block.get("block_id")}
+        mastered_ids = {
+            str(row.get("subtopic_id"))
+            for row in self.state_manager.db_client.list_subtopic_statuses(session_id)
+            if int(row.get("status") or 0) == 1
+        }
+        # Foundation selections are persisted at user scope; include them
+        # when diagnosing a newly created session through the chat入口.
+        try:
+            user_id = self.state_manager.db_client.get_session_user_id(session_id)
+            mastered_ids.update(
+                str(row.get("subtopic_id"))
+                for row in self.state_manager.db_client.list_user_subtopic_statuses(user_id)
+                if int(row.get("status") or 0) == 1
+            )
+        except Exception:
+            pass
+        if target_block_ids:
+            diagnostic.profile.knowledge_gaps = [
+                gap for gap in diagnostic.profile.knowledge_gaps
+                if gap.block_id in target_block_ids
+            ]
+            for block in goal_blocks:
+                block_topics = {str(topic.get("subtopic_id")) for topic in (block.get("subtopics") or []) if topic.get("subtopic_id")}
+                if block_topics and block_topics.issubset(mastered_ids):
+                    diagnostic.profile.knowledge_gaps = [
+                        gap for gap in diagnostic.profile.knowledge_gaps
+                        if gap.block_id != block.get("block_id")
+                    ]
+
+        # A diagnostic with no target gaps is already complete. Never ask the
+        # stage planner to invent a fallback stage for a mastered goal.
+        goal_supported = bool(goal_blocks)
+        if goal_supported and not diagnostic.profile.knowledge_gaps:
+            self.state_manager.update_field(session_id, "phase", "goal_already_mastered")
+            self.state_manager.update_field(session_id, "available_actions", ["edit_profile", "create_goal"])
+            return {
+                "status": "all_mastered",
+                "profile": diagnostic.profile.model_dump(mode="json"),
+                "stage_info": None,
+                "all_mastered": True,
+            }
+
         stage = await self.agent1.generate_stage(StagePlanningInput(
             session_id=session_id,
             profile=diagnostic.profile,

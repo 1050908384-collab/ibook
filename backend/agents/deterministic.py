@@ -397,7 +397,9 @@ class DeterministicDiagnosticAgent:
         profile = UserProfile(
             session_id=session_id,
             skill_tags=skill_tags,
-            knowledge_gaps=gaps if gaps else [KnowledgeGap(skill=target_text or "通用学习目标")],
+            # Keep an empty gap list when every target subtopic is mastered.
+            # The API uses this as the signal to skip stage/package generation.
+            knowledge_gaps=gaps,
             goal=target_text or "学习",
             daily_hours=max(0.5, min(8.0, float(daily_hours or 2.0))),
             learning_style=learning_style or "mixed",
@@ -411,7 +413,34 @@ class DeterministicDiagnosticAgent:
         return DiagnosticOutput(profile=profile, followup_questions=[])
 
     def _select_target_candidates(self, target_text: str) -> list[dict[str, Any]]:
+        normalized_target = str(target_text or "").casefold()
+        # Explicit goal anchors are authoritative. Do not let semantic
+        # neighbours (e.g. PyTorch) expand a Linux/Python goal's scope.
+        anchor_ids = {
+            "linux": "KB-01", "shell": "KB-01", "wsl": "KB-01",
+            "python": "KB-02", "python基础": "KB-02",
+        }
+        for anchor, block_id in anchor_ids.items():
+            if anchor in normalized_target:
+                block = self.knowledge_catalog_tool.get_block(block_id) or {}
+                return [{"block_id": block_id, "score": 100.0, "mapping_confidence": 0.99, **block}]
         candidates = self._recall_candidates(target_text)
+        if not candidates:
+            # Indexes can be unavailable during bootstrap; retain a small
+            # deterministic alias fallback so common goals are not rejected.
+            normalized = str(target_text or "").casefold()
+            alias_map = {
+                "KB-01": ("linux", "shell", "命令行", "终端", "wsl"),
+                "KB-02": ("python", "python基础"),
+                "KB-11": ("huggingface", "transformers", "datasets"),
+                "KB-12": ("lora", "qlora", "peft"),
+                "KB-15": ("vllm", "推理部署"),
+            }
+            fallback_ids = [block_id for block_id, aliases in alias_map.items() if any(alias in normalized for alias in aliases)]
+            candidates = [
+                {"block_id": block_id, "score": 100.0, "mapping_confidence": 0.9}
+                for block_id in fallback_ids
+            ]
         if not candidates:
             return []
         top_score = float(candidates[0].get("score") or 0)
@@ -624,6 +653,14 @@ class DeterministicDiagnosticAgent:
     async def generate_stage(self, request: StagePlanningInput) -> StagePlanningOutput:
         """Stage planning functionality merged from Agent2 into 学情诊断与阶段规划 Agent."""
         _agent_log("学情诊断与阶段规划 Agent", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
+
+        # Never plan a stage from a stale gap belonging to another goal.
+        allowed_block_ids = {str(item.get("block_id")) for item in self._select_target_candidates(request.profile.goal) if item.get("block_id")}
+        if allowed_block_ids:
+            request.profile.knowledge_gaps = [
+                item for item in request.profile.knowledge_gaps
+                if item.block_id in allowed_block_ids
+            ]
 
         gap = next(
             (item for item in request.profile.knowledge_gaps if float(item.progress or 0.0) < 1.0),

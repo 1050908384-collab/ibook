@@ -74,7 +74,7 @@ function Start-CmdWindow([string]$Title, [string]$WorkingDir, [string]$CommandLi
     # cmd.exe rule: if the first and last char of the argument after /C or /K is ",
     # cmd strips them and parses what's inside. We want our $inner parsed literally.
     $arg = 'cmd /c "' + $inner + '"'
-    Start-Process -FilePath "cmd.exe" -ArgumentList ("/k",$inner) -WorkingDirectory $WorkingDir
+    Start-Process -FilePath "cmd.exe" -ArgumentList ("/k",$inner) -WorkingDirectory $WorkingDir -WindowStyle Normal
 }
 function Stop-ProjectFrontendProcesses([string]$FrontendPath) {
     # npm ci removes node_modules before reinstalling.  A stale Vite process
@@ -91,6 +91,23 @@ function Stop-ProjectFrontendProcesses([string]$FrontendPath) {
         if ($processes) { Start-Sleep -Milliseconds 800 }
     } catch {
         Write-Host "  [WARN] Could not inspect stale frontend processes: $($_.Exception.Message)" -ForegroundColor DarkGray
+    }
+}
+function Stop-ProjectBackendProcesses([string]$BackendPath) {
+    try {
+        $escapedPath = [regex]::Escape($BackendPath)
+        $processes = Get-CimInstance Win32_Process |
+            Where-Object {
+                ($_.Name -in @('python.exe','pythonw.exe','uvicorn.exe')) -and
+                (($_.CommandLine -match $escapedPath) -or ($_.CommandLine -match 'uvicorn.*main:app'))
+            }
+        foreach ($process in $processes) {
+            Write-Host "  Stopping stale project backend process (PID $($process.ProcessId))..." -ForegroundColor Yellow
+            Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+        if ($processes) { Start-Sleep -Milliseconds 800 }
+    } catch {
+        Write-Host "  [WARN] Could not inspect stale backend processes: $($_.Exception.Message)" -ForegroundColor DarkGray
     }
 }
 
@@ -430,10 +447,18 @@ sys.exit(0)
         Write-Host "  Backend import OK." -ForegroundColor Green
     }
     Write-Host "  Starting uvicorn on :$BackendPort ..." -ForegroundColor Yellow
-    $cmdLine = "set PYTHONUNBUFFERED=1 & ""$PythonExe"" -m uvicorn main:app --host 0.0.0.0 --port $BackendPort"
+    $cmdLine = "set PYTHONUNBUFFERED=1 & ""$PythonExe"" -m uvicorn main:app --host 0.0.0.0 --port $BackendPort --access-log"
     Start-CmdWindow "[2/3] Backend :$BackendPort" (Join-Path $ProjectDir "backend") $cmdLine
 } else {
-    Write-Host "  Backend already on :$BackendPort. Reusing." -ForegroundColor DarkGreen
+    $BackendDir = Join-Path $ProjectDir "backend"
+    Write-Host "  Backend already on :$BackendPort. Restarting this project's backend to restore its log window..." -ForegroundColor Yellow
+    Stop-ProjectBackendProcesses $BackendDir
+    if (Test-PortListening $BackendPort) {
+        Write-Host "[ERROR] Port $BackendPort is still occupied by another process; refusing to stop it." -ForegroundColor Red
+        throw "backend port occupied by another process"
+    }
+    $cmdLine = "set PYTHONUNBUFFERED=1 & ""$PythonExe"" -m uvicorn main:app --host 0.0.0.0 --port $BackendPort --access-log"
+    Start-CmdWindow "[2/3] Backend :$BackendPort" $BackendDir $cmdLine
 }
 if (-not (Wait-Http200 "http://127.0.0.1:$BackendPort/health" 40 "Backend")) { throw "Backend not ready" }
 
@@ -531,7 +556,19 @@ if (-not (Test-PortListening $FrontendPort)) {
     $cmdLine = """$($npm.Source)"" run dev -- --host 127.0.0.1 --port $FrontendPort --strictPort 1> ""$FrontendLog"" 2>&1"
     Start-CmdWindow "[3/3] Frontend :$FrontendPort" $FrontendDir $cmdLine
 } else {
-    Write-Host "  Frontend already on :$FrontendPort. Reusing." -ForegroundColor DarkGreen
+    $FrontendDir = Join-Path $ProjectDir "frontend"
+    Write-Host "  Frontend already on :$FrontendPort. Restarting this project's frontend to restore its log window..." -ForegroundColor Yellow
+    Stop-ProjectFrontendProcesses $FrontendDir
+    if (Test-PortListening $FrontendPort) {
+        Write-Host "[ERROR] Port $FrontendPort is still occupied by another process; refusing to stop it." -ForegroundColor Red
+        throw "frontend port occupied by another process"
+    }
+    $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if (-not $npm) { throw "npm.cmd missing" }
+    $FrontendLog = Join-Path $env:TEMP "aiat_frontend_vite.log"
+    Remove-Item $FrontendLog -ErrorAction SilentlyContinue
+    $cmdLine = """$($npm.Source)"" run dev -- --host 127.0.0.1 --port $FrontendPort --strictPort 1> ""$FrontendLog"" 2>&1"
+    Start-CmdWindow "[3/3] Frontend :$FrontendPort" $FrontendDir $cmdLine
 }
 if (-not (Wait-Http200 "http://127.0.0.1:$FrontendPort/" 45 "Frontend")) {
     if ($FrontendLog -and (Test-Path $FrontendLog)) {

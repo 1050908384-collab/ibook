@@ -61,12 +61,28 @@ const ChatPage: React.FC = () => {
         response = await apiClient.askQuestion(sessionId, inputValue);
       }
 
+      let content = JSON.stringify(response);
+      let techPass: boolean | undefined;
+      let qualityPass: boolean | undefined;
+      if ('answer' in response) {
+        content = response.answer || content;
+        const reviewSummary = response.review_summary;
+        techPass = typeof reviewSummary?.technical_passed === 'boolean'
+          ? reviewSummary.technical_passed
+          : undefined;
+        qualityPass = typeof reviewSummary?.quality_passed === 'boolean'
+          ? reviewSummary.quality_passed
+          : undefined;
+      } else {
+        content = response.assistant_message || content;
+      }
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response.answer || response.assistant_message || JSON.stringify(response),
+        content,
         isUser: false,
-        techPass: response.review_summary?.technical_passed,
-        qualityPass: response.review_summary?.quality_passed,
+        techPass,
+        qualityPass,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, botMessage]);

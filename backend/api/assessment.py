@@ -173,6 +173,23 @@ async def get_stage_result(
         _raise(e)
 
 
+@router.get("/sessions/{session_id}/wrong-questions")
+async def get_wrong_questions(
+    session_id: str,
+    _user_id: str = Depends(require_owned_session),
+):
+    """Return submitted incorrect answers, grouped by stage, for review only."""
+    try:
+        stages = assessment_service.db.get_wrong_questions_by_stage(session_id)
+        return {
+            "session_id": session_id,
+            "wrong_count": sum(int(stage["wrong_count"]) for stage in stages),
+            "stages": stages,
+        }
+    except Exception as e:
+        _raise(e)
+
+
 @router.put("/assessment-attempts/{attempt_id}/answers/{question_id}")
 async def save_assessment_answer(attempt_id: str, question_id: str, request: SaveAnswerRequest, _user_id: str = Depends(require_owned_attempt)):
     """保存或覆盖单题答案（提交前可改，只保存一条最终答案）。"""
