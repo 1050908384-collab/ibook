@@ -817,8 +817,19 @@ class DeterministicDiagnosticAgent:
 
         # A stage consumes the learner's daily budget. Keep catalog order and
         # only group currently unlocked nodes from the same planned closure.
+        #
+        # Foundation/setup chains are allowed a tiny overflow so we do not
+        # split a tightly-coupled prerequisite prefix too early (for example,
+        # KB-01's first three environment steps).
         selected_subtopics = []
         budget = max(0.5, min(8.0, float(request.profile.daily_hours or 2.0)))
+        soft_budget = budget
+        seed_block_id = str(candidates[0].get("block_id") or "") if candidates else ""
+        if seed_block_id and seed_block_id != str(preferred_block.get("block_id") or ""):
+            seed_block = self.knowledge_catalog_tool.get_block(seed_block_id) or {}
+            seed_subtopics = seed_block.get("subtopics", []) or []
+            if seed_subtopics and int(seed_subtopics[0].get("sequence_index") or 0) == 0:
+                soft_budget = min(8.0, budget + 0.5)
         total_hours = 0.0
         # Build this from the complete status list rather than using the
         # block-scoped helper: prerequisites can belong to an earlier block.
@@ -861,7 +872,7 @@ class DeterministicDiagnosticAgent:
             if any(prerequisite not in completed_ids for prerequisite in prerequisites):
                 continue
             hours = max(0.0, float(candidate.get("estimated_hours") or 0.0))
-            if selected_subtopics and hours > 0 and total_hours + hours > budget:
+            if selected_subtopics and hours > 0 and total_hours + hours > soft_budget:
                 break
             selected_subtopics.append(candidate)
             total_hours += hours
@@ -2692,8 +2703,8 @@ class HybridContentAgent(DeterministicContentAgent):
                         block.personalized_content = candidate
             _agent_log("个性化学习资源生成 Agent", f"block:llm_done | cb={block.content_block_id} | len={len(rewritten)}")
         else:
-            # 保留确定性教学层，而非退回裸原文；这样模型暂时不可用时仍可体现
-            # 当前画像的教学任务，并保留原始事实主体供 专业知识与教学质量审核 Agent 核验。
+            # 兜底时回到原始资料，避免把额外教学检查混入正文。
+            block.personalized_content = source_text.strip()
             _agent_log("个性化学习资源生成 Agent", f"block:llm_invalid -> deterministic_fallback | cb={block.content_block_id}")
         return block
 

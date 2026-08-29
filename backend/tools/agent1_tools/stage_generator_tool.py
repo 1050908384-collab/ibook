@@ -139,6 +139,8 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
     skill_name = gap.get("skill", "未知技能")
     level = gap.get("level", "beginner")
     llm_data = {}
+    learning_style = _normalize_learning_style(profile.get("learning_style", "mixed"))
+    profile = {**profile, "learning_style": learning_style}
 
     stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{session_id}:{stage_num}:{skill_name}"))
     block_id = block_info.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, skill_name).hex[:8].upper()}"
@@ -156,7 +158,6 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
     difficulty = user_max if order.get(block_diff, 1) > order.get(user_max, 1) else block_diff
 
     daily_hours = float(profile.get("daily_hours", 2.0))
-    learning_style = profile.get("learning_style", "mixed")
     hardware = profile.get("hardware", "")
     grade = profile.get("grade", "")
 
@@ -249,13 +250,14 @@ def _generate_style_notes(learning_style: str, skill_name: str) -> str:
     """根据学习风格生成建议。"""
     style_map = {
         "practice": f"动手型学习者：建议先完成{skill_name}的最小可运行操作，再记录命令、报错与解决过程",
+        "theory": f"理论型学习者：建议先梳理{skill_name}的概念、原理与适用边界，再进入实操",
         "visual": f"视觉型学习者：建议多关注{skill_name}的架构图、流程图和可视化演示",
         "auditory": f"听觉型学习者：建议配合{skill_name}的视频讲解和语音教程",
         "reading": f"阅读型学习者：建议详细阅读{skill_name}的官方文档和技术书籍",
         "kinesthetic": f"动手型学习者：建议边学边练，在代码中实践{skill_name}的每个知识点",
         "mixed": f"混合型学习者：建议结合阅读、观看和实践多种方式学习{skill_name}",
     }
-    return style_map.get(learning_style, style_map["mixed"])
+    return style_map.get(_normalize_learning_style(learning_style), style_map["mixed"])
 
 
 def _generate_hardware_notes(hardware: str, skill_name: str) -> str:
@@ -291,8 +293,15 @@ def _generate_summary(grade: str, daily_hours: float, learning_style: str,
     parts.append(f"建议分{study_days}天学习")
     if daily_hours:
         parts.append(f"每天{daily_hours}小时")
-    style_label = {"practice": "动手型", "visual": "视觉型", "auditory": "听觉型", "reading": "阅读型",
-                   "kinesthetic": "动手型", "mixed": "综合型"}.get(learning_style, "综合型")
+    style_label = {
+        "practice": "动手型",
+        "theory": "理论型",
+        "visual": "视觉型",
+        "auditory": "听觉型",
+        "reading": "阅读型",
+        "kinesthetic": "动手型",
+        "mixed": "综合型",
+    }.get(_normalize_learning_style(learning_style), "综合型")
     parts.append(f"{style_label}学习风格")
     return " | ".join(parts)
 
@@ -301,6 +310,8 @@ def _fallback_stage(session_id: str, skill_name: str, level: str, goal: str,
                     stage_num: int, profile: Dict[str, Any] = None) -> dict:
     """LLM失败时的回退阶段计划。"""
     profile = profile or {}
+    learning_style = _normalize_learning_style(profile.get("learning_style", "mixed"))
+    profile = {**profile, "learning_style": learning_style}
     stage_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{session_id}:{stage_num}:{skill_name}"))
     block_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{skill_name}"))
 
@@ -324,7 +335,6 @@ def _fallback_stage(session_id: str, skill_name: str, level: str, goal: str,
     difficulty_map = {"beginner": "初级", "intermediate": "中级", "advanced": "高级"}
 
     daily_hours = float(profile.get("daily_hours", 2.0))
-    learning_style = profile.get("learning_style", "mixed")
     hardware = profile.get("hardware", "")
     grade = profile.get("grade", "")
 
@@ -370,6 +380,64 @@ def _clean_response(response: str) -> str:
     response = re.sub(r'```json\s*', '', response)
     response = re.sub(r'\s*```', '', response)
     return response.strip()
+
+
+def _normalize_learning_style(learning_style: Any) -> str:
+    """把中文/英文学习风格归一化为阶段模板可识别的枚举值。"""
+    raw = str(learning_style or "").strip()
+    if not raw:
+        return "mixed"
+
+    lowered = raw.casefold()
+    direct_map = {
+        "practice": "practice",
+        "hands-on": "practice",
+        "hands on": "practice",
+        "动手型": "practice",
+        "实操型": "practice",
+        "实践型": "practice",
+        "操作型": "practice",
+        "示例驱动": "practice",
+        "实操": "practice",
+        "实践": "practice",
+        "动手": "practice",
+        "theory": "theory",
+        "理论型": "theory",
+        "理论讲解": "theory",
+        "理论": "theory",
+        "原理优先": "theory",
+        "原理": "theory",
+        "visual": "visual",
+        "视觉型": "visual",
+        "视觉": "visual",
+        "auditory": "auditory",
+        "听觉型": "auditory",
+        "听觉": "auditory",
+        "reading": "reading",
+        "阅读型": "reading",
+        "读写型": "reading",
+        "阅读": "reading",
+        "kinesthetic": "kinesthetic",
+        "动觉型": "kinesthetic",
+        "动觉": "kinesthetic",
+        "mixed": "mixed",
+        "混合型": "mixed",
+        "综合型": "mixed",
+        "混合": "mixed",
+        "结合": "mixed",
+    }
+    for key, value in direct_map.items():
+        if raw == key or lowered == key:
+            return value
+        if key in raw or key in lowered:
+            return value
+
+    try:
+        from agents.deterministic import DeterministicDiagnosticAgent
+        extracted = DeterministicDiagnosticAgent._extract_learning_style(raw)
+    except Exception:
+        extracted = "mixed"
+    return extracted if extracted in {"practice", "theory", "mixed"} else "mixed"
 
 
 # ------------------------------------------------------------------

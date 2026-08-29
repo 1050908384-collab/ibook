@@ -1,5 +1,6 @@
 from typing import Dict, Any, List, Set
 from agents.base_agent import BaseAgent
+from agents.deterministic import DeterministicDiagnosticAgent
 from tools.agent1_tools.extract_skills_tool import ExtractSkillsTool
 from tools.agent1_tools.calculate_confidence_tool import CalculateConfidenceTool
 from tools.agent1_tools.graph_query_tool import GraphQueryTool
@@ -128,6 +129,10 @@ class DiagnosticAgent(BaseAgent):
         else:
             declared_mastered_list = []
 
+        learning_style = DeterministicDiagnosticAgent._extract_learning_style(
+            str(raw_data.get("learning_style", "") or "")
+        )
+
         profile = {
             "session_id": session_id,
             "skill_tags": skill_tags,
@@ -135,7 +140,7 @@ class DiagnosticAgent(BaseAgent):
             "knowledge_gaps": knowledge_gaps,
             "goal": raw_data.get("goal", ""),
             "daily_hours": raw_data.get("daily_hours", 2.0),
-            "learning_style": raw_data.get("learning_style", "mixed"),
+            "learning_style": learning_style,
             "learning_rhythm": raw_data.get("learning_rhythm", "medium"),
             "confidence_index": raw_data.get("confidence_index", 0.5),
             "confusion_markers": [],

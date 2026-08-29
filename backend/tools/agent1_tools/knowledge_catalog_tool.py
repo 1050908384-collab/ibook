@@ -271,6 +271,12 @@ class KnowledgeCatalogTool:
     def default_target_subtopic_ids(self, block_id: str, query: str) -> list[str]:
         """Choose a canonical target when recall finds a block but no valid node."""
         normalized_query = _normalize(query)
+        if block_id == "KB-01":
+            # Linux/WSL is the prerequisite prefix for broader tooling goals
+            # such as LoRA.  Prefer the first three setup nodes so stage 1
+            # reaches the complete "can start learning" baseline instead of
+            # stopping after the first two catalog hits.
+            return ["KBS-01-00", "KBS-01-01", "KBS-01-02"]
         if block_id == "KB-12":
             if "qlora" in normalized_query or "4bit" in normalized_query or "nf4" in normalized_query:
                 return ["KBS-12-04"]

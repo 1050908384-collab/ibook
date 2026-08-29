@@ -425,17 +425,46 @@ def _fts_rows_to_results(rows: list[tuple]) -> List[Dict[str, Any]]:
     return results
 
 
+def _tokenize_like_query(query: str) -> list[str]:
+    """把中文连续文本和英文术语拆成更适合 LIKE 回退的 token。
+
+    这里尽量贴近 FTS 的颗粒度：英文词保留，中文长片段切成三字片段，
+    避免 bigram 过宽导致弱相关块排到前面。
+    """
+    tokens: list[str] = []
+    tokens.extend(re.findall(r"[a-zA-Z][a-zA-Z0-9_\-]{1,}", query))
+    for segment in re.findall(r"[\u4e00-\u9fff]+", query):
+        if len(segment) < 3:
+            tokens.append(segment)
+        else:
+            tokens.extend(segment[index:index + 3] for index in range(len(segment) - 2))
+    return list(dict.fromkeys(token.strip() for token in tokens if token.strip()))[:24]
+
+
+def _like_token_weight(token: str) -> float:
+    """给 token 一个简单的相关度权重，长英文词优先。"""
+    if re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_\-]{1,}", token):
+        return min(float(len(token)), 8.0)
+    return min(float(len(token)), 4.0)
+
+
+def _score_like_row(content: str, query_words: list[str]) -> float:
+    """按 token 命中情况给 LIKE 回退结果排序。"""
+    normalized = (content or "").lower()
+    score = 0.0
+    matched = 0
+    for token in query_words:
+        if token.lower() in normalized:
+            matched += 1
+            score += _like_token_weight(token)
+    # 命中更多 token 的结果优先，其次用总权重排序。
+    return score + matched * 0.25
+
+
 def _search_sqlite_like_fallback(conn: sqlite3.Connection, where_scope: str,
                                   scope_params: list, query: str, top_k: int) -> List[Dict[str, Any]]:
     """LIKE 模糊匹配回退（当 FTS5 不可用/无结果时使用）。"""
-    # 对中文/英文统一处理：bigram + 英文单词
-    like_tokens: list[str] = []
-    like_tokens.extend(re.findall(r"[a-zA-Z][a-zA-Z0-9_\-]{1,}", query))
-    for segment in re.findall(r"[\u4e00-\u9fff]+", query):
-        if len(segment) < 2:
-            like_tokens.append(segment)
-        else:
-            like_tokens.extend(segment[i:i + 2] for i in range(len(segment) - 1))
+    like_tokens = _tokenize_like_query(query)
 
     if not like_tokens:
         rows = conn.execute(f"""
@@ -450,18 +479,29 @@ def _search_sqlite_like_fallback(conn: sqlite3.Connection, where_scope: str,
 
     like_clauses = " OR ".join(["c.content LIKE ?" for _ in like_tokens])
     params = [f"%{t}%" for t in like_tokens]
+    fetch_limit = max(top_k * 10, 30)
 
     sql = f"""
         SELECT c.chunk_id, c.block_id, c.content, d.source, d.created_at, d.title
         FROM knowledge_chunks c
         LEFT JOIN knowledge_docs d ON c.doc_id = d.doc_id
         WHERE {where_scope} AND ({like_clauses})
-        ORDER BY CASE WHEN d.doc_id LIKE 'LOCAL-%' THEN 0 ELSE 1 END, d.created_at DESC
+        ORDER BY d.created_at DESC
         LIMIT ?
     """
-    cur = conn.execute(sql, scope_params + params + [top_k])
+    cur = conn.execute(sql, scope_params + params + [fetch_limit])
     rows = cur.fetchall()
-    return _rows_to_results(rows, like_tokens)
+    if not rows:
+        return []
+
+    rows.sort(
+        key=lambda row: (
+            _score_like_row(row[2] or "", like_tokens),
+            row[4] or "",
+        ),
+        reverse=True,
+    )
+    return _rows_to_results(rows[:top_k], like_tokens)
 
 
 def _get_chroma_path() -> Path:
