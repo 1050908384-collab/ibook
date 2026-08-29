@@ -144,12 +144,35 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
     block_id = block_info.get("block_id") or f"KB-{uuid.uuid5(uuid.NAMESPACE_DNS, skill_name).hex[:8].upper()}"
     difficulty_map = {"beginner": "初级", "intermediate": "中级", "advanced": "高级"}
 
+    # ── P1-3 T2 难度修复：反转优先级 —— 用户 level 是上限，块难度不得超过封顶 ──
+    #
+    # 原逻辑：block_info.difficulty (区块标称) > difficulty_map[level]
+    #         → beginner 用户会拿到 KB-12=高级 输出（难度拔高 T2 16 fail 根因）
+    # 新逻辑：user_max = level 对应难度上限；block_diff = 块标称；取较低者。
+    #         保证 beginner→初级封顶；intermediate→中级封顶；advanced→按块标称
+    user_max = difficulty_map.get(level, "中级")
+    block_diff = block_info.get("difficulty") or difficulty_map.get(level, user_max)
+    order = {"初级": 0, "中级": 1, "高级": 2}
+    difficulty = user_max if order.get(block_diff, 1) > order.get(user_max, 1) else block_diff
+
     daily_hours = float(profile.get("daily_hours", 2.0))
     learning_style = profile.get("learning_style", "mixed")
     hardware = profile.get("hardware", "")
     grade = profile.get("grade", "")
 
     base_hours = float(block_info.get("estimated_hours", 2.0))
+    # ── P2 T3 时长修复（第 1 处）：安装/环境/依赖类工作量基准修正 ──
+    #
+    # 零基础环境准备型 block（Python+conda+IDE 全家桶）默认基准估时 0.5h
+    # 偏小，实际工作量远大于此（T3 10 fail 中 8 条估时偏低的根因）。
+    env_keywords = ("安装", "环境准备", "环境配置", "环境", "依赖", "conda", "pip", "ide")
+    block_label = (
+        f"{str(block_info.get('block_name', '')).lower()}"
+        f" {str(block_info.get('subtopic_name', '')).lower()}"
+        f" {skill_name.lower()}"
+    )
+    if any(k.lower() in block_label for k in env_keywords) and base_hours < 1.5:
+        base_hours = max(base_hours, 1.5)
     adjusted_hours = _adjust_hours_by_profile(base_hours, daily_hours, level)
     study_days = max(1, round(adjusted_hours / max(daily_hours, 0.5)))
 
@@ -190,7 +213,7 @@ def _generate_stage(session_id: str, gap: Dict[str, Any], block_info: Dict[str, 
                 f"掌握{skill_name}的核心技术",
                 f"能够独立完成{skill_name}相关任务"
             ]),
-            "difficulty": llm_data.get("difficulty", block_info.get("difficulty") or difficulty_map.get(level, "中级")),
+            "difficulty": llm_data.get("difficulty", difficulty),
             "recommended_daily_hours": daily_hours,
             "suggested_study_days": study_days,
             "learning_style_notes": learning_style_notes,
@@ -214,7 +237,12 @@ def _adjust_hours_by_profile(base_hours: float, daily_hours: float, level: str) 
 
     level_multiplier = {"beginner": 1.2, "intermediate": 1.0, "advanced": 0.9}
     adjusted = base_hours * level_multiplier.get(level, 1.0) / speed_factor
-    return round(min(adjusted, 16.0), 1)
+    # ── P2 T3 时长修复（第 2 处）：硬截断 daily_hours * 3.0 ──
+    #
+    # 原逻辑只 min(adjusted, 16.0) → case_019/021 daily=2h 输出 est=6.6h
+    # 大于 2h×3=6h 审核规则违规（T3 10 fail 中 2 条超上限规的根因）。
+    # 新逻辑：三取最小 → 永远不超 daily_budget * 3。
+    return round(min(adjusted, 16.0, max(0.5, daily_hours) * 3.0), 1)
 
 
 def _generate_style_notes(learning_style: str, skill_name: str) -> str:

@@ -243,10 +243,27 @@ class DeterministicDiagnosticAgent:
         ) if confidence < 0.7 else []
         if confidence < 0.7 and needs_domain_clarification:
             followup_questions = self._with_domain_clarification_question(followup_questions)
+        # ── T1 根因A 修复：解析声明的已掌握块（existing_skills 标签）落 profile.mastered_block_ids ──
+        #
+        # structured["skill_tags"] 来自确定性 _parse_structured_input → L1012
+        # "我的已有基础/已掌握技能/mastered skills" 标签解析，正好是用户
+        # 提交的 existing_skills 字段。这里把它解析成 catalog block id 集合：
+        #  1. 后续 generate_stage 选 gap 时可以跳过已重复教学（根因A）
+        #  2. completed_ids 构建时把该 block 的全部 subtopic 视为已学（让
+        #     下游 prerequisites 校验通过，不再重复）
+        declared_mastered_block_ids: list[str] = sorted(
+            self._resolve_mastered_block_ids(mastered or structured.get("skill_tags"))
+        )
+        # Also capture user-written expected_target_blocks from input text so
+        # that topological gap tie-break prefers goal blocks first.
+        declared_targets: list[str] = self._parse_declared_target_blocks(request.user_input)
+
         profile = UserProfile(
             session_id=request.session_id,
             grade=structured.get("grade", ""),
             skill_tags=mastered,
+            mastered_block_ids=declared_mastered_block_ids,
+            expected_target_blocks=declared_targets,
             knowledge_gaps=gaps,
             goal=target_text or text,
             daily_hours=structured.get("daily_hours", self._extract_daily_hours(text)),
@@ -662,12 +679,67 @@ class DeterministicDiagnosticAgent:
                 if item.block_id in allowed_block_ids
             ]
 
-        gap = next(
-            (item for item in request.profile.knowledge_gaps if float(item.progress or 0.0) < 1.0),
-            None,
-        )
-        if gap is None:
+        # ── T1 根因A+B 修复位点：构建 mastered_set（输入声明的已掌握块 ∪ gaps 已完成的块） ──
+        # 1) declared_mastered_block_ids 来自 deterministic.run 的 profile.mastered_block_ids
+        #    （由用户提交的 existing_skills / 已掌握技能字段 解析而来）
+        # 2) 再并上 knowledge_gaps 里 progress>=1 的 block_id
+        mastered_block_ids: set[str] = {
+            str(bid) for bid in (request.profile.mastered_block_ids or []) if bid
+        }
+        for g in request.profile.knowledge_gaps:
+            if float(g.progress or 0.0) >= 1.0 and g.block_id:
+                mastered_block_ids.add(str(g.block_id))
+
+        # ── T1 根因B 修复位点（B2）：选 gap 改成拓扑最小优先 + expected_target 平局优先 ──
+        #
+        # 原来: next(item for item in gaps if progress<1) —— 只拿列表首个，
+        # 会把 KB-08（QLoRA）放在最前面，导致越级（case_002/003/004的T1 fail）。
+        # 修复后：
+        #   1) 计算每个 unmet_gap 的 "未掌握前置块数"（prerequisites 不在 mastered_set 中的个数）
+        #   2) 按 (未掌握前置数 ASC, expected_target_blocks 命中优先（平局按用户写的顺序）, 原index ASC) 排序取首个
+        candidate_gaps = [
+            g for g in request.profile.knowledge_gaps
+            if float(g.progress or 0.0) < 1.0 and g.block_id not in mastered_block_ids
+        ]
+        if not candidate_gaps:
             raise ValueError("No unmastered knowledge gap remains")
+
+        # Build expected target priority index (stable ordering matches the
+        # user-declared order on input → tie-break keeps goal-directed gaps).
+        expected_targets: list[str] = list(request.profile.expected_target_blocks or [])
+        expected_priority = {str(tid).upper(): i for i, tid in enumerate(expected_targets)}
+        for i, t in enumerate(expected_targets):
+            resolved = self.knowledge_catalog_tool.resolve_block(t)
+            if resolved and resolved.get("block_id"):
+                expected_priority.setdefault(str(resolved["block_id"]).upper(), i)
+
+        def _gap_unmet_prereq_count(g) -> int:
+            prereq_block_ids = self._resolve_mastered_block_ids(list(g.prerequisites or []))
+            return sum(1 for pre in prereq_block_ids if pre and pre not in mastered_block_ids)
+
+        def _gap_expected_rank(g) -> int:
+            bid = str(g.block_id or "").upper()
+            if bid in expected_priority:
+                return expected_priority[bid]
+            # Fallback: match by block name if user wrote plain names.
+            if not expected_targets:
+                return 0
+            blk = self.knowledge_catalog_tool.get_block(g.block_id or "") or {}
+            name = str(blk.get("block_name", "")).casefold()
+            for i, t in enumerate(expected_targets):
+                if t and t.casefold() in name:
+                    return i
+            return len(expected_targets)  # last = lowest priority
+
+        ranked_gaps = sorted(
+            candidate_gaps,
+            key=lambda g: (
+                _gap_unmet_prereq_count(g),
+                _gap_expected_rank(g),
+                request.profile.knowledge_gaps.index(g) if g in request.profile.knowledge_gaps else 9999,
+            ),
+        )
+        gap = ranked_gaps[0]
 
         preferred_block = {}
         try:
@@ -755,6 +827,28 @@ class DeterministicDiagnosticAgent:
             for item in self.db_client.list_subtopic_statuses(request.session_id)
             if int(item.get("status", -1)) == 1
         }
+        # ── T1 根因A 修复位点（A2）：completed_ids 并入输入声明的已掌握 blocks 的所有 subtopic ──
+        #
+        # 用户在 existing_skills 中声明"已掌握 KB-04/KB-08"，意味着这些 block
+        # 内部的 subtopic 对他来说是已经会了的，构建阶段候选时我们要把它们视为
+        # "completed"，否则 ① 候选筛选时 prerequisites 会误判前置未学；② 后续
+        # 阶段规划还会重复教已掌握块（case_009/014 KB-11；case_016/017/020 KB-04
+        # 等 10 多个 T1 重复 fail 的根因）。
+        #
+        # 注意：knowledge_catalog_tool.list_blocks() 返回轻量摘要（subtopics=空），
+        # 必须逐个 get_block() 才能拿到完整子知识点列表。
+        if mastered_block_ids:
+            for bid in mastered_block_ids:
+                block = (
+                    self.knowledge_catalog_tool.get_block(bid)
+                    or next((b for b in self.knowledge_catalog_tool.list_blocks()
+                             if str(b.get("block_id", "") or "") == bid), None)
+                    or {}
+                )
+                for sub in (block.get("subtopics", []) or []):
+                    sid = str(sub.get("subtopic_id") or sub.get("id") or "")
+                    if sid:
+                        completed_ids.add(sid)
         for candidate in candidates:
             if selected_subtopics and candidate.get("block_id") != selected_subtopics[0].get("block_id"):
                 continue
@@ -995,9 +1089,19 @@ class DeterministicDiagnosticAgent:
 
     @staticmethod
     def _stage_time_plan(estimated_hours: float, daily_hours: float) -> tuple[float, float, int]:
-        """Turn one atomic knowledge point into a learner-visible time plan."""
+        """Turn one atomic knowledge point into a learner-visible time plan.
+
+        NOTE: ``stage_generator_tool._generate_stage`` already produces an
+        ``adjusted_hours`` value from the catalog baseline; this function is
+        used on the *deterministic* side where hours are aggregated from the
+        selected subtopics.  Both sides must honour the audit rule that a
+        stage total can never exceed ``daily_hours * 3`` (cases 019/021
+        triggered the violation with 6.6h on a 2h/day budget).
+        """
         effective_hours = max(0.0, round(float(estimated_hours or 0.0), 1))
         daily_budget = max(0.5, min(8.0, float(daily_hours or 2.0)))
+        # ── P2 T3 修复位点（deterministic 镜像）：effective_hours 硬截断 daily_budget * 3 ──
+        effective_hours = round(min(effective_hours, daily_budget * 3.0), 1)
         recommended_daily_hours = min(effective_hours, daily_budget)
         suggested_study_days = max(1, math.ceil(effective_hours / daily_budget))
         return effective_hours, recommended_daily_hours, suggested_study_days
@@ -1042,6 +1146,35 @@ class DeterministicDiagnosticAgent:
             return []
         parts = re.split(r"[、,，/|；;\n]+", raw)
         return [part.strip() for part in parts if part.strip()]
+
+    @staticmethod
+    def _parse_declared_target_blocks(text: str) -> list[str]:
+        """Extract user-declared target block IDs / names from diagnostics text.
+
+        The evaluation pipeline writes an ``expected_target_blocks`` CSV
+        column; when present it gets encoded as
+        ``"预期目标块: KB-12, KB-13"`` on its own line.  This helper is a
+        tolerant parse so that topological tie-breaking in
+        :meth:`generate_stage` can prefer user-annotated goals.
+        """
+        if not text:
+            return []
+        labels = (
+            "预期目标块",
+            "预期目标板块",
+            "目标块",
+            "目标板块",
+            "期望目标块",
+            "expected_target_blocks",
+            "expected target blocks",
+            "target blocks",
+        )
+        for label in labels:
+            pattern = rf"{re.escape(label)}\s*[:：=]\s*([^\n]+)"
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if match:
+                return DeterministicDiagnosticAgent._parse_tags(match.group(1))
+        return []
 
     @staticmethod
     def _extract_goal_from_sentences(text: str) -> str:
