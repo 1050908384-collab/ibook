@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -9,7 +10,7 @@ BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
 sys.path.insert(0, BACKEND_DIR)
 
 from config import settings
-from orchestrator.harness import Harness, resolve_block_concurrency
+from orchestrator.harness import AdaptiveConcurrencyLimiter, Harness, resolve_block_concurrency
 
 
 class BlockConcurrencyTests(unittest.TestCase):
@@ -38,6 +39,28 @@ class BlockConcurrencyTests(unittest.TestCase):
             settings, "BLOCK_CONCURRENCY_LOCAL", 3
         ):
             self.assertEqual(harness._block_concurrency(), 3)
+
+    def test_runtime_fallback_can_shrink_queued_work(self):
+        async def scenario():
+            limiter = AdaptiveConcurrencyLimiter(5)
+            acquired = []
+            gate = asyncio.Event()
+
+            async def worker(index):
+                await limiter.acquire()
+                acquired.append(index)
+                await gate.wait()
+                limiter.release()
+
+            tasks = [asyncio.create_task(worker(index)) for index in range(6)]
+            await asyncio.sleep(0)
+            self.assertEqual(len(acquired), 5)
+            limiter.set_limit(3)
+            self.assertEqual(len(acquired), 5)
+            gate.set()
+            await asyncio.gather(*tasks)
+
+        asyncio.run(scenario())
 
 
 if __name__ == "__main__":
