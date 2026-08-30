@@ -1,8 +1,27 @@
 {
-  "session_id": "cec91eb7-5cd0-4dbd-8273-99bd83ce5a81",
+  "session_id": "cda12a9f-e929-4445-8a59-47570ec5c287",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "掌握PyTorch和训练流程，想学推理部署",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "LLM三阶段训练流程"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-10"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-15"
+  ],
+  "target_subtopic_ids": [
+    "KBS-15-04"
+  ],
+  "planned_block_order": [
+    "KB-15"
+  ],
+  "active_stage_block_id": "KB-01",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -28,9 +47,9 @@
   ],
   "goal": "vLLM部署",
   "daily_hours": 2.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.725,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

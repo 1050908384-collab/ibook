@@ -1,132 +1,132 @@
 [
   {
-    "question_id": "Q-KB12-ST1204-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
     "options": [],
-    "correct_answer": "显存 ||| 内存 ||| 存储",
-    "hint": "Double Quantization 降低量化状态的存储开销。",
-    "explanation": "Double Quantization 降低量化状态的存储开销。"
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
   },
   {
-    "question_id": "Q-KB12-ST1204-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 常用的 4-bit 数据类型名称是________。",
-    "options": [],
-    "correct_answer": "NF4 ||| NormalFloat4",
-    "hint": "NF4 为正态分布权重设计的 4-bit 格式。",
-    "explanation": "NF4 为正态分布权重设计的 4-bit 格式。"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中用于指定注入 LoRA 层模块名列表的参数是________。",
-    "options": [],
-    "correct_answer": "target_modules",
-    "hint": "target_modules 决定哪些线性层被适配。",
-    "explanation": "target_modules 决定哪些线性层被适配。"
-  },
-  {
-    "question_id": "Q-KB12-ST1202-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoRA 中 rank r 决定低秩更新矩阵的________。",
-    "options": [],
-    "correct_answer": "秩 ||| rank ||| 维度",
-    "hint": "r 越大，可训练适配器容量通常越大。",
-    "explanation": "r 越大，可训练适配器容量通常越大。"
-  },
-  {
-    "question_id": "Q-KB12-ST1205-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-05",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "使用 `save_pretrained()` 导出模型或适配器时，通常会保存权重和________文件。",
-    "options": [],
-    "correct_answer": "配置 ||| config ||| 配置文件",
-    "hint": "配置文件用于后续正确加载模型。",
-    "explanation": "配置文件用于后续正确加载模型。"
-  },
-  {
-    "question_id": "Q-KB1201-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
     "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 相比 LoRA 的主要改进是引入了 **4-bit** 量化技术，进一步降低了微调时的________占用。",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
     "options": [],
-    "correct_answer": "显存（GPU Memory）",
-    "hint": null,
-    "explanation": ""
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
   },
   {
-    "question_id": "Q-KB12-ST1202-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "在其他条件相同时，增大 LoRA rank 最可能带来什么？",
-    "options": [
-      {
-        "key": "A",
-        "text": "可训练参数量增加"
-      },
-      {
-        "key": "B",
-        "text": "基座模型词表被删除"
-      },
-      {
-        "key": "C",
-        "text": "不再需要训练数据"
-      },
-      {
-        "key": "D",
-        "text": "模型自动变为量化模型"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "更高 rank 意味着更大的低秩适配器。",
-    "explanation": "更高 rank 意味着更大的低秩适配器。"
-  },
-  {
-    "question_id": "Q-KB1201-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB0202-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
     "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "LoRA中，`r`（rank）参数的作用是？",
+    "question_text": "以下代码输出是？\n```python\ns = {1, 2, 3, 3, 2, 1}\nprint(len(s))\n```",
     "options": [
       {
         "key": "A",
-        "text": "设置学习率"
+        "text": "6"
       },
       {
         "key": "B",
-        "text": "设置低秩矩阵的维度，`r` 越大可训练参数越多"
+        "text": "3"
       },
       {
         "key": "C",
-        "text": "设置Batch Size"
+        "text": "2"
       },
       {
         "key": "D",
-        "text": "设置最大序列长度"
+        "text": "报错"
       }
     ],
     "correct_answer": "B",
+    "hint": "> 集合自动去重，`{1, 2, 3}` 长度为3。",
+    "explanation": "> 集合自动去重，`{1, 2, 3}` 长度为3。"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0205-009",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "写一个装饰器 `timer`，测量并打印被装饰函数的执行时间（秒），同时不改变原函数的返回值。然后用它装饰一个计算前100万个数平方和的函数。",
+    "options": [],
+    "correct_answer": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---",
+    "hint": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---",
+    "explanation": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0204-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`\"w\"`"
+      },
+      {
+        "key": "B",
+        "text": "`\"r\"`"
+      },
+      {
+        "key": "C",
+        "text": "`\"a\"`"
+      },
+      {
+        "key": "D",
+        "text": "`\"x\"`"
+      }
+    ],
+    "correct_answer": "C",
     "hint": null,
     "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0202-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请用**列表推导式**生成1到20中所有能被3整除的数的平方。",
+    "options": [],
+    "correct_answer": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
+    "hint": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
+    "explanation": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```"
+  },
+  {
+    "question_id": "Q-KB0205-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写一个**带参数的装饰器** `retry(times=3)`，使被装饰的函数在抛出异常时自动重试指定次数。",
+    "options": [],
+    "correct_answer": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "hint": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "explanation": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```"
   }
 ]

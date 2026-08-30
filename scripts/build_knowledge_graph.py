@@ -351,6 +351,17 @@ def build_knowledge_graph() -> dict:
     for node in nodes:
         node_attributes = dict(node)
         node_id = node_attributes.pop("node_id")
+        # 注入拓扑层级（从 learning_levels 派生结果回写到图节点属性）
+        if node_attributes.get("node_type") == "block":
+            for bl in learning_levels.get("blocks", []):
+                if bl["block_id"] == node_id:
+                    node_attributes["topological_level"] = bl["level"]
+                    break
+        elif node_attributes.get("node_type") == "subtopic":
+            for sl in learning_levels.get("subtopics", []):
+                if sl["subtopic_id"] == node_id:
+                    node_attributes["topological_level"] = sl["level"]
+                    break
         graph_client.add_node(node_id, **node_attributes)
     for edge in edges:
         edge_attributes = dict(edge)

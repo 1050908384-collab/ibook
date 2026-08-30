@@ -1,65 +1,65 @@
 [
   {
-    "question_id": "Q-KB1201-004",
-    "submitted_answer": "正确",
+    "question_id": "Q-KB0200-004",
+    "submitted_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "is_correct": true,
-    "correct_answer": "正确",
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB12-ST1204-002",
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "24.0",
+    "is_correct": true,
+    "correct_answer": "24.0",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0202-004",
+    "submitted_answer": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0200-002",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "显存 ||| 内存 ||| 存储",
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1201-002",
-    "submitted_answer": "显存（GPU Memory）",
+    "question_id": "Q-KB0201-004",
+    "submitted_answer": "B",
     "is_correct": true,
-    "correct_answer": "显存（GPU Memory）",
+    "correct_answer": "B",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1201-001",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0203-005",
+    "submitted_answer": "`3`\n> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "`3`\n> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1201-005",
-    "submitted_answer": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---",
-    "is_correct": true,
-    "correct_answer": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-003",
-    "submitted_answer": "A",
-    "is_correct": true,
-    "correct_answer": "A",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-002",
-    "submitted_answer": "lora_dropout",
-    "is_correct": true,
-    "correct_answer": "lora_dropout",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-001",
+    "question_id": "Q-KB0202-006",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "target_modules",
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0205-008",
+    "submitted_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

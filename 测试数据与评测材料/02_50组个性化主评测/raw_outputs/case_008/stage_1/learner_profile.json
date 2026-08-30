@@ -1,8 +1,21 @@
 {
-  "session_id": "5402f620-4a3b-4162-b76b-ca2771fe6c11",
+  "session_id": "36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2",
   "user_id": "local-user",
-  "grade": "",
+  "grade": "数据分析师，熟练SQL和Excel，想学LLM",
   "skill_tags": [],
+  "mastered_block_ids": [],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -10,10 +23,14 @@
       "block_id": "KB-12",
       "block_name": "参数高效微调（LoRA与QLoRA）",
       "target_subtopic_ids": [
-        "KBS-12-01"
+        "KBS-12-01",
+        "KBS-12-02",
+        "KBS-12-03",
+        "KBS-12-04",
+        "KBS-12-05"
       ],
       "mapping_confidence": 1.0,
-      "level": "beginner",
+      "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
@@ -24,10 +41,10 @@
   ],
   "goal": "LoRA微调",
   "daily_hours": 1.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
+  "learning_style": "mixed",
+  "learning_rhythm": "medium",
   "confidence_index": 0.5,
   "confusion_markers": [],
-  "confidence": 0.95,
+  "confidence": 0.9,
   "version": 1
 }

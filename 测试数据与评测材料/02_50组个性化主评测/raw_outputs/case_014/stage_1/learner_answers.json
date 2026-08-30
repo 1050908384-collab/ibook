@@ -1,22 +1,22 @@
 [
   {
-    "question_id": "Q-KB1103-003",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "```python\nfrom trl import SFTTrainer, SFTConfig\n\ntraining_args = SFTConfig(\n    output_dir=\"./sft_output\",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    logging_steps=10,\n    save_strategy=\"epoch\"\n)\n\ntrainer = SFTTrainer(\n    model=model,\n    args=training_args,\n    train_dataset=train_dataset,\n    data_collator=data_collator,\n)\n\ntrainer.train()\n```",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB1103-005",
-    "submitted_answer": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
+    "question_id": "Q-KB0100-002",
+    "submitted_answer": "your_username\nDESKTOP-XXXX",
     "is_correct": true,
-    "correct_answer": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
+    "correct_answer": "your_username\nDESKTOP-XXXX",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1103-004",
+    "question_id": "Q-KB0100-004",
+    "submitted_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "is_correct": true,
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-004",
     "submitted_answer": "B",
     "is_correct": true,
     "correct_answer": "B",
@@ -24,7 +24,31 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1103-001",
+    "question_id": "Q-KB0101-002",
+    "submitted_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
+    "is_correct": true,
+    "correct_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "submitted_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "is_correct": true,
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "submitted_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "is_correct": true,
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-001",
     "submitted_answer": "B",
     "is_correct": true,
     "correct_answer": "B",
@@ -32,31 +56,7 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1101-002",
-    "submitted_answer": "`no_grad`",
-    "is_correct": true,
-    "correct_answer": "`no_grad`",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB11-ST1102-002",
-    "submitted_answer": "True ||| 真",
-    "is_correct": true,
-    "correct_answer": "True ||| 真",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB11-ST1100-002",
-    "submitted_answer": "Token ||| token ||| 令牌",
-    "is_correct": true,
-    "correct_answer": "Token ||| token ||| 令牌",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB11-ST1102-003",
+    "question_id": "Q-KB0104-002",
     "submitted_answer": "A",
     "is_correct": true,
     "correct_answer": "A",

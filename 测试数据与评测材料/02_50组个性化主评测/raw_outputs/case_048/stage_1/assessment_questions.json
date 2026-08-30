@@ -1,135 +1,169 @@
 [
   {
-    "question_id": "Q-KB12-ST1202-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
+    "question_id": "Q-KB07-ST0700-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "LoRA 中 rank r 决定低秩更新矩阵的________。",
+    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
     "options": [],
-    "correct_answer": "秩 ||| rank ||| 维度",
-    "hint": "r 越大，可训练适配器容量通常越大。",
-    "explanation": "r 越大，可训练适配器容量通常越大。"
+    "correct_answer": "tokenizer ||| 分词器",
+    "hint": "Tokenizer 负责文本与 token 序列转换。",
+    "explanation": "Tokenizer 负责文本与 token 序列转换。"
   },
   {
-    "question_id": "Q-KB1201-005",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "请使用 `peft` 库，为 `model` 配置 LoRA，要求 `r=16`，`lora_alpha=32`，目标模块为所有线性层（`all-linear`），`lora_dropout=0.05`。",
+    "question_id": "Q-KB07-ST0700-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Hugging Face 模型与分词器常用的 Python 库名称是________。",
     "options": [],
-    "correct_answer": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---",
-    "hint": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---",
-    "explanation": "```python\nfrom peft import LoraConfig, TaskType, get_peft_model\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,\n    lora_alpha=32,\n    target_modules=\"all-linear\",\n    lora_dropout=0.05,\n    bias=\"none\"\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n```\n\n---"
+    "correct_answer": "transformers",
+    "hint": "transformers 提供模型、Tokenizer 与训练接口。",
+    "explanation": "transformers 提供模型、Tokenizer 与训练接口。"
   },
   {
-    "question_id": "Q-KB1201-004",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB0702-004",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "在 Hugging Face Tokenizer 的输出中，`attention_mask` 的作用是什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "标记哪些 token 是填充（padding）部分"
+      },
+      {
+        "key": "B",
+        "text": "标记哪些 token 是特殊 token（如 [CLS], [SEP]）"
+      },
+      {
+        "key": "C",
+        "text": "存储每个 token 的词性信息"
+      },
+      {
+        "key": "D",
+        "text": "用于加速分词过程"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `attention_mask` 是一个与 `input_ids` 形状相同的张量，其中有效 token 对应的位置为 1，填充 token 对应的位置为 0。模型使用它来忽略填充部分的注意力计算。",
+    "explanation": "> `attention_mask` 是一个与 `input_ids` 形状相同的张量，其中有效 token 对应的位置为 1，填充 token 对应的位置为 0。模型使用它来忽略填充部分的注意力计算。"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "Byte Pair Encoding (BPE) 算法的核心思想是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "随机采样词元"
+      },
+      {
+        "key": "B",
+        "text": "从字符级别开始，迭代合并最频繁出现的相邻符号对"
+      },
+      {
+        "key": "C",
+        "text": "基于整个词进行编码"
+      },
+      {
+        "key": "D",
+        "text": "使用固定大小的词汇表"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。",
+    "explanation": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。"
+  },
+  {
+    "question_id": "Q-KB0701-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
     "difficulty": "中级",
     "question_type": "true_false",
-    "question_text": "使用LoRA微调后的模型，可以将LoRA权重合并（Merge）回基座模型中，合并后推理不需要额外加载LoRA适配器。（ ）",
+    "question_text": "SentencePiece 模型将输入文本视为原始的字符串序列，无需预先进行空格分词，可以直接从原始句子中学习子词单元。（ ）",
     "options": [
       "正确",
       "错误"
     ],
     "correct_answer": "正确",
-    "hint": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。",
-    "explanation": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。"
+    "hint": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。",
+    "explanation": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。"
   },
   {
-    "question_id": "Q-KB12-ST1202-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoRA 中 alpha 通常用于对低秩更新进行________。",
-    "options": [],
-    "correct_answer": "缩放 ||| scaling ||| 放缩",
-    "hint": "常见实现使用 alpha/r 缩放更新。",
-    "explanation": "常见实现使用 alpha/r 缩放更新。"
-  },
-  {
-    "question_id": "Q-KB12-ST1200-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 的 4-bit 量化常依赖的库是________。",
-    "options": [],
-    "correct_answer": "bitsandbytes",
-    "hint": "bitsandbytes 提供低比特量化与优化器支持。",
-    "explanation": "bitsandbytes 提供低比特量化与优化器支持。"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
+    "question_id": "Q-KB0703-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "若希望将 LoRA 注入注意力层的 query 与 value 投影，应配置什么？",
+    "question_text": "当设置 `truncation=True` 时，如果输入序列长度超过模型的最大长度，分词器会如何处理？",
     "options": [
       {
         "key": "A",
-        "text": "target_modules 指向对应投影层名"
+        "text": "抛出错误"
       },
       {
         "key": "B",
-        "text": "删除 tokenizer"
+        "text": "自动将序列填充到最大长度"
       },
       {
         "key": "C",
-        "text": "把 batch size 设为0"
+        "text": "从序列末尾截断超出部分"
       },
       {
         "key": "D",
-        "text": "关闭梯度计算"
+        "text": "随机删除一些 token"
       }
     ],
-    "correct_answer": "A",
-    "hint": "target_modules 控制 LoRA 的注入位置。",
-    "explanation": "target_modules 控制 LoRA 的注入位置。"
+    "correct_answer": "C",
+    "hint": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。",
+    "explanation": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。"
   },
   {
-    "question_id": "Q-KB12-ST1204-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
+    "question_id": "Q-KB0703-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`padding='max_length'` 参数会将所有序列填充或截断到由________参数指定的长度。",
+    "options": [],
+    "correct_answer": "`max_length`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0701-004",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "分页优化器的主要目标是？",
+    "question_text": "以下关于子词切分（Subword Tokenization）的优点，描述**错误**的是？",
     "options": [
       {
         "key": "A",
-        "text": "缓解训练时显存峰值"
+        "text": "能有效解决未登录词（OOV）问题"
       },
       {
         "key": "B",
-        "text": "增加词表"
+        "text": "相比字符级模型，能更好地保留语义信息"
       },
       {
         "key": "C",
-        "text": "替代数据集"
+        "text": "相比词级模型，能显著减小词汇表大小"
       },
       {
         "key": "D",
-        "text": "关闭反向传播"
+        "text": "切分出的子词单元总是具有独立的、完整的语义"
       }
     ],
-    "correct_answer": "A",
-    "hint": "分页策略可避免部分优化器状态引发的显存峰值。",
-    "explanation": "分页策略可避免部分优化器状态引发的显存峰值。"
-  },
-  {
-    "question_id": "Q-KB12-ST1205-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-05",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "PEFT 模型调用 `merge_and_unload()` 后，会将 LoRA 权重________到基座模型中。",
-    "options": [],
-    "correct_answer": "合并 ||| merge ||| 融合",
-    "hint": "合并后可作为普通模型进行推理部署。",
-    "explanation": "合并后可作为普通模型进行推理部署。"
+    "correct_answer": "D",
+    "hint": "> 子词单元（如 \"ing\", \"pre\", \"##ing\"）本身不一定具有完整的语义，它们是构成词的更小单位。其优势在于平衡了词汇表大小和OOV问题，而不是保证每个单元都有独立语义。",
+    "explanation": "> 子词单元（如 \"ing\", \"pre\", \"##ing\"）本身不一定具有完整的语义，它们是构成词的更小单位。其优势在于平衡了词汇表大小和OOV问题，而不是保证每个单元都有独立语义。"
   }
 ]

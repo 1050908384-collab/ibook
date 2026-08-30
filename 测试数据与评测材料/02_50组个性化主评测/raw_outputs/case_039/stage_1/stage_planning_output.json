@@ -1,26 +1,36 @@
 {
-  "stage_id": "empty-0c9d5490-d567-4bdd-9195-02752f537b1d-1",
+  "stage_id": "d6d4d444-88f9-5665-8fe1-798c6c43996d",
   "stage_num": 1,
-  "block_id": "KB-12",
-  "block_name": "LoRA",
-  "block_ids": [],
-  "subtopic_id": "",
-  "subtopic_name": "",
-  "subtopic_ids": [],
-  "subtopic_names": [],
-  "estimated_hours": 0.0,
+  "block_id": "KB-02",
+  "block_name": "Python编程基础",
+  "block_ids": [
+    "KB-02"
+  ],
+  "subtopic_id": "KBS-02-00",
+  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
+  "subtopic_ids": [
+    "KBS-02-00"
+  ],
+  "subtopic_names": [
+    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
+  ],
+  "estimated_hours": 0.5,
   "gap_skill": "LoRA",
   "prerequisites": [],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "已完成全部知识点",
-  "description": "当前 gap 下没有需要学习的知识点了",
-  "objectives": [],
+  "title": "学习环境准备：安装Python 3.10+",
+  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
+  "objectives": [
+    "理解环境准备：安装Python 3.10+的基本概念",
+    "掌握环境准备：安装Python 3.10+的核心技术",
+    "能够独立完成环境准备：安装Python 3.10+相关任务"
+  ],
   "difficulty": "初级",
-  "recommended_daily_hours": 0.0,
-  "suggested_study_days": 0,
-  "learning_style_notes": null,
-  "hardware_notes": null,
-  "personalization_summary": null
+  "recommended_daily_hours": 0.5,
+  "suggested_study_days": 1,
+  "learning_style_notes": "混合型学习者：建议结合阅读讲解、可视化演示与实操练习，交替推进环境准备：安装Python 3.10+的学习。",
+  "hardware_notes": "当前设备为 RTX 4060 Ti 16GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合平时没时间，周末集中5小时，想学LoRA学习者 | 预计1.1小时完成 | 建议分1天学习 | 每天5.0小时 | 综合型学习风格"
 }

@@ -1,120 +1,120 @@
-{"id": 943, "timestamp": 1787729701102, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 944, "timestamp": 1787729701105, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 945, "timestamp": 1787729701106, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 946, "timestamp": 1787729701106, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 947, "timestamp": 1787729701106, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 948, "timestamp": 1787729701106, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 949, "timestamp": 1787729701108, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 950, "timestamp": 1787729701108, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 951, "timestamp": 1787729701108, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 952, "timestamp": 1787729701108, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 953, "timestamp": 1787729701108, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 954, "timestamp": 1787729701109, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 955, "timestamp": 1787729701109, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 956, "timestamp": 1787729701110, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 957, "timestamp": 1787729701110, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 958, "timestamp": 1787729701111, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 959, "timestamp": 1787729701114, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 960, "timestamp": 1787729701114, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 961, "timestamp": 1787729701114, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 962, "timestamp": 1787729701114, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 963, "timestamp": 1787729701114, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 964, "timestamp": 1787729703382, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 965, "timestamp": 1787729703382, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 966, "timestamp": 1787729703445, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 967, "timestamp": 1787729703445, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 968, "timestamp": 1787729703445, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 969, "timestamp": 1787729703445, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 970, "timestamp": 1787729703445, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 971, "timestamp": 1787729703445, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 972, "timestamp": 1787729704337, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 973, "timestamp": 1787729704337, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 974, "timestamp": 1787729704378, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 975, "timestamp": 1787729704378, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 976, "timestamp": 1787729704378, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 977, "timestamp": 1787729704378, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 978, "timestamp": 1787729704379, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 979, "timestamp": 1787729704379, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 980, "timestamp": 1787729704459, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 981, "timestamp": 1787729704459, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 982, "timestamp": 1787729704495, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 983, "timestamp": 1787729704495, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 984, "timestamp": 1787729704496, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 985, "timestamp": 1787729704496, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 986, "timestamp": 1787729704496, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 987, "timestamp": 1787729704496, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 988, "timestamp": 1787729704686, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 989, "timestamp": 1787729704686, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 990, "timestamp": 1787729704734, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 991, "timestamp": 1787729704735, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 992, "timestamp": 1787729704735, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 993, "timestamp": 1787729704735, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 994, "timestamp": 1787729704735, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 995, "timestamp": 1787729704735, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 996, "timestamp": 1787729704838, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 997, "timestamp": 1787729704838, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 998, "timestamp": 1787729704948, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 999, "timestamp": 1787729704948, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 1000, "timestamp": 1787729704948, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 1001, "timestamp": 1787729704948, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 1002, "timestamp": 1787729704948, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 1003, "timestamp": 1787729704948, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 1004, "timestamp": 1787729705562, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1005, "timestamp": 1787729705562, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1006, "timestamp": 1787729705602, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1007, "timestamp": 1787729705603, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 1008, "timestamp": 1787729705603, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 1009, "timestamp": 1787729705603, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 1010, "timestamp": 1787729705603, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 1011, "timestamp": 1787729705603, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 1012, "timestamp": 1787729706744, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1013, "timestamp": 1787729706744, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1014, "timestamp": 1787729706784, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1015, "timestamp": 1787729706784, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 1016, "timestamp": 1787729706784, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 1017, "timestamp": 1787729706784, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 1018, "timestamp": 1787729706785, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 1019, "timestamp": 1787729706785, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 1020, "timestamp": 1787729707112, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1021, "timestamp": 1787729707113, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1022, "timestamp": 1787729707146, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1023, "timestamp": 1787729707146, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 1024, "timestamp": 1787729707146, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 1025, "timestamp": 1787729707146, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 1026, "timestamp": 1787729707146, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 1027, "timestamp": 1787729707147, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 1028, "timestamp": 1787729707885, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1029, "timestamp": 1787729707886, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1030, "timestamp": 1787729707929, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1031, "timestamp": 1787729707929, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 1032, "timestamp": 1787729707929, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 1033, "timestamp": 1787729707929, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 1034, "timestamp": 1787729707929, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 1035, "timestamp": 1787729707930, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 1036, "timestamp": 1787729708485, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1037, "timestamp": 1787729708486, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1038, "timestamp": 1787729708542, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1039, "timestamp": 1787729708542, "event": "agent3:review_reply_start", "detail": "round=2"}
-{"id": 1040, "timestamp": 1787729708542, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
-{"id": 1041, "timestamp": 1787729708542, "event": "agent4:verdict_start", "detail": "round=2"}
-{"id": 1042, "timestamp": 1787729708542, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
-{"id": 1043, "timestamp": 1787729708542, "event": "agent3:revision_start", "detail": "round=2"}
-{"id": 1044, "timestamp": 1787729708825, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1045, "timestamp": 1787729708825, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1046, "timestamp": 1787729708852, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1047, "timestamp": 1787729709258, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1048, "timestamp": 1787729709258, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1049, "timestamp": 1787729709286, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1050, "timestamp": 1787729709831, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1051, "timestamp": 1787729709831, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1052, "timestamp": 1787729709878, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1053, "timestamp": 1787729711014, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1054, "timestamp": 1787729711014, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1055, "timestamp": 1787729711040, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1056, "timestamp": 1787729712194, "event": "agent3:revision_done", "detail": "round=2"}
-{"id": 1057, "timestamp": 1787729712194, "event": "agent4:recheck_start", "detail": "round=3"}
-{"id": 1058, "timestamp": 1787729712213, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
-{"id": 1059, "timestamp": 1787729712213, "event": "pipeline:converge_freeze", "detail": "round=2, frozen_blocks=15"}
-{"id": 1060, "timestamp": 1787729712717, "event": "pipeline:phaseC_round", "detail": "round=2, unresolved_must_fix=0, open_errors=17"}
-{"id": 1061, "timestamp": 1787729712840, "event": "pipeline:done", "detail": "final_status=needs_human_review, blocks=93, unresolved=0"}
-{"id": 1062, "timestamp": 1787729713085, "event": "start_stage:done", "detail": "passed=True, iterations=3, final_status=needs_human_review, needs_human_review=True"}
+{"id": 426, "timestamp": 1788083049973, "event": "agent3:review_reply_done", "detail": "round=1, replies=1"}
+{"id": 427, "timestamp": 1788083049973, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 428, "timestamp": 1788083049973, "event": "agent4:verdict_done", "detail": "round=1, decisions=1"}
+{"id": 429, "timestamp": 1788083049973, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 430, "timestamp": 1788083050082, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 431, "timestamp": 1788083050082, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 432, "timestamp": 1788083050089, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 433, "timestamp": 1788083050089, "event": "agent3:review_reply_start", "detail": "round=1"}
+{"id": 434, "timestamp": 1788083050089, "event": "agent3:review_reply_done", "detail": "round=1, replies=1"}
+{"id": 435, "timestamp": 1788083050089, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 436, "timestamp": 1788083050089, "event": "agent4:verdict_done", "detail": "round=1, decisions=1"}
+{"id": 437, "timestamp": 1788083050089, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 438, "timestamp": 1788083050399, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 439, "timestamp": 1788083050399, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 440, "timestamp": 1788083050405, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 441, "timestamp": 1788083050405, "event": "agent3:review_reply_start", "detail": "round=1"}
+{"id": 442, "timestamp": 1788083050405, "event": "agent3:review_reply_done", "detail": "round=1, replies=3"}
+{"id": 443, "timestamp": 1788083050405, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 444, "timestamp": 1788083050405, "event": "agent4:verdict_done", "detail": "round=1, decisions=3"}
+{"id": 445, "timestamp": 1788083050405, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 446, "timestamp": 1788083051268, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 447, "timestamp": 1788083051268, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 448, "timestamp": 1788083051273, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 449, "timestamp": 1788083051273, "event": "agent3:review_reply_start", "detail": "round=1"}
+{"id": 450, "timestamp": 1788083051273, "event": "agent3:review_reply_done", "detail": "round=1, replies=1"}
+{"id": 451, "timestamp": 1788083051273, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 452, "timestamp": 1788083051273, "event": "agent4:verdict_done", "detail": "round=1, decisions=1"}
+{"id": 453, "timestamp": 1788083051273, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 454, "timestamp": 1788083051517, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 455, "timestamp": 1788083051517, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 456, "timestamp": 1788083051521, "event": "agent4:recheck_done", "detail": "round=2, issues=1"}
+{"id": 457, "timestamp": 1788083051522, "event": "agent3:review_reply_start", "detail": "round=1"}
+{"id": 458, "timestamp": 1788083051522, "event": "agent3:review_reply_done", "detail": "round=1, replies=1"}
+{"id": 459, "timestamp": 1788083051522, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 460, "timestamp": 1788083051522, "event": "agent4:verdict_done", "detail": "round=1, decisions=1"}
+{"id": 461, "timestamp": 1788083051522, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 462, "timestamp": 1788083051955, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 463, "timestamp": 1788083051955, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 464, "timestamp": 1788083051961, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 465, "timestamp": 1788083051961, "event": "agent3:review_reply_start", "detail": "round=1"}
+{"id": 466, "timestamp": 1788083051961, "event": "agent3:review_reply_done", "detail": "round=1, replies=2"}
+{"id": 467, "timestamp": 1788083051961, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 468, "timestamp": 1788083051961, "event": "agent4:verdict_done", "detail": "round=1, decisions=2"}
+{"id": 469, "timestamp": 1788083051961, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 470, "timestamp": 1788083052188, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 471, "timestamp": 1788083052189, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 472, "timestamp": 1788083052194, "event": "agent4:recheck_done", "detail": "round=2, issues=1"}
+{"id": 473, "timestamp": 1788083052194, "event": "agent3:review_reply_start", "detail": "round=1"}
+{"id": 474, "timestamp": 1788083052194, "event": "agent3:review_reply_done", "detail": "round=1, replies=1"}
+{"id": 475, "timestamp": 1788083052194, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 476, "timestamp": 1788083052194, "event": "agent4:verdict_done", "detail": "round=1, decisions=1"}
+{"id": 477, "timestamp": 1788083052194, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 478, "timestamp": 1788083052361, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 479, "timestamp": 1788083052361, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 480, "timestamp": 1788083052367, "event": "agent4:recheck_done", "detail": "round=2, issues=1"}
+{"id": 481, "timestamp": 1788083052368, "event": "agent3:review_reply_start", "detail": "round=1"}
+{"id": 482, "timestamp": 1788083052368, "event": "agent3:review_reply_done", "detail": "round=1, replies=3"}
+{"id": 483, "timestamp": 1788083052368, "event": "agent4:verdict_start", "detail": "round=1"}
+{"id": 484, "timestamp": 1788083052368, "event": "agent4:verdict_done", "detail": "round=1, decisions=3"}
+{"id": 485, "timestamp": 1788083052368, "event": "agent3:revision_start", "detail": "round=1"}
+{"id": 486, "timestamp": 1788083053088, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 487, "timestamp": 1788083053088, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 488, "timestamp": 1788083053095, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 489, "timestamp": 1788083053332, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 490, "timestamp": 1788083053332, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 491, "timestamp": 1788083053336, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 492, "timestamp": 1788083053344, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 493, "timestamp": 1788083053344, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 494, "timestamp": 1788083053349, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 495, "timestamp": 1788083053548, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 496, "timestamp": 1788083053548, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 497, "timestamp": 1788083053554, "event": "agent4:recheck_done", "detail": "round=2, issues=0"}
+{"id": 498, "timestamp": 1788083054847, "event": "agent3:revision_done", "detail": "round=1"}
+{"id": 499, "timestamp": 1788083054848, "event": "agent4:recheck_start", "detail": "round=2"}
+{"id": 500, "timestamp": 1788083054853, "event": "agent4:recheck_done", "detail": "round=2, issues=1"}
+{"id": 501, "timestamp": 1788083055181, "event": "pipeline:phaseC_round", "detail": "round=1, unresolved_must_fix=0, open_errors=5"}
+{"id": 502, "timestamp": 1788083055181, "event": "agent3:review_reply_start", "detail": "round=2"}
+{"id": 503, "timestamp": 1788083055181, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
+{"id": 504, "timestamp": 1788083055181, "event": "agent4:verdict_start", "detail": "round=2"}
+{"id": 505, "timestamp": 1788083055181, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
+{"id": 506, "timestamp": 1788083055181, "event": "agent3:revision_start", "detail": "round=2"}
+{"id": 507, "timestamp": 1788083055181, "event": "agent3:review_reply_start", "detail": "round=2"}
+{"id": 508, "timestamp": 1788083055181, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
+{"id": 509, "timestamp": 1788083055181, "event": "agent4:verdict_start", "detail": "round=2"}
+{"id": 510, "timestamp": 1788083055181, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
+{"id": 511, "timestamp": 1788083055181, "event": "agent3:revision_start", "detail": "round=2"}
+{"id": 512, "timestamp": 1788083055183, "event": "agent3:review_reply_start", "detail": "round=2"}
+{"id": 513, "timestamp": 1788083055183, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
+{"id": 514, "timestamp": 1788083055183, "event": "agent4:verdict_start", "detail": "round=2"}
+{"id": 515, "timestamp": 1788083055183, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
+{"id": 516, "timestamp": 1788083055183, "event": "agent3:revision_start", "detail": "round=2"}
+{"id": 517, "timestamp": 1788083055183, "event": "agent3:review_reply_start", "detail": "round=2"}
+{"id": 518, "timestamp": 1788083055183, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
+{"id": 519, "timestamp": 1788083055183, "event": "agent4:verdict_start", "detail": "round=2"}
+{"id": 520, "timestamp": 1788083055183, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
+{"id": 521, "timestamp": 1788083055183, "event": "agent3:revision_start", "detail": "round=2"}
+{"id": 522, "timestamp": 1788083055184, "event": "agent3:review_reply_start", "detail": "round=2"}
+{"id": 523, "timestamp": 1788083055184, "event": "agent3:review_reply_done", "detail": "round=2, replies=1"}
+{"id": 524, "timestamp": 1788083055184, "event": "agent4:verdict_start", "detail": "round=2"}
+{"id": 525, "timestamp": 1788083055184, "event": "agent4:verdict_done", "detail": "round=2, decisions=1"}
+{"id": 526, "timestamp": 1788083055184, "event": "agent3:revision_start", "detail": "round=2"}
+{"id": 527, "timestamp": 1788083056850, "event": "agent3:revision_done", "detail": "round=2"}
+{"id": 528, "timestamp": 1788083056850, "event": "agent4:recheck_start", "detail": "round=3"}
+{"id": 529, "timestamp": 1788083056856, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
+{"id": 530, "timestamp": 1788083057528, "event": "agent3:revision_done", "detail": "round=2"}
+{"id": 531, "timestamp": 1788083057528, "event": "agent4:recheck_start", "detail": "round=3"}
+{"id": 532, "timestamp": 1788083057543, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
+{"id": 533, "timestamp": 1788083057801, "event": "agent3:revision_done", "detail": "round=2"}
+{"id": 534, "timestamp": 1788083057801, "event": "agent4:recheck_start", "detail": "round=3"}
+{"id": 535, "timestamp": 1788083057807, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
+{"id": 536, "timestamp": 1788083058114, "event": "agent3:revision_done", "detail": "round=2"}
+{"id": 537, "timestamp": 1788083058114, "event": "agent4:recheck_start", "detail": "round=3"}
+{"id": 538, "timestamp": 1788083058121, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
+{"id": 539, "timestamp": 1788083058145, "event": "agent3:revision_done", "detail": "round=2"}
+{"id": 540, "timestamp": 1788083058146, "event": "agent4:recheck_start", "detail": "round=3"}
+{"id": 541, "timestamp": 1788083058151, "event": "agent4:recheck_done", "detail": "round=3, issues=1"}
+{"id": 542, "timestamp": 1788083058151, "event": "pipeline:converge_freeze", "detail": "round=2, frozen_blocks=5"}
+{"id": 543, "timestamp": 1788083058229, "event": "pipeline:phaseC_round", "detail": "round=2, unresolved_must_fix=0, open_errors=5"}
+{"id": 544, "timestamp": 1788083058254, "event": "pipeline:done", "detail": "final_status=needs_human_review, blocks=58, unresolved=0"}
+{"id": 545, "timestamp": 1788083058359, "event": "start_stage:done", "detail": "passed=True, iterations=3, final_status=needs_human_review, needs_human_review=True"}

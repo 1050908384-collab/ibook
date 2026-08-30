@@ -1,22 +1,46 @@
 [
   {
-    "question_id": "Q-KB15-ST1503-003",
-    "submitted_answer": "A",
-    "is_correct": true,
-    "correct_answer": "A",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB15-ST1503-001",
+    "question_id": "Q-KB0100-002",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "Cache ||| cache ||| 缓存",
+    "correct_answer": "your_username\nDESKTOP-XXXX",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1504-006",
+    "question_id": "Q-KB0100-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-007",
+    "submitted_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "is_correct": true,
+    "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "submitted_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "is_correct": true,
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-003",
     "submitted_answer": "B",
     "is_correct": true,
     "correct_answer": "B",
@@ -24,42 +48,18 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1504-013",
-    "submitted_answer": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---",
+    "question_id": "Q-KB0103-004",
+    "submitted_answer": "C",
     "is_correct": true,
-    "correct_answer": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---",
+    "correct_answer": "C",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1504-002",
-    "submitted_answer": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
+    "question_id": "Q-KB0104-004",
+    "submitted_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
     "is_correct": true,
-    "correct_answer": "```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=100)\n\noutputs = llm.generate([\"Hello, who are you?\"], sampling_params)\nprint(outputs[0].outputs[0].text)\n```",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB1504-014",
-    "submitted_answer": "B",
-    "is_correct": true,
-    "correct_answer": "B",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB15-ST1501-003",
-    "submitted_answer": "A",
-    "is_correct": true,
-    "correct_answer": "A",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB15-ST1500-001",
-    "submitted_answer": "版本 ||| 版本号",
-    "is_correct": true,
-    "correct_answer": "版本 ||| 版本号",
+    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

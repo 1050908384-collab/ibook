@@ -2,7 +2,7 @@
   "answer_behavior": "medium",
   "target_accuracy_range": [
     0.6,
-    0.79
+    0.69
   ],
   "wrong_answer_strategy": "fixed_by_question_id",
   "expected_next_strategy": "reinforce",

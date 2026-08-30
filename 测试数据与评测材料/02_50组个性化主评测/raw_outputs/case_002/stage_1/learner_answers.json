@@ -1,46 +1,14 @@
 [
   {
-    "question_id": "Q-KB07-ST0700-002",
-    "submitted_answer": "tokenizer ||| 分词器",
+    "question_id": "Q-KB04-ST0400-002",
+    "submitted_answer": "CUDA ||| GPU ||| 显卡",
     "is_correct": true,
-    "correct_answer": "tokenizer ||| 分词器",
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB07-ST0700-001",
-    "submitted_answer": "transformers",
-    "is_correct": true,
-    "correct_answer": "transformers",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0704-003",
-    "submitted_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
-    "is_correct": true,
-    "correct_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0703-002",
-    "submitted_answer": "`max_length`",
-    "is_correct": true,
-    "correct_answer": "`max_length`",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0703-005",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n\ntexts = [\"Short text\", \"A very long text that will definitely exceed the maximum length of one hundred and twenty-eight tokens...\"]\n\nencodings = tokenizer(\n    texts,\n    max_length=128,\n    padding='max_length',  # 填充到 max_length 指定的长度\n    truncation=True,       # 启用截断\n    return_tensors=\"tf\"    # 返回 TensorFlow 张量\n)\n\nprint(encodings[\"input_ids\"].shape)  # 输出: (2, 128)\n```\n\n---",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0704-004",
+    "question_id": "Q-KB04-ST0400-003",
     "submitted_answer": "A",
     "is_correct": true,
     "correct_answer": "A",
@@ -48,18 +16,50 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0703-001",
-    "submitted_answer": "C",
+    "question_id": "Q-KB0405-005",
+    "submitted_answer": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
     "is_correct": true,
-    "correct_answer": "C",
+    "correct_answer": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0703-004",
-    "submitted_answer": "正确",
+    "question_id": "Q-KB0401-001",
+    "submitted_answer": "A",
     "is_correct": true,
-    "correct_answer": "正确",
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`(2, 2)`；`torch.int64`（或 `torch.long`）",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0404-002",
+    "submitted_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "is_correct": true,
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

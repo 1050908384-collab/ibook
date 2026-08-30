@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T15:14:11.282457+00:00",
+  "generated_at": "2026-08-30T07:47:43.522263+00:00",
   "seed_files": {
     "blocks": "data/seeds/knowledge_blocks.json",
     "subtopics": "data/seeds/knowledge_subtopics.json",
@@ -12,8 +12,8 @@
   },
   "edge_counts": {
     "contains": 73,
-    "hard_prerequisite": 87,
-    "recommended_prerequisite": 3,
+    "hard_prerequisite": 86,
+    "recommended_prerequisite": 4,
     "goal_condition": 2,
     "progresses_to": 72
   },

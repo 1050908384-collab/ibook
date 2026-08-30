@@ -9,6 +9,14 @@ prerequisites so they participate in the DAG rather than being display-only.
 
 from __future__ import annotations
 
+
+import sys
+from pathlib import Path
+_PROJ_ROOT_ = Path(__file__).resolve().parent.parent
+if str(_PROJ_ROOT_) not in sys.path: sys.path.insert(0, str(_PROJ_ROOT_))
+_BE_ = Path(_PROJ_ROOT_, "backend")
+if str(_BE_) not in sys.path: sys.path.insert(0, str(_BE_))
+
 import json
 import re
 from pathlib import Path

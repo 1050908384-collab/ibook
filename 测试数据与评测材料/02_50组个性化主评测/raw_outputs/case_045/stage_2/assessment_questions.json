@@ -1,108 +1,60 @@
 [
   {
-    "question_id": "Q-KB12-ST1202-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
+    "question_id": "Q-KB07-ST0700-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "在其他条件相同时，增大 LoRA rank 最可能带来什么？",
+    "question_text": "安装 Hugging Face Transformers 的常用命令是？",
     "options": [
       {
         "key": "A",
-        "text": "可训练参数量增加"
+        "text": "pip install transformers"
       },
       {
         "key": "B",
-        "text": "基座模型词表被删除"
+        "text": "pip install tokenizer-only"
       },
       {
         "key": "C",
-        "text": "不再需要训练数据"
+        "text": "conda remove torch"
       },
       {
         "key": "D",
-        "text": "模型自动变为量化模型"
+        "text": "python uninstall model"
       }
     ],
     "correct_answer": "A",
-    "hint": "更高 rank 意味着更大的低秩适配器。",
-    "explanation": "更高 rank 意味着更大的低秩适配器。",
+    "hint": "pip install transformers 是标准安装方式。",
+    "explanation": "pip install transformers 是标准安装方式。",
     "expected_output": null,
     "grading_mode": "exact_match",
     "source": "runtime_supplement"
   },
   {
-    "question_id": "Q-KB12-ST1204-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
-    "options": [],
-    "correct_answer": "显存 ||| 内存 ||| 存储",
-    "hint": "Double Quantization 降低量化状态的存储开销。",
-    "explanation": "Double Quantization 降低量化状态的存储开销。",
-    "expected_output": null,
-    "grading_mode": "semantic_match",
-    "source": "runtime_supplement"
-  },
-  {
-    "question_id": "Q-KB12-ST1204-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 常用的 4-bit 数据类型名称是________。",
-    "options": [],
-    "correct_answer": "NF4 ||| NormalFloat4",
-    "hint": "NF4 为正态分布权重设计的 4-bit 格式。",
-    "explanation": "NF4 为正态分布权重设计的 4-bit 格式。",
-    "expected_output": null,
-    "grading_mode": "semantic_match",
-    "source": "runtime_supplement"
-  },
-  {
-    "question_id": "Q-KB12-ST1200-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 的 4-bit 量化常依赖的库是________。",
-    "options": [],
-    "correct_answer": "bitsandbytes",
-    "hint": "bitsandbytes 提供低比特量化与优化器支持。",
-    "explanation": "bitsandbytes 提供低比特量化与优化器支持。",
-    "expected_output": null,
-    "grading_mode": "semantic_match",
-    "source": "runtime_supplement"
-  },
-  {
-    "question_id": "Q-KB1201-004",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
-    "difficulty": "中级",
-    "question_type": "true_false",
-    "question_text": "使用LoRA微调后的模型，可以将LoRA权重合并（Merge）回基座模型中，合并后推理不需要额外加载LoRA适配器。（ ）",
-    "options": [
-      "正确",
-      "错误"
-    ],
-    "correct_answer": "正确",
-    "hint": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。",
-    "explanation": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。",
-    "expected_output": null,
-    "grading_mode": "exact_match",
-    "source": "测试题目.md"
-  },
-  {
-    "question_id": "Q-KB1201-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB07-ST0700-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
     "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "QLoRA 相比 LoRA 的主要改进是引入了 **4-bit** 量化技术，进一步降低了微调时的________占用。",
+    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
     "options": [],
-    "correct_answer": "显存（GPU Memory）",
+    "correct_answer": "tokenizer ||| 分词器",
+    "hint": "Tokenizer 负责文本与 token 序列转换。",
+    "explanation": "Tokenizer 负责文本与 token 序列转换。",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB0703-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`padding='max_length'` 参数会将所有序列填充或截断到由________参数指定的长度。",
+    "options": [],
+    "correct_answer": "`max_length`",
     "hint": null,
     "explanation": "",
     "expected_output": null,
@@ -110,33 +62,115 @@
     "source": "测试题目.md"
   },
   {
-    "question_id": "Q-KB12-ST1205-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-05",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "使用 `save_pretrained()` 导出模型或适配器时，通常会保存权重和________文件。",
-    "options": [],
-    "correct_answer": "配置 ||| config ||| 配置文件",
-    "hint": "配置文件用于后续正确加载模型。",
-    "explanation": "配置文件用于后续正确加载模型。",
+    "question_id": "Q-KB0703-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "当设置 `truncation=True` 时，如果输入序列长度超过模型的最大长度，分词器会如何处理？",
+    "options": [
+      {
+        "key": "A",
+        "text": "抛出错误"
+      },
+      {
+        "key": "B",
+        "text": "自动将序列填充到最大长度"
+      },
+      {
+        "key": "C",
+        "text": "从序列末尾截断超出部分"
+      },
+      {
+        "key": "D",
+        "text": "随机删除一些 token"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。",
+    "explanation": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。",
     "expected_output": null,
-    "grading_mode": "semantic_match",
-    "source": "runtime_supplement"
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
   },
   {
-    "question_id": "Q-KB12-ST1203-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
+    "question_id": "Q-KB0701-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "Byte Pair Encoding (BPE) 算法的核心思想是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "随机采样词元"
+      },
+      {
+        "key": "B",
+        "text": "从字符级别开始，迭代合并最频繁出现的相邻符号对"
+      },
+      {
+        "key": "C",
+        "text": "基于整个词进行编码"
+      },
+      {
+        "key": "D",
+        "text": "使用固定大小的词汇表"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。",
+    "explanation": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0702-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "请写出使用 Hugging Face `transformers` 库加载名为 `bert-base-uncased` 的分词器的代码。",
     "options": [],
-    "correct_answer": "lora_dropout",
-    "hint": "该参数用于适配器分支的 dropout。",
-    "explanation": "该参数用于适配器分支的 dropout。",
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
     "expected_output": null,
     "grading_mode": "semantic_match",
-    "source": "runtime_supplement"
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0701-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "SentencePiece 模型将输入文本视为原始的字符串序列，无需预先进行空格分词，可以直接从原始句子中学习子词单元。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "hint": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。",
+    "explanation": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0702-005",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：加载 `gpt2` 分词器，并对文本 `\"Hello, world!\"` 进行分词，要求返回 PyTorch 张量，并打印出 `input_ids` 和 `attention_mask`。",
+    "options": [],
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
   }
 ]

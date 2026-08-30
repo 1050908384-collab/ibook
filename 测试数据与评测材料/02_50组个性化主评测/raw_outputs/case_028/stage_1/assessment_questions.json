@@ -1,149 +1,149 @@
 [
   {
-    "question_id": "Q-KB15-ST1502-003",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-02",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "Top-p 采样保留的候选集合满足什么条件？",
-    "options": [
-      {
-        "key": "A",
-        "text": "累计概率达到阈值 p"
-      },
-      {
-        "key": "B",
-        "text": "候选数量恒为1"
-      },
-      {
-        "key": "C",
-        "text": "只保留最低概率 token"
-      },
-      {
-        "key": "D",
-        "text": "不依赖概率"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "Top-p 又称 nucleus sampling。",
-    "explanation": "Top-p 又称 nucleus sampling。"
-  },
-  {
-    "question_id": "Q-KB15-ST1502-002",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "Top-k 采样每一步只在概率最高的 k 个候选________中采样。",
+    "question_id": "Q-KB0100-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
     "options": [],
-    "correct_answer": "token ||| 词元",
-    "hint": "Top-k 截断低概率候选。",
-    "explanation": "Top-k 截断低概率候选。"
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+    "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。"
   },
   {
-    "question_id": "Q-KB1504-018",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-04",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "请写出使用 FastAPI 封装一个简单的大模型推理接口的代码（假设已有 `model` 和 `tokenizer`）。",
-    "options": [],
-    "correct_answer": "```python\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass RequestModel(BaseModel):\n    prompt: str\n    max_tokens: int = 100\n\n@app.post(\"/generate\")\nasync def generate_text(request: RequestModel):\n    inputs = tokenizer(request.prompt, return_tensors=\"pt\").to(model.device)\n    outputs = model.generate(**inputs, max_new_tokens=request.max_tokens)\n    text = tokenizer.decode(outputs[0], skip_special_tokens=True)\n    return {\"generated_text\": text}\n```\n\n---",
-    "hint": "```python\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass RequestModel(BaseModel):\n    prompt: str\n    max_tokens: int = 100\n\n@app.post(\"/generate\")\nasync def generate_text(request: RequestModel):\n    inputs = tokenizer(request.prompt, return_tensors=\"pt\").to(model.device)\n    outputs = model.generate(**inputs, max_new_tokens=request.max_tokens)\n    text = tokenizer.decode(outputs[0], skip_special_tokens=True)\n    return {\"generated_text\": text}\n```\n\n---",
-    "explanation": "```python\nfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass RequestModel(BaseModel):\n    prompt: str\n    max_tokens: int = 100\n\n@app.post(\"/generate\")\nasync def generate_text(request: RequestModel):\n    inputs = tokenizer(request.prompt, return_tensors=\"pt\").to(model.device)\n    outputs = model.generate(**inputs, max_new_tokens=request.max_tokens)\n    text = tokenizer.decode(outputs[0], skip_special_tokens=True)\n    return {\"generated_text\": text}\n```\n\n---"
-  },
-  {
-    "question_id": "Q-KB1504-016",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-04",
+    "question_id": "Q-KB0100-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
     "difficulty": "中级",
-    "question_type": "short_answer",
-    "question_text": "请写出一个简单的 Dockerfile，基于 `python:3.10-slim`，安装 `fastapi` 和 `uvicorn`，并暴露 8000 端口。",
+    "question_type": "practical",
+    "question_text": "执行以下命令确认系统发行版信息：\n```bash\ncat /etc/os-release\n```",
     "options": [],
-    "correct_answer": "```dockerfile\nFROM python:3.10-slim\n\nWORKDIR /app\nCOPY . /app\n\nRUN pip install --no-cache-dir fastapi uvicorn\n\nEXPOSE 8000\n\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```",
-    "hint": "```dockerfile\nFROM python:3.10-slim\n\nWORKDIR /app\nCOPY . /app\n\nRUN pip install --no-cache-dir fastapi uvicorn\n\nEXPOSE 8000\n\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```",
-    "explanation": "```dockerfile\nFROM python:3.10-slim\n\nWORKDIR /app\nCOPY . /app\n\nRUN pip install --no-cache-dir fastapi uvicorn\n\nEXPOSE 8000\n\nCMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n```"
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "hint": null,
+    "explanation": ""
   },
   {
-    "question_id": "Q-KB15-ST1501-003",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-01",
-    "difficulty": "高级",
+    "question_id": "Q-KB0101-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "与贪心搜索相比，束搜索的典型代价是？",
+    "question_text": "以下哪个命令用于**切换当前工作目录**？",
     "options": [
       {
         "key": "A",
-        "text": "计算量和显存开销更高"
+        "text": "`ls`"
       },
       {
         "key": "B",
-        "text": "无法生成文本"
+        "text": "`cd`"
       },
       {
         "key": "C",
-        "text": "不需要模型"
+        "text": "`mkdir`"
       },
       {
         "key": "D",
-        "text": "不能设置长度限制"
+        "text": "`pwd`"
       }
     ],
-    "correct_answer": "A",
-    "hint": "多条候选路径需要更多计算和存储。",
-    "explanation": "多条候选路径需要更多计算和存储。"
+    "correct_answer": "B",
+    "hint": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+    "explanation": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。"
   },
   {
-    "question_id": "Q-KB1504-013",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-04",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "在部署大模型服务时，为什么要关注“首字延迟（TTFT）”和“生成吞吐量（Tokens/s）”这两个指标？",
-    "options": [],
-    "correct_answer": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---",
-    "hint": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---",
-    "explanation": "*   **TTFT（首字延迟）：** 决定了用户的交互体验。如果 TTFT 过高，用户会感觉系统反应迟钝。\n*   **生成吞吐量：** 决定了系统的并发服务能力。高吞吐量意味着单位时间内能服务更多用户，降低运营成本。\n\n---"
-  },
-  {
-    "question_id": "Q-KB1504-008",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-04",
+    "question_id": "Q-KB0101-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
     "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "AWQ 和 GPTQ 属于哪种量化方式？",
+    "question_text": "`cp -r source_dir/ dest_dir/` 中 `-r` 参数的含义是？",
     "options": [
       {
         "key": "A",
-        "text": "训练后量化（PTQ）"
+        "text": "只复制文件不复制目录"
       },
       {
         "key": "B",
-        "text": "量化感知训练（QAT）"
+        "text": "递归复制整个目录树"
       },
       {
         "key": "C",
-        "text": "动态量化"
+        "text": "覆盖时不提示"
       },
       {
         "key": "D",
-        "text": "二值化"
+        "text": "保留文件属性"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `-r`（recursive）递归复制目录及其所有子目录和文件。",
+    "explanation": "> `-r`（recursive）递归复制目录及其所有子目录和文件。"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。",
+    "options": [],
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出将 `/usr/local/cuda/bin` 永久添加到 `PATH` 环境变量的完整步骤（以bash为例）。",
+    "options": [],
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "hint": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```",
+    "explanation": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```"
+  },
+  {
+    "question_id": "Q-KB0103-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-03",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出以下操作的完整命令序列：\n1. 创建名为 `llm_train` 的conda环境（Python 3.10）\n2. 激活该环境\n3. 用pip安装 `torch` 包\n4. 查看已安装包列表\n5. 导出环境配置到 `environment.yml`",
+    "options": [],
+    "correct_answer": "conda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml",
+    "hint": "```bash\nconda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml\n```",
+    "explanation": "```bash\nconda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml\n```"
+  },
+  {
+    "question_id": "Q-KB0104-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "`nvidia-smi` 输出中，`Memory-Usage: 2048MiB / 8192MiB` 表示什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPU总内存8GB，已使用2GB"
+      },
+      {
+        "key": "B",
+        "text": "CPU内存使用情况"
+      },
+      {
+        "key": "C",
+        "text": "磁盘空间"
+      },
+      {
+        "key": "D",
+        "text": "网络带宽"
       }
     ],
     "correct_answer": "A",
-    "hint": ">",
-    "explanation": ">"
-  },
-  {
-    "question_id": "Q-KB15-ST1500-002",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "vLLM 推理服务通常需要 NVIDIA GPU 及足够的________。",
-    "options": [],
-    "correct_answer": "显存 ||| GPU 显存",
-    "hint": "模型权重与 KV Cache 都占用显存。",
-    "explanation": "模型权重与 KV Cache 都占用显存。"
+    "hint": null,
+    "explanation": ""
   }
 ]

@@ -2,595 +2,473 @@
 
 ## 块 1
 
-## 一、为什么需要Datasets库？
+## 1.1 Python 解释器：程序的"翻译官"
 
-### 1.1 大模型训练为什么需要数据处理？
+你已经有 Transformer 和 HuggingFace 的基础，但环境这块我们快速对齐一下。
 
-你要做LoRA微调，第一步不是写模型代码，而是先把数据准备好。看下面这个流程，数据准备是整个训练链路的起点：
+**核心概念**：你写的 Python 代码是人类可读的文字，但电脑只认 0 和 1。**Python 解释器**就是把你写的代码翻译成电脑能执行的指令的"翻译官"。没有它，你写的 `.py` 文件只是一堆文本，什么也干不了。
 
-```
-原始文本数据 → 数据清洗 → 格式转换 → Tokenizer编码 → Dataset → 模型训练
-```
+**和你目标的关系**：你要做 LoRA 微调，核心操作是写 Python 脚本调用 HuggingFace 的 PEFT 库。如果解释器没装好，你的微调脚本连跑都跑不起来——不是模型的问题，是"翻译官"没上岗。
 
-**关键认知：原始数据不能直接输入模型。**
+**动手验证**：打开终端，输入 `python --version`，看到版本号输出就说明解释器已就绪。如果提示"不是内部或外部命令"，说明解释器还没装或没加入环境变量。
 
-举个例子。你手头有一条原始数据：
-
-```json
-{
-  "text": "人工智能正在改变世界"
-}
-```
-
-但模型要的不是这段文字，而是这样的结构（ID仅为示意，实际数值取决于所用模型的分词器，请以实际运行输出为准）：
-
-```python
-{
-  "input_ids": [..., ..., ...],
-  "attention_mask": [1, 1, ...]
-}
-```
-
-也就是说，模型吃的是**数字**，不是**文字**。从 `"人工智能正在改变世界"` 到 `input_ids`，中间需要经过分词、编码、填充、截断等一系列处理。
-
-**这跟你做LoRA微调有什么关系？**
-
-LoRA微调的本质是让模型在特定任务上继续学习，而学习素材就是经过处理的输入输出对。如果你的数据没处理好——比如文本没清洗、长度没统一、格式不对——模型训练时就会报错，或者学出来的效果很差。
-
-所以，你需要一个专门的数据处理工具，把"原始文本"变成"模型能吃的格式"。这就是Hugging Face Datasets库存在的意义。
-
-接下来的内容会带你掌握三个核心操作：`map()`（数据转换）、`filter()`（数据筛选）、`shuffle()`（数据打乱）。完成这一章后，你就能独立完成训练数据的清洗、Token化处理和预处理，为后面的LoRA微调打好地基。
-
----
-
-**本块学习检查**：用自己的话说一遍——为什么原始文本不能直接喂给模型
+**本块学习检查**：用自己的话说说——为什么没有 Python 解释器，你的微调脚本就无法执行？如果遇到解释不清的术语（比如"环境变量"），先记下来，后面章节会讲到。
 
 ## 块 2
 
-**本块学习检查**：安装并导入 `datasets` 库后，运行 `from datasets import Dataset`，确认无报错即通过。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
----
+你的目标是LoRA微调，这需要写代码、跑脚本。记事本也能写，但效率极低。**IDE（集成开发环境）**提供语法高亮、自动补全、运行调试等功能，让你写代码像用 Word 写文档一样舒服。推荐两款：**VS Code**（轻量免费）和 **PyCharm**（专业强大）。
 
-`datasets` 是 Hugging Face 的数据处理库，专为高效处理大规模数据而生。它的核心能力围绕四个操作：**加载**（从Hub或本地文件）、**转换**（改字段、Tokenizer编码）、**过滤**（删无效样本）、**随机化**（shuffle打乱）。
-
-**上手三步：**
-
-1. 安装：`pip install datasets`
-2. 导入：`from datasets import Dataset`
-3. 开始处理数据
-
-**针对你的LoRA微调目标**：微调前，你需要用 `map` 对数据集做Tokenizer编码（如
+微调时，不同项目依赖版本可能冲突。比如A项目要`numpy 1.0`，B项目要`numpy 2.0`，装一起会报错。**虚拟环境**
 
 ## 块 3
 
-**本块学习检查**：用 `Dataset.from_dict` 创建含两行文本的数据集，打印 `dataset` 观察输出格式，再分别用 `dataset[0]` 和 `dataset.column_names` 查看首行与字段名，确认与下方示例一致。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
 ---
 
-**Dataset 是什么？**  
-把它想成一张**专为机器学习训练准备的数据表**，类似 Python 的 `list` 或 Pandas 的 `DataFrame`。  
+### 2.1 Windows 用户：安装 Python 3.10+
 
-**创建示例**（直接复制运行）：  
-```python
-from datasets import Dataset
-dataset = Dataset.from_dict({
-    "text": ["你好", "欢迎学习LLM"]
-})
-print(dataset)
-```
-输出会显示：  
-```
-Dataset({
-features: ['text'],
-num_rows: 2
-})
-```
-这表示：数据集有 1 个字段 `text`，共 2 行数据。  
+你的目标是 LoRA 微调，这需要先有能运行 PyTorch 的 Python 环境。本块带你装好 Python 本身。
 
-**查看内容**：  
-- 取第一行：`print(dataset[0])`
+**第一步：下载安装包**
+
+1. 浏览器打开 https://www.python.org
+2. 鼠标移到顶部 **Downloads**，网站会自动推荐 Windows 版本（如 `Python 3.13.x`）。
+3. 点击下载 **Windows installer (64-bit)**。
+
+**第二步：运行安装程序（⚠️ 关键步骤）**
+
+双击 `.exe` 文件，弹出安装界面后，**务必做两件事**：
+
+1. **勾选最下方的 "Add python.exe to PATH"**  
+   不勾选的话，命令行输入 `python` 会提示"不是内部或外部命令"，后续所有命令都跑不了。
+
+2. 点击 **"Install Now"**（默认安装）即可。  
+   默认路径不含中文和特殊符号，避免后续报错。想改路径的话，确保路径中**没有中文或空格**。
+
+**第三步：验证安装**
+
+1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
+2. 输入并回车：
+
+```bash
+python --version
+```
+
+3. 显示 `Python 3.13.x`（或你下载的版本号）即
 
 ## 块 4
 
-`map()` 是 Hugging Face Datasets 里做数据转换的核心工具。它的作用很简单：**对数据集中的每一条数据，执行一个你写好的处理函数**。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-你可以把它想象成 Python 内置的 `map(func, list)`——对列表里每个元素依次套用同一个函数。注意，Python 的 `list` 本身没有 `.map()` 方法，这是 Datasets 特有的。
+macOS 12.3 起不再预装 Python 2，系统可能带旧版 `python3`。**强烈建议自行安装最新版 Python**，别依赖系统自带版本。
 
-**关键点：两种模式，别搞混**
+**方法一：官方安装包（推荐新手）**
 
-- 默认（`batched=False`）：你的函数每次收到**单条样本**，比如 `{"text": "你好"}`。
-- 设置 `batched=True`：函数收到的是**一批样本按列组织的字典**，比如 `{"text": ["你好", "世界", "..."]}`，这时你要对**列表**做批量处理。
+1. 访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
+2. 双击运行，一路 "Continue" → "Install" 完成。
+3. 打开终端，验证：
 
-写函数前，先确认自己处于哪种模式，否则容易出错。
+```bash
+python3 --version
+pip3 --version
+```
 
-**常见用途**：Tokenizer 编码、添加新字段、修改数据格式、数据清洗。
+**为什么用 `python3` 而不是 `python`**：现代 macOS 默认不提供 `python` 命令（早期曾指向 Python 2，现已移除），系统与官方安装包统一用 `python3`。请始终用 `python3` / `pip3`，避免"命令不存在"或误用系统版本。
 
-**实训提示**：本章只做数据处理，不涉及模型训练。CPU 双
+**方法二：Homebrew（适合已有 Homebrew 的开发者）**
+
+已装 Homebrew 的话，终端执行：
+
+```bash
+brew install python
+```
+
+装完同样用 `python3 --version` 验证。
+
+**练习任务**：安装完成后，在终端依次运行 `python3 --version` 和 `pip3 --version
 
 ## 块 5
 
-### 基础map使用：给数据加个“长度”字段
+**本块学习检查**：完成安装后，请用自己的话说明“Python 3.10+ 环境”与“LoRA微调”的关系；若遇到无法解释的术语（如`venv`），记录下来再提问。
 
-你正在为LoRA微调准备数据，`map`是处理数据集的核心工具。它的作用很简单：**对数据集里的每一条样本，执行你定义的函数，然后返回更新后的数据集**。
+---
 
-**第一步：创建数据**
+Linux（Ubuntu/Debian）通常自带Python，但版本可能偏老。执行以下命令安装：
 
-```python
-from datasets import Dataset
+```bash
+# 更新软件源
+sudo apt update
 
-dataset = Dataset.from_dict({
-    "text": ["Hello", "Hugging Face"]
-})
+# 安装 Python 3、pip 和虚拟环境模块
+sudo apt install python3 python3-pip python3-venv -y
+
+# 验证版本
+python3 --version
 ```
 
-**第二步：定义处理函数**
-
-这个函数接收一条样本（一个字典），给它加一个新字段，然后返回：
-
-```python
-def add_length(example):
-    example["length"] = len(example["text"])
-    return example
-```
-
-**第三步：执行map**
-
-```python
-dataset = dataset.map(add_length)
-```
-
-**第四步：查看结果**
-
-```python
-print(dataset)
-```
-
-你会看到每条样本都多了`length`字段，比如`"Hello"`变成了`{"text
+**要点**：`-y` 自动确认安装，免手动输入`y`；`python3-venv` 用于创建
 
 ## 块 6
 
-### 5.1 加载Tokenizer
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-先加载一个预训练好的分词器，它是把文本转成模型能读的数字ID的工具：
+---
 
-```python
-from transformers import AutoTokenizer
+你的目标是跑通 LoRA 微调，而微调依赖 GPU 环境。选错操作系统，后面会卡在驱动和 CUDA 上。
 
-# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）
-# 注意：Llama-2-7b FP16 需要至少14GB显存
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-```
+**日常写 Python、练命令行（Windows 用户）**：启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它提供接近真实生产的 Linux 环境，命令、路径、包管理与服务器一致，比 Windows 原生 CMD 更贴近实战。安装只需管理员 PowerShell 执行 `wsl --install`。
 
-### 5.2 编写Tokenize函数
+**日常写 Python（macOS / Linux 用户）**：直接用本机终端，本身就是类 Unix 环境。
 
-接着写一个函数，对数据集里的每条样本做编码。`truncation=True`截断超长文本，`padding="max_length"`把短文本补到固定长度，`max_length=128`设定统一长度：
+**LoRA / QLoRA 微调、vLLM 部署等 GPU 实训**：用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态支持最成熟、文档最全。
 
-```python
-def tokenize(example):
-    return tokenizer(
-        example["text"],
-        truncation=True,
-        padding="max_length",
-        max_length=128
-    )
-```
-
-**本块学习
+> **⚠️ 不推荐**：不要把 **"CentOS + VirtualBox 虚拟机"当作最佳方案**。CentOS 8 已停止维护；VirtualBox 默认无法直通 NVIDIA GPU，跑不了真正的 GPU 训练，只适合纯 CPU 隔离小实验。
 
 ## 块 7
 
-```markdown
-你的目标是用 LoRA 微调模型，而这一步正是微调前的“数据预处理”。`map` 方法能让你用一行代码，把 `tokenize` 函数应用到数据集里的每一条样本上，批量完成编码。
+你在用 HuggingFace 做文本分类时，应该已经装过不少库。如果某次 `pip install transformers` 卡住不动，或频繁超时，这就是需要镜像源的信号。
 
-```python
-tokenized_dataset = dataset.map(
-    tokenize
-)
+**核心原则**：官方 PyPI（`pypi.org`）永远是最权威、最完整的默认源，应保留。镜像只是网络不畅时的**临时加速手段**，不是永久替换。
+
+**推荐做法**：只对某一次安装临时指定镜像，不改全局配置：
+
+```bash
+pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-运行后，`tokenized_dataset` 里每一条数据都会多出两个字段：`input_ids`（token 编号）和 `attention_mask`（注意力掩码）。你可以打印第一条看看效果：
+这样官方源仍是默认，网络恢复或镜像出问题时，无需清理任何配置。
 
-```python
-print(tokenized_dataset[0])
-```
-
-输出大致是这样（以 `bert-base-uncased` 为例，`101`/`102` 是 BERT 的特殊 token `[CLS]`/`[SEP]`，中间是词的编号；实际数值以运行为准）：
-
-```python
-{
-"text":"Hello",
-"input_ids":[101,7592,102],
-"attention_mask":[1,1,1]
-}
-```
-```
+**本块学习检查**：完成本块后，用自己的话说明：本块内容与你当前 LoRA 微调目标（安装相关依赖库）有什么关系？遇到无法解释的术语（如“镜像”“PyPI”）时记录下来，稍后提问。
 
 ## 块 8
 
-## 为什么需要 batched？
+## 3.3 进阶：将镜像设为默认（仅在长期网络受限时）
 
-先看默认行为：`map()` 是一条一条处理数据的，就像排队过安检，一次只过一个人：
+你已经熟悉 HuggingFace 生态，对 `pip install` 应该不陌生。这里要提醒你：**只有当长期处于网络受限环境、几乎每次都要用镜像时**，才把镜像写入配置作为默认源。配置后请记住——官方 PyPI 仍是最可靠的来源，网络恢复后建议改回或删除该配置。
 
-```
-example1 → 处理 → 输出
-example2 → 处理 → 输出
-example3 → 处理 → 输出
-```
+### Windows 用户操作
 
-数据量小的时候没问题，但当你处理几万、几十万条样本时，这种串行方式会非常慢。
+1. 按 `Win + R`，输入 `%APPDATA%`，回车，打开类似 `C:\Users\你的用户名\AppData\Roaming` 的文件夹。
+2. 在该文件夹下**新建一个名为 `pip` 的文件夹**。
+3. 在 `pip` 文件夹内**新建一个名为 `pip.ini` 的文本文件**。
+4. 用记事本打开 `pip.ini`，写入：
 
-**开启 `batched=True` 后**，`map()` 会一次性接收一个批次的数据，该批次是一个字典，其中每个键对应一个字段，值为该批次内所有样本该字段的列表，批量处理：
-
-```python
-{
-  "text": [example1, example2, example3]
-} → 一次处理 → 批量输出
+```ini
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
----
+`index-url` 告诉 pip 默认从这个地址下载包。
 
-### 实际示例：批量tokenize
+> **⚠️ 关于 `trusted-host`**：网上很多教程会顺手加一行 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——`trusted-host` 会让 pip 跳过对该域名的 TLS 校验，等于放弃传输安全。清华、阿里等主流镜像都提供合法的 HTTPS 证书，正常使用**无需** `trusted-host`。只有在企业内网自建源、或确实遇到证书报错且已确认来源可信时，才临时加它。
 
-```python
-def tokenize_batch(batch):
-    return tokenizer(
-        batch["text"],
-        padding=True,
-        truncation=True
-    )
+### macOS / Linux 用户操作
 
-dataset = dataset.map(
-    tokenize_batch,
-    batched=True
-)
+1. 打开终端，执行：
+
+```bash
+mkdir -p ~/.config/pip
 ```
 
-注意这里的 `batch["text"]` 是一个**列表**（该批次内所有样本的 text 字段），而不是单个字符串。Tokenizer 本身支持批量输入，`batched=True` 正好把这个能力用上。
+2. 创建配置文件：
 
-**优势：**
-- **更快**：减少 Python 层面的循环开销，充分利用 Tokenizer 的批处理能力；
-- **更适合大规模数据**：数据量越大，收益越明显。
-
----
-
-### ⚠️ 一个容易踩的坑
-
-`padding=True` 只会在**当前这个 map batch 内部**把样本补齐到该 batch 的最长长度。也就是说：
-
-- batch 1 的最长样本是 100 token → batch 1 全部补到 100；
-- batch 2 的最长样本是 80 token → batch 2 全部补到 80。
-
-**不同 map batch 之间的序列长度仍然可能不同。** 如果你的下游训练要求统一长度，有两种做法：
-
-1. **在训练阶段**用动态填充的 `DataCollator`（如 `DataCollatorWithPadding`），按训练 batch 动态补齐；
-2. **在这里**直接用固定长度：`padding="max_length", max_length=某个值`。
-
----
-
-### 本块学习检查
-
-打开你的数据集，对比以下两种方式的速度差异（可以用小数据集先试）：
-
-```python
-# 方式A：不开启 batched
-dataset.map(lambda x: tokenizer(x["text"], truncation=True))
-
-# 方式B：开启 batched
-dataset.map(lambda batch: tokenizer(batch["text"], truncation=True), batched=True)
+```bash
+nano ~/.config/pip/pip.conf
 ```
 
-观察：方式B的代码里 `batch["text"]` 是什么类型？为什么 `tokenizer` 能直接处理它？
+3. 写入同样的内容：
+
+```ini
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+4. 按 `Ctrl + O` 保存，`Ctrl + X` 退出。
+
+### 验证配置是否生效
+
+在命令行输入：
+
+```bash
+pip config list
+```
+
+如果看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'`，说明配置成功。
+
+### 改回官方源
+
+删除上面创建的 `pip.ini` / `pip.conf` 文件即可，
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 9
 
-**filter()：给数据“体检”**
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-`filter()` 就是按条件删除不符合要求的数据。比如删掉空文本、过短文本或垃圾数据。
+**为什么选它**：VS Code 是微软出品的免费编辑器，启动快、插件丰富，不仅适合 Python，也适合前端、配置文件编辑等。后续学习 Linux 命令行、写脚本时都能用到。
 
-**动手试一下**
+**安装步骤**：
 
-先造点数据：
-```python
-dataset = Dataset.from_dict({"text": ["hi", "hello world", ""]})
-```
+1. 访问 https://code.visualstudio.com，下载对应系统的安装包。
+2. 运行安装程序，一路下一步即可。
+3. **必装插件**：打开 VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并安装：
+   - **Python**（Microsoft 官方出品，提供语法高亮、调试、智能提示）
+   - **Pylance**（Python 语言服务器，让代码提示更智能）
 
-定义规则（保留长度大于2的文本）：
-```python
-def check_length(example):
-    return len(example["text"]) > 2
-```
+**为什么这样写**：安装 Python 插件后，VS Code 才能识别 `.py` 文件，提供代码补全、错误提示和一键运行功能。
 
-过滤：
-```python
-dataset = dataset.filter(check_length)
-```
+**配置 Python 解释器**：
 
-**结果**：只保留 `"hello world"`，`"hi"` 和空文本都被删掉了。
-
-**本块学习检查**：把规则改成保留长度大于5的文本，预测过滤后剩什么，再运行验证。
+1. 打开 VS Code，按 `Ctrl + Shift + P`
 
 ## 块 10
 
-## 9.1 为什么需要shuffle？
-
-你要做 LoRA 微调，数据顺序是个隐藏陷阱。如果数据固定排列成：
-
-```
-类别A
-类别A
-类别A
-类别B
-类别B
-```
-
-模型会偷懒——它可能不是在学"如何分类"，而是在学"前三个是A，后两个是B"这种顺序规律。这会让微调效果失真。
-
-**shuffle 的作用**：把训练样本顺序随机打乱，强迫模型真正学习数据本身的特征，而不是顺序套路。
+**本块学习检查**：完成安装后，请用自己的话说明：PyCharm Community 的安装与你的 LoRA 微调目标有什么关系？若遇到“解释器”“虚拟环境”等术语无法解释，请记录下来再提问。
 
 ---
 
-## 9.2 基础使用
+**目标**：为 LoRA 微调准备一个专业、开箱即用的代码编辑环境。
 
-一行代码搞定：
+**为什么选它**：PyCharm 社区版免费，内置代码分析、版本控制等功能，适合管理微调脚本这类稍复杂的项目。
 
-```python
-dataset = dataset.shuffle()
-```
+**安装步骤**：
+1. 确保你的操作系统满足 PyCharm Community Edition 的最低要求（Windows 10/11、macOS 10.14+、Linux），并建议安装 Python 3.8 及以上版本。
+2. 打开 https://www.jetbrains.com/pycharm/download/
+3. 下载 **Community Edition**（社区版）
+4. 运行安装程序，务必勾选：
+   - `Add "Open Folder as Project"`（方便右键打开项目文件夹）
+   - `Add to PATH`（命令行可直接启动）
 
----
-
-## 9.3 设置随机种子
-
-LoRA 微调需要可复现的实验结果。加个 `seed` 参数：
-
-```python
-dataset = dataset.shuffle(seed=42)
-```
-
-**关键点**：相同 `seed`，每次打乱结果完全一致。这样你调整其他参数时，能确定效果差异来自参数本身，而不是数据顺序变了。
-
----
-
-## 十、数据预处理流程示例
-
-> 注意：下面这条链路是**概念示意**，帮你理解步骤关系。真实 LoRA 训练前还需要划分训练/验证集、构造标签、处理 padding 等，这里先聚焦核心流程。
-
-假设原始数据：
-
-```python
-dataset = Dataset.from_dict(
-{
-"text":[
-"Hello AI",
-"Hugging Face",
-"Large Language Model"
-]
-}
-)
-```
-
-**核心链路**：`filter → shuffle → map(tokenize)
+**首次启动配置**：
 
 ## 块 11
 
-**本块学习检查**：运行下方代码后，打印 `dataset` 的长度，确认清洗后每条样本的 `text` 长度都大于5。
+### 5.1 为什么用 Conda
 
----
+你已经熟悉 Transformer 和 HuggingFace，做文本分类时肯定装过不少包。但当你准备用 LoRA 微调模型时，依赖会更复杂——PyTorch、CUDA、transformers 等版本必须匹配。Conda 的价值就在这里：它为每个项目创建独立的 Python 空间，还能管理不同版本的 Python 解释器本身。这意味着你可以为 LoRA 微调项目单独建一个环境，装好配套依赖，不污染你现有的其他项目。
 
-你的LoRA微调数据管线，从清洗开始。这段代码用 `filter` 丢掉过短的文本——`len(x["text"])>5` 表示只保留字符数超过5的样本。**动手试**：把阈值改成10，观察数据集长度变化。
+### 5.2 安装 Conda：Anaconda vs Miniconda
 
-接着用 `shuffle(seed=42)` 打乱顺序。固定 `seed=42` 保证每次运行结果一致，方便复现实验。
+两个选择：
 
-最后用 `map` 对每条样本执行 `preprocess`：调用 `tokenizer` 将 `text` 编码，`truncation=True` 截断超长文本
+| 选项 | 特点 | 推荐人群 |
+|------|------|----------|
+| **Anaconda** | 体积大（约 500MB+），预装 numpy、pandas、jupyter 等 | 做数据分析、不想手动装包 |
+| **Miniconda** | 体积小（约 50MB），只含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发 |
+
+**推荐 Miniconda**——你的目标是 LoRA 微调，环境越干净越好，需要什么装什么。
+
+**安装步骤：**
+
+1. 访问 https://docs.conda.io/en/latest/miniconda.html
+2. 下载对应系统安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）
+3. 运行安装程序：
+   - **Windows**：一路下一步，**不要勾选 "Add Miniconda3 to my PATH environment variable"**（安装器标为"不推荐"）。直接塞进 PATH 容易和已有 Python 冲突，导致 `python`、`pip` 指向不明。日常用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 即可。
+   - **macOS/Linux**：运行 `.sh` 文件，按提示输入 `yes` 同意协议、选路径，最后一步选 `yes` 让安装器执行 **`conda init`**。这样终端会通过初始化脚本正确接管 conda，而不是硬加 PATH。
+4. **验证安装**：打开**新的**终端（Windows 用 "Anaconda Prompt (Miniconda3)"；macOS/Linux 重开终端），输入：
+
+```bash
+conda --version
 
 ## 块 12
 
-## 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充）
+### 创建你的第一个虚拟环境
 
-前面我们只做到“清洗 + 编码”，现在补一个更接近实战的 **Causal LM 数据准备**流程。你要做 LoRA 微调，数据准备是第一步，这里覆盖四个关键动作：**划分训练/验证集**、**文本拼接与截断**、**构造 `labels`**、**动态填充 DataCollator**。
+你已经熟悉 Transformer 和 HuggingFace，但 LoRA 微调需要独立的 PyTorch/CUDA 环境。这一步就是为后续微调项目打好隔离基础。
 
-### 完整代码示例
+在终端执行：
 
-```python
-from datasets import Dataset
-from transformers import (
-    AutoTokenizer,
-    DataCollatorForLanguageModeling,
-)
-
-# 1) 准备原始数据（少量样本演示流程）
-raw = Dataset.from_dict({
-    "prompt": ["翻译成英文：你好", "续写：今天天气"],
-    "response": ["Hello", "很好，适合出门。"],
-})
-
-# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）
-# 注意：Llama-2-7b FP16 需要至少14GB显存
-tokenizer = AutoTokenizer.from_pretrained("gpt2")
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token
-
-MAX_LEN = 128
-
-# 2) 文本拼接 + 截断；Causal LM 通常让 labels = input_ids
-def build_example(example):
-    # 把 prompt 与 response 拼成一段训练文本（真实项目可用 chat template）
-    text = example["prompt"] + "\n" + example["response"] + tokenizer.eos_token
-    enc = tokenizer(text, truncation=True, max_length=MAX_LEN)
-    enc["labels"] = enc["input_ids"].copy()   # 语言模型标签
-    return enc
-
-# 先划分再各自处理，避免验证集信息在处理时"泄漏"进训练集统计
-split = raw.train_test_split(test_size=0.5, seed=42)   # 得到 DatasetDict(train/test)
-
-tokenized = split.map(
-    build_example,
-    remove_columns=split["train"].column_names,   # 去掉原始文本列，只留 input_ids/attention_mask/labels
-)
-
-# 3) 训练阶段动态填充：按每个训练 batch 的最长长度补齐（比在 map 里固定 max_length 更省算力）
-#    Causal LM 用 DataCollatorForLanguageModeling(mlm=False)；分类任务则用 DataCollatorWithPadding
-data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
-
-# tokenized["train"] / tokenized["test"] 即可分别作为 train_dataset / eval_dataset
-# data_collator 传给 Trainer(..., data_collator=data_collator)（完整 Trainer 用法见 11.4）
+```bash
+conda create -n llm-learn python=3.10
 ```
 
-### 四个关键点逐一说清
+**拆解**：`conda create` 创建环境；`-n llm-learn` 命名环境（`n` 即 `name`）；`python=3.10` 指定 Python 版本。
 
-**① 先划分，再处理。** 代码里用 `train_test_split(test_size=0.5, seed=42)` 先把原始数据切成训练集和验证集，得到 `DatasetDict`。顺序很重要——如果先做文本处理再划分，验证集的信息可能“泄漏”进训练集的统计中，影响评估的可靠性。
+终端会列出待装包并询问 `Proceed ([y]/n)?`，输入 `y` 回车等待完成。
 
-**② 文本拼接与截断。** `build_example` 函数把 `prompt` 和 `response` 拼成一段完整文本，末尾加上 `eos_token`（结束符
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA 微调
 
 ## 块 13
 
-## 十.1 面向 Causal LM 的较完整数据准备示例
+### 5.4 激活与退出环境
 
-你的目标是 LoRA 微调，而 LoRA 微调通常作用于 Causal LM（因果语言模型）。所以这一节的数据准备方式，就是你后续微调时最常遇到的场景。我们直接上手，把流程走通。
+**激活环境**（进入这个“独立房间”）：
 
-### 第一步：划分数据集（先划分，再处理）
-
-```python
-from datasets import Dataset
-
-dataset = Dataset.from_dict({"text": [...]})  # 你的原始数据
-
-# 先划分，再处理
-split = dataset.train_test_split(test_size=0.5, seed=42)
-# split 是一个 DatasetDict，包含 train 和 test 两个子集
-train_dataset = split["train"]
-eval_dataset = split["test"]
+```bash
+conda activate llm-learn
 ```
 
-**为什么必须先划分再处理？** 如果先做统计或拼接再划分，验证集的数据会“看过”训练集的统计信息（比如词频、长度分布），导致评估结果虚高——这就是**数据泄漏**。`seed` 参数保证每次运行划分结果一致，可复现。
+**为什么这样写**：激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。
 
-> ⚠️ 注意：这里 `test_size=0.5` 只是演示流程用，样本量极小，**不能反映真实训练效果**。实际项目中通常用 0.1~0.2。
+**验证当前环境的 Python 版本**：
 
-### 第二步：构造标签（Causal LM 的核心）
-
-Causal LM 的训练目标是“根据前文预测下一个 token”，所以最常见的做法是：
-
-```python
-def preprocess_function(examples):
-    # tokenizer 编码文本
-    inputs = tokenizer(examples["text"], truncation=True, max_length=512)
-    # Causal LM：标签就是输入本身
-    inputs["labels"] = inputs["input_ids"].copy()
-    return inputs
+```bash
+python --version
 ```
 
-**关键点**：
-- `labels = input_ids`：让模型学习预测每一个位置的下一 token。
-- 如果你只想对 response 部分计算损失（比如对话场景），可以把 prompt 和 padding 位置的值设为 `-100`，这样损失函数会自动忽略这些位置。
-- 真实对话数据建议用 `tokenizer.apply_chat_template` 拼接，而不是手动拼字符串。
+应该显示 `Python 3.10.x`。
 
-### 第三步：动态填充（省显存的关键）
+**退出环境**（回到系统默认环境）：
 
-**不要在 `map` 里固定 padding**。原因很简单：一个 batch 里样本长度不一，如果都填充到最长长度，短样本的 padding token 也会参与计算，浪费显存和算力。
-
-正确做法：在训练时用 DataCollator 按 batch 动态补齐。
-
-```python
-from transformers import DataCollatorForLanguageModeling
-
-data_collator = DataCollatorForLanguageModeling(
-    tokenizer=tokenizer,
-    mlm=False  # Causal LM 不需要 masked language modeling
-)
+```bash
+conda deactivate
 ```
 
-这个 collator 会在每个 batch 内部自动把样本填充到该 batch 的最长长度，而不是全局最长。
+### 5.5 查看和管理环境
 
-### 第四步：连接 Trainer
+**查看所有已创建的环境**：
 
-Dataset 是数据处理和 Trainer 之间的桥梁，流程是：
-
-```
-数据文件 → datasets处理 → Trainer → 模型训练
+```bash
+conda env list
 ```
 
-```python
-from transformers import Trainer
+带 `*` 的就是当前激活的环境。
 
-trainer = Trainer(
-    model=model,
-    train_dataset=train_dataset,
-    eval_dataset=eval_dataset,      # 验证集必须有
-    data_collator=data_collator,    # 动态填充
-    # 还需要 TrainingArguments（输出目录、评估策略等）
-)
+**删除环境**（如果以后需要清理）：
+
+```bash
+conda remove -n llm-learn --all
 ```
 
-> ⚠️ 上面只是**结构示意**，不能直接复制运行。完整可运行代码见后续章节。
+---
 
-### 常见坑位速查
+## 第六章：在 VS Code / PyCharm 中使用 Conda
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 14
 
-## 十.1 面向 Causal LM 的数据准备示例（动手版）
+## 6.1 VS Code 配置 Conda 环境
 
-你的目标是 LoRA 微调，而微调前的数据准备是必经之路。下面这段代码演示了从原始文本到可用 Dataset 的完整流程，请跟着敲一遍。
+既然你已熟悉 HuggingFace 工具链，这里的关键是确保 VS Code 指向正确的解释器。先激活环境：`conda activate llm-learn`。然后打开 VS Code，按 `Ctrl + Shift + P`，输入 `Python: Select Interpreter`，选择带有 `conda` 字样的路径（如 `Python 3.10.x ('llm-learn': conda)`）。这样，你写的所有代码都会使用该环境中的 Python 和已装包——包括你后续做 LoRA 微调时需要的 transformers、peft 等。
 
-```python
-from datasets import Dataset
+## 6.2 PyCharm 配置 Conda 环境
 
-# 1. 创建 Dataset：把字典转成数据集
-dataset = Dataset.from_dict({
-    "text": ["hello", "machine learning", "large language model"]
-})
+若你用 PyCharm：打开 `File` → `Settings`（Mac 为 `PyCharm` → `Preferences`），左侧选 `Project: 你的项目名` → `Python Interpreter`，点击齿轮 → `Add...`，选 `Conda Environment` → `Existing environment`，在 `Interpreter` 路径中指定 conda 环境的 Python 可执行文件：
+- Windows：`C:\Users\你的用户名\miniconda3\envs\llm-learn\python.exe`
+- macOS/Linux：`~/miniconda3/envs/llm-learn/bin/python`
 
-# 2. shuffle：打乱顺序，固定 seed=42 保证可复现
-dataset = dataset.shuffle(seed=42)
+## 第七章：验证——运行你的第一行代码
 
-# 3. filter：过滤掉长度 <= 5 的样本
-dataset = dataset.filter(lambda x: len(x["text"]) > 5)
+配置完成后，务必验证：在 VS Code 或 PyCharm 中新建一个 Python 文件，输入 `import torch`，然后输入 `print(torch.__version__)` 并运行。
 
-print(dataset)
-```
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语
 
-保存为 `test_dataset.py`，运行：
+## 块 15
+
+## 7.1 在命令行验证
+
+你已经熟悉Transformer和HuggingFace，但微调LoRA前，先确认环境能跑通。打开终端，激活环境：
 
 ```bash
-python test_dataset.py
+conda activate llm-learn
 ```
 
-成功输出：
+输入 `python` 进入交互模式，看到 `>>>` 提示符后，执行：
 
-```
-Dataset({
-features:['text'],
-num_rows:2
-})
+```python
+print("Hello, Python! 我的环境准备好了！")
 ```
 
-三个 ✅ 分别对应：Dataset 创建成功、shuffle 运行成功、filter 运行成功。
+正确打印文字后，输入 `exit()` 退出。
 
-**关键理解**：原始 3 条数据，shuffle 打乱顺序后，filter 用 `len(x["text"]) > 5` 筛掉了 `"hello"`（长度 5，不满足 `>5`），最终剩 2 条。
+## 7.2 在 VS Code 中验证
 
-**本块学习检查**：把 `seed=42` 改成 `seed=0`，重新运行，
+新建文件夹 `my-first-project`，用 VS Code 打开。新建 `hello.py`，输入：
+
+```python
+print("Hello from VS Code!")
+```
+
+点击右上角小三角或按 `Ctrl + F5`，下方终端应输出：
+
+```
+Hello from VS Code!
+```
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释
+
+## 块 16
+
+### 7.3 在 PyCharm 中验证
+
+你已经熟悉 Transformer 和 HuggingFace，对 Python 环境应该不陌生。这里快速过一遍 PyCharm 的验证流程，确保工具链畅通，为后续 LoRA 微调实验打好基础。
+
+**操作步骤：**
+
+1. 打开 PyCharm，新建一个项目（路径不要包含中文或空格）。
+2. 在项目中新建 Python 文件，命名为 `hello.py`。
+3. 在文件中输入一行代码：`print("Hello, LoRA!")` —— 内容随意，关键是验证环境能跑通。
+4. 在编辑区右键点击文件 → 选择 `Run 'hello'`。
+5. 查看下方 **Run 窗口**，如果输出了你打印的内容，说明 PyCharm 配置正确，可以正常执行 Python 代码。
+
+**小提示**：如果你之前用 VS Code 或命令行，这里只是换了个入口，本质都是调用同一个 Python 解释器。确保 PyCharm 右下角显示的解释器是你创建的 `llm-learn` 环境，而不是 base 环境。
+
+---
+
+### 常见问题速查
+
+| 问题现象 | 可能原因 | 解决方案 |
+|----------|----------|----------|
+| 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选择 "Modify"，勾选 "Add Python to environment variables" |
+| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 临时加 `-i` 指定国内镜像（如清华源）；长期受限再考虑设为默认源 |
+| `conda` 命令找不到 | 未使用 Anaconda/Miniconda Prompt（Windows）/ 未执行 `conda init`（macOS/Linux） | Windows 用户使用开始菜单的 `Anaconda Prompt (Miniconda3)`；macOS/Linux 运行 `conda init` 后重开终端 |
+| VS Code 提示"未选择 Python 解释器" | 未配置解释器路径 | 按 `Ctrl + Shift + P` → `Python: Select Interpreter` 手动选择 |
+| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 使用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
+| pip 安装后，Python 里
 
 ## 测评题目
 
-### Q-KB11-ST1102-002
-datasets 的 `filter()` 会保留使筛选函数返回________的样本。
+### Q-KB0200-002
+执行以下命令进入Python交互环境，将输出粘贴作答：
+```bash
+python
+```
 
-### Q-KB11-ST1102-003
-为了在每个训练轮次打乱样本顺序，通常使用？
+### Q-KB0200-001
+请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：
+```bash
+python --version
+```
 
-### Q-KB11-ST1102-001
-datasets 的 `map()` 常用于对数据集样本执行批量________。
+### Q-KB0203-004
+以下代码输出是？
+```python
+class A:
+    def __init__(self):
+        self.x = 1
+class B(A):
+    def __init__(self):
+        super().__init__()
+        self.y = 2
+b = B()
+print(b.x, b.y)
+```
 
-### Q-KB1103-001
-TRL（Transformer Reinforcement Learning）库中，专门用于监督微调（SFT）的Trainer类是？
+### Q-KB0203-001
+以下函数定义中，哪个参数是**默认参数**？
+```python
+def greet(name, greeting="Hello"):
+    return f"{greeting}, {name}!"
+```
 
-### Q-KB1101-002
-在进行模型推理时，为了防止计算梯度占用显存，通常使用 `with torch.________():` 上下文管理器。
+### Q-KB0201-004
+以下代码输出是？
+```python
+a = [1, 2, 3]
+b = a
+b.append(4)
+print(a)
+```
 
-### Q-KB11-ST1100-003
-以下哪个库最直接用于训练配置中的分布式加速？
+### Q-KB0202-001
+以下哪个是Python中**不可变**的数据结构？
 
-### Q-KB1101-005
-请写代码：将加载的模型移动到 GPU 上（如果可用），并使用 `torch.float16` 半精度加载以节省显存。
+### Q-KB0204-002
+使用 `with open("file.txt", "r") as f:` 的好处是________。
 
-### Q-KB1103-005
-请写代码：在 `SFTTrainer` 训练完成后，保存微调后的 LoRA 适配器权重到 `./final_lora_adapter` 目录。
+### Q-KB0201-001
+以下哪个是Python中**正确的**变量赋值？

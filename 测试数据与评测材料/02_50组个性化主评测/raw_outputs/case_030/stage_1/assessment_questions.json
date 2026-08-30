@@ -1,132 +1,135 @@
 [
   {
-    "question_id": "Q-KB15-ST1503-002",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "Continuous Batching 的核心是让不同请求在生成过程中________加入或离开批次。",
+    "question_id": "Q-KB0100-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "执行以下命令检查系统架构和内核版本：\n```bash\narch && uname -r\n```",
     "options": [],
-    "correct_answer": "动态 ||| 连续 ||| 实时",
-    "hint": "动态调度提高 GPU 利用率与吞吐。",
-    "explanation": "动态调度提高 GPU 利用率与吞吐。"
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "hint": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---",
+    "explanation": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---"
   },
   {
-    "question_id": "Q-KB15-ST1503-001",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "vLLM 的 PagedAttention 用分页方式管理注意力计算所需的 KV________。",
-    "options": [],
-    "correct_answer": "Cache ||| cache ||| 缓存",
-    "hint": "分页管理减少 KV Cache 碎片和浪费。",
-    "explanation": "分页管理减少 KV Cache 碎片和浪费。"
-  },
-  {
-    "question_id": "Q-KB15-ST1500-002",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "vLLM 推理服务通常需要 NVIDIA GPU 及足够的________。",
-    "options": [],
-    "correct_answer": "显存 ||| GPU 显存",
-    "hint": "模型权重与 KV Cache 都占用显存。",
-    "explanation": "模型权重与 KV Cache 都占用显存。"
-  },
-  {
-    "question_id": "Q-KB15-ST1502-002",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "Top-k 采样每一步只在概率最高的 k 个候选________中采样。",
-    "options": [],
-    "correct_answer": "token ||| 词元",
-    "hint": "Top-k 截断低概率候选。",
-    "explanation": "Top-k 截断低概率候选。"
-  },
-  {
-    "question_id": "Q-KB1504-007",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-04",
+    "question_id": "Q-KB0100-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
     "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "GGUF 格式是由 ________ 社区主推的模型格式，专为 CPU 和混合 CPU/GPU 推理（如 llama.cpp）设计。",
+    "question_type": "practical",
+    "question_text": "执行以下命令验证当前用户和主机名：\n```bash\nwhoami && hostname\n```",
     "options": [],
-    "correct_answer": "llama.cpp",
-    "hint": null,
-    "explanation": ""
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "hint": "```\nyour_username\nDESKTOP-XXXX\n```",
+    "explanation": "```\nyour_username\nDESKTOP-XXXX\n```"
   },
   {
-    "question_id": "Q-KB15-ST1502-001",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "Temperature 增大通常会使采样分布更________。",
+    "question_id": "Q-KB0101-006",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请完成以下操作并截图/粘贴输出：\n1. 在 `/tmp` 下创建目录 `practice`\n2. 进入该目录，创建文件 `note.txt` 并写入 \"Hello Linux\"\n3. 查看文件内容\n4. 复制为 `note_backup.txt`\n5. 列出目录下所有文件",
     "options": [],
-    "correct_answer": "平坦 ||| 随机 ||| 发散",
-    "hint": "较高温度降低高概率 token 的相对优势。",
-    "explanation": "较高温度降低高概率 token 的相对优势。"
+    "correct_answer": "mkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la",
+    "hint": "```bash\nmkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la\n```",
+    "explanation": "```bash\nmkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la\n```"
   },
   {
-    "question_id": "Q-KB15-ST1501-003",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-01",
-    "difficulty": "高级",
+    "question_id": "Q-KB0101-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "与贪心搜索相比，束搜索的典型代价是？",
+    "question_text": "`cp -r source_dir/ dest_dir/` 中 `-r` 参数的含义是？",
     "options": [
       {
         "key": "A",
-        "text": "计算量和显存开销更高"
+        "text": "只复制文件不复制目录"
       },
       {
         "key": "B",
-        "text": "无法生成文本"
+        "text": "递归复制整个目录树"
       },
       {
         "key": "C",
-        "text": "不需要模型"
+        "text": "覆盖时不提示"
       },
       {
         "key": "D",
-        "text": "不能设置长度限制"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "多条候选路径需要更多计算和存储。",
-    "explanation": "多条候选路径需要更多计算和存储。"
-  },
-  {
-    "question_id": "Q-KB1504-006",
-    "block_id": "KB-15",
-    "subtopic_id": "KBS-15-04",
-    "difficulty": "初级",
-    "question_type": "single_choice",
-    "question_text": "模型量化（Quantization）的主要目的是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "提高模型精度"
-      },
-      {
-        "key": "B",
-        "text": "减小模型体积和显存占用，加速推理"
-      },
-      {
-        "key": "C",
-        "text": "增加训练数据"
-      },
-      {
-        "key": "D",
-        "text": "改变模型架构"
+        "text": "保留文件属性"
       }
     ],
     "correct_answer": "B",
+    "hint": "> `-r`（recursive）递归复制目录及其所有子目录和文件。",
+    "explanation": "> `-r`（recursive）递归复制目录及其所有子目录和文件。"
+  },
+  {
+    "question_id": "Q-KB0102-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "高级",
+    "question_type": "true_false",
+    "question_text": "在 `~/.bashrc` 中写入 `export LD_LIBRARY_PATH=/usr/local/lib` 后，新开一个终端窗口，该变量是否自动生效？为什么？",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "错误",
+    "hint": "---",
+    "explanation": "---"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。",
+    "options": [],
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
     "hint": null,
     "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0103-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "创建一个名为 `myenv`、Python版本为3.10的conda虚拟环境，正确命令是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`conda create -n myenv python=3.10`"
+      },
+      {
+        "key": "B",
+        "text": "`conda install myenv python=3.10`"
+      },
+      {
+        "key": "C",
+        "text": "`conda new myenv --python 3.10`"
+      },
+      {
+        "key": "D",
+        "text": "`conda env create myenv 3.10`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出将 `/usr/local/cuda/bin` 永久添加到 `PATH` 环境变量的完整步骤（以bash为例）。",
+    "options": [],
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "hint": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```",
+    "explanation": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```"
   }
 ]

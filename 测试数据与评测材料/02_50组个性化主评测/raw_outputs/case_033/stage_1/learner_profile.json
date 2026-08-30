@@ -1,8 +1,27 @@
 {
-  "session_id": "cad8f991-af60-48e4-bb0c-6269843791e1",
+  "session_id": "f15ae738-0c0d-4855-a6cb-fe7f4a6126ae",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "云T4，想做vLLM API服务",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-15"
+  ],
+  "target_subtopic_ids": [
+    "KBS-15-04"
+  ],
+  "planned_block_order": [
+    "KB-15"
+  ],
+  "active_stage_block_id": "KB-01",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -17,7 +36,7 @@
         "KBS-15-04"
       ],
       "mapping_confidence": 1.0,
-      "level": "beginner",
+      "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
@@ -27,9 +46,9 @@
   ],
   "goal": "vLLM部署",
   "daily_hours": 2.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.725,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

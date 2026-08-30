@@ -1,8 +1,25 @@
 {
-  "session_id": "d1c01152-8b66-4b00-9bfe-8e0c20abaedf",
+  "session_id": "0092e318-5ab3-4a01-8a44-9dad5ddcb74a",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "掌握基础Python，写过爬虫和脚本，无深度学习经验",
+  "skill_tags": [
+    "Python编程基础"
+  ],
+  "mastered_block_ids": [
+    "KB-02"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-04",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -17,15 +34,16 @@
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
+        "深度学习框架PyTorch基础",
         "HuggingFace生态工具链"
       ]
     }
   ],
   "goal": "LoRA微调",
   "daily_hours": 1.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.65,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

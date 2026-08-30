@@ -1,183 +1,166 @@
 [
   {
-    "question_id": "Q-KB1201-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
     "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "LoRA（Low-Rank Adaptation）的核心思想是？",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
     "options": [
       {
         "key": "A",
-        "text": "冻结预训练模型的所有参数，仅训练新增的低秩分解矩阵"
+        "text": "torch.cuda.is_available()"
       },
       {
         "key": "B",
-        "text": "训练模型的所有参数"
+        "text": "torch.manual_seed(0)"
       },
       {
         "key": "C",
-        "text": "删除模型的部分层"
+        "text": "torch.save()"
       },
       {
         "key": "D",
-        "text": "仅训练Embedding层"
+        "text": "torch.no_grad()"
       }
     ],
     "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "options": [],
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
+  },
+  {
+    "question_id": "Q-KB0405-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`CrossEntropyLoss` 的输入 `logits` 是否需要先经过 `Softmax`？",
+    "options": [
+      {
+        "key": "A",
+        "text": "需要"
+      },
+      {
+        "key": "B",
+        "text": "不需要"
+      },
+      {
+        "key": "C",
+        "text": "可选"
+      },
+      {
+        "key": "D",
+        "text": "取决于输出维度"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `CrossEntropyLoss` 内部已包含 `LogSoftmax`，直接传入未归一化的 logits 即可。",
+    "explanation": "> `CrossEntropyLoss` 内部已包含 `LogSoftmax`，直接传入未归一化的 logits 即可。"
+  },
+  {
+    "question_id": "Q-KB0401-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`x.view(-1, 3)` 中 `-1` 的含义是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "删除该维度"
+      },
+      {
+        "key": "B",
+        "text": "自动推断该维度的大小"
+      },
+      {
+        "key": "C",
+        "text": "设置为0"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `-1` 表示该维度大小由其他维度和总元素数自动推断。",
+    "explanation": "> `-1` 表示该维度大小由其他维度和总元素数自动推断。"
+  },
+  {
+    "question_id": "Q-KB0403-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`nn.Module` 的子类中，`forward` 方法的作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "初始化网络参数"
+      },
+      {
+        "key": "B",
+        "text": "定义前向传播逻辑"
+      },
+      {
+        "key": "C",
+        "text": "执行反向传播"
+      },
+      {
+        "key": "D",
+        "text": "保存模型"
+      }
+    ],
+    "correct_answer": "B",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1205-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-05",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "合并 LoRA 权重后最直接的用途是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "以不依赖单独适配器的形式部署推理"
-      },
-      {
-        "key": "B",
-        "text": "删除全部模型参数"
-      },
-      {
-        "key": "C",
-        "text": "跳过保存模型"
-      },
-      {
-        "key": "D",
-        "text": "自动增加训练数据"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "合并可简化独立推理部署。",
-    "explanation": "合并可简化独立推理部署。"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
+    "question_id": "Q-KB0404-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请实现一个简单的自定义数据集类 `MyDataset`，接收数据列表 `data` 和标签列表 `labels`，实现 `__len__` 和 `__getitem__` 方法。",
     "options": [],
-    "correct_answer": "lora_dropout",
-    "hint": "该参数用于适配器分支的 dropout。",
-    "explanation": "该参数用于适配器分支的 dropout。"
+    "correct_answer": "```python\nfrom torch.utils.data import Dataset\n\nclass MyDataset(Dataset):\n    def __init__(self, data, labels):\n        self.data = data\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.data)\n\n    def __getitem__(self, idx):\n        return self.data[idx], self.labels[idx]\n```",
+    "hint": "```python\nfrom torch.utils.data import Dataset\n\nclass MyDataset(Dataset):\n    def __init__(self, data, labels):\n        self.data = data\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.data)\n\n    def __getitem__(self, idx):\n        return self.data[idx], self.labels[idx]\n```",
+    "explanation": "```python\nfrom torch.utils.data import Dataset\n\nclass MyDataset(Dataset):\n    def __init__(self, data, labels):\n        self.data = data\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.data)\n\n    def __getitem__(self, idx):\n        return self.data[idx], self.labels[idx]\n```"
   },
   {
-    "question_id": "Q-KB12-ST1203-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
+    "question_id": "Q-KB0403-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
     "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "若希望将 LoRA 注入注意力层的 query 与 value 投影，应配置什么？",
-    "options": [
-      {
-        "key": "A",
-        "text": "target_modules 指向对应投影层名"
-      },
-      {
-        "key": "B",
-        "text": "删除 tokenizer"
-      },
-      {
-        "key": "C",
-        "text": "把 batch size 设为0"
-      },
-      {
-        "key": "D",
-        "text": "关闭梯度计算"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "target_modules 控制 LoRA 的注入位置。",
-    "explanation": "target_modules 控制 LoRA 的注入位置。"
-  },
-  {
-    "question_id": "Q-KB12-ST1200-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 的 4-bit 量化常依赖的库是________。",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `nn.Sequential` 定义一个包含 `Linear(10, 5)`、`ReLU`、`Linear(5, 1)` 的网络。",
     "options": [],
-    "correct_answer": "bitsandbytes",
-    "hint": "bitsandbytes 提供低比特量化与优化器支持。",
-    "explanation": "bitsandbytes 提供低比特量化与优化器支持。"
+    "correct_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "hint": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "explanation": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---"
   },
   {
-    "question_id": "Q-KB12-ST1200-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "QLoRA 对显存要求相对较低，主要因为它将基座模型以何种精度加载？",
-    "options": [
-      {
-        "key": "A",
-        "text": "4-bit 量化精度"
-      },
-      {
-        "key": "B",
-        "text": "64-bit 浮点精度"
-      },
-      {
-        "key": "C",
-        "text": "纯文本精度"
-      },
-      {
-        "key": "D",
-        "text": "不加载模型"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "QLoRA 以低比特量化加载冻结的基座模型。",
-    "explanation": "QLoRA 以低比特量化加载冻结的基座模型。"
-  },
-  {
-    "question_id": "Q-KB12-ST1205-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-05",
-    "difficulty": "高级",
+    "question_id": "Q-KB0401-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "PEFT 模型调用 `merge_and_unload()` 后，会将 LoRA 权重________到基座模型中。",
+    "question_text": "张量 `x = torch.tensor([[1, 2], [3, 4]])`，其形状 `x.shape` 为________；数据类型 `x.dtype` 默认为________。",
     "options": [],
-    "correct_answer": "合并 ||| merge ||| 融合",
-    "hint": "合并后可作为普通模型进行推理部署。",
-    "explanation": "合并后可作为普通模型进行推理部署。"
-  },
-  {
-    "question_id": "Q-KB12-ST1202-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "在其他条件相同时，增大 LoRA rank 最可能带来什么？",
-    "options": [
-      {
-        "key": "A",
-        "text": "可训练参数量增加"
-      },
-      {
-        "key": "B",
-        "text": "基座模型词表被删除"
-      },
-      {
-        "key": "C",
-        "text": "不再需要训练数据"
-      },
-      {
-        "key": "D",
-        "text": "模型自动变为量化模型"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "更高 rank 意味着更大的低秩适配器。",
-    "explanation": "更高 rank 意味着更大的低秩适配器。"
+    "correct_answer": "`(2, 2)`；`torch.int64`（或 `torch.long`）",
+    "hint": null,
+    "explanation": ""
   }
 ]

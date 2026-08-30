@@ -1,54 +1,54 @@
 [
   {
-    "question_id": "Q-KB15-ST1503-002",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "动态 ||| 连续 ||| 实时",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB15-ST1503-001",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "Cache ||| cache ||| 缓存",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB15-ST1500-002",
-    "submitted_answer": "显存 ||| GPU 显存",
+    "question_id": "Q-KB0100-004",
+    "submitted_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
     "is_correct": true,
-    "correct_answer": "显存 ||| GPU 显存",
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB15-ST1502-002",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "token ||| 词元",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB1504-007",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "llama.cpp",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB15-ST1502-001",
-    "submitted_answer": "平坦 ||| 随机 ||| 发散",
+    "question_id": "Q-KB0100-002",
+    "submitted_answer": "your_username\nDESKTOP-XXXX",
     "is_correct": true,
-    "correct_answer": "平坦 ||| 随机 ||| 发散",
+    "correct_answer": "your_username\nDESKTOP-XXXX",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB15-ST1501-003",
+    "question_id": "Q-KB0101-006",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "mkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-004",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-004",
+    "submitted_answer": "错误",
+    "is_correct": true,
+    "correct_answer": "错误",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "submitted_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "is_correct": true,
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0103-001",
     "submitted_answer": "A",
     "is_correct": true,
     "correct_answer": "A",
@@ -56,10 +56,10 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1504-006",
-    "submitted_answer": "B",
+    "question_id": "Q-KB0102-002",
+    "submitted_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
     "is_correct": true,
-    "correct_answer": "B",
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

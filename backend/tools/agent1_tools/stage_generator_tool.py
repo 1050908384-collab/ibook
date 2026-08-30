@@ -28,6 +28,14 @@ from typing import Any, Dict
 
 from config import DATA_DIR
 from llm.client import LLMClient
+from models.profile import (
+    LEARNING_STYLE_MIXED,
+    LEARNING_STYLE_PRACTICE,
+    LEARNING_STYLE_THEORY,
+    LEARNING_STYLES,
+    LearningStyle,
+    normalize_learning_style,
+)
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -245,17 +253,27 @@ def _adjust_hours_by_profile(base_hours: float, daily_hours: float, level: str) 
     return round(min(adjusted, 16.0, max(0.5, daily_hours) * 3.0), 1)
 
 
-def _generate_style_notes(learning_style: str, skill_name: str) -> str:
-    """根据学习风格生成建议。"""
-    style_map = {
-        "practice": f"动手型学习者：建议先完成{skill_name}的最小可运行操作，再记录命令、报错与解决过程",
-        "visual": f"视觉型学习者：建议多关注{skill_name}的架构图、流程图和可视化演示",
-        "auditory": f"听觉型学习者：建议配合{skill_name}的视频讲解和语音教程",
-        "reading": f"阅读型学习者：建议详细阅读{skill_name}的官方文档和技术书籍",
-        "kinesthetic": f"动手型学习者：建议边学边练，在代码中实践{skill_name}的每个知识点",
-        "mixed": f"混合型学习者：建议结合阅读、观看和实践多种方式学习{skill_name}",
+def _generate_style_notes(learning_style: object, skill_name: str) -> str:
+    """根据学习风格生成建议。
+
+    值空间由前端 ProfileSetupForm.styleOptions 决定：theory / practice / mixed
+    三选一，并且用 normalize_learning_style 强制收敛到枚举，杜绝死键和
+    '未知值→默认 mixed' 的隐性漂移。"""
+    style: LearningStyle = normalize_learning_style(learning_style)
+    # style_map 的键必须和 LEARNING_STYLES 完全一致，否则是数据漂移
+    style_map: dict[LearningStyle, str] = {
+        LEARNING_STYLE_THEORY:
+            f"理论型学习者：建议先理解{skill_name}的原理、设计思路与适用场景，再辅以少量代码示例验证关键写法。",
+        LEARNING_STYLE_PRACTICE:
+            f"动手型学习者：建议先完成{skill_name}的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+        LEARNING_STYLE_MIXED:
+            f"混合型学习者：建议结合阅读讲解、可视化演示与实操练习，交替推进{skill_name}的学习。",
     }
-    return style_map.get(learning_style, style_map["mixed"])
+    assert set(style_map.keys()) == set(LEARNING_STYLES), (
+        f"style_map 键 {set(style_map.keys())} 与前端枚举 {set(LEARNING_STYLES)} 不一致，"
+        f"请同步修改 models/profile.py 的 LEARNING_STYLES。"
+    )
+    return style_map[style]
 
 
 def _generate_hardware_notes(hardware: str, skill_name: str) -> str:

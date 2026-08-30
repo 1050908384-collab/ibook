@@ -1,36 +1,38 @@
 {
-  "stage_id": "e3cf7997-881d-5d80-8003-4b6452f890d6",
+  "stage_id": "bf5306d2-1e27-5fc1-836a-695d56593077",
   "stage_num": 1,
-  "block_id": "KB-12",
-  "block_name": "LoRA",
-  "block_ids": [],
-  "subtopic_id": "KBS-12-05",
-  "subtopic_name": "掌握LoRA权重合并与导出（merge_and_unload）",
+  "block_id": "KB-07",
+  "block_name": "子词切分与分词器（Tokenizer）",
+  "block_ids": [
+    "KB-07"
+  ],
+  "subtopic_id": "KBS-07-00",
+  "subtopic_name": "（环境准备：在Python环境中安装transformers、tokenizers库）",
   "subtopic_ids": [
-    "KBS-12-05"
+    "KBS-07-00"
   ],
   "subtopic_names": [
-    "掌握LoRA权重合并与导出（merge_and_unload）"
+    "（环境准备：在Python环境中安装transformers、tokenizers库）"
   ],
-  "estimated_hours": 6.6,
+  "estimated_hours": 0.5,
   "gap_skill": "LoRA",
   "prerequisites": [
-    "HuggingFace生态工具链"
+    "KBS-02-00"
   ],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习LoRA",
-  "description": "围绕LoRA完成一次可执行的阶段学习与练习。",
+  "title": "学习环境准备：在Python环境中安装transformers、...",
+  "description": "围绕环境准备：在Python环境中安装transformers、...完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解LoRA的基本概念",
-    "掌握LoRA的核心技术",
-    "能够独立完成LoRA相关任务"
+    "理解环境准备：在Python环境中安装transformers、...的基本概念",
+    "掌握环境准备：在Python环境中安装transformers、...的核心技术",
+    "能够独立完成环境准备：在Python环境中安装transformers、...相关任务"
   ],
-  "difficulty": "高级",
-  "recommended_daily_hours": 2.0,
-  "suggested_study_days": 4,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习LoRA",
-  "hardware_notes": "",
-  "personalization_summary": "预计6.6小时完成 | 建议分3天学习 | 每天2.0小时 | 综合型学习风格"
+  "difficulty": "中级",
+  "recommended_daily_hours": 0.5,
+  "suggested_study_days": 1,
+  "learning_style_notes": "动手型学习者：建议先完成环境准备：在Python环境中安装transformers、...的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+  "hardware_notes": "当前设备为 MacBook M2 16GB统一内存：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合Mac M2用户，统一内存16GB，想用MLX做LoRA学习者 | 预计1.4小时完成 | 建议分1天学习 | 每天2.0小时 | 动手型学习风格"
 }

@@ -1,8 +1,25 @@
 {
-  "session_id": "24ec18d7-a67e-426f-a2a6-33dc0f5389a5",
+  "session_id": "fe9fe879-3850-40a7-8ca6-b62634d586f7",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "熟悉Tokenizer和BPE算法，想深入Transformer",
+  "skill_tags": [
+    "子词切分与分词器"
+  ],
+  "mastered_block_ids": [
+    "KB-07"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-08"
+  ],
+  "target_subtopic_ids": [
+    "KBS-08-02"
+  ],
+  "planned_block_order": [
+    "KB-08"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -30,9 +47,9 @@
   ],
   "goal": "理解Transformer架构",
   "daily_hours": 2.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.725,
+  "learning_style": "theory",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

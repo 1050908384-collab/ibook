@@ -28,6 +28,7 @@
   },
   "recommended_prerequisites": [
     ["KBS-01-00", "KBS-02-00"],
+    ["KBS-01-04", "KBS-04-00"],
     ["KBS-07-04", "KBS-09-02"],
     ["KBS-10-02", "KBS-12-03"]
   ],

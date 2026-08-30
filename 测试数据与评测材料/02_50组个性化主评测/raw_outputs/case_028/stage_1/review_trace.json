@@ -1,6 +1,6 @@
 {
   "review_passed": true,
-  "iterations": 2,
+  "iterations": 3,
   "review_history": [
     {
       "iteration": 1,
@@ -9,40 +9,368 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
+            "error_type": "incomplete_sentence",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "description": "与来源块 LOCAL-KBS-15-02-C001 相似度 0.70 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-15-02-C001，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第一章：随机采样的定位——从\"唯一答案\"到\"多种可能\" > 1.1 为什么需要随机采样？，lines=1-51",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "fdf6aac9ce9c_r1",
-            "canonical_error_id": "fdf6aac9ce9c",
-            "source_refs": [
-              "src_LOCAL-KBS-15-02-C001"
-            ],
+            "location": null,
+            "description": "内容块末尾出现不完整句子“只有 WSL2 装不上”，句子被截断，导致信息不完整，影响理解。",
+            "evidence": "原文末尾为“只有 WSL2 装不上”，缺少后续内容，属于明显的截断或遗漏。",
+            "suggestion": "补全该句，例如“只有 WSL2 装不上时才考虑虚拟机或云服务器。”",
+            "error_id": "fe77b08d0946_r1",
+            "canonical_error_id": "fe77b08d0946",
+            "source_refs": [],
             "change_request": {
               "required": false,
               "action": "review_suggestion"
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_chunk_id": "LOCAL-KBS-15-02-C001",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C002",
+            "content_chunk_id": "LOCAL-KBS-01-00-C002",
             "content_version": 1,
-            "in_chunk_position": "lines:1-51"
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在挂载镜像步骤处被截断，缺少后续步骤（如启动虚拟机、安装系统等），导致操作步骤不完整。",
+            "evidence": "原文在'挂载 ubuntu-24.04.x'处截断，未提供完整操作流程。",
+            "suggestion": "补充完整的后续步骤，包括选择ISO镜像、启动虚拟机、安装Ubuntu系统等。",
+            "error_id": "6bcff2721b48_r1",
+            "canonical_error_id": "6bcff2721b48",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C006",
+            "content_chunk_id": "LOCAL-KBS-01-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_error",
+            "severity": "major",
+            "location": null,
+            "description": "第5步SSH连接命令中使用了中文占位符'你的用户名'，这不是有效的用户名格式，会导致命令执行失败。",
+            "evidence": "命令为'ssh 你的用户名@192.168.xxx.xxx'，其中'你的用户名'是中文文本，不符合SSH用户名的有效格式。",
+            "suggestion": "将'你的用户名'替换为实际的Ubuntu用户名，例如'ssh ubuntu@192.168.xxx.xxx'，并提示用户替换为自己的用户名。",
+            "error_id": "1b680e907986_r1",
+            "canonical_error_id": "1b680e907986",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C008",
+            "content_chunk_id": "LOCAL-KBS-01-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'常见'处截断，未完成BIOS开启步骤的完整说明，且缺少后续内容。",
+            "evidence": "原文以'> **常见'结尾，明显不完整。",
+            "suggestion": "补充完整内容，确保BIOS开启步骤和后续说明完整。",
+            "error_id": "745c26f0940a_r1",
+            "canonical_error_id": "745c26f0940a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C010",
+            "content_chunk_id": "LOCAL-KBS-01-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'操作验证'部分被截断，未提供完整的验证步骤和后续说明，导致学习内容不完整。",
+            "evidence": "原文以'再用'结尾，未说明如何验证用户创建成功及后续操作。",
+            "suggestion": "补充完整的验证步骤，例如：'再用 exit 退出 root，用新用户登录，执行 whoami 确认用户，并测试 sudo 权限。'",
+            "error_id": "1af593ae1dcb_r1",
+            "canonical_error_id": "1af593ae1dcb",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C015",
+            "content_chunk_id": "LOCAL-KBS-01-00-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_error",
+            "severity": "major",
+            "location": null,
+            "description": "步骤4中执行 `su - yourname` 切换到普通用户，但后续命令 `mkdir -p ~/.ssh` 和 `nano ~/.ssh/authorized_keys` 是在该用户的家目录下操作，而步骤5的 `chmod 700 ~/.ssh` 和 `chmod 600 ~/.ssh/authorized_keys` 也是在该用户下执行，逻辑上一致。但若用户已通过VNC/远程连接以root登录，执行 `su - yourname` 后，`~` 会展开为 yourname 的家目录，这是正确的。然而，若 yourname 用户不存在或没有家目录，命令会失败。此外，`su -` 需要输入密码，若未提供密码或无法交互，命令会卡住。建议明确说明需要切换到目标用户，并确保该用户存在。",
+            "evidence": "命令 `su - yourname` 需要目标用户存在且需要密码，若未提供密码或无法交互，命令会卡住。",
+            "suggestion": "建议在步骤4前明确说明需要以目标用户登录或使用 `sudo -u yourname` 执行后续命令，并确保 yourname 用户存在。",
+            "error_id": "c6a4045da390_r1",
+            "canonical_error_id": "c6a4045da390",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C016",
+            "content_chunk_id": "LOCAL-KBS-01-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "本块末尾的'本块学习检查'句子不完整，'用自己的话说明 SSH 密钥登录与 v' 被截断，缺少后续内容。",
+            "evidence": "原文末尾为'用自己的话说明 SSH 密钥登录与 v'，明显不完整。",
+            "suggestion": "补全该句，例如'用自己的话说明 SSH 密钥登录与密码登录的区别'。",
+            "error_id": "0454ed976c3e_r1",
+            "canonical_error_id": "0454ed976c3e",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C016",
+            "content_chunk_id": "LOCAL-KBS-01-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "security_risk",
+            "severity": "minor",
+            "location": null,
+            "description": "建议开放22端口时，若来源IP不固定暂填0.0.0.0/0，这会将SSH端口暴露给所有公网IP，存在被暴力破解的风险。",
+            "evidence": "原文：'IP不固定就暂填0.0.0.0/0'。根据行业安全规范，开放SSH端口时应限制来源IP，避免使用0.0.0.0/0。",
+            "suggestion": "建议强调使用0.0.0.0/0的风险，并推荐使用云服务商的安全组或防火墙限制来源IP，或使用VPN/跳板机。",
+            "error_id": "f6b42ea33c80_r1",
+            "canonical_error_id": "f6b42ea33c80",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C017",
+            "content_chunk_id": "LOCAL-KBS-01-00-C017",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "security_risk",
+            "severity": "minor",
+            "location": null,
+            "description": "示例命令中使用了公网IP地址47.96.xxx.xxx，虽然xxx是占位符，但可能诱导用户直接使用真实IP，存在安全隐患。",
+            "evidence": "内容块中命令为ssh yourname@47.96.xxx.xxx，未提示用户使用自己的IP或注意安全。",
+            "suggestion": "建议使用占位符如<公网IP>，并提示用户从控制台复制自己的公网IP，避免直接使用示例IP。",
+            "error_id": "5e3df83de5ac_r1",
+            "canonical_error_id": "5e3df83de5ac",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C018",
+            "content_chunk_id": "LOCAL-KBS-01-00-C018",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_platform_mismatch",
+            "severity": "major",
+            "location": null,
+            "description": "验证步骤中在Windows命令提示符中执行`ssh 用户名@你的IP地址`，但SSH命令通常在PowerShell或CMD中均可执行，且Windows 10及以上版本自带OpenSSH客户端，此命令本身有效。然而，内容块标题为'虚拟机/云服务器：配置SSH免密登录'，且假设4.3节已完成密钥配置，但未明确说明密钥配置的具体步骤，可能导致用户无法完成免密登录。",
+            "evidence": "内容块中'验证步骤'明确指示在Windows命令提示符中执行ssh命令，但未提供密钥生成和复制到服务器的具体步骤，仅假设已完成。",
+            "suggestion": "补充密钥生成（ssh-keygen）和复制（ssh-copy-id或手动添加公钥）的具体步骤，或明确引用4.3节的具体内容。",
+            "error_id": "a7d59b1b9f06_r1",
+            "canonical_error_id": "a7d59b1b9f06",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C019",
+            "content_chunk_id": "LOCAL-KBS-01-00-C019",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "ssh-copy-id_windows_availability",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块提到'若提示`ssh-copy-id 不是内部或外部命令`，说明Windows版本较老'，但ssh-copy-id在Windows上并非默认命令，即使较新版本也可能不存在，需要额外安装或使用替代方法。",
+            "evidence": "ssh-copy-id是Unix/Linux工具，Windows原生不支持，需通过Git Bash或WSL使用，或手动复制公钥。",
+            "suggestion": "建议提供Windows下替代方案，如手动将公钥添加到服务器的authorized_keys文件，或使用PowerShell命令。",
+            "error_id": "7b9991589335_r1",
+            "canonical_error_id": "7b9991589335",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C019",
+            "content_chunk_id": "LOCAL-KBS-01-00-C019",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'注意：你的 A100 是云服务器，只装'处截断，未完成插件安装说明，且缺少后续内容。",
+            "evidence": "原文以'只装'结尾，句子不完整，无法确认插件安装的完整指导。",
+            "suggestion": "补全内容，明确云服务器用户只需安装 Python 和 Remote-SSH 插件，并说明 Remote-WSL 不需要安装。",
+            "error_id": "75bf30db664d_r1",
+            "canonical_error_id": "75bf30db664d",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C020",
+            "content_chunk_id": "LOCAL-KBS-01-00-C020",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'echo命令'部分被截断，未完成该命令的说明，导致信息不完整。",
+            "evidence": "原文以'**2. echo命令**（适合快速写入或追加'结尾，缺少后续内容。",
+            "suggestion": "补充echo命令的完整用法示例，如'echo \"max_num_seqs=256\" >> config.py'等。",
+            "error_id": "344533b430f1_r1",
+            "canonical_error_id": "344533b430f1",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C025",
+            "content_chunk_id": "LOCAL-KBS-01-00-C025",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'若提示找不到命令，'处截断，未完成ifconfig命令的说明，导致信息不完整。",
+            "evidence": "原文以'若提示找不到命令，'结尾，缺少后续内容。",
+            "suggestion": "补充完整说明，例如：若提示找不到命令，可尝试使用`ip addr`或`ip a`命令查看网卡信息。",
+            "error_id": "5866c3703628_r1",
+            "canonical_error_id": "5866c3703628",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C026",
+            "content_chunk_id": "LOCAL-KBS-01-00-C026",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "场景2的代码块被截断，缺少完整的命令和预期输出，无法验证其正确性。",
+            "evidence": "内容块在'# 1. 查看内存使用情况（-'处截断，未提供完整的命令和预期输出。",
+            "suggestion": "补全场景2的完整命令和预期输出，确保命令可执行且输出正确。",
+            "error_id": "3157f1183e2a_r1",
+            "canonical_error_id": "3157f1183e2a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C027",
+            "content_chunk_id": "LOCAL-KBS-01-00-C027",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_command",
+            "severity": "minor",
+            "location": null,
+            "description": "第5条避坑指南'命令记忆'中，命令示例'用`命令 --help`（如'未完整给出示例，句子被截断，可能导致学习者困惑。",
+            "evidence": "原文：'用`命令 --help`（如'，缺少完整的示例命令和闭合括号。",
+            "suggestion": "补全示例，例如：'用`命令 --help`（如`ls --help`）查看命令帮助。'",
+            "error_id": "c1dc146a67ad_r1",
+            "canonical_error_id": "c1dc146a67ad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C028",
+            "content_chunk_id": "LOCAL-KBS-01-00-C028",
+            "content_version": 1,
+            "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "description": "与来源块 LOCAL-KBS-15-02-C019 相似度 0.79 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-02-C019，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第七章：电脑配置批注 > 7.2 云端环境配置参考，lines=408-446",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "description": "与来源块 LOCAL-KBS-01-00-C031 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-00-C031，heading_path=环境准备：安装 Linux 系统（或 WSL2 / 云服务器），熟悉终端使用，确保能执行 Shell 命令 > 七、环境验证：安装 Python 基础环境并运行第一个程序（①） > 7.3 运行你的第一个 Python 程序（①），lines=670-728",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "de9b36b6731c_r1",
-            "canonical_error_id": "de9b36b6731c",
+            "error_id": "bddeedf71474_r1",
+            "canonical_error_id": "bddeedf71474",
             "source_refs": [
-              "src_LOCAL-KBS-15-02-C019"
+              "src_LOCAL-KBS-01-00-C031"
             ],
             "change_request": {
               "required": false,
@@ -50,11 +378,435 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_chunk_id": "LOCAL-KBS-15-02-C019",
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
             "content_version": 1,
-            "in_chunk_position": "lines:408-446"
+            "in_chunk_position": "lines:670-728"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“Python 3.12 与 pip 已就绪”，但本块并未实际安装或验证 Python 3.12，且 Ubuntu 24.04 默认 Python 版本为 3.12，但未提供安装或验证步骤，可能误导学习者。",
+            "evidence": "本块仅创建并运行了 hello.py，未执行 python3 --version 或 pip --version 验证版本。",
+            "suggestion": "在“动手做”步骤中增加验证 Python 版本和 pip 的命令，如 python3 --version 和 pip3 --version，并确保输出与声明一致。",
+            "error_id": "4803153a1071_r1",
+            "canonical_error_id": "4803153a1071",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“掌握了 vim 命令”，但本块仅使用了 nano 编辑器，未涉及 vim。",
+            "evidence": "本块步骤中仅使用 nano hello.py，未出现 vim 相关命令。",
+            "suggestion": "将“vim”从已掌握命令列表中移除，或在本块中补充 vim 的使用说明。",
+            "error_id": "59eb7d9c435f_r1",
+            "canonical_error_id": "59eb7d9c435f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“掌握了 ifconfig 命令”，但本块未涉及 ifconfig，且常见问题速查中提示 ifconfig 可能未安装，与“已掌握”矛盾。",
+            "evidence": "本块未使用 ifconfig，且常见问题速查中提示 command not found: ifconfig。",
+            "suggestion": "将“ifconfig”从已掌握命令列表中移除，或在本块中补充 ifconfig 的安装和使用说明。",
+            "error_id": "591ae7af22d0_r1",
+            "canonical_error_id": "591ae7af22d0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'### 三、ls：列出目录内容'标题后突然截断，仅剩'`ls'，缺少后续内容，导致内容不完整。",
+            "evidence": "原文在'### 三、ls：列出目录内容'后只有'`ls'，无任何后续说明或代码块闭合。",
+            "suggestion": "补充'ls'命令的完整说明，包括常用选项（如-l、-a）和示例，并确保代码块正确闭合。",
+            "error_id": "4b227e5930d6_r1",
+            "canonical_error_id": "4b227e5930d6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C002",
+            "content_chunk_id": "LOCAL-KBS-01-01-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "声称 `-h` 必须搭配 `-l` 才有效，但 `ls -h` 单独使用是合法的，只是不显示大小。",
+            "evidence": "GNU coreutils 文档：`-h` 与 `--human-readable` 一起使用时，与 `-l` 等长格式选项配合显示人类可读大小；单独使用 `-h` 不报错，只是无实际效果。",
+            "suggestion": "改为：`-h` 通常与 `-l` 搭配使用以显示人类可读的文件大小，单独使用不报错但无实际效果。",
+            "error_id": "ff0f97d82514_r1",
+            "canonical_error_id": "ff0f97d82514",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C004",
+            "content_chunk_id": "LOCAL-KBS-01-01-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "mkdir 命令的说明存在事实错误：声称 'mkdir 默认不能直接创建多级嵌套目录，必须加 -p 参数'，但实际 mkdir 默认可以创建多级目录（如 mkdir a/b/c 会逐级创建），-p 参数的作用是当父目录不存在时自动创建，而非必须。",
+            "evidence": "POSIX 标准中 mkdir 默认行为是创建指定目录，若父目录不存在则报错；-p 参数用于递归创建父目录。原文表述易误导用户认为必须加 -p 才能创建多级目录。",
+            "suggestion": "修改为：'mkdir 默认可以创建多级目录，但若父目录不存在会报错；使用 -p 参数可自动创建所有缺失的父目录。'",
+            "error_id": "ece3543eccf1_r1",
+            "canonical_error_id": "ece3543eccf1",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C005",
+            "content_chunk_id": "LOCAL-KBS-01-01-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容块不完整，缺少7.3节之后的实际内容，且存在未完成的标题和文本。",
+            "evidence": "内容块以'## 7.3 复制软链接'开头，但后续代码块未闭合，且'## 八、mv：移动与重命名'标题后无正文，最后一行'**本块学习检查'未完成。",
+            "suggestion": "请提供完整的内容块，确保所有代码块闭合，并补全缺失的正文部分。",
+            "error_id": "e5d54436138f_r1",
+            "canonical_error_id": "e5d54436138f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C006",
+            "content_chunk_id": "LOCAL-KBS-01-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_command",
+            "severity": "critical",
+            "location": null,
+            "description": "cp命令缺少目标目录参数，命令不完整，无法执行。",
+            "evidence": "命令为 `cp ~/Downloads/train.csv ~/Downloads/test.csv ~/Downloads/dev.csv`，缺少目标目录，cp命令需要至少一个源文件和一个目标。",
+            "suggestion": "补充目标目录，例如：`cp ~/Downloads/train.csv ~/Downloads/test.csv ~/Downloads/dev.csv ~/Downloads/data/`",
+            "error_id": "1409ed788702_r1",
+            "canonical_error_id": "1409ed788702",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C009",
+            "content_chunk_id": "LOCAL-KBS-01-01-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "description": "与来源块 LOCAL-KBS-01-01-C010 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-01-C010，heading_path=常用 Shell 命令（cd / ls / mkdir / cp / mv / pwd / touch / rm） > 十、综合实战演练（①+②） > 场景 3：清理临时文件，lines=405-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f07f9d59b16c_r1",
+            "canonical_error_id": "f07f9d59b16c",
+            "source_refs": [
+              "src_LOCAL-KBS-01-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_chunk_id": "LOCAL-KBS-01-01-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:405-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "186789022d02_r1",
+            "canonical_error_id": "186789022d02",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-48"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'临时 vs 永久'部分被截断，未完成该主题的讲解，导致内容不完整。",
+            "evidence": "原文在'### 1.3 临时 vs 永久'处结束，缺少后续内容。",
+            "suggestion": "补充'临时 vs 永久'的完整说明，包括临时设置和永久设置的具体方法及区别。",
+            "error_id": "883c085ddd74_r1",
+            "canonical_error_id": "883c085ddd74",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'若两者同时存在，系统优先读~/.bash_profile'，但实际加载顺序取决于Shell类型和登录方式。对于bash登录Shell，确实优先读取~/.bash_profile；但对于其他Shell（如zsh）或非登录Shell，此说法不准确。此外，~/.profile是sh的配置文件，bash登录Shell在~/.bash_profile不存在时才会读取~/.profile。",
+            "evidence": "Bash手册：登录Shell按顺序读取/etc/profile、~/.bash_profile、~/.bash_login、~/.profile，读取第一个存在的文件。",
+            "suggestion": "明确说明此规则适用于bash登录Shell，并补充其他Shell或非登录Shell的差异。",
+            "error_id": "0b9aa4f34a29_r1",
+            "canonical_error_id": "0b9aa4f34a29",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C005",
+            "content_chunk_id": "LOCAL-KBS-01-02-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "优先级列表将'用户级配置'列为~/.bashrc等，但~/.bashrc通常用于交互式非登录Shell，而~/.bash_profile用于登录Shell，两者加载时机不同，不能简单归为同一优先级。",
+            "evidence": "Bash启动文件：~/.bash_profile在登录Shell加载，~/.bashrc在交互式非登录Shell加载。",
+            "suggestion": "区分登录Shell和非登录Shell的配置文件，分别说明其加载时机和优先级。",
+            "error_id": "feed17f6cf0c_r1",
+            "canonical_error_id": "feed17f6cf0c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C005",
+            "content_chunk_id": "LOCAL-KBS-01-02-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "syntax_error",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块中 `echo $` 是不完整的命令，缺少变量名，属于语法错误。",
+            "evidence": "代码块内容为 `echo $`，缺少变量名，无法执行。",
+            "suggestion": "修正为 `echo $MY_VAR` 或 `echo \"$MY_VAR\"`。",
+            "error_id": "0d97729b8ace_r1",
+            "canonical_error_id": "0d97729b8ace",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C010",
+            "content_chunk_id": "LOCAL-KBS-01-02-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_security_warning",
+            "severity": "minor",
+            "location": null,
+            "description": "安全警告不完整，仅显示“source .env”而未说明具体风险，可能误导用户忽略敏感信息泄露风险。",
+            "evidence": "原文中安全警告为“> **⚠️ 安全警告**：`source .env`”，未说明风险内容。",
+            "suggestion": "补充完整的安全警告，例如：不要将包含敏感信息（如API密钥、密码）的.env文件提交到版本控制，并确保文件权限仅限本人可读。",
+            "error_id": "661e2ac3f374_r1",
+            "canonical_error_id": "661e2ac3f374",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C012",
+            "content_chunk_id": "LOCAL-KBS-01-02-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称'/etc/environment'不支持'$PATH'这类Shell引用，但实际该文件支持变量展开（如PATH=$PATH:/foo），只是不支持命令替换和通配符等。",
+            "evidence": "根据Linux系统配置规范，/etc/environment文件中的变量值会进行变量展开，允许引用其他变量如$PATH。",
+            "suggestion": "修改为：/etc/environment支持变量展开（如PATH=$PATH:/foo），但不支持命令替换和通配符。",
+            "error_id": "a47919004d6d_r1",
+            "canonical_error_id": "a47919004d6d",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C015",
+            "content_chunk_id": "LOCAL-KBS-01-02-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "minor",
+            "location": null,
+            "description": "代码块中'source使当前会话生效，'缺少闭合引号和后续内容，导致代码不完整。",
+            "evidence": "原文中'source使当前会话生效，'后无闭合引号，且缺少后续说明。",
+            "suggestion": "补全代码块，例如：source /etc/profile  # 使当前会话生效",
+            "error_id": "ba006871b25b_r1",
+            "canonical_error_id": "ba006871b25b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C015",
+            "content_chunk_id": "LOCAL-KBS-01-02-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_sentence",
+            "severity": "minor",
+            "location": null,
+            "description": "实践部分句子不完整，缺少闭合括号和后续内容，影响可读性和完整性。",
+            "evidence": "原文末尾为'检查对应配置文件是否存在（'，括号未闭合，句子中断。",
+            "suggestion": "补全句子，例如：'检查对应配置文件是否存在（如 ~/.bashrc 是否存在）。'",
+            "error_id": "4a4fd0139954_r1",
+            "canonical_error_id": "4a4fd0139954",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C016",
+            "content_chunk_id": "LOCAL-KBS-01-02-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "950c6a97770b_r1",
+            "canonical_error_id": "950c6a97770b",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C017"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_version": 1,
+            "in_chunk_position": "lines:520-567"
           }
         ],
         "personalization_errors": [],
@@ -65,40 +817,368 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
+            "error_type": "incomplete_sentence",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "description": "与来源块 LOCAL-KBS-15-02-C001 相似度 0.70 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-15-02-C001，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第一章：随机采样的定位——从\"唯一答案\"到\"多种可能\" > 1.1 为什么需要随机采样？，lines=1-51",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "fdf6aac9ce9c_r1",
-            "canonical_error_id": "fdf6aac9ce9c",
-            "source_refs": [
-              "src_LOCAL-KBS-15-02-C001"
-            ],
+            "location": null,
+            "description": "内容块末尾出现不完整句子“只有 WSL2 装不上”，句子被截断，导致信息不完整，影响理解。",
+            "evidence": "原文末尾为“只有 WSL2 装不上”，缺少后续内容，属于明显的截断或遗漏。",
+            "suggestion": "补全该句，例如“只有 WSL2 装不上时才考虑虚拟机或云服务器。”",
+            "error_id": "fe77b08d0946_r1",
+            "canonical_error_id": "fe77b08d0946",
+            "source_refs": [],
             "change_request": {
               "required": false,
               "action": "review_suggestion"
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_chunk_id": "LOCAL-KBS-15-02-C001",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C002",
+            "content_chunk_id": "LOCAL-KBS-01-00-C002",
             "content_version": 1,
-            "in_chunk_position": "lines:1-51"
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在挂载镜像步骤处被截断，缺少后续步骤（如启动虚拟机、安装系统等），导致操作步骤不完整。",
+            "evidence": "原文在'挂载 ubuntu-24.04.x'处截断，未提供完整操作流程。",
+            "suggestion": "补充完整的后续步骤，包括选择ISO镜像、启动虚拟机、安装Ubuntu系统等。",
+            "error_id": "6bcff2721b48_r1",
+            "canonical_error_id": "6bcff2721b48",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C006",
+            "content_chunk_id": "LOCAL-KBS-01-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_error",
+            "severity": "major",
+            "location": null,
+            "description": "第5步SSH连接命令中使用了中文占位符'你的用户名'，这不是有效的用户名格式，会导致命令执行失败。",
+            "evidence": "命令为'ssh 你的用户名@192.168.xxx.xxx'，其中'你的用户名'是中文文本，不符合SSH用户名的有效格式。",
+            "suggestion": "将'你的用户名'替换为实际的Ubuntu用户名，例如'ssh ubuntu@192.168.xxx.xxx'，并提示用户替换为自己的用户名。",
+            "error_id": "1b680e907986_r1",
+            "canonical_error_id": "1b680e907986",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C008",
+            "content_chunk_id": "LOCAL-KBS-01-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'常见'处截断，未完成BIOS开启步骤的完整说明，且缺少后续内容。",
+            "evidence": "原文以'> **常见'结尾，明显不完整。",
+            "suggestion": "补充完整内容，确保BIOS开启步骤和后续说明完整。",
+            "error_id": "745c26f0940a_r1",
+            "canonical_error_id": "745c26f0940a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C010",
+            "content_chunk_id": "LOCAL-KBS-01-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'操作验证'部分被截断，未提供完整的验证步骤和后续说明，导致学习内容不完整。",
+            "evidence": "原文以'再用'结尾，未说明如何验证用户创建成功及后续操作。",
+            "suggestion": "补充完整的验证步骤，例如：'再用 exit 退出 root，用新用户登录，执行 whoami 确认用户，并测试 sudo 权限。'",
+            "error_id": "1af593ae1dcb_r1",
+            "canonical_error_id": "1af593ae1dcb",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C015",
+            "content_chunk_id": "LOCAL-KBS-01-00-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_error",
+            "severity": "major",
+            "location": null,
+            "description": "步骤4中执行 `su - yourname` 切换到普通用户，但后续命令 `mkdir -p ~/.ssh` 和 `nano ~/.ssh/authorized_keys` 是在该用户的家目录下操作，而步骤5的 `chmod 700 ~/.ssh` 和 `chmod 600 ~/.ssh/authorized_keys` 也是在该用户下执行，逻辑上一致。但若用户已通过VNC/远程连接以root登录，执行 `su - yourname` 后，`~` 会展开为 yourname 的家目录，这是正确的。然而，若 yourname 用户不存在或没有家目录，命令会失败。此外，`su -` 需要输入密码，若未提供密码或无法交互，命令会卡住。建议明确说明需要切换到目标用户，并确保该用户存在。",
+            "evidence": "命令 `su - yourname` 需要目标用户存在且需要密码，若未提供密码或无法交互，命令会卡住。",
+            "suggestion": "建议在步骤4前明确说明需要以目标用户登录或使用 `sudo -u yourname` 执行后续命令，并确保 yourname 用户存在。",
+            "error_id": "c6a4045da390_r1",
+            "canonical_error_id": "c6a4045da390",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C016",
+            "content_chunk_id": "LOCAL-KBS-01-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "本块末尾的'本块学习检查'句子不完整，'用自己的话说明 SSH 密钥登录与 v' 被截断，缺少后续内容。",
+            "evidence": "原文末尾为'用自己的话说明 SSH 密钥登录与 v'，明显不完整。",
+            "suggestion": "补全该句，例如'用自己的话说明 SSH 密钥登录与密码登录的区别'。",
+            "error_id": "0454ed976c3e_r1",
+            "canonical_error_id": "0454ed976c3e",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C016",
+            "content_chunk_id": "LOCAL-KBS-01-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "security_risk",
+            "severity": "minor",
+            "location": null,
+            "description": "建议开放22端口时，若来源IP不固定暂填0.0.0.0/0，这会将SSH端口暴露给所有公网IP，存在被暴力破解的风险。",
+            "evidence": "原文：'IP不固定就暂填0.0.0.0/0'。根据行业安全规范，开放SSH端口时应限制来源IP，避免使用0.0.0.0/0。",
+            "suggestion": "建议强调使用0.0.0.0/0的风险，并推荐使用云服务商的安全组或防火墙限制来源IP，或使用VPN/跳板机。",
+            "error_id": "f6b42ea33c80_r1",
+            "canonical_error_id": "f6b42ea33c80",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C017",
+            "content_chunk_id": "LOCAL-KBS-01-00-C017",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "security_risk",
+            "severity": "minor",
+            "location": null,
+            "description": "示例命令中使用了公网IP地址47.96.xxx.xxx，虽然xxx是占位符，但可能诱导用户直接使用真实IP，存在安全隐患。",
+            "evidence": "内容块中命令为ssh yourname@47.96.xxx.xxx，未提示用户使用自己的IP或注意安全。",
+            "suggestion": "建议使用占位符如<公网IP>，并提示用户从控制台复制自己的公网IP，避免直接使用示例IP。",
+            "error_id": "5e3df83de5ac_r1",
+            "canonical_error_id": "5e3df83de5ac",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C018",
+            "content_chunk_id": "LOCAL-KBS-01-00-C018",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_platform_mismatch",
+            "severity": "major",
+            "location": null,
+            "description": "验证步骤中在Windows命令提示符中执行`ssh 用户名@你的IP地址`，但SSH命令通常在PowerShell或CMD中均可执行，且Windows 10及以上版本自带OpenSSH客户端，此命令本身有效。然而，内容块标题为'虚拟机/云服务器：配置SSH免密登录'，且假设4.3节已完成密钥配置，但未明确说明密钥配置的具体步骤，可能导致用户无法完成免密登录。",
+            "evidence": "内容块中'验证步骤'明确指示在Windows命令提示符中执行ssh命令，但未提供密钥生成和复制到服务器的具体步骤，仅假设已完成。",
+            "suggestion": "补充密钥生成（ssh-keygen）和复制（ssh-copy-id或手动添加公钥）的具体步骤，或明确引用4.3节的具体内容。",
+            "error_id": "a7d59b1b9f06_r1",
+            "canonical_error_id": "a7d59b1b9f06",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C019",
+            "content_chunk_id": "LOCAL-KBS-01-00-C019",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "ssh-copy-id_windows_availability",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块提到'若提示`ssh-copy-id 不是内部或外部命令`，说明Windows版本较老'，但ssh-copy-id在Windows上并非默认命令，即使较新版本也可能不存在，需要额外安装或使用替代方法。",
+            "evidence": "ssh-copy-id是Unix/Linux工具，Windows原生不支持，需通过Git Bash或WSL使用，或手动复制公钥。",
+            "suggestion": "建议提供Windows下替代方案，如手动将公钥添加到服务器的authorized_keys文件，或使用PowerShell命令。",
+            "error_id": "7b9991589335_r1",
+            "canonical_error_id": "7b9991589335",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C019",
+            "content_chunk_id": "LOCAL-KBS-01-00-C019",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'注意：你的 A100 是云服务器，只装'处截断，未完成插件安装说明，且缺少后续内容。",
+            "evidence": "原文以'只装'结尾，句子不完整，无法确认插件安装的完整指导。",
+            "suggestion": "补全内容，明确云服务器用户只需安装 Python 和 Remote-SSH 插件，并说明 Remote-WSL 不需要安装。",
+            "error_id": "75bf30db664d_r1",
+            "canonical_error_id": "75bf30db664d",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C020",
+            "content_chunk_id": "LOCAL-KBS-01-00-C020",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'echo命令'部分被截断，未完成该命令的说明，导致信息不完整。",
+            "evidence": "原文以'**2. echo命令**（适合快速写入或追加'结尾，缺少后续内容。",
+            "suggestion": "补充echo命令的完整用法示例，如'echo \"max_num_seqs=256\" >> config.py'等。",
+            "error_id": "344533b430f1_r1",
+            "canonical_error_id": "344533b430f1",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C025",
+            "content_chunk_id": "LOCAL-KBS-01-00-C025",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'若提示找不到命令，'处截断，未完成ifconfig命令的说明，导致信息不完整。",
+            "evidence": "原文以'若提示找不到命令，'结尾，缺少后续内容。",
+            "suggestion": "补充完整说明，例如：若提示找不到命令，可尝试使用`ip addr`或`ip a`命令查看网卡信息。",
+            "error_id": "5866c3703628_r1",
+            "canonical_error_id": "5866c3703628",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C026",
+            "content_chunk_id": "LOCAL-KBS-01-00-C026",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "场景2的代码块被截断，缺少完整的命令和预期输出，无法验证其正确性。",
+            "evidence": "内容块在'# 1. 查看内存使用情况（-'处截断，未提供完整的命令和预期输出。",
+            "suggestion": "补全场景2的完整命令和预期输出，确保命令可执行且输出正确。",
+            "error_id": "3157f1183e2a_r1",
+            "canonical_error_id": "3157f1183e2a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C027",
+            "content_chunk_id": "LOCAL-KBS-01-00-C027",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_command",
+            "severity": "minor",
+            "location": null,
+            "description": "第5条避坑指南'命令记忆'中，命令示例'用`命令 --help`（如'未完整给出示例，句子被截断，可能导致学习者困惑。",
+            "evidence": "原文：'用`命令 --help`（如'，缺少完整的示例命令和闭合括号。",
+            "suggestion": "补全示例，例如：'用`命令 --help`（如`ls --help`）查看命令帮助。'",
+            "error_id": "c1dc146a67ad_r1",
+            "canonical_error_id": "c1dc146a67ad",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C028",
+            "content_chunk_id": "LOCAL-KBS-01-00-C028",
+            "content_version": 1,
+            "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "description": "与来源块 LOCAL-KBS-15-02-C019 相似度 0.79 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-02-C019，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第七章：电脑配置批注 > 7.2 云端环境配置参考，lines=408-446",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "description": "与来源块 LOCAL-KBS-01-00-C031 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-00-C031，heading_path=环境准备：安装 Linux 系统（或 WSL2 / 云服务器），熟悉终端使用，确保能执行 Shell 命令 > 七、环境验证：安装 Python 基础环境并运行第一个程序（①） > 7.3 运行你的第一个 Python 程序（①），lines=670-728",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "de9b36b6731c_r1",
-            "canonical_error_id": "de9b36b6731c",
+            "error_id": "bddeedf71474_r1",
+            "canonical_error_id": "bddeedf71474",
             "source_refs": [
-              "src_LOCAL-KBS-15-02-C019"
+              "src_LOCAL-KBS-01-00-C031"
             ],
             "change_request": {
               "required": false,
@@ -106,11 +1186,435 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_chunk_id": "LOCAL-KBS-15-02-C019",
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
             "content_version": 1,
-            "in_chunk_position": "lines:408-446"
+            "in_chunk_position": "lines:670-728"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“Python 3.12 与 pip 已就绪”，但本块并未实际安装或验证 Python 3.12，且 Ubuntu 24.04 默认 Python 版本为 3.12，但未提供安装或验证步骤，可能误导学习者。",
+            "evidence": "本块仅创建并运行了 hello.py，未执行 python3 --version 或 pip --version 验证版本。",
+            "suggestion": "在“动手做”步骤中增加验证 Python 版本和 pip 的命令，如 python3 --version 和 pip3 --version，并确保输出与声明一致。",
+            "error_id": "4803153a1071_r1",
+            "canonical_error_id": "4803153a1071",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“掌握了 vim 命令”，但本块仅使用了 nano 编辑器，未涉及 vim。",
+            "evidence": "本块步骤中仅使用 nano hello.py，未出现 vim 相关命令。",
+            "suggestion": "将“vim”从已掌握命令列表中移除，或在本块中补充 vim 的使用说明。",
+            "error_id": "59eb7d9c435f_r1",
+            "canonical_error_id": "59eb7d9c435f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“掌握了 ifconfig 命令”，但本块未涉及 ifconfig，且常见问题速查中提示 ifconfig 可能未安装，与“已掌握”矛盾。",
+            "evidence": "本块未使用 ifconfig，且常见问题速查中提示 command not found: ifconfig。",
+            "suggestion": "将“ifconfig”从已掌握命令列表中移除，或在本块中补充 ifconfig 的安装和使用说明。",
+            "error_id": "591ae7af22d0_r1",
+            "canonical_error_id": "591ae7af22d0",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'### 三、ls：列出目录内容'标题后突然截断，仅剩'`ls'，缺少后续内容，导致内容不完整。",
+            "evidence": "原文在'### 三、ls：列出目录内容'后只有'`ls'，无任何后续说明或代码块闭合。",
+            "suggestion": "补充'ls'命令的完整说明，包括常用选项（如-l、-a）和示例，并确保代码块正确闭合。",
+            "error_id": "4b227e5930d6_r1",
+            "canonical_error_id": "4b227e5930d6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C002",
+            "content_chunk_id": "LOCAL-KBS-01-01-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "声称 `-h` 必须搭配 `-l` 才有效，但 `ls -h` 单独使用是合法的，只是不显示大小。",
+            "evidence": "GNU coreutils 文档：`-h` 与 `--human-readable` 一起使用时，与 `-l` 等长格式选项配合显示人类可读大小；单独使用 `-h` 不报错，只是无实际效果。",
+            "suggestion": "改为：`-h` 通常与 `-l` 搭配使用以显示人类可读的文件大小，单独使用不报错但无实际效果。",
+            "error_id": "ff0f97d82514_r1",
+            "canonical_error_id": "ff0f97d82514",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C004",
+            "content_chunk_id": "LOCAL-KBS-01-01-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "mkdir 命令的说明存在事实错误：声称 'mkdir 默认不能直接创建多级嵌套目录，必须加 -p 参数'，但实际 mkdir 默认可以创建多级目录（如 mkdir a/b/c 会逐级创建），-p 参数的作用是当父目录不存在时自动创建，而非必须。",
+            "evidence": "POSIX 标准中 mkdir 默认行为是创建指定目录，若父目录不存在则报错；-p 参数用于递归创建父目录。原文表述易误导用户认为必须加 -p 才能创建多级目录。",
+            "suggestion": "修改为：'mkdir 默认可以创建多级目录，但若父目录不存在会报错；使用 -p 参数可自动创建所有缺失的父目录。'",
+            "error_id": "ece3543eccf1_r1",
+            "canonical_error_id": "ece3543eccf1",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C005",
+            "content_chunk_id": "LOCAL-KBS-01-01-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容块不完整，缺少7.3节之后的实际内容，且存在未完成的标题和文本。",
+            "evidence": "内容块以'## 7.3 复制软链接'开头，但后续代码块未闭合，且'## 八、mv：移动与重命名'标题后无正文，最后一行'**本块学习检查'未完成。",
+            "suggestion": "请提供完整的内容块，确保所有代码块闭合，并补全缺失的正文部分。",
+            "error_id": "e5d54436138f_r1",
+            "canonical_error_id": "e5d54436138f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C006",
+            "content_chunk_id": "LOCAL-KBS-01-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_command",
+            "severity": "critical",
+            "location": null,
+            "description": "cp命令缺少目标目录参数，命令不完整，无法执行。",
+            "evidence": "命令为 `cp ~/Downloads/train.csv ~/Downloads/test.csv ~/Downloads/dev.csv`，缺少目标目录，cp命令需要至少一个源文件和一个目标。",
+            "suggestion": "补充目标目录，例如：`cp ~/Downloads/train.csv ~/Downloads/test.csv ~/Downloads/dev.csv ~/Downloads/data/`",
+            "error_id": "1409ed788702_r1",
+            "canonical_error_id": "1409ed788702",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C009",
+            "content_chunk_id": "LOCAL-KBS-01-01-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "description": "与来源块 LOCAL-KBS-01-01-C010 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-01-C010，heading_path=常用 Shell 命令（cd / ls / mkdir / cp / mv / pwd / touch / rm） > 十、综合实战演练（①+②） > 场景 3：清理临时文件，lines=405-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f07f9d59b16c_r1",
+            "canonical_error_id": "f07f9d59b16c",
+            "source_refs": [
+              "src_LOCAL-KBS-01-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_chunk_id": "LOCAL-KBS-01-01-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:405-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "186789022d02_r1",
+            "canonical_error_id": "186789022d02",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-48"
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'临时 vs 永久'部分被截断，未完成该主题的讲解，导致内容不完整。",
+            "evidence": "原文在'### 1.3 临时 vs 永久'处结束，缺少后续内容。",
+            "suggestion": "补充'临时 vs 永久'的完整说明，包括临时设置和永久设置的具体方法及区别。",
+            "error_id": "883c085ddd74_r1",
+            "canonical_error_id": "883c085ddd74",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'若两者同时存在，系统优先读~/.bash_profile'，但实际加载顺序取决于Shell类型和登录方式。对于bash登录Shell，确实优先读取~/.bash_profile；但对于其他Shell（如zsh）或非登录Shell，此说法不准确。此外，~/.profile是sh的配置文件，bash登录Shell在~/.bash_profile不存在时才会读取~/.profile。",
+            "evidence": "Bash手册：登录Shell按顺序读取/etc/profile、~/.bash_profile、~/.bash_login、~/.profile，读取第一个存在的文件。",
+            "suggestion": "明确说明此规则适用于bash登录Shell，并补充其他Shell或非登录Shell的差异。",
+            "error_id": "0b9aa4f34a29_r1",
+            "canonical_error_id": "0b9aa4f34a29",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C005",
+            "content_chunk_id": "LOCAL-KBS-01-02-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "优先级列表将'用户级配置'列为~/.bashrc等，但~/.bashrc通常用于交互式非登录Shell，而~/.bash_profile用于登录Shell，两者加载时机不同，不能简单归为同一优先级。",
+            "evidence": "Bash启动文件：~/.bash_profile在登录Shell加载，~/.bashrc在交互式非登录Shell加载。",
+            "suggestion": "区分登录Shell和非登录Shell的配置文件，分别说明其加载时机和优先级。",
+            "error_id": "feed17f6cf0c_r1",
+            "canonical_error_id": "feed17f6cf0c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C005",
+            "content_chunk_id": "LOCAL-KBS-01-02-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "syntax_error",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块中 `echo $` 是不完整的命令，缺少变量名，属于语法错误。",
+            "evidence": "代码块内容为 `echo $`，缺少变量名，无法执行。",
+            "suggestion": "修正为 `echo $MY_VAR` 或 `echo \"$MY_VAR\"`。",
+            "error_id": "0d97729b8ace_r1",
+            "canonical_error_id": "0d97729b8ace",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C010",
+            "content_chunk_id": "LOCAL-KBS-01-02-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_security_warning",
+            "severity": "minor",
+            "location": null,
+            "description": "安全警告不完整，仅显示“source .env”而未说明具体风险，可能误导用户忽略敏感信息泄露风险。",
+            "evidence": "原文中安全警告为“> **⚠️ 安全警告**：`source .env`”，未说明风险内容。",
+            "suggestion": "补充完整的安全警告，例如：不要将包含敏感信息（如API密钥、密码）的.env文件提交到版本控制，并确保文件权限仅限本人可读。",
+            "error_id": "661e2ac3f374_r1",
+            "canonical_error_id": "661e2ac3f374",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C012",
+            "content_chunk_id": "LOCAL-KBS-01-02-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称'/etc/environment'不支持'$PATH'这类Shell引用，但实际该文件支持变量展开（如PATH=$PATH:/foo），只是不支持命令替换和通配符等。",
+            "evidence": "根据Linux系统配置规范，/etc/environment文件中的变量值会进行变量展开，允许引用其他变量如$PATH。",
+            "suggestion": "修改为：/etc/environment支持变量展开（如PATH=$PATH:/foo），但不支持命令替换和通配符。",
+            "error_id": "a47919004d6d_r1",
+            "canonical_error_id": "a47919004d6d",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C015",
+            "content_chunk_id": "LOCAL-KBS-01-02-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "minor",
+            "location": null,
+            "description": "代码块中'source使当前会话生效，'缺少闭合引号和后续内容，导致代码不完整。",
+            "evidence": "原文中'source使当前会话生效，'后无闭合引号，且缺少后续说明。",
+            "suggestion": "补全代码块，例如：source /etc/profile  # 使当前会话生效",
+            "error_id": "ba006871b25b_r1",
+            "canonical_error_id": "ba006871b25b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C015",
+            "content_chunk_id": "LOCAL-KBS-01-02-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_sentence",
+            "severity": "minor",
+            "location": null,
+            "description": "实践部分句子不完整，缺少闭合括号和后续内容，影响可读性和完整性。",
+            "evidence": "原文末尾为'检查对应配置文件是否存在（'，括号未闭合，句子中断。",
+            "suggestion": "补全句子，例如：'检查对应配置文件是否存在（如 ~/.bashrc 是否存在）。'",
+            "error_id": "4a4fd0139954_r1",
+            "canonical_error_id": "4a4fd0139954",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C016",
+            "content_chunk_id": "LOCAL-KBS-01-02-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "950c6a97770b_r1",
+            "canonical_error_id": "950c6a97770b",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C017"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_version": 1,
+            "in_chunk_position": "lines:520-567"
           }
         ],
         "personalization_errors": [],
@@ -128,14 +1632,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "description": "与来源块 LOCAL-KBS-15-02-C001 相似度 0.70 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-15-02-C001，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第一章：随机采样的定位——从\"唯一答案\"到\"多种可能\" > 1.1 为什么需要随机采样？，lines=1-51",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "description": "与来源块 LOCAL-KBS-01-00-C031 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-00-C031，heading_path=环境准备：安装 Linux 系统（或 WSL2 / 云服务器），熟悉终端使用，确保能执行 Shell 命令 > 七、环境验证：安装 Python 基础环境并运行第一个程序（①） > 7.3 运行你的第一个 Python 程序（①），lines=670-728",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "fdf6aac9ce9c_r2",
-            "canonical_error_id": "fdf6aac9ce9c",
+            "error_id": "bddeedf71474_r2",
+            "canonical_error_id": "bddeedf71474",
             "source_refs": [
-              "src_LOCAL-KBS-15-02-C001"
+              "src_LOCAL-KBS-01-00-C031"
             ],
             "change_request": {
               "required": false,
@@ -143,23 +1647,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_chunk_id": "LOCAL-KBS-15-02-C001",
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
             "content_version": 2,
-            "in_chunk_position": "lines:1-51"
+            "in_chunk_position": "lines:670-728"
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "description": "与来源块 LOCAL-KBS-15-02-C019 相似度 0.79 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-02-C019，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第七章：电脑配置批注 > 7.2 云端环境配置参考，lines=408-446",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "description": "与来源块 LOCAL-KBS-01-01-C010 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-01-C010，heading_path=常用 Shell 命令（cd / ls / mkdir / cp / mv / pwd / touch / rm） > 十、综合实战演练（①+②） > 场景 3：清理临时文件，lines=405-475",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "de9b36b6731c_r2",
-            "canonical_error_id": "de9b36b6731c",
+            "error_id": "f07f9d59b16c_r2",
+            "canonical_error_id": "f07f9d59b16c",
             "source_refs": [
-              "src_LOCAL-KBS-15-02-C019"
+              "src_LOCAL-KBS-01-01-C010"
             ],
             "change_request": {
               "required": false,
@@ -167,11 +1671,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_chunk_id": "LOCAL-KBS-15-02-C019",
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_chunk_id": "LOCAL-KBS-01-01-C010",
             "content_version": 2,
-            "in_chunk_position": "lines:408-446"
+            "in_chunk_position": "lines:405-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "186789022d02_r2",
+            "canonical_error_id": "186789022d02",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-48"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "950c6a97770b_r2",
+            "canonical_error_id": "950c6a97770b",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C017"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_version": 2,
+            "in_chunk_position": "lines:520-567"
           }
         ],
         "personalization_errors": [],
@@ -184,14 +1736,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "description": "与来源块 LOCAL-KBS-15-02-C001 相似度 0.70 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-15-02-C001，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第一章：随机采样的定位——从\"唯一答案\"到\"多种可能\" > 1.1 为什么需要随机采样？，lines=1-51",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "description": "与来源块 LOCAL-KBS-01-00-C031 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-00-C031，heading_path=环境准备：安装 Linux 系统（或 WSL2 / 云服务器），熟悉终端使用，确保能执行 Shell 命令 > 七、环境验证：安装 Python 基础环境并运行第一个程序（①） > 7.3 运行你的第一个 Python 程序（①），lines=670-728",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "fdf6aac9ce9c_r2",
-            "canonical_error_id": "fdf6aac9ce9c",
+            "error_id": "bddeedf71474_r2",
+            "canonical_error_id": "bddeedf71474",
             "source_refs": [
-              "src_LOCAL-KBS-15-02-C001"
+              "src_LOCAL-KBS-01-00-C031"
             ],
             "change_request": {
               "required": false,
@@ -199,23 +1751,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C001",
-            "content_chunk_id": "LOCAL-KBS-15-02-C001",
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
             "content_version": 2,
-            "in_chunk_position": "lines:1-51"
+            "in_chunk_position": "lines:670-728"
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "description": "与来源块 LOCAL-KBS-15-02-C019 相似度 0.79 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-15-02-C019，heading_path=Top-p/Top-k采样、Temperature温度系数 > 第七章：电脑配置批注 > 7.2 云端环境配置参考，lines=408-446",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "description": "与来源块 LOCAL-KBS-01-01-C010 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-01-C010，heading_path=常用 Shell 命令（cd / ls / mkdir / cp / mv / pwd / touch / rm） > 十、综合实战演练（①+②） > 场景 3：清理临时文件，lines=405-475",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "de9b36b6731c_r2",
-            "canonical_error_id": "de9b36b6731c",
+            "error_id": "f07f9d59b16c_r2",
+            "canonical_error_id": "f07f9d59b16c",
             "source_refs": [
-              "src_LOCAL-KBS-15-02-C019"
+              "src_LOCAL-KBS-01-01-C010"
             ],
             "change_request": {
               "required": false,
@@ -223,11 +1775,272 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_block_id": "cb_51655649-e5fb-4c75-aba8-52be1c53bf98_e5562f46-9dc9-51ef-9e3b-e2b99cba4222_LOCAL-KBS-15-02-C019",
-            "content_chunk_id": "LOCAL-KBS-15-02-C019",
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_chunk_id": "LOCAL-KBS-01-01-C010",
             "content_version": 2,
-            "in_chunk_position": "lines:408-446"
+            "in_chunk_position": "lines:405-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "186789022d02_r2",
+            "canonical_error_id": "186789022d02",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-48"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "950c6a97770b_r2",
+            "canonical_error_id": "950c6a97770b",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C017"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_version": 2,
+            "in_chunk_position": "lines:520-567"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "description": "与来源块 LOCAL-KBS-01-00-C031 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-00-C031，heading_path=环境准备：安装 Linux 系统（或 WSL2 / 云服务器），熟悉终端使用，确保能执行 Shell 命令 > 七、环境验证：安装 Python 基础环境并运行第一个程序（①） > 7.3 运行你的第一个 Python 程序（①），lines=670-728",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "bddeedf71474_r3",
+            "canonical_error_id": "bddeedf71474",
+            "source_refs": [
+              "src_LOCAL-KBS-01-00-C031"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 3,
+            "in_chunk_position": "lines:670-728"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "description": "与来源块 LOCAL-KBS-01-01-C010 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-01-C010，heading_path=常用 Shell 命令（cd / ls / mkdir / cp / mv / pwd / touch / rm） > 十、综合实战演练（①+②） > 场景 3：清理临时文件，lines=405-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f07f9d59b16c_r2",
+            "canonical_error_id": "f07f9d59b16c",
+            "source_refs": [
+              "src_LOCAL-KBS-01-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_chunk_id": "LOCAL-KBS-01-01-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:405-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "186789022d02_r3",
+            "canonical_error_id": "186789022d02",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-48"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "950c6a97770b_r2",
+            "canonical_error_id": "950c6a97770b",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C017"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_version": 2,
+            "in_chunk_position": "lines:520-567"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "description": "与来源块 LOCAL-KBS-01-00-C031 相似度 0.73 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-00-C031，heading_path=环境准备：安装 Linux 系统（或 WSL2 / 云服务器），熟悉终端使用，确保能执行 Shell 命令 > 七、环境验证：安装 Python 基础环境并运行第一个程序（①） > 7.3 运行你的第一个 Python 程序（①），lines=670-728",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "bddeedf71474_r3",
+            "canonical_error_id": "bddeedf71474",
+            "source_refs": [
+              "src_LOCAL-KBS-01-00-C031"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-00-C031",
+            "content_chunk_id": "LOCAL-KBS-01-00-C031",
+            "content_version": 3,
+            "in_chunk_position": "lines:670-728"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "description": "与来源块 LOCAL-KBS-01-01-C010 相似度 0.75 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-01-C010，heading_path=常用 Shell 命令（cd / ls / mkdir / cp / mv / pwd / touch / rm） > 十、综合实战演练（①+②） > 场景 3：清理临时文件，lines=405-475",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f07f9d59b16c_r2",
+            "canonical_error_id": "f07f9d59b16c",
+            "source_refs": [
+              "src_LOCAL-KBS-01-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-01-C010",
+            "content_chunk_id": "LOCAL-KBS-01-01-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:405-475"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "186789022d02_r3",
+            "canonical_error_id": "186789022d02",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C001",
+            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-48"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "950c6a97770b_r2",
+            "canonical_error_id": "950c6a97770b",
+            "source_refs": [
+              "src_LOCAL-KBS-01-02-C017"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_97ebdc0f-e367-471d-a820-dc845709d90d_fb127776-430f-5b62-b075-0b7a810c4af1_LOCAL-KBS-01-02-C017",
+            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_version": 2,
+            "in_chunk_position": "lines:520-567"
           }
         ],
         "personalization_errors": [],

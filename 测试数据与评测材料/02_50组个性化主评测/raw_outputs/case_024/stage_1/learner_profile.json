@@ -1,8 +1,29 @@
 {
-  "session_id": "2d851818-0f3c-474d-8cab-d1ecd7a396be",
+  "session_id": "788f784f-a41f-4849-b483-2fa8c211ad8e",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "双卡RTX 4060，想分布式LoRA微调",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构",
+    "PyTorch进阶训练技巧"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08",
+    "KB-13"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -27,9 +48,9 @@
   ],
   "goal": "LoRA微调",
   "daily_hours": 2.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.65,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

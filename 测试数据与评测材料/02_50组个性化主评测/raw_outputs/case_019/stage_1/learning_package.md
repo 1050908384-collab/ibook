@@ -2,426 +2,452 @@
 
 ## 块 1
 
-## 一、为什么需要QLoRA？
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（QLoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-你已经学过LoRA，知道它只训练一小部分参数，大幅减少了**可训练参数量**。但这里有个关键点：**LoRA只是减少了要训练的参数，并没有减少你要加载的模型大小**。
+---
 
-### 动手算一笔账
+你正为 QLoRA 微调做准备，但先别急着碰模型。QLoRA 微调的本质，是让电脑执行你写的 Python 代码来训练模型。而电脑只认 0 和 1，看不懂你写的代码——这就是为什么你需要 **Python 解释器**。
 
-假设你要微调一个7B模型（70亿参数），用FP16精度存储：
+把它想成一位“翻译官”：你写的是人类语言（Python 代码），电脑执行的是机器指令（0 和 1）。解释器负责把前者翻译成后者。没有它，你写的 `.py` 文件只是一堆普通文本，电脑根本不会理睬。
 
-```
-7B × 2 bytes ≈ 14GB 显存
-```
+对你而言，这意味着：**装好解释器，是跑通 QLoRA 微调脚本的第一道门槛**。后续你运行任何微调代码，背后都是这位“翻译官”在默默工作。
 
-这14GB只是**把模型加载进显存**的固定开销。真正跑起来时，还需要额外空间给：
-
-- **激活值**：前向传播时每层的中间结果
-- **梯度**：反向传播时计算出来的更新方向
-- **优化器状态**：比如Adam的动量项
-
-所以实际显存需求远高于14GB。这就是为什么很多人用LoRA时，发现显存还是不够——**瓶颈不在训练参数，而在基础模型本身**。
-
-### 核心思路
-
-QLoRA的出发点很直接：**既然LoRA省的是训练参数，那能不能把基础模型也压缩一下？** 答案是：把基础模型从FP16（16位）降到4-bit量化存储，这样7B模型的显存
+**动手验证**：打开你的终端（命令行），输入 `python --version` 并回车。如果看到类似 `Python 3.x.x` 的版本号，说明解释器已就位；如果提示“找不到命令”，说明还没装好，记下这个报错，我们下一步解决。
 
 ## 块 2
 
-**QLoRA核心思想（动手版）**
+你的目标是 QLoRA 微调，这意味着你很快会接触 HuggingFace 生态和大量脚本。工欲善其事，必先利其器——本块就是帮你把“工作台”搭对，避免后续在环境问题上卡壳。
 
-QLoRA = **Quantized LoRA**，一句话：先把基础模型压成4-bit，再在上面挂LoRA训练。
+**IDE 选型**：你有两个主流选择。**VS Code** 轻量免费，插件丰富，适合快速改脚本；**PyCharm** 专业强大，调试功能更顺手。两者都能满足你的需求，建议先用 VS Code 上手，它更贴近深度学习社区的主流工作流。
 
-**流程（跟着做一遍）：**
-1. 加载FP16基础模型
-2. 转成4-bit量化
-3. 加载量化后的模型
-4. 插入LoRA适配器
-5. 只训练LoRA参数
-
-**对比记忆：**
-- LoRA：FP16模型 + LoRA
-- QLoRA：4-bit模型 + LoRA
-
-**关键区别：**
-- 被量化的是**基础模型权重**（冻结不动）
-- LoRA参数保持FP16/BF16，**正常训练**
-
-**结构流：** 输入
+**虚拟环境（重点）**：QLoRA 微调会依赖特定版本的 PyTorch、transformers 等库。不同项目对库版本要求可能冲突（比如项目 A 要 numpy 1.0，项目 B 要 2.0），全装一起会报错。**虚拟环境**就是给每个项目一个独立的 Python 空间，互不
 
 ## 块 3
 
-## 3.1 模型存储方式：从“斤两”看显存
+## 2.1 Windows 用户：为 QLoRA 微调铺路
 
-模型参数在显存里占多大地方，取决于**每个参数用多少字节**。看这张“价目表”：
+你已经有 PyTorch 和 Transformer 基础，目标是用 12GB 显存跑 QLoRA。在动手微调前，先把 Python 环境搭好——这是所有后续操作的地基。
 
-| 类型 | 每个参数占用 |
-|------|------|
-| FP32 | 4 Bytes |
-| FP16/BF16 | 2 Bytes |
-| INT8 | 1 Byte |
-| INT4 | 0.5 Byte |
+**第一步：下载安装包**
 
-**动手算一下（7B模型）：**
+打开浏览器访问 https://www.python.org，鼠标移到顶部 **Downloads** 菜单，网站会自动推荐适合你系统的 Windows 版本（如 `Python 3.13.x`）。点击下载 **Windows installer (64-bit)**。
 
-- **FP16**：7B × 2 ≈ **14GB**
-- **4-bit**：7B × 0.5 ≈ **3.5GB**
+**第二步：运行安装程序（⚠️ 关键步骤）**
 
-显存直接减少约**75%**——这就是4-bit量化最直接的吸引力。
+双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
 
-> ⚠️ **注意**：这个3.5GB只是**理论下界**（理想权重估算）。实际占用会更高，因为还要算上量化常数/缩放因子、分组元数据（NF4按组量化，每组都要存
+1. **勾选最下方的 "Add python.exe to PATH"**  
+   这个选项把 Python 加入系统"环境变量"。不勾选的话，在命令行输入 `python` 会提示"不是内部或外部命令"，后续所有命令操作都会卡住——包括你之后要用的 `pip install` 安装 QLoRA 相关库。
+
+2. 点击 **"Install Now"**（默认安装）  
+   默认路径在 `C:\Users\你的用户名\AppData\Local\Programs\Python\Python3xx`，不含中文和特殊符号，避免后续路径报错。想改路径的话，务必确保路径中**没有中文或空格**。
+
+**第三步：验证安装**
+
+按 `Win + R`，输入 `cmd` 回车打开命令提示符，依次输入：
+
+```bash
+python --version
+```
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 4
 
-### NF4是什么？——给“动手派”的快速解释
+### macOS 用户：安装 Python 3.10+
 
-NF4，全称 NormalFloat4，中文叫“正态分布4位浮点”。这是 QLoRA 论文里为**神经网络权重**专门设计的一种 4-bit 数据类型。
+你的目标是 QLoRA 微调，这需要稳定的 Python 环境。macOS 自带的 Python 版本可能较旧或缺失，且系统 Python 可能被系统工具依赖，不建议直接用于开发环境。**强烈建议自行安装最新版**，避免后续环境问题。
 
-**别被名字骗了**：它不是 IEEE 754 那种通用浮点格式，而是一套**离散码本（codebook）**。核心思路是：
+**方法一：官方安装包（推荐）**
 
-- 预先定好 **16 个取值点**（因为 4-bit 能表示 2⁴ = 16 个值）。
-- 这些点按**标准正态分布的分位数**排布——权重在 0 附近最密集，所以 0 附近划分更细，精度更高。
--
+1. 访问 [python.org](https://www.python.org)，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
+2. 双击运行，一路点击 "Continue" → "Install" 完成安装。
+3. 打开终端（Terminal），输入验证：
+
+```bash
+python3 --version
+pip3 --version
+```
+
+**注意**：现代 macOS 默认**不提供** `python` 命令，统一使用 `python3` / `pip3`。请始终用这两个命令，避免"命令不存在"或误用系统旧版本的坑。如果 `python3 --version` 显示的版本不是刚安装的版本，请检查 PATH 环境变量，确保新安装的 Python 在 PATH 中优先。
+
+**方法二：Homebrew（适合已有 Homebrew 的开发者）**
+
+在终端执行：
+
+```bash
+brew install python
+```
+
+安装完成后，同样用 `python3 --version` 验证。
+
+---
+
+**本块
 
 ## 块 5
 
-## 4.2 为什么NF4适合模型权重？
+**本块学习检查**：完成安装后，用自己的话说明“Python 环境”与“QLoRA微调”的关系；遇到不懂的术语（如虚拟环境）先记下再提问。
 
-大模型训练完的权重有个特点：**近似正态分布**——大量参数都挤在0附近，越往两边越少。
+Linux 常自带 Python，但版本可能偏老。Ubuntu/Debian 执行：
 
-普通INT4量化是**平均划分**区间，比如[-8,-7,...,7]，每个档位等宽。但权重都集中在中心，这种均匀切法对密集区域“照顾不周”，精度损失大。
+```bash
+sudo apt update
+sudo apt install python3 python3-pip python3-venv -y
+python3 --version
+```
 
-**NF4的思路**：既然权重服从正态分布，那就**按正态分布来设计量化范围**——中心区域分得更细，精度更高；两侧分得粗一些。结果就是：更贴合真实权重分布，精度损失更低。
+`-y` 自动确认安装，免手动输入；`python3-venv` 用于建虚拟环境，一并装好省得补。
 
-## 4.3 NF4量化过程（实操视角）
-
-你手上有FP16权重，比如 `0.023`
+**练习**：运行上述命令，确认 `python3 --version` 输出版本号。你的 RTX 3060 后续跑 QLoRA
 
 ## 块 6
 
-**本块学习检查**：读完5.1-5.3后，请用一句话回答：双重量化“第二次量化”的对象是什么？答案就在文中，找出来即可。
+## 2.4 操作系统与实训环境该怎么选
+
+你的目标是 QLoRA 微调，且手头是 RTX 3060 12GB 显卡。这意味着你最终要跑 GPU 训练，所以环境选择直接决定你能否顺利跑通。
+
+**日常练习阶段**：如果你是 Windows 用户，强烈建议启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它让你在 Windows 里获得接近真实生产的 Linux 环境，命令、路径、包管理方式都和后续服务器一致，比 Windows 原生 CMD 更贴近实战。安装只需管理员 PowerShell 执行 `wsl --install`。macOS/Linux 用户直接用本机终端即可。
+
+**GPU 实训阶段**：QLoRA 微调这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，应使用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。Ubuntu LTS 对深度学习生态支持最成熟、文档最全。
+
+> **⚠️ 不推荐**：不要把 "CentOS + VirtualBox 虚拟机" 当最佳方案。CentOS 8 已停止维护；VirtualBox 默认无法直通 NVIDIA GPU，跑不了真正的 GPU 训练，只适合纯 CPU 隔离小实验。
+
+**路线总结**：命令练习用 WSL2/Ubuntu LTS，GPU 实训用云上或实体的 Ubuntu LTS。
 
 ---
 
-**5.1 为什么需要双重量化？**
+**
 
-4-bit量化不只是存权重，还得存每组权重的**量化参数**：`scale`（缩放因子）和`zero point`（零点）。这些额外参数同样占显存，不能忽略。
-
-**5.2 双重量化思想**
-
-普通量化：FP16权重 → 4-bit权重 + scale参数。
-
-双重量化：把scale参数**再量化一次**。第一次量化模型权重，第二次量化量化参数本身。结构上就是：FP16权重 → NF4量化 → 保存4-bit权重；同时scale参数 → 再次量化 → 减少scale
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 7
 
-## 6.1 为什么需要分页优化器？
+你的目标是用 QLoRA 微调模型，而 QLoRA 依赖 PyTorch 等库。安装这些库时，`pip` 默认从官方源（`pypi.org`）下载——这是最权威、最完整的源，应始终保留为默认。
 
-训练大模型时，显存峰值不只看模型本身，**梯度**和**优化器状态**也会占显存。以 Adam 优化器为例，它需要额外保存**一阶动量**和**二阶动量**两份状态。
+**只有**当你访问官方源明显变慢或经常超时时，才需要临时切换。镜像只是“网络不好时的加速手段”，不是永久设置。
 
-QLoRA 虽然大幅降低了模型的显存占用，但训练过程中仍可能遇到**显存突然不足（OOM）** 的情况——尤其是某个瞬间的显存峰值，可能直接让训练中断。
+**首选做法**：只对某次安装临时指定镜像，不改全局配置：
 
-## 6.2 分页优化器思想
+```bash
+pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
 
-Paged Optimizer 借鉴了操作系统里的**虚拟内存**思想，核心机制是：
+这样官方源仍是默认，网络恢复或镜像出问题时无需清理配置。
 
-> 借助 NVIDIA 的**统一内存（Unified Memory）**，在显存出现峰值、即将 OOM 时，把优化器状态自动"分页"换出到 CPU 内存，需要时再换回 GPU。
-
-流程如下：
-
-```text
-GPU显
+**本块学习检查**：用自己的话说明“临时指定镜像”与“永久换源”的区别，以及为什么前者更适合你后续安装 QLoRA 依赖的场景。遇到不懂的术语（如“全局配置”）先记下来再提问。
 
 ## 块 8
 
-好的，我们开始讲解分页优化器。想象一下你的电脑桌面就是显存，普通优化器会把所有东西都堆在桌面上，桌面满了就没法继续工作，也就是显存溢出（OOM）。
+### 3.3 进阶：将镜像设为默认（仅在长期网络受限时）
 
-分页优化器的思路很聪明：它把常用的文件（比如当前正在计算的参数状态）放在桌面，把暂时不用的文件（比如历史梯度状态）存到柜子里（也就是CPU内存）。当需要用到柜子里的文件时，再临时取出来。这样桌面就不会被占满，训练就能继续下去。
+你正在为 QLoRA 微调准备环境，而 pip 下载速度直接影响你安装 `transformers`、`bitsandbytes` 等依赖的效率。如果你长期处于网络受限环境，几乎每次都要手动指定镜像源，那才值得把它设为默认。**注意**：官方 PyPI 始终是最可靠的，网络恢复后建议改回或删除配置。
 
-现在，我们来看看如何在代码里启用它。其实很简单，不需要你手动写换页逻辑，`bitsandbytes` 库已经帮你实现了。你只需要在 `TrainingArguments` 里设置 `optim` 参数就行。
+**Windows 用户：**
 
-```python
-from transformers import TrainingArguments
+1. 按 `Win + R`，输入 `%APPDATA%`，回车，打开类似 `C:\Users\你的用户名\AppData\Roaming` 的文件夹。
+2. 新建一个名为 `pip` 的文件夹。
+3. 在 `pip` 文件夹内新建一个名为 `pip.ini` 的文本文件。
+4. 用记事本打开，写入：
 
-training_args = TrainingArguments(
-    output_dir="./qlora_ckpt",
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=16,
-    learning_rate=2e-4,
-    num_train_epochs=3,
-    logging_steps=10,
-    save_strategy="epoch",
-    gradient_checkpointing=True,     # 配合 QLoRA 进一步降低显存峰值
-    # 关键：使用 bitsandbytes 的分页优化器
-    optim="paged_adamw_8bit",        # 或 "paged_adamw_32bit"（精度更高、显存更大）
-)
+```ini
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+trusted-host = pypi.tuna.tsinghua.edu.cn
 ```
 
-这里有几点要注意：
-- `optim="paged_adamw_8bit"` 表示优化器状态用8-bit存储，更省显存；`"paged_adamw_32bit"` 精度更高但占用更多。
-- 不同版本的 Transformers 或 bitsandbytes 支持的 `optim` 取值可能不同（比如还有 `adamw_bnb_8bit`）。如果报错说未知的优化器，就去查一下你当前版本的文档，换用支持的名称即可。
-- 分页优化器主要解决的是显存峰值过高的问题，它通常和 `gradient_checkpointing=True`、较小的 `per_device_train_batch_size` 以及梯度累积配合使用，来共同控制显存占用。
+`index-url` 告诉 pip 默认从这个地址下载包。`trusted-host` 用于跳过该镜像的 TLS 证书校验，仅在网络受限或证书验证失败时使用；若你的网络环境正常，可删除此行以保留传输安全。
 
-**本块学习检查**：请打开你的代码编辑器，找到你之前配置训练参数的地方，
+> **⚠️ 关于 `trusted-host`**：网上很多教程会顺手加一行 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——它会跳过 TLS 校验，放弃传输安全。清华、阿里等主流镜像都有合法 HTTPS 证书，正常使用**无需**它。只有企业内网自建源或确认来源可信时才临时加。
+
+**macOS / Linux 用户：**
+
+1. 打开终端，执行：
+
+```bash
+mkdir -p ~/.config/pip
+```
+
+2. 创建配置文件：
+
+```bash
+nano ~/.config/pip/pip.conf
+```
+
+3. 写入同样的内容：
+
+```ini
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+trusted-host = pypi.tuna.tsinghua.edu.cn
+```
+
+4. 按 `Ctrl + O` 保存，`Ctrl + X` 退出。
+
+### 3.4
 
 ## 块 9
 
-### 7.1 4-bit量化：给模型“瘦身”
+### 4.1 方案一：VS Code（轻量、免费、推荐）
 
-QLoRA的第一步，是把模型权重从FP16（16位浮点）压缩到NF4（4位浮点）。你可以把它想象成把高清照片转成压缩格式——文件变小了，但画面依然可辨。这一步直接减少了模型权重的存储大小，是显存优化的基石。
+**为什么选它**：VS Code 是微软出品的免费编辑器，启动快、插件丰富，不仅适合 Python，也适合前端、配置文件编辑等。后续学习 Linux 命令行、写脚本时都能用到。
 
-> **动手理解**：FP16下，一个权重占2字节；NF4下只占0.5字节。同样显存，能塞下的模型参数直接翻4倍。
+**安装步骤**：
+1. 访问 https://code.visualstudio.com，下载对应系统的安装包。
+2. 运行安装程序，一路下一步即可。
+3. **必装插件**：打开 VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并安装：
+   - **Python**（Microsoft 官方出品，提供语法高亮、调试、智能提示）
+   - **Pylance**（Python 语言服务器，让代码提示更智能）
 
----
+**为什么这样写**：安装 Python 插件后，VS Code 才能识别 `.py` 文件，提供代码补全、错误提示和一键运行功能。
 
-### 7.2 双重量化：连“尺子”也压缩
-
-量化时，每个权重块需要配一个“缩放因子”（scale）来还原数值。这些scale本身也占空间。双重量化就是把这些scale**再量化一次**（例如使用NF4量化scale），进一步减少量化参数的占用。相当于你不仅压缩了照片，连照片的“元数据”也一并压缩了。
-
----
-
-### 7.3 分页优化器：显存不够，内存来凑
-
-训练时优化器状态（如Adam的动量）很吃显存。分
+**配置 Python 解释器**：
+1. 打开 VS Code，按 `Ctrl + Shift + P`（Mac 是 `Cmd + Shift + P`）。
+2. 输入 `Python: Select Interpreter`，从列表中选择已
 
 ## 块 10
 
-好的，我们直接进入正题。既然你的目标是QLoRA微调，而且喜欢动手实践，那我们就用“配置一个能跑起来的QLoRA”这个视角，来拆解这四个参数。你可以把下面的代码块当作你的“起点模板”。
+### 4.2 方案二：PyCharm Community（免费、开箱即用）
 
-> **模型许可证**：本配置示例基于 Llama 2 模型架构，其权重遵循 Llama 2 Community License。若你的应用场景为商用且月活用户超过7亿，需另行获得 Meta 的授权。请在使用前确认你的模型来源与许可条款。
+**为什么选它**：PyCharm 是 JetBrains 出品的 Python 专用 IDE，社区版完全免费。它内置了代码分析、版本控制等功能，适合大型项目开发。
 
-### 核心配置：让模型“瘦身”加载
+**安装步骤：**
 
-在`transformers`库中，`BitsAndBytesConfig`是控制模型加载方式的总开关。我们这里要配置的四个参数，都是为了让模型以4-bit的“瘦身”状态加载进显存，从而在有限的硬件上跑起大模型微调。
+1. 访问 https://www.jetbrains.com/pycharm/download/。
+2. 下载 **PyCharm Community Edition**（社区版，免费）。
+3. 运行安装程序，建议勾选：
+   - `Add "Open Folder as Project"`（右键菜单快速打开文件夹）
+   - `Add to PATH`（命令行可直接启动 PyCharm）
 
-```python
-from transformers import BitsAndBytesConfig
-import torch
+**首次启动配置：**
 
-# 1. 根据你的GPU能力，自动选择计算精度（后面会详细讲）
-compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,                # 开启4-bit加载
-    bnb_4bit_quant_type="nf4",        # 使用NF4量化类型
-    bnb_4bit_use_double_quant=True,   # 开启双重量化
-    bnb_4bit_compute_dtype=compute_dtype, # 设置计算时的精度
-)
-```
-
-### 逐个参数，动手理解
-
-**1. `load_in_4bit=True`：这是总开关**
-把它设为`True`，就是告诉`transformers`：“我要用4-bit的方式加载模型”。这是QLoRA节省显存的基础，没有这一步，后面都无从谈起。
-
-**2. `bnb_4bit_quant_type="nf4"`：选择“压缩算法”**
-4-bit加载不是简单地把数字四舍五入，而是一种量化技术。`"nf4"`（NormalFloat4）是一种专门为神经网络权重设计的量化格式，能在极低精度下尽量保留模型性能。在QLoRA的配置中，这就是标准选项。
-
-**3. `bnb_4bit_use_double_quant=True`：再省一笔显存**
-这个参数开启“双重量化”。简单理解，就是量化过程中的一些“辅助参数”本身也再被量化一次，能额外节省
-
-## 块 11
-
-## 9.1 把量化配置、prepare、梯度检查点、LoRA 注入串起来（可跑通骨架）
-
-前面我们分别看了 `BitsAndBytesConfig`（4-bit 加载）、分页优化器、计算精度这些零件。现在把它们**拼成一台能跑的机器**——下面是一个最小可运行骨架，展示各部分如何协作。模型和数据路径请替换为你自己的。
-
-### 代码骨架（按步骤拆解）
-
-```python
-import torch
-from datasets import Dataset
-from transformers import (
-    AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig,
-    TrainingArguments, Trainer, DataCollatorForLanguageModeling,
-)
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-
-model_name = "your/base-causal-lm"   # 替换为实际的 Causal LM
-# 模型许可证：请确认所选模型的许可证类型（如 Llama 2 Community License，商用月活>7亿需Meta授权）
-# 注意：以 Llama-2-7b FP16 为例，加载至少需要14GB显存；4-bit 量化后显存需求显著降低
-```
-
-**第 1 步：4-bit 量化配置**
-
-```python
-compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_compute_dtype=compute_dtype,
-)
-```
-
-这里做了三件事：启用 4-bit 加载、用 NF4 量化类型、开启双重量化。计算精度按 GPU 能力自动选择——支持 bf16 就用 bf16，否则退回 fp16。
-
-**第 2 步：以 4-bit 加载基础模型**
-
-```python
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token
-
-try:
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        quantization_config=bnb_config,
-        device_map="auto",
-    )
-except Exception as e:
-    logger.error(f"模型加载失败: {e}")
-    raise
-```
-
-`quantization_config` 把第 1 步的配置传给模型加载；`device_map="auto"` 让模型自动分配到可用设备。同时补上 pad_token（若缺失则用 eos_token 代替）。模型加载涉及网络下载和文件读取，使用 try-except 捕获异常并记录日志。
-
-**第 3 步：为 k-bit 训练做准备（关键衔接）**
-
-```python
-model = prepare_model_for_kbit_training(
-    model,
-    use_gradient_checkpointing=True,   # 与 TrainingArguments 的 gradient_checkpointing 对应
-)
-```
-
-这一步是**量化模型能正常训练的前提**：它处理 norm 层和输出层的精度问题，并开启梯度检查点所需的输入梯度。注意这里的 `use_gradient_checkpointing=True` 必须与后面 `TrainingArguments` 里的 `gradient_checkpointing=True` 呼应。
-
-**第 4 步：注入 LoRA**
-
-```python
-lora_config = LoraConfig(
-    r=8, lora_alpha=16, lora_dropout=0.05,
-    bias="none", task_type="CAUSAL_LM",
-    target_modules=["q_proj", "v_proj"],   # 按实际模型模块名调整，或用 "all-linear"
-)
-model = get_peft_model(model, lora_config)
-model.print_trainable_parameters()
-```
-
-只训练低秩增量参数，原始 4-bit 权重保持冻结。`target_modules` 指定注入哪些模块（可按模型调整，或直接用 `"all-linear"`）。`print_trainable_parameters()` 会显示可训练参数量，帮你确认 LoRA 注入生效。
-
-**第 5 步：极简训练数据**
-
-```python
-raw = Dataset.from_dict({"text": ["Hello QLoRA", "Fine-tune with 4-bit"]})
-def tok(ex):
-    enc = tokenizer(ex["text"], truncation=True, max_length=128)
-    enc["labels"] = enc["input_ids"].copy()   # Causal LM 的 labels 直接复制 input_ids
-    return enc
-train_dataset = raw.map(tok, remove_columns=raw.column_names)
-data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
-```
-
-真实场景请替换为足够规模的数据。关键点：Causal LM 的 `labels` 直接复制 `input_ids`，不需要额外标注。
-
-**第 6 步：训练参数——分页优化器 + 梯度检查点**
-
-```python
-training_args = TrainingArguments(
-    output_dir="./qlora_ckpt",
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=16,
-    learning_rate=2e-4,
-    num_train_epochs=1,
-    logging_steps=10,
-    save_strategy="epoch",
-    gradient_checkpointing=True,        # 与第 3 步的 use_gradient_checkpointing 呼应
-    optim="paged_adamw_8bit",           # 分页优化器（依赖 bitsandbytes；名称随版本可能不同）
-)
-
-try:
-    trainer = Trainer(
-        model=model, args=training_args,
-        train_dataset=train_dataset, data_collator=data_collator,
-        tokenizer=tokenizer,             # 兼容旧版本 transformers；新版本可用 processing_class=tokenizer
-    )
-    trainer.train()
-except Exception as e:
-    logger.error(f"训练过程出错: {e}")
-    raise
-```
-
-注意：`Trainer` 的 `tokenizer` 参数在旧版本 transformers 中有效；新版本推荐使用 `processing_class`。若使用旧版本（如 transformers<4.46），请保留 `tokenizer=tokenizer` 写法。
-
-### 整体关系图
-
-```
-BitsAndBytesConfig（4-bit 量化配置）
-        ↓
-AutoModelForCausalLM.from_pretrained（4-bit 加载）
-        ↓
-prepare_model_for_kbit_training（精度处理 + 梯度检查点）
-        ↓
-get_peft_model（注入 LoRA）
-        ↓
-Trainer（分页优化器 + 梯度检查点 + 训练）
-```
-
-> **来源说明**：本块内容依据来源块 LOCAL-KBS-12-04-C011 整理，该来源块已通过人工复核确认其技术细节与代码逻辑的准确性。
-
-## 块 12
-
-## 九、把 QLoRA 的五个关键步骤串起来（可跑通骨架）
-
-你现在已经知道 NF4 量化、双重量化、分页优化器各自是干什么的了。但真正写代码时，这些技术要按顺序配合使用，缺一步都可能出问题。下面这 5 步就是 QLoRA 微调的“最小骨架”，帮你建立整体流程感。
-
-**第 1 步：`BitsAndBytesConfig`——决定模型怎么被 4-bit 加载**
-
-这一步是“入口配置”。它一次性指定三件事：用 NF4 做 4-bit 量化、开启双重量化、设定计算 dtype（比如 BF16/FP16）。也就是说，模型加载时的“底层格式”由它说了算。
-
-**第 2 步：`prepare_model_for_kbit_training()`——QLoRA 的必要适配**
-
-这是**最容易跳过但绝不能跳**的一步。量化后的模型不能直接拿去训练，这个函数会冻结量化模型的参数，并启用输入梯度以支持梯度检查点等训练适配。**跳过它，常见后果是训练不收敛或直接报错**。
-
-**第 3 步：`get_peft_model(..., LoraConfig)`——注入 LoRA**
-
-这一步把可训练的 LoRA 适配器“插”到冻结的 4-bit 主干模型上。主干保持量化冻结，只有 LoRA 参数在更新。
-
-**第 4 步：梯度检查点**
-
-在 `TrainingArguments` 中设置 `gradient_checkpointing=True` 即可启用梯度检查点；若使用 `prepare_model_for_kbit_training`，可同时设置 `use_gradient_checkpointing=True` 以保持一致性，但并非强制。
-
-**第 5 步：`optim="paged_adamw_8bit"`——分页优化器**
-
-这个设置启用分页优化器，通过统一内存管理在 GPU 显存不足时将优化器状态分页到 CPU 内存，从而缓解峰值显存压力。
-
-> **注意**：上面是“能说明关系”的最小骨架。真实训练时，你需要换成足够规模的数据、合理的超参，并且按你实际使用的库版本核对 `optim` 的名称、`prepare_model_for_kbit_training` 的参数，以及 `processing_class`/`tokenizer` 的写法。
+1. 打开 PyCharm，选择 `New Project`。
+2. 在 `Location` 处选择项目存放路径（**路径中不要含中文**）。
+3. `Interpreter` 选择 `Previously configured interpreter`，然后选择系统安装的 Python 3.10+。
 
 ---
 
-## 十、你的电脑能跑吗？——配置参考
+**本块学习检查**：完成本块后，用自己的话说明本
 
-**只学原理**：不需要 GPU，纯看代码和概念就行。
+## 块 11
 
-**实际运行 QLoRA**，最低要求：
+## 5.1 为什么用 Conda
 
-- **CPU**：4 核以上
-- **内存**：16GB 以上
-- **GPU**：NVIDIA CUDA
+你已经有 PyTorch 和 Transformer 的基础，接下来要学 QLoRA 微调，这意味着你的项目会依赖 PyTorch、CUDA 等一堆复杂包。如果直接在系统 Python 里装，很容易把环境搞乱。**Conda** 能帮每个项目创建独立的 Python 空间，还能管理不同版本的 Python 解释器本身——这对深度学习几乎是必备工具。
+
+## 5.2 安装 Conda：Anaconda vs Miniconda
+
+两个选择：
+
+| 选项 | 特点 | 推荐人群 |
+|------|------|----------|
+| **Anaconda** | 体积大（约 500MB+），预装大量数据科学库 | 做数据分析、不想手动装包的用户 |
+| **Miniconda** | 体积小（约 50MB），只含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发的用户 |
+
+**推荐 Miniconda**，环境更干净，需要什么装什么。
+
+**安装步骤：**
+
+1. 访问 https://docs.conda.io/en/latest/miniconda.html
+2. 下载对应系统安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）
+3. 运行安装程序：
+   - **Windows**：一路下一步，**不要勾选 "Add Miniconda3 to my PATH environment variable"**（安装器标为"不推荐"）。直接塞进系统 PATH 容易和已有 Python 冲突，导致 `python`、`pip` 指向不明。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"**。
+   - **macOS/Linux**：运行 `.sh` 后按提示输入 `yes` 同意协议、选择路径，最后一步选 `yes` 让安装器执行 **`conda init`**。这样终端打开时 conda 会正确接管，而非硬加 PATH。
+4. **验证安装**：打开**新的**终端（Windows 用 "Anaconda Prompt (Miniconda3)"；macOS/Linux 重开终端），输入：
+
+```bash
+conda --version
+```
+
+显示类似 `conda 24.x.x` 即成功。
+
+---
+
+**本块学习检查**：完成本块后，用自己的话说明：Conda
+
+## 块 12
+
+你的目标是用 12GB 显存的 RTX 3060 跑 QLoRA 微调，而 QLoRA 依赖特定版本的 PyTorch 和 CUDA。为了避免不同项目之间互相干扰，现在先学会用 Conda 建一个独立环境，以后每次微调都能直接复用这套流程。
+
+打开终端，执行：
+
+```bash
+conda create -n llm-learn python=3.10
+```
+
+这条命令拆开看：
+- `conda create`：创建环境的固定开头。
+- `-n llm-learn`：给环境命名为 `llm-learn`（`n` 就是 `name` 的缩写）。
+- `python=3.10`：指定这个环境里安装 Python 3.10。
+
+执行后，终端会列出准备安装的包
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 13
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（QLoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+### 5.4 激活与退出环境
+
+**激活环境**（进入这个"独立房间"）：
+
+```bash
+conda activate llm-learn
+```
+
+激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。
+
+**验证当前环境的 Python 版本**：
+
+```bash
+python --version
+```
+
+应该显示 `Python 3.10.x`。
+
+**退出环境**（回到系统默认环境）：
+
+```bash
+conda deactivate
+```
+
+### 5.5 查看和管理环境
+
+**查看所有已创建的环境**：
+
+```bash
+conda env list
+```
+
+带 `*` 的就是当前激活的环境。
+
+**删除环境**（如果
+
+## 块 14
+
+### 6.1 VS Code 配置 Conda 环境
+
+你已经创建了 `llm-learn` 环境，现在让 VS Code 用它跑代码：
+
+1. 先激活环境：`conda activate llm-learn`
+2. 打开 VS Code，按 `Ctrl + Shift + P`。
+3. 输入 `Python: Select Interpreter`。
+4. 选择带有 `conda` 字样的 Python 路径（如 `Python 3.10.x ('llm-learn': conda)`）。
+
+**为什么这样写**：VS Code 能自动识别 conda 环境。选好后，你写的代码就会用 `llm-learn` 里的 Python 和已装好的包——包括后面做 QLoRA 要用的 PyTorch 等。
+
+### 6.2 PyCharm 配置 Conda 环境
+
+1. 打开 PyCharm，点击 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）。
+2. 左侧选择 `Project: 你的项目名` → `Python Interpreter`。
+3. 点击齿轮图标 → `Add...`。
+4. 左侧选择 `Conda Environment` → `Existing environment`。
+5. 在 `Interpreter` 路径中选择 conda 环境的 Python 可执行文件：
+   - Windows：`C:\Users\你的用户名\miniconda3\envs\llm-learn\python.exe`
+   - macOS/Linux：`~/miniconda3/envs/llm-learn/bin/python`
+
+**本块学习检查**：完成本块后，
+
+## 块 15
+
+## 7.1 在命令行验证
+
+激活环境后，输入 `python` 进入交互模式，看到 `>>>` 提示符，输入：
+
+```python
+print("Hello, Python! 我的环境准备好了！")
+```
+
+回车后正确打印文字，按 `exit()` 退出。
+
+## 7.2 在 VS Code 中验证
+
+新建文件夹 `my-first-project` 并用 VS Code 打开，新建 `hello.py`，输入：
+
+```python
+print("Hello from VS Code!")
+```
+
+点击右上角运行按钮或按 `Ctrl + F5`，下方终端应输出 `Hello from VS Code!`。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与 QLoRA 微调目标的关系——环境验证是后续
+
+## 块 16
+
+## 7.3 在 PyCharm 中验证
+
+你的目标是用 QLoRA 微调大模型，而这一切的前提是代码能跑起来。现在，我们就在 PyCharm 里跑通第一行代码，确认整条工具链是通的。
+
+**操作步骤（跟着做）：**
+
+1. 打开 PyCharm，新建一个项目。
+2. 在项目中创建一个新文件，命名为 `hello.py`。
+3. 在文件里输入：`print("Hello, QLoRA!")` —— 这是你与模型微调之路的第一次对话。
+4. 在文件编辑区**右键点击**，选择 `Run 'hello'`。
+5. 看 PyCharm **下方**的 Run 窗口，如果输出了 `Hello, QLoRA!`，说明环境验证成功。
+
+> 小提示：如果 Run 窗口没有出现，检查一下是不是文件没保存（文件名旁有星号表示未保存），按 `Ctrl+S` 保存后再运行。
+
+---
+
+## 常见问题排查（精简版）
+
+跑代码时遇到报错很正常，下面是几个高频问题，直接对照解决：
+
+| 问题现象 | 可能原因 | 解决方案 |
+|----------|----------|----------|
+| 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选 "Modify"，勾选 "Add Python to environment variables" |
+| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 按第三章临时加 `-i` 指定国内镜像（如清华源） |
+| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
+| pip 安装后，Python 里 `import` 报错 | pip 装到了错误的环境 | 激活目标 conda 环境后，使用 `python -m pip install 包名` 安装 |
+
+---
+
+## 本章小结
+
+现在你的电脑应该具备：
+
+| 组件 | 状态 |
 
 ## 测评题目
 
-### Q-KB12-ST1204-002
-双重量化指的是进一步量化量化常数，以继续节省________。
+### Q-KB0200-004
+验证conda环境是否配置正确：
+```bash
+conda --version && conda info --envs
+```
 
-### Q-KB12-ST1204-001
-QLoRA 常用的 4-bit 数据类型名称是________。
+### Q-KB0200-001
+请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：
+```bash
+python --version
+```
 
-### Q-KB12-ST1203-001
-LoraConfig 中用于指定注入 LoRA 层模块名列表的参数是________。
+### Q-KB0202-003
+以下代码输出是？
+```python
+s = {1, 2, 3, 3, 2, 1}
+print(len(s))
+```
 
-### Q-KB12-ST1202-001
-LoRA 中 rank r 决定低秩更新矩阵的________。
+### Q-KB0200-003
+在Python交互环境中执行以下代码，验证pip是否可用：
+```python
+import pip
+print(pip.__version__)
+```
 
-### Q-KB12-ST1205-002
-使用 `save_pretrained()` 导出模型或适配器时，通常会保存权重和________文件。
+### Q-KB0205-009
+写一个装饰器 `timer`，测量并打印被装饰函数的执行时间（秒），同时不改变原函数的返回值。然后用它装饰一个计算前100万个数平方和的函数。
 
-### Q-KB1201-002
-QLoRA 相比 LoRA 的主要改进是引入了 **4-bit** 量化技术，进一步降低了微调时的________占用。
+### Q-KB0204-001
+以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？
 
-### Q-KB12-ST1202-003
-在其他条件相同时，增大 LoRA rank 最可能带来什么？
+### Q-KB0202-004
+请用**列表推导式**生成1到20中所有能被3整除的数的平方。
 
-### Q-KB1201-003
-LoRA中，`r`（rank）参数的作用是？
+### Q-KB0205-005
+请写一个**带参数的装饰器** `retry(times=3)`，使被装饰的函数在抛出异常时自动重试指定次数。

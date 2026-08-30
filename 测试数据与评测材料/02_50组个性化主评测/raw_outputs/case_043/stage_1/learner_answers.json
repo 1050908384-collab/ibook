@@ -1,65 +1,65 @@
 [
   {
-    "question_id": "Q-KB12-ST1200-001",
+    "question_id": "Q-KB0200-004",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "peft",
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "answer_behavior": "very_low",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB12-ST1204-003",
+    "question_id": "Q-KB0200-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "answer_behavior": "very_low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "answer_behavior": "very_low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0204-004",
     "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "C",
+    "answer_behavior": "very_low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0202-002",
+    "submitted_answer": "`d[\"a\"]` 或 `d.get(\"a\")`；`d.get(\"c\", 0)`",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "`d[\"a\"]` 或 `d.get(\"a\")`；`d.get(\"c\", 0)`",
     "answer_behavior": "very_low",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB12-ST1205-001",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "合并 ||| merge ||| 融合",
-    "answer_behavior": "very_low",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-001",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "target_modules",
-    "answer_behavior": "very_low",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB12-ST1200-003",
+    "question_id": "Q-KB0203-006",
     "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "C",
+    "answer_behavior": "very_low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-004",
+    "submitted_answer": "B",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "B",
     "answer_behavior": "very_low",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB12-ST1202-002",
-    "submitted_answer": "我不知道",
+    "question_id": "Q-KB0202-003",
+    "submitted_answer": "A",
     "is_correct": false,
-    "correct_answer": "缩放 ||| scaling ||| 放缩",
-    "answer_behavior": "very_low",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB12-ST1204-001",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "NF4 ||| NormalFloat4",
-    "answer_behavior": "very_low",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB12-ST1205-002",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "配置 ||| config ||| 配置文件",
+    "correct_answer": "B",
     "answer_behavior": "very_low",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

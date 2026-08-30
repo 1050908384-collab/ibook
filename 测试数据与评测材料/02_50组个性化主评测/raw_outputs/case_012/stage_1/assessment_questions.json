@@ -1,166 +1,115 @@
 [
   {
-    "question_id": "Q-KB08-ST0804-003",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-04",
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
+  },
+  {
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
     "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0204-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：读取 `data.txt` 文件，捕获文件不存在的异常，若不存在则打印 \"文件未找到\"。",
+    "options": [],
+    "correct_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "hint": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "explanation": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```"
+  },
+  {
+    "question_id": "Q-KB0202-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：给定嵌套字典 `data = {\"users\": [{\"name\": \"Alice\", \"age\": 30}, {\"name\": \"Bob\", \"age\": 25}]}`，提取所有年龄大于26的用户姓名。",
+    "options": [],
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "hint": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "explanation": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0205-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写一个生成器函数 `fibonacci(n)`，生成前 `n` 个斐波那契数。",
+    "options": [],
+    "correct_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "hint": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "explanation": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```"
+  },
+  {
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
+  },
+  {
+    "question_id": "Q-KB0204-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "FFN 在 Transformer 中主要负责？",
+    "question_text": "以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？",
     "options": [
       {
         "key": "A",
-        "text": "对每个 token 做非线性特征变换"
+        "text": "`\"w\"`"
       },
       {
         "key": "B",
-        "text": "计算因果掩码"
+        "text": "`\"r\"`"
       },
       {
         "key": "C",
-        "text": "加载训练数据"
+        "text": "`\"a\"`"
       },
       {
         "key": "D",
-        "text": "替代注意力层"
+        "text": "`\"x\"`"
       }
     ],
-    "correct_answer": "A",
-    "hint": "FFN 提供逐位置的非线性变换能力。",
-    "explanation": "FFN 提供逐位置的非线性变换能力。"
-  },
-  {
-    "question_id": "Q-KB08-ST0804-002",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-04",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "SwiGLU 是一种带门控机制的________函数变体。",
-    "options": [],
-    "correct_answer": "激活 ||| activation",
-    "hint": "SwiGLU 常用于现代 LLM 的前馈网络。",
-    "explanation": "SwiGLU 常用于现代 LLM 的前馈网络。"
-  },
-  {
-    "question_id": "Q-KB0805-002",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-05",
-    "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "原始Transformer论文中，使用的是基于________和________函数的固定位置编码。",
-    "options": [],
-    "correct_answer": "正弦（sine）；余弦（cosine）",
+    "correct_answer": "C",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB0805-003",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-05",
-    "difficulty": "中级",
-    "question_type": "single_choice",
-    "question_text": "以下哪种位置编码是**可学习**的（Learnable）？",
-    "options": [
-      {
-        "key": "A",
-        "text": "原始Transformer的Sinusoidal PE"
-      },
-      {
-        "key": "B",
-        "text": "ALiBi (Attention with Linear Biases)"
-      },
-      {
-        "key": "C",
-        "text": "RoPE (Rotary Position Embedding)"
-      },
-      {
-        "key": "D",
-        "text": "BERT中的绝对位置编码（Absolute PE）"
-      }
-    ],
-    "correct_answer": "D",
-    "hint": "> BERT在训练时将位置编码作为Embedding矩阵的一部分进行随机初始化和梯度更新。",
-    "explanation": "> BERT在训练时将位置编码作为Embedding矩阵的一部分进行随机初始化和梯度更新。"
-  },
-  {
-    "question_id": "Q-KB08-ST0807-002",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-07",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "推理时将模型切换到评估模式，应调用 `model.________()`。",
-    "options": [],
-    "correct_answer": "eval ||| eval()",
-    "hint": "eval 模式会调整 dropout 等层的行为。",
-    "explanation": "eval 模式会调整 dropout 等层的行为。"
-  },
-  {
-    "question_id": "Q-KB0806-001",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-06",
+    "question_id": "Q-KB0201-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
     "difficulty": "初级",
-    "question_type": "single_choice",
-    "question_text": "在自回归生成过程中，KV Cache的主要作用是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "缓存模型的权重"
-      },
-      {
-        "key": "B",
-        "text": "避免重复计算历史Token的Key和Value，加速生成"
-      },
-      {
-        "key": "C",
-        "text": "缓存用户的输入"
-      },
-      {
-        "key": "D",
-        "text": "减少显存占用"
-      }
-    ],
-    "correct_answer": "B",
-    "hint": "> 每次生成新Token时，只需要计算新Token的Q/K/V，历史的K/V直接从Cache中读取，将复杂度从 $O(N^2)$ 降低。",
-    "explanation": "> 每次生成新Token时，只需要计算新Token的Q/K/V，历史的K/V直接从Cache中读取，将复杂度从 $O(N^2)$ 降低。"
-  },
-  {
-    "question_id": "Q-KB0806-003",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-06",
-    "difficulty": "中级",
-    "question_type": "single_choice",
-    "question_text": "以下哪种技术不是用于推理加速的？",
-    "options": [
-      {
-        "key": "A",
-        "text": "FlashAttention"
-      },
-      {
-        "key": "B",
-        "text": "PagedAttention (vLLM)"
-      },
-      {
-        "key": "C",
-        "text": "LoRA"
-      },
-      {
-        "key": "D",
-        "text": "Speculative Decoding（投机采样）"
-      }
-    ],
-    "correct_answer": "C",
-    "hint": "> LoRA 是微调技术。FlashAttention 加速注意力计算，PagedAttention 优化显存管理，Speculative Decoding 加速生成。",
-    "explanation": "> LoRA 是微调技术。FlashAttention 加速注意力计算，PagedAttention 优化显存管理，Speculative Decoding 加速生成。"
-  },
-  {
-    "question_id": "Q-KB08-ST0803-002",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-03",
-    "difficulty": "中级",
     "question_type": "fill_blank",
-    "question_text": "RMSNorm 使用均方根统计进行归一化，通常不减去输入的________。",
+    "question_text": "Python中，`type(3.14)` 的返回结果是________；`type(\"3.14\")` 的返回结果是________。",
     "options": [],
-    "correct_answer": "均值 ||| 平均值",
-    "hint": "RMSNorm 与 LayerNorm 的常见区别是不中心化。",
-    "explanation": "RMSNorm 与 LayerNorm 的常见区别是不中心化。"
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "hint": null,
+    "explanation": ""
   }
 ]

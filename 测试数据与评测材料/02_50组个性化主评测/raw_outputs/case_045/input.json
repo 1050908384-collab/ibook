@@ -3,7 +3,7 @@
   "primary_category": "测试反馈与路径调整",
   "tags": "测试反馈与路径调整|LoRA微调|实操型|RTX 4060 8GB|multi_stage",
   "background": "用户调整目标/时长，阶段2重新规划",
-  "existing_skills": "KB-04|KB-08",
+  "existing_skills": "深度学习框架PyTorch基础、Transformer架构",
   "learning_goal": "LoRA微调",
   "daily_hours": "2.0",
   "learning_style": "实操型",
@@ -13,6 +13,6 @@
   "expected_difficulty": "中级",
   "expected_strategy": "reinforce",
   "run_stage_2": "True",
-  "answer_script_stage_1": "{\"answer_behavior\":\"medium\",\"target_accuracy_range\":[0.6,0.79],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"reinforce\"}",
-  "user_input_text": "我的学习背景：用户调整目标/时长，阶段2重新规划\n已掌握技能：KB-04|KB-08\n我的学习目标：LoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：实操型\n我的硬件条件：RTX 4060 8GB"
+  "answer_script_stage_1": "{\"answer_behavior\": \"medium\", \"target_accuracy_range\": [0.6, 0.69], \"wrong_answer_strategy\": \"fixed_by_question_id\", \"expected_next_strategy\": \"reinforce\"}",
+  "user_input_text": "我的学习背景：用户调整目标/时长，阶段2重新规划\n我已掌握的技能：深度学习框架PyTorch基础、Transformer架构\n我的学习目标：LoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：实操型\n我的硬件条件：RTX 4060 8GB"
 }

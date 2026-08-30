@@ -1,149 +1,149 @@
 [
   {
-    "question_id": "Q-KB1103-003",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
+    "question_id": "Q-KB0100-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令验证当前用户和主机名：\n```bash\nwhoami && hostname\n```",
+    "options": [],
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "hint": "```\nyour_username\nDESKTOP-XXXX\n```",
+    "explanation": "```\nyour_username\nDESKTOP-XXXX\n```"
+  },
+  {
+    "question_id": "Q-KB0100-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
     "difficulty": "中级",
-    "question_type": "short_answer",
-    "question_text": "请写出使用 `SFTTrainer` 进行训练的基本代码框架（包含 `model`, `train_dataset`, `args`, `data_collator`）。",
+    "question_type": "practical",
+    "question_text": "执行以下命令检查系统架构和内核版本：\n```bash\narch && uname -r\n```",
     "options": [],
-    "correct_answer": "```python\nfrom trl import SFTTrainer, SFTConfig\n\ntraining_args = SFTConfig(\n    output_dir=\"./sft_output\",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    logging_steps=10,\n    save_strategy=\"epoch\"\n)\n\ntrainer = SFTTrainer(\n    model=model,\n    args=training_args,\n    train_dataset=train_dataset,\n    data_collator=data_collator,\n)\n\ntrainer.train()\n```",
-    "hint": "```python\nfrom trl import SFTTrainer, SFTConfig\n\ntraining_args = SFTConfig(\n    output_dir=\"./sft_output\",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    logging_steps=10,\n    save_strategy=\"epoch\"\n)\n\ntrainer = SFTTrainer(\n    model=model,\n    args=training_args,\n    train_dataset=train_dataset,\n    data_collator=data_collator,\n)\n\ntrainer.train()\n```",
-    "explanation": "```python\nfrom trl import SFTTrainer, SFTConfig\n\ntraining_args = SFTConfig(\n    output_dir=\"./sft_output\",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    logging_steps=10,\n    save_strategy=\"epoch\"\n)\n\ntrainer = SFTTrainer(\n    model=model,\n    args=training_args,\n    train_dataset=train_dataset,\n    data_collator=data_collator,\n)\n\ntrainer.train()\n```"
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "hint": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---",
+    "explanation": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---"
   },
   {
-    "question_id": "Q-KB1103-005",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "请写代码：在 `SFTTrainer` 训练完成后，保存微调后的 LoRA 适配器权重到 `./final_lora_adapter` 目录。",
-    "options": [],
-    "correct_answer": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
-    "hint": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
-    "explanation": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---"
-  },
-  {
-    "question_id": "Q-KB1103-004",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
+    "question_id": "Q-KB0101-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
     "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "在 `SFTConfig` 中，`max_seq_length` 参数的作用是？",
+    "question_text": "`cp -r source_dir/ dest_dir/` 中 `-r` 参数的含义是？",
     "options": [
       {
         "key": "A",
-        "text": "设置模型的最大层数"
+        "text": "只复制文件不复制目录"
       },
       {
         "key": "B",
-        "text": "设置训练时序列的最大长度，超过则截断"
+        "text": "递归复制整个目录树"
       },
       {
         "key": "C",
-        "text": "设置学习率"
+        "text": "覆盖时不提示"
       },
       {
         "key": "D",
-        "text": "设置LoRA的秩"
+        "text": "保留文件属性"
       }
     ],
     "correct_answer": "B",
+    "hint": "> `-r`（recursive）递归复制目录及其所有子目录和文件。",
+    "explanation": "> `-r`（recursive）递归复制目录及其所有子目录和文件。"
+  },
+  {
+    "question_id": "Q-KB0101-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "命令 `ls -la` 中，`-l` 的作用是________，`-a` 的作用是________。",
+    "options": [],
+    "correct_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB1103-001",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
+    "question_id": "Q-KB0102-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。",
+    "options": [],
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出将 `/usr/local/cuda/bin` 永久添加到 `PATH` 环境变量的完整步骤（以bash为例）。",
+    "options": [],
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "hint": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```",
+    "explanation": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```"
+  },
+  {
+    "question_id": "Q-KB0101-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
     "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "TRL（Transformer Reinforcement Learning）库中，专门用于监督微调（SFT）的Trainer类是？",
+    "question_text": "以下哪个命令用于**切换当前工作目录**？",
     "options": [
       {
         "key": "A",
-        "text": "`Trainer`"
+        "text": "`ls`"
       },
       {
         "key": "B",
-        "text": "`SFTTrainer`"
+        "text": "`cd`"
       },
       {
         "key": "C",
-        "text": "`PPOTrainer`"
+        "text": "`mkdir`"
       },
       {
         "key": "D",
-        "text": "`DPOTrainer`"
+        "text": "`pwd`"
       }
     ],
     "correct_answer": "B",
-    "hint": null,
-    "explanation": ""
+    "hint": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+    "explanation": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。"
   },
   {
-    "question_id": "Q-KB1101-002",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-01",
+    "question_id": "Q-KB0104-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
     "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "在进行模型推理时，为了防止计算梯度占用显存，通常使用 `with torch.________():` 上下文管理器。",
-    "options": [],
-    "correct_answer": "`no_grad`",
-    "hint": null,
-    "explanation": ""
-  },
-  {
-    "question_id": "Q-KB11-ST1102-002",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-02",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "datasets 的 `filter()` 会保留使筛选函数返回________的样本。",
-    "options": [],
-    "correct_answer": "True ||| 真",
-    "hint": "filter 依据布尔结果保留样本。",
-    "explanation": "filter 依据布尔结果保留样本。"
-  },
-  {
-    "question_id": "Q-KB11-ST1100-002",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-00",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "使用私有 Hugging Face 仓库时，通常需要配置访问________。",
-    "options": [],
-    "correct_answer": "Token ||| token ||| 令牌",
-    "hint": "访问受限模型或数据集需要认证 Token。",
-    "explanation": "访问受限模型或数据集需要认证 Token。"
-  },
-  {
-    "question_id": "Q-KB11-ST1102-003",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-02",
-    "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "为了在每个训练轮次打乱样本顺序，通常使用？",
+    "question_text": "`nvidia-smi` 输出中，`Memory-Usage: 2048MiB / 8192MiB` 表示什么？",
     "options": [
       {
         "key": "A",
-        "text": "dataset.shuffle(seed=...)"
+        "text": "GPU总内存8GB，已使用2GB"
       },
       {
         "key": "B",
-        "text": "dataset.filter(...)"
+        "text": "CPU内存使用情况"
       },
       {
         "key": "C",
-        "text": "dataset.save_to_disk(...)"
+        "text": "磁盘空间"
       },
       {
         "key": "D",
-        "text": "dataset.select_columns(...)"
+        "text": "网络带宽"
       }
     ],
     "correct_answer": "A",
-    "hint": "shuffle 会随机重排数据集。",
-    "explanation": "shuffle 会随机重排数据集。"
+    "hint": null,
+    "explanation": ""
   }
 ]

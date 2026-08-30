@@ -195,7 +195,6 @@
     "sequence_index": 0,
     "difficulty": "中级",
     "prerequisites": [
-      "KBS-01-04",
       "KBS-02-00"
     ],
     "content_summary": "（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）"

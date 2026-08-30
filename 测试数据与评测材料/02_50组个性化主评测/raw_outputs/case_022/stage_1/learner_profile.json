@@ -1,8 +1,29 @@
 {
-  "session_id": "79e781ed-c2f1-4fa9-9ab0-ce8bf4a928c7",
+  "session_id": "7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "16GB卡，想深入LoRA rank/alpha参数设计",
+  "skill_tags": [
+    "Transformer架构",
+    "HuggingFace生态工具链",
+    "PyTorch进阶训练技巧"
+  ],
+  "mastered_block_ids": [
+    "KB-08",
+    "KB-11",
+    "KB-13"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -12,9 +33,7 @@
       "target_subtopic_ids": [
         "KBS-12-01",
         "KBS-12-02",
-        "KBS-12-03",
-        "KBS-12-04",
-        "KBS-12-05"
+        "KBS-12-03"
       ],
       "mapping_confidence": 1.0,
       "level": "advanced",
@@ -27,9 +46,9 @@
   ],
   "goal": "LoRA微调",
   "daily_hours": 2.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.725,
+  "learning_style": "mixed",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

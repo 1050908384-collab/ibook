@@ -2,7 +2,12 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, computed_field
 
-from models.profile import PracticeProfile, UserProfile
+from models.profile import (
+    LEARNING_STYLE_DEFAULT,
+    LearningStyle,
+    PracticeProfile,
+    UserProfile,
+)
 from models.review import ReviewError, ReviewResult
 from models.stage import ContentBlock, LearningPackage, StageInfo
 
@@ -45,7 +50,7 @@ class FoundationSubmitRequest(BaseModel):
     goal: str
     mastered_subtopic_ids: List[str] = Field(default_factory=list)
     daily_hours: float = 2.0
-    learning_style: str = "mixed"
+    learning_style: LearningStyle = LEARNING_STYLE_DEFAULT
 
 
 class FoundationSubmitResponse(BaseModel):
@@ -61,6 +66,7 @@ class StagePlanningInput(BaseModel):
     stage_num: int
     adjustment_notes: Optional[str] = None
     excluded_subtopic_ids: List[str] = Field(default_factory=list)
+    practice_profile: Optional[PracticeProfile] = None
 
 
 class StagePlanningOutput(BaseModel):

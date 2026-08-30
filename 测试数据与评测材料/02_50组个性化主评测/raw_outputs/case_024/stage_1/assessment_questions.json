@@ -1,152 +1,132 @@
 [
   {
-    "question_id": "Q-KB12-ST1202-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoRA 中 rank r 决定低秩更新矩阵的________。",
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
     "options": [],
-    "correct_answer": "秩 ||| rank ||| 维度",
-    "hint": "r 越大，可训练适配器容量通常越大。",
-    "explanation": "r 越大，可训练适配器容量通常越大。"
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
   },
   {
-    "question_id": "Q-KB1201-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0203-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个类 `Dog`，包含：\n- 类属性 `species = \"Canis familiaris\"`\n- 实例属性 `name` 和 `age`（通过 `__init__` 初始化）\n- 方法 `bark()` 返回 `\"{name} says: Woof!\"`",
+    "options": [],
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "hint": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "explanation": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```"
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
     "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "LoRA中，`r`（rank）参数的作用是？",
+    "question_text": "以下代码中，`finally` 块在什么情况下执行？\n```python\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print(\"除零错误\")\nfinally:\n    print(\"清理完成\")\n```",
     "options": [
       {
         "key": "A",
-        "text": "设置学习率"
+        "text": "仅在无异常时"
       },
       {
         "key": "B",
-        "text": "设置低秩矩阵的维度，`r` 越大可训练参数越多"
+        "text": "仅在捕获异常后"
       },
       {
         "key": "C",
-        "text": "设置Batch Size"
+        "text": "无论是否有异常都执行"
       },
       {
         "key": "D",
-        "text": "设置最大序列长度"
+        "text": "仅在未捕获异常时"
       }
     ],
-    "correct_answer": "B",
+    "correct_answer": "C",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1204-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
+    "question_id": "Q-KB0204-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "QLoRA 常用的 4-bit 数据类型名称是________。",
+    "question_text": "使用 `with open(\"file.txt\", \"r\") as f:` 的好处是________。",
     "options": [],
-    "correct_answer": "NF4 ||| NormalFloat4",
-    "hint": "NF4 为正态分布权重设计的 4-bit 格式。",
-    "explanation": "NF4 为正态分布权重设计的 4-bit 格式。"
+    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
+    "hint": null,
+    "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1203-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
+    "question_id": "Q-KB0204-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "若希望将 LoRA 注入注意力层的 query 与 value 投影，应配置什么？",
+    "question_text": "以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？",
     "options": [
       {
         "key": "A",
-        "text": "target_modules 指向对应投影层名"
+        "text": "`\"w\"`"
       },
       {
         "key": "B",
-        "text": "删除 tokenizer"
+        "text": "`\"r\"`"
       },
       {
         "key": "C",
-        "text": "把 batch size 设为0"
+        "text": "`\"a\"`"
       },
       {
         "key": "D",
-        "text": "关闭梯度计算"
+        "text": "`\"x\"`"
       }
     ],
-    "correct_answer": "A",
-    "hint": "target_modules 控制 LoRA 的注入位置。",
-    "explanation": "target_modules 控制 LoRA 的注入位置。"
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1205-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-05",
-    "difficulty": "高级",
+    "question_id": "Q-KB0201-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "PEFT 模型调用 `merge_and_unload()` 后，会将 LoRA 权重________到基座模型中。",
+    "question_text": "Python中，`type(3.14)` 的返回结果是________；`type(\"3.14\")` 的返回结果是________。",
     "options": [],
-    "correct_answer": "合并 ||| merge ||| 融合",
-    "hint": "合并后可作为普通模型进行推理部署。",
-    "explanation": "合并后可作为普通模型进行推理部署。"
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "hint": null,
+    "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1204-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
+    "question_id": "Q-KB0203-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
     "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nclass Counter:\n    count = 0\n    def __init__(self):\n        Counter.count += 1\n    @classmethod\n    def get_count(cls):\n        return cls.count\n\na = Counter()\nb = Counter()\nc = Counter()\nprint(Counter.get_count())\n```",
     "options": [],
-    "correct_answer": "显存 ||| 内存 ||| 存储",
-    "hint": "Double Quantization 降低量化状态的存储开销。",
-    "explanation": "Double Quantization 降低量化状态的存储开销。"
-  },
-  {
-    "question_id": "Q-KB12-ST1200-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "QLoRA 对显存要求相对较低，主要因为它将基座模型以何种精度加载？",
-    "options": [
-      {
-        "key": "A",
-        "text": "4-bit 量化精度"
-      },
-      {
-        "key": "B",
-        "text": "64-bit 浮点精度"
-      },
-      {
-        "key": "C",
-        "text": "纯文本精度"
-      },
-      {
-        "key": "D",
-        "text": "不加载模型"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "QLoRA 以低比特量化加载冻结的基座模型。",
-    "explanation": "QLoRA 以低比特量化加载冻结的基座模型。"
-  },
-  {
-    "question_id": "Q-KB1201-004",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
-    "difficulty": "中级",
-    "question_type": "true_false",
-    "question_text": "使用LoRA微调后的模型，可以将LoRA权重合并（Merge）回基座模型中，合并后推理不需要额外加载LoRA适配器。（ ）",
-    "options": [
-      "正确",
-      "错误"
-    ],
-    "correct_answer": "正确",
-    "hint": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。",
-    "explanation": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。"
+    "correct_answer": "`3`\n> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
+    "hint": "> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
+    "explanation": "> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。"
   }
 ]

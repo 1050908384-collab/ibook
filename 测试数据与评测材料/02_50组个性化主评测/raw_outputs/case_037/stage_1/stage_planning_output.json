@@ -1,26 +1,40 @@
 {
-  "stage_id": "empty-466a4b6f-317b-4500-89e2-da6ab389697c-1",
+  "stage_id": "defc0fd5-3fab-55dd-a34a-018e7007723b",
   "stage_num": 1,
-  "block_id": "KB-15",
-  "block_name": "vLLM",
-  "block_ids": [],
-  "subtopic_id": "",
-  "subtopic_name": "",
-  "subtopic_ids": [],
-  "subtopic_names": [],
-  "estimated_hours": 0.0,
+  "block_id": "KB-01",
+  "block_name": "Linux环境与命令行操作",
+  "block_ids": [
+    "KB-01"
+  ],
+  "subtopic_id": "KBS-01-00",
+  "subtopic_name": "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）",
+  "subtopic_ids": [
+    "KBS-01-00",
+    "KBS-01-01",
+    "KBS-01-02"
+  ],
+  "subtopic_names": [
+    "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）",
+    "常用Shell命令（cd/ls/mkdir/cp/mv）",
+    "环境变量配置"
+  ],
+  "estimated_hours": 2.5,
   "gap_skill": "vLLM",
   "prerequisites": [],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "已完成全部知识点",
-  "description": "当前 gap 下没有需要学习的知识点了",
-  "objectives": [],
+  "title": "学习环境准备：安装Linux系统（或WSL2/云服务器）",
+  "description": "围绕环境准备：安装Linux系统（或WSL2/云服务器）完成一次可执行的阶段学习与练习。",
+  "objectives": [
+    "理解环境准备：安装Linux系统（或WSL2/云服务器）的基本概念",
+    "掌握环境准备：安装Linux系统（或WSL2/云服务器）的核心技术",
+    "能够独立完成环境准备：安装Linux系统（或WSL2/云服务器）相关任务"
+  ],
   "difficulty": "初级",
-  "recommended_daily_hours": 0.0,
-  "suggested_study_days": 0,
-  "learning_style_notes": null,
-  "hardware_notes": null,
-  "personalization_summary": null
+  "recommended_daily_hours": 2.5,
+  "suggested_study_days": 1,
+  "learning_style_notes": "动手型学习者：建议先完成环境准备：安装Linux系统（或WSL2/云服务器）的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+  "hardware_notes": "当前设备为 RTX 4090 24GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合每天3小时，工程实操型，想学vLLM部署学习者 | 预计1.4小时完成 | 建议分1天学习 | 每天3.0小时 | 动手型学习风格"
 }

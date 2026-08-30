@@ -26,13 +26,47 @@ class DiagnosticAgent(BaseAgent):
             self.stage_generator_tool,
         ])
 
+    _NEGATION_PREFIXES = (
+        "无", "没有", "没", "未", "不懂", "不了解", "不熟悉", "不掌握",
+        "不具备", "缺乏", "缺少", "不会", "没学过", "没接触过",
+    )
+
     @staticmethod
-    def _parse_block_list(raw: str) -> List[str]:
+    def _has_negation(text: str) -> bool:
+        """Detect whether a free-text skill declaration carries a negation
+        (e.g. '无Python、深度学习基础' means 'has no such skills').
+        """
+        import re
+        # Normalize whitespace for stable prefix matching.
+        t = text.strip()
+        if not t:
+            return False
+        # 1) Exact full-text negation placeholders (fast path).
+        if t.casefold() in {"none", "无", "无基础", "零基础", "0基础", "未提供", "null", "[]"}:
+            return True
+        # 2) Any sentence-level negation near the start (first 20 chars).
+        #    Covers '无Python、深度学习与大模型相关基础' / '没有任何编程经验' etc.
+        head = t[:20]
+        for prefix in DiagnosticAgent._NEGATION_PREFIXES:
+            if head.startswith(prefix):
+                return True
+        # 3) Mid-sentence negation like '具备 X 和 Y，但不了解 Z' / '除了 A 其他都不会'.
+        mid_neg = re.search(r"但|但是|不过|除了.{0,10}(不|无|没)|(不|无|没).{0,10}(经验|基础|知识|能力)", t)
+        if mid_neg:
+            return True
+        return False
+
+    @classmethod
+    def _parse_block_list(cls, raw) -> List[str]:
         """Parse existing_skills / expected_target_blocks from free-text.
 
         Accepted separators: Chinese/English comma, slash, pipe, semicolon,
         space, newline, Chinese enumeration comma "、".  Returns an ordered
         de-duplicated list of block IDs / skill tags.
+
+        Negation-aware: if the text expresses 'no such skills at all', the
+        whole declaration collapses to [] so we never mistake '无Python'
+        for 'has Python'.
         """
         if not raw:
             return []
@@ -41,7 +75,7 @@ class DiagnosticAgent(BaseAgent):
             return [p for p in dict.fromkeys(parts) if p]
         text = str(raw).strip()
         # Collapse known zero-foundation placeholders to empty.
-        if text.casefold() in {"none", "无", "无基础", "零基础", "0基础", "未提供", "null", "[]"}:
+        if cls._has_negation(text):
             return []
         parts = __import__("re").split(r"[、,，/|；;\s\n]+", text)
         return [p for p in dict.fromkeys(part.strip(" \t\"'()（）") for part in parts) if p]

@@ -7596,22 +7596,6 @@ body.resizing-workspace-panels * {
   font-weight: 600;
 }
 
-.gen-progress-percent {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  flex: 0 0 auto;
-}
-
-.gen-progress-bar {
-  height: 6px;
-  background: #f1f2f6;
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 8px 22px 0;
-}
-
 .gen-progress-review-result {
   margin: 14px 0 0;
   padding: 10px 12px;
@@ -7695,13 +7679,6 @@ body.resizing-workspace-panels * {
   cursor: help;
   text-decoration: underline dotted;
   text-underline-offset: 2px;
-}
-
-.gen-progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--violet) 0%, #8a80ff 100%);
-  border-radius: 3px;
-  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* -------------- 真实协同事件流 -------------- */
@@ -7818,7 +7795,6 @@ body.resizing-workspace-panels * {
   .gen-progress-stepper,
   .gen-stage-preview,
   .gen-progress-status-row,
-  .gen-progress-bar,
   .gen-progress-error,
   .gen-progress-footer {
     padding-left: 16px;

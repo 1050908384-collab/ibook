@@ -1,42 +1,38 @@
 {
-  "stage_id": "d85e7611-badf-53a5-8c34-972037d105bc",
+  "stage_id": "61a7a880-3c04-5175-9c5f-7e4ceae64b58",
   "stage_num": 1,
-  "block_id": "KB-08",
-  "block_name": "Transformer架构（Decoder-Only）",
+  "block_id": "KB-01",
+  "block_name": "Linux环境与命令行操作",
   "block_ids": [
-    "KB-08"
+    "KB-01"
   ],
-  "subtopic_id": "KBS-08-00",
-  "subtopic_name": "（环境准备：可选安装transformers库，加载小型模型（如GPT-2）进行前向传播实验）",
+  "subtopic_id": "KBS-01-00",
+  "subtopic_name": "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）",
   "subtopic_ids": [
-    "KBS-08-00",
-    "KBS-08-01",
-    "KBS-08-02"
+    "KBS-01-00",
+    "KBS-01-01"
   ],
   "subtopic_names": [
-    "（环境准备：可选安装transformers库，加载小型模型（如GPT-2）进行前向传播实验）",
-    "掌握Transformer的Encoder-Decoder结构",
-    "重点理解Decoder-Only架构（如GPT/Llama/Qwen）"
+    "（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）",
+    "常用Shell命令（cd/ls/mkdir/cp/mv）"
   ],
-  "estimated_hours": 2.0,
+  "estimated_hours": 1.5,
   "gap_skill": "vLLM",
-  "prerequisites": [
-    "KBS-07-00"
-  ],
+  "prerequisites": [],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习环境准备：可选安装transformers库",
-  "description": "围绕环境准备：可选安装transformers库完成一次可执行的阶段学习与练习。",
+  "title": "学习环境准备：安装Linux系统（或WSL2/云服务器）",
+  "description": "围绕环境准备：安装Linux系统（或WSL2/云服务器）完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解环境准备：可选安装transformers库的基本概念",
-    "掌握环境准备：可选安装transformers库的核心技术",
-    "能够独立完成环境准备：可选安装transformers库相关任务"
+    "理解环境准备：安装Linux系统（或WSL2/云服务器）的基本概念",
+    "掌握环境准备：安装Linux系统（或WSL2/云服务器）的核心技术",
+    "能够独立完成环境准备：安装Linux系统（或WSL2/云服务器）相关任务"
   ],
-  "difficulty": "高级",
-  "recommended_daily_hours": 2.0,
+  "difficulty": "初级",
+  "recommended_daily_hours": 1.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：可选安装transformers库",
-  "hardware_notes": "",
-  "personalization_summary": "预计0.5小时完成 | 建议分1天学习 | 每天2.0小时 | 综合型学习风格"
+  "learning_style_notes": "动手型学习者：建议先完成环境准备：安装Linux系统（或WSL2/云服务器）的最小可运行操作，再记录命令、报错与解决过程",
+  "hardware_notes": "当前设备为 RTX 4060 8GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合前端/Web开发背景，会JS和基础Python，想转LLM方向学习者 | 预计1.4小时完成 | 建议分1天学习 | 每天2.0小时 | 动手型学习风格"
 }

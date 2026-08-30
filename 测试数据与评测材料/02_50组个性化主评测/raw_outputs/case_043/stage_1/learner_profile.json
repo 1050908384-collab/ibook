@@ -1,8 +1,21 @@
 {
-  "session_id": "5a042e06-bcd5-4be1-9972-58d76d59efd6",
+  "session_id": "9cf1d383-995d-4bd8-b9f7-dbf9feebd998",
   "user_id": "local-user",
-  "grade": "",
+  "grade": "连续两次低分，验证是否回退更基础前置",
   "skill_tags": [],
+  "mastered_block_ids": [],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -17,16 +30,17 @@
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
+        "深度学习框架PyTorch基础",
         "HuggingFace生态工具链"
       ]
     }
   ],
   "goal": "LoRA微调",
   "daily_hours": 1.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.575,
+  "learning_style": "theory",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
-  "confidence": 0.95,
+  "confidence": 0.9,
   "version": 1
 }

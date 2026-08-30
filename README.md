@@ -1,5 +1,13 @@
 # AI Agent Trainer - 多Agent个性化辅导系统
 
+<p style="background:#b91c1c;color:#fff;padding:14px 18px;border-radius:8px;font-size:16px;line-height:1.75;">
+⚠️  <strong style="font-size:18px">评委复现第一步：必须先 <code>pip install -r requirements.txt</code></strong><br>
+&nbsp;&nbsp;① 使用同一个 Python 虚拟环境（推荐 <code>python -m venv venv</code> → <code>venv\Scripts\activate</code>），<br>
+&nbsp;&nbsp;② 激活后执行 <code>python -m pip install -r requirements.txt</code>，<br>
+&nbsp;&nbsp;③ <strong>禁止</strong>在未激活的情况下直接全局 <code>pip install</code>，否则 <code>python scripts\*.py</code> 仍会报 ModuleNotFound。<br>
+&nbsp;&nbsp;④ 或直接双击打开 <code>快捷方式\_launcher.ps1</code>，脚本会自动检测缺失依赖并补装。
+</p>
+
 一个基于多Agent协同的AI个性化学习辅导系统，专注于大模型微调与推理部署领域的教学。
 
 ## 核心特性

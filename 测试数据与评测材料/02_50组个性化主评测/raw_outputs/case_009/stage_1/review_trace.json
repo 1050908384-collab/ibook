@@ -9,38 +9,14 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "description": "与来源块 LOCAL-KBS-11-02-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-02-C001，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 一、为什么需要Datasets库？（①②） > 1.1 大模型训练为什么需要数据处理？，lines=1-84",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "befd6c5e73c5_r1",
-            "canonical_error_id": "befd6c5e73c5",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_chunk_id": "LOCAL-KBS-11-02-C001",
-            "content_version": 1,
-            "in_chunk_position": "lines:1-84"
-          },
-          {
             "error_type": "incomplete_sentence",
             "severity": "minor",
             "location": null,
-            "description": "内容块末尾出现未完成的句子：'你需要用 map 对数据集做Tokenizer编码（'，句子被截断，缺少闭合括号和后续内容。",
-            "evidence": "原文末尾为'你需要用 `map` 对数据集做Tokenizer编码（'，括号未闭合，句子不完整。",
-            "suggestion": "补全该句，例如：'你需要用 `map` 对数据集做Tokenizer编码（如将文本转换为input_ids和attention_mask）。'",
-            "error_id": "7fdd2cf2351b_r1",
-            "canonical_error_id": "7fdd2cf2351b",
+            "description": "内容块末尾句子不完整：'它错误提示更'，缺少后续内容，导致句子中断。",
+            "evidence": "原文最后一句为'它错误提示更'，未完成表述。",
+            "suggestion": "补全句子，例如：'它错误提示更友好，便于排查问题。'",
+            "error_id": "f6886046c5f4_r1",
+            "canonical_error_id": "f6886046c5f4",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -49,8 +25,8 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C002",
-            "content_chunk_id": "LOCAL-KBS-11-02-C002",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -58,11 +34,11 @@
             "error_type": "factual_error",
             "severity": "minor",
             "location": null,
-            "description": "示例输出中 features 字段格式错误，应为 'features: ['text']' 而非 'features:['text']'，且缺少空格。",
-            "evidence": "Hugging Face Datasets 库实际输出格式为 'Dataset({features: ['text'], num_rows: 2})'，包含空格和方括号。",
-            "suggestion": "修正示例输出为 'Dataset({features: ['text'], num_rows: 2})'。",
-            "error_id": "19f891e8bcd9_r1",
-            "canonical_error_id": "19f891e8bcd9",
+            "description": "内容声称“现代 macOS（Catalina 10.15 起）不再预装 Python 2”，但 macOS Catalina 10.15 仍预装 Python 2.7，直到 macOS Monterey 12.3 才移除 Python 2。",
+            "evidence": "Apple 官方文档及社区记录显示，macOS Catalina 10.15 仍包含 Python 2.7，macOS Monterey 12.3 起不再预装 Python 2。",
+            "suggestion": "修改为“macOS Monterey 12.3 起不再预装 Python 2，系统可能带旧版 python3”或“现代 macOS（Catalina 10.15 起）不再预装 Python 2”需核实，建议改为“macOS 12.3 起不再预装 Python 2”。",
+            "error_id": "4efbc0cb35b1_r1",
+            "canonical_error_id": "4efbc0cb35b1",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -71,8 +47,74 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C003",
-            "content_chunk_id": "LOCAL-KBS-11-02-C003",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "要点中'python3-venv 用于创建'语句不完整，未说明其用途（创建虚拟环境），可能造成理解障碍。",
+            "evidence": "原文'python3-venv 用于创建'缺少宾语，未明确说明其用于创建虚拟环境。",
+            "suggestion": "补全为'python3-venv 用于创建虚拟环境'。",
+            "error_id": "6b46bd6eb4cd_r1",
+            "canonical_error_id": "6b46bd6eb4cd",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_prerequisite_check",
+            "severity": "minor",
+            "location": null,
+            "description": "安装步骤中未提及检查Python版本或确保系统满足PyCharm Community Edition的最低要求，可能导致安装失败或运行异常。",
+            "evidence": "内容块仅提供下载和安装步骤，未包含系统要求或Python版本检查。",
+            "suggestion": "建议在安装步骤前增加系统要求说明，如'确保你的操作系统满足PyCharm Community Edition的最低要求（Windows 10/11、macOS 10.14+、Linux），并建议安装Python 3.8及以上版本。'",
+            "error_id": "8240527aca79_r1",
+            "canonical_error_id": "8240527aca79",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_verification_step",
+            "severity": "minor",
+            "location": null,
+            "description": "安装完成后未提供验证安装是否成功的步骤，用户可能无法确认安装是否正确。",
+            "evidence": "内容块在安装步骤后直接进入首次启动配置，缺少验证安装的环节。",
+            "suggestion": "建议增加验证步骤，如'安装完成后，打开PyCharm，确认能正常启动并创建新项目，以验证安装成功。'",
+            "error_id": "a0407aca6533_r1",
+            "canonical_error_id": "a0407aca6533",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -80,11 +122,11 @@
             "error_type": "incomplete_content",
             "severity": "major",
             "location": null,
-            "description": "内容块在'推荐 4 核 CPU 和'处截断，句子不完整，缺少后续内容。",
-            "evidence": "原文末尾为'推荐 4 核 CPU 和'，未完成句子。",
-            "suggestion": "补充完整句子，例如'推荐 4 核 CPU 和 16GB 内存以获得更流畅的体验。'",
-            "error_id": "d1b47f10e294_r1",
-            "canonical_error_id": "d1b47f10e294",
+            "description": "内容块在验证安装步骤后突然中断，缺少预期的输出示例和本块学习检查的完整内容，导致内容不完整。",
+            "evidence": "原文在'conda --version'命令后直接以'显示类似'结尾，未提供任何输出示例，且'本块学习检查'部分仅列出要求而未给出具体内容。",
+            "suggestion": "补充conda --version的预期输出示例，并完善本块学习检查的具体内容。",
+            "error_id": "ed69a7d4d063_r1",
+            "canonical_error_id": "ed69a7d4d063",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -93,64 +135,20 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C004",
-            "content_chunk_id": "LOCAL-KBS-11-02-C004",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C006",
-            "content_chunk_id": "LOCAL-KBS-11-02-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C006",
-            "content_chunk_id": "LOCAL-KBS-11-02-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "code_truncation",
+            "error_type": "code_syntax_error",
             "severity": "critical",
             "location": null,
-            "description": "代码块在输出中被截断，缺少完整的 attention_mask 列表和后续内容，导致代码不完整、无法运行。",
-            "evidence": "代码块以 'attention_mask':[1,1,' 结尾，未闭合列表和字典，且缺少后续代码。",
-            "suggestion": "补全完整的代码示例，确保所有列表和字典正确闭合，并展示完整的输出。",
-            "error_id": "e71880f7ca55_r1",
-            "canonical_error_id": "e71880f7ca55",
+            "description": "代码块中 `import torch` 后缺少换行和后续代码，导致代码块不完整，无法运行。",
+            "evidence": "原文代码块内容为 'import torch'，未闭合且无后续代码。",
+            "suggestion": "补全代码块，例如：import torch\\nprint(torch.__version__)",
+            "error_id": "3bf61693a4fb_r1",
+            "canonical_error_id": "3bf61693a4fb",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -159,44 +157,20 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C007",
-            "content_chunk_id": "LOCAL-KBS-11-02-C007",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "description": "与来源块 LOCAL-KBS-11-02-C008 相似度 0.77 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-02-C008，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 六、batched参数：批量处理优化（参考文章⑥） > 6.1 为什么需要batched？，lines=376-485",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "cea13965302b_r1",
-            "canonical_error_id": "cea13965302b",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
-            "content_version": 1,
-            "in_chunk_position": "lines:376-485"
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
+            "error_type": "truncated_content",
+            "severity": "critical",
             "location": null,
-            "description": "声称开启batched=True后map()会一次性接收一个批次的数据（默认是一个列表），但实际batched=True时map()接收的是一个字典，其中每个字段对应一个列表，而非整个批次作为一个列表。",
-            "evidence": "Hugging Face Datasets文档：当batched=True时，传递给map函数的batch是一个字典，包含数据集各列的列表。",
-            "suggestion": "修正描述为：开启batched=True后，map()会一次性接收一个批次的数据，该批次是一个字典，其中每个键对应一个字段，值为该批次内所有样本该字段的列表。",
-            "error_id": "e7ecfbfda94c_r1",
-            "canonical_error_id": "e7ecfbfda94c",
+            "description": "内容块在代码块内被截断，缺少闭合的代码围栏和后续内容，导致代码块不完整。",
+            "evidence": "原文末尾为 '下方终端应输出 `Hello from VS'，代码块未闭合，且缺少 'Code!' 等预期输出。",
+            "suggestion": "补全被截断的内容，确保代码块完整闭合，并补充完整的预期输出。",
+            "error_id": "fde55cad98fe_r1",
+            "canonical_error_id": "fde55cad98fe",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -205,66 +179,22 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C012",
-            "content_chunk_id": "LOCAL-KBS-11-02-C012",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C012",
-            "content_chunk_id": "LOCAL-KBS-11-02-C012",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "description": "与来源块 LOCAL-KBS-11-02-C013 相似度 0.75 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-02-C013，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 十、数据预处理流程示例（参考文章⑥⑦） > 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充），lines=725-789",
+            "location": "block:cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "77ae5fb5d14e_r1",
-            "canonical_error_id": "77ae5fb5d14e",
+            "error_id": "74c64858dce0_r1",
+            "canonical_error_id": "74c64858dce0",
             "source_refs": [
-              "src_LOCAL-KBS-11-02-C013"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -272,11 +202,33 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_chunk_id": "LOCAL-KBS-11-02-C013",
+            "claim_id": "clm_cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 1,
-            "in_chunk_position": "lines:725-789"
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容块不完整，末尾出现未闭合的表格标记'| 组件'，且缺少后续内容，无法进行完整的技术审核。",
+            "evidence": "内容块以'| 组件'结尾，表格未闭合，明显截断。",
+            "suggestion": "补充完整内容块，确保表格闭合且内容完整。",
+            "error_id": "6520602f8565_r1",
+            "canonical_error_id": "6520602f8565",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
           }
         ],
         "personalization_errors": [],
@@ -287,38 +239,14 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "description": "与来源块 LOCAL-KBS-11-02-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-02-C001，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 一、为什么需要Datasets库？（①②） > 1.1 大模型训练为什么需要数据处理？，lines=1-84",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "befd6c5e73c5_r1",
-            "canonical_error_id": "befd6c5e73c5",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_chunk_id": "LOCAL-KBS-11-02-C001",
-            "content_version": 1,
-            "in_chunk_position": "lines:1-84"
-          },
-          {
             "error_type": "incomplete_sentence",
             "severity": "minor",
             "location": null,
-            "description": "内容块末尾出现未完成的句子：'你需要用 map 对数据集做Tokenizer编码（'，句子被截断，缺少闭合括号和后续内容。",
-            "evidence": "原文末尾为'你需要用 `map` 对数据集做Tokenizer编码（'，括号未闭合，句子不完整。",
-            "suggestion": "补全该句，例如：'你需要用 `map` 对数据集做Tokenizer编码（如将文本转换为input_ids和attention_mask）。'",
-            "error_id": "7fdd2cf2351b_r1",
-            "canonical_error_id": "7fdd2cf2351b",
+            "description": "内容块末尾句子不完整：'它错误提示更'，缺少后续内容，导致句子中断。",
+            "evidence": "原文最后一句为'它错误提示更'，未完成表述。",
+            "suggestion": "补全句子，例如：'它错误提示更友好，便于排查问题。'",
+            "error_id": "f6886046c5f4_r1",
+            "canonical_error_id": "f6886046c5f4",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -327,8 +255,8 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C002",
-            "content_chunk_id": "LOCAL-KBS-11-02-C002",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -336,11 +264,11 @@
             "error_type": "factual_error",
             "severity": "minor",
             "location": null,
-            "description": "示例输出中 features 字段格式错误，应为 'features: ['text']' 而非 'features:['text']'，且缺少空格。",
-            "evidence": "Hugging Face Datasets 库实际输出格式为 'Dataset({features: ['text'], num_rows: 2})'，包含空格和方括号。",
-            "suggestion": "修正示例输出为 'Dataset({features: ['text'], num_rows: 2})'。",
-            "error_id": "19f891e8bcd9_r1",
-            "canonical_error_id": "19f891e8bcd9",
+            "description": "内容声称“现代 macOS（Catalina 10.15 起）不再预装 Python 2”，但 macOS Catalina 10.15 仍预装 Python 2.7，直到 macOS Monterey 12.3 才移除 Python 2。",
+            "evidence": "Apple 官方文档及社区记录显示，macOS Catalina 10.15 仍包含 Python 2.7，macOS Monterey 12.3 起不再预装 Python 2。",
+            "suggestion": "修改为“macOS Monterey 12.3 起不再预装 Python 2，系统可能带旧版 python3”或“现代 macOS（Catalina 10.15 起）不再预装 Python 2”需核实，建议改为“macOS 12.3 起不再预装 Python 2”。",
+            "error_id": "4efbc0cb35b1_r1",
+            "canonical_error_id": "4efbc0cb35b1",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -349,8 +277,74 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C003",
-            "content_chunk_id": "LOCAL-KBS-11-02-C003",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "要点中'python3-venv 用于创建'语句不完整，未说明其用途（创建虚拟环境），可能造成理解障碍。",
+            "evidence": "原文'python3-venv 用于创建'缺少宾语，未明确说明其用于创建虚拟环境。",
+            "suggestion": "补全为'python3-venv 用于创建虚拟环境'。",
+            "error_id": "6b46bd6eb4cd_r1",
+            "canonical_error_id": "6b46bd6eb4cd",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_prerequisite_check",
+            "severity": "minor",
+            "location": null,
+            "description": "安装步骤中未提及检查Python版本或确保系统满足PyCharm Community Edition的最低要求，可能导致安装失败或运行异常。",
+            "evidence": "内容块仅提供下载和安装步骤，未包含系统要求或Python版本检查。",
+            "suggestion": "建议在安装步骤前增加系统要求说明，如'确保你的操作系统满足PyCharm Community Edition的最低要求（Windows 10/11、macOS 10.14+、Linux），并建议安装Python 3.8及以上版本。'",
+            "error_id": "8240527aca79_r1",
+            "canonical_error_id": "8240527aca79",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "missing_verification_step",
+            "severity": "minor",
+            "location": null,
+            "description": "安装完成后未提供验证安装是否成功的步骤，用户可能无法确认安装是否正确。",
+            "evidence": "内容块在安装步骤后直接进入首次启动配置，缺少验证安装的环节。",
+            "suggestion": "建议增加验证步骤，如'安装完成后，打开PyCharm，确认能正常启动并创建新项目，以验证安装成功。'",
+            "error_id": "a0407aca6533_r1",
+            "canonical_error_id": "a0407aca6533",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C010",
+            "content_chunk_id": "LOCAL-KBS-02-00-C010",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -358,11 +352,11 @@
             "error_type": "incomplete_content",
             "severity": "major",
             "location": null,
-            "description": "内容块在'推荐 4 核 CPU 和'处截断，句子不完整，缺少后续内容。",
-            "evidence": "原文末尾为'推荐 4 核 CPU 和'，未完成句子。",
-            "suggestion": "补充完整句子，例如'推荐 4 核 CPU 和 16GB 内存以获得更流畅的体验。'",
-            "error_id": "d1b47f10e294_r1",
-            "canonical_error_id": "d1b47f10e294",
+            "description": "内容块在验证安装步骤后突然中断，缺少预期的输出示例和本块学习检查的完整内容，导致内容不完整。",
+            "evidence": "原文在'conda --version'命令后直接以'显示类似'结尾，未提供任何输出示例，且'本块学习检查'部分仅列出要求而未给出具体内容。",
+            "suggestion": "补充conda --version的预期输出示例，并完善本块学习检查的具体内容。",
+            "error_id": "ed69a7d4d063_r1",
+            "canonical_error_id": "ed69a7d4d063",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -371,64 +365,20 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C004",
-            "content_chunk_id": "LOCAL-KBS-11-02-C004",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C006",
-            "content_chunk_id": "LOCAL-KBS-11-02-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C006",
-            "content_chunk_id": "LOCAL-KBS-11-02-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "code_truncation",
+            "error_type": "code_syntax_error",
             "severity": "critical",
             "location": null,
-            "description": "代码块在输出中被截断，缺少完整的 attention_mask 列表和后续内容，导致代码不完整、无法运行。",
-            "evidence": "代码块以 'attention_mask':[1,1,' 结尾，未闭合列表和字典，且缺少后续代码。",
-            "suggestion": "补全完整的代码示例，确保所有列表和字典正确闭合，并展示完整的输出。",
-            "error_id": "e71880f7ca55_r1",
-            "canonical_error_id": "e71880f7ca55",
+            "description": "代码块中 `import torch` 后缺少换行和后续代码，导致代码块不完整，无法运行。",
+            "evidence": "原文代码块内容为 'import torch'，未闭合且无后续代码。",
+            "suggestion": "补全代码块，例如：import torch\\nprint(torch.__version__)",
+            "error_id": "3bf61693a4fb_r1",
+            "canonical_error_id": "3bf61693a4fb",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -437,44 +387,20 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C007",
-            "content_chunk_id": "LOCAL-KBS-11-02-C007",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "description": "与来源块 LOCAL-KBS-11-02-C008 相似度 0.77 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-02-C008，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 六、batched参数：批量处理优化（参考文章⑥） > 6.1 为什么需要batched？，lines=376-485",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "cea13965302b_r1",
-            "canonical_error_id": "cea13965302b",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
-            "content_version": 1,
-            "in_chunk_position": "lines:376-485"
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
+            "error_type": "truncated_content",
+            "severity": "critical",
             "location": null,
-            "description": "声称开启batched=True后map()会一次性接收一个批次的数据（默认是一个列表），但实际batched=True时map()接收的是一个字典，其中每个字段对应一个列表，而非整个批次作为一个列表。",
-            "evidence": "Hugging Face Datasets文档：当batched=True时，传递给map函数的batch是一个字典，包含数据集各列的列表。",
-            "suggestion": "修正描述为：开启batched=True后，map()会一次性接收一个批次的数据，该批次是一个字典，其中每个键对应一个字段，值为该批次内所有样本该字段的列表。",
-            "error_id": "e7ecfbfda94c_r1",
-            "canonical_error_id": "e7ecfbfda94c",
+            "description": "内容块在代码块内被截断，缺少闭合的代码围栏和后续内容，导致代码块不完整。",
+            "evidence": "原文末尾为 '下方终端应输出 `Hello from VS'，代码块未闭合，且缺少 'Code!' 等预期输出。",
+            "suggestion": "补全被截断的内容，确保代码块完整闭合，并补充完整的预期输出。",
+            "error_id": "fde55cad98fe_r1",
+            "canonical_error_id": "fde55cad98fe",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -483,66 +409,22 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C012",
-            "content_chunk_id": "LOCAL-KBS-11-02-C012",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C012",
-            "content_chunk_id": "LOCAL-KBS-11-02-C012",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "description": "与来源块 LOCAL-KBS-11-02-C013 相似度 0.75 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-02-C013，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 十、数据预处理流程示例（参考文章⑥⑦） > 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充），lines=725-789",
+            "location": "block:cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "77ae5fb5d14e_r1",
-            "canonical_error_id": "77ae5fb5d14e",
+            "error_id": "74c64858dce0_r1",
+            "canonical_error_id": "74c64858dce0",
             "source_refs": [
-              "src_LOCAL-KBS-11-02-C013"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -550,11 +432,33 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_chunk_id": "LOCAL-KBS-11-02-C013",
+            "claim_id": "clm_cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 1,
-            "in_chunk_position": "lines:725-789"
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容块不完整，末尾出现未闭合的表格标记'| 组件'，且缺少后续内容，无法进行完整的技术审核。",
+            "evidence": "内容块以'| 组件'结尾，表格未闭合，明显截断。",
+            "suggestion": "补充完整内容块，确保表格闭合且内容完整。",
+            "error_id": "6520602f8565_r1",
+            "canonical_error_id": "6520602f8565",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
           }
         ],
         "personalization_errors": [],
@@ -572,14 +476,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "description": "与来源块 LOCAL-KBS-11-02-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-02-C001，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 一、为什么需要Datasets库？（①②） > 1.1 大模型训练为什么需要数据处理？，lines=1-84",
+            "location": "block:cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "befd6c5e73c5_r2",
-            "canonical_error_id": "befd6c5e73c5",
+            "error_id": "74c64858dce0_r2",
+            "canonical_error_id": "74c64858dce0",
             "source_refs": [
-              "src_LOCAL-KBS-11-02-C001"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -587,103 +491,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_chunk_id": "LOCAL-KBS-11-02-C001",
+            "claim_id": "clm_cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 2,
-            "in_chunk_position": "lines:1-84"
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C006",
-            "content_chunk_id": "LOCAL-KBS-11-02-C006",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "description": "与来源块 LOCAL-KBS-11-02-C008 相似度 0.77 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-02-C008，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 六、batched参数：批量处理优化（参考文章⑥） > 6.1 为什么需要batched？，lines=376-485",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "cea13965302b_r2",
-            "canonical_error_id": "cea13965302b",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
-            "content_version": 2,
-            "in_chunk_position": "lines:376-485"
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C012",
-            "content_chunk_id": "LOCAL-KBS-11-02-C012",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "description": "与来源块 LOCAL-KBS-11-02-C013 相似度 0.75 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-02-C013，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 十、数据预处理流程示例（参考文章⑥⑦） > 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充），lines=725-789",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "77ae5fb5d14e_r2",
-            "canonical_error_id": "77ae5fb5d14e",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C013"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_chunk_id": "LOCAL-KBS-11-02-C013",
-            "content_version": 2,
-            "in_chunk_position": "lines:725-789"
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -696,14 +508,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "description": "与来源块 LOCAL-KBS-11-02-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-02-C001，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 一、为什么需要Datasets库？（①②） > 1.1 大模型训练为什么需要数据处理？，lines=1-84",
+            "location": "block:cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "befd6c5e73c5_r2",
-            "canonical_error_id": "befd6c5e73c5",
+            "error_id": "74c64858dce0_r2",
+            "canonical_error_id": "74c64858dce0",
             "source_refs": [
-              "src_LOCAL-KBS-11-02-C001"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -711,103 +523,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_chunk_id": "LOCAL-KBS-11-02-C001",
+            "claim_id": "clm_cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 2,
-            "in_chunk_position": "lines:1-84"
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C006",
-            "content_chunk_id": "LOCAL-KBS-11-02-C006",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "description": "与来源块 LOCAL-KBS-11-02-C008 相似度 0.77 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-02-C008，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 六、batched参数：批量处理优化（参考文章⑥） > 6.1 为什么需要batched？，lines=376-485",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "cea13965302b_r2",
-            "canonical_error_id": "cea13965302b",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
-            "content_version": 2,
-            "in_chunk_position": "lines:376-485"
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C012",
-            "content_chunk_id": "LOCAL-KBS-11-02-C012",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "description": "与来源块 LOCAL-KBS-11-02-C013 相似度 0.75 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-02-C013，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 十、数据预处理流程示例（参考文章⑥⑦） > 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充），lines=725-789",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "77ae5fb5d14e_r2",
-            "canonical_error_id": "77ae5fb5d14e",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C013"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_chunk_id": "LOCAL-KBS-11-02-C013",
-            "content_version": 2,
-            "in_chunk_position": "lines:725-789"
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -825,14 +545,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "description": "与来源块 LOCAL-KBS-11-02-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-02-C001，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 一、为什么需要Datasets库？（①②） > 1.1 大模型训练为什么需要数据处理？，lines=1-84",
+            "location": "block:cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "befd6c5e73c5_r2",
-            "canonical_error_id": "befd6c5e73c5",
+            "error_id": "74c64858dce0_r3",
+            "canonical_error_id": "74c64858dce0",
             "source_refs": [
-              "src_LOCAL-KBS-11-02-C001"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -840,59 +560,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_chunk_id": "LOCAL-KBS-11-02-C001",
-            "content_version": 2,
-            "in_chunk_position": "lines:1-84"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "description": "与来源块 LOCAL-KBS-11-02-C008 相似度 0.77 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-02-C008，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 六、batched参数：批量处理优化（参考文章⑥） > 6.1 为什么需要batched？，lines=376-485",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "cea13965302b_r3",
-            "canonical_error_id": "cea13965302b",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
+            "claim_id": "clm_cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 3,
-            "in_chunk_position": "lines:376-485"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "description": "与来源块 LOCAL-KBS-11-02-C013 相似度 0.75 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-02-C013，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 十、数据预处理流程示例（参考文章⑥⑦） > 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充），lines=725-789",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "77ae5fb5d14e_r2",
-            "canonical_error_id": "77ae5fb5d14e",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C013"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_chunk_id": "LOCAL-KBS-11-02-C013",
-            "content_version": 2,
-            "in_chunk_position": "lines:725-789"
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -905,14 +577,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "description": "与来源块 LOCAL-KBS-11-02-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-11-02-C001，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 一、为什么需要Datasets库？（①②） > 1.1 大模型训练为什么需要数据处理？，lines=1-84",
+            "location": "block:cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "befd6c5e73c5_r2",
-            "canonical_error_id": "befd6c5e73c5",
+            "error_id": "74c64858dce0_r3",
+            "canonical_error_id": "74c64858dce0",
             "source_refs": [
-              "src_LOCAL-KBS-11-02-C001"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -920,59 +592,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C001",
-            "content_chunk_id": "LOCAL-KBS-11-02-C001",
-            "content_version": 2,
-            "in_chunk_position": "lines:1-84"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "description": "与来源块 LOCAL-KBS-11-02-C008 相似度 0.77 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.77，chunk=LOCAL-KBS-11-02-C008，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 六、batched参数：批量处理优化（参考文章⑥） > 6.1 为什么需要batched？，lines=376-485",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "cea13965302b_r3",
-            "canonical_error_id": "cea13965302b",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C008",
-            "content_chunk_id": "LOCAL-KBS-11-02-C008",
+            "claim_id": "clm_cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_fce104bc-043e-4988-a943-781b1af179fe_c02d0ed4-e5e4-504f-87d3-60db8005160e_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 3,
-            "in_chunk_position": "lines:376-485"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "description": "与来源块 LOCAL-KBS-11-02-C013 相似度 0.75 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-11-02-C013，heading_path=Hugging Face Datasets数据处理：掌握 map / filter / shuffle 核心操作（最终版） > 十、数据预处理流程示例（参考文章⑥⑦） > 十.1 面向 Causal LM 的较完整数据准备示例（含划分/标签/动态填充），lines=725-789",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "77ae5fb5d14e_r2",
-            "canonical_error_id": "77ae5fb5d14e",
-            "source_refs": [
-              "src_LOCAL-KBS-11-02-C013"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_block_id": "cb_b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5_34edf52d-3b5a-5d9b-8550-37a60fc306ff_LOCAL-KBS-11-02-C013",
-            "content_chunk_id": "LOCAL-KBS-11-02-C013",
-            "content_version": 2,
-            "in_chunk_position": "lines:725-789"
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],

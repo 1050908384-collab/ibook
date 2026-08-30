@@ -1,8 +1,27 @@
 {
-  "session_id": "1fc8fe96-0e4f-4319-b094-23fc99361a18",
+  "session_id": "4614eabc-f9d2-426d-b058-90eac6386a35",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "掌握预训练和SFT流程，想做LoRA微调",
+  "skill_tags": [
+    "Transformer架构",
+    "LLM三阶段训练流程"
+  ],
+  "mastered_block_ids": [
+    "KB-08",
+    "KB-10"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -10,10 +29,14 @@
       "block_id": "KB-12",
       "block_name": "参数高效微调（LoRA与QLoRA）",
       "target_subtopic_ids": [
-        "KBS-12-01"
+        "KBS-12-01",
+        "KBS-12-02",
+        "KBS-12-03",
+        "KBS-12-04",
+        "KBS-12-05"
       ],
       "mapping_confidence": 1.0,
-      "level": "beginner",
+      "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
@@ -24,9 +47,9 @@
   ],
   "goal": "LoRA微调",
   "daily_hours": 2.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.725,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

@@ -1,135 +1,132 @@
 [
   {
-    "question_id": "Q-KB07-ST0700-002",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-00",
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
     "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
     "options": [],
-    "correct_answer": "tokenizer ||| 分词器",
-    "hint": "Tokenizer 负责文本与 token 序列转换。",
-    "explanation": "Tokenizer 负责文本与 token 序列转换。"
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
   },
   {
-    "question_id": "Q-KB07-ST0700-001",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-00",
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
     "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "Hugging Face 模型与分词器常用的 Python 库名称是________。",
-    "options": [],
-    "correct_answer": "transformers",
-    "hint": "transformers 提供模型、Tokenizer 与训练接口。",
-    "explanation": "transformers 提供模型、Tokenizer 与训练接口。"
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
   },
   {
-    "question_id": "Q-KB0704-003",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-04",
-    "difficulty": "中级",
+    "question_id": "Q-KB0405-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "高级",
     "question_type": "short_answer",
-    "question_text": "使用 `tokenizer.apply_chat_template` 方法，将以下对话历史转换为模型输入文本，但不进行分词（即 `tokenize=False`）。\n```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n```",
+    "question_text": "请写代码：实现带梯度裁剪的训练步骤，使用 `AdamW`，学习率 `5e-5`，梯度裁剪阈值为1.0。",
     "options": [],
-    "correct_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
-    "hint": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
-    "explanation": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```"
+    "correct_answer": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
+    "hint": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
+    "explanation": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---"
   },
   {
-    "question_id": "Q-KB0703-002",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-03",
+    "question_id": "Q-KB0401-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个命令可以创建一个全为0的3x3张量？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`torch.zeros(3, 3)`"
+      },
+      {
+        "key": "B",
+        "text": "`torch.ones(3, 3)`"
+      },
+      {
+        "key": "C",
+        "text": "`torch.empty(3, 3)`"
+      },
+      {
+        "key": "D",
+        "text": "`torch.rand(3, 3)`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。",
+    "explanation": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。"
+  },
+  {
+    "question_id": "Q-KB0401-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
     "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "`padding='max_length'` 参数会将所有序列填充或截断到由________参数指定的长度。",
+    "question_text": "张量 `x = torch.tensor([[1, 2], [3, 4]])`，其形状 `x.shape` 为________；数据类型 `x.dtype` 默认为________。",
     "options": [],
-    "correct_answer": "`max_length`",
+    "correct_answer": "`(2, 2)`；`torch.int64`（或 `torch.long`）",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB0703-005",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-03",
+    "question_id": "Q-KB0404-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`DataLoader` 中，`batch_size=32` 表示________；`shuffle=True` 表示________。",
+    "options": [],
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0401-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
     "difficulty": "高级",
     "question_type": "short_answer",
-    "question_text": "请写代码：对一批文本进行分词，要求：\n1.  填充到 128 的长度。\n2.  如果超过 128 则进行截断。\n3.  返回 TensorFlow 张量。",
+    "question_text": "给定张量 `x` 形状为 `(2, 3, 4)`，请写出将其转置为 `(4, 3, 2)` 的代码。",
     "options": [],
-    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n\ntexts = [\"Short text\", \"A very long text that will definitely exceed the maximum length of one hundred and twenty-eight tokens...\"]\n\nencodings = tokenizer(\n    texts,\n    max_length=128,\n    padding='max_length',  # 填充到 max_length 指定的长度\n    truncation=True,       # 启用截断\n    return_tensors=\"tf\"    # 返回 TensorFlow 张量\n)\n\nprint(encodings[\"input_ids\"].shape)  # 输出: (2, 128)\n```\n\n---",
-    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n\ntexts = [\"Short text\", \"A very long text that will definitely exceed the maximum length of one hundred and twenty-eight tokens...\"]\n\nencodings = tokenizer(\n    texts,\n    max_length=128,\n    padding='max_length',  # 填充到 max_length 指定的长度\n    truncation=True,       # 启用截断\n    return_tensors=\"tf\"    # 返回 TensorFlow 张量\n)\n\nprint(encodings[\"input_ids\"].shape)  # 输出: (2, 128)\n```\n\n---",
-    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n\ntexts = [\"Short text\", \"A very long text that will definitely exceed the maximum length of one hundred and twenty-eight tokens...\"]\n\nencodings = tokenizer(\n    texts,\n    max_length=128,\n    padding='max_length',  # 填充到 max_length 指定的长度\n    truncation=True,       # 启用截断\n    return_tensors=\"tf\"    # 返回 TensorFlow 张量\n)\n\nprint(encodings[\"input_ids\"].shape)  # 输出: (2, 128)\n```\n\n---"
+    "correct_answer": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "hint": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "explanation": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```"
   },
   {
-    "question_id": "Q-KB0704-004",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-04",
-    "difficulty": "中级",
-    "question_type": "single_choice",
-    "question_text": "`apply_chat_template` 方法中，`add_generation_prompt=True` 参数的作用是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "在对话末尾添加一个特殊的生成起始标记，告诉模型接下来该它生成回复了。"
-      },
-      {
-        "key": "B",
-        "text": "在对话开头添加系统提示词。"
-      },
-      {
-        "key": "C",
-        "text": "自动为对话添加摘要。"
-      },
-      {
-        "key": "D",
-        "text": "忽略助手的历史回复。"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "> 这个参数通常用于推理阶段。它会在格式化后的对话末尾添加一个特定的标记（如 `<|assistant|>`），告诉模型接下来该它生成回复了。",
-    "explanation": "> 这个参数通常用于推理阶段。它会在格式化后的对话末尾添加一个特定的标记（如 `<|assistant|>`），告诉模型接下来该它生成回复了。"
-  },
-  {
-    "question_id": "Q-KB0703-001",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-03",
-    "difficulty": "初级",
-    "question_type": "single_choice",
-    "question_text": "当设置 `truncation=True` 时，如果输入序列长度超过模型的最大长度，分词器会如何处理？",
-    "options": [
-      {
-        "key": "A",
-        "text": "抛出错误"
-      },
-      {
-        "key": "B",
-        "text": "自动将序列填充到最大长度"
-      },
-      {
-        "key": "C",
-        "text": "从序列末尾截断超出部分"
-      },
-      {
-        "key": "D",
-        "text": "随机删除一些 token"
-      }
-    ],
-    "correct_answer": "C",
-    "hint": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。",
-    "explanation": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。"
-  },
-  {
-    "question_id": "Q-KB0703-004",
-    "block_id": "KB-07",
-    "subtopic_id": "KBS-07-03",
-    "difficulty": "中级",
-    "question_type": "true_false",
-    "question_text": "`padding=True` 和 `padding='longest'` 的效果是完全一样的。（ ）",
-    "options": [
-      "正确",
-      "错误"
-    ],
-    "correct_answer": "正确",
-    "hint": "> 在一个批次（batch）内进行分词时，`padding=True` 的默认行为就是将批次内所有序列填充到该批次中最长序列的长度，这与 `padding='longest'` 的效果相同。",
-    "explanation": "> 在一个批次（batch）内进行分词时，`padding=True` 的默认行为就是将批次内所有序列填充到该批次中最长序列的长度，这与 `padding='longest'` 的效果相同。"
+    "question_id": "Q-KB0403-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `nn.Sequential` 定义一个包含 `Linear(10, 5)`、`ReLU`、`Linear(5, 1)` 的网络。",
+    "options": [],
+    "correct_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "hint": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "explanation": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---"
   }
 ]

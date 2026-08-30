@@ -1,0 +1,31 @@
+﻿case_id,status,block_id,mastered_blocks,learning_style,difficulty,estimated_hours,daily_hours,hardware_input,hardware_notes_nonempty,1_target_path,2_difficulty,3_time_budget,4_hardware,5_learning_style,pass_5
+case_001,completed,KB-02,[],theory,初级,0.5,1.0,无独立GPU（仅核显笔记本）,True,✅,✅,✅,✅,❌,4/5
+case_002,completed,KB-04,['KB-02'],practice,初级,0.5,1.0,无独立GPU,True,✅,✅,✅,✅,✅,5/5
+case_003,completed,KB-04,"['KB-02', 'KB-03']",practice,初级,0.5,1.5,RTX 3060 12GB,True,✅,✅,✅,✅,✅,5/5
+case_004,completed,KB-01,['KB-02'],practice,初级,1.5,2.0,RTX 4060 8GB,True,✅,✅,✅,✅,✅,5/5
+case_005,completed,KB-02,[],practice,初级,0.5,2.0,RTX 4070 12GB,True,✅,✅,✅,✅,✅,5/5
+case_006,completed,KB-02,[],theory,初级,0.5,1.0,无独立GPU,True,✅,✅,✅,✅,✅,5/5
+case_007,completed,KB-04,['KB-02'],theory,初级,0.5,1.0,RTX 3060 12GB,True,✅,✅,✅,✅,✅,5/5
+case_008,completed,KB-02,[],mixed,初级,0.5,1.5,无独立GPU,True,✅,✅,✅,✅,✅,5/5
+case_009,completed,KB-02,"['KB-08', 'KB-11']",practice,初级,0.5,2.0,RTX 4060 8GB,True,✅,✅,✅,✅,✅,5/5
+case_010,completed,KB-01,"['KB-04', 'KB-10']",practice,初级,2.5,2.5,RTX 4090 24GB,True,✅,✅,✅,✅,✅,5/5
+case_011,completed,KB-02,"['KB-05', 'KB-06']",practice,初级,0.5,2.0,RTX 4060 Ti 16GB,True,✅,✅,✅,✅,✅,5/5
+case_012,completed,KB-02,['KB-07'],theory,初级,0.5,2.0,RTX 3060 12GB,True,✅,✅,✅,✅,✅,5/5
+case_013,completed,KB-02,"['KB-08', 'KB-10']",practice,初级,0.5,2.0,RTX 4070 12GB,True,✅,✅,✅,✅,✅,5/5
+case_014,completed,KB-01,"['KB-04', 'KB-08', 'KB-11', 'KB-13']",practice,初级,2.5,3.0,双卡RTX 4090 48GB,True,✅,✅,✅,✅,✅,5/5
+case_015,completed,KB-02,"['KB-11', 'KB-13']",practice,初级,0.5,2.0,RTX 4080 16GB,True,✅,✅,✅,✅,✅,5/5
+case_016,completed,KB-02,"['KB-04', 'KB-08']",mixed,初级,0.5,2.0,RTX 4060 8GB,True,✅,✅,✅,✅,✅,5/5
+case_017,completed,KB-07,"['KB-02', 'KB-04']",mixed,初级,0.5,1.0,无独立GPU（核显）,True,✅,✅,✅,✅,✅,5/5
+case_018,completed,KB-02,"['KB-04', 'KB-08', 'KB-13']",practice,初级,0.5,3.0,RTX 3090 24GB,True,✅,✅,✅,✅,✅,5/5
+case_019,completed,KB-02,"['KB-04', 'KB-08']",mixed,初级,0.5,2.0,RTX 3060 12GB,True,✅,✅,✅,✅,✅,5/5
+case_020,completed,KB-02,"['KB-04', 'KB-08', 'KB-13']",practice,初级,0.5,3.0,RTX 4090 24GB,True,✅,✅,✅,✅,✅,5/5
+case_021,completed,KB-07,"['KB-02', 'KB-04']",practice,中级,0.5,2.0,MacBook M2 16GB统一内存,True,✅,✅,✅,✅,✅,5/5
+case_022,completed,KB-02,"['KB-08', 'KB-11', 'KB-13']",mixed,初级,0.5,2.5,RTX 4060 Ti 16GB,True,✅,✅,✅,✅,✅,5/5
+case_023,completed,KB-02,"['KB-04', 'KB-08']",mixed,初级,0.5,2.0,RTX 3080 10GB,True,✅,✅,✅,✅,✅,5/5
+case_024,completed,KB-02,"['KB-04', 'KB-08', 'KB-13']",practice,初级,0.5,2.5,双卡RTX 4060 16GB,True,✅,✅,✅,✅,✅,5/5
+case_025,completed,KB-02,"['KB-04', 'KB-08']",practice,初级,0.5,2.0,Tesla T4 16GB（云）,True,✅,✅,✅,✅,✅,5/5
+case_026,completed,KB-02,"['KB-04', 'KB-08', 'KB-11', 'KB-13']",practice,初级,0.5,3.0,RTX 4090 24GB,True,✅,✅,✅,✅,✅,5/5
+case_027,completed,KB-01,"['KB-04', 'KB-08']",practice,初级,1.5,2.0,RTX 4060 8GB,True,✅,✅,✅,✅,✅,5/5
+case_028,completed,KB-01,"['KB-04', 'KB-08', 'KB-11']",practice,初级,2.5,3.0,A100 80GB（云）,True,✅,✅,✅,✅,✅,5/5
+case_029,completed,KB-01,"['KB-04', 'KB-08', 'KB-13']",practice,初级,2.5,2.5,RTX 3090 24GB,True,✅,✅,✅,✅,✅,5/5
+case_030,completed,KB-01,"['KB-04', 'KB-08']",practice,初级,2.5,2.5,RTX 4080 16GB,True,✅,✅,✅,✅,✅,5/5

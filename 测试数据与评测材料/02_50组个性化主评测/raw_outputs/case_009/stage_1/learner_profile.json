@@ -1,8 +1,27 @@
 {
-  "session_id": "b89ce3d5-44e9-4d62-9c95-9c6b70d57ef5",
+  "session_id": "fce104bc-043e-4988-a943-781b1af179fe",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "熟悉Transformer和HuggingFace，做过文本分类",
+  "skill_tags": [
+    "Transformer架构",
+    "HuggingFace生态工具链"
+  ],
+  "mastered_block_ids": [
+    "KB-08",
+    "KB-11"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -12,12 +31,10 @@
       "target_subtopic_ids": [
         "KBS-12-01",
         "KBS-12-02",
-        "KBS-12-03",
-        "KBS-12-04",
-        "KBS-12-05"
+        "KBS-12-03"
       ],
       "mapping_confidence": 1.0,
-      "level": "advanced",
+      "level": "intermediate",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
@@ -27,8 +44,8 @@
   ],
   "goal": "LoRA微调",
   "daily_hours": 2.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
   "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,

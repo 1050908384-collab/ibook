@@ -1,16 +1,41 @@
 {
-  "session_id": "9b2dfd91-2d0e-4450-bd97-6ec4f3ac0ec2",
+  "session_id": "381f1ae3-2bf1-45ba-9063-4db452da18ad",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "每天只有0.5小时，理论型，想理解Transformer",
+  "skill_tags": [
+    "Python编程基础"
+  ],
+  "mastered_block_ids": [
+    "KB-02"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-08"
+  ],
+  "target_subtopic_ids": [
+    "KBS-08-02"
+  ],
+  "planned_block_order": [
+    "KB-08"
+  ],
+  "active_stage_block_id": "KB-07",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
       "skill": "Transformer",
       "block_id": "KB-08",
       "block_name": "Transformer架构（Decoder-Only）",
-      "target_subtopic_ids": [],
-      "mapping_confidence": 0.792,
+      "target_subtopic_ids": [
+        "KBS-08-01",
+        "KBS-08-02",
+        "KBS-08-03",
+        "KBS-08-04",
+        "KBS-08-05",
+        "KBS-08-06",
+        "KBS-08-07"
+      ],
+      "mapping_confidence": 1.0,
       "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
@@ -22,9 +47,9 @@
   ],
   "goal": "理解Transformer架构",
   "daily_hours": 0.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.8,
+  "learning_style": "theory",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

@@ -1,5 +1,5 @@
 {
-  "stage_id": "73d75d89-d8be-55d5-8ae1-5bb9d4b67262",
+  "stage_id": "d6559c83-ed95-58de-a190-97a6a4ded366",
   "stage_num": 1,
   "block_id": "KB-02",
   "block_name": "Python编程基础",
@@ -31,6 +31,6 @@
   "recommended_daily_hours": 0.5,
   "suggested_study_days": 1,
   "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习环境准备：安装Python 3.10+",
-  "hardware_notes": "",
-  "personalization_summary": "预计0.7小时完成 | 建议分1天学习 | 每天1.0小时 | 综合型学习风格"
+  "hardware_notes": "当前设备为 无独立GPU（仅核显笔记本）：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合无任何编程经验，文科背景，希望转行做大模型微调学习者 | 预计2.2小时完成 | 建议分2天学习 | 每天1.0小时 | 综合型学习风格"
 }

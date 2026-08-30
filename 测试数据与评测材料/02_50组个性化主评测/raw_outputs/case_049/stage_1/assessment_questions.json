@@ -1,149 +1,132 @@
 [
   {
-    "question_id": "Q-KB1201-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
-    "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 相比 LoRA 的主要改进是引入了 **4-bit** 量化技术，进一步降低了微调时的________占用。",
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
     "options": [],
-    "correct_answer": "显存（GPU Memory）",
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码中，`finally` 块在什么情况下执行？\n```python\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print(\"除零错误\")\nfinally:\n    print(\"清理完成\")\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "仅在无异常时"
+      },
+      {
+        "key": "B",
+        "text": "仅在捕获异常后"
+      },
+      {
+        "key": "C",
+        "text": "无论是否有异常都执行"
+      },
+      {
+        "key": "D",
+        "text": "仅在未捕获异常时"
+      }
+    ],
+    "correct_answer": "C",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1203-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
+    "question_id": "Q-KB0205-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\ndef my_decorator(func):\n    def wrapper():\n        print(\"Before\")\n        func()\n        print(\"After\")\n    return wrapper\n\n@my_decorator\ndef say_hello():\n    print(\"Hello!\")\n\nsay_hello()\n```",
     "options": [],
-    "correct_answer": "lora_dropout",
-    "hint": "该参数用于适配器分支的 dropout。",
-    "explanation": "该参数用于适配器分支的 dropout。"
+    "correct_answer": "```\nBefore\nHello!\nAfter\n```",
+    "hint": "```\nBefore\nHello!\nAfter\n```",
+    "explanation": "```\nBefore\nHello!\nAfter\n```"
   },
   {
-    "question_id": "Q-KB12-ST1203-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中用于指定注入 LoRA 层模块名列表的参数是________。",
+    "question_id": "Q-KB0201-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nfor i in range(5):\n    if i == 3:\n        continue\n    print(i, end=\" \")\n```",
     "options": [],
-    "correct_answer": "target_modules",
-    "hint": "target_modules 决定哪些线性层被适配。",
-    "explanation": "target_modules 决定哪些线性层被适配。"
+    "correct_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "hint": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "explanation": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。"
   },
   {
-    "question_id": "Q-KB12-ST1204-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
+    "question_id": "Q-KB0205-009",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
     "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
+    "question_type": "short_answer",
+    "question_text": "写一个装饰器 `timer`，测量并打印被装饰函数的执行时间（秒），同时不改变原函数的返回值。然后用它装饰一个计算前100万个数平方和的函数。",
     "options": [],
-    "correct_answer": "显存 ||| 内存 ||| 存储",
-    "hint": "Double Quantization 降低量化状态的存储开销。",
-    "explanation": "Double Quantization 降低量化状态的存储开销。"
+    "correct_answer": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---",
+    "hint": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---",
+    "explanation": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---"
   },
   {
-    "question_id": "Q-KB12-ST1203-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
+    "question_id": "Q-KB0202-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
     "difficulty": "高级",
     "question_type": "single_choice",
-    "question_text": "若希望将 LoRA 注入注意力层的 query 与 value 投影，应配置什么？",
+    "question_text": "以下代码输出是？\n```python\nd = {}\nd.setdefault(\"key\", []).append(1)\nd.setdefault(\"key\", []).append(2)\nprint(d)\n```",
     "options": [
       {
         "key": "A",
-        "text": "target_modules 指向对应投影层名"
+        "text": "`{\"key\": [1]}`"
       },
       {
         "key": "B",
-        "text": "删除 tokenizer"
+        "text": "`{\"key\": [1, 2]}`"
       },
       {
         "key": "C",
-        "text": "把 batch size 设为0"
+        "text": "`{\"key\": [2]}`"
       },
       {
         "key": "D",
-        "text": "关闭梯度计算"
+        "text": "报错"
       }
     ],
-    "correct_answer": "A",
-    "hint": "target_modules 控制 LoRA 的注入位置。",
-    "explanation": "target_modules 控制 LoRA 的注入位置。"
+    "correct_answer": "B",
+    "hint": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。",
+    "explanation": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。"
   },
   {
-    "question_id": "Q-KB12-ST1204-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 常用的 4-bit 数据类型名称是________。",
+    "question_id": "Q-KB0204-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：读取 `data.txt` 文件，捕获文件不存在的异常，若不存在则打印 \"文件未找到\"。",
     "options": [],
-    "correct_answer": "NF4 ||| NormalFloat4",
-    "hint": "NF4 为正态分布权重设计的 4-bit 格式。",
-    "explanation": "NF4 为正态分布权重设计的 4-bit 格式。"
-  },
-  {
-    "question_id": "Q-KB12-ST1204-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "分页优化器的主要目标是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "缓解训练时显存峰值"
-      },
-      {
-        "key": "B",
-        "text": "增加词表"
-      },
-      {
-        "key": "C",
-        "text": "替代数据集"
-      },
-      {
-        "key": "D",
-        "text": "关闭反向传播"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "分页策略可避免部分优化器状态引发的显存峰值。",
-    "explanation": "分页策略可避免部分优化器状态引发的显存峰值。"
-  },
-  {
-    "question_id": "Q-KB12-ST1205-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-05",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "合并 LoRA 权重后最直接的用途是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "以不依赖单独适配器的形式部署推理"
-      },
-      {
-        "key": "B",
-        "text": "删除全部模型参数"
-      },
-      {
-        "key": "C",
-        "text": "跳过保存模型"
-      },
-      {
-        "key": "D",
-        "text": "自动增加训练数据"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "合并可简化独立推理部署。",
-    "explanation": "合并可简化独立推理部署。"
+    "correct_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "hint": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "explanation": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```"
   }
 ]

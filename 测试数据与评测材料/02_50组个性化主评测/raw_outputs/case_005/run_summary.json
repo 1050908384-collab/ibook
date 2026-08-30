@@ -4,12 +4,16 @@
   "error": null,
   "stage_1_completed": true,
   "stage_2_completed": false,
-  "llm_call_count": 82,
+  "llm_call_count": 47,
   "execution_path": "deepseek_only",
-  "stage_1_accuracy": 1.0,
+  "stage_1_accuracy": 0.75,
   "stage_1_question_count": 8,
   "stage_1_strategy": "advance",
   "stage_1_expected_strategy": "advance",
-  "stage_1_accuracy_within_range": true,
-  "stage_1_strategy_match": true
+  "stage_1_accuracy_within_range": false,
+  "stage_1_strategy_match": true,
+  "mastered_block_ids": [],
+  "stage_1_block": "KB-02",
+  "stage_1_block_id": "KB-02",
+  "stage_1_estimated_hours": 0.5
 }

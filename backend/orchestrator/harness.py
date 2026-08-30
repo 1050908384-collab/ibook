@@ -358,6 +358,31 @@ class Harness:
             )
         except Exception:
             pass
+        # Also include block-level mastery from Agent1's diagnostic profile.
+        # Agent1 resolves 'existing_skills' free-text → KB-ids (e.g. 'KB-02'),
+        # but the DB tables above only have subtopic-level records from prior
+        # sessions. Without this line, a fresh session with a Python-expert
+        # user would still plan KB-01 (Linux) because harness sees zero
+        # mastered subtopics.
+        for bid in (diagnostic.profile.mastered_block_ids or []):
+            for block in goal_blocks:
+                if str(block.get("block_id")) == str(bid):
+                    for topic in block.get("subtopics") or []:
+                        if topic.get("subtopic_id"):
+                            mastered_ids.add(str(topic["subtopic_id"]))
+        # Also resolve mastered_block_ids via knowledge catalog for blocks
+        # not in the current goal (e.g. KB-02 mastered, goal is LoRA/KB-12).
+        catalog = getattr(self.agent1, "knowledge_catalog_tool", None)
+        if catalog:
+            for bid in (diagnostic.profile.mastered_block_ids or []):
+                bid_str = str(bid)
+                if any(str(b.get("block_id")) == bid_str for b in goal_blocks):
+                    continue  # already handled above
+                blk = catalog.get_block(bid_str) or {}
+                for topic in (blk.get("subtopics") or []):
+                    tid = topic.get("subtopic_id") or topic.get("id")
+                    if tid:
+                        mastered_ids.add(str(tid))
         if target_block_ids:
             diagnostic.profile.knowledge_gaps = [
                 gap for gap in diagnostic.profile.knowledge_gaps
@@ -384,10 +409,14 @@ class Harness:
                 "all_mastered": True,
             }
 
+        practice_for_stage = PracticeProfile.model_validate(
+            self.state_manager.get_practice_profile(session_id)
+        )
         stage = await self.agent1.generate_stage(StagePlanningInput(
             session_id=session_id,
             profile=diagnostic.profile,
             stage_num=1,
+            practice_profile=practice_for_stage,
         ))
         self.state_manager.update_stage(session_id, stage.stage)
         self._log(
@@ -502,8 +531,16 @@ class Harness:
             raise ValueError(f"Stage not found: {requested_stage_num}")
         stage = StageInfo.model_validate(snapshot["stage_info"])
         profile = UserProfile.model_validate(self._require_profile(session_id))
+        # Completed sessions remain available for read-only Q&A. They must
+        # not be reopened or allowed to mutate stage progress, but learners
+        # should still be able to ask follow-up questions about the finished
+        # stage after a page refresh.
+        session_state = self.state_manager.get_session(session_id) or {}
+        allow_completed_qa = session_state.get("status") == "completed"
         practice_profile = PracticeProfile.model_validate(
-            self.state_manager.get_practice_profile(session_id)
+            self.state_manager.get_practice_profile(
+                session_id, allow_completed=allow_completed_qa
+            )
         )
         self._log(session_id, "handle_question:start", f"question={question[:60]}")
         is_greeting = self._is_greeting(question)
@@ -619,12 +656,13 @@ class Harness:
             latest_review.technical.passed,
             latest_review.quality.passed,
             stage_num=stage.stage_num,
+            allow_completed=allow_completed_qa,
         )
         self.state_manager.add_interaction(session_id, "question_asked", {
             "question": question,
             "question_type": question_type,
             "stage_num": stage.stage_num,
-        })
+        }, allow_completed=allow_completed_qa)
         return {
             "answer": answer,
             "question_type": question_type,
@@ -1057,6 +1095,9 @@ class Harness:
                 },
             )
         else:
+            practice_for_stage = PracticeProfile.model_validate(
+                self.state_manager.get_practice_profile(session_id)
+            )
             planned = await self.agent1.generate_stage(StagePlanningInput(
                 session_id=session_id,
                 profile=profile,
@@ -1067,6 +1108,7 @@ class Harness:
                     if force_advance and current_stage_info.subtopic_id
                     else []
                 ),
+                practice_profile=practice_for_stage,
             ))
             next_stage = planned.stage
         self.state_manager.update_next_stage(session_id, next_stage)
@@ -2088,11 +2130,12 @@ class Harness:
         )
         for error in review_round.technical.errors:
             print(f"  [合并审核] [{error.severity}] {error.description} -> {error.suggestion or '未提供建议'}")
+        session_state = self.state_manager.get_session(session_id) or {}
         self.state_manager.add_interaction(session_id, "review_round", {
             "target_type": target_type,
             **review_round.model_dump(mode="json"),
             "passed": review_round.passed,
-        })
+        }, allow_completed=session_state.get("status") == "completed")
 
     async def _sync_profile_from_subtopic_status(self, profile: UserProfile) -> UserProfile:
         synced_profile = profile.model_copy(deep=True)

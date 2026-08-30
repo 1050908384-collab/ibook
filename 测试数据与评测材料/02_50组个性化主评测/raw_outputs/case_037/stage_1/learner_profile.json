@@ -1,8 +1,29 @@
 {
-  "session_id": "466a4b6f-317b-4500-89e2-da6ab389697c",
+  "session_id": "870c5978-59d0-4471-83a9-9e00a5ddd6dc",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "每天3小时，工程实操型，想学vLLM部署",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构",
+    "PyTorch进阶训练技巧"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08",
+    "KB-13"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-15"
+  ],
+  "target_subtopic_ids": [
+    "KBS-15-04"
+  ],
+  "planned_block_order": [
+    "KB-15"
+  ],
+  "active_stage_block_id": "KB-01",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -21,16 +42,15 @@
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
-        "Transformer架构（Decoder-Only）",
         "HuggingFace生态工具链"
       ]
     }
   ],
   "goal": "vLLM部署",
   "daily_hours": 3.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.8,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

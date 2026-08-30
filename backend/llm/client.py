@@ -165,7 +165,11 @@ class LLMClient:
     ) -> httpx.AsyncClient:
         if proxy_url:
             return httpx.AsyncClient(timeout=timeout, proxy=proxy_url, trust_env=False)
-        transport = httpx.AsyncHTTPTransport(trust_env=False)
+        # Allow each machine's standard HTTPS_PROXY/HTTP_PROXY settings when
+        # no project-specific proxy is supplied. This keeps deployments
+        # portable and is required on networks where direct 443 is blocked.
+        use_system_proxy = bool(settings.DEEPSEEK_USE_SYSTEM_PROXY)
+        transport = httpx.AsyncHTTPTransport(trust_env=use_system_proxy)
         fallback_ips = self._deepseek_fallback_ips()
         if fallback_ips:
             hostname = httpx.URL(self.deepseek_api_base).host
@@ -182,7 +186,7 @@ class LLMClient:
                 proxy=proxy_url,
                 trust_env=False,
             )
-        transport = httpx.HTTPTransport(trust_env=False)
+        transport = httpx.HTTPTransport(trust_env=bool(settings.DEEPSEEK_USE_SYSTEM_PROXY))
         fallback_ips = self._deepseek_fallback_ips()
         if fallback_ips:
             hostname = httpx.URL(self.deepseek_api_base).host
@@ -383,6 +387,7 @@ class LLMClient:
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
+            "thinking": {"type": "disabled"},
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
@@ -509,6 +514,7 @@ class LLMClient:
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
+            "thinking": {"type": "disabled"},
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}

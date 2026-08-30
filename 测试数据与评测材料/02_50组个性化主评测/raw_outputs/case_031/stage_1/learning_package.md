@@ -2,868 +2,1464 @@
 
 ## 块 1
 
-# 理解vLLM的PagedAttention与Continuous Batching机制
+### 1.1 什么是 Linux？我为什么要装它？
 
-## 第一章：PagedAttention 的定位——为什么需要分页管理 KV Cache？
+你已经熟悉 PyTorch 和分布式训练，但 vLLM 部署的目标环境几乎都是 Linux。Windows/macOS 是日常操作系统，而 Linux 统治着服务器和 AI 集群——你最终要在 Linux 上跑多卡推理。
 
-### 1.1 传统 KV Cache 管理的两大浪费
+本教程使用 **Ubuntu 24.04 LTS**（长期支持版），稳定且适合入门。若你已有 22.04，步骤同样适用。
 
-在大模型自回归推理中，每生成一个新 token，都需要缓存该 token 对应的 Key 和 Value 向量（即 KV Cache）。随着序列增长，KV Cache 不断膨胀，成为推理显存的主要消耗者。
+**你的重点**：不是学“什么是操作系统”，而是快速获得一个能执行 Shell 命令的 Ubuntu 环境。你有 4×RTX 4090，建议直接用云服务器（带 GPU 的 Ubuntu 实例），省去本地虚拟机配置驱动的麻烦。
 
-在 vLLM 出现之前，传统推理框架（如 FasterTransformer、ONNX Runtime）采用**静态预分配**策略：
+---
 
-> **为每个请求预先分配一块按最大序列长度计算的连续显存空间。**
+**本块学习检查**
 
-例如，模型支持的最大上下文为 2048 tokens，那么即使某个请求实际只生成 50 个 token，也要为其预留能装 2048 tokens 的连续 KV Cache 空间。
+先用最小示例回顾前置知识，确认能解释关键写法后再继续：
 
-这导致了两种严重的显存浪费（①）：
+1. 打开终端，依次执行：
+   ```bash
+   cd ~
+   mkdir test_dir
+   ls
+   cp -r test_dir test_dir_backup
+   mv test_dir_backup /tmp/
+   ```
+2. 解释每条命令的作用（`cd` 切换目录、`ls` 列出文件、`mkdir` 创建目录、`cp -r` 递归复制、`mv` 移动）。
+3. 若 `ls` 能看到 `test_dir`，且 `/tmp/test_dir_backup` 存在，说明终端操作就绪。
 
-1. **内存碎片**：请求的实际序列长度远小于最大序列长度，但需要预留较大空间，导致内存未被充分利用。
-2. **显存浪费**：为每个请求预留的 KV Cache 大小远大于实际需求，导致显存利用率低下。
-
-这种静态预分配策略在模型规模和推理序列长度不断扩展的今天，已经无法满足高性能推理的需求。
-
-### 1.2 PagedAttention 的提出与
-
-**本块学习检查**：先用一个最小示例回顾 理解vLLM的PagedAttention与Continuous Batching机制；确认能解释关键写法后再继续本块。
+确认无误后，再进入下一节。
 
 ## 块 2
 
-| 浪费类型 | 说明 | 类比 |
-|---------|------|------|
-| **内部碎片（Internal Fragmentation）** | 预留了 2048，实际只用了 50，剩余 1998 的空间被白白占用 | 租了 100 平米的办公室，只坐了 5 个人 |
-| **外部碎片（External Fragmentation）** | 每个请求需要连续的大块显存，导致显存被切成大小不一的碎片，总空闲够但找不到足够大的连续空间 | 停车场有很多空位，但都是分散的小车位，大巴停不进去 |
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-**为什么这样写**：在这种静态预分配方案下，KV Cache 的显存利用率往往只能达到**几成左右**（不同来源常给出约 20%~40% 的经验区间，具体数值与序列长度分布、最大长度设置、请求模式强相关，仅为示意），相当一部分显存被碎片浪费。而显存是推理的命根子——可用于 KV Cache 的显存越多，能支持的并发请求数和上下文长度就越长。浪费显存 = 直接限制吞吐量和用户体验。
+---
 
-（个性化提示：学习风格：hands-on）
+你已有PyTorch和分布式训练基础，且目标是用4×RTX 4090跑vLLM部署。环境选择直接影响后续能否顺利执行分布式推理命令，所以先定方案。
+
+**三个选项速览**：
+
+- **虚拟机**：在你电脑里模拟一台新电脑，隔离最彻底，但吃内存（建议至少4GB），配置低会卡。适合内存≥8GB、想体验完整Linux桌面的情况。
+- **WSL2**：Windows自带的Linux子系统，像装App一样轻量、启动快，与Windows无缝互通。仅限Win10/11，部分高级功能受限。
+-
 
 ## 块 3
 
-### 1.2 PagedAttention 的核心洞察
+### 1.3 三个方案最终都要达到什么效果？
 
-vLLM 的 PagedAttention 借鉴了操作系统管理物理内存的经典方案——**虚拟内存分页**：
+无论你选虚拟机、云服务器还是 WSL2，三个方案最终都能得到一台运行 Ubuntu 24.04 的环境，但操作方式不同：虚拟机/云服务器通过SSH远程连接，WSL2与Windows直接集成。
 
-> **操作系统不要求进程的虚拟地址空间在物理内存中连续存放。内存被切成固定大小的页（Page），按需分配给进程，通过页表记录逻辑地址到物理地址的映射。**
+- **虚拟机 / 云服务器**：通过 SSH 从 Windows 远程连过去操作，就像远程控制另一台电脑。
+- **WSL2**：与 Windows 直接互通，用 VS Code 本地开发即可，无需手动配 SSH。
 
-PagedAttention 将这一思想搬到 GPU 显存管理上：
-
-| 操作系统概念 | PagedAttention 对应 |
-|-------------|-------------------|
-| 物理内存页（Page） | KV Cache 块（Block） |
-| 页表（Page Table） | 块表（Block Table） |
-| 进程逻辑地址空间 | 一个请求的 KV 序列 |
-
-**为什么这样写**：这不是简单的类比，而是**架构级别的复用**。操作系统用分页解决了内存碎片问题，vLLM 用同样的思路解决了 KV Cache 的显存碎片问题。
+> **SSH 通俗理解**：远程桌面的命令行版。你不需要跑到服务器跟前，在自己电脑上敲命令就能控制它。
 
 ---
 
-## 第二章：PagedAttention 核心原理——块、块表与按需分配
+## 二、方案一：虚拟机（VirtualBox + Ubuntu 24.04）
 
-（个性化提示：学习风格：hands-on）
+**开始前检查
 
 ## 块 4
 
-### 2.1 Block 的定义（③）
+**VirtualBox 是什么？** 它是一款开源虚拟机软件，能在你的 Windows 里造出一台“假电脑”，用来安装任何操作系统——包括后续要用的 Ubuntu。
 
-PagedAttention 将 KV Cache 切成**固定大小的块（Block）**，默认每个 Block 存储 16 个 token 的 Key 和 Value：
+**下载与安装步骤：**
+1. 浏览器打开：`https://www.virtualbox.org/wiki/Downloads`
+2. 找到 **"VirtualBox 7.x.x platform packages"** 下的 **Windows hosts** 版本，点击下载。
+3. 双击安装包，一路“下一步”保持默认，点“安装”等进度条跑完，最后“完成”。
 
-```
-一个 Block = 16 个 token 的 K/V 向量
+**常见坑预警**：弹出“是否允许更改设备”选“是”；杀毒软件拦截就选“允许”或“信任”。
 
-用于"估算容量"的概念形状（不代表单个 Block 的真实内存布局）：
-[num_layers, 2(K/V), num_heads, block_size=16, head_dim]
-```
+> 你的目标是多卡 vLLM 部署，虚拟机只是环境准备的第一步。装好后能打开 VirtualBox 主界面，即表示安装成功。
 
-**为什么这样写**：`block_size=16` 是部分 vLLM CUDA 版本上常见的默认值，这个大小在 GPU 内存访问对齐和显存粒度之间取得平衡：太小会增加块表管理开销，太大会增加内部碎片。需要注意，**默认值与可选范围可能随引擎版本、硬件平台变化**，这里的 16 只是特定版本/平台的示例，不是永久固定规则；实际请以 `vllm serve --help` 或所装版本文档为准。
-
-> **关于上面的"形状"**：`[num_layers, 2(K/V), num_heads, block_size, head_dim]` 是一个**便于估算 KV Cache 总容量的概念形状**（把各层、K/V 两份、注意力头都乘进去，方便算显存），**并不代表单个物理 Block 在显存里的真实内存布局**。实际实现中 KV Cache 通常**按层分别维护**（每层各自持有若干 Block），K 与 V 是否分开存放、`num_heads` 用的是 Query 头数还是 KV 头数（GQA/MQA 场景）、各维度的先后顺序等，都取决于具体 backend、精度与 vLLM 版本。这里给出该形状只是为了帮助你估算容量，不要据此推断底层张量的排布。
-
-（个性化提示：学习风格：hands-on）
+**本块学习检查**：完成本块后，用自己的话
 
 ## 块 5
 
-```markdown
-# 理解vLLM的PagedAttention与Continuous Batching机制
+**下载 Ubuntu 24.04 镜像文件（.iso）**
 
-## 2.2 Block Table——逻辑到物理的映射
+镜像文件就是“操作系统安装光盘的电子版”，VirtualBox 靠它来装系统。你的目标是 vLLM 部署，这一步只是搭好环境地基。
 
-在vLLM的模型推理过程中，为了高效管理大量的token数据，需要采用分页分配
+操作步骤：
+1. 浏览器打开：https://releases.ubuntu.com/24.04/
+2. 找文件名类似 `ubuntu-24.04.x-desktop-amd64.iso`（x 是小版本号），点击下载
+3. 文件约 5GB，下载需几分钟到十几分钟（看网速）
+4. 下载完**别双击打开**，放下载文件夹即可
+
+**常见坑**：确认是 `desktop-amd64.iso`，不是 `server` 版——server 版无图形
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 6
 
-### 2.3 内存分配与回收流程（③）
+## 2.3 在 VirtualBox 里创建虚拟机
 
-```
-[请求到达]
-    ↓
-[估算所需 Block 数]
-    ↓
-[从 BlockAllocator 获取空闲 Block] → O(1) 从 free_list 弹出
-    ↓
-[追加到 block_table]
-    ↓
-[请求完成 / 生成结束]
-    ↓
-[释放所有 Block] → 归还到 free_list → O(1)
-    ↓
-[Block 立刻可被其他请求复用]
-```
+你的目标是vLLM部署，但先别急着碰GPU——多卡环境需要一个稳定的Linux底座。这一步就是搭好这个底座。
 
-**为什么这样写**：BlockAllocator 维护一个空闲块链表（free_list），分配和回收都是 O(1) 操作。请求结束后 Block 立刻进池，新请求随时凑块加入，不存在"连续大空间找不到"的问题。
+**操作步骤：**
 
-（个性化提示：学习风格：hands-on）
+1. 打开 **Oracle VM VirtualBox**，点 **"新建"**
+2. 填写：名称 `Ubuntu-24.04`，文件夹选 **D盘或E盘**（别放C盘），类型 `Linux`，版本 `Ubuntu (64-bit)`，下一步
+3. 内存拖到 **4096 MB**，下一步
+4. 虚拟硬盘选 **"现在创建虚拟硬盘"**，大小 **60 GB**，类型 **VDI**，存储 **动态分配**，完成
+5. 选中虚拟机 → **"设置"** → **"系统"→"处理器"**：处理器数量设为 `2`（或根据主机CPU情况调整）
+6. **"存储"** → 点光盘图标 → **"选择虚拟盘"** → 找到 `ubuntu-24.04.x-desktop-amd64.iso
 
 ## 块 7
 
-### 2.4 为什么解决了浪费（①）
+你的目标是多卡环境下用 vLLM 做分布式部署，所以虚拟机这一步只是“练兵场”——用 60G 虚拟磁盘模拟真实服务器，把安装流程跑通，后面在 4×RTX 4090 上装系统时就不会慌。
 
-| 问题 | 传统方案 | PagedAttention |
-|------|---------|---------------|
-| 内部碎片 | 预留 2048，用 50，浪费 1998 | 按需分配，50 token 只占 4 块，最多浪费最后一块的十几个 token |
-| 外部碎片 | 需要连续大块，找不到 | 块固定大小，任何空闲块都能给任何请求用 |
-| 显存利用率 | 较低（常见经验值约 20%~40%，示意） | **接近满载**（按需分配，浪费极小） |
-| 并发能力 | 低 | 同显存下并发能力可显著提升（具体倍数视模型、序列长度与负载而定） |
+**操作步骤（跟着点就行）**
 
-**为什么这样写**：PagedAttention 把 KV Cache 显存利用率从"只有几成"提升到接近满载（上文的百分比区间为示意，实际取决于负载），这是 vLLM 吞吐量提升的**第一支柱**。
-
----
-
-## 第三章：Continuous Batching——动态调度请求
-
-（个性化提示：学习风格：hands-on）
+1. 在 VirtualBox 窗口选中你的虚拟机，点 **“启动”**。
+2. 等几十秒进入安装界面，按顺序操作：
+   - 语言选 **“中文(简体)”**，点“安装 Ubuntu”。
+   - 键盘布局默认，点“继续”。
+   - 更新和软件：选 **“正常安装”**，勾选“安装时下载更新”和“安装第三方软件”，点“继续”。
+   - 安装类型：选 **“清除整个磁盘并安装 Ubuntu”**——这里清的是虚拟机的 60G 盘，碰不到你真实硬盘，放心点“现在安装”，弹窗再点“继续”。
+   - 时区：输入“Shanghai”或
 
 ## 块 8
 
-### 3.1 静态批处理的两大浪费
+### 2.5 安装 SSH 远程连接工具（①）
 
-在理解 Continuous Batching 之前，先看传统**静态批处理（Static Batching）**的问题：
+**为什么这一步对你的 vLLM 部署至关重要？**
 
+你的目标是 4×RTX 4090 上做分布式 vLLM 部署。这意味着你最终要在多台机器上跑推理服务，而 SSH 就是你从 Windows 远程操控这些 Linux 机器的“遥控器”。现在在虚拟机里练熟它，后面管理多卡集群时才能游刃有余。
+
+**动手操作（跟着做一遍）**
+
+1. **打开 Ubuntu 终端**：在桌面空白处点右键 → 选“在终端中打开”；如果右键没反应，按 `Ctrl + Alt + T`。
+
+2. **安装 SSH 服务**：依次输入以下命令（每行输完按回车）：
+
+```bash
+# 第1步：更新软件列表（类似刷新应用商店货架）
+sudo apt update
+
+# 第2步：安装 SSH 服务端和网络工具
+sudo apt install -y openssh-server net-tools
+
+# 第3步：设置 SSH 开机自启
+sudo systemctl enable ssh
+
+# 第4步：立刻启动 SSH
+sudo systemctl start ssh
 ```
-【静态批处理】
-时间 →
-Batch 0: [请求A: "Hello world"]         → 请求A已完成，但必须等请求B
-         [请求B: "Hi"] + [PAD]×10       → 请求B还在生成，请求A"陪跑"
-         ↓ 整批必须等最慢的请求完成才释放
 
-Batch 1: [请求C: "What is AI?"]
-         [请求D: "A"] + [PAD]×9
-         ↓ 同样的问题重复出现
+> **sudo 是什么？** 相当于“以管理员身份执行”。Linux 普通用户不能随便装软件，加 sudo 就是临时提权。输入后会让你输密码，**屏幕不显示任何字符**（连 `***` 都没有），这是正常的安全设计，盲打完按回车即可。
+
+3. **查看虚拟机 IP**：
+
+```bash
+ifconfig
 ```
 
-两种浪费（①）：
+4. 输出内容较多，找到类似 `inet 192.168.xxx.xxx` 的那一行，那一串数字就是 IP 地址。**记下来！** 例如 `192.168.126.128`。
 
-- **等齐才开始**：凑够一个 batch 才能启动，先到的请求干等
-- **等最慢才结束**：整批必须等生成最长的请求跑完，早完成的请求白白占用 GPU 算力和显存
+5. **从 Windows 验证连接**：按 `Win + R`，输入 `cmd` 回车，在命令提示符里输入：
 
-**生活化比喻**：静态批处理就像**拼车必须坐满才发车、所有人到终点才让下车**。而真实场景中，请求陆续到达、生成长度差异巨大。
+```bash
+ssh 你的用户名@192.168.xxx.xxx
+```
 
-（个性化提示：学习风格：hands-on）
+6. 提示输入密码时，输入 Ubuntu 的密码并回车。看到 `Welcome to Ubuntu` 之类的欢迎信息，说明连接成功。
+
+**常见坑预警**：
+- 提示 `connection refused`：回到 Ubuntu 终端，输入 `sudo systemctl status ssh` 检查 SSH 是否运行，绿色 `active (running)` 才对。
+- 连不上可能是 VirtualBox 网络
 
 ## 块 9
 
-### 3.2 Continuous Batching 的核心思想
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-Continuous Batching（也叫 Iteration-level Batching 或 In-flight Batching）取消了"固定 batch"的概念，改为**动态池子**：
+在4×RTX 4090多卡环境下，你最终要部署vLLM。但先别急——本块解决的是“虚拟机与Windows的协作问题”。
 
-> **调度器在每一步生成（每个 token 迭代）都重新审视：谁完成了立刻踢出？有空位立刻把新请求塞进来？**
+**为什么这步重要？** 你后续要写配置、复制模型路径、粘贴命令，如果虚拟机不能和Windows互通剪贴板，每次都得手敲，效率极低。增强功能就是打通这条“复制粘贴”通道。
 
-```
-【Continuous Batching】
-时间 →
+**操作步骤**（若新版VirtualBox未自动生效）：
 
-迭代 1: [A_decode] [B_decode] [C_decode]     → 3 个请求同时处理
-迭代 2: [A_decode] [D_prefill] [C_decode]     → B 完成退出，D 新加入
-迭代 3: [E_prefill] [D_decode] [C_decode]     → A 完成退出，E 新加入
-迭代 4: [E_decode] [D_decode] [F_prefill]     → C 完成退出，F 新加入
+```bash
+# 安装 VirtualBox 增强工具包
+sudo apt install -y virtualbox-guest-utils virtualbox-guest-x11
 
-每一次迭代都保持 GPU 满载
+# 重启虚拟机
+sudo reboot
 ```
 
-**为什么这样写**："Batch"在 Continuous Batching 中不是一个固定的集合，而是**每步都在变化的动态组合**。GPU 几乎不空闲，没有"等齐"也没有"陪跑"的浪费。
+重启后，在Windows里`Ctrl+C`复制文字，到Ubuntu里`Ctrl+V`即可粘贴。
 
-（个性化提示：学习风格：hands-on）
+**完成标志**
 
 ## 块 10
 
-### 3.3 Scheduler 调度器的核心逻辑（②③）
+### 3.1 确认虚拟化已开启（①）
 
-vLLM 的 Scheduler 在每一步执行以下决策：
+你的目标是vLLM部署，但先别急——WSL2是Windows下运行Linux的“套娃”方案，虚拟化没开，后面一切免谈。这一步就是给环境“通电”。
 
-```python
-# 简化版核心逻辑（来自 vllm/v1/core/sched/scheduler.py）
-class Scheduler:
-    def __init__(self):
-        self.waiting = deque()   # 新来的请求队列
-        self.running = []        # 正在生成的请求列表
+**检查方法（30秒）**：
+1. 按 `Ctrl + Shift + Esc` 打开**任务管理器**
+2. 点顶部**“性能”**标签页
+3. 右下角找**“虚拟化”**，看是“已启用”还是“已禁用”
 
-    def schedule(self, max_num_batched_tokens: int):
-        scheduled = []
-        token_budget = max_num_batched_tokens
+**如果“已启用”** → 直接跳到下一步。
 
-        # Step 1: 优先继续处理正在运行的请求（decode）
-        for seq_group in self.running:
-            if token_budget > 0:
-                scheduled.append(seq_group)
-                token_budget -= 1   # 每个 decode 请求消耗 1 token
-
-        # Step 2: 如果还有预算，从 waiting 中加入新请求（prefill）
-        while self.waiting and token_budget > 0:
-            new_req = self.waiting.popleft()
-            needed = new_req.get_prompt_len()
-            if needed <= token_budget:
-                scheduled.append(new_req)
-                token_budget -= needed
-            else:
-                break  # 预算不够，可以 chunked prefill（分块预填充）
-
-        return scheduled
-```
-
-**为什么这样写**：
-- **Decode 优先**：运行中的请求（生成下一个 token）优先级最高，保证低延迟
-- **Prefill 填充**：有剩余预算时加入新请求的 prefill（一次性处理整个 prompt）
-- **Chunked Prefill**：如果新 prompt 太长，可以拆成多块，分批处理（不阻塞 decode）
-
-（个性化提示：学习风格：hands-on）
+**如果“已禁用”** → 必须进BIOS开启：
+- 重启电脑，开机时狂按 `F2` 或 `Del`（联想F2，惠普F10，戴尔F2）
+- 进入BIOS后，用方向键找**“Configuration”**或**“Advanced”**菜单
+- 找到**“Intel Virtualization Technology”**或**“AMD SVM”**，改成**
 
 ## 块 11
 
-### 3.4 效果：GPU 利用率显著提升（②）
+你的目标是在4×RTX 4090 96GB的多卡环境上部署vLLM，这意味着你最终需要在Linux环境下运行命令。WSL2正是Windows下最轻量的Linux运行方案——它提供完整Linux内核，且安装只需几分钟。
 
-| 指标 | 静态批处理 | Continuous Batching |
-|------|-----------|-------------------|
-| GPU 利用率 | 偏低（常见经验区间约 40%~60%，示意） | **明显更高（可达八九成以上，视负载而定）** |
-| 吞吐量提升 | 基准 | **数倍甚至更高**（高并发时收益最明显，具体倍数依模型/负载/对比基线而定） |
-| 平均延迟 | 高（等齐+陪跑） | 低（随时进出） |
-| 请求响应 | 一批一起返回 | 完成一个返回一个 |
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-**为什么这样写**：Continuous Batching 是 vLLM 吞吐量提升的**第二支柱**。与 PagedAttention 配合，共同构成了 vLLM 高性能的根基。
+按以下步骤操作：
 
----
+1. 按 `Win` 键，输入 `powershell`，在搜索结果里**右键** "Windows PowerShell" → **"以管理员身份运行"**，弹出提示时点"是"。
 
-## 第四章：两大机制如何配合——Paging 让 Batching 成为可能
+2. 在PowerShell窗口中，**逐行**输入以下两条命令（复制一整行，右键粘贴，回车）：
 
-（个性化提示：学习风格：hands-on）
+```bash
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
+
+每条命令执行后应显示"操作成功完成"。
+
+3. **重启电脑**。
+
+4. 重启后，再次以管理员身份打开PowerShell，输入：
+
+```bash
+wsl --set-default-version 2
+```
+
+若提示需要更新内核，请访问 https://aka.ms/wsl2kernel 下载并安装最新的 WSL2
 
 ## 块 12
 
-### 4.1 关键洞察：调度的灵活性建立在显存管理的灵活性之上（①）
+### 3.3 安装 Ubuntu 24.04（①）
 
-这是最容易被忽视、也是面试中最常考的点：
+你的目标是vLLM部署，而WSL2是Windows上跑Linux环境的最快路径。装好Ubuntu后，你才能执行后续的Shell命令和模型推理脚本。下面直接进入安装。
 
-> **Continuous Batching 的"随时进出"，依赖 PagedAttention 的"灵活显存管理"。**
+**方法一（推荐，简单）**：
+1. 按 `Win` 键，输入 `Microsoft Store`，打开微软应用商店。
+2. 搜索框输入 `Ubuntu 24.04`。
+3. 找到 **"Ubuntu 24.04.x LTS"**（发布者是 Canonical Group Limited），点"安装"。
+4. 下载约几百MB（具体大小视网络和系统而定），装完后点"打开"。
 
-**为什么？**
+**方法二（命令行）**：
+```bash
+# 一条命令自动下载并安装 Ubuntu 24.04
+wsl --install -d Ubuntu-24.04
+```
 
-如果还是传统方案的"预留连续大块显存"：
-- 请求 A 走了，留下一个特定大小的连续空洞
-- 新请求 B 的 KV Cache 不一定能塞进这个空洞（大小不匹配）
-- 外部碎片导致"总空闲够，但塞不进新请求"
-
-PagedAttention 解决了这个问题：
-- 请求 A 的 Block 被逐个释放回 free_list
-- 每个 Block 大小固定（16 tokens），任何新请求都能凑块使用
-- 请求一结束，Block 立刻进池 → 新请求随时加入
-
-**一句话总结**：Paging 管"显存怎么高效分配回收"，Batching 管"请求怎么高效调度进出"，**后者建立在前者之上**。
-
-（个性化提示：学习风格：hands-on）
+5. 首次启动会显示 "Installing, this may take a few minutes..."，等2~5分钟。
+6. 安装完会提示设置用户名和密码：
+   - 输入用户名（全英文小写，如 `
 
 ## 块 13
 
-### 4.2 PagedAttention与Continuous Batching的配合工作流程
+### 本块学习检查
 
-为了更好地理解PagedAttention和Continuous Batching的工作原理及其配合机制，我们可以通过以下工作流程图进行分析：
+完成本块后，请用自己的话说明：为什么在 WSL2 中通常不需要像虚拟机那样配置 SSH，以及这对你后续在 4×RTX 4090 上部署 vLLM 的开发流程意味着什么？遇到无法解释的术语（如 `apt`、`Remote-WSL`）时记录下来再提问。
 
-#### 工作流程图解析
+---
 
-1. **PagedAttention（显存管理层）**
-   - **作用**：负责管理模型的显存资源分配。
-   - **工作流程**：
-     - **
+在 Ubuntu 终端（绿色提示符窗口）中，逐行执行以下命令，让系统保持最新：
+
+```bash
+# 刷新软件包列表（相当于更新“应用商店的货架”）
+sudo apt update
+
+# 升级所有已安装软件到最新版（-y 表示自动确认所有询问）
+sudo apt upgrade -y
+```
+
+> **关键点**：WSL2 与 Windows 紧密集成，通常无需额外配置 SSH 即可进行本地开发，但若需远程访问或使用 SSH 协议，仍可安装和配置 SSH 服务。你直接用 VS Code 的 Remote-WSL 插件即可开发，省去了虚拟机那套额外配置。
+
+**验证环境**：
+
+1. 检查系统与用户：
+```bash
+lsb_re
 
 ## 块 14
 
-### 5.1 块共享的原理
+### 4.1 购买服务器（①）
 
-既然 KV Cache 被切成了固定大小的 Block，那么**多个请求如果有相同的前缀**（如相同的 system prompt），这段前缀的 KV 向量是完全一样的。
+你的目标是vLLM部署，但注意：**最低配2核2G仅够基础练习，不适用于大模型训练或vLLM部署**。你的4×RTX 4090 96GB环境才是主力，云服务器只作备用或调试。
 
-传统方案：每个请求各存一份 → N 个请求存 N 份  
-PagedAttention：多个请求**共用同一组物理 Block** → N 个请求存 1 份
-
-```
-请求1: [System Prompt] + "请翻译Hello"
-请求2: [System Prompt] + "请翻译World"
-请求3: [System Prompt] + "请翻译AI"
-
-传统方案：System Prompt 的 KV 存 3 份
-PagedAttention + Prefix Caching：System Prompt 的 KV 只存 1 份，3 个请求共享
-```
-
-**为什么这样写**：Prefix Caching 通过哈希（`hash(token_ids[0:block_size])`）检测是否已有相同前缀的 Block，有则直接引用，O(1) 命中检测。这在 RAG、Chat 等**共享前缀占比高**的多轮对话场景中能带来可观的额外吞吐提升（具体幅度取决于前缀长度占比与命中率，前缀越长、命中越多收益越大，需以实测为准）。
-
-（个性化提示：学习风格：hands-on）
+以阿里云为例（腾讯云、华为云流程类似）：
+1. 打开 https://www.aliyun.com/ ，右上角用支付宝/淘宝账号注册/登录。
+2. 顶部搜索"轻量应用服务器"进入；学生先搜"学生优惠"完成认证，价格更低。
+3. 点"立即购买"：
+   - **地域**：选最近的（如华东1（杭州）、华南1（深圳
 
 ## 块 15
 
-### 5.2 后缀写入与 Copy-on-Write 机制（③）
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
-多个请求共享同一段前缀 Block 后，各自继续生成时会产生不同的后缀 token。这里需要分清两种情况：
+你的4卡4090集群需要vLLM做分布式推理，但部署前先要筑牢安全地基。云服务器默认用`root`（超级管理员）登录，权限过高，误操作可能删系统文件。所以第一步是创建普通用户日常使用。
 
-- **已缓存的完整前缀 Block 保持只读**，可以被多个请求安全共享，不需要复制。
-- **新生成的后缀**通常写入各请求**自己新申请的私有 Block**，天然互不影响，这一步本身并不需要 Copy-on-Write。
-- **Copy-on-Write（写时复制）更典型地出现在"确实需要修改某个被共享的 Block"的场景**，例如并行采样（`n>1`）或束搜索中，多条序列共享同一个尚未写满的 Block、却要各自写入不同 token 时。此时才复制该共享 Block、生成私有副本再写入：
+通过云厂商控制台的“远程连接”或VNC（网页版终端）登录后，执行：
 
-```
-1. 需要修改某个仍被多个序列共享的 Block 时，才复制它 → 创建私有副本
-2. 在私有副本上写入新 token 的 K/V
-3. 原共享 Block 的引用计数减 1
+```bash
+adduser yourname   # 创建用户，yourname用英文小写；设密码两次，其余信息回车跳过
+usermod -aG sudo yourname   # 赋予sudo（管理员资格）
 ```
 
-**为什么这样写**：Prefix Caching 的常态是"只读共享前缀 + 各写各的私有后缀 Block"，并不会每次生成都触发 Copy-on-Write。只有当多条序列需要在**同一个共享 Block**上写入不同内容时，写时复制才登场，用来保证共享只发生在只读部分、写入互不污染。把 COW 说成"共享前缀一进入生成阶段就必然发生"是不准确的。
-
----
-
-## 第六章：电脑配置批注
-
-本章节涉及 vLLM 推理引擎的核心机制理解，本地和云端场景均需考虑。
-
-（个性化提示：学习风格：hands-on）
+密码
 
 ## 块 16
 
-### 6.1 本地环境配置要求
+## 4.3 配置 SSH 密钥登录（安全第二步）
 
-| 项目 | 最低配置 | 推荐配置 |
-|------|---------|---------|
-| **GPU** | 1 张 NVIDIA GPU，显存 **≥16GB** | 1 张 RTX 4090（24GB）/ A100（40GB/80GB） |
-| **CPU** | 8 核 | 16 核+ |
-| **内存** | 32GB | 64GB+ |
-| **磁盘** | 100GB SSD | 500GB+ NVMe SSD |
-| **系统** | Linux（Ubuntu 20.04+）或 WSL2 | 原生 Linux（Ubuntu 22.04+） |
-| **是否支持 CPU 运行** | ⚠️ 支持但极慢（仅调试） | — |
+**为什么先做这一步？** 你要在4张4090上跑vLLM分布式部署，服务器会长期开放端口。密码登录等于把门虚掩着，暴力破解随时可能闯进来。密钥登录相当于换了把只有你有的钥匙，安全且省去每次输密码的麻烦。
 
-（个性化提示：学习风格：hands-on）
+**操作步骤（Windows → 云服务器）：**
+
+1. `Win + R` 输入 `cmd` 打开命令提示符
+2. 生成密钥对：
+```bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+3. 提示保存路径 → 直接回车（默认路径）
+4. 提示输入 passphrase → 设置一个强密码短语并牢记；若选择不设，务必妥善保管私钥文件并限制其权限
+5. 看到 randomart image 即生成成功
+
+6. 通过云厂商 VNC/远程连接登录服务器（通常以 root 或云厂商默认用户登录），创建授权文件：
+```bash
+sudo -i
+mkdir -p ~/.ssh
+nano ~/.ssh/authorized_keys
+```
+
+7. 回到 Windows 查看公钥：
+```bash
+type %USERPROFILE%\.ssh\id_rsa.pub
+```
+全选复制输出内容，粘贴到服务器 nano 编辑器里，`Ctrl
 
 ## 块 17
 
-### 6.2 云端环境配置参考
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-| 场景 | 推荐实例 | PagedAttention 效果 |
-|------|---------|-------------------|
-| 低成本实验 | AutoDL RTX 3090（24GB）×1 | 7B 模型，并发 8~16 |
-| 标准推理 | AWS g5.xlarge（A10G 24GB） | 7B~13B 模型，并发 16~32 |
-| 高并发服务 | AWS g5.12xlarge（4×A10G） | 70B 模型（TP=4），并发 64+ |
-| 超长上下文 | AWS p4d.24xlarge（8×A100） | 128K 上下文，Prefix Caching 效果显著 |
+**目标**：为你的4×RTX 4090多卡环境，安全开放SSH端口。
 
-（个性化提示：学习风格：hands-on）
+**操作**：
+1. 云厂商控制台 → **轻量应用服务器** → **防火墙**标签页
+2. 添加规则：端口`22`，协议`TCP`
+3. 来源：填你本机公网IP（浏览器搜"IP"查看），格式`123.45.67.89/32`；IP不固定可暂填`0.0.0.0/0`（允许所有，安全性低，
 
 ## 块 18
 
-# vLLM部署：PagedAttention与Continuous Batching机制
+## 从 Windows 连接你的云服务器
 
-## 6.3 关键参数与吞吐关系
+你已经有了云服务器，现在从 Windows 连上去操作它。这是你后续部署 vLLM 的第一步——所有命令都要在这台远程 Ubuntu 上执行。
 
-### 6.3.1 关键参数的作用与建议值
+**操作步骤：**
 
-在vLLM部署过程中，以下关键参数对模型性能和吞吐量有着重要影响：
+1. 在阿里云控制台找到 **公网 IP**（形如 `47.96.xxx.xxx`），复制它
+2. 按 `Win + R`，输入 `cmd` 打开命令提示符
+3. 执行连接命令：
 
-1. **`block_size`**  
-   - **作用**：每个Block存储的token数量，决定了模型处理的粒细程度。  
-   - **建议值**：通常为16，但需根据模型版本和硬件规格进行微调。不同引擎版本可能有不同默认值，建议参考官方文档或通过实验确定最优值。
+```bash
+ssh yourname@47.96.xxx.xxx
+```
 
-2. **`gpu_memory_utilization`**  
-   - **作用**：控制GPU显存的使用比例，直接影响模型的运行效率。  
-   - **建议值**：建议设置为0.85~0.95，避免显存溢出导致的preemption（任务被抢占执行）。
-
-3. **`max_num_seqs`**  
-   - **作用**：最大并发处理的序列数，直接影响模型的吞吐量。  
-   - **建议值**：根据显存资源调整，建议范围为256~512。若显存资源充足，可适当提高值以提升吞吐量。
-
-4. **`enable_prefix_caching`**  
-   - **作用**：启用前缀缓存机制，可减少重复前缀请求
+4. 首次连接会询问 `Are you sure you want to continue connecting (yes/no)?`，输入 `yes` 回车
+5. 若密钥配置正确，将直接登录到服务器，出现欢迎
 
 ## 块 19
 
-1. **把 Paging 和 Batching 当成一对来记**——单独理解任何一个都不完整，两者的配合才是 vLLM 快的原因
-2. **面试标准答法**：先讲 PagedAttention 解决显存碎片，再讲 Continuous Batching 解决调度浪费，最后强调"调度灵活性建立在显存管理灵活性之上"
-3. **共享前缀场景优先开 Prefix Caching**——RAG 和多轮 Chat 里相同前缀只存一份，能省显存又省计算，但收益取决于前缀占比和命中率，需以实测为准
-4. **不要手动凑 batch**——vLLM 的 Scheduler 比你更聪明，把请求丢进去让它自动调度
-5. **监控 preemption 次数**——如果频繁出现请求被抢占重算，说明 `gpu_memory_utilization` 设太高了
-6. **Block size 一般沿用默认**——部分版本默认 16 已是常见调优结果，默认值随版本/平台可能不同，除非你有明确的性能分析数据再调整
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
----
-
-## 下一步预告
-
-掌握了 PagedAttention 和 Continuous Batching 的核心机制后，你已经理解了 vLLM 高性能的底层原理。接下来，你将进入 **"能够使用 vLLM 加载模型并配置 gpu_memory_utilization 等关键参数进行推理部署"** 的实战环节——亲手启动 vLLM 服务，配置 `gpu_memory_utilization`、`max_num_seqs`、`tensor_parallel_size` 等关键参数，监控吞吐量和延迟指标，并将模型部署为生产可用的 OpenAI 兼容 API 服务。这是从"懂原理"进化为"能上线"的关键一步，继续加油！
-
-（个性化提示：学习风格：hands-on）
+在命令提示符执行 `ssh 用户名@你的IP地址`，免密即成功。若提示 `ssh-copy-id 不是内部或外部命令`，装 Git for Windows 用 Git Bash，或手动复制（见 4.3 节）。
 
 ## 块 20
 
-# 第一章：vLLM 推理部署的定位——从"能跑"到"能服务"
+## 5.2 WSL2：无需 SSH，直接集成
 
-## 1.1 为什么需要专门的部署配置？
+你用的是 WSL2，所以**不需要配置 SSH**。VS Code 通过 Remote-WSL 插件直接与 WSL2 通信，体验更流畅——这意味着你可以跳过 SSH 密钥、端口转发等繁琐步骤，直接在 Windows 的 VS Code 里操作 Linux 环境，对后续在 WSL2 里跑 vLLM 分布式部署非常顺手。
 
-在本地用 `LLM.generate()` 跑几个测试用例很简单，但要把模型部署为**生产可用的推理服务**，你需要考虑：
+## 5.3 安装 VS Code 及远程开发插件
 
-### 1.1.1 本地推理与生产部署的区别
-- **本地推理**：仅用于测试和验证模型性能，通常不考虑实际生产环境的需求。
-- **生产部署**：需要满足以下要求：
-  1. **性能优化**：提升推理速度和吞吐量。
-  2. **稳定性**：确保模型在高负载下正常运行。
-  3. **安全性**：保护模型和推理服务免受攻击。
-  4. **可扩展性**：支持单机或多卡、多GPU的部署。
+**VS Code**（Visual Studio Code）是微软出的免费代码编辑器，轻量、插件多、跨平台。你之后要写 Python 脚本、调试 vLLM 推理代码，都靠它。
 
-### 1.1.2 需要配置的关键参数
-在部署过程中，需要配置以下关键参数以优化推理性能：
-- `gpu_memory_utilization`：限制GPU内存使用，避免溢出。
-- `max_model_len`：设置模型输入的最大长度。
-- `tensor_parallel_size`：并行计算的大小，影响模型性能和显存占用。
+### 第一步：安装 VS Code
 
-### 1.1.3 实战示例
-假设你已经完成了以下准备工作：
-1. vLL
+1. 浏览器打开：https://code.visualstudio.com/
+2. 点 **"Download for Windows"** 按钮
+3. 下载完成后双击安装包
+4. 安装过程：
+   - 同意协议 → 下一步
+   - 安装路径默认 → 下一步
+   - **重点！** 这页勾选：
+     - ☑ **"将 Code 添加到"PATH"中"**（重要！这样可以在命令行直接输入 `code` 打开 VS Code）
+     - ☑ **"将 Code 注册为受支持的编辑器"**
+     - ☑ **"添加到文件资源管理器上下文菜单"**
+   - 一路"下一步" → "安装" → 完成后勾上"启动 VS Code" → "完成"
+
+### 第二步：安装必备插件
+
+**插件（Extension）** 是 VS Code 的"外挂功能包"。VS Code 本身只是编辑器壳子，装了插件才能高亮代码、自动补全、调试。
+
+1. 打开 VS Code
+2. 点左侧竖排图标栏里**第五个图标**（四个小方块），或按 `Ctrl + Shift + X`
+3. 在**扩展商店**搜索框里依次搜索并安装：
+
+| 搜索关键词 | 插件全名 | 发布者 | 作用 |
+|---|---|---|---|
+| Python | Python | Microsoft | Python 代码高亮、智能提示、
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 21
 
-| 问题 | 本地测试无所谓 | 生产服务必须考虑 |
-|------|-------------|---------------|
-| 显存分配 | 用多少算多少 | 必须预留余量，防止 OOM |
-| 并发处理 | 单请求串行 | 多请求同时到达，需要调度 |
-| 上下文长度 | 固定短文本 | 用户输入长短不一，需要限制 |
-| 多卡扩展 | 单卡够用 | 大模型必须多卡并行 |
-| 服务接口 | 直接调 Python API | 需要 RESTful API 供前端调用 |
+## 5.4 连接你的 Linux 环境
 
-**为什么这样写**：vLLM 的部署不是"把模型加载进来就行"，而是一套需要精细调参的系统工程。`gpu_memory_utilization`、`max_model_len`、`tensor_parallel_size` 等参数直接决定服务的稳定性、吞吐量和成本。
+你的目标是 vLLM 分布式部署，4×RTX 4090 意味着你需要把 VS Code 连到那台多卡 Linux 机器上。下面按你的场景走一遍。
 
-### 1.2 部署方式概览
+**虚拟机或云服务器：**
 
-vLLM 提供两种主要部署方式（②）：
+1. 打开 VS Code，看左下角绿色图标（`><` 形状）
+2. 点击它 → 顶部菜单选 **"Connect to Host…"**
+3. 输入 `用户名@IP地址`（如 `root@192.168.1.100`）→ 回车
+4. 选平台 **"Linux"**
+5. 配过密钥直接连上；没配则输密码
+6. 左下角变成 `SSH: IP地址` 即成功
+7. 点 **"File"** → **"Open Folder…"**，选服务器目录（如 `/home/你的用户名`），点 OK
 
-| 方式 | 适用场景 | 启动方式 |
-|------|---------|---------|
-| **离线推理（Offline）** | 批量处理数据集、实验评测 | `LLM(model=...)` Python API |
-| **在线服务（Online）** | 生产环境 API 服务、Web 应用 | `vllm serve` 命令 |
+连上后，你就能像编辑本地文件一样改远程代码——这对后续调 vLLM 配置、改启动脚本是基础操作。
 
-本章重点讲解**在线服务部署**，这是将模型投入实际应用的核心路径。
+**WSL2 用户更快的路径：**
+
+在 Ubuntu 终端 `cd` 进项目目录，直接输 `code .`，VS Code 自动连接 WSL 并打开。
 
 ---
 
-## 第二章：显存规划——部署前的必修课
+## 六、终端入门
 
-（个性化提示：学习风格：hands-on）
+终端就是那个黑框框。若提示 `command not found`（如 `vim`、`nano` 未装），先执行：
+
+```bash
+sudo apt install -y vim nano
+```
+
+---
+
+**本块学习检查**：用自己的话说明——为什么"连接 Linux 环境 + 熟悉终端"是你做 vLLM 分布式部署的第一步？遇到无法解释的术语（如 SSH、WSL）记录下来再提问。
 
 ## 块 22
 
-### 2.1 显存都去哪儿了？（①）
+## 6.1 文件与目录操作：最基础也最常用
 
-部署前必须清楚显存的三大消耗者：
+> 你的目标是用 vLLM 在多卡环境部署模型。部署前，模型权重、日志、配置文件都散落在服务器目录里——这一节就是让你能高效地“找到、移动、清理”这些文件。
 
-```
-总显存占用 = 模型权重 + KV Cache + 激活值/CUDA Graph/其他
-```
+### 核心命令速览
 
-**模型权重**：
-- FP16/BF16：参数量 × 2 字节
-- AWQ/GPTQ INT4：参数量 × 0.5 字节
-- FP8：参数量 × 1 字节
+**定位与导航**
 
-**KV Cache**（PagedAttention 管理）：
-- 每 token 的 KV Cache ≈ $2 \times \text{层数} \times \text{KV头数} \times \text{head\_dim} \times \text{精度}$
-- 与**序列长度**和**并发请求数**成正比
+- `pwd`：显示当前所在目录的绝对路径。部署时先确认自己在哪，避免在错误目录执行命令。
+- `ls`：列出目录内容。`ls -l`（或 `ll`）查看详细权限和大小，`ls -a` 显示隐藏文件（如 `.cache`、`.env`）。
+- `cd`：切换目录。`cd ..` 上级、`cd /` 根目录、`cd ~` 用户主目录、`cd /path/to/dir` 指定路径。
 
-**激活值与其他**：
-- Prefill 阶段峰值激活
-- CUDA Graph 预分配显存池
-- 系统预留
+**创建与查看**
 
-（个性化提示：学习风格：hands-on）
+- `mkdir`：创建目录。`mkdir -p test/aaa/bbb` 可递归创建多级目录。
+- `touch`：创建空文件。例如 `touch config.yaml`。
+- `cat`：查看小文件内容，`cat -n` 显示行号。
+- `more/less`：分页查看大文件（如日志）。`less app.log`，空格翻页、`q` 退出。
+
+**复制、移动与删除**
+
+- `cp`：复制。文件直接复制，目录需加 `-r` 递归：`cp -r model_dir/ /data/backup/`。
+- `mv`：移动或重命名。`mv old_name new_name` 改名，`mv file.txt target_dir/` 移动。
+- `rm`：删除。**
 
 ## 块 23
 
-### 2.2 模型规模与显存对照表（①）
+## 6.2 权限管理：Linux 系统的安全核心
 
-> **说明**：下表只给 **权重的数量级估算**（权重 ≈ 参数量 × 每参数字节数，相对确定）。**KV Cache 单独列在 2.2.1 用公式说明**——它高度依赖 KV 头数（GQA/MQA）、层数、head_dim、缓存精度与序列长度/并发，用一个固定数字很容易误导。所有数值都是量级参考，实际占用请以启动日志中 vLLM 打印的实测分配为准。
+你已经熟悉 PyTorch 分布式训练，但多卡环境（4×RTX 4090）下，**权限错误**是 vLLM 部署最常见的拦路虎。比如模型权重文件不可读、启动脚本无执行权限，都会直接导致推理服务起不来。
 
-| 模型 | 参数量（约） | FP16 权重 | INT
+Linux 中每个文件/目录都有三类权限归属：**所有者、所属组、其他用户**。权限值用数字表示：读=4、写=2、执行=1，可叠加。
+
+**核心命令一：`chmod`（改权限）**
+
+数字法（推荐）：`chmod 744 file1.txt` 表示所有者可读+写+执行（7=4+2+1），所属组只读（4），其他用户只读（4）。部署 vLLM 时，模型文件通常设为 `644`（所有者读写，其他人只读），脚本设为 `755`（所有者全权，其他人可读+执行）。
+
+符号法：`chmod g+w file1.txt` 给所属组加写权限
 
 ## 块 24
 
-### 2.2.1 KV Cache 怎么估算（用公式，别套固定数字）
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-不要直接抄"某模型 KV Cache = 固定 X GB"。这类数字往往没有正确体现 **GQA/MQA 的 KV 头数**，很容易偏大或偏小。更稳妥的做法是用公式估算再和实测对照：
+在4×RTX 4090 96GB多卡环境部署vLLM前，先用系统查询命令确认机器状态。`uname -a`查看内核与架构，确保驱动兼容；`free -h`确认96GB显存与内存充足；`df -h`检查磁盘空间，避免模型下载中断；`top`或`ps -ef | grep python`监控进程，排查残留任务占用资源。这些命令让你在部署前摸清环境底细，避免资源冲突。
 
-```text
-单请求 KV Cache 字节数
-≈ 2 × 层数(num_hidden_layers)
-     × KV头数(num_key_value_heads)
-     × head_dim
-     × token 数(序列长度)
-     × 每元素字节数(FP16=2, FP8=1)
-```
-
-- 开头的 `2` 表示 Key 和 Value 各一份。
-- **对于 GQA/MQA 模型，必须用 KV 头数 `num_key_value_heads`，而不是 Query 头数 `num_attention_heads`**——很多模型的 KV 头数远小于 Query 头数，用错会把估算放大数倍。
-- 参数从模型 `config.json` 读取，乘以计划支持的最大序列长度与并发请求数得到理论值，最后**以 vLLM 启动日志实际分配的 KV Cache 显存为准**修正。
-
-（个性化提示：学习风格：hands-on）
+**操作验证**：依次执行`uname -a`、`free -h`、`df -h`，再用`top`观察CPU/内存占用，按`q`退出；最后用`ps -ef | grep python`确认无异常Python进程。
 
 ## 块 25
 
-### 2.3 显存诊断命令（①）
+你的目标是vLLM部署，但先别急着碰模型。在4×RTX 4090 96GB的多卡环境里，你迟早要改配置文件（比如`vllm serve`的启动脚本或模型路径）。本块教你两种快速改文件的方法，够用且不啰嗦。
 
-```bash
-# 查看 GPU 显存总量
-nvidia-smi
-
-# 查看 vLLM 启动时的显存分配详情
-vllm serve Qwen/Qwen2.5-7B-Instruct --gpu-memory-utilization 0.9
-# 启动日志会自动打印模型加载和 KV Cache 分配信息
-
-# 运行时监控显存
-nvidia-smi -l 2  # 每 2 秒刷新
-
-# 查看 vLLM 指标（Prometheus 格式），KV Cache 使用率、吞吐、排队等都在这里
-curl http://localhost:8000/metrics
-```
-
-> **说明**：运行时的显存/KV Cache/吞吐等指标以 `/metrics`（Prometheus 格式）为准；不同 vLLM 版本暴露的具体端点会有差异，请以你所装版本的官方文档（或 `vllm serve --help` 与启动日志）为准，不要臆造未文档化的调试端点。
-
----
-
-## 第三章：关键参数详解——gpu_memory_utilization 与 friends
-
-（个性化提示：学习风格：hands-on）
+**1. 用`vim`改文件（适合手动微调）**
+- 打开文件：`vim file1.txt`
+- 按`i`进入编辑模式（左下角出现`--INSERT--`），此时可输入或修改内容
+- 改完按`Esc`退出编辑，输入`:wq`回车保存退出；若想放弃修改，输入`:q!`回车
+- 查找内容：按`Esc`后输入`/关键词`回车，用`n`跳下一个、`N`跳上一个
 
 ## 块 26
 
-# 第三章：显存管理参数详解——gpu_memory_utilization
+## 6.5 网络操作：基础网络查询
 
-## 3.1 gpu_memory_utilization：显存使用的"总闸门"（③⑥）
+多卡分布式部署前，先确认节点间网络连通与网卡状态，这是 vLLM 多机通信的基础。
 
-在使用vLLM进行模型推理部署时，`gpu_memory_utilization` 是一个关键参数，它决定了模型在GPU显存中的使用比例。简单来说，这个参数控制着vLLM占用显存的多少，范围在0到1之间。
+**ping**：测试网络连通性。语法 `ping [选项] 目标IP/域名`。示例：`ping www.baidu.com`，按 `Ctrl+C` 停止。若目标可达，会持续返回响应时间；若超时，说明网络不通。
 
-### 作用
-`gpu_memory_utilization` 用于限制vLLM占用显存的比例。默认值为0.9，意味着vLLM会将
+**ifconfig**：查看网卡信息（IP、MAC 地址等）。语法 `ifconfig` 或 `ip addr`（部分系统默认 `ip` 命令）。示例：直接运行 `ifconfig`，输出中 `eth0`/`wlan0` 的 `inet` 字段即 IP
 
 ## 块 27
 
-### 3.2 max-model-len：上下文窗口的"硬天花板"（③⑤）
+## 6.6 命令实战场景演练（面向 vLLM 部署）
 
-**作用**：限制模型处理的最大序列长度（包括 prompt + 生成的文本）。
+你已掌握 PyTorch 与分布式训练，但 vLLM 部署依赖 Linux 终端操作。下面两个场景直接对应你即将面对的任务：**整理模型文件**与**排查 GPU 进程**。
+
+### 场景 1：创建并整理文件（对应模型权重目录管理）
 
 ```bash
-vllm serve Qwen/Qwen2.5-7B-Instruct --max-model-len 8192
-```
+# 1. 进入主目录
+cd ~
 
-**为什么这样写**：
-- 如果不指定，vLLM 使用模型配置中的默认最大长度（如 Llama-3 原生 8K，Qwen2.5 原生 128K）
-- **一般不要把它设得超过模型声明的最大上下文长度**：模型没在更长序列上训练过，直接调大不是"精度略降"这么简单，而可能显著劣化甚至输出异常。确需更长上下文时，应使用官方提供的长上下文方案（如对应的长上下文权重或 RoPE scaling 等外推配置），并**单独做质量验证**，而不是随手把 8K 模型设成 32K
-- **KV Cache 显存与序列长度成正比**——8K → 32K，KV Cache 约翻 4 倍，并发能力随之大幅下降
+# 2. 创建 work 及子文件夹（-p 可一次性创建多级目录）
+mkdir -p work/doc work/code
 
-**调参建议**：
+# 3. 创建并写入文件（> 为重定向符）
+echo "Linux命令学习笔记" > note.txt
 
-| 业务场景 | 建议值 | 理由 |
-|---------|--------|------|
-| 短文本问答 | 2048~4096 | 省显存，支持更多并发 |
-| 通用对话 | 8192 | 平衡上下文和并发 |
-| 长文档分析 | 32768~131072 | 需要处理长文本，但并发大幅降低 |
+# 4. 移动文件（mv 也可用于重命名）
+mv note.txt work/doc/
 
-（个性化提示：学习风格：hands-on）
+# 5. 查看结果
 
 ## 块 28
 
-### 3.3 tensor-parallel-size：多卡并行的"切分刀"（①③⑤）
+## 6.7 新手避坑指南（针对多卡 vLLM 部署）
 
-**作用**：张量并行度，将模型权重切分到多张 GPU 上。
+你的目标是多卡 vLLM 部署，终端操作失误会直接浪费调试时间。以下四个坑最常绊倒新手：
 
-```bash
-# 单卡推理
-vllm serve Qwen/Qwen2.5-7B-Instruct --tensor-parallel-size 1
+**1. 大小写敏感**：Linux 命令严格区分大小写。`ls` 正确，`LS` 直接报错。部署脚本里写错一个大小写，可能让整个服务起不来。
 
-# 4 卡推理（70B 模型必需）
-vllm serve meta-llama/Meta-Llama-3.1-70B-Instruct --tensor-parallel-size 4
-```
+**2. 路径写错**：切换目录或加载模型权重时，路径错会提示 "No such file or directory"。先用 `ls` 确认路径存在再操作，别凭记忆敲路径。
 
-**为什么这样写**：
-- 每张 GPU 只保存约 $1/N$ 的模型权重
-- TP 每步计算都要跨卡做 AllReduce 同步，**强烈依赖高速卡间互联**——优先单机 NVLink/NVSwitch；用 PCIe 或跨节点并非不能运行，但通信开销更大，是否可接受应以基准测试为准
-- `tensor_parallel_size` 必须整除注意力头数（如 32 头可以切 2/4/8，不能切 3）
+**3. `rm -rf` 极度危险**：这是"删库跑路"级命令。清理旧权重或日志前，务必 `ls` 确认目标正确，防止误删根目录 `/`——一旦发生，系统直接报废。
 
-**多卡部署对照表**（①⑤）：
-
-| 模型 | 单卡 24GB | 2×24GB | 4×24GB | 8×80GB |
-|------|----------|--------|--------|--------|
-| 7B (FP16) | ⚠️ 紧张 | ✅ | ✅ | ✅ |
-| 7B (AWQ) | ✅ 流畅 | ✅ | ✅ | ✅ |
-| 14B (FP16) | ❌ | ✅ | ✅ | ✅ |
-| 70B (FP16) | ❌ | ❌ | ⚠️ 勉强 | ✅ |
-| 70B (AWQ) | ❌ | ✅ | ✅ | ✅ |
-
-（个性化提示：学习风格：hands-on）
+**4. 权限不足**：访问系统文件或他人文件时提示 "Permission denied"。在命令前加 `sudo` 获取临时管理员权限（需输当前用户密码
 
 ## 块 29
 
-### 3.4 max-num-seqs 与 max-num-batched-tokens：并发控制的"双闸"（③）
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-| 参数 | 作用 | 默认值 | 调参建议 |
-|------|------|--------|---------|
-| `max_num_seqs` | 单步可并行调度的最大序列数（调度上限） | 随版本而定（曾常见 256，请以 `vllm serve --help` 为准） | 显存紧张时减小（如 8~64） |
-| `max_num_batched_tokens` | 每步最多处理的 token 数 | 随版本/是否开启 chunked prefill 而定 | 限制 Prefill 峰值，小值 ITL 更好，大值 TTFT 更好 |
+你的4×RTX 4090环境已就绪，但vLLM部署前必须先确认Python工具链可用。Ubuntu 24.04默认带Python 3.12，直接验证：
 
-> **说明**：上表默认值仅为示例，vLLM 各版本会调整这些默认行为，**请以 `vllm serve --help` 或所装版本文档为准**，不要把某个具体数字当成永久默认。
+```bash
+python3 --version   # 预期输出：Python 3.12.x
+pip3 --version      # 若提示未找到，执行下方安装
+```
 
-**为什么这样写**：
-- `max_num_seqs` 是"单步最多同时调度多少条序列"的**上限**，并不意味着一启动就按这个数把 KV Cache 全额预留；但它决定了高并发时 KV Cache 的峰值压力——并发越多、上下文越长，KV Cache 需求越大
-- `max_num_batched_tokens` 控制 Chunked Prefill 的块大小。小值（如 2048）让 Decode 更频繁，降低 ITL；大值（如 16384）一次处理更多 Prefill，降低 TTFT
+若`pip3`缺失，运行：
 
----
+```bash
+sudo apt update
+sudo apt install -y python3-pip
+```
 
-## 第四章：启动 vLLM 服务——从最小可用到生产配置
-
-（个性化提示：学习风格：hands-on）
+**关键理解**：pip是Python的包管理器（相当于
 
 ## 块 30
 
-# 最小可用启动（②）
+## 7.2 （可选但推荐）安装 Miniconda（①）
 
-在使用vLLM部署模型时，最小可用启动配置是最基本的配置方式。以下是详细的实现步骤和参数说明：
+你的目标是 vLLM 部署，后续会涉及多卡并行与虚拟环境隔离。系统自带 Python 虽够用，但 Miniconda 能让你更干净地管理 PyTorch、vLLM 等依赖，避免版本冲突。这里先做最简安装，详细虚拟环境配置后续深入。
 
-## 实战
+**安装步骤：**
+
+1. **下载安装脚本**（若提示 `wget` 未找到，先执行 `sudo apt install wget`）：
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+```
+
+2. **运行脚本**：
+```bash
+bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+3. **交互选项**：按 `Enter` 阅读许可 → 输入 `yes` 同意 → 确认路径（默认回车）→ 提示更新 shell profile 时输入 `yes`。
+
+4. **激活配置**：关闭重开终端，或执行 `source ~/.bashrc`。
+
+5. **验证**：
+```bash
+conda --version
+# 预期输出类似：conda 24.9.2
 
 ## 块 31
 
-# 4.3 显存紧张时的降配配置思路示例
+### 7.3 运行你的第一个 Python 程序（①）
 
-在单卡运行大模型时，显存紧张是常见的问题。降配配置的思路是通过三条策略同时优化：**换预量化权重（缩小权重）+ 缩小 KV Cache（限制长度和并发）+ 把放不下的部分 offload 到 CPU 内存**。下面是一个具体的配置示例，帮助你理解如何在实际场景中应用这些策略。
+你的目标是 vLLM 部署，而 vLLM 的推理引擎运行在 Python 之上。所以，让 Python 在你的 Linux 环境里跑起来，是验证环境可用性的第一步——这一步不通过，后面所有分布式推理都无从谈起。下面直接操作。
 
----
+**1. 创建并编辑文件**
 
-## 示例配置思路
-
-1. **预量化（AWQ）**：使用预量化权重可以有效减少模型大小。预量化权重的大小取决于量化格式（如4bit），具体参数由模型提供方确定。
-2. **限制 KV Cache长度和并发**：通过设置`--max-model-len`和`--max-num-batched-tokens`，可以控制模型的运行长度和批量处理的大小。
-3. **CPU内存卸载**：将无法在显存中加载的部分权重和缓存卸载到CPU内存中，使用`--cpu-offload-gb`参数控制卸载的大小。
-
----
-
-## 示例配置代码
+在终端执行：
 
 ```bash
-# ⚠️ 下面是"思路示例"，各数值需按你的实际硬件实测调整
-vllm serve TheBloke/Llama-2-70B-AWQ \
-  --quantization awq \
-  --tensor-parallel-size 1
+cd ~
+nano hello.py
+```
+
+`cd ~` 回到主目录，`nano hello.py` 用 nano 编辑器打开（或创建）一个叫 `hello.py` 的文件。
+
+**2. 输入代码**
+
+在 nano 里输入：
+
+```python
+print("Hello, Python on Ubuntu 24.04!")
+```
+
+**3. 保存并退出**
+
+按 `Ctrl + O` 保存，回车确认文件名；再按 `Ctrl + X` 退出 nano。
+
+**4. 运行程序**
+
+```bash
+python3 hello.py
+```
+
+屏幕输出 `Hello, Python on Ubuntu 24.04!`，说明 Python 环境就绪，且你已经用上了 `cd`、`nano`、`python3` 这几个终端命令。
+
+---
+
+#### 常见问题速查（与本块直接相关）
+
+| 症状 | 可能原因 | 解决办法 |
+|---|---|---|
+| `python3` 提示 `command not found` | Python 未安装或 PATH 未配置 | 回到上一节确认 Python 3.12 与 pip 已就绪 |
+| 保存时文件名输错 | 手误 | 重新 `nano hello.py` 再存一次 |
+| 运行后无输出 | 代码没保存成功 | 重新执行 `nano hello.py`，确认 `print` 那行代码完整，再保存退出 |
+
+---
+
+#### 本块学习检查
+
+完成本块后，用自己的话说明：**本块内容（运行第一个 Python 程序）与你当前学习目标（vLLM 部署）的关系是什么？** 如果遇到无法解释的术语（比如 `nano` 或 `python3` 的具体机制），记录下来，之后提问。
 
 ## 块 32
 
-> **把它变成"可直接运行配置"前，请先实测以下项**（任一未测就不要对外宣称"这套配置可以直接跑 70B"）：
-> - **GPU 型号与实际可用显存**（不同 24GB/40GB/48GB 卡差别很大）；
-> - **主机内存与 CPU**（`--cpu-offload-gb` 要占用等量的 CPU 内存，内存不足会直接失败或触发系统交换）；
-> - **PCIe 带宽/拓扑**（CPU↔GPU 传输是 offload 的瓶颈，带宽低会显著拖慢速度）；
-> - **模型仓库的具体 revision**（不同 AWQ 打包的权重体积、`group_size`、是否含额外文件会影响能否加载与占用）；
-> - **实测吞吐（tokens/s）与首 token 延迟（TTFT）**，据此再调 `--max-model-len`、`--max-num-seqs`、`--cpu-offload-gb`。
->
-> 上表数值只是**起始试探值**；在你自己的机器上完整跑通、量过上述指标之前，请把它当"配置思路"看待，而不是"拿来即用的生产配置"。
+## 二、你在哪？pwd 与路径的概念
 
----
+### 2.1 pwd：打印当前工作目录
 
-## 第五章：调用部署好的服务
+在分布式训练中，你经常需要确认模型权重、日志文件到底保存在哪台机器的哪个目录下。`pwd` 就是干这个的——它是 **P**rint **W**orking **D**irectory 的缩写，作用是告诉你“我现在在哪个文件夹里”。
 
-（个性化提示：学习风格：hands-on）
+```bash
+pwd
+```
+
+示例输出：
+
+```bash
+/home/zhangsan
+```
+
+这表示你当前位于 `/home/zhangsan` 目录下。在操作文件之前，养成先敲 `pwd` 的习惯，能避免很多“文件找不到了”的困惑。
+
+**和你的 vLLM 部署有什么关系？** 当你用 4×RTX 4090 启动多卡推理时，每个 GPU 进程的工作目录可能不同。如果脚本里用了相对路径加载模型，某个进程找不到文件就会报错。先 `pwd` 确认位置，再用绝对路径，能省下大量
 
 ## 块 33
 
-### 5.1 OpenAI 兼容 API（②）
+### 2.2 绝对路径 vs 相对路径
 
-vLLM 启动后，自动提供**兼容 OpenAI 常用接口**（如 Chat Completions、Completions、Models 等）的 RESTful API：
+你在多卡机上部署 vLLM 时，经常要指定模型路径或日志目录。搞不清这两种路径，命令就会“找不到文件”。
 
-```bash
-# 测试服务是否启动
-curl http://localhost:8000/v1/models
+| 路径类型 | 定义 | 示例 |
+|---|---|---|
+| **绝对路径** | 从根目录 `/` 开始，不依赖当前位置 | `/home/zhangsan/Documents` |
+| **相对路径** | 相对于你当前所在的位置 | `./file.txt`、`../backup` |
 
-# 文本补全
-curl http://localhost:8000/v1/completions \
-    -H "Content-Type: application/json" \
-    -d '{
-        "model": "my-qwen",
-        "prompt": "San Francisco is a",
-        "max_tokens": 7,
-        "temperature": 0
-    }'
+相对路径中两个重要符号：
 
-# 聊天补全
-curl http://localhost:8000/v1/chat/completions \
-    -H "Content-Type: application/json" \
-    -d '{
-        "model": "my-qwen",
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Hello!"}
-        ]
-    }'
-```
+- `./`：表示**当前目录**（可省略）
+- `../`：表示**上一级目录**
+- `~`：表示**当前用户的家目录**（如 `/home/zhangsan`）
 
-（个性化提示：学习风格：hands-on）
+> **举例**：假设你在 `/home/zhangsan/Documents` 目录下：
+> - `cd /home/zhangsan` 是绝对路径，去哪都管用
+> - `cd ..` 是相对路径，
 
 ## 块 34
 
-### 5.2 Python 客户端调用（②）
+## 3.1 ls：列出目录内容（基础用法）
 
-```python
-from openai import OpenAI
+你的目标是 vLLM 部署，而 vLLM 的模型文件、配置和日志都存放在目录中。`ls` 是你查看这些文件的第一工具，尤其在多卡环境下，你需要快速确认模型权重、日志文件是否就位。
 
-client = OpenAI(
-    api_key="EMPTY",
-    base_url="http://localhost:8000/v1"
-)
+**基础命令**：
 
-response = client.chat.completions.create(
-    model="my-qwen",
-    messages=[{"role": "user", "content": "Hello!"}],
-    temperature=0.7,
-    top_p=0.9,
-    max_tokens=512
-)
-print(response.choices[0].message.content)
+```bash
+# 列出当前目录下的文件/文件夹（不包括隐藏文件）
+ls
+
+# 列出指定路径下的内容
+ls /home/zhangsan
+
+# 列出当前目录下所有文件（包括隐藏文件，以 . 开头）
+ls -a
+
+# 以详细列表形式显示（权限、所有者、大小、修改时间）
+ls -l
+
+# 组合使用：详细列出所有文件，并以人类可读格式显示大小
+ls -ahl
 ```
 
-**为什么这样写**：`openai` Python 包可以直接连接 vLLM 服务，常见场景下只改 `base_url`（和把 `api_key` 设为占位值）即可复用原有代码，迁移成本很低。这是 vLLM 的重要优势之一。不过"兼容"针对的是常用的 Chat/Completions 等接口，OpenAI 平台的部分高级特性、专有端点或最新字段不一定 1:1 支持，接入前建议对你实际用到的接口做一次验证。
+**关于隐藏文件**：Linux 中以 `.` 开头的文件/文件夹默认是隐藏的，比如 `.bashrc`、`.ssh`。这些文件往往很重要，后续配置环境变量时会频繁遇到。
 
-（个性化提示：学习风格：hands-on）
+## 3.2 ls -l 的输出解读
+
+执行 `ls -l` 后
 
 ## 块 35
 
-### 5.3 流式输出（①）
+### ls 常用选项：直击 vLLM 部署中的文件管理
 
-```python
-from openai import OpenAI
+在管理 4×RTX 4090 的模型权重、日志和数据集时，`ls` 的这些选项能帮你快速定位关键文件。
 
-client = OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
+**核心组合：`ls -lh`**  
+以详细列表显示，文件大小自动转为 KB/MB/GB。注意：`-h` 必须搭配 `-l` 才有效，单独使用无效果。部署时用 `ls -lh` 检查 `.safetensors` 权重文件是否完整下载。
 
-stream = client.chat.completions.create(
-    model="my-qwen",
-    messages=[{"role": "user", "content": "写一首关于AI的诗"}],
-    stream=True,  # 开启流式输出
-)
-
-for chunk in stream:
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="", flush=True)
-```
-
-**为什么这样写**：`stream=True` 使用 Server-Sent Events（SSE）逐 token 返回，Web 端用户体验极佳。
-
----
-
-## 第六章：电脑配置批注
-
-本章节涉及 vLLM 推理服务的本地部署与云端部署实操。
-
-（个性化提示：学习风格：hands-on）
+**实用排序与筛选**  
+- `ls -t`：按修改时间排序，最新在前——快速找到刚生成的日志。  
+- `ls -S`：按大小从
 
 ## 块 36
 
-### 6.1 本地环境配置要求
+## 4.1 cd 基础用法：切换目录
 
-| 项目 | 最低配置 | 推荐配置 |
-|------|---------|---------|
-| **操作系统** | Linux（Ubuntu 20.04+） | Linux（Ubuntu 22.04+） |
-| **GPU** | 1 张 NVIDIA GPU（显存按目标模型而定，7B 示例约 16GB 起，更小模型可用更小显存验证） | 1 张 RTX 4090（24GB）/ A100（40GB/80GB） |
-| **CPU** | 8 核 | 16 核+ |
-| **内存** | 32GB | 64GB+ |
-| **磁盘** | 100GB SSD | 500GB+ NVMe SSD |
-| **NVIDIA 驱动** | 驱动支持 CUDA 11.8+ | 驱动支持 CUDA 12.1+ |
-| **Python** | 以所装 vLLM 支持范围为准（示例 3.10） | 示例 3.12（仍以发行说明为准） |
-| **网络** | 本地回环 | 10Gbps+（多机部署） |
-| **是否支持 CPU 运行** | ⚠️ 支持但极慢（仅调试） | — |
+你在多卡环境下做 vLLM 分布式部署，经常需要在模型权重目录、日志目录、配置文件目录之间来回穿梭。`cd` 就是你移动的“传送门”。
 
-> **显存说明**：表中"16GB"是针对本章 **7B 示例**的经验下限，并非"部署任何模型的统一门槛"——显存要求应随模型规模而定，用小模型仅做环境验证时几 GB 也够。
+```bash
+# 进入指定目录（绝对路径，从根目录 / 开始写起）
+cd /home/zhangsan/Documents
 
-（个性化提示：学习风格：hands-on）
+# 进入当前目录下的子文件夹（相对路径，./ 可省略）
+cd ./Downloads
+cd Downloads
+
+# 返回上一级目录
+cd ..
+
+# 返回上两级目录
+cd ../..
+
+# 回到家目录
+cd ~
+cd        # 直接 cd 不加参数也是回家目录
+
+# 返回刚才所在的目录（快速来回切换）
+cd -
+```
+
+**实操建议**：部署 vLLM 时，你经常要在 `/models`（权重）和 `/logs`（日志）之间切换，`cd -` 能帮你省下大量重复输入路径的时间。
+
+## 4.2 路径切换示例
+
+假设当前在 `/usr/local` 下，想切换到 `/home/zhangsan`：
+
+```bash
+# 方法1：绝对路径（去哪都管用，推荐）
+cd /home/zhangsan
+
+# 方法2：相对路径（先回根目录，再去 home）
+cd ../../home/zhangsan
+```
+
+> **建议**：新手优先使用绝对路径，不容易迷路；熟悉后多用相对路径，效率更高。
+
+## 五、mkdir：创建目录
+
+`mkdir` = **M**a**k**e **Dir**ectory，用来创建文件夹。部署 vLLM 时，你需要为不同实验创建独立目录来隔离配置和日志。
+
+```bash
+# 在当前目录下创建一个文件夹
+mkdir myproject
+
+# 在指定路径下创建文件夹
+mkdir /home/zhangsan/myproject
+
+# 递归创建多级目录（父目录不存在时自动创建）
+mkdir -p myproject/src/models
+
+# 一次性创建多个同级文件夹
+mkdir dir1 dir2 dir3
+
+# 使用花括号批量创建同级文件夹
+mkdir {dir1,dir2,dir3}
+
+# 批量创建 100 个文件夹（dir1 ~ dir100）
+mkdir dir{1..100}
+```
+
+> **注意**：`mkdir` 默认只能创建单级目录，若父目录不存在会报错；使用 `-p` 参数可递归创建多级目录
 
 ## 块 37
 
-### 6.2 云端环境配置参考
+## 7.1 复制文件：为 vLLM 部署做准备
 
-| 场景 | 推荐实例 | 启动命令示例 |
-|------|---------|-------------|
-| 低成本实验 | AutoDL RTX 3090（24GB） | `vllm serve Qwen/Qwen2.5-7B-Instruct --gpu-memory-utilization 0.9` |
-| 标准推理 | AWS g5.xlarge（A10G 24GB） | `vllm serve Qwen/Qwen2.5-7B-Instruct --max-model-len 8192` |
-| 高并发服务 | AWS g5.12xlarge（4×A10G） | `vllm serve Qwen/Qwen2.5-72B-Instruct-AWQ --tensor-parallel-size 4` |
-| 超大模型 | AWS p4d.24xlarge（8×A100） | `vllm serve meta-llama/Meta-Llama-3.1-70B-Instruct --tensor-parallel-size 8` |
+在分布式 vLLM 部署中，你经常需要把模型配置文件、启动脚本复制到多台机器的相同路径下。`cp` 就是干这个的。
 
-（个性化提示：学习风格：hands-on）
+```bash
+# 把 hello.py 复制到 backup 目录（文件名不变）
+cp hello.py ./backup/
+
+# 复制并改名，比如把不同版本的配置区分开
+cp hello.py ./backup/hello_backup.py
+
+# 一次复制多个文件
+cp file1.txt file2.txt ./backup/
+
+# -p：保留修改时间等属性，排查问题时很有用
+cp -p hello.py ./backup/
+
+# -i：目标已存在时先询问，防止覆盖重要配置
+cp -i hello.py ./backup/
+```
+
+## 7.2 复制目录：整个项目迁移
+
+复制整个项目文件夹时，**必须加 `-r`**（递归），否则系统直接拒绝。
+
+```bash
+cp -r myproject ./backup/
+```
+
+注意行为差异：`backup` 不存在时会新建并把内容放进去；`backup` 已存在时，会生成 `backup/myproject/` 嵌套目录。部署时路径别搞错。
+
+## 7.3 复制软链接
+
+```bash
 
 ## 块 38
 
-# 第六章：电脑配置批注  
-## 6.3 多卡部署的硬件要求  
+## 8.1 移动文件/文件夹（①）
 
-在进行多卡部署时，硬件配置是确保顺利运行的关键因素。以下是多卡部署的硬件要求及注意事项：  
+```bash
+# 把文件移动到另一个文件夹
+mv hello.py ./backup/
 
-### 并行策略与硬件要求  
+# 把文件夹移动到另一个位置
+mv myproject ./archive/
 
-| 并行策略 | 最低 GPU 数量 | 卡间带宽要求 | 网络要求 |  
-|---------|-------------|-------------|---------|  
-| 单卡     | 1 卡         |
+# 使用通配符移动多个文件（把所有以 data_ 开头的文件移到 data 文件夹）
+mv data_* ./data/
+```
+
+## 8.2 重命名（①）
+
+```bash
+# 把 a.txt 重命名为 b.txt（本质是在同一目录下移动）
+mv a.txt b.txt
+
+# 移动的同时改名
+mv hello.py ./backup/hello_v2.py
+```
+
+## 8.3 安全选项（①）
+
+```bash
+# 覆盖前询问（推荐日常使用）
+mv -i old.txt new.txt
+
+# 强制覆盖，不提示（慎用）
+mv -f old.txt new.txt
+```
+
+---
+
+## 九、rm：删除文件与目录（①）
+
+`rm` = **R**e**m**ove，用来删除文件或文件夹。**此命令不可逆，请谨慎使用！**（①）
+
+```bash
+# 删除单个文件
+rm hello.py
+
+# 删除多个文件
+rm file1.txt file2.txt
+
+# 删除文件名以 - 开头的文件（必须用 -- 告诉 rm 后面是文件名而非选项）
+rm -- -file.txt
+
+# 删除文件夹（必须加 -r，递归删除其中的所有内容）
+rm -r myproject/
+
+# 只删除空文件夹
+rm -d empty_dir/
+
+# 强制删除，不提示确认
+rm -f hello.py
+
+# 强制递归删除文件夹及其中所有内容（⚠️ 极度危险，务必确认路径正确！）
+rm -rf my
 
 ## 块 39
 
-# 多卡部署的硬件要求
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-## 1. 学习目标
-掌握多卡部署的硬件要求，理解多卡环境下vLLM模型推理的配置参数设置，能够顺利完成多卡部署。
+你的目标是vLLM部署，但先别急着碰推理。分布式部署前，项目结构必须清晰。本块用最基础的Shell命令搭建`llm-learning`目录，这正是你后续存放数据、模型和训练脚本的骨架。
 
-## 2. 学习方式
-通过实践操作，结合理论知识，完成多卡环境下的vLLM部署配置。
+**动手做**（在4×RTX 4090环境上）：
 
-## 3. 学习步骤
+1. `cd ~` 回到家目录
+2. `mkdir llm-learning` 建根目录
+3. `cd llm-learning` 进入
+4. `mkdir data models scripts` 一次建三个子目录
+5. `touch scripts/train.py`
 
-### 1. 硬件环境检查
-在开始配置之前，请确保以下硬件条件满足：
-- 至少拥有两张支持相同架构的显卡（如两块NVIDIA GPU或两块AMD GPU）。
-- 每块显卡具有足够的显存，能够支持vLLM的推理任务。
+## 块 40
 
-### 2. 基础参数设置
-在多卡环境下，vLLM的运行依赖于以下参数的合理配置：
-- **gpu_memory_utilization**：建议设置为0.85-0.9，确保显存资源的合理分配。
-- **max_model_len**：设置为4096-8192，以适应多卡环境下的模型推理需求。
-- **max_num_seqs**：根据显存限制，建议设置为256-512。
-- **max_num_batched_tokens**：设置为512-1024，以平衡前缀编码和解码效率。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-### 3. 生产配置模板
-在多卡环境下，推荐使用以下生产配置模板：
-- `--port 11111`
-- `--host localhost`
-- `--served-model-name your_model`
-- `--dtype float16`
+---
+
+在4×RTX 4090 96GB多卡环境中准备vLLM部署，你需要先整理好实验文件。这里练习用`cp`命令把`~/Downloads/`下的三个CSV数据集复制到`~/llm-learning/data/`。
+
+**操作步骤**：
+
+1. **确认源文件存在**：`ls ~/Downloads/*.csv`，用通配符`*.csv`列出所有CSV文件。
+2. **复制文件**：`cp ~/Downloads/train.csv ~/Downloads/test.csv ~/Downloads/val
+
+## 块 41
+
+## 场景 3：清理临时文件（结合 vLLM 部署实战）
+
+在 vLLM 部署过程中，你经常需要清理实验产生的临时文件——比如下载失败的模型缓存、测试脚本的中间输出。这个场景帮你养成安全清理的习惯。
+
+**需求**：你在 `~/llm-learning/` 下误建了一个名为 `temp` 的空文件夹和一个 `old.txt` 文件，请将它们删除。
+
+```bash
+# 1. 先确认要删的内容（好习惯！）
+ls ~/llm-learning/temp ~/llm-learning/old.txt
+
+# 2. 删除文件
+rm ~/llm-learning/old.txt
+
+# 3. 删除空文件夹
+rmdir ~/llm-learning/temp
+
+# 4. 验证
+ls ~/llm-learning/
+```
+
+注意第 3 步：`rmdir` 只能删除**空**文件夹。如果 `temp` 里有文件，会报错——这时需要用 `rm -r`（递归删除），但务必谨慎。
+
+---
+
+## 十一、新手避坑指南（重点看与 vLLM 部署相关的）
+
+**1. 区分文件和文件夹**：`ls -l` 第一列是 `d` 表示文件夹，是 `-` 表示文件。对文件夹操作别忘了 `-r`（如 `cp -r`、`rm -r`）。部署 vLLM 时复制模型权重目录，漏掉 `-r` 会直接报错。
+
+**2. 路径写错**：切换目录或复制文件时，路径写错会提示 "No such file or directory"，可先用 `pwd` 和 `ls` 确认当前位置和目录内容。多卡环境下，你经常要在多个路径间切换（模型权重、日志、虚拟环境），这个习惯尤其重要。
+
+**3. 路径中包含空格必须用引号包裹**：如果文件夹或文件名包含空格，命令行会把它当成多个参数。务必用双引号包裹：
+
+```bash
+# 错误：mkdir my folder 会创建两个文件夹 my 和 folder
+# 正确：
+mkdir "my folder"
+cd "my folder"
+touch "my file.txt"
+cp "my file.txt" ./backup/
+rm "my file.txt"
+```
+
+**4. 文件名以 `-` 开头时使用 `--`**：Linux 命令中 `-` 开头通常表示选项。
+
+## 块 42
+
+## 环境变量是什么？——先搞懂这张“备忘录”
+
+你已经掌握 `cd`、`ls`、`mkdir` 这些命令了，但有没有想过：为什么你在终端敲 `python3`，系统就知道去哪找它？答案就是环境变量。
+
+**一句话理解**：环境变量是操作系统或应用程序运行时使用的**动态键值对**，用来传递配置信息。你可以把它想象成操作系统的“备忘录”——系统启动时加载这些备忘录，所有程序都能读到里面的内容，并据此调整自己的行为。
+
+**几个最常见的“备忘录条目”**：
+
+| 变量名 | 作用 |
+|---|---|
+| `PATH` | 告诉系统去哪里找可执行程序（比如你输入 `python3`，系统就是靠 PATH 找到它的位置） |
+| `HOME` | 当前用户的家目录路径（如 `/home/zhangsan`） |
+| `USER` | 当前登录的用户名 |
+| `SHELL` | 当前使用的 Shell 程序路径（如 `/bin/bash`） |
+| `LANG` | 系统语言和字符编码（如 `en_US.UTF-8`） |
+| `PWD` | 当前工作目录路径（随 `cd` 命令自动更新） |
+| `EDITOR` | 默认文本编辑器（影响 `git commit` 等操作） |
+
+**为什么需要环境变量？** 三个核心原因：
+
+1. **控制程序行为**：例如通过 `JAVA_HOME` 指定 JDK 路径，让依赖 Java 的程序知道去哪找它。
+2. **简化配置**：避免在每次运行程序时都手动输入长长的路径。
+3. **跨进程通信**：子进程会自动继承父进程的环境变量，实现配置的无缝传递。
+
+**环境变量的分类**：按生命周期分为两类——**临时**和**永久**。这个区别是后续操作的基础，下一节我们会
+
+## 块 43
+
+你的目标是**vLLM部署**，而vLLM启动时往往需要临时指定一些环境变量（比如模型路径、显存分配策略）来做快速验证。这一块讲的正是这类“用完即走”的变量。
+
+**临时变量**的生命周期很短：只在**当前终端会话**内有效。一旦你关闭终端窗口或断开SSH连接，它就自动消失。这非常适合在调试时快速测试某个配置，而不污染系统全局设置。
+
+看一个最直接的操作流程：
+
+```bash
+# 设置一个临时变量
+export MY_VAR="hello_linux"
+
+# 查看它的值
+echo $MY_VAR
+# 输出：hello_linux
+
+# 删除这个变量
+unset MY_VAR
+
+# 再查看
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 44
+
+**永久变量：写入配置文件，持久生效**
+
+临时变量关掉终端就没了。要让变量每次打开终端都在，就得写进**配置文件**。
+
+| 级别 | 配置文件 | 影响范围 | 是否需要 sudo |
+|---|---|---|---|
+| **用户级（推荐）** | `~/.bashrc` | 仅当前用户 | 否 |
+| **用户级** | `~/.bash_profile` 或 `~/.profile` | 仅当前用户（登录时生效） | 否 |
+| **系统级** | `/etc/profile` 等 | 所有用户 | 是 |
+
+**选哪个？** 日常开发优先用 `~/.bashrc`，只影响你自己，改错不伤系统。系统级配置要 `sudo` 且影响所有用户，不建议日常动。
+
+**本块学习
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 45
+
+你的目标是多卡环境下用 vLLM 部署模型，而 vLLM 启动时会读取环境变量（如模型路径、并行度设置）。如果这些变量每次都要手动敲，既慢又容易错。本块教你用 `~/.bashrc` 把变量永久固化，让新终端自动加载，省去重复劳动。
+
+**操作步骤**（跟着做一遍）：
+
+```bash
+# 1. 打开配置文件（用上节课的 nano）
+nano ~/.bashrc
+
+# 2. 滚到文件末尾，添加一行：
+export MY_VAR="hello_permanent"
+
+# 3. Ctrl+O 保存，Ctrl+X 退出
+
+# 4. 立即生效，不用重启终端：
+source ~/.bashrc
+
+# 5. 验证：
+echo $MY_VAR
+# 应输出：hello_permanent
+```
+
+**关键点**：
+- `~/.bashrc` 在每次打开**新的交互式终端**时自动加载，是日常开发最常用的配置位置。
+- `source` 相当于“重新执行一遍这个配置文件”，让修改在当前终端立刻生效。
+- **注意限制**：并非所有 SSH 会话、IDE 集成终端或服务进程都会自动加载它。比如某些 IDE 终端只加载 `~/.profile`，
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 46
+
+## 用户级配置与优先级：为vLLM部署铺路
+
+你的目标是多卡vLLM部署，这通常通过SSH登录远程服务器完成。此时生效的正是**登录Shell**——也就是本节主角`~/.bash_profile`或`~/.profile`的用武之地。
+
+**关键规则**：登录Shell按顺序读取`~/.bash_profile`、`~/.bash_login`、`~/.profile`，且仅当`~/.bash_profile`不存在时才读取`~/.profile`。日常开终端更常用`~/.bashrc`（每次打开都加载），但SSH登录场景下，配置写在`~/.bash_profile`里才确保生效。
+
+**优先级**（从高到低）：
+1. **临时变量**（当前终端`export`的）
+2. **用户级配置**（`~/.bash_profile`、`~/.profile`、`~/.bashrc`等，不同Shell类型加载不同文件）
+3. **系统级配置**（`/etc/profile`等）
+
+临时设置会覆盖配置文件。比如`
+
+## 块 47
+
+## 5.1 PATH：命令的“搜索路径”
+
+PATH 是最重要的环境变量，没有之一。它定义了系统**查找可执行文件**的目录列表。对你即将进行的 vLLM 多卡部署来说，`python3`、`vllm`、`torchrun` 这些命令能否被正确找到，全靠 PATH 说了算。
+
+### 查看 PATH
+
+```bash
+echo $PATH
+```
+
+输出类似这样（多个路径用冒号 `:` 分隔）：
+
+```bash
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+
+当你在终端输入 `python3` 时，系统会**从左到右**依次在这些目录里找名为 `python3` 的可执行文件，找到了就执行，找不到就提示 `command not found`。多卡环境下，你大概率会用 conda 创建虚拟环境，如果 `vllm` 装好了却提示找不到，多半就是 PATH 没包含 conda 环境的 `bin` 目录。
+
+### 查看命令具体位置
+
+```bash
+which python3
+# 输出：/usr/bin/python3
+
+which conda
+# 输出：/home/zhangsan/miniconda3/bin/conda
+```
+
+`which` 命令能告诉你某个命令到底是从 PATH 的哪个目录里找到的。部署 vLLM 时，如果 `which python3` 指向的不是你 conda 环境里的解释器，后续 `torchrun` 拉起多卡进程时就会版本错乱。
+
+### 修改 PATH
+
+**追加路径**（添加到末尾，优先级较低）：
+
+```bash
+export PATH=$PATH:/new/path
+```
+
+**前置路径**（添加到开头，优先级更高，系统会先搜这里）：
+
+```bash
+export PATH=/new/path:$PATH
+```
+
+> **安全提示**：不要把 `.`（当前目录）添加到 PATH 中，以避免安全风险
+
+## 块 48
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+`LD_LIBRARY_PATH` 告诉系统在**运行时**去哪里找额外的动态库（`.so` 文件）。你的 4×RTX 4090 多卡环境要跑 vLLM 分布式部署，CUDA 和 PyTorch 的库文件常不在默认路径，配置它就是让程序能找到这些库。
+
+先看当前值：
+```bash
+echo $LD_LIBRARY_PATH
+```
+临时添加 CUDA 库路径：
+```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
+```
+
+**典型场景**：你编译的程序依赖某个 `.so`
+
+## 块 49
+
+### 5.3 LIBRARY_PATH：编译时库文件路径（②）
+
+`LIBRARY_PATH` 是给编译器用的，告诉 `gcc` 在**编译链接阶段**去哪里找库文件（静态库 `.a` 或动态库 `.so`）。它和运行时无关，只影响“能不能链接上”。
+
+```bash
+export LIBRARY_PATH=$LIBRARY_PATH:/path/to/your/libraries
+```
+
+**三个变量一表分清**（②）：
+
+| 变量名 | 作用阶段 | 查找目标 | 典型用途 |
+|---|---|---|---|
+| `PATH` | 执行命令时 | 可执行文件 | 让命令在任何位置都能运行 |
+| `LD_LIBRARY_PATH` | 程序运行时 | 动态链接库（`.so`） | 运行依赖自定义动态库的程序 |
+| `LIBRARY_PATH` | 编译链接时 | 静态库/动态库 | 编译时链接第三方库 |
+
+> **对你的提示**：做 vLLM 部署时，`PATH` 和 `LD_LIBRARY_PATH` 是你最常碰的。装 Miniconda、CUDA、PyTorch 都要配好它们。（②+③）
+
+---
+
+## 六
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 50
+
+## 6.1 先确认 CUDA 是否已在环境变量中
+
+在动手配置前，先检查当前环境是否已经包含 CUDA 路径：
+
+```bash
+echo $PATH | grep cuda
+echo $LD_LIBRARY_PATH | grep cuda
+```
+
+有输出（如 `/usr/local/cuda/bin`）说明已配置，可直接跳到 6.3 验证；无输出则继续 6.2。
+
+## 6.2 编辑 ~/.bashrc 添加 CUDA 路径
+
+```bash
+nano ~/.bashrc
+```
+
+在文件末尾添加：
+
+```bash
+# CUDA 环境变量配置
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+```
+
+> **注意**：`/usr/local/cuda` 是默认安装路径。若你的 CUDA 装在别处，请替换为实际路径。
+
+## 6.3 使配置生效并验证
+
+```bash
+source ~/.bashrc
+echo $PATH | grep cuda
+nvcc --version
+```
+
+`nvcc --version` 能输出版本号即配置成功。
+
+---
+
+**本块学习检查**：完成本块后，用自己的话说明本块
+
+## 块 51
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+你在4×RTX 4090 96GB多卡环境上做vLLM分布式部署，配置环境变量是启动前的“体检”。本块教你三件事：
+
+**1. 看全局**：`printenv` 或 `env` 列出所有变量，快速确认CUDA_VISIBLE_DEVICES、NCCL相关设置是否就位。
+
+**2. 查单个**：`echo $PATH` 看路径，`printenv PATH` 同样效果，`declare -p PATH` 显示是否export（决定子进程能否继承）。部署vLLM时，确认python和CUDA路径正确是关键。
+
+**3. 验生效**：改完 `~/.bashrc` 后必须 `source ~/.bash
+
+## 块 52
+
+### 8.1 变量未生效（①）
+
+**可能原因**：
+- 改了配置文件但没 `source` 或重启终端
+- 配置文件语法错误（比如漏写 `export`）
+- 变量被其他位置覆盖
+- 终端或 IDE 没加载 `~/.bashrc`
+
+**排查步骤**：
+
+```bash
+# 1. 确认配置正确
+cat ~/.bashrc | grep "你的变量名"
+
+# 2. 重新加载
+source ~/.bashrc
+
+# 3. 检查重复定义
+grep -r "PATH=" ~/.bashrc
+```
+
+---
+
+**本块学习检查**：完成本块后，用自己的话说明“变量未生效”的排查思路与你 vLLM 分布式部署目标的关系；遇到无法解释的术语（如 `source` 机制）记录下来再提问。
+
+## 块 53
+
+## 9.1 脚本中临时修改变量（①）
+
+在分布式 vLLM 部署中，你经常需要为不同 GPU 卡设置不同的环境变量（如显存分配、并行策略参数）。直接在终端 `export` 的变量会污染当前会话，而脚本内临时修改变量则更干净：
+
+```bash
+#!/bin/bash
+export TEMP_VAR=123
+# 仅在脚本执行期间生效，脚本结束后变量消失
+```
+
+**要点**：这个 `export` 写在脚本里，变量只在脚本运行时存在。脚本退出后，终端里 `echo $TEMP_VAR` 不会有输出。这对你管理 4×RTX 4090 的多卡启动脚本非常实用——每个脚本可以独立设置自己的变量，互不干扰。
+
+## 9.2 使用 env 命令指定单次运行的变量（①）
+
+当你只想为某一次命令临时设置变量，而不想写脚本时：
+
+```bash
+env MY_VAR=hello python3 my_script.py
+# MY_VAR 仅在这次 python3 运行时有效
+```
+
+**要点**：`env` 命令把变量"注入"到紧随其后的命令环境中，命令结束后变量即消失。在 vLLM 部署场景，你可以这样为单次推理测试临时指定参数，无需修改任何配置文件。
+
+## 9.3 使用 .env 文件分组管理变量（④）
+
+多卡部署往往需要一组变量（模型路径、端口、并行度等
+
+## 块 54
+
+## 场景 1：创建并验证自定义变量
+
+在 vLLM 分布式部署中，你经常需要设置模型路径、并行度等环境变量。先掌握最基础的变量创建与持久化。
+
+**临时变量**（仅当前终端有效）：
+
+```bash
+export MY_NAME="zhangsan"
+echo $MY_NAME   # 输出：zhangsan
+```
+
+**永久生效**：将 export 命令追加到 `~/.bashrc`，每次打开终端自动加载：
+
+```bash
+echo 'export MY_NAME="zhangsan"' >> ~/.bashrc
+source ~/.bashrc   # 重新加载配置
+echo $MY_NAME      # 验证仍可输出
+```
+
+## 场景 2：为自定义脚本目录配置 PATH
+
+假设你把 vLLM 启动脚本放在 `~/scripts`，希望任何目录下都能直接调用。
+
+```bash
+# 1. 创建目录与测试脚本
+mkdir -p ~/scripts
+echo '#!/bin/bash' > ~/scripts/hello_tool.sh
+echo 'echo "Hello from my tool!"' >> ~/scripts/hello_tool.sh
+chmod +x ~/scripts/hello_tool.sh
+
+# 2. 将目录加入 PATH（注意用 $PATH 保留原有路径）
+echo 'export PATH=$PATH:~/scripts' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**本块学习检查**：
+
+## 块 55
+
+**场景 3：模拟 CUDA 环境变量配置**
+
+你还没装 CUDA 也能先练配置。目标是让系统找到 CUDA，为 vLLM 部署铺路。
+
+1. 编辑 `~/.bashrc`：`nano ~/.bashrc`
+2. 末尾加两行（假设 CUDA 在 `/usr/local/cuda`）：
+   `export PATH=/usr/local/cuda/bin:$PATH`
+   `export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH`
+3. 保存并生效：`source ~/.bashrc`
+4. 验证：`echo $PATH | grep cuda`
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（
+
+## 块 56
+
+你已掌握分布式训练，现在要迈向 vLLM 部署。在配置多卡推理服务时，系统级环境变量是公共服务器上必须理解的底层机制。本块聚焦两个关键文件，它们决定了所有用户的默认环境。
+
+**A.1 /etc/environment**
+- 特点：**无需 `export`**，直接写 `KEY=value`。
+- 限制：仅支持简单键值对，**不支持 Shell 语法**（如 `$PATH` 引用）。
+- 操作：`sudo nano /etc/environment` 添加 `JAVA_HOME=/usr/lib/jvm/java-11-openjdk`，保存后需**重启或重新登录**生效。
+
+**A.2 /etc/profile**
+- 适用：全局 Bash 配置，**需要 `export`**。
+- 操作：`sudo nano /etc/profile` 添加 `export PATH=$PATH:/usr/local/custom/bin`，保存后 `source /etc/profile` 可当前会话生效，或重启系统。
+
+**本块学习检查**：用自己的话说明
+
+## 块 57
+
+你的目标是vLLM多卡部署，但环境变量配置是第一步——不同Shell的配置文件位置不同，直接影响你能否正确加载CUDA、vLLM等环境变量。
+
+**先确认你的Shell**：执行 `echo $SHELL`，若输出 `/bin/bash` 即Bash。
+
+**对照表（重点看Zsh）**：
+- **Bash**：日常终端用 `~/.bashrc`；SSH登录用 `~/.bash_profile`
+- **Zsh**：所有交互式Shell都用 `~/.zshrc`（macOS默认或你手动切换时）
+- **Fish**：`~/.config/fish/config.fish`
+
+**实践建议**：完成Shell配置后，在启动vLLM前先验证环境变量是否生效（如执行 `echo $CUDA
+
+## 块 58
+
+## 清理 PATH 重复项与调试技巧（面向 vLLM 分布式部署）
+
+你在多卡环境下部署 vLLM，会反复修改 `PATH`、`LD_LIBRARY_PATH` 等变量来切换不同版本的 CUDA、cuDNN 或 Python 环境。改得多了，`PATH` 里难免出现重复路径——这不会报错，但会让 `which`、`type -a` 的排查结果变得混乱，也可能让系统加载到旧版本的可执行文件。
+
+**清理重复路径**，一条命令即可：
+
+```bash
+export PATH=$(echo $PATH | awk -v RS=: -v FS=: '!a[$0]++' | paste -sd: -)
+```
+
+这条命令把 `PATH` 按冒号拆开，去重后再用冒号拼回去。注意它只对当前 Shell 生效，确认无误后可以把它追加到 `~/.bashrc` 里。
+
+**按环境加载不同配置**：如果你在开发机和生产机上用同一份 `~/.bashrc`，可以这样区分：
+
+```bash
+if [ "$ENVIRONMENT" = "production" ]; then
+    source ~/.env.prod
+else
+    source ~/.env.dev
+fi
+```
+
+这样 `ENVIRONMENT` 变量不同，加载的环境变量文件就不同，适合区分开发/生产环境的 CUDA 或 vLLM 配置。
+
+**调试脚本**：部署 vLLM 时如果启动脚本行为异常，用详细模式运行：
+
+```bash
+bash -x your_script.sh
+```
+
+这会打印每一行执行前的变量值，方便定位是哪个环境变量没生效。也可以在当前 Shell 中临时
 
 ## 测评题目
 
-### Q-KB15-ST1503-003
-PagedAttention 的主要收益是？
+### Q-KB0100-002
+执行以下命令验证当前用户和主机名：
+```bash
+whoami && hostname
+```
 
-### Q-KB15-ST1503-001
-vLLM 的 PagedAttention 用分页方式管理注意力计算所需的 KV________。
+### Q-KB0100-003
+执行以下命令确认系统发行版信息：
+```bash
+cat /etc/os-release
+```
 
-### Q-KB1504-006
-模型量化（Quantization）的主要目的是？
+### Q-KB0101-003
+请依次执行以下命令并描述每一步的结果：
+```bash
+mkdir -p /tmp/test_dir/sub_dir
+cd /tmp/test_dir
+touch hello.txt
+cp hello.txt sub_dir/
+mv hello.txt renamed.txt
+ls -R
+```
 
-### Q-KB1504-013
-在部署大模型服务时，为什么要关注“首字延迟（TTFT）”和“生成吞吐量（Tokens/s）”这两个指标？
+### Q-KB0101-007
+请写出一条管道命令，统计当前目录下 `.py` 文件的数量。
 
-### Q-KB1504-002
-请写出使用 vLLM 的 `LLM` 类加载 `meta-llama/Llama-2-7b-chat-hf` 模型并生成文本的代码。
+### Q-KB0102-001
+临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。
 
-### Q-KB1504-014
-Docker 的主要作用是？
+### Q-KB0102-003
+以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？
 
-### Q-KB15-ST1501-003
-与贪心搜索相比，束搜索的典型代价是？
+### Q-KB0103-004
+`pip install -i https://pypi.tuna.tsinghua.edu.cn/simple torch` 中 `-i` 参数的作用是？
 
-### Q-KB15-ST1500-001
-部署 vLLM 前应确保 CUDA、PyTorch 与 vLLM 三者的________兼容。
+### Q-KB0104-004
+`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。

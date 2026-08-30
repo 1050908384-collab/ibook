@@ -1,0 +1,156 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "安装带 CUDA 支持的 PyTorch 时，应使 PyTorch 所支持的 CUDA 版本与本机________版本兼容。",
+    "options": [],
+    "correct_answer": "NVIDIA 驱动 ||| 显卡驱动",
+    "hint": "驱动需能支持所安装 PyTorch 对应的 CUDA 运行时。",
+    "explanation": "驱动需能支持所安装 PyTorch 对应的 CUDA 运行时。",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB0401-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`x.view(-1, 3)` 中 `-1` 的含义是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "删除该维度"
+      },
+      {
+        "key": "B",
+        "text": "自动推断该维度的大小"
+      },
+      {
+        "key": "C",
+        "text": "设置为0"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `-1` 表示该维度大小由其他维度和总元素数自动推断。",
+    "explanation": "> `-1` 表示该维度大小由其他维度和总元素数自动推断。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0401-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请将以下两个张量按**列方向**（dim=1）拼接：\n```python\na = torch.tensor([[1, 2], [3, 4]])\nb = torch.tensor([[5], [6]])\n```",
+    "options": [],
+    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "hint": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "explanation": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0404-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `DataLoader` 加载 `MyDataset`，批次大小为16，使用4个子进程，并在每个epoch开始时打乱数据。",
+    "options": [],
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "hint": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "explanation": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0401-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "给定张量 `x` 形状为 `(2, 3, 4)`，请写出将其转置为 `(4, 3, 2)` 的代码。",
+    "options": [],
+    "correct_answer": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "hint": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "explanation": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0403-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`nn.Linear(in_features=10, out_features=5)` 表示输入维度为________，输出维度为________。",
+    "options": [],
+    "correct_answer": "10；5",
+    "hint": null,
+    "explanation": "",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个简单的神经网络类 `SimpleNet`，包含：\n- 一个输入层到隐藏层的线性层（10 -> 20）\n- ReLU激活\n- 隐藏层到输出层的线性层（20 -> 1）",
+    "options": [],
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "hint": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "explanation": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  }
+]

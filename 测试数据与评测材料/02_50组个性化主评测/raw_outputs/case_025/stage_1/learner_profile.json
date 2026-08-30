@@ -1,8 +1,27 @@
 {
-  "session_id": "54906271-d03d-4ddc-bd4e-6799d2ce3cf4",
+  "session_id": "500a1f57-9105-4371-8ac7-b9e65c9fe30b",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "云T4 16GB，想QLoRA微调并部署",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-04"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -10,7 +29,11 @@
       "block_id": "KB-12",
       "block_name": "参数高效微调（LoRA与QLoRA）",
       "target_subtopic_ids": [
-        "KBS-12-01"
+        "KBS-12-01",
+        "KBS-12-02",
+        "KBS-12-03",
+        "KBS-12-04",
+        "KBS-12-05"
       ],
       "mapping_confidence": 1.0,
       "level": "beginner",
@@ -23,9 +46,9 @@
   ],
   "goal": "QLoRA微调",
   "daily_hours": 2.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.8,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

@@ -2,480 +2,372 @@
 
 ## 块 1
 
-## 一、为什么需要参数高效微调？
-
-### 1.1 全参数微调的问题
-
-先看传统大模型训练是怎么工作的：
-
-```text
-输入数据
-    ↓
-整个模型参数更新
-    ↓
-保存完整模型
-```
-
-以 7B 参数模型为例，就是 **70 亿个参数**。训练时，你不仅要保存这些参数本身，还要额外保存**梯度**和**优化器状态**。
-
-这意味着什么？显存需求会非常高——普通消费级 GPU 根本扛不住。
-
-**动手验证一下**：打开你的 GPU 监控工具（比如 `nvidia-smi`），看看当前显存占用。再想想：如果 70 亿参数 + 梯度 + 优化器状态全塞进显存，你的卡够用吗？
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
 ---
 
-**为什么这对你很重要**：你的目标是 LoRA 微调，而 LoRA 正是为了解决"全参数微调太吃显存"这个问题而生的。理解了这个痛点，你才能明白后面为什么要装 PEFT 和 bitsandbytes。
+你熟悉 HuggingFace Trainer 和 PyTorch 训练流程，但 LoRA 微调的第一步，恰恰是回到最底层：**你写的 Python 代码，凭什么能被 GPU 执行？**
 
-**下一步**：接下来我们会讲 LoRA 与 QLoRA 的区别，以及如何搭建环境。
+答案就是 **Python 解释器**——程序的"翻译官"。
+
+你写的 `.py` 文件是人类可读的文本，但 RTX 4080 只认 0 和 1。解释器负责把你的代码逐行翻译成机器指令，电脑才能运行。没有它，你的 LoRA 训练脚本只是一堆无法执行的文字。
+
+**为什么这对你很重要？**
+
+你在 Trainer 里写的 `TrainingArguments`、`PeftModel`，最终都要靠解释器翻译成 GPU 能跑的指令。解释器版本、环境是否干净，直接决定你的 LoRA 脚本能否稳定跑起来——尤其是 16GB 显存下做 QLoRA 时，环境问题往往比模型问题更先出现。
+
+**动手验证（约 2 分钟）**：
+
+打开终端，输入 `python --version`。如果看到版本号，说明解释器已就位；如果报错，说明环境还没配好——这正是你下一步要解决的。
 
 ## 块 2
 
-**1.2 参数高效微调（PEFT）——动手理解**
+## 1.2 代码编辑器（IDE）：你的“工作台”
 
-PEFT，即参数高效微调。核心思想一句话：**不动整个大模型，只训练少量新增参数**。
+记事本也能写代码，但效率极低。**IDE（集成开发环境）**提供语法高亮、自动补全、运行调试等功能，让你写代码像用 Word 写文档一样舒服。推荐两款：**VS Code**（轻量免费）和 **PyCharm**（专业强大）。
 
-流程上，原始大模型加上LoRA适配器参数，然后只训练LoRA参数，最后保存小规模Adapter。
-
-对比三种方式：
-
-| 方式 | 训练参数 | 显存需求 |
-|------|----------|----------|
-| 全参数微调 | 全部参数 | 非常高 |
-| LoRA | 少量参数 | 较低 |
-| QLoRA | 量化模型+LoRA | 更低 |
-
-**本块学习检查**：对照表格，说出LoRA相比全参数微调在训练参数和显存需求上的差异
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 3
 
-**本块学习检查**：读完本块后，请合上资料，用一句话向自己解释“LoRA为什么能省显存？”（提示：只训练两个小矩阵，不碰原模型）。
+## 2.1 Windows 用户：为 LoRA 微调铺好路
 
----
+你已熟悉 HuggingFace Trainer，接下来要跑 LoRA 微调，Python 环境是第一步。下面三步帮你快速搞定。
 
-### 2.1 LoRA是什么？（①）
+**第一步：下载安装包**
 
-LoRA全称**Low-Rank Adaptation**（低秩适配）。核心思路：**原模型权重 `W` 冻结不动**，在旁边新增一个更新量 `ΔW`，最终效果相当于 `W + ΔW`。
+1. 浏览器打开 https://www.python.org
+2. 鼠标移到顶部 **Downloads**，网站会自动推荐 Windows 版本（如 `Python 3.13.x`）。
+3. 点击下载 **Windows installer (64-bit)**。
 
-这个 `ΔW` 不是随便加的，它被拆成两个小矩阵的乘积：
+**第二步：运行安装程序（⚠️ 关键步骤）**
 
-```
-ΔW = B × A
-```
+双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
 
-- 若原权重 `W` 形状是 `d_out × d_in`，秩为 `r`
-- 则 `A` 形状约 `r × d_in`，`B` 形状约 `d_out × r`
-- 相乘后 `B × A` 还原成与 `W` 同形状的 `ΔW`
+1. **勾选最下方的 "Add python.exe to PATH"**  
+   不勾选的话，命令行输入 `python` 会提示"不是内部或外部命令"，后续 pip 装包、跑训练脚本都会卡住。
 
-> 注意：不同资料可能写 `A × B`，只是符号
+2. 点击 **"Install Now"**（默认安装）即可。  
+   默认路径不含中文和特殊符号，避免后续路径报错。想改路径的话，确保路径中**没有中文或空格**。
 
-## 块 4
+**第三步：验证安装**
 
-## 3.1 LoRA 的问题：模型还是要“全量”装进显存
-
-你已经知道 LoRA 能大幅减少**训练参数**，但这里有个关键点：**基础模型本身仍然需要完整加载到显存里**。
-
-举个例子，一个 7B 参数的模型，如果用 FP16 精度加载，大约需要 **14GB 显存**。也就是说，不管 LoRA 让训练参数变得多小，这个“底座”模型占用的显存是省不掉的。
-
-> **动手感受一下**：如果你手头有 GPU，可以试着用 `nvidia-smi` 看一下当前显存占用，再想想 14GB 这个数字——这就是 LoRA 在显存上的“底线”。
-
----
-
-## 3.2 QLoRA 的解法：把底座模型“压缩”后再训练
-
-QLoRA（Quantized LoRA，量化版 LoRA）的思路很直接：既然底座模型省不掉，那就把它**变小**。
-
-核心流程：
-
-```text
-FP16模型 → 4bit量化 → 显存占用大幅下降 → 加载LoRA进行训练
-```
-
-训练时的结构：
-
-```text
-4bit基础模型 + LoRA参数 → 训练
-```
-
-简单说：**底座模型用 4bit 精度存，LoRA 参数照常训练**。这样既保留了 LoRA 的高效训练，又把底座模型的显存开销砍了下来。
-
----
-
-## 3.3 关键依赖：bitsandbytes 负责“量化”这件事
-
-QLoRA 的实现需要几个库配合：
-
-- `transformers`：模型加载与训练框架
-- `peft`：LoRA 等参数高效微调工具
-- `bitsandbytes`：**核心量化库**，负责低精度量化、4bit 加载和 8bit 加载
-
-其中 `bitsandbytes` 是让“4bit 加载”成为可能的关键组件。
-
-> **注意（重要）**：本教程的示例
-
-## 块 5
-
-**本块学习检查**：读完本块后，请对照你的电脑配置，写下“我的显存是___GB，按经验参考值，我能跑___（LoRA最低/QLoRA参考下限/QLoRA推荐）”，并说明理由。
-
----
-
-### 电脑配置批注（针对LoRA微调目标）
-
-你目标是跑通LoRA微调，且偏好动手实操。这里直接给你**能落地的配置门槛**，别被术语吓到。
-
-**LoRA最低配置（先看这个，满足它你就能开始）**
-- **CPU**：4核以上
-- **内存**：16GB+
-- **磁盘**：50GB以上
-- **GPU**：推荐NVIDIA
-- **显存**：最低8GB，推荐12GB+
-
-**QLoRA要求（显存不够时的省钱方案）**
-QLoRA的核心价值：**用更小显存跑大模型**（通过4-bit量化基础模型，显存占用通常低于LoRA全精度加载）。但注意，本教程实训范围限定为**NVIDIA CUDA GPU**，命令也按此给出；其它后端请以bitsandbytes官方说明为准。
-
-**显存经验参考（7B级别模型）**
-- 参考下限：约8~12GB（短序列、小batch）
-- 推荐：16GB+
-
-**关键提醒：别把上面的数值当死门槛**
-实际显存占用受这些**测试条件**影响，条件变了结论就变：
-- **模型规模**：7B级别；13B/70B显存需求显著上升
-- **序列长度**：短序列（≤512）省显存；越长激活值增长越明显
-- **batch大小**：小batch（1~2）省显
-
-## 块 6
-
-## 5.1 Python版本检查
-
-先确认你的Python版本，打开终端运行：
+1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
+2. 输入以下命令并回车：
 
 ```bash
 python --version
 ```
 
-建议使用 **Python 3.10+**。如果版本过低，后续安装PEFT和bitsandbytes时可能会遇到兼容性问题。
+3. 如果显示 `Python 3.13.x`（或你下载的版本号），说明安装成功！
+4. 再输入：
+
+```bash
+pip --version
+```
+
+如果也
+
+## 块 4
+
+你的目标是 LoRA 微调，而 LoRA 依赖 PyTorch 等深度学习框架，这些框架又依赖 Python 环境。本块帮你把 macOS 上的 Python 装好，这是后续搭建训练环境的第一步。
+
+**方法一：官方安装包（推荐新手）**
+
+1. 访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
+2. 双击运行，一路点击 "Continue" → "Install" 完成安装。
+3. 打开终端（Terminal），输入验证：
+
+```bash
+python3 --version
+pip3 --version
+```
+
+**为什么用 `python3` 而不是 `python`**：现代 macOS 默认不提供 `python` 命令，系统与官方安装包统一使用 `python3`。请始终用 `python3` / `pip3`，避免踩到"命令不存在"或误用系统版本的坑。
+
+**方法二：Homebrew（适合已有 Homebrew 的开发者）**
+
+如果你已安装 Homebrew，在终端执行：
+
+```bash
+brew install python
+```
+
+安装完成后，同样用 `python3 --version` 验证。
 
 ---
 
-## 5.2 PyTorch检查（关键一步）
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA 微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-**为什么重要？** LoRA/QLoRA依赖PyTorch，而且`bitsandbytes`的4-bit量化功能要求安装**与你本机CUDA匹配的GPU版PyTorch**。直接`pip install torch`通常装到CPU版，QLoRA会无法使用。
+## 块 5
 
-请到 [PyTorch官方安装选择器](https://pytorch.org/get-started/locally/) 选择对应命令。例如NVIDIA CUDA 12.1：
+## 2.3 Linux 用户（Ubuntu/Debian）：为 LoRA 微调铺路
+
+你的 RTX 4080 已就位，现在确保系统 Python 环境能支撑后续 PyTorch 与 HuggingFace Trainer 的安装。Linux 常预装 Python，但版本可能偏老，直接装好 3.10+ 与虚拟环境工具，避免微调脚本跑起来才发现环境缺东西。
 
 ```bash
-pip install torch --index-url https://download.pytorch.org/whl/cu121
+# 更新软件源
+sudo apt update
+
+# 安装 Python 3 和 pip
+sudo apt install python3 python3-pip python3-venv -y
+
+# 验证
+python3 --version
 ```
 
-**验证PyTorch能否看到GPU**，运行：
+**为什么这样写**：`-y` 自动确认安装，
 
-```python
-import torch
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
-print(torch.__version__)
-print(torch.cuda.is_available())   # 应为 True
-print(torch.version.cuda)          # 查看torch编译用的CUDA版本
-```
+## 块 6
 
-`torch.cuda.is_available()`返回`True`表示PyTorch侧能用GPU。**注意**：这并不保证bitsandbytes的4-bit量化路径可用，后者还需要bitsandbytes正确匹配本机CUDA，后续章节会专门检查。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
 ---
 
-## 5.3 查看GPU信息
+### 2.4 操作系统与实训环境该怎么选
 
-终端运行：
+你的目标是LoRA微调，这属于GPU实训。选对环境，能直接决定你后续跑训练时是否顺畅。
 
-```bash
-nvidia-smi
-```
+**日常写Python、练命令（Windows用户）**：启用 **WSL2 + Ubuntu LTS**（如Ubuntu 22.04/24.04 LTS）。它提供接近真实生产的Linux环境，命令、路径、包管理都和后续服务器一致。安装只需管理员PowerShell执行 `wsl --install`。
 
-输出包含：GPU型号、CUDA版本、显存大小。例如：
+**日常写Python（macOS/Linux用户）**：直接用本机终端即可，本身就是类Unix环境。
 
-```text
-RTX 4090
-CUDA 12.x
-Memory 24GB
-```
+**LoRA/QLoRA微调等GPU实训**：应使用**装有Ubuntu LTS的NVIDIA GPU云服务器，或本地实体Linux（Ubuntu LTS）机器**。这类任务依赖NVIDIA驱动、CUDA与显卡直通，Ubuntu LTS对深度学习生态支持最成熟。
 
----
+> **⚠️ 不推荐**：不要把 **"CentOS + VirtualBox虚拟机"当作最佳方案**。CentOS 8已停止维护；VirtualBox默认**无法直通NVIDIA GPU**，跑不了真正的GPU训练，只适合纯CPU隔离小实验。
 
-## 六、安装PEFT库
-
-### 6.1 PEFT是什么？
-
-PEFT是Hugging Face官方的**参数高效微调库**，支持LoRA、Prefix Tuning、Prompt Tuning、Adapter等方法。
-
-### 6.2 安装PEFT
-
-```bash
-pip install peft
-```
-
-验证安装：
-
-```python
-import peft
-print(peft.__version__)
-```
-
-能打印版本号即安装成功。
-
----
-
-## 七、安装bitsandbytes
-
-> 本块原始资料未给出bitsandbytes的具体安装命令和验证方法，相关内容将在后续章节（第八章、第十三章）展开。当前你只需知道：**bitsandbytes是QLoRA实现4-bit量化的关键依赖库**。
-
-安装bitsandbytes：
-
-```bash
-pip install bitsandbytes
-```
-
-验证安装：
-
-```python
-import bitsandbytes
-```
+**
 
 ## 块 7
 
-**7.1 bitsandbytes 在 QLoRA 里的角色**
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-你要做 LoRA 微调，而 QLoRA 是它的进阶版——先把大模型压成 4-bit 再训练。`bitsandbytes` 就是干这个压缩的库：负责 8-bit 和 4-bit 量化，是 QLoRA 训练的前置依赖。
-
-**注意**：本教程统一用 `bitsandbytes` + NVIDIA CUDA 方案，所以“必须安装”是针对这套流程。QLoRA 本身不绑定某个量化库，你以后用别的后端，以对应文档为准。
-
-**7.2 安装**
+你在用HuggingFace Trainer跑LoRA微调时，`pip install` 装 `peft`、`transformers` 等库是必经步骤。如果官方源下载慢，别急着改全局配置——**临时指定镜像**最干净：
 
 ```bash
-pip install bitsandbytes
+pip install peft -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
----
+**关键点**：官方PyPI（`pypi.org`）始终是首选默认源，镜像只是网络不佳时的临时加速手段。临时指定只影响这一次安装，不污染你的日常环境，网络恢复或镜像出问题时无需清理配置。
 
-**本块学习检查**：请口头回答
+**动手验证**：用上述命令安装任意库，观察下载速度；再运行 `pip install numpy`（不带`-i`），确认
 
 ## 块 8
 
-**为什么必须检查CUDA？**
+### 验证配置是否生效
 
-你的目标是跑通LoRA微调，而bitsandbytes是量化的核心工具。它依赖CUDA来调用GPU计算。如果CUDA版本不匹配，后果很直接：CUDA不可用、量化失败、加载模型直接报错。所以，动手前先花1分钟确认环境，能省下后面排查的大把时间。
+在命令行输入：
 
-**两步检查法（跟着做）**
+```bash
+pip config list
+```
 
-1. **查CUDA版本**：打开终端，运行：
-   ```bash
-   nvidia-smi
-   ```
-   在输出末尾找到`CUDA Version`，记下这个数字。
-
-2. **查bitsandbytes是否匹配**：接着运行：
-   ```bash
-   python -m bitsandbytes
-   ```
+如果看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'`，说明配置已生效，pip 会默认从清华镜像下载包。若输出为空或未显示该行，请检查配置文件路径和内容是否正确。
 
 ## 块 9
 
-**本块学习检查**：在终端运行 `python -c "import bitsandbytes"`，若报错提示 CUDA 动态库加载失败，请记录错误信息，并对照下方“可能问题”逐项排查。
+你的目标是用 LoRA 微调模型，而微调前需要跑训练脚本、看日志、改配置。VS Code 就是干这个的“工作台”——它轻量、免费，启动快，插件丰富，后续写 Linux 命令或改脚本时也能复用。
 
----
+**安装三步走：**
 
-### 9.1 推荐使用WSL2
+1. 打开 https://code.visualstudio.com，下载对应系统的安装包。
+2. 运行安装程序，一路“下一步”即可。
+3. 装完打开 VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并安装两个**必装插件**：
+   - **Python**（微软官方出品，提供语法高亮、调试、智能提示）
+   - **Pylance**（Python 语言服务器，让代码提示更智能）
 
-你的目标是快速跑通LoRA微调，建议直接走这条路径：
+装完插件后，VS Code 才能识别 `.py` 文件，给你代码补全、错误提示和一键运行功能——这对你调试 LoRA 训练脚本很关键。
 
-**Windows → WSL2 Ubuntu → CUDA环境 → bitsandbytes**
+**配置 Python 解释器：**
 
-原因很简单：Linux环境兼容性更好，能少踩很多坑。
-
----
-
-### 9.2 Windows原生可能问题
-
-如果你坚持在Windows原生环境跑，最常遇到的是：
-
-**问题1：bitsandbytes无法加载CUDA动态库**
-
-这不是单一原因，常见的有三种：
-
-- 你装的 `bitsandbytes` 版本和本机 CUDA / GPU 版
+1. 按 `Ctrl + Shift + P`（Mac 是 `Cmd + Shift + P`）。
+2
 
 ## 块 10
 
-## 九、Windows用户特别注意事项（新增）
-
-### 9.1 推荐使用WSL2
-
-**问题2：CUDA版本不匹配**
-
-在Windows上跑LoRA，最常遇到的坑就是CUDA版本对不上。别慌，按下面三步排查：
-
-**第一步：查看驱动和CUDA版本**
-
-打开终端，运行：
-
-```bash
-nvidia-smi
-```
-
-这个命令会告诉你三件事：
-- **NVIDIA驱动**是否正常安装
-- 驱动支持的**CUDA版本**（注意：这是驱动支持的最高版本）
-- GPU型号和显存使用情况
-
-**第二步：确认PyTorch版本**
-
-记住一个关键点：**PyTorch的CUDA版本必须和驱动兼容**。驱动支持的CUDA版本可以高于PyTorch要求的版本，但不能低于。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
 ---
 
-## 十、安装完整LoRA环境
+PyCharm Community 是 JetBrains 出品的免费 Python 专用 IDE，内置代码分析、版本控制、数据库工具，适合大型项目开发——比如你后续要进行的 LoRA 微调实验。
 
-如果你已经有基础环境（transformers、datasets、accelerate），直接加装LoRA核心库：
+**安装步骤**：
+1. 访问官网下载页，选择 **Community Edition**（社区版，免费）。
+2. 运行安装程序，建议勾选：
+   - `Add "Open Folder as Project"`（右键快速打开文件夹）
+   - `Add to PATH`（命令行可直接启动）
 
-```bash
-pip install peft bitsandbytes
-```
-
-**完整安装命令**（一步到位）：
-
-```bash
-pip install "transformers[sentencepiece]" datasets accelerate peft bitsandbytes
-```
-
-> **⚠️ 前置提醒**：确保已安装**匹配本机CUDA的GPU版PyTorch**，否则后面`import torch`或QLoRA 4-bit会失败。CUDA 12.1示例：
->
-> ```bash
-> pip install torch --index-url https://download.pytorch.org/whl/cu121
-> ```
+**首次启动配置**：
+1. 打开 PyCharm，选择 `New Project`。
+2. `Location` 处选择项目路径（**路径中不要含中文**）。
+3. `Interpreter` 选择 `Previously configured interpreter`，再选系统已装的 Python 3.10+。
 
 ---
 
-## 十一、配置Accelerate
-
-运行配置向导：
-
-```bash
-accelerate config
-```
-
-单GPU环境推荐选择：
-- Compute environment：`This machine`
-- Distributed：`No`
-- Mixed precision：`fp16`
-
-配置完成后会生成`default_config.yaml`文件。
-
----
-
-## 十二、LoRA环境验证实验
-
-创建`test_lora_env.py`文件，写入：
-
-```python
-import torch
-from peft import LoraConfig
-
-print("CUDA:", torch.cuda.is_available())
-
-config = LoraConfig(
-    r=8,
-    lora_alpha=16,
-    target_modules=["q_proj", "v_proj"],
-    lora_dropout=0.05
-)
-
-print(config)
-```
-
-运行：
-
-```bash
-python test_lora_env.py
-```
-
-**成功标准**：看到`CUDA: True`且能打印出LoRA配置，说明：
-- ✅ PyTorch正常
-- ✅ PEFT正常
-- ✅ LoRA配置可用
-
----
-
-## 十三、QLoRA环境验证实验
-
-测试bitsandbytes是否正常工作：
-
-```python
-import torch
-import bitsandbytes as bnb
-
-# 检查bitsandbytes是否可用
-print("bitsandbytes:", bnb.__version__)
-
-# 测试4-bit量化加载
-from transformers import AutoModelForCausalLM, BitsAndBytesConfig
-
-quant_config
-```
-
-> **模型许可证**：本部署示例默认使用Llama 2模型，其许可证为**Llama 2 Community License**。若商用且月活跃用户超过7亿，需获得Meta的额外授权。请根据实际使用的模型确认对应许可证条款。
+**练习任务**：按上述步骤创建一个名为 `lora_test` 的新项目，
 
 ## 块 11
 
-## 九、Windows用户特别注意事项（新增）
+### 5.1 为什么用 Conda
 
-### 9.1 推荐使用WSL2
+你已经熟悉 HuggingFace Trainer 和 PyTorch 训练流程，接下来要学 LoRA 微调。LoRA 微调通常需要特定版本的 PyTorch 和 CUDA 环境，如果直接在系统 Python 里装，很容易和已有项目冲突。**Conda** 就是解决这个问题的工具——它为每个项目创建独立的 Python 空间，还能管理不同版本的 Python 解释器本身。对深度学习这种依赖复杂的场景，Conda 几乎是必备工具。
 
-**问题2：Windows报错**
+### 5.2 安装 Conda：Anaconda vs Miniconda
 
-如果你在Windows上遇到兼容性问题，推荐使用WSL2来解决。
+| 选项 | 特点 | 推荐人群 |
+|------|------|----------|
+| **Anaconda** | 体积大（约 500MB+），预装大量数据科学库（numpy、pandas、jupyter 等） | 做数据分析、不想手动装包的用户 |
+| **Miniconda** | 体积小（约 50MB），只包含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发的用户 |
+
+**推荐 Miniconda**——你的目标是 LoRA 微调，环境越干净越好，需要什么装什么。
+
+**安装步骤：**
+
+1. 访问 https://docs.conda.io/en/latest/miniconda.html
+2. 下载对应系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）
+3. 运行安装程序：
+   - **Windows**：一路下一步，**保持默认、不要勾选 "Add Miniconda3 to my PATH environment variable"**（安装器标为"不推荐"）。直接塞进系统 PATH 容易和已有 Python/工具冲突，导致 `python`、`pip` 指向不明。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 使用 conda。
+   - **macOS/Linux**：运行 `.sh` 文件，按提示输入 `yes` 同意协议、选择安装路径，最后一步选 `yes` 让安装器执行 **`conda init`**（完成 shell 初始化）。这样每次打开终端时 conda 通过初始化脚本正确接管，而不是把目录硬加进 PATH。
+4. **验证安装**：打开**新的**终端（Windows 用 "Anaconda Prompt
+
+## 块 12
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
+
+创建虚拟环境是为LoRA微调做准备的关键一步。你的RTX 4080跑LoRA时，不同项目可能需要不同版本的PyTorch和CUDA，现在学会隔离环境，以后直接复用这套流程。
+
+在终端执行：
+
+```bash
+conda create -n llm-learn python=3.10
+```
+
+**命令拆解**：
+- `conda create`：创建环境的命令
+- `-n llm-learn`：给环境起名叫`llm-learn`（`n`是`name`的缩写）
+- `python=3.10`：指定环境里安装Python
+
+## 块 13
+
+## 5.4 激活与退出环境
+
+你已经熟悉 HuggingFace Trainer 了，但 LoRA 微调会涉及多个依赖库（如 `peft`、`bitsandbytes`）。用 Conda 环境隔离项目，能避免版本冲突——这正是你接下来要做的。
+
+**激活环境**（进入这个"独立房间"）：
+
+```bash
+conda activate llm-learn
+```
+
+激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。
+
+**验证当前环境的 Python 版本**：
+
+```bash
+python --version
+```
+
+应该显示 `Python 3.10.x`。
+
+**退出环境**（回到系统默认环境）：
+
+```bash
+conda deactivate
+```
+
+### 5.5 查看和管理环境
+
+**查看所有已创建的环境**：
+
+```bash
+conda env list
+```
+
+带 `*` 的就是
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 14
+
+## 6.1 VS Code 配置 Conda 环境
+
+你的目标是 LoRA 微调，这意味着你马上要跑训练脚本、调超参数。如果 IDE 用的 Python 解释器不对，`import torch` 都会报错——所以这一步值得认真做。
+
+**操作步骤：**
+
+1. 终端里先激活环境：`conda activate llm-learn`
+2. 打开 VS Code，按 `Ctrl + Shift + P` 打开命令面板
+3. 输入并选择 `Python: Select Interpreter`
+4. 在列表里选带有 `conda` 字样的项，形如 `Python 3.10.x ('llm-learn': conda)`
+
+**为什么这样做**：VS Code 会自动识别 conda 环境。选中后，你在当前工作区写的所有代码都会使用 `llm-learn` 里的 Python 和已装好的包——包括你后续 LoRA 微调要用的 transformers、peft 等。
+
+## 6.2 PyCharm 配置 Conda 环境
+
+如果你用 PyCharm，流程略有不同：
+
+1. 打开 PyCharm，点击 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）
+2. 左侧选 `Project: 你的项目名` → `Python Interpreter`
+3. 点齿轮图标 → `Add...`
+4. 左侧选 `Conda Environment` → `Existing environment`
+5. 在 `Interpreter` 路径中选择 conda 可执行文件（如 `~/
+
+## 块 15
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
 ---
 
-## 十四、常见问题排查
+你在命令行验证环境，是为LoRA微调铺路——训练脚本必须跑在正确的环境里。先激活环境，再输入`python`进入交互模式，看到`>>>`后执行：
 
-| 问题 | 原因 | 解决 |
-| ---- | ---- | ---- |
-| bitsandbytes加载失败 | CUDA不匹配 | 运行`nvidia-smi`检查CUDA版本，安装匹配的CUDA版bitsandbytes |
-| CUDA unavailable | PyTorch安装CPU版本 | 运行`pip install torch --index-url https://download.pytorch.org/whl/cu118`重新安装CUDA版PyTorch |
-| 显存不足 | 模型过大 | 降低batch size或使用梯度累积 |
-| Windows报错 | 兼容性问题 | 使用WSL2 |
-| QLoRA速度慢 | GPU性能不足 | 升级GPU |
+```python
+print("Hello, Python! 我的环境准备好了！")
+```
 
----
+打印成功即环境就绪，用`exit()`退出。接着在VS Code中建`my-first-project`文件夹，新建`hello.py`，写入`print("Hello from VS Code!")`，点右上角运行按钮或按`Ctrl + F5`，终端输出即
 
-## 十五、完整LoRA/QLoRA学习路线
+## 块 16
 
-**当前环境：**
+## 7.3 在 PyCharm 中验证
 
-Transformers → Datasets → Accelerate → PEFT → LoRA → bitsandbytes → QLoRA
+你已经熟悉 HuggingFace Trainer 和 PyTorch 进阶训练，环境验证对你来说更多是确认“工作台顺手”，而不是学习新概念。按下面三步走，30 秒内完成：
 
-**后续学习：**
+1. **新建项目**：打开 PyCharm，`File → New Project`，创建后右键项目根目录 → `New → Python File`，命名为 `hello.py`。
+2. **写入代码**：在 `hello.py` 中输入 `print("Hello, LoRA!")`（这里用你自己的目标字符串即可，不必拘泥于原文示例）。
+3. **运行**：右键编辑器空白处 → `Run 'hello'`，底部 **Run 窗口**会输出你打印的内容。
 
-加载基础模型 → 准备训练数据 →
+> 小提示：你的 RTX 4080 16GB 在后续 LoRA 微调中会频繁用到 GPU 资源监控，PyCharm 的 Run 窗口同样会显示训练日志，确认输出无报错是每次跑脚本的第一步。
 
 ## 测评题目
 
-### Q-KB12-ST1200-003
-QLoRA 对显存要求相对较低，主要因为它将基座模型以何种精度加载？
+### Q-KB0200-004
+验证conda环境是否配置正确：
+```bash
+conda --version && conda info --envs
+```
 
-### Q-KB12-ST1200-001
-使用 Hugging Face PEFT 实现 LoRA 时，需要安装的库名称是________。
+### Q-KB0200-001
+请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：
+```bash
+python --version
+```
 
-### Q-KB12-ST1202-001
-LoRA 中 rank r 决定低秩更新矩阵的________。
+### Q-KB0205-008
+写一个类 `Stack`（栈），实现 `push(item)`、`pop()`、`peek()`、`is_empty()` 方法。`pop()` 在栈空时抛出 `IndexError`。
 
-### Q-KB12-ST1200-002
-QLoRA 的 4-bit 量化常依赖的库是________。
+### Q-KB0205-001
+以下哪个是装饰器的正确语法？
 
-### Q-KB1201-005
-请使用 `peft` 库，为 `model` 配置 LoRA，要求 `r=16`，`lora_alpha=32`，目标模块为所有线性层（`all-linear`），`lora_dropout=0.05`。
+### Q-KB0203-002
+Python中，`*args` 接收的是________类型；`**kwargs` 接收的是________类型。
 
-### Q-KB1201-004
-使用LoRA微调后的模型，可以将LoRA权重合并（Merge）回基座模型中，合并后推理不需要额外加载LoRA适配器。（ ）
+### Q-KB0205-002
+生成器函数使用________关键字返回值（而非 `return`），调用生成器函数返回的是一个________对象。
 
-### Q-KB12-ST1204-001
-QLoRA 常用的 4-bit 数据类型名称是________。
+### Q-KB0204-005
+请写一个自定义异常类 `ModelError`，继承自 `Exception`，并在模型加载失败时抛出该异常，附带错误信息。
 
-### Q-KB12-ST1204-002
-双重量化指的是进一步量化量化常数，以继续节省________。
+### Q-KB0205-004
+请写一个生成器函数 `fibonacci(n)`，生成前 `n` 个斐波那契数。

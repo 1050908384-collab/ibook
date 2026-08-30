@@ -3,7 +3,7 @@
   "primary_category": "学情诊断与前置补全",
   "tags": "学情诊断与前置补全|vLLM部署|工程实操型|RTX 4060 8GB",
   "background": "前端/Web开发背景，会JS和基础Python，想转LLM方向",
-  "existing_skills": "KB-02",
+  "existing_skills": "Python编程基础",
   "learning_goal": "vLLM部署",
   "daily_hours": "2.0",
   "learning_style": "工程实操型",
@@ -13,6 +13,6 @@
   "expected_difficulty": "中级",
   "expected_strategy": "reinforce",
   "run_stage_2": "False",
-  "answer_script_stage_1": "{\"answer_behavior\":\"medium\",\"target_accuracy_range\":[0.6,0.79],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"reinforce\"}",
-  "user_input_text": "我的学习背景：前端/Web开发背景，会JS和基础Python，想转LLM方向\n已掌握技能：KB-02\n我的学习目标：vLLM部署\n我每天能学：2.0小时\n我喜欢怎么学：工程实操型\n我的硬件条件：RTX 4060 8GB"
+  "answer_script_stage_1": "{\"answer_behavior\": \"medium\", \"target_accuracy_range\": [0.6, 0.69], \"wrong_answer_strategy\": \"fixed_by_question_id\", \"expected_next_strategy\": \"reinforce\"}",
+  "user_input_text": "我的学习背景：前端/Web开发背景，会JS和基础Python，想转LLM方向\n我已掌握的技能：Python编程基础\n我的学习目标：vLLM部署\n我每天能学：2.0小时\n我喜欢怎么学：工程实操型\n我的硬件条件：RTX 4060 8GB"
 }

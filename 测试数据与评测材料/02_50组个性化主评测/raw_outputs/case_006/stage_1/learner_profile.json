@@ -1,8 +1,21 @@
 {
-  "session_id": "4b0ff64d-196c-4c3d-b06f-417863e13c26",
+  "session_id": "0c37991c-e8b9-4e80-92aa-ccbd4e7c0399",
   "user_id": "local-user",
-  "grade": "",
+  "grade": "数学专业硕士，懂线性代数和概率论，但无编程经验",
   "skill_tags": [],
+  "mastered_block_ids": [],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-08"
+  ],
+  "target_subtopic_ids": [
+    "KBS-08-02"
+  ],
+  "planned_block_order": [
+    "KB-08"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -18,7 +31,7 @@
         "KBS-08-06"
       ],
       "mapping_confidence": 1.0,
-      "level": "beginner",
+      "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
@@ -29,10 +42,10 @@
   ],
   "goal": "理解Transformer架构",
   "daily_hours": 1.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.8,
+  "learning_style": "theory",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
-  "confidence": 0.95,
+  "confidence": 0.9,
   "version": 1
 }

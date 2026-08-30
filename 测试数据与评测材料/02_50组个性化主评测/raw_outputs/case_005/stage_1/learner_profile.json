@@ -1,8 +1,21 @@
 {
-  "session_id": "705ba96b-2e39-434f-9531-7f9daff8fb03",
+  "session_id": "e435ca2c-475e-433d-855d-08b1d087ecef",
   "user_id": "local-user",
-  "grade": "",
+  "grade": "资深C++/Java工程师，但不会Python，想学大模型微调",
   "skill_tags": [],
+  "mastered_block_ids": [],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -24,10 +37,10 @@
   ],
   "goal": "LoRA微调",
   "daily_hours": 2.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.575,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
-  "confidence": 0.95,
+  "confidence": 0.9,
   "version": 1
 }

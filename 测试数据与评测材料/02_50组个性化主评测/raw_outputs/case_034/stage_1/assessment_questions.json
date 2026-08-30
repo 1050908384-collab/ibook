@@ -1,135 +1,135 @@
 [
   {
-    "question_id": "Q-KB08-ST0807-001",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-07",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "模型前向传播得到的 logits 通常在经过________后可转换为词表上的概率分布。",
-    "options": [],
-    "correct_answer": "softmax",
-    "hint": "softmax 将 logits 归一化为概率。",
-    "explanation": "softmax 将 logits 归一化为概率。"
-  },
-  {
-    "question_id": "Q-KB08-ST0807-003",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-07",
-    "difficulty": "中级",
-    "question_type": "single_choice",
-    "question_text": "前向实验中 `input_ids` 通常表示？",
-    "options": [
-      {
-        "key": "A",
-        "text": "Tokenizer 输出的 token 整数编号"
-      },
-      {
-        "key": "B",
-        "text": "模型损失值"
-      },
-      {
-        "key": "C",
-        "text": "GPU 温度"
-      },
-      {
-        "key": "D",
-        "text": "训练轮数"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "input_ids 是送入模型的离散 token ID。",
-    "explanation": "input_ids 是送入模型的离散 token ID。"
-  },
-  {
-    "question_id": "Q-KB08-ST0804-001",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-04",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "Transformer 中的 FFN 通常对序列中的每个 token 位置________地应用同一组参数。",
-    "options": [],
-    "correct_answer": "独立 ||| 分别 ||| position-wise",
-    "hint": "FFN 不直接混合不同位置的信息。",
-    "explanation": "FFN 不直接混合不同位置的信息。"
-  },
-  {
-    "question_id": "Q-KB08-ST0807-002",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-07",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "推理时将模型切换到评估模式，应调用 `model.________()`。",
-    "options": [],
-    "correct_answer": "eval ||| eval()",
-    "hint": "eval 模式会调整 dropout 等层的行为。",
-    "explanation": "eval 模式会调整 dropout 等层的行为。"
-  },
-  {
-    "question_id": "Q-KB08-ST0802-002",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-02",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "GPT、Llama、Qwen 等自回归语言模型通常使用________架构。",
-    "options": [],
-    "correct_answer": "Decoder-Only ||| decoder only ||| 仅解码器",
-    "hint": "这些模型按自回归方式预测下一个 token。",
-    "explanation": "这些模型按自回归方式预测下一个 token。"
-  },
-  {
-    "question_id": "Q-KB08-ST0800-003",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-00",
+    "question_id": "Q-KB07-ST0700-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
     "difficulty": "初级",
-    "question_type": "single_choice",
-    "question_text": "加载 GPT-2 等预训练模型进行前向实验，最直接的目的是什么？",
-    "options": [
-      {
-        "key": "A",
-        "text": "验证模型与输入张量可正常前向计算"
-      },
-      {
-        "key": "B",
-        "text": "立即完成微调"
-      },
-      {
-        "key": "C",
-        "text": "删除词表"
-      },
-      {
-        "key": "D",
-        "text": "关闭 CUDA 驱动"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "该实验用于验证加载和前向流程。",
-    "explanation": "该实验用于验证加载和前向流程。"
+    "question_type": "fill_blank",
+    "question_text": "Hugging Face 模型与分词器常用的 Python 库名称是________。",
+    "options": [],
+    "correct_answer": "transformers",
+    "hint": "transformers 提供模型、Tokenizer 与训练接口。",
+    "explanation": "transformers 提供模型、Tokenizer 与训练接口。"
   },
   {
-    "question_id": "Q-KB0801-004",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-01",
+    "question_id": "Q-KB07-ST0700-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
+    "options": [],
+    "correct_answer": "tokenizer ||| 分词器",
+    "hint": "Tokenizer 负责文本与 token 序列转换。",
+    "explanation": "Tokenizer 负责文本与 token 序列转换。"
+  },
+  {
+    "question_id": "Q-KB0704-005",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：加载 `meta-llama/Llama-2-7b-chat-hf` 分词器，使用 `apply_chat_template` 生成一个包含系统提示（\"You are a helpful assistant.\"）、用户提问（\"What is AI?\"）的输入字符串，要求包含生成提示（generation prompt），且不进行分词。",
+    "options": [],
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0701-005",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请简述 BPE 算法在解码（Decoding）时可能遇到的一个主要问题，以及 SentencePiece 是如何解决这个问题的。",
+    "options": [],
+    "correct_answer": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---",
+    "hint": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---",
+    "explanation": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0701-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
     "difficulty": "中级",
     "question_type": "true_false",
-    "question_text": "在Transformer解码器（Decoder）中，为了防止模型在生成时“偷看”到未来的词，通常会使用因果掩码（Causal Mask）。（ ）",
+    "question_text": "SentencePiece 模型将输入文本视为原始的字符串序列，无需预先进行空格分词，可以直接从原始句子中学习子词单元。（ ）",
     "options": [
       "正确",
       "错误"
     ],
     "correct_answer": "正确",
-    "hint": "> 因果掩码（Causal Mask）或下三角掩码（Lower-triangular Mask）确保位置 $i$ 的预测只能依赖于位置 $1$ 到 $i-1$ 的输出。",
-    "explanation": "> 因果掩码（Causal Mask）或下三角掩码（Lower-triangular Mask）确保位置 $i$ 的预测只能依赖于位置 $1$ 到 $i-1$ 的输出。"
+    "hint": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。",
+    "explanation": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。"
   },
   {
-    "question_id": "Q-KB08-ST0800-001",
-    "block_id": "KB-08",
-    "subtopic_id": "KBS-08-00",
+    "question_id": "Q-KB0702-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
     "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "用 `AutoModel.from_pretrained()` 加载模型时，模型权重通常来自名称对应的预训练________。",
+    "question_type": "short_answer",
+    "question_text": "请写出使用 Hugging Face `transformers` 库加载名为 `bert-base-uncased` 的分词器的代码。",
     "options": [],
-    "correct_answer": "检查点 ||| checkpoint ||| 模型仓库",
-    "hint": "from_pretrained 会下载或读取预训练检查点。",
-    "explanation": "from_pretrained 会下载或读取预训练检查点。"
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```"
+  },
+  {
+    "question_id": "Q-KB0701-004",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下关于子词切分（Subword Tokenization）的优点，描述**错误**的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "能有效解决未登录词（OOV）问题"
+      },
+      {
+        "key": "B",
+        "text": "相比字符级模型，能更好地保留语义信息"
+      },
+      {
+        "key": "C",
+        "text": "相比词级模型，能显著减小词汇表大小"
+      },
+      {
+        "key": "D",
+        "text": "切分出的子词单元总是具有独立的、完整的语义"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> 子词单元（如 \"ing\", \"pre\", \"##ing\"）本身不一定具有完整的语义，它们是构成词的更小单位。其优势在于平衡了词汇表大小和OOV问题，而不是保证每个单元都有独立语义。",
+    "explanation": "> 子词单元（如 \"ing\", \"pre\", \"##ing\"）本身不一定具有完整的语义，它们是构成词的更小单位。其优势在于平衡了词汇表大小和OOV问题，而不是保证每个单元都有独立语义。"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "Byte Pair Encoding (BPE) 算法的核心思想是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "随机采样词元"
+      },
+      {
+        "key": "B",
+        "text": "从字符级别开始，迭代合并最频繁出现的相邻符号对"
+      },
+      {
+        "key": "C",
+        "text": "基于整个词进行编码"
+      },
+      {
+        "key": "D",
+        "text": "使用固定大小的词汇表"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。",
+    "explanation": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。"
   }
 ]

@@ -1,5 +1,34 @@
 # -*- coding: utf-8 -*-
 """看 OllamaEmbeddingFunction 内部 call 函数实现和所用端点。"""
+
+# ---------- 路径设置：python scripts\xxx.py 直接运行时能正确找到 backend / data ----------
+
+import sys
+from pathlib import Path
+_PROJ_ROOT_ = Path(__file__).resolve().parent.parent
+if str(_PROJ_ROOT_) not in sys.path: sys.path.insert(0, str(_PROJ_ROOT_))
+_BE_ = Path(_PROJ_ROOT_, "backend")
+if str(_BE_) not in sys.path: sys.path.insert(0, str(_BE_))
+
+import sys as _sys_py
+from pathlib import Path as _Path_py
+_PROJ_ROOT_ = _Path_py(__file__).resolve().parent.parent
+if str(_PROJ_ROOT_) not in _sys_py.path:
+    _sys_py.path.insert(0, str(_PROJ_ROOT_))
+if str(_PROJ_ROOT_ / "backend") not in _sys_py.path:
+    _sys_py.path.insert(0, str(_PROJ_ROOT_ / "backend"))
+# -------------------------------------------------------------------------------------
+
+# ---------- 路径设置：python scripts\xxx.py 直接运行时能正确找到 backend / data ----------
+import sys as _sys_py
+from pathlib import Path as _Path_py
+_PROJ_ROOT_ = _Path_py(__file__).resolve().parent.parent
+if str(_PROJ_ROOT_) not in _sys_py.path:
+    _sys_py.path.insert(0, str(_PROJ_ROOT_))
+if str(_PROJ_ROOT_ / "backend") not in _sys_py.path:
+    _sys_py.path.insert(0, str(_PROJ_ROOT_ / "backend"))
+# -------------------------------------------------------------------------------------
+
 import sys, inspect, re
 from chromadb.utils import embedding_functions
 

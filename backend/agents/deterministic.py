@@ -28,7 +28,16 @@ from models.contracts import (
     StagePlanningOutput,
 )
 from models.material import TestQuestion
-from models.profile import KnowledgeGap, PracticeProfile, UserProfile
+from models.profile import (
+    KnowledgeGap,
+    LEARNING_STYLE_MIXED,
+    LEARNING_STYLE_PRACTICE,
+    LEARNING_STYLE_THEORY,
+    LearningStyle,
+    PracticeProfile,
+    UserProfile,
+    normalize_learning_style,
+)
 from models.review import QualityReviewResult, ReviewError, TechnicalReviewResult
 from models.stage import Claim, ContentBlock, LearningPackage, Source, StageInfo
 from tools.learning_resource_tool import LearningResourceTool
@@ -172,9 +181,19 @@ class DeterministicDiagnosticAgent:
         text = request.user_input.strip()
         structured = self._parse_structured_input(text)
         target_text = structured.get("goal") or self._target_text(text)
-        mastered = structured.get("skill_tags") or self._extract_mastered_skills(text, target_text)
+        mastered = structured.get("skill_tags")
+        if mastered is None:
+            mastered = self._extract_mastered_skills(text, target_text)
         needs_domain_clarification = self._needs_domain_clarification(target_text)
+        goal_scope = self._infer_goal_scope(target_text)
         target_candidates = [] if needs_domain_clarification else self._select_target_candidates(target_text)
+        if goal_scope == "all_knowledge":
+            target_candidates = [
+                {"block_id": str(block.get("block_id")), "score": 100.0,
+                 "mapping_confidence": 1.0, **block}
+                for block in self.knowledge_catalog_tool.list_blocks()
+                if block.get("block_id")
+            ]
         gaps = await self._build_grounded_gaps(target_text, target_candidates, mastered)
         if self._needs_training_optimization(target_text):
             optimization_block = self.knowledge_catalog_tool.get_block("KB-13")
@@ -199,6 +218,39 @@ class DeterministicDiagnosticAgent:
             )
         if not gaps:
             gaps = [KnowledgeGap(skill=target_text or "通用学习目标")]
+        target_block_ids = [
+            str(item.get("block_id")) for item in target_candidates
+            if item.get("block_id")
+        ]
+        target_subtopic_ids = list(dict.fromkeys(
+            sid for gap in gaps for sid in (gap.target_subtopic_ids or []) if sid
+        ))
+        if goal_scope == "all_knowledge":
+            # Explicit all-knowledge requests expand every catalog block in
+            # catalog order; ordinary goals never receive this expansion.
+            gaps = []
+            target_subtopic_ids = []
+            for block in target_candidates:
+                block_id = str(block.get("block_id"))
+                # list_blocks() may return summaries without nested topics;
+                # resolve each block through the catalog before expanding it.
+                resolved_block = self.knowledge_catalog_tool.get_block(block_id) or block
+                ids = [str(item.get("subtopic_id") or item.get("id"))
+                       for item in (resolved_block.get("subtopics") or [])
+                       if item.get("subtopic_id") or item.get("id")]
+                if not ids:
+                    continue
+                target_subtopic_ids.extend(ids)
+                gaps.append(KnowledgeGap(
+                    skill=str(resolved_block.get("block_name") or block_id),
+                    block_id=block_id,
+                    block_name=str(resolved_block.get("block_name") or block_id),
+                    target_subtopic_ids=ids,
+                    mapping_confidence=1.0,
+                    level="beginner",
+                    prerequisites=[],
+                ))
+            target_block_ids = [gap.block_id for gap in gaps]
         # Stages expand the target's subtopic-level hard closure. Do not inject
         # coarse block prerequisites into the diagnostic profile.
 
@@ -264,14 +316,53 @@ class DeterministicDiagnosticAgent:
             skill_tags=mastered,
             mastered_block_ids=declared_mastered_block_ids,
             expected_target_blocks=declared_targets,
+            goal_scope=("all_knowledge" if goal_scope == "all_knowledge" else
+                        "full_curriculum" if goal_scope == "full_curriculum" else
+                        "multi_block" if len(target_block_ids) > 1 else "focused"),
+            target_block_ids=target_block_ids,
+            target_subtopic_ids=list(dict.fromkeys(target_subtopic_ids)),
+            planned_block_order=self._order_target_blocks(target_block_ids),
             knowledge_gaps=gaps,
             goal=target_text or text,
             daily_hours=structured.get("daily_hours", self._extract_daily_hours(text)),
-            learning_style=structured.get("learning_style", self._extract_learning_style(text)),
+            learning_style=normalize_learning_style(
+                structured.get("learning_style", self._extract_learning_style(text))
+            ),
             confidence=confidence,
         )
         _agent_log("学情诊断与阶段规划 Agent", f"diagnostic:done | goal={profile.goal} | gaps={len(profile.knowledge_gaps)} | confidence={profile.confidence:.2f}")
         return DiagnosticOutput(profile=profile, followup_questions=followup_questions)
+
+    @staticmethod
+    def _infer_goal_scope(target_text: str) -> str:
+        normalized = str(target_text or "").casefold()
+        if any(token in normalized for token in (
+            "全部73", "73个知识点", "全部知识点", "所有知识点",
+            "完整课程", "完整学习", "all knowledge", "full curriculum",
+        )):
+            return "all_knowledge"
+        if any(token in normalized for token in (
+            "完整部署路线", "从基础到上线", "端到端部署", "full deployment",
+        )):
+            return "full_curriculum"
+        return "focused"
+
+    def _order_target_blocks(self, block_ids: list[str]) -> list[str]:
+        remaining = {str(bid) for bid in block_ids if bid}
+        ordered: list[str] = []
+        while remaining:
+            ready = []
+            for bid in remaining:
+                block = self.knowledge_catalog_tool.get_block(bid) or {}
+                prerequisites = {str(pid) for pid in (block.get("prerequisites") or [])}
+                if not prerequisites.intersection(remaining):
+                    ready.append(bid)
+            if not ready:
+                ready = sorted(remaining)
+            for bid in sorted(ready):
+                ordered.append(bid)
+                remaining.remove(bid)
+        return ordered
 
     # ------------------------------------------------------------------
     # 分步诊断：目标 → 知识板块 → 知识点 → 确定
@@ -414,6 +505,14 @@ class DeterministicDiagnosticAgent:
         profile = UserProfile(
             session_id=session_id,
             skill_tags=skill_tags,
+            goal_scope="multi_block" if len(candidates) > 1 else "focused",
+            target_block_ids=[str(item.get("block_id")) for item in candidates if item.get("block_id")],
+            target_subtopic_ids=[
+                sid for gap in gaps for sid in (gap.target_subtopic_ids or []) if sid
+            ],
+            planned_block_order=self._order_target_blocks(
+                [str(item.get("block_id")) for item in candidates if item.get("block_id")]
+            ),
             # Keep an empty gap list when every target subtopic is mastered.
             # The API uses this as the signal to skip stage/package generation.
             knowledge_gaps=gaps,
@@ -616,14 +715,42 @@ class DeterministicDiagnosticAgent:
             candidate.get("block_id")
             for candidate in self.knowledge_catalog_tool.search(target_text, top_k=8)
         }
+        # Parse negation patterns like '无深度学习经验' / '没有 Python 基础' /
+        # '不熟悉 Linux' so we don't falsely mark negated skills as mastered.
+        negated_terms: set[str] = set()
+        for neg in re.finditer(
+            r"(?:无|没有|没|未|不懂|不了解|不熟悉|不掌握|不具备|缺乏|缺少|不会|没学过|没接触过)\s*"
+            r"([\u4e00-\u9fa5A-Za-z0-9\-/]{1,20})"
+            r"(?:经验|基础|知识|能力|背景|相关)?",
+            mastery_text,
+        ):
+            term = neg.group(1).strip()
+            if term:
+                negated_terms.add(term)
+
         mastered: list[str] = []
         for candidate in self.knowledge_catalog_tool.search(mastery_text, top_k=8):
             if candidate.get("block_id") in target_block_ids:
                 continue
+            # Skip candidates whose keywords appear inside a negation phrase.
             resolved = self.knowledge_catalog_tool.get_block(str(candidate.get("block_id", ""))) or candidate
+            block_name = str(resolved.get("block_name") or candidate.get("matched_terms") or "")
+            block_id = str(candidate.get("block_id") or "")
+            negated = False
+            for nt in negated_terms:
+                if nt and (nt in block_name or nt in block_id or nt in str(candidate.get("matched_terms") or "")):
+                    negated = True
+                    break
+            if negated:
+                continue
             mastered.append(self.knowledge_catalog_tool.canonical_skill_label(resolved, mastery_text))
         if not mastered:
             mastered = [skill for skill in SKILL_NAMES if skill.lower() in mastery_text.lower()]
+            # Also filter negated SKILL_NAMES hits.
+            mastered = [
+                s for s in mastered
+                if not any(nt and nt in s for nt in negated_terms)
+            ]
         return list(dict.fromkeys(mastered))
 
     @staticmethod
@@ -672,7 +799,15 @@ class DeterministicDiagnosticAgent:
         _agent_log("学情诊断与阶段规划 Agent", f"stage_planning:start | session={request.session_id} | stage={request.stage_num}")
 
         # Never plan a stage from a stale gap belonging to another goal.
-        allowed_block_ids = {str(item.get("block_id")) for item in self._select_target_candidates(request.profile.goal) if item.get("block_id")}
+        allowed_block_ids = {
+            str(bid) for bid in (request.profile.target_block_ids or []) if bid
+        }
+        if not allowed_block_ids:
+            allowed_block_ids = {
+                str(item.get("block_id"))
+                for item in self._select_target_candidates(request.profile.goal)
+                if item.get("block_id")
+            }
         if allowed_block_ids:
             request.profile.knowledge_gaps = [
                 item for item in request.profile.knowledge_gaps
@@ -707,6 +842,10 @@ class DeterministicDiagnosticAgent:
         # Build expected target priority index (stable ordering matches the
         # user-declared order on input → tie-break keeps goal-directed gaps).
         expected_targets: list[str] = list(request.profile.expected_target_blocks or [])
+        planned_order = {
+            str(block_id): index
+            for index, block_id in enumerate(request.profile.planned_block_order or [])
+        }
         expected_priority = {str(tid).upper(): i for i, tid in enumerate(expected_targets)}
         for i, t in enumerate(expected_targets):
             resolved = self.knowledge_catalog_tool.resolve_block(t)
@@ -736,6 +875,7 @@ class DeterministicDiagnosticAgent:
             key=lambda g: (
                 _gap_unmet_prereq_count(g),
                 _gap_expected_rank(g),
+                planned_order.get(str(g.block_id), len(planned_order)),
                 request.profile.knowledge_gaps.index(g) if g in request.profile.knowledge_gaps else 9999,
             ),
         )
@@ -776,6 +916,15 @@ class DeterministicDiagnosticAgent:
                 item for item in self.db_client.list_subtopic_statuses(request.session_id)
                 if int(item.get("status", -1)) in (-1, 0) and item["subtopic_id"] in hard_levels
             ]
+            # Exclude subtopics belonging to blocks the learner already
+            # mastered. Without this, a Python-proficient user (KB-02
+            # mastered) would be re-taught KB-02 subtopics instead of
+            # progressing to KB-03.
+            if mastered_block_ids:
+                candidates = [
+                    item for item in candidates
+                    if str(item.get("block_id", "")) not in mastered_block_ids
+                ]
             candidates.sort(
                 key=lambda item: (
                     hard_levels[item["subtopic_id"]],
@@ -867,6 +1016,58 @@ class DeterministicDiagnosticAgent:
             total_hours += hours
             completed_ids.add(candidate["subtopic_id"])
         if not selected_subtopics:
+            # Before falling back to the stage_generator_tool, try expanding
+            # the hard-prerequisite closure to the entire target block.
+            # A narrow target_subtopic_ids (e.g. ['KBS-12-01']) can produce a
+            # tiny closure where every candidate has unmet prerequisites.
+            # Expanding to all block subtopics yields a fuller closure that
+            # may unlock a valid starting subtopic.
+            expanded_targets = [
+                item["subtopic_id"] for item in preferred_block.get("subtopics", [])
+                if item.get("subtopic_id")
+            ]
+            if expanded_targets and expanded_targets != target_subtopic_ids:
+                expanded_levels = await self.graph_query_tool.minimal_hard_prerequisite_subgraph(
+                    expanded_targets,
+                    request.profile.goal,
+                )
+                if expanded_levels:
+                    expanded_candidates = [
+                        item for item in self.db_client.list_subtopic_statuses(request.session_id)
+                        if int(item.get("status", -1)) in (-1, 0)
+                        and item["subtopic_id"] in expanded_levels
+                    ]
+                    if mastered_block_ids:
+                        expanded_candidates = [
+                            item for item in expanded_candidates
+                            if str(item.get("block_id", "")) not in mastered_block_ids
+                        ]
+                    expanded_candidates.sort(
+                        key=lambda item: (
+                            expanded_levels[item["subtopic_id"]],
+                            0 if item.get("estimated_hours", 0) <= request.profile.daily_hours else 1,
+                            item.get("sequence_index", 0),
+                            item["subtopic_id"],
+                        )
+                    )
+                    for candidate in expanded_candidates:
+                        if selected_subtopics and candidate.get("block_id") != selected_subtopics[0].get("block_id"):
+                            continue
+                        prerequisites = candidate.get("prerequisites") or []
+                        if isinstance(prerequisites, str):
+                            try:
+                                prerequisites = json.loads(prerequisites)
+                            except json.JSONDecodeError:
+                                prerequisites = []
+                        if any(prerequisite not in completed_ids for prerequisite in prerequisites):
+                            continue
+                        hours = max(0.0, float(candidate.get("estimated_hours") or 0.0))
+                        if selected_subtopics and hours > 0 and total_hours + hours > budget:
+                            break
+                        selected_subtopics.append(candidate)
+                        total_hours += hours
+                        completed_ids.add(candidate["subtopic_id"])
+        if not selected_subtopics:
             return await self._generate_fallback_stage(request, gap, preferred_block)
         subtopic = selected_subtopics[0]
         block_info = preferred_block
@@ -888,13 +1089,17 @@ class DeterministicDiagnosticAgent:
             stage_block_info["estimated_hours"] = subtopic["estimated_hours"]
 
         try:
+            stage_profile = request.profile.model_dump(mode="json")
+            practice = getattr(request, "practice_profile", None)
+            if practice and getattr(practice, "hardware", ""):
+                stage_profile["hardware"] = practice.hardware
             generated_stage = await self.stage_generator_tool.generate_stage(
                 request.session_id,
                 stage_gap,
                 stage_block_info,
                 request.profile.goal,
                 request.stage_num,
-                profile=request.profile.model_dump(mode="json"),
+                profile=stage_profile,
             )
         except Exception:
             generated_stage = {}
@@ -951,6 +1156,7 @@ class DeterministicDiagnosticAgent:
             "学情诊断与阶段规划 Agent",
             f"stage_planning:done | block={stage.block_name} | block_id={stage.block_id} | subtopics={','.join(stage.subtopic_ids) or '-'} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
         )
+        request.profile.active_stage_block_id = stage.block_id
         return StagePlanningOutput(stage=stage)
 
     async def _generate_fallback_stage(
@@ -1085,6 +1291,7 @@ class DeterministicDiagnosticAgent:
             "学情诊断与阶段规划 Agent",
             f"stage_planning:fallback | block={stage.block_name} | subtopics={','.join(fb_sub_ids)} | hours={stage.estimated_hours} | days={stage.suggested_study_days}",
         )
+        request.profile.active_stage_block_id = stage.block_id
         return StagePlanningOutput(stage=stage)
 
     @staticmethod
@@ -1115,17 +1322,19 @@ class DeterministicDiagnosticAgent:
             "grade": self._labeled_value(text, ("我的身份背景", "身份背景", "学习背景", "background")),
             "skill_tags": self._parse_tags(self._labeled_value(
                 text,
-                ("我的已有基础", "已有基础", "知识基础", "mastered skills", "mastered"),
+                ("我的已有基础", "已有基础", "知识基础", "我已掌握的技能", "已掌握的技能", "已掌握技能", "mastered skills", "mastered"),
             )),
             "goal": goal,
             "daily_hours": self._extract_daily_hours(self._labeled_value(
                 text,
                 ("我每天可以学习", "每天可以学习", "每日学习时长", "我每阶段可以学习", "每阶段学习时长", "每阶段可以学习", "daily study hours", "daily hours"),
             ) or text),
-            "learning_style": self._extract_learning_style(self._labeled_value(
-                text,
-                ("我的学习方式", "学习方式", "learning style"),
-            ) or text),
+            "learning_style": normalize_learning_style(self._extract_learning_style(
+                self._labeled_value(
+                    text,
+                    ("我的学习方式", "学习方式", "learning style"),
+                ) or text,
+            )),
         }
 
     @staticmethod
@@ -1144,8 +1353,23 @@ class DeterministicDiagnosticAgent:
         normalized = raw.strip().casefold()
         if normalized in {"none", "no foundation", "no prior knowledge", "0基础", "零基础", "无", "无基础"}:
             return []
+        # 整个字符串以否定词开头 → 全部否定，无已掌握技能
+        negation_prefixes = ("无", "没有", "没", "未", "不懂", "不了解", "不熟悉",
+                             "不掌握", "不具备", "缺乏", "缺少", "不会", "没学过", "没接触过")
+        raw_stripped = raw.strip()
+        if any(raw_stripped.startswith(p) for p in negation_prefixes):
+            return []
         parts = re.split(r"[、,，/|；;\n]+", raw)
-        return [part.strip() for part in parts if part.strip()]
+        # 过滤单个带否定前缀的标签（如 "无Python"、"没有深度学习经验"）
+        cleaned: list[str] = []
+        for part in parts:
+            tag = part.strip()
+            if not tag:
+                continue
+            if any(tag.startswith(p) for p in negation_prefixes):
+                continue
+            cleaned.append(tag)
+        return cleaned
 
     @staticmethod
     def _parse_declared_target_blocks(text: str) -> list[str]:
@@ -1200,15 +1424,11 @@ class DeterministicDiagnosticAgent:
         return max(0.5, min(8.0, hours))
 
     @staticmethod
-    def _extract_learning_style(text: str) -> str:
-        lowered = text.lower()
-        if "practice" in lowered or "实操" in text or "实践" in text or "动手" in text:
-            return "practice"
-        if "theory" in lowered or "理论" in text or "原理" in text:
-            return "theory"
-        if "mixed" in lowered or "混合" in text or "结合" in text:
-            return "mixed"
-        return "mixed"
+    def _extract_learning_style(text: str) -> LearningStyle:
+        """仅返回 LEARNING_STYLES 枚举内三值之一。
+        判定顺序：组合/混合 → 实操 → 理论 → 默认 mixed，
+        保证"理论结合简单实操"等组合表达归为 mixed 而非 practice。"""
+        return normalize_learning_style(text)
 
 
 class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
@@ -1218,6 +1438,10 @@ class HybridDiagnosticAgent(DeterministicDiagnosticAgent):
 
     async def run(self, request: DiagnosticInput) -> DiagnosticOutput:
         fallback = await super().run(request)
+        # Full-curriculum scope is explicit and deterministic. Do not let the
+        # optional LLM classifier narrow the user's declared all-knowledge set.
+        if fallback.profile.goal_scope == "all_knowledge":
+            return fallback
         candidate_query = fallback.profile.goal or request.user_input
         recalled_candidates = self._recall_candidates(candidate_query)
         candidates = [self.knowledge_catalog_tool._prompt_candidate(item) for item in recalled_candidates]
@@ -2035,10 +2259,14 @@ class DeterministicContentAgent:
         if daily_hours:
             answer += f"\n\n你每天有 {daily_hours} 小时学习时间，合理规划好节奏就好。"
 
-        learning_style = getattr(profile, "learning_style", "")
+        learning_style = normalize_learning_style(getattr(profile, "learning_style", "") or LEARNING_STYLE_MIXED)
         if learning_style:
-            style_hint = "多动手实践" if learning_style == "practice" else "注重原理理解" if learning_style == "theory" else "理论结合实践"
-            answer += f"你的学习风格偏向{style_hint}，可以按这个方向调整。"
+            style_cn = {
+                LEARNING_STYLE_PRACTICE: "多动手实践",
+                LEARNING_STYLE_THEORY:   "注重原理理解",
+                LEARNING_STYLE_MIXED:    "理论结合实践",
+            }[learning_style]
+            answer += f"你的学习风格偏向{style_cn}，可以按这个方向调整。"
 
         # 引用画像摘要文本（补充 profile 对象未覆盖的信息）
         if request.profile_summary:
@@ -2292,11 +2520,13 @@ class DeterministicContentAgent:
         block_index: int = 0,
     ) -> tuple[str, str, List[Dict[str, Any]], List[str]]:
         """Build deterministic teaching metadata without changing source facts."""
-        learning_style = (getattr(profile, "learning_style", "") or "mixed").strip()
+        learning_style = normalize_learning_style(
+            getattr(profile, "learning_style", "") or LEARNING_STYLE_MIXED
+        )
         goal = (getattr(profile, "goal", "") or stage.gap_skill or stage.block_name).strip()
         hardware = (getattr(practice, "hardware", "") or "").strip()
-        is_practice = any(token in learning_style.lower() for token in ("实践", "实操", "动手", "示例", "practice"))
-        is_mixed = learning_style.lower() in {"mixed", "混合", "混合型"}
+        is_practice = learning_style == LEARNING_STYLE_PRACTICE
+        is_mixed = learning_style == LEARNING_STYLE_MIXED
         evidence = (
             learning_evidence.model_dump(mode="json")
             if hasattr(learning_evidence, "model_dump") else (learning_evidence or {})

@@ -1,6 +1,6 @@
 {
   "review_passed": true,
-  "iterations": 4,
+  "iterations": 3,
   "review_history": [
     {
       "iteration": 1,
@@ -11,14 +11,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r1",
-            "canonical_error_id": "0c6566b08768",
+            "error_id": "9eb2f8075670_r1",
+            "canonical_error_id": "9eb2f8075670",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
+              "src_LOCAL-KBS-04-00-C001"
             ],
             "change_request": {
               "required": false,
@@ -26,21 +26,45 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:1-56"
+            "in_chunk_position": "lines:1-28"
           },
           {
-            "error_type": "version_mismatch",
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "914898d12d4c_r1",
+            "canonical_error_id": "914898d12d4c",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "incomplete_sentence",
             "severity": "major",
             "location": null,
-            "description": "内容要求PyTorch版本为2.5.x，但requirements.txt中指定torch==2.5.1，且未说明与transformers>=4.45.0、tokenizers>=0.20.0的兼容性，可能因版本不匹配导致安装或运行错误。",
-            "evidence": "内容中'PyTorch: 2.5.x'与'torch==2.5.1'一致，但未提供transformers和tokenizers与PyTorch 2.5.1的兼容性验证。",
-            "suggestion": "建议明确说明torch 2.5.1与transformers>=4.45.0、tokenizers>=0.20.0的兼容性，或提供已验证的版本组合。",
-            "error_id": "02609171daf1_r1",
-            "canonical_error_id": "02609171daf1",
+            "description": "内容块末尾出现未完成的句子：'CUDA Toolkit（nvcc --version'，句子被截断，缺少闭合括号和后续说明，导致技术信息不完整。",
+            "evidence": "原文末尾为'CUDA Toolkit（nvcc --version'，未闭合括号，且无后续内容。",
+            "suggestion": "补全该句，例如：'CUDA Toolkit（nvcc --version 查看版本）'，并确保依赖链图示完整。",
+            "error_id": "3c53c5c5dd9b_r1",
+            "canonical_error_id": "3c53c5c5dd9b",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -49,264 +73,22 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称 tokenizers 通常是 transformers 的依赖项，安装 transformers 时会自动安装一个兼容版本。但 transformers 的依赖项中并不包含 tokenizers，tokenizers 是独立库，需要单独安装。",
-            "evidence": "transformers 的官方依赖列表（setup.py）中不包含 tokenizers，tokenizers 是独立库，需要单独安装。",
-            "suggestion": "修改为：tokenizers 是独立库，需要单独安装，但通常与 transformers 一起使用。",
-            "error_id": "228342c35b23_r1",
-            "canonical_error_id": "228342c35b23",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C005",
-            "content_chunk_id": "LOCAL-KBS-07-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C005",
-            "content_chunk_id": "LOCAL-KBS-07-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C006",
-            "content_chunk_id": "LOCAL-KBS-07-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C006",
-            "content_chunk_id": "LOCAL-KBS-07-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "环境变量优先级描述不准确：HF_HUB_CACHE 并非最高优先级，实际优先级为 HF_HUB_CACHE > HF_HOME > XDG_CACHE_HOME，但 HF_HUB_CACHE 的默认值是基于 HF_HOME 的，且 transformers 的 default_cache_path 实际返回的是 HF_HOME 下的路径，而非按此优先级查找。",
-            "evidence": "Hugging Face 官方文档：HF_HUB_CACHE 默认值为 $HF_HOME/hub，HF_HOME 默认值为 $XDG_CACHE_HOME/huggingface。default_cache_path 返回的是 HF_HOME 路径，而非按优先级查找。",
-            "suggestion": "修正优先级说明，并明确 default_cache_path 返回的是 HF_HOME 路径。",
-            "error_id": "874998ce1370_r1",
-            "canonical_error_id": "874998ce1370",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C007",
-            "content_chunk_id": "LOCAL-KBS-07-00-C007",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "code_error",
-            "severity": "minor",
-            "location": null,
-            "description": "Python 代码中 from transformers import utils 可能无法导入 utils 模块，且 utils.default_cache_path 可能不存在。",
-            "evidence": "transformers 库中 utils 模块可能未导出，且 default_cache_path 属性可能不存在于 utils 中。",
-            "suggestion": "建议使用 from transformers import file_utils 或 from transformers import __version__ 等，或直接使用 transformers.utils 的替代方法。",
-            "error_id": "5269a42f3d06_r1",
-            "canonical_error_id": "5269a42f3d06",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C007",
-            "content_chunk_id": "LOCAL-KBS-07-00-C007",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r1",
-            "canonical_error_id": "5fe2e1fa3e77",
+            "error_id": "a798388526a0_r1",
+            "canonical_error_id": "a798388526a0",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
+              "src_LOCAL-KBS-04-00-C003"
             ],
             "change_request": {
               "required": false,
@@ -314,21 +96,43 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
             "content_version": 1,
-            "in_chunk_position": "lines:189-237"
+            "in_chunk_position": "lines:91-127"
           },
           {
-            "error_type": "api_deprecated",
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“nvidia-smi 输出的 CUDA Version 决定你能安装哪个版本的 PyTorch”，但 CUDA Version 是驱动支持的最高 CUDA 版本，而 PyTorch 的 CUDA 版本选择还受操作系统、PyTorch 发行版支持等因素影响，且实际安装时需匹配 PyTorch 官方提供的 CUDA 版本。因此该表述过于绝对，存在误导。",
+            "evidence": "NVIDIA 官方文档：nvidia-smi 显示的 CUDA Version 是驱动支持的最高 CUDA 版本，并非系统当前安装的 CUDA 版本。PyTorch 安装时需根据官方提供的 CUDA 版本选择，且需与驱动兼容。",
+            "suggestion": "建议修改为：nvidia-smi 输出的 CUDA Version 表示驱动支持的最高 CUDA 版本，安装 PyTorch 时需确保所选 CUDA 版本不超过该值，并参考 PyTorch 官方安装命令。",
+            "error_id": "e8ae2582ccb2_r1",
+            "canonical_error_id": "e8ae2582ccb2",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
             "severity": "major",
             "location": null,
-            "description": "使用 `model.cuda()` 是 PyTorch 1.x 旧写法，未指定 device，在 PyTorch 2.x 中推荐使用 `model.to(device)`。",
-            "evidence": "PyTorch 2.x 推荐使用 `model.to(device)`，device 由 `torch.device` 统一管理。",
-            "suggestion": "改为 `device = torch.device('cuda' if torch.cuda.is_available() else 'cpu'); model = model.to(device)`",
-            "error_id": "dfb3c808cb7d_r1",
-            "canonical_error_id": "dfb3c808cb7d",
+            "description": "内容块在'为什么 CUDA 版必须'处截断，未完成该句，导致关键警告的说明不完整。",
+            "evidence": "原文末尾为'用自己的话说明“为什么 CUDA 版必须'，句子未结束，缺少后续内容。",
+            "suggestion": "补全该句，例如'为什么 CUDA 版必须从官方源下载'，并完成本块的验证安装说明。",
+            "error_id": "46ad91a508be_r1",
+            "canonical_error_id": "46ad91a508be",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -337,32 +141,34 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "missing_exception_handler",
+            "error_type": "review_needed",
             "severity": "major",
-            "location": null,
-            "description": "模型加载涉及 IO 操作，缺失 try-except 异常捕获，可能导致程序崩溃。",
-            "evidence": "OWASP ML Top 10 2023 ML06 要求敏感操作配套异常处理。",
-            "suggestion": "用 try-except 包裹 from_pretrained 调用，捕获 OSError 并记录日志。",
-            "error_id": "91bdd7d08fca_r1",
-            "canonical_error_id": "91bdd7d08fca",
-            "source_refs": [],
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1e4d1912c666_r1",
+            "canonical_error_id": "1e4d1912c666",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
             "change_request": {
               "required": false,
               "action": "review_suggestion"
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
             "content_version": 1,
-            "in_chunk_position": null
+            "in_chunk_position": "lines:240-297"
           }
         ],
         "personalization_errors": [],
@@ -375,14 +181,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r1",
-            "canonical_error_id": "0c6566b08768",
+            "error_id": "9eb2f8075670_r1",
+            "canonical_error_id": "9eb2f8075670",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
+              "src_LOCAL-KBS-04-00-C001"
             ],
             "change_request": {
               "required": false,
@@ -390,21 +196,45 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
             "content_version": 1,
-            "in_chunk_position": "lines:1-56"
+            "in_chunk_position": "lines:1-28"
           },
           {
-            "error_type": "version_mismatch",
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "914898d12d4c_r1",
+            "canonical_error_id": "914898d12d4c",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "incomplete_sentence",
             "severity": "major",
             "location": null,
-            "description": "内容要求PyTorch版本为2.5.x，但requirements.txt中指定torch==2.5.1，且未说明与transformers>=4.45.0、tokenizers>=0.20.0的兼容性，可能因版本不匹配导致安装或运行错误。",
-            "evidence": "内容中'PyTorch: 2.5.x'与'torch==2.5.1'一致，但未提供transformers和tokenizers与PyTorch 2.5.1的兼容性验证。",
-            "suggestion": "建议明确说明torch 2.5.1与transformers>=4.45.0、tokenizers>=0.20.0的兼容性，或提供已验证的版本组合。",
-            "error_id": "02609171daf1_r1",
-            "canonical_error_id": "02609171daf1",
+            "description": "内容块末尾出现未完成的句子：'CUDA Toolkit（nvcc --version'，句子被截断，缺少闭合括号和后续说明，导致技术信息不完整。",
+            "evidence": "原文末尾为'CUDA Toolkit（nvcc --version'，未闭合括号，且无后续内容。",
+            "suggestion": "补全该句，例如：'CUDA Toolkit（nvcc --version 查看版本）'，并确保依赖链图示完整。",
+            "error_id": "3c53c5c5dd9b_r1",
+            "canonical_error_id": "3c53c5c5dd9b",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -413,264 +243,22 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称 tokenizers 通常是 transformers 的依赖项，安装 transformers 时会自动安装一个兼容版本。但 transformers 的依赖项中并不包含 tokenizers，tokenizers 是独立库，需要单独安装。",
-            "evidence": "transformers 的官方依赖列表（setup.py）中不包含 tokenizers，tokenizers 是独立库，需要单独安装。",
-            "suggestion": "修改为：tokenizers 是独立库，需要单独安装，但通常与 transformers 一起使用。",
-            "error_id": "228342c35b23_r1",
-            "canonical_error_id": "228342c35b23",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C005",
-            "content_chunk_id": "LOCAL-KBS-07-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C005",
-            "content_chunk_id": "LOCAL-KBS-07-00-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C006",
-            "content_chunk_id": "LOCAL-KBS-07-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C006",
-            "content_chunk_id": "LOCAL-KBS-07-00-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "环境变量优先级描述不准确：HF_HUB_CACHE 并非最高优先级，实际优先级为 HF_HUB_CACHE > HF_HOME > XDG_CACHE_HOME，但 HF_HUB_CACHE 的默认值是基于 HF_HOME 的，且 transformers 的 default_cache_path 实际返回的是 HF_HOME 下的路径，而非按此优先级查找。",
-            "evidence": "Hugging Face 官方文档：HF_HUB_CACHE 默认值为 $HF_HOME/hub，HF_HOME 默认值为 $XDG_CACHE_HOME/huggingface。default_cache_path 返回的是 HF_HOME 路径，而非按优先级查找。",
-            "suggestion": "修正优先级说明，并明确 default_cache_path 返回的是 HF_HOME 路径。",
-            "error_id": "874998ce1370_r1",
-            "canonical_error_id": "874998ce1370",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C007",
-            "content_chunk_id": "LOCAL-KBS-07-00-C007",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "code_error",
-            "severity": "minor",
-            "location": null,
-            "description": "Python 代码中 from transformers import utils 可能无法导入 utils 模块，且 utils.default_cache_path 可能不存在。",
-            "evidence": "transformers 库中 utils 模块可能未导出，且 default_cache_path 属性可能不存在于 utils 中。",
-            "suggestion": "建议使用 from transformers import file_utils 或 from transformers import __version__ 等，或直接使用 transformers.utils 的替代方法。",
-            "error_id": "5269a42f3d06_r1",
-            "canonical_error_id": "5269a42f3d06",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C007",
-            "content_chunk_id": "LOCAL-KBS-07-00-C007",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r1",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r1",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r1",
-            "canonical_error_id": "5fe2e1fa3e77",
+            "error_id": "a798388526a0_r1",
+            "canonical_error_id": "a798388526a0",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
+              "src_LOCAL-KBS-04-00-C003"
             ],
             "change_request": {
               "required": false,
@@ -678,21 +266,43 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
             "content_version": 1,
-            "in_chunk_position": "lines:189-237"
+            "in_chunk_position": "lines:91-127"
           },
           {
-            "error_type": "api_deprecated",
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“nvidia-smi 输出的 CUDA Version 决定你能安装哪个版本的 PyTorch”，但 CUDA Version 是驱动支持的最高 CUDA 版本，而 PyTorch 的 CUDA 版本选择还受操作系统、PyTorch 发行版支持等因素影响，且实际安装时需匹配 PyTorch 官方提供的 CUDA 版本。因此该表述过于绝对，存在误导。",
+            "evidence": "NVIDIA 官方文档：nvidia-smi 显示的 CUDA Version 是驱动支持的最高 CUDA 版本，并非系统当前安装的 CUDA 版本。PyTorch 安装时需根据官方提供的 CUDA 版本选择，且需与驱动兼容。",
+            "suggestion": "建议修改为：nvidia-smi 输出的 CUDA Version 表示驱动支持的最高 CUDA 版本，安装 PyTorch 时需确保所选 CUDA 版本不超过该值，并参考 PyTorch 官方安装命令。",
+            "error_id": "e8ae2582ccb2_r1",
+            "canonical_error_id": "e8ae2582ccb2",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
             "severity": "major",
             "location": null,
-            "description": "使用 `model.cuda()` 是 PyTorch 1.x 旧写法，未指定 device，在 PyTorch 2.x 中推荐使用 `model.to(device)`。",
-            "evidence": "PyTorch 2.x 推荐使用 `model.to(device)`，device 由 `torch.device` 统一管理。",
-            "suggestion": "改为 `device = torch.device('cuda' if torch.cuda.is_available() else 'cpu'); model = model.to(device)`",
-            "error_id": "dfb3c808cb7d_r1",
-            "canonical_error_id": "dfb3c808cb7d",
+            "description": "内容块在'为什么 CUDA 版必须'处截断，未完成该句，导致关键警告的说明不完整。",
+            "evidence": "原文末尾为'用自己的话说明“为什么 CUDA 版必须'，句子未结束，缺少后续内容。",
+            "suggestion": "补全该句，例如'为什么 CUDA 版必须从官方源下载'，并完成本块的验证安装说明。",
+            "error_id": "46ad91a508be_r1",
+            "canonical_error_id": "46ad91a508be",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -701,32 +311,34 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "missing_exception_handler",
+            "error_type": "review_needed",
             "severity": "major",
-            "location": null,
-            "description": "模型加载涉及 IO 操作，缺失 try-except 异常捕获，可能导致程序崩溃。",
-            "evidence": "OWASP ML Top 10 2023 ML06 要求敏感操作配套异常处理。",
-            "suggestion": "用 try-except 包裹 from_pretrained 调用，捕获 OSError 并记录日志。",
-            "error_id": "91bdd7d08fca_r1",
-            "canonical_error_id": "91bdd7d08fca",
-            "source_refs": [],
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1e4d1912c666_r1",
+            "canonical_error_id": "1e4d1912c666",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
             "change_request": {
               "required": false,
               "action": "review_suggestion"
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
             "content_version": 1,
-            "in_chunk_position": null
+            "in_chunk_position": "lines:240-297"
           }
         ],
         "personalization_errors": [],
@@ -744,14 +356,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r2",
-            "canonical_error_id": "0c6566b08768",
+            "error_id": "9eb2f8075670_r2",
+            "canonical_error_id": "9eb2f8075670",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
+              "src_LOCAL-KBS-04-00-C001"
             ],
             "change_request": {
               "required": false,
@@ -759,111 +371,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:1-56"
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r2",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r2",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 2,
-            "in_chunk_position": null
+            "in_chunk_position": "lines:1-28"
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r2",
-            "canonical_error_id": "5fe2e1fa3e77",
+            "error_id": "914898d12d4c_r2",
+            "canonical_error_id": "914898d12d4c",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
+              "src_LOCAL-KBS-04-00-C002"
             ],
             "change_request": {
               "required": false,
@@ -871,11 +395,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
             "content_version": 2,
-            "in_chunk_position": "lines:189-237"
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a798388526a0_r2",
+            "canonical_error_id": "a798388526a0",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 2,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1e4d1912c666_r2",
+            "canonical_error_id": "1e4d1912c666",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
           }
         ],
         "personalization_errors": [],
@@ -888,14 +460,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r2",
-            "canonical_error_id": "0c6566b08768",
+            "error_id": "9eb2f8075670_r2",
+            "canonical_error_id": "9eb2f8075670",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
+              "src_LOCAL-KBS-04-00-C001"
             ],
             "change_request": {
               "required": false,
@@ -903,111 +475,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:1-56"
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r2",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C004",
-            "content_chunk_id": "LOCAL-KBS-07-00-C004",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r2",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 2,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r2",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 2,
-            "in_chunk_position": null
+            "in_chunk_position": "lines:1-28"
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r2",
-            "canonical_error_id": "5fe2e1fa3e77",
+            "error_id": "914898d12d4c_r2",
+            "canonical_error_id": "914898d12d4c",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
+              "src_LOCAL-KBS-04-00-C002"
             ],
             "change_request": {
               "required": false,
@@ -1015,11 +499,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
             "content_version": 2,
-            "in_chunk_position": "lines:189-237"
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a798388526a0_r2",
+            "canonical_error_id": "a798388526a0",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 2,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1e4d1912c666_r2",
+            "canonical_error_id": "1e4d1912c666",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
           }
         ],
         "personalization_errors": [],
@@ -1037,14 +569,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r3",
-            "canonical_error_id": "0c6566b08768",
+            "error_id": "9eb2f8075670_r2",
+            "canonical_error_id": "9eb2f8075670",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
+              "src_LOCAL-KBS-04-00-C001"
             ],
             "change_request": {
               "required": false,
@@ -1052,23 +584,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
-            "content_version": 3,
-            "in_chunk_position": "lines:1-56"
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r3",
-            "canonical_error_id": "5fe2e1fa3e77",
+            "error_id": "914898d12d4c_r3",
+            "canonical_error_id": "914898d12d4c",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
+              "src_LOCAL-KBS-04-00-C002"
             ],
             "change_request": {
               "required": false,
@@ -1076,11 +608,59 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
             "content_version": 3,
-            "in_chunk_position": "lines:189-237"
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a798388526a0_r3",
+            "canonical_error_id": "a798388526a0",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 3,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "1e4d1912c666_r2",
+            "canonical_error_id": "1e4d1912c666",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
           }
         ],
         "personalization_errors": [],
@@ -1093,14 +673,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r3",
-            "canonical_error_id": "0c6566b08768",
+            "error_id": "9eb2f8075670_r2",
+            "canonical_error_id": "9eb2f8075670",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
+              "src_LOCAL-KBS-04-00-C001"
             ],
             "change_request": {
               "required": false,
@@ -1108,23 +688,47 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "914898d12d4c_r3",
+            "canonical_error_id": "914898d12d4c",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
             "content_version": 3,
-            "in_chunk_position": "lines:1-56"
+            "in_chunk_position": "lines:29-89"
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r3",
-            "canonical_error_id": "5fe2e1fa3e77",
+            "error_id": "a798388526a0_r3",
+            "canonical_error_id": "a798388526a0",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
+              "src_LOCAL-KBS-04-00-C003"
             ],
             "change_request": {
               "required": false,
@@ -1132,36 +736,23 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
             "content_version": 3,
-            "in_chunk_position": "lines:189-237"
-          }
-        ],
-        "personalization_errors": [],
-        "review_details": null,
-        "scores": null
-      },
-      "passed": false
-    },
-    {
-      "iteration": 4,
-      "technical": {
-        "reviewer": "technical",
-        "passed": false,
-        "errors": [
+            "in_chunk_position": "lines:91-127"
+          },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
+            "location": "block:cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r3",
-            "canonical_error_id": "0c6566b08768",
+            "error_id": "1e4d1912c666_r2",
+            "canonical_error_id": "1e4d1912c666",
             "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
+              "src_LOCAL-KBS-04-00-C008"
             ],
             "change_request": {
               "required": false,
@@ -1169,179 +760,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
-            "content_version": 3,
-            "in_chunk_position": "lines:1-56"
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r4",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 4,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r4",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 4,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r4",
-            "canonical_error_id": "5fe2e1fa3e77",
-            "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 4,
-            "in_chunk_position": "lines:189-237"
-          }
-        ],
-        "personalization_errors": [],
-        "review_details": null
-      },
-      "quality": {
-        "reviewer": "quality",
-        "passed": false,
-        "errors": [
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "description": "与来源块 LOCAL-KBS-07-00-C001 相似度 0.72 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-07-00-C001，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 一、前置检查：确认 PyTorch 环境就绪 > 1.1 确认 conda 环境和 PyTorch 版本，lines=1-56",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "0c6566b08768_r3",
-            "canonical_error_id": "0c6566b08768",
-            "source_refs": [
-              "src_LOCAL-KBS-07-00-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C001",
-            "content_chunk_id": "LOCAL-KBS-07-00-C001",
-            "content_version": 3,
-            "in_chunk_position": "lines:1-56"
-          },
-          {
-            "error_type": "license_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档引用模型但未标注许可证类型。",
-            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
-            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
-            "error_id": "99be9c84485b_r4",
-            "canonical_error_id": "99be9c84485b",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 4,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "vram_note_missing",
-            "severity": "minor",
-            "location": "部署说明",
-            "description": "部署文档涉及模型加载但未标注显存要求。",
-            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
-            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
-            "error_id": "9bf4fdfad01a_r4",
-            "canonical_error_id": "9bf4fdfad01a",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 4,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "description": "与来源块 LOCAL-KBS-07-00-C008 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-07-00-C008，heading_path=环境准备：在 Python 环境中安装 transformers、tokenizers 库 > 六、离线模式配置（拓展）（①） > 6.1 预先下载模型（①），lines=189-237",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "5fe2e1fa3e77_r4",
-            "canonical_error_id": "5fe2e1fa3e77",
-            "source_refs": [
-              "src_LOCAL-KBS-07-00-C008"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_block_id": "cb_d1c01152-8b66-4b00-9bfe-8e0c20abaedf_459d2aa7-3bd3-5789-b76e-75ca28a471c3_LOCAL-KBS-07-00-C008",
-            "content_chunk_id": "LOCAL-KBS-07-00-C008",
-            "content_version": 4,
-            "in_chunk_position": "lines:189-237"
+            "claim_id": "clm_cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_0092e318-5ab3-4a01-8a44-9dad5ddcb74a_03a31bdf-fc4c-5e81-adbe-7ae40a1d8436_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
           }
         ],
         "personalization_errors": [],

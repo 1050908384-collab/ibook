@@ -1,80 +1,80 @@
 [
   {
-    "question_id": "Q-KB11-ST1102-002",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-02",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "datasets 的 `filter()` 会保留使筛选函数返回________的样本。",
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
     "options": [],
-    "correct_answer": "True ||| 真",
-    "hint": "filter 依据布尔结果保留样本。",
-    "explanation": "filter 依据布尔结果保留样本。"
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
   },
   {
-    "question_id": "Q-KB11-ST1102-003",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-02",
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
+  },
+  {
+    "question_id": "Q-KB0203-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
     "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "为了在每个训练轮次打乱样本顺序，通常使用？",
+    "question_text": "以下代码输出是？\n```python\nclass A:\n    def __init__(self):\n        self.x = 1\nclass B(A):\n    def __init__(self):\n        super().__init__()\n        self.y = 2\nb = B()\nprint(b.x, b.y)\n```",
     "options": [
       {
         "key": "A",
-        "text": "dataset.shuffle(seed=...)"
+        "text": "`1 2`"
       },
       {
         "key": "B",
-        "text": "dataset.filter(...)"
+        "text": "`2 1`"
       },
       {
         "key": "C",
-        "text": "dataset.save_to_disk(...)"
+        "text": "报错"
       },
       {
         "key": "D",
-        "text": "dataset.select_columns(...)"
+        "text": "`None 2`"
       }
     ],
     "correct_answer": "A",
-    "hint": "shuffle 会随机重排数据集。",
-    "explanation": "shuffle 会随机重排数据集。"
+    "hint": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。",
+    "explanation": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。"
   },
   {
-    "question_id": "Q-KB11-ST1102-001",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-02",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "datasets 的 `map()` 常用于对数据集样本执行批量________。",
-    "options": [],
-    "correct_answer": "转换 ||| 处理 ||| 映射",
-    "hint": "map 会将给定函数应用到数据集样本。",
-    "explanation": "map 会将给定函数应用到数据集样本。"
-  },
-  {
-    "question_id": "Q-KB1103-001",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
+    "question_id": "Q-KB0203-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
     "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "TRL（Transformer Reinforcement Learning）库中，专门用于监督微调（SFT）的Trainer类是？",
+    "question_text": "以下函数定义中，哪个参数是**默认参数**？\n```python\ndef greet(name, greeting=\"Hello\"):\n    return f\"{greeting}, {name}!\"\n```",
     "options": [
       {
         "key": "A",
-        "text": "`Trainer`"
+        "text": "`name`"
       },
       {
         "key": "B",
-        "text": "`SFTTrainer`"
+        "text": "`greeting`"
       },
       {
         "key": "C",
-        "text": "`PPOTrainer`"
+        "text": "两者都是"
       },
       {
         "key": "D",
-        "text": "`DPOTrainer`"
+        "text": "两者都不是"
       }
     ],
     "correct_answer": "B",
@@ -82,68 +82,102 @@
     "explanation": ""
   },
   {
-    "question_id": "Q-KB1101-002",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-01",
+    "question_id": "Q-KB0201-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`[1, 2, 3]`"
+      },
+      {
+        "key": "B",
+        "text": "`[1, 2, 3, 4]`"
+      },
+      {
+        "key": "C",
+        "text": "`[4, 1, 2, 3]`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。",
+    "explanation": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。"
+  },
+  {
+    "question_id": "Q-KB0202-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是Python中**不可变**的数据结构？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`list`"
+      },
+      {
+        "key": "B",
+        "text": "`dict`"
+      },
+      {
+        "key": "C",
+        "text": "`set`"
+      },
+      {
+        "key": "D",
+        "text": "`tuple`"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。",
+    "explanation": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。"
+  },
+  {
+    "question_id": "Q-KB0204-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
     "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "在进行模型推理时，为了防止计算梯度占用显存，通常使用 `with torch.________():` 上下文管理器。",
+    "question_text": "使用 `with open(\"file.txt\", \"r\") as f:` 的好处是________。",
     "options": [],
-    "correct_answer": "`no_grad`",
+    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB11-ST1100-003",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-00",
-    "difficulty": "中级",
+    "question_id": "Q-KB0201-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "以下哪个库最直接用于训练配置中的分布式加速？",
+    "question_text": "以下哪个是Python中**正确的**变量赋值？",
     "options": [
       {
         "key": "A",
-        "text": "accelerate"
+        "text": "`2name = \"hello\"`"
       },
       {
         "key": "B",
-        "text": "flask"
+        "text": "`my-var = 10`"
       },
       {
         "key": "C",
-        "text": "requests"
+        "text": "`_count = 5`"
       },
       {
         "key": "D",
-        "text": "sqlite3"
+        "text": "`class = \"A\"`"
       }
     ],
-    "correct_answer": "A",
-    "hint": "accelerate 用于简化设备与分布式训练配置。",
-    "explanation": "accelerate 用于简化设备与分布式训练配置。"
-  },
-  {
-    "question_id": "Q-KB1101-005",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-01",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "请写代码：将加载的模型移动到 GPU 上（如果可用），并使用 `torch.float16` 半精度加载以节省显存。",
-    "options": [],
-    "correct_answer": "```python\nimport torch\nfrom transformers import AutoModelForCausalLM\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"gpt2\",\n    torch_dtype=torch.float16,\n    device_map=device\n)\n```\n\n---",
-    "hint": "```python\nimport torch\nfrom transformers import AutoModelForCausalLM\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"gpt2\",\n    torch_dtype=torch.float16,\n    device_map=device\n)\n```\n\n---",
-    "explanation": "```python\nimport torch\nfrom transformers import AutoModelForCausalLM\n\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"gpt2\",\n    torch_dtype=torch.float16,\n    device_map=device\n)\n```\n\n---"
-  },
-  {
-    "question_id": "Q-KB1103-005",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "请写代码：在 `SFTTrainer` 训练完成后，保存微调后的 LoRA 适配器权重到 `./final_lora_adapter` 目录。",
-    "options": [],
-    "correct_answer": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
-    "hint": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---",
-    "explanation": "```python\ntrainer.save_model(\"./final_lora_adapter\")\n```\n\n---"
+    "correct_answer": "C",
+    "hint": "> 变量名不能以数字开头（A错）、不能含连字符（B错）、不能使用保留关键字（D错）。下划线开头合法。",
+    "explanation": "> 变量名不能以数字开头（A错）、不能含连字符（B错）、不能使用保留关键字（D错）。下划线开头合法。"
   }
 ]

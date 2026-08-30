@@ -1,8 +1,27 @@
 {
-  "session_id": "6d387a02-bf00-494b-9db5-341a96583906",
+  "session_id": "8752d0b3-b41f-4fc0-8820-7493ea533f2f",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "8GB卡，想部署小模型vLLM服务",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-15"
+  ],
+  "target_subtopic_ids": [
+    "KBS-15-04"
+  ],
+  "planned_block_order": [
+    "KB-15"
+  ],
+  "active_stage_block_id": "KB-01",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -10,11 +29,14 @@
       "block_id": "KB-15",
       "block_name": "模型推理部署（vLLM）",
       "target_subtopic_ids": [
+        "KBS-15-00",
+        "KBS-15-01",
+        "KBS-15-02",
         "KBS-15-03",
         "KBS-15-04"
       ],
       "mapping_confidence": 1.0,
-      "level": "intermediate",
+      "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
@@ -24,9 +46,9 @@
   ],
   "goal": "vLLM部署",
   "daily_hours": 2.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.725,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

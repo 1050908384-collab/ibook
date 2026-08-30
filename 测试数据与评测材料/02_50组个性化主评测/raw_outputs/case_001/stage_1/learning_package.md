@@ -2,50 +2,39 @@
 
 ## 块 1
 
-**本块目标**：先搞懂“Python 解释器”是什么，再动手验证它。
+好的，我们直接开始。既然你的目标是LoRA微调，那第一步就是让电脑能“听懂”你写的指令。这一节，我们只搞懂一个东西：**Python解释器**。
 
----
+想象一下，你是一位导演（写代码的人），Python解释器就是你的翻译官。你写的剧本（`.py`文件）是人类语言，但电脑演员（CPU）只懂0和1的机器语言。翻译官的工作，就是把你写的每一句“台词”实时翻译给电脑听，电脑才能照做。
 
-### 1.1 Python 解释器：程序的“翻译官”
+**所以，没有这个翻译官，你写的代码文件就只是一堆普通的文本，电脑根本不会理它。**
 
-你写的 Python 代码是人类能看懂的文字，但电脑只认 0 和 1。**Python 解释器**的作用，就是把你的代码“翻译”成电脑能执行的指令。
+你可能会问：“那我直接跟电脑说机器语言不行吗？”理论上可以，但那就像用二进制代码写小说，效率极低且容易出错。我们写Python，就是为了用接近人类思维的方式表达逻辑，然后把翻译的苦活累活交给解释器。
 
-**关键点**：没有解释器，你写的 `.py` 文件只是一堆文本，电脑根本看不懂。
+**一个关键认知**：你的电脑是核显笔记本，没有独立GPU。这没关系，因为**Python解释器本身不挑硬件**，它只是负责“翻译”。你之后做LoRA微调时，真正需要强大算力的是“训练”这个环节，而我们现在搭建的“翻译官”，是所有后续工作的地基。
 
-**动手验证（约2分钟）**：
-1. 打开终端（Windows 用 CMD 或 PowerShell，Mac 用“终端”App）。
-2. 输入 `python` 并回车。
-3. 如果看到 `>>>` 提示符，说明解释器已就绪——你现在就在和它对话。
-4. 输入 `print("hello")` 回车，看到输出 `hello`，就证明“翻译官”工作正常。
-
-**小提醒**：如果提示“不是内部或外部命令”，别急，这是环境变量没配好，下一节会带你解决。
-
----
-
-**本块学习检查**：用自己的话说，为什么没有解释器，`.py` 文件就“只是一堆文本”？
+**本块学习检查**：
+请用自己的话，向一位完全不懂技术的朋友解释：为什么我们写Python代码，还需要额外安装一个“解释器”？把它说清楚，就说明你真正理解了。
 
 ## 块 2
 
-**你的目标：LoRA微调。** 在动手调模型前，得先把“工作台”搭好。本块只讲两件事：选编辑器、建独立环境。
+好的，我们开始吧。既然你的目标是学习 LoRA 微调，那么一个得心应手的“工作台”就是你的第一块基石。
 
-**1. 编辑器：选 VS Code 就对了**
-记事本也能写代码，但你会疯掉。**IDE** 提供语法高亮、自动补全、运行调试，写代码像用 Word 一样舒服。**VS Code** 轻量免费，适合你快速上手、边看教程边敲。
+**1.2 代码编辑器（IDE）：你的“工作台”**
 
-**2. 虚拟环境：项目的“独立房间”**
-做 LoRA 微调时，你会装很多库。假设项目 A 要 `numpy 1.0`，项目 B 要 `numpy 2.0`，全装一起就冲突报错。**虚拟环境**为每个项目创建独立 Python 空间，互不干扰。用 **conda** 管理，这是主流方案。
+记事本也能写代码，但效率极低。**IDE（集成开发环境）** 提供了语法高亮、自动补全、运行调试等功能，让你写代码像用 Word 写文档一样舒服。对于零基础的你，推荐 **VS Code**，它轻量免费，上手快，足够支撑你后续的微调学习。
 
-**动手验证**：打开 VS Code，
+**1.3 虚拟环境：项目的“独立房间”**
+
+想象你同时在做两个项目：A 项目需要 `numpy 1.0`，B 项目需要 `numpy
 
 ## 块 3
 
-**Windows 上装好 Python，为 LoRA 微调铺路**
-
-你的目标是 LoRA 微调，这需要 Python 环境来运行训练脚本。下面三步，跟着做就行。
+### 2.1 Windows 用户：安装 Python 3.10+
 
 **第一步：下载安装包**
 
-1. 浏览器打开 https://www.python.org
-2. 鼠标移到顶部 **Downloads**，网站会自动推荐 Windows 版本（如 `Python 3.13.x`）。
+1. 打开浏览器，访问 https://www.python.org
+2. 鼠标移到顶部菜单 **Downloads**，网站会自动推荐 Windows 版本（如 `Python 3.13.x`）。
 3. 点击下载 **Windows installer (64-bit)**。
 
 **第二步：运行安装程序（⚠️ 关键步骤）**
@@ -53,10 +42,10 @@
 双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
 
 1. **勾选最下方的 "Add python.exe to PATH"**  
-   这个选项把 Python 加入系统"环境变量"。不勾选的话，命令行输入 `python` 会提示"不是内部或外部命令"，后续所有命令操作都无法进行。
+   这个选项会把 Python 添加到系统的"环境变量"中。如果不勾选，你打开命令行输入 `python` 时，系统会提示"不是内部或外部命令"，后续所有命令行操作都无法进行。
 
 2. 点击 **"Install Now"**（默认安装）即可。  
-   默认安装路径通常在 `%LOCALAPPDATA%\Programs\Python\Python3xx`（此路径仅为示例，实际路径因用户而异），不含中文和特殊符号，避免后续路径报错。想改路径的话，务必确保路径中**没有中文或空格**。
+   默认安装路径为 `C:\Users\<用户名>\AppData\Local\Programs\Python\Python313`（版本号随安装版本变化）。路径中应避免中文和空格，但用户名本身可能包含空格，需注意。进阶用户如果想改路径，务必确保路径中**没有中文或空格**。
 
 **第三步：验证安装**
 
@@ -64,17 +53,21 @@
 2. 输入以下命令并回车：
 
 ```bash
+python --version
+```
+
+3. 如果显示 `Python 3.
 
 ## 块 4
 
-### 2.2 macOS 用户：装好 Python，为 LoRA 微调铺路
+### macOS 用户：安装 Python 3.10+
 
-你的目标是 LoRA 微调，这需要一套干净的 Python 环境。macOS 可能自带旧版 `python3`，但**强烈建议自行安装最新版**，避免依赖系统版本——系统自带的通常老旧，且可能被系统脚本占用，不适合做开发。
+你可能会听说“Mac 自带 Python”，但请注意：**现代 macOS（Catalina 10.15 至 Monterey 12.2）仍预装 Python 2.7，但自 macOS Monterey 12.3 起已移除 Python 2**。部分系统可能带有供系统脚本使用的旧版 `python3`，且系统自带的 Python 3 版本可能较旧，**强烈建议自行安装最新版 Python**，避免依赖系统自带版本——这对你后续做 LoRA 微调至关重要，因为旧版本可能缺少必要的库支持。
 
-**方法一：官方安装包（推荐新手，最省心）**
+#### 方法一：官方安装包（推荐新手）
 
-1. 打开浏览器，访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
-2. 双击下载的文件，一路点击 "Continue" → "Install" 完成安装。
+1. 访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
+2. 双击运行，一路点击 "Continue" → "Install" 完成安装。
 3. 打开终端（Terminal），输入以下命令验证安装：
 
 ```bash
@@ -82,284 +75,316 @@ python3 --version
 pip3 --version
 ```
 
-看到版本号输出，就说明装好了。
+**为什么用 `python3` 而不是 `python`？** 在现代 macOS 上，命令行默认**并不提供** `python` 命令。系统与官方安装包统一使用 `python3`，因此请始终用 `python3` / `pip3`，避免踩到“命令不存在”或误用系统版本的坑。
 
-**为什么用 `python3` 而不是 `python`？** 这是新手最容易踩的坑。现代 macOS 命令行默认**不提供** `python` 命令（早期版本曾指向 Python 2，现已移除）。系统与官方安装包统一使用 `python3`。所以请**始终用 `python3` / `pip3`**，避免遇到"命令不存在"或误用系统旧版本的麻烦。
+#### 方法二：Homebrew（适合已有 Homebrew 的开发者）
 
-**方法二：Homebrew（适合已有 Homebrew 的
+如果你已经
 
 ## 块 5
 
-**动手装好 Python，为 LoRA 微调铺路**
+**Linux 用户（Ubuntu/Debian）安装 Python**
 
-你的目标是 LoRA 微调，但先别急着碰模型——Linux 上 Python 版本太老会直接卡住你。跟着做，三步搞定：
+你的电脑是 Linux 系统（Ubuntu 或 Debian 系列）吗？别担心，虽然系统通常自带 Python，但版本可能偏老，不适合后续的模型微调工作。我们一步步来更新它。
+
+打开终端（Terminal），依次输入以下三条命令，每输完一条按回车：
 
 ```bash
-# 1. 更新软件源，确保能装到最新版
 sudo apt update
-
-# 2. 一次装齐 Python 3、pip 和虚拟环境模块
 sudo apt install python3 python3-pip python3-venv -y
-
-# 3. 验证安装结果
 python3 --version
 ```
 
-**关键点**：`-y` 是自动确认，省得你手动输 `y`；`python3-venv` 是建虚拟环境用的
+**这三条命令在做什么？**
+
+- 第一条：更新软件源，让系统知道最新可用的软件版本。
+- 第二条：安装 Python 3、pip（Python 的包管理工具）和 venv（虚拟环境模块
 
 ## 块 6
 
 ## 2.4 操作系统与实训环境该怎么选
 
-你的目标是 LoRA 微调，这意味着最终要跑 GPU 训练。环境选对了，后面能少踩很多坑。
+作为零基础文科背景、目标是大模型微调的你，选对环境比选“最好”的环境更重要。这里按你的实际场景分两步走：
 
-**日常写 Python、练命令（Windows 用户）**：启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它给你一个接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致。安装只需管理员 PowerShell 执行 `wsl --install`，一步到位。
+**第一步：日常练 Python（用你的 Windows 笔记本）**
 
-**日常写 Python（macOS / Linux 用户）**：直接用本机终端，本身就是类 Unix 环境，不用额外折腾。
+先别急着装虚拟机，推荐启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它是在 Windows 里运行的一个接近真实生产的 Linux 环境，命令、路径、包管理方式都和后续服务器一致。你现在练的命令行习惯，将来直接迁移到云端服务器，不用重学。安装只需管理员 PowerShell 执行 `wsl --install` 即可。
 
-**LoRA / QLoRA 微调等 GPU 实训**：用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态支持最成熟、文档最全。
+> 如果你用的是 macOS 或 Linux，直接使用本机终端即可，本身就是类 Unix 环境，无需额外配置。
 
-> **⚠️ 别走弯路**：**不要**把 **"CentOS + VirtualBox 虚拟机"** 当最佳方案。CentOS 8 已停止维护，建议使用其替代品如 Rocky Linux 8 或 AlmaLinux 8，或直接使用 Ubuntu LTS；VirtualBox 这类桌面虚拟机**
+**第二步：LoRA 微调实训（你目前无独立 GPU）**
+
+你的笔记本只有核显，跑不了 GPU 训练。LoRA/QLoRA 微调这类任务，应使用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态的支持最成熟、文档最全。
+
+**⚠️ 不推荐的做法**：不要把 **“CentOS + VirtualBox
 
 ## 块 7
 
-### 3.1 什么时候才需要镜像源
+### 3.1 镜像源：什么时候用，怎么用
 
-`pip` 是 Python 的包管理工具，用来安装第三方库（比如 `numpy`、`pandas`）。默认情况下，`pip` 从官方 PyPI 服务器（`pypi.org`）下载，这是**最权威、最完整、最应保留的默认源**。
+**先理解背景**：`pip` 是 Python 的“软件安装管家”，帮你下载第三方库（比如 `numpy`）。默认它从官方源（`pypi.org`）下载——这是**最权威、最完整**的选择，**永远应该优先保留**。
 
-只有当你网络受限、访问官方源明显变慢或经常超时时，才考虑临时切换到国内镜像。**镜像是"网络不好时的临时加速手段"，不是必须永久替换的默认设置**——官方源始终是首选。
+**什么时候才需要镜像源**：只有当你**网络受限**、访问官方源**明显变慢**或**经常超时**时，才临时切换。记住：**镜像是“网络不好时的加速手段”，不是永久设置**。
 
-### 3.2 首选做法：临时指定镜像源（推荐）
-
-如果只是某次安装慢，最干净的做法是**只对这一次安装临时指定镜像**，不改动任何全局配置：
+**推荐做法（临时指定）**：如果某次安装慢，只对**这一次**临时指定镜像，不改全局配置：
 
 ```bash
 pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-**为什么推荐这种方式**：它不会影响你平时的
+**为什么推荐**：不影响你平时的默认行为，官方源仍是首选；网络恢复或镜像出问题时，无需清理
 
 ## 块 8
 
-### 3.3 进阶：将镜像设为默认（仅在长期网络受限时）
+## 3.3 进阶：把镜像设为默认（仅在长期网络受限时）
 
-你正在为 LoRA 微调准备环境，如果长期网络受限，可以把清华镜像设为 pip 默认源。**注意**：官方 PyPI 最可靠，网络恢复后建议改回。
+这一步是“一劳永逸”的配置，但请先记住一个前提：**只有当你长期处于网络受限环境、几乎每次下载都要用镜像时，才这样做**。官方 PyPI 始终是最可靠的来源，网络恢复后建议改回或删除配置。
 
-**Windows 用户：**
-1. 按 `Win + R`，输入 `%APPDATA%`，回车，打开配置文件夹。
-2. 新建 `pip` 文件夹，在里面新建 `pip.ini` 文件。
-3. 用记事本写入：
+### Windows 用户操作步骤
+
+1. 按 `Win + R`，输入 `%APPDATA%` 并回车，会打开一个类似 `C:\Users\你的用户名\AppData\Roaming` 的文件夹。
+2. 在该文件夹下**新建一个名为 `pip` 的文件夹**。
+3. 在 `pip` 文件夹内**新建一个名为 `pip.ini` 的文本文件**。
+4. 用记事本打开 `pip.ini`，写入以下内容：
+
 ```ini
 [global]
 index-url = https://pypi.tuna.tsinghua.edu.cn/simple
 ```
-`index-url` 告诉 pip 默认从这里下载包。
 
-> **⚠️ 别加 `trusted-host`**：网上教程常让你加，但除非镜像 HTTPS 证书验证失败，否则别加——它会跳过 TLS 校验，放弃传输安全。清华、阿里等主流镜像都有合法证书，正常使用**无需**它。若确需使用，应仅在确认镜像源可信且网络环境安全时临时添加，并尽快恢复官方源。替代方案：若证书验证失败，可用 `--cert` 参数指定可信证书，而非跳过验证。
+**为什么这样写**：`index-url` 告诉 pip 默认从这个地址下载包。
 
-**macOS / Linux 用户：**
-1. 终端执行：
+> **⚠️ 关于 `trusted-host`**：网上很多教程会顺手加一行 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——`trusted-host` 会让 pip 跳过对该域名的 TLS 校验，等于放弃了传输安全。清华、阿里等主流镜像都提供合法的 HTTPS 证书，正常使用**无需** `trusted-host`。只有在企业内网自建源、或确实遇到证书报错且已确认来源可信时，才临时加它。
+
+### macOS / Linux 用户操作步骤
+
+1. 打开终端，执行：
+
 ```bash
 mkdir -p ~/.config/pip
 ```
-2. 创建并编辑配置：
+
+2. 创建配置文件：
+
 ```bash
 nano ~/.config/pip/pip.conf
 ```
-3. 写入同样内容，`Ctrl + O` 保存，`Ctrl + X` 退出。
 
-### 3.4 验证配置
-命令行输入：
+3. 写入同样的内容：
+
+```ini
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+4. 按 `Ctrl + O` 保存，`Ctrl + X` 退出。
+
+### 3.4 验证配置是否生效
+
+在命令行输入：
+
 ```bash
 pip config list
 ```
-看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'` 即成功。
 
-### 3.5 改回
+如果看到 `global.index-url='https://
 
 ## 块 9
 
-**本块目标**：装好 VS Code，为后续 LoRA 微调写 Python 代码做准备。你只需跟着做，不用记概念。
+## 4.1 方案一：VS Code（轻量、免费、推荐）
 
-**为什么选 VS Code**：免费、启动快，装插件后能写 Python，以后写脚本也能用。适合你快速上手。
+**为什么选它**：VS Code 是微软出品的免费编辑器，启动快、插件丰富。你后续做 LoRA 微调时，既要写 Python 代码，也可能要改配置文件、看训练日志，它都能胜任。
 
-**安装（约5分钟）**：
-1. 打开 `https://code.visualstudio.com`，下载你系统的安装包。
-2. 运行安装程序，一路“下一步”完成。
+**安装步骤**：
 
-**装两个必装插件**：
-打开 VS Code，点左侧最下方的四个方块图标（扩展），搜索并安装：
-- **Python**（微软官方，提供语法高亮、调试、智能提示）
-- **Pylance**（让代码提示更智能）
+1. 访问 https://code.visualstudio.com，下载对应系统的安装包。
+2. 运行安装程序，一路下一步即可。
 
-> 不装 Python 插件，VS Code 认不出 `.py` 文件，就没代码补全和运行按钮。
+**必装插件**：打开 VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并安装：
 
-**选 Python 解释器**（关键一步）：
-1. 按 `Ctrl + Shift + P`（Mac
+- **Python**（Microsoft 官方出品，提供语法高亮、调试、智能提示）
+- **Pylance**（Python 语言服务器，让代码提示更智能）
+
+安装 Python 插件后，VS Code 才能识别 `.py` 文件，提供代码补全、错误提示和一键运行功能。
+
+**配置 Python 解释器**：
+
+1. 打开 VS Code，按 `Ctrl + Shift + P`（Mac
 
 ## 块 10
 
-**动手装好 PyCharm，为 LoRA 微调铺路**
+## 4.2 方案二：PyCharm Community（免费、轻量）
 
-你目标是跑通 LoRA 微调，那代码编辑器就是你的“主战场”。PyCharm 社区版免费且功能完整，适合管理稍大的项目，正好匹配你的学习节奏。
+**为什么选它**：PyCharm 是 JetBrains 出品的 Python 专用 IDE，社区版完全免费。它内置代码分析、版本控制等功能，适合大型项目开发——你之后做 LoRA 微调时，项目文件会比较多，这类工具能帮你理清结构。注意：社区版不包含数据库工具，如需该功能请考虑专业版。
 
-**安装要点（跟着点就行）**
+**安装步骤**（文科背景不用怕，跟着点就行）：
 
-1. 打开官网下载页：`https://www.jetbrains.com/pycharm/download/`
-2. 选 **Community Edition**（社区版，免费那个）
-3. 安装时勾选这两项，后面省事：
-   - `Add "Open Folder as Project"`（右键文件夹就能直接打开）
-   - `Add to PATH`（命令行也能启动 PyCharm；Windows/Linux 上对应选项为 `Add launchers dir to the PATH` 或 `Create Desktop Entry`，macOS 无此选项）
+1. 访问 https://www.jetbrains.com/pycharm/download/
+2. 下载 **PyCharm Community Edition**（社区版，免费那个）
+3. 运行安装程序，建议勾选：
+   - `Add "Open Folder as Project"`（右键菜单快速打开文件夹）
+   - `Update PATH variable (restart needed)`（命令行可直接启动 PyCharm）
 
-**首次启动，两步搞定**
+**首次启动配置**：
 
-1. 点 `New Project` 新建项目
-2. `Location` 选存放路径——**记住：路径别带
+1. 打开 PyCharm，选择 `New Project`
+2. 在 `Location` 处选择项目存放路径（**路径中
 
 ## 块 11
 
-### 5.1 为什么用 Conda
+好的，同学，欢迎来到环境准备的关键一步。我知道你完全没有编程经验，而且是从文科转行来做大模型微调，这很酷！别担心，我们一步步来。这一节，我们只解决一个问题：**为什么你的电脑需要一个叫 Conda 的“工具箱”**。
 
-你的目标是 LoRA 微调，这属于深度学习实战。这类项目依赖复杂（比如 PyTorch、CUDA 等），如果直接在系统 Python 里装，很容易把环境搞乱。**Conda** 能帮你为每个项目创建独立的 Python 空间，还能管理不同版本的 Python 解释器本身——这正是深度学习的刚需。
+想象一下，你以后要做的“大模型微调”，就像是在一个非常精密的实验室里做实验。这个实验室里，不同的项目（比如用 LoRA 微调不同的大模型）需要不同的“试剂”（也就是 Python 版本和各种软件包）。如果所有实验都在同一个脏乱的桌子上做，试剂很容易混在一起，实验就全乱了。
 
-### 5.2 安装 Conda：选 Miniconda
+**Conda** 就是帮你管理这个实验室的“智能储物柜”。它最厉害的地方在于，不仅能给每个项目创建独立的“实验台”（虚拟环境），还能直接管理“实验台”上用的“基础试剂”——也就是 Python 解释器本身的版本。对于你后续要学习的深度学习（需要 PyTorch 等复杂依赖），用 Conda 来管理几乎是必备技能，能帮你省去无数“环境冲突”的烦恼。
 
-| 选项 | 特点 | 适合谁 |
-|------|------|--------|
-| **Anaconda** | 大（500MB+），预装 numpy、pandas 等 | 做数据分析、不想手动装包 |
-| **Miniconda** | 小（约 70-100MB），只含 conda 和基础 Python | 希望环境干净、按需装包 |
+既然我们确定了要用 Conda，那具体选哪个版本呢？这里有两个选择：**Anaconda** 和 **Miniconda**。
 
-**推荐 Miniconda**——你后面做 LoRA 微调，需要什么装什么，环境干净不臃肿。
+- **Anaconda** 像一个“全家桶”，体积大（通常超过 800MB），预装了大量科学计算库。适合不想手动装包、做数据分析的人。
+- **Miniconda** 像一个“精简包”，体积小（约50MB），只包含 Conda 本身和基础的 Python。你需要什么，就自己动手装什么。
 
-**安装步骤：**
+**我推荐你选择 Miniconda**。因为你的目标是做项目开发，保持环境干净、按需安装，是更专业的习惯，也能让你更清楚自己每一步在做什么。
 
-1. 打开 https://docs.conda.io/en/latest/miniconda.html
-2. 下载对应系统的安装包（Windows 选 `.exe`，macOS/Linux 选 `.sh`）
-3. 运行安装：
-   - **Windows**：一路下一步，**别勾选** "Add Miniconda3 to my PATH environment variable"（安装器也标了"不推荐"）。避免和系统已有 Python 冲突。日常用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 操作 conda。
-   - **macOS/Linux**：运行 `.sh`，输入 `yes` 同意协议、选路径，最后一步**选 `yes` 执行 `conda init`**。这样终端会自动接管 conda，不用手动改 PATH。
-4. **验证**：打开**新**终端（Windows 用 Anaconda Prompt；macOS/Linux 重开终端），输入：
+安装过程很简单，跟着做就行：
 
-```bash
-conda --version
-```
-
-看到 conda 版本号（如 conda 24
+1.  打开安装包下载页面：`https://docs.conda.io/en/latest/miniconda.html`。
+2.  下载对应你系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）。
+3.  运行安装程序，这里有个**特别重要的提醒**：
+    - **如果你用 Windows**
 
 ## 块 12
 
-## 5.3 创建你的第一个虚拟环境
+**创建你的第一个虚拟环境**
 
-**为什么现在做**：你马上要学 LoRA 微调，不同项目需要不同版本的 PyTorch 和 CUDA。学会创建环境，以后直接复用这套流程。
+这一步是为后续大模型微调打基础。不同项目可能需要不同版本的 PyTorch 和 CUDA，虚拟环境能让每个项目“各用各的”，互不干扰。现在学会，以后直接复用。
 
-打开终端，执行：
+在终端中执行以下命令：
 
 ```bash
 conda create -n llm-learn python=3.10
 ```
 
-**逐段拆解**：
+**这条命令在做什么？** 拆开看：
+
 - `conda create`：创建环境的命令
-- `-n llm-learn`：给环境命名为 `llm-learn`（`n` 是 `name` 的缩写）
+- `-n llm-learn`：给环境起名为 `llm-learn`（`n` 是 `name` 的缩写）
 - `python=3.10`：指定环境内安装 Python 3.10
 
-执行后终端会列出待安装包，并询问：
+执行后，终端会列出准备安装的包，并询问：
 
 ```bash
-Proceed ([y]/n)?
-```
-
-输入 `y`
+Proceed
 
 ## 块 13
 
-### 5.4 激活与退出环境：进入你的“独立房间”
+## 5.4 激活与退出环境：进入你的“独立房间”
 
-你的目标是 LoRA 微调，这意味着你马上要开始动手跑代码了。为了让实验不“污染”系统，我们先把环境激活，就像走进自己的专属工作间。
+想象一下，你正在为“LoRA微调”这个项目搭建一个专属工作间。Conda环境就是这样一个独立房间——里面只放这个项目需要的工具，不会弄乱你电脑的其他地方。
 
-**激活环境**（进入这个“独立房间”）：
+**进入房间（激活环境）**
+
+在终端输入：
 
 ```bash
 conda activate llm-learn
 ```
 
-**为什么这样写**：激活后，命令行前面会出现 `(llm-learn)` 标志。记住，只要看到这个标志，就表示你后续敲的所有 `python` 和 `pip` 命令，都只作用在这个环境里，不会影响系统或其他项目。这是项目隔离的核心。
+输入后，注意看命令行最前面会出现 `(llm-learn)` 标志。这个标志就像房间门口的门牌，告诉你：现在你已经在“llm-learn”这个专属工作间里了。此后，你输入的所有 `python` 和 `pip` 命令，都只在这个房间里生效，不会影响系统或其他项目。
 
-**验证当前环境的 Python 版本**（确认你走对了房间）：
+**确认房间配置（验证Python版本）**
+
+进入房间后，可以检查一下工具是否齐全：
 
 ```bash
 python --version
 ```
 
-应该显示 `Python 3.10.x`。看到这个版本号，就说明环境激活成功了。
-
-**退出环境**（
+屏幕上应该显示 `Python 3
 
 ## 块 14
 
-**本块学习检查**：完成下面两步，确认你的 `llm-learn` 环境已被 VS Code 正确选中。
+**6.1 VS Code 配置 Conda 环境**
 
-**1. 在 VS Code 中切换 Conda 环境（约2分钟）**
+打开 VS Code，按 `Ctrl + Shift + P`，输入 `Python: Select Interpreter`，选择带有 `conda` 字样的 Python 路径（如 `Python 3.10.x ('llm-learn': conda)`）。
 
-- 先打开终端（Terminal），输入并运行：`conda activate llm-learn`
-- 回到 VS Code 编辑器，按 `Ctrl + Shift + P` 打开命令面板。
-- 输入 `Python: Select Interpreter` 并回车。
-- 在弹出的列表中，选择带有 `conda` 字样的 Python 路径（例如 `Python 3.10.x ('llm-learn': conda)`）。
+**为什么这样写**：VS Code 能自动识别 conda 环境。选择后，你在这个工作区写的代码就会使用 `llm-learn` 环境中的 Python 和已安装的包。
 
-> **为什么这样做**：VS Code 会自动识别你电脑上的 conda 环境。选中后，你在当前工作区写的所有代码，都会使用 `llm-learn` 环境里的 Python 和已经装好的包（比如后面 LoRA 微调要用的库）。
+**6.2 PyCharm 配置 Conda 环境**
 
-**2. 快速验证（约1分钟）**
+打开 PyCharm，点击 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）。左侧选择 `Project: 你的项目名` → `Python Interpreter`。点击齿轮图标 → `Add...`。左侧选择 `Conda Environment` → `Existing environment`。在 `Interpreter` 路径中选择 conda 环境的 Python 可执行文件：
+- Windows：`C:\Users\你的用户名\miniconda3\envs\llm-learn\python.exe`
+- macOS/Linux：`~/miniconda3/envs/llm-learn/bin/python`
 
-- 在 VS Code 里新建一个 Python 文件（比如 `test.py`）。
-- 输入一行代码：`import sys; print(sys.executable)`
-- 点击右上角的“运行”按钮。
-- **检查输出**：如果打印出的路径中包含 `llm-learn`，说明配置成功，你的代码正在使用正确的环境。如果路径不对，回到第1步重新选择解释器。
+---
+
+**第七章：验证——运行你的第一行代码**
+
+环境搭好后，必须验证一遍，确保每个环节都通。
+
+**本块学习检查**：在 VS Code 中新建一个 `.py` 文件，输入 `print("hello")`
 
 ## 块 15
 
-### 在命令行验证你的 Python 环境
+## 7.1 在命令行验证
 
-既然你的目标是 LoRA 微调，动手跑通环境是第一步。跟着做，很快就能看到反馈。
+你不需要图形界面，命令行就是你的“对话窗口”。先激活环境：
 
-1. **激活环境**：打开终端，输入 `conda activate llm-learn` 并回车。
-2. **进入 Python**：输入 `python` 回车，看到 `>>>` 提示符就对了。
-3. **运行第一行代码**：在 `>>>` 后输入 `print("Hello, Python! 我的环境准备好了！")` 并回车。
-4. **确认输出**：屏幕打印出这句话，说明环境正常。输入 `exit()` 退出。
+```bash
+conda activate llm-learn
+```
 
-**本块学习检查**：在命令行重复步骤 2-3，确认能再次看到输出。如果失败，检查是否已
+输入 `python` 进入交互模式，看到 `>>>` 提示符后，逐字输入：
+
+```python
+print("Hello, Python! 我的环境准备好了！")
+```
+
+回车，若正确打印出这句话，说明环境已通。输入 `exit()` 退出。
+
+## 7.2 在 VS Code 中验证
+
+新建文件夹 `my-first-project`，用 VS Code 打开。新建文件 `hello.py`，输入：
+
+```python
+print("Hello from VS Code!")
+```
+
+点击右上角小三角（或按 `Ctrl + F5`），下方终端应输出 `Hello from VS
 
 ## 块 16
 
-**本块学习检查**：完成下面三步，确认你的 PyCharm 工作台能跑通第一行代码。
+好的，学习者。我们已经把开发工作台搭建好了，现在到了最激动人心的时刻：运行你的第一行代码。这一步就像按下新车的启动键，确认一切正常，准备出发。
+
+在 PyCharm 中验证非常简单，跟着做就行：
+
+1.  **新建项目并创建文件**：打开 PyCharm，新建一个项目。在项目里，新建一个名为 `hello.py` 的 Python 文件。
+2.  **运行文件**：在编辑区右键点击 `hello.py` 文件，在弹出的菜单中选择 `Run 'hello'`。
+3.  **查看结果**：PyCharm 窗口底部会打开一个 `Run` 面板，你的代码输出结果就会显示在这里。
+
+看到输出结果，就说明你的开发环境完全打通了，可以开始写真正的代码了。
 
 ---
 
-### 7.3 在 PyCharm 中验证
+**遇到问题？别慌，这是新手必经之路。**
 
-你的目标是 LoRA 微调，但任何微调实验都要从“能运行代码”开始。现在用 PyCharm 验证环境是否打通。
-
-**操作步骤**：
-
-1. 打开 PyCharm，新建一个项目（项目路径不要包含中文或空格）。
-2. 在项目中新建文件，命名为 `hello.py`。
-3. 在文件中输入：`print("Hello, LoRA!")`
-4. 右键点击文件 → 选择 `Run 'hello'`。
-5. 看下方 **Run 窗口**，如果输出了 `Hello, LoRA!`，说明你的开发环境已就绪。
-
----
-
-### 常见问题排查（遇到再看）
+环境配置偶尔会闹点小脾气，这里有一份“故障排除”指南，帮你快速定位问题：
 
 | 问题现象 | 可能原因 | 解决方案 |
 |----------|----------|----------|
-| 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选 "Modify"，勾选 "Add Python to environment variables" |
-| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 临时加 `-i` 指定国内镜像（如清华源）；长期受限再设为默认源 |
-| `conda` 命令找不到 | 未使用 Anaconda/Miniconda Prompt（Windows）/ 未执行 `conda init`（macOS/Linux） | Windows 用开始菜单的 `Anaconda Prompt (Miniconda3)`；macOS/Linux 运行 `conda init` 后重开终端 |
+| 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选择 "Modify"，勾选 "Add Python to environment variables" |
+| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 临时使用 `pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 包名` 指定清华镜像源 |
+| `conda` 命令找不到 | 未使用 Anaconda/Miniconda Prompt（Windows）/ 未执行 `conda init`（macOS/Linux） | Windows 用户使用开始菜单的 `Anaconda Prompt (Miniconda3)`；macOS/Linux 运行 `conda init` 后重开终端 |
 | VS Code 提示"未选择 Python 解释器" | 未配置解释器路径 | 按 `Ctrl + Shift + P` → `Python: Select Interpreter` 手动选择 |
-| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
-| pip 安装后，Python 里 `import` 报错 |
+| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 使用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
+| pip 安装后，Python 里 `import` 报错 | pip 装到了错误
 
 ## 测评题目
+
+### Q-KB0200-002
+执行以下命令进入Python交互环境，将输出粘贴作答：
+```bash
+python
+```
 
 ### Q-KB0200-004
 验证conda环境是否配置正确：
@@ -367,12 +392,11 @@ python --version
 conda --version && conda info --envs
 ```
 
-### Q-KB0200-003
-在Python交互环境中执行以下代码，验证pip是否可用：
-```python
-import pip
-print(pip.__version__)
-```
+### Q-KB0202-004
+请用**列表推导式**生成1到20中所有能被3整除的数的平方。
+
+### Q-KB0205-002
+生成器函数使用________关键字返回值（而非 `return`），调用生成器函数返回的是一个________对象。
 
 ### Q-KB0201-005
 以下代码输出什么？
@@ -383,44 +407,11 @@ for i in range(5):
     print(i, end=" ")
 ```
 
-### Q-KB0201-002
-Python中，`type(3.14)` 的返回结果是________；`type("3.14")` 的返回结果是________。
+### Q-KB0205-005
+请写一个**带参数的装饰器** `retry(times=3)`，使被装饰的函数在抛出异常时自动重试指定次数。
 
-### Q-KB0201-003
-以下代码的输出是？
-```python
-x = 10
-y = 3
-print(x // y, x % y, x ** y)
-```
+### Q-KB0204-003
+请写代码：读取 `data.txt` 文件，捕获文件不存在的异常，若不存在则打印 "文件未找到"。
 
-### Q-KB0205-007
-写一个函数 `count_words(text)`，接收一段英文字符串，返回一个字典，统计每个单词出现的次数（忽略大小写）。
-
-### Q-KB0204-004
-以下代码中，`finally` 块在什么情况下执行？
-```python
-try:
-    x = 1 / 0
-except ZeroDivisionError:
-    print("除零错误")
-finally:
-    print("清理完成")
-```
-
-### Q-KB0205-003
-以下代码输出什么？
-```python
-def my_decorator(func):
-    def wrapper():
-        print("Before")
-        func()
-        print("After")
-    return wrapper
-
-@my_decorator
-def say_hello():
-    print("Hello!")
-
-say_hello()
-```
+### Q-KB0204-001
+以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？

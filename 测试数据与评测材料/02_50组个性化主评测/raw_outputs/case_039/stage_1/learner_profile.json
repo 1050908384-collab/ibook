@@ -1,8 +1,27 @@
 {
-  "session_id": "0c9d5490-d567-4bdd-9195-02752f537b1d",
+  "session_id": "b8a28f3e-df2b-4506-ac41-84690e7a955b",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "平时没时间，周末集中5小时，想学LoRA",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -17,20 +36,19 @@
         "KBS-12-05"
       ],
       "mapping_confidence": 1.0,
-      "level": "beginner",
+      "level": "advanced",
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
-        "深度学习框架PyTorch基础",
         "HuggingFace生态工具链"
       ]
     }
   ],
   "goal": "LoRA微调",
   "daily_hours": 5.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.65,
+  "learning_style": "mixed",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

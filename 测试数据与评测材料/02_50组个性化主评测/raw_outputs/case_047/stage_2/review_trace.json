@@ -1,0 +1,2322 @@
+{
+  "review_passed": true,
+  "iterations": 3,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "52477a57ba1b_r1",
+            "canonical_error_id": "52477a57ba1b",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f833f7367b8f_r1",
+            "canonical_error_id": "f833f7367b8f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2192feda9976_r1",
+            "canonical_error_id": "2192feda9976",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "示例输出中显示的CUDA Version为12.2，但实际RTX 3060驱动535.54.03最高支持CUDA 12.2，而RTX 4060的驱动版本可能不同，且示例中显卡型号与用户实际显卡（RTX 4060）不一致，可能造成误导。",
+            "evidence": "原文示例输出为RTX 3060，但用户显卡为RTX 4060，且驱动版本535.54.03对应CUDA 12.2，但RTX 4060的驱动版本可能不同，导致CUDA Version可能不同。",
+            "suggestion": "建议使用与用户显卡型号匹配的示例，或明确说明示例仅为示意，实际以用户nvidia-smi输出为准。",
+            "error_id": "2347c7afedc6_r1",
+            "canonical_error_id": "2347c7afedc6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "原文声称'CUDA Version: 12.2'是驱动最高支持的CUDA版本，但实际nvidia-smi显示的CUDA Version是驱动支持的CUDA运行时版本，并非驱动最高支持的CUDA版本。驱动最高支持的CUDA版本通常由驱动版本决定，但nvidia-smi显示的CUDA Version是当前驱动支持的CUDA版本，并非上限。",
+            "evidence": "NVIDIA官方文档说明，nvidia-smi显示的CUDA Version是驱动支持的CUDA运行时版本，并非驱动最高支持的CUDA版本。驱动最高支持的CUDA版本通常由驱动版本决定，但nvidia-smi显示的CUDA Version是当前驱动支持的CUDA版本，并非上限。",
+            "suggestion": "建议修改表述为：'CUDA Version: 12.2'表示当前驱动支持的CUDA版本，安装PyTorch时CUDA版本应不高于此版本。",
+            "error_id": "13e2af085a23_r1",
+            "canonical_error_id": "13e2af085a23",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "PyTorch 2.5.1 的 cu121 版本不存在，实际 cu121 对应 PyTorch 2.5.0 及更早版本。",
+            "evidence": "PyTorch 官方发布历史显示，cu121 轮子最后支持到 2.5.0，2.5.1 仅提供 cu118 和 cu124 版本。",
+            "suggestion": "将 cu121 命令中的版本改为 2.5.0，或改用 cu124 并保持 2.5.1。",
+            "error_id": "5a21753f0ad4_r1",
+            "canonical_error_id": "5a21753f0ad4",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C004",
+            "content_chunk_id": "LOCAL-KBS-04-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "PyTorch 2.5.1 的 cu118 版本不存在，实际 cu118 最后支持到 2.5.0。",
+            "evidence": "PyTorch 官方发布历史显示，cu118 轮子最后支持到 2.5.0，2.5.1 仅提供 cu124 版本。",
+            "suggestion": "将 cu118 命令中的版本改为 2.5.0，或改用 cu124 并保持 2.5.1。",
+            "error_id": "897502f9385e_r1",
+            "canonical_error_id": "897502f9385e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C004",
+            "content_chunk_id": "LOCAL-KBS-04-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_error",
+            "severity": "critical",
+            "location": null,
+            "description": "pip install 命令中使用了 --index-url 指定 PyTorch 官方仓库，但命令中同时包含了 torchvision 和 torchaudio 的版本号，这些包在 cu121 仓库中存在，但命令格式可能导致 pip 解析错误，且未使用 --extra-index-url 或 -i 指定镜像源，与后续警告内容矛盾。",
+            "evidence": "命令：pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121。该命令正确指定了官方仓库，但警告中强调不要叠加 -i 或 --extra-index-url，此处未叠加，但命令本身可能因版本不匹配导致安装失败。",
+            "suggestion": "确认 torchvision 0.20.1 和 torchaudio 2.5.1 在 cu121 仓库中存在，若不存在请调整版本号。",
+            "error_id": "08ee5751bda1_r1",
+            "canonical_error_id": "08ee5751bda1",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "声称 PyTorch 安装包体积约 2~3GB，但实际 PyTorch 的 wheel 包（含 CUDA 依赖）通常约 2GB 左右，但 torchvision 和 torchaudio 的包体积较小，总下载量可能超过 3GB，具体取决于 CUDA 版本和平台。",
+            "evidence": "PyTorch 官方安装包大小因版本和 CUDA 版本而异，通常 torch 的 wheel 约 2GB，但加上 torchvision 和 torchaudio 可能超过 3GB。",
+            "suggestion": "建议改为'安装包体积较大（约 2~3GB 或更多）'，或删除具体数字以避免误导。",
+            "error_id": "cc0fee4f06f6_r1",
+            "canonical_error_id": "cc0fee4f06f6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块以'安装完成后'结尾，未包含验证安装的具体步骤，如运行 torch.cuda.is_available() 等，导致内容不完整。",
+            "evidence": "原文最后一句为'安装完成后'，未提供后续验证命令。",
+            "suggestion": "补充验证安装的代码示例，如：python -c \"import torch; print(torch.__version__, torch.cuda.is_available())\"。",
+            "error_id": "1d3b6db63297_r1",
+            "canonical_error_id": "1d3b6db63297",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "预期输出中的GPU型号为'NVIDIA GeForce RTX 3060'，但上下文明确用户目标是RTX 4060，且标题路径也指明RTX 4060。GPU型号与用户实际硬件不符，属于事实错误。",
+            "evidence": "内容块开头明确'你的目标是 LoRA 微调，而微调的前提是 PyTorch 能真正调用你的 RTX 4060'，但预期输出示例中GPU型号为RTX 3060，与用户硬件不一致。",
+            "suggestion": "将预期输出中的GPU型号改为'NVIDIA GeForce RTX 4060'，以匹配用户实际硬件。",
+            "error_id": "79a4826012cc_r1",
+            "canonical_error_id": "79a4826012cc",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C007",
+            "content_chunk_id": "LOCAL-KBS-04-00-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "55720df98647_r1",
+            "canonical_error_id": "55720df98647",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:240-297"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "description": "与来源块 LOCAL-KBS-04-01-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C001，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.1 创建张量（②），lines=1-55",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "5cd7f99afe7e_r1",
+            "canonical_error_id": "5cd7f99afe7e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-55"
+          },
+          {
+            "error_type": "lora_mechanism_error",
+            "severity": "critical",
+            "location": null,
+            "description": "内容将LoRA的核心操作描述为'在已有张量上做精细的数学变换'，并称'LoRA的核心操作——冻结原模型、注入低秩矩阵'，但未明确说明LoRA是训练低秩增量ΔW=(α/r)BA，且后文提到'用zeros初始化低秩矩阵B（初始为0，保证训练开始时不影响原模型）'，暗示B初始为0，但标准LoRA中B初始为0而A初始为随机，且整体表述可能误导为对原权重做变换而非冻结原权重训练增量。",
+            "evidence": "标准LoRA冻结原权重W，训练低秩增量ΔW=(α/r)BA，其中A随机初始化，B初始化为0。内容未明确此机制，且'在已有张量上做精细的数学变换'表述模糊，可能被误解为对原权重进行变换。",
+            "suggestion": "明确说明LoRA冻结原权重W，仅训练低秩矩阵A和B，增量ΔW=(α/r)BA，并指出A随机初始化、B初始化为0。",
+            "error_id": "9b2e9c6c3877_r1",
+            "canonical_error_id": "9b2e9c6c3877",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "hallucination",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'LoRA中常用randn初始化低秩矩阵A，因为正态分布能提供更好的梯度信号'，但标准LoRA实践中A通常使用随机正态分布初始化，但'更好的梯度信号'这一说法缺乏明确依据，且知识库中可能无此具体声明。",
+            "evidence": "标准LoRA初始化中A常用随机正态分布，但'更好的梯度信号'这一理由并非标准文献中的明确表述，可能为模型臆造。",
+            "suggestion": "删除'因为正态分布能提供更好的梯度信号'这一无依据的理由，或补充可靠来源。",
+            "error_id": "023b131fb66a_r1",
+            "canonical_error_id": "023b131fb66a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'一个[4096, 8]的矩阵只占约0.26MB显存'，但计算错误：4096*8*4字节（float32）=131072字节=0.125MB，若为float16则为0.0625MB，0.26MB明显偏高。",
+            "evidence": "矩阵元素数=4096*8=32768，float32下内存=32768*4=131072字节=0.125MB，float16下为0.0625MB。0.26MB与计算不符。",
+            "suggestion": "修正显存计算：一个[4096,8]的float32矩阵占0.125MB，float16占0.0625MB。",
+            "error_id": "2bb012574b92_r1",
+            "canonical_error_id": "2bb012574b92",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块末尾'实操建议：创建完张量后，试试`'未完成，缺少后续内容。",
+            "evidence": "原文以'试试`'结尾，明显截断。",
+            "suggestion": "补全实操建议的完整内容。",
+            "error_id": "4f4141eee382_r1",
+            "canonical_error_id": "4f4141eee382",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "description": "与来源块 LOCAL-KBS-04-01-C002 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-01-C002，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.2 查看张量属性（②），lines=56-119",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2543160d043a_r1",
+            "canonical_error_id": "2543160d043a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_chunk_id": "LOCAL-KBS-04-01-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:56-119"
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在代码示例中途被截断，缺少完整的 unsqueeze 示例和后续内容，导致代码不完整且无法运行。",
+            "evidence": "代码块以 `print(t4` 结尾，未闭合括号和引号，且缺少后续代码行。",
+            "suggestion": "补全代码示例，确保代码完整可运行，并检查内容块是否完整。",
+            "error_id": "1cbcc4e3a994_r1",
+            "canonical_error_id": "1cbcc4e3a994",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C005",
+            "content_chunk_id": "LOCAL-KBS-04-01-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "code_truncation",
+            "severity": "critical",
+            "location": null,
+            "description": "代码示例被截断，缺少完整的 permute 输出和后续内容，导致代码不完整、无法运行。",
+            "evidence": "代码块以 `print(t2.shape)               # torch.Size([4` 结尾，缺少闭合括号和后续代码。",
+            "suggestion": "补全代码示例，确保输出完整且可运行。",
+            "error_id": "4fe537948e3f_r1",
+            "canonical_error_id": "4fe537948e3f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C006",
+            "content_chunk_id": "LOCAL-KBS-04-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块不完整，'A = torch.t' 截断，无法执行，且缺少矩阵乘法示例的完整代码。",
+            "evidence": "原文代码块以 'A = torch.t' 结尾，未闭合，且未展示 @ 或 matmul 的完整示例。",
+            "suggestion": "补全代码示例，例如：A = torch.tensor([[1., 2.], [3., 4.]]); B = torch.tensor([[5., 6.], [7., 8.]]); print(A @ B)。",
+            "error_id": "0ed4d193cc4b_r1",
+            "canonical_error_id": "0ed4d193cc4b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C007",
+            "content_chunk_id": "LOCAL-KBS-04-01-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "broadcast_shape_error",
+            "severity": "critical",
+            "location": null,
+            "description": "广播机制示例中，形状为(3,1)的张量与形状为(3,)的张量相加，结果形状应为(3,3)，但示例代码中b的形状为(3,)，广播后b被隐式扩展为(1,3)，结果正确。然而，规则描述中'从尾部维度对齐，(3,1)与(3,)→(3,1)与(1,3)→结果(3,3)'的表述存在歧义：实际上(3,)与(3,1)对齐时，b的维度被扩展为(1,3)，但描述中未明确说明b被扩展为(1,3)的过程，可能误导读者。但代码本身正确，结果正确。",
+            "evidence": "PyTorch广播规则：从尾部维度对齐，维度为1的自动扩展。示例中a形状(3,1)，b形状(3,)，广播后b变为(1,3)，结果(3,3)。代码输出与描述一致。",
+            "suggestion": "建议在规则描述中明确说明b被扩展为(1,3)的过程，例如：'从尾部维度对齐，(3,1)与(3,)→(3,1)与(1,3)→结果(3,3)，其中b被扩展为(1,3)'。",
+            "error_id": "90fdd9e8cf36_r1",
+            "canonical_error_id": "90fdd9e8cf36",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C008",
+            "content_chunk_id": "LOCAL-KBS-04-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "description": "与来源块 LOCAL-KBS-04-01-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-01-C009，heading_path=张量操作 > 八、条件筛选与数据复制（②） > 8.1 布尔掩码（②），lines=302-386",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "35af474f58a2_r1",
+            "canonical_error_id": "35af474f58a2",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:302-386"
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，最后一行 `x = torch.randn(3` 缺少右括号和后续内容，导致代码无法运行。",
+            "evidence": "原文代码块以 `x = torch.randn(3` 结尾，缺少闭合括号和分号，属于语法不完整。",
+            "suggestion": "补全代码，例如 `x = torch.randn(3, 3)` 或提供完整的示例。",
+            "error_id": "7a1bffe5c13a_r1",
+            "canonical_error_id": "7a1bffe5c13a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "description": "与来源块 LOCAL-KBS-04-01-C010 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C010，heading_path=张量操作 > 十一、综合实战演练（①+②+④） > 场景：模拟一次图像数据的预处理流程，lines=387-435",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d5d3433aa001_r1",
+            "canonical_error_id": "d5d3433aa001",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:387-435"
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块在第六节末尾不完整，缺少GPU迁移后的后续操作和收尾，导致代码无法运行。",
+            "evidence": "代码块以 `image_final` 结尾，没有后续赋值或打印语句，且缺少 `print` 等输出，代码不完整。",
+            "suggestion": "补全代码，例如：`image_final = image_flat.to(device)` 并添加打印语句验证。",
+            "error_id": "124ff74fb93e_r1",
+            "canonical_error_id": "124ff74fb93e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第四节声称标准化后数据分布接近标准正态，但使用ImageNet的mean/std对randn数据标准化后，数据分布并非标准正态，且范围可能超出[-1,1]。",
+            "evidence": "randn生成的数据均值为0、方差为1，减去mean（0.485等）并除以std（0.229等）后，均值和方差不再为0和1，因此不是标准正态分布。",
+            "suggestion": "修改表述为'使数据分布接近ImageNet数据集的分布'，或说明标准化后数据范围可能超出[-1,1]。",
+            "error_id": "70d57576df45_r1",
+            "canonical_error_id": "70d57576df45",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "minor_issue",
+            "severity": "minor",
+            "location": null,
+            "description": "第一节使用randn生成模拟图像，但真实图像数据通常为0-255或0-1范围，randn生成的数据不符合真实图像分布，可能误导学习者。",
+            "evidence": "真实图像像素值通常在0-255或0-1范围，randn生成的数据均值为0、方差为1，与真实图像分布不符。",
+            "suggestion": "建议使用torch.rand生成0-1范围的数据，或明确说明这是模拟数据，仅用于演示张量操作。",
+            "error_id": "cbea29aff99d_r1",
+            "canonical_error_id": "cbea29aff99d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "52477a57ba1b_r1",
+            "canonical_error_id": "52477a57ba1b",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f833f7367b8f_r1",
+            "canonical_error_id": "f833f7367b8f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2192feda9976_r1",
+            "canonical_error_id": "2192feda9976",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "示例输出中显示的CUDA Version为12.2，但实际RTX 3060驱动535.54.03最高支持CUDA 12.2，而RTX 4060的驱动版本可能不同，且示例中显卡型号与用户实际显卡（RTX 4060）不一致，可能造成误导。",
+            "evidence": "原文示例输出为RTX 3060，但用户显卡为RTX 4060，且驱动版本535.54.03对应CUDA 12.2，但RTX 4060的驱动版本可能不同，导致CUDA Version可能不同。",
+            "suggestion": "建议使用与用户显卡型号匹配的示例，或明确说明示例仅为示意，实际以用户nvidia-smi输出为准。",
+            "error_id": "2347c7afedc6_r1",
+            "canonical_error_id": "2347c7afedc6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "原文声称'CUDA Version: 12.2'是驱动最高支持的CUDA版本，但实际nvidia-smi显示的CUDA Version是驱动支持的CUDA运行时版本，并非驱动最高支持的CUDA版本。驱动最高支持的CUDA版本通常由驱动版本决定，但nvidia-smi显示的CUDA Version是当前驱动支持的CUDA版本，并非上限。",
+            "evidence": "NVIDIA官方文档说明，nvidia-smi显示的CUDA Version是驱动支持的CUDA运行时版本，并非驱动最高支持的CUDA版本。驱动最高支持的CUDA版本通常由驱动版本决定，但nvidia-smi显示的CUDA Version是当前驱动支持的CUDA版本，并非上限。",
+            "suggestion": "建议修改表述为：'CUDA Version: 12.2'表示当前驱动支持的CUDA版本，安装PyTorch时CUDA版本应不高于此版本。",
+            "error_id": "13e2af085a23_r1",
+            "canonical_error_id": "13e2af085a23",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "PyTorch 2.5.1 的 cu121 版本不存在，实际 cu121 对应 PyTorch 2.5.0 及更早版本。",
+            "evidence": "PyTorch 官方发布历史显示，cu121 轮子最后支持到 2.5.0，2.5.1 仅提供 cu118 和 cu124 版本。",
+            "suggestion": "将 cu121 命令中的版本改为 2.5.0，或改用 cu124 并保持 2.5.1。",
+            "error_id": "5a21753f0ad4_r1",
+            "canonical_error_id": "5a21753f0ad4",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C004",
+            "content_chunk_id": "LOCAL-KBS-04-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "PyTorch 2.5.1 的 cu118 版本不存在，实际 cu118 最后支持到 2.5.0。",
+            "evidence": "PyTorch 官方发布历史显示，cu118 轮子最后支持到 2.5.0，2.5.1 仅提供 cu124 版本。",
+            "suggestion": "将 cu118 命令中的版本改为 2.5.0，或改用 cu124 并保持 2.5.1。",
+            "error_id": "897502f9385e_r1",
+            "canonical_error_id": "897502f9385e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C004",
+            "content_chunk_id": "LOCAL-KBS-04-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "command_error",
+            "severity": "critical",
+            "location": null,
+            "description": "pip install 命令中使用了 --index-url 指定 PyTorch 官方仓库，但命令中同时包含了 torchvision 和 torchaudio 的版本号，这些包在 cu121 仓库中存在，但命令格式可能导致 pip 解析错误，且未使用 --extra-index-url 或 -i 指定镜像源，与后续警告内容矛盾。",
+            "evidence": "命令：pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121。该命令正确指定了官方仓库，但警告中强调不要叠加 -i 或 --extra-index-url，此处未叠加，但命令本身可能因版本不匹配导致安装失败。",
+            "suggestion": "确认 torchvision 0.20.1 和 torchaudio 2.5.1 在 cu121 仓库中存在，若不存在请调整版本号。",
+            "error_id": "08ee5751bda1_r1",
+            "canonical_error_id": "08ee5751bda1",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "声称 PyTorch 安装包体积约 2~3GB，但实际 PyTorch 的 wheel 包（含 CUDA 依赖）通常约 2GB 左右，但 torchvision 和 torchaudio 的包体积较小，总下载量可能超过 3GB，具体取决于 CUDA 版本和平台。",
+            "evidence": "PyTorch 官方安装包大小因版本和 CUDA 版本而异，通常 torch 的 wheel 约 2GB，但加上 torchvision 和 torchaudio 可能超过 3GB。",
+            "suggestion": "建议改为'安装包体积较大（约 2~3GB 或更多）'，或删除具体数字以避免误导。",
+            "error_id": "cc0fee4f06f6_r1",
+            "canonical_error_id": "cc0fee4f06f6",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块以'安装完成后'结尾，未包含验证安装的具体步骤，如运行 torch.cuda.is_available() 等，导致内容不完整。",
+            "evidence": "原文最后一句为'安装完成后'，未提供后续验证命令。",
+            "suggestion": "补充验证安装的代码示例，如：python -c \"import torch; print(torch.__version__, torch.cuda.is_available())\"。",
+            "error_id": "1d3b6db63297_r1",
+            "canonical_error_id": "1d3b6db63297",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C006",
+            "content_chunk_id": "LOCAL-KBS-04-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "预期输出中的GPU型号为'NVIDIA GeForce RTX 3060'，但上下文明确用户目标是RTX 4060，且标题路径也指明RTX 4060。GPU型号与用户实际硬件不符，属于事实错误。",
+            "evidence": "内容块开头明确'你的目标是 LoRA 微调，而微调的前提是 PyTorch 能真正调用你的 RTX 4060'，但预期输出示例中GPU型号为RTX 3060，与用户硬件不一致。",
+            "suggestion": "将预期输出中的GPU型号改为'NVIDIA GeForce RTX 4060'，以匹配用户实际硬件。",
+            "error_id": "79a4826012cc_r1",
+            "canonical_error_id": "79a4826012cc",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C007",
+            "content_chunk_id": "LOCAL-KBS-04-00-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "55720df98647_r1",
+            "canonical_error_id": "55720df98647",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:240-297"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "description": "与来源块 LOCAL-KBS-04-01-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C001，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.1 创建张量（②），lines=1-55",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "5cd7f99afe7e_r1",
+            "canonical_error_id": "5cd7f99afe7e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-55"
+          },
+          {
+            "error_type": "lora_mechanism_error",
+            "severity": "critical",
+            "location": null,
+            "description": "内容将LoRA的核心操作描述为'在已有张量上做精细的数学变换'，并称'LoRA的核心操作——冻结原模型、注入低秩矩阵'，但未明确说明LoRA是训练低秩增量ΔW=(α/r)BA，且后文提到'用zeros初始化低秩矩阵B（初始为0，保证训练开始时不影响原模型）'，暗示B初始为0，但标准LoRA中B初始为0而A初始为随机，且整体表述可能误导为对原权重做变换而非冻结原权重训练增量。",
+            "evidence": "标准LoRA冻结原权重W，训练低秩增量ΔW=(α/r)BA，其中A随机初始化，B初始化为0。内容未明确此机制，且'在已有张量上做精细的数学变换'表述模糊，可能被误解为对原权重进行变换。",
+            "suggestion": "明确说明LoRA冻结原权重W，仅训练低秩矩阵A和B，增量ΔW=(α/r)BA，并指出A随机初始化、B初始化为0。",
+            "error_id": "9b2e9c6c3877_r1",
+            "canonical_error_id": "9b2e9c6c3877",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "hallucination",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'LoRA中常用randn初始化低秩矩阵A，因为正态分布能提供更好的梯度信号'，但标准LoRA实践中A通常使用随机正态分布初始化，但'更好的梯度信号'这一说法缺乏明确依据，且知识库中可能无此具体声明。",
+            "evidence": "标准LoRA初始化中A常用随机正态分布，但'更好的梯度信号'这一理由并非标准文献中的明确表述，可能为模型臆造。",
+            "suggestion": "删除'因为正态分布能提供更好的梯度信号'这一无依据的理由，或补充可靠来源。",
+            "error_id": "023b131fb66a_r1",
+            "canonical_error_id": "023b131fb66a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称'一个[4096, 8]的矩阵只占约0.26MB显存'，但计算错误：4096*8*4字节（float32）=131072字节=0.125MB，若为float16则为0.0625MB，0.26MB明显偏高。",
+            "evidence": "矩阵元素数=4096*8=32768，float32下内存=32768*4=131072字节=0.125MB，float16下为0.0625MB。0.26MB与计算不符。",
+            "suggestion": "修正显存计算：一个[4096,8]的float32矩阵占0.125MB，float16占0.0625MB。",
+            "error_id": "2bb012574b92_r1",
+            "canonical_error_id": "2bb012574b92",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块末尾'实操建议：创建完张量后，试试`'未完成，缺少后续内容。",
+            "evidence": "原文以'试试`'结尾，明显截断。",
+            "suggestion": "补全实操建议的完整内容。",
+            "error_id": "4f4141eee382_r1",
+            "canonical_error_id": "4f4141eee382",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "description": "与来源块 LOCAL-KBS-04-01-C002 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-01-C002，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.2 查看张量属性（②），lines=56-119",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2543160d043a_r1",
+            "canonical_error_id": "2543160d043a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_chunk_id": "LOCAL-KBS-04-01-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:56-119"
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在代码示例中途被截断，缺少完整的 unsqueeze 示例和后续内容，导致代码不完整且无法运行。",
+            "evidence": "代码块以 `print(t4` 结尾，未闭合括号和引号，且缺少后续代码行。",
+            "suggestion": "补全代码示例，确保代码完整可运行，并检查内容块是否完整。",
+            "error_id": "1cbcc4e3a994_r1",
+            "canonical_error_id": "1cbcc4e3a994",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C005",
+            "content_chunk_id": "LOCAL-KBS-04-01-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "code_truncation",
+            "severity": "critical",
+            "location": null,
+            "description": "代码示例被截断，缺少完整的 permute 输出和后续内容，导致代码不完整、无法运行。",
+            "evidence": "代码块以 `print(t2.shape)               # torch.Size([4` 结尾，缺少闭合括号和后续代码。",
+            "suggestion": "补全代码示例，确保输出完整且可运行。",
+            "error_id": "4fe537948e3f_r1",
+            "canonical_error_id": "4fe537948e3f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C006",
+            "content_chunk_id": "LOCAL-KBS-04-01-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块不完整，'A = torch.t' 截断，无法执行，且缺少矩阵乘法示例的完整代码。",
+            "evidence": "原文代码块以 'A = torch.t' 结尾，未闭合，且未展示 @ 或 matmul 的完整示例。",
+            "suggestion": "补全代码示例，例如：A = torch.tensor([[1., 2.], [3., 4.]]); B = torch.tensor([[5., 6.], [7., 8.]]); print(A @ B)。",
+            "error_id": "0ed4d193cc4b_r1",
+            "canonical_error_id": "0ed4d193cc4b",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C007",
+            "content_chunk_id": "LOCAL-KBS-04-01-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "broadcast_shape_error",
+            "severity": "critical",
+            "location": null,
+            "description": "广播机制示例中，形状为(3,1)的张量与形状为(3,)的张量相加，结果形状应为(3,3)，但示例代码中b的形状为(3,)，广播后b被隐式扩展为(1,3)，结果正确。然而，规则描述中'从尾部维度对齐，(3,1)与(3,)→(3,1)与(1,3)→结果(3,3)'的表述存在歧义：实际上(3,)与(3,1)对齐时，b的维度被扩展为(1,3)，但描述中未明确说明b被扩展为(1,3)的过程，可能误导读者。但代码本身正确，结果正确。",
+            "evidence": "PyTorch广播规则：从尾部维度对齐，维度为1的自动扩展。示例中a形状(3,1)，b形状(3,)，广播后b变为(1,3)，结果(3,3)。代码输出与描述一致。",
+            "suggestion": "建议在规则描述中明确说明b被扩展为(1,3)的过程，例如：'从尾部维度对齐，(3,1)与(3,)→(3,1)与(1,3)→结果(3,3)，其中b被扩展为(1,3)'。",
+            "error_id": "90fdd9e8cf36_r1",
+            "canonical_error_id": "90fdd9e8cf36",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C008",
+            "content_chunk_id": "LOCAL-KBS-04-01-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "description": "与来源块 LOCAL-KBS-04-01-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-01-C009，heading_path=张量操作 > 八、条件筛选与数据复制（②） > 8.1 布尔掩码（②），lines=302-386",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "35af474f58a2_r1",
+            "canonical_error_id": "35af474f58a2",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 1,
+            "in_chunk_position": "lines:302-386"
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "major",
+            "location": null,
+            "description": "代码块不完整，最后一行 `x = torch.randn(3` 缺少右括号和后续内容，导致代码无法运行。",
+            "evidence": "原文代码块以 `x = torch.randn(3` 结尾，缺少闭合括号和分号，属于语法不完整。",
+            "suggestion": "补全代码，例如 `x = torch.randn(3, 3)` 或提供完整的示例。",
+            "error_id": "7a1bffe5c13a_r1",
+            "canonical_error_id": "7a1bffe5c13a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "description": "与来源块 LOCAL-KBS-04-01-C010 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C010，heading_path=张量操作 > 十一、综合实战演练（①+②+④） > 场景：模拟一次图像数据的预处理流程，lines=387-435",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d5d3433aa001_r1",
+            "canonical_error_id": "d5d3433aa001",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": "lines:387-435"
+          },
+          {
+            "error_type": "incomplete_code",
+            "severity": "critical",
+            "location": null,
+            "description": "代码块在第六节末尾不完整，缺少GPU迁移后的后续操作和收尾，导致代码无法运行。",
+            "evidence": "代码块以 `image_final` 结尾，没有后续赋值或打印语句，且缺少 `print` 等输出，代码不完整。",
+            "suggestion": "补全代码，例如：`image_final = image_flat.to(device)` 并添加打印语句验证。",
+            "error_id": "124ff74fb93e_r1",
+            "canonical_error_id": "124ff74fb93e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "第四节声称标准化后数据分布接近标准正态，但使用ImageNet的mean/std对randn数据标准化后，数据分布并非标准正态，且范围可能超出[-1,1]。",
+            "evidence": "randn生成的数据均值为0、方差为1，减去mean（0.485等）并除以std（0.229等）后，均值和方差不再为0和1，因此不是标准正态分布。",
+            "suggestion": "修改表述为'使数据分布接近ImageNet数据集的分布'，或说明标准化后数据范围可能超出[-1,1]。",
+            "error_id": "70d57576df45_r1",
+            "canonical_error_id": "70d57576df45",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "minor_issue",
+            "severity": "minor",
+            "location": null,
+            "description": "第一节使用randn生成模拟图像，但真实图像数据通常为0-255或0-1范围，randn生成的数据不符合真实图像分布，可能误导学习者。",
+            "evidence": "真实图像像素值通常在0-255或0-1范围，randn生成的数据均值为0、方差为1，与真实图像分布不符。",
+            "suggestion": "建议使用torch.rand生成0-1范围的数据，或明确说明这是模拟数据，仅用于演示张量操作。",
+            "error_id": "cbea29aff99d_r1",
+            "canonical_error_id": "cbea29aff99d",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "52477a57ba1b_r2",
+            "canonical_error_id": "52477a57ba1b",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f833f7367b8f_r2",
+            "canonical_error_id": "f833f7367b8f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2192feda9976_r2",
+            "canonical_error_id": "2192feda9976",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 2,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "55720df98647_r2",
+            "canonical_error_id": "55720df98647",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "description": "与来源块 LOCAL-KBS-04-01-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C001，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.1 创建张量（②），lines=1-55",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "5cd7f99afe7e_r2",
+            "canonical_error_id": "5cd7f99afe7e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-55"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "description": "与来源块 LOCAL-KBS-04-01-C002 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-01-C002，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.2 查看张量属性（②），lines=56-119",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2543160d043a_r2",
+            "canonical_error_id": "2543160d043a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_chunk_id": "LOCAL-KBS-04-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:56-119"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "description": "与来源块 LOCAL-KBS-04-01-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-01-C009，heading_path=张量操作 > 八、条件筛选与数据复制（②） > 8.1 布尔掩码（②），lines=302-386",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "35af474f58a2_r2",
+            "canonical_error_id": "35af474f58a2",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:302-386"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "description": "与来源块 LOCAL-KBS-04-01-C010 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C010，heading_path=张量操作 > 十一、综合实战演练（①+②+④） > 场景：模拟一次图像数据的预处理流程，lines=387-435",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d5d3433aa001_r2",
+            "canonical_error_id": "d5d3433aa001",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:387-435"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "52477a57ba1b_r2",
+            "canonical_error_id": "52477a57ba1b",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f833f7367b8f_r2",
+            "canonical_error_id": "f833f7367b8f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2192feda9976_r2",
+            "canonical_error_id": "2192feda9976",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 2,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "55720df98647_r2",
+            "canonical_error_id": "55720df98647",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "description": "与来源块 LOCAL-KBS-04-01-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C001，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.1 创建张量（②），lines=1-55",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "5cd7f99afe7e_r2",
+            "canonical_error_id": "5cd7f99afe7e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-55"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "description": "与来源块 LOCAL-KBS-04-01-C002 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-01-C002，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.2 查看张量属性（②），lines=56-119",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2543160d043a_r2",
+            "canonical_error_id": "2543160d043a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_chunk_id": "LOCAL-KBS-04-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:56-119"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "description": "与来源块 LOCAL-KBS-04-01-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-01-C009，heading_path=张量操作 > 八、条件筛选与数据复制（②） > 8.1 布尔掩码（②），lines=302-386",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "35af474f58a2_r2",
+            "canonical_error_id": "35af474f58a2",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 2,
+            "in_chunk_position": "lines:302-386"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "description": "与来源块 LOCAL-KBS-04-01-C010 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C010，heading_path=张量操作 > 十一、综合实战演练（①+②+④） > 场景：模拟一次图像数据的预处理流程，lines=387-435",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d5d3433aa001_r2",
+            "canonical_error_id": "d5d3433aa001",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 2,
+            "in_chunk_position": "lines:387-435"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "52477a57ba1b_r2",
+            "canonical_error_id": "52477a57ba1b",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f833f7367b8f_r2",
+            "canonical_error_id": "f833f7367b8f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2192feda9976_r3",
+            "canonical_error_id": "2192feda9976",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 3,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "55720df98647_r2",
+            "canonical_error_id": "55720df98647",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "description": "与来源块 LOCAL-KBS-04-01-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C001，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.1 创建张量（②），lines=1-55",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "5cd7f99afe7e_r3",
+            "canonical_error_id": "5cd7f99afe7e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-55"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "description": "与来源块 LOCAL-KBS-04-01-C002 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-01-C002，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.2 查看张量属性（②），lines=56-119",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2543160d043a_r2",
+            "canonical_error_id": "2543160d043a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_chunk_id": "LOCAL-KBS-04-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:56-119"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "description": "与来源块 LOCAL-KBS-04-01-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-01-C009，heading_path=张量操作 > 八、条件筛选与数据复制（②） > 8.1 布尔掩码（②），lines=302-386",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "35af474f58a2_r3",
+            "canonical_error_id": "35af474f58a2",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:302-386"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "description": "与来源块 LOCAL-KBS-04-01-C010 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C010，heading_path=张量操作 > 十一、综合实战演练（①+②+④） > 场景：模拟一次图像数据的预处理流程，lines=387-435",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d5d3433aa001_r3",
+            "canonical_error_id": "d5d3433aa001",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:387-435"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "52477a57ba1b_r2",
+            "canonical_error_id": "52477a57ba1b",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "f833f7367b8f_r2",
+            "canonical_error_id": "f833f7367b8f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2192feda9976_r3",
+            "canonical_error_id": "2192feda9976",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 3,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "55720df98647_r2",
+            "canonical_error_id": "55720df98647",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "description": "与来源块 LOCAL-KBS-04-01-C001 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C001，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.1 创建张量（②），lines=1-55",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "5cd7f99afe7e_r3",
+            "canonical_error_id": "5cd7f99afe7e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C001",
+            "content_chunk_id": "LOCAL-KBS-04-01-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-55"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "description": "与来源块 LOCAL-KBS-04-01-C002 相似度 0.71 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-04-01-C002，heading_path=张量操作 > 二、张量创建与基本属性（②） > 2.2 查看张量属性（②），lines=56-119",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "2543160d043a_r2",
+            "canonical_error_id": "2543160d043a",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C002",
+            "content_chunk_id": "LOCAL-KBS-04-01-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:56-119"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "description": "与来源块 LOCAL-KBS-04-01-C009 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-01-C009，heading_path=张量操作 > 八、条件筛选与数据复制（②） > 8.1 布尔掩码（②），lines=302-386",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "35af474f58a2_r3",
+            "canonical_error_id": "35af474f58a2",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C009"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C009",
+            "content_chunk_id": "LOCAL-KBS-04-01-C009",
+            "content_version": 3,
+            "in_chunk_position": "lines:302-386"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "description": "与来源块 LOCAL-KBS-04-01-C010 相似度 0.74 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-04-01-C010，heading_path=张量操作 > 十一、综合实战演练（①+②+④） > 场景：模拟一次图像数据的预处理流程，lines=387-435",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "d5d3433aa001_r3",
+            "canonical_error_id": "d5d3433aa001",
+            "source_refs": [
+              "src_LOCAL-KBS-04-01-C010"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_block_id": "cb_323af12e-d05d-4312-a98d-916f6c310850_d8d73d5b-2d6b-573b-882a-c387fa45f94b_LOCAL-KBS-04-01-C010",
+            "content_chunk_id": "LOCAL-KBS-04-01-C010",
+            "content_version": 3,
+            "in_chunk_position": "lines:387-435"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional"
+}

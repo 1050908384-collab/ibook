@@ -1,0 +1,5 @@
+﻿case_id,status,block_id,mastered_blocks,learning_style,difficulty,estimated_hours,daily_hours,hardware_input,hardware_notes_nonempty,1_target_path,2_difficulty,3_time_budget,4_hardware,5_learning_style,pass_5
+case_041,completed,KB-02,"['KB-04', 'KB-08']",practice,初级,0.5,2.0,RTX 4060 8GB,True,✅,✅,✅,✅,✅,5/5
+case_042,completed,KB-02,['KB-04'],mixed,初级,0.5,1.5,RTX 3060 12GB,True,✅,✅,✅,✅,✅,5/5
+case_043,completed,KB-02,[],theory,初级,0.5,1.5,RTX 3060 12GB,True,✅,✅,✅,✅,✅,5/5
+case_044,completed,KB-01,"['KB-08', 'KB-11']",practice,初级,2.5,2.5,RTX 4090 24GB,True,✅,✅,✅,✅,✅,5/5

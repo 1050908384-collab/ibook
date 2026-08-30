@@ -3,7 +3,7 @@
   "primary_category": "已掌握知识识别与跳过",
   "tags": "已掌握知识识别与跳过|LoRA微调|实操型|RTX 4060 8GB",
   "background": "熟悉Transformer和HuggingFace，做过文本分类",
-  "existing_skills": "KB-08|KB-11",
+  "existing_skills": "Transformer架构、HuggingFace生态工具链",
   "learning_goal": "LoRA微调",
   "daily_hours": "2.0",
   "learning_style": "实操型",
@@ -14,5 +14,5 @@
   "expected_strategy": "advance",
   "run_stage_2": "False",
   "answer_script_stage_1": "{\"answer_behavior\":\"high\",\"target_accuracy_range\":[0.8,1.0],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"advance\"}",
-  "user_input_text": "我的学习背景：熟悉Transformer和HuggingFace，做过文本分类\n已掌握技能：KB-08|KB-11\n我的学习目标：LoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：实操型\n我的硬件条件：RTX 4060 8GB"
+  "user_input_text": "我的学习背景：熟悉Transformer和HuggingFace，做过文本分类\n我已掌握的技能：Transformer架构、HuggingFace生态工具链\n我的学习目标：LoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：实操型\n我的硬件条件：RTX 4060 8GB"
 }

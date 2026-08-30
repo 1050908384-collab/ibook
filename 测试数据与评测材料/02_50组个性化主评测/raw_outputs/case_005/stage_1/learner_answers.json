@@ -1,14 +1,30 @@
 [
   {
-    "question_id": "Q-KB0102-002",
-    "submitted_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "question_id": "Q-KB0200-001",
+    "submitted_answer": "Python 3.10.14",
     "is_correct": true,
-    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "correct_answer": "Python 3.10.14",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0102-003",
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "24.0",
+    "is_correct": true,
+    "correct_answer": "24.0",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0205-002",
+    "submitted_answer": "`yield`；生成器（generator）",
+    "is_correct": true,
+    "correct_answer": "`yield`；生成器（generator）",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-004",
     "submitted_answer": "B",
     "is_correct": true,
     "correct_answer": "B",
@@ -16,50 +32,34 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0103-003",
-    "submitted_answer": "conda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml",
+    "question_id": "Q-KB0204-002",
+    "submitted_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
     "is_correct": true,
-    "correct_answer": "conda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml",
+    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0103-005",
-    "submitted_answer": "错误",
+    "question_id": "Q-KB0204-001",
+    "submitted_answer": "C",
     "is_correct": true,
-    "correct_answer": "错误",
+    "correct_answer": "C",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0103-001",
+    "question_id": "Q-KB0202-005",
     "submitted_answer": "A",
-    "is_correct": true,
-    "correct_answer": "A",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0101-001",
-    "submitted_answer": "B",
-    "is_correct": true,
+    "is_correct": false,
     "correct_answer": "B",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0104-004",
-    "submitted_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
-    "is_correct": true,
-    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0100-003",
-    "submitted_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
-    "is_correct": true,
-    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "question_id": "Q-KB0201-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

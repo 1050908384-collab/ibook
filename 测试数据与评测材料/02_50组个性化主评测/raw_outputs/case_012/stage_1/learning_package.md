@@ -2,640 +2,393 @@
 
 ## 块 1
 
-## 二、原始 FFN 的“升维-激活-降维”三步走
+**1.1 Python 解释器：程序的"翻译官"**
 
-### 步骤 1：升维线性变换
+你已经熟悉 Tokenizer 如何把文本切成子词，现在换个视角：Python 解释器做的事，本质上也是一种"翻译"——不过它翻译的对象不是文本，而是你写的代码。
 
-在动手写代码之前，先明确一个关键直觉：**Attention 负责让 token 之间“交流”，FFN 负责让每个 token 自己“变聪明”**。FFN 对每个 token 独立操作，不涉及 token 之间的交互。
+**核心类比**：你写的 `.py` 文件是人类可读的文字，但电脑 CPU 只认 0 和 1。解释器就是那个"翻译官"，把代码逐行翻译成机器指令。没有它，`.py` 文件只是一堆文本，什么也做不了。
 
-原始 Transformer 的 FFN 公式为：
+**为什么这对你重要**：你在 Transformer 中处理的 token 序列，最终都要通过 Python 代码来驱动模型训练和推理。理解解释器这一层，你就能明白：为什么同样的代码在不同环境（比如你的 RTX 3060 上）表现不同——因为解释器负责把你的高级指令翻译成硬件能执行的底层操作。
 
-$$\text{FFN}(x) = \max\left( 0,xW_{1} + b_{1} \right)W_{2} + b_{2}$$
+**一个值得记住的点**：解释器是"逐行翻译并立即执行"，而不是像编译器那样"全部翻译完再执行"。这意味着你写的每一行 Python 代码，在解释器眼里都是"待翻译的指令流"——就像 BPE 把文本切成 token 流一样，解释器把代码切成一条条可执行的指令。
 
-这个公式可以拆成三步，本块先聚焦**第一步：升维线性变换**。
-
----
-
-**升维做了什么？**
-
-输入 $x$ 的维度是 $d$（模型隐藏层维度），第一步计算：
-
-$$xW_{1} + b_{1}$$
-
-其中 $W_{1}$ 的形状是 $d \times d_{ff}$，$b_{1}$ 的形状是 $d_{ff}$。原始 Transformer 中 $d_{ff} = 4d$，即**先把维度从 $d$ 放大到 $4d$**。
-
-**为什么要升维？** 升维为后续的激活函数提供了更丰富的特征空间。维度越高，每个 token 可被“重塑”的自由度越大，模型越有能力拟合复杂的语言模式。如果只做线性变换而不升维，FFN 的表达能力会被限制在线性空间，难以处理非线性关系。
-
----
-
-**动手验证（PyTorch 最小示例）**
-
-在已安装 `torch` 的 Python 环境中运行：
-
-```python
-import torch
-import torch.nn as nn
-
-d = 8          # 模型隐藏维度
-d_ff = 4 * d   # 升维目标维度，原始 Transformer 取 4d
-
-x = torch.randn(2, 3, d)   # 模拟 batch=2, seq_len=3, 每个 token 维度为 d
-W1 = nn.Linear(d, d_ff)    # 升维线性层
-
-out = W1(x)                # 形状变为 (2, 3, d_ff)
-print(out.shape)           # torch.Size([2, 3, 32])
-```
-
-观察输出形状：每个 token 的维度从 8 变成了 32，这就是“升维”的直观体现。`nn.Linear` 内部已经包含了偏置 $b_1$，对应公式中的 $
+**学习检查**：用自己的话回答——如果没有 Python 解释器，你写好的 `model.py` 文件在电脑上运行时会怎样？
 
 ## 块 2
 
-### 步骤 1：升维线性变换
+### 1.2 代码编辑器（IDE）：你的"工作台"
 
-这一步的核心公式是：`z₁ = xW₁ + b₁`。
+你已熟悉Tokenizer和BPE，接下来要深入Transformer，代码量会骤增。记事本写代码效率极低，**IDE（集成开发环境）**提供语法高亮、自动补全、运行调试，让你写代码像用Word写文档一样舒服。推荐两款：**VS Code**（轻量免费）和 **PyCharm**（专业强大）。建议选VS Code，轻量且对PyTorch项目友好。
 
-**它在做什么？** 输入 `x` 的形状是 `L × d_model`，其中 `L` 是序列长度，`d_model` 是每个 token 的特征维度。通过乘以升维矩阵 `W₁`（形状 `d_model × d_ff`），每个 token 的特征被投影到一个更高维的空间，维度从 `d_model` 变为 `d_ff`。这里 `d_ff = 4 × d_model`，例如 512 维会变成 2048 维。
+### 1.3 虚拟环境：项目的"独立房间"
 
-**为什么需要升维？** 高维空间拥有更多的“特征方向”，相当于给每个 token 提供了更丰富的“表达画布”。后续的非线性变换（激活）可以在这个更广阔的空间里“雕刻”
+你即将用PyTorch搭建Transformer，不同项目依赖版本可能冲突。比如A项目要`numpy 1.0`，B项目要`numpy 2.0`，装一起会报错。**虚拟环境**为每个项目创建独立Python空间，互不影响。用 **conda** 管理，这是最主流方案。
+
+---
+
+## 第二章：安装 Python
 
 ## 块 3
 
-**动手验证 ReLU 的作用**
+### 2.1 Windows 用户：安装 Python 3.10+
 
-先看公式：`z2 = max(0, z1)`。ReLU 把负数清零、正数保留，这就是“稀疏激活”。
+你已经熟悉 Tokenizer 和 BPE，接下来要深入 Transformer 架构。在动手写代码之前，先把 Python 环境搭好——这是运行一切深度学习实验的基础。
 
-**为什么必须要有它？** 如果去掉 ReLU，两个线性层 `z1 = xW1 + b1` 和 `z2 = z1W2 + b2` 可以合并成 `x(W1W2) + b1W2 + b2`——本质上还是一个线性变换，堆再多层也白搭。ReLU 的“分段线性”让 FFN 能用多个线性段逼近复杂函数，表达能力才真正起来。
+**第一步：下载安装包**
 
-**动手试一下**：拿一个小张量 `x`，分别计算 `x @ (W
+打开浏览器，访问 https://www.python.org。鼠标移到顶部菜单 **Downloads**，网站会自动推荐适合你系统的 Windows 版本（如 `Python 3.13.x`）。点击下载 **Windows installer (64-bit)**。
+
+**第二步：运行安装程序（⚠️ 关键步骤）**
+
+双击下载的 `.exe` 文件，弹出安装界面后，**务必做两件事**：
+
+1. **勾选最下方的 "Add python.exe to PATH"**  
+   这个选项会把 Python 添加到系统的"环境变量"中。如果不勾选，你打开命令行输入 `python` 时，系统会提示"不是内部或外部命令"，后续所有命令行操作都无法进行。
+
+2. 点击 **"Install Now"**（默认安装）即可。  
+   默认安装路径在 `C:\Users\你的用户名\AppData\Local\Programs\Python\Python3xx`，不含中文和特殊符号，避免后续路径报错。进阶用户如果想改路径，务必确保路径中**没有中文或空格**。
+
+**第三步：验证安装**
+
+1. 按 `Win + R`，输入 `cmd`，回车打开命令提示符。
+2. 输入以下命令并回车：
+
+```bash
+python --version
+```
+
+3. 如果
 
 ## 块 4
 
-### 3.1 ReLU 的局限
+### 2.2 macOS 用户：安装 Python 3.10+
 
-ReLU 计算简单，但在深层网络中藏着一个“暗坑”：**神经元死亡**。当某个神经元的输出长期落在负区间，梯度为 0，参数更新无法把它拉回正区间，它就会“躺平”——永久失活。注意：单次输出为负不算死亡，只有长期无法恢复才算。此外，负半轴信息被截断，导致**梯度稀疏**，梯度流不够平滑，训练效率打折。
+你已熟悉 Tokenizer 与 BPE，接下来要深入 Transformer 架构。在动手实现之前，先把 Python 环境搭好——这是所有后续代码的基础。
 
-### 3.2 GLU：门控机制的引入
+**关键背景**：现代 macOS（Catalina 10.15 起）不再预装 Python 2，系统自带的 `python3` 版本可能较旧，建议自行安装最新版 Python 以避免兼容性问题。
 
-GLU（门控线性单元）2016 年提出，核心是**门控机制**——像“智能水龙头”一样动态控制信息流量：
+---
 
-$$\text{GLU}(x) = \sigma\left( xW + b \right) \otimes \left( xV + c \
+**方法一：官方安装包（推荐新手）**
+
+1. 访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
+2. 双击运行，一路点击 "Continue" → "Install" 完成安装。
+3. 打开终端（Terminal），输入验证：
+
+```bash
+python3 --version
+pip3 --version
+```
+
+**为什么用 `python3` 而不是 `python`**：现代 macOS 上，命令行默认**不提供** `python` 命令（早期版本曾指向 Python 2，现已移除）。系统与官方安装包统一使用 `python3`。请始终用 `python3` / `pip3`，避免"命令不存在"或误用系统版本的坑。
+
+---
+
+**方法二：Homebrew（适合已有 Homebrew 的开发者）**
+
+已安装 Homebrew 的话，在终端执行：
+
+```bash
+brew install python
+```
+
+安装
 
 ## 块 5
 
-### 3.3 Swish：更平滑的激活
+你的目标不是装好 Python 本身，而是为后续跑通 Transformer 模型铺路。在 Ubuntu/Debian 上，系统通常自带 Python，但版本可能偏老，直接用来训练模型容易踩坑。
 
-Swish 的公式是 `Swish(x) = x · σ(βx)`。当 β=1 时，PyTorch 里直接用 `F.silu()` 就能实现。和 ReLU 比，Swish 有三个关键优势：
+打开终端，依次执行：
 
-- **负半轴非零梯度**：负数输入也有梯度，神经元不会彻底“死掉”
-- **最大梯度约 1.1**：Swish 的导数最大约为 1.1，略高于 ReLU 的 1.0，但差异不大，主要优势在于平滑性和非零梯度
-- **平滑非单调**：曲线不是单调上升，能更灵活地缩放输入
+```bash
+sudo apt update
+sudo apt install python3 python3-pip python3-venv -y
+python3 --version
+```
 
-### 3.4 SwiGLU：门控 + Swish
-
-SwiGLU 把 GLU 里的 Sigmoid 换成 Swish，形成了 Transformer FFN 的新范式：
-
-`FFN_SwiGL
+第一行更新软件源，确保能装到最新包；第二行安装 Python 3、包管理器 pip 和虚拟环境模块 venv。`-y` 让系统自动确认，省去手动输入 `y` 的步骤。`python3-venv` 是创建隔离环境的关键，提前装好，避免后续为每个项目单独补充
 
 ## 块 6
 
-### 4.1 原始 FFN 的参数量
+### 2.4 操作系统与实训环境该怎么选
 
-原始 FFN 只有两个权重矩阵：$W_{1}$（形状 $d \times 4d$）和 $W_{2}$（形状 $4d \times d$）。每个矩阵的参数量都是 $4d^{2}$，所以总参数量是：
+你已经熟悉 Tokenizer 和 BPE，下一步深入 Transformer 时，环境选择会直接影响你跑模型、做微调的效率。这里按你的实际场景来拆解：
 
-$$4d^{2} + 4d^{2} = 8d^{2}$$
+- **如果你在 Windows 上写 Python、练命令**：启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它给你一个接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致，比在 Windows 原生 CMD 里练更贴近实战。安装只需管理员 PowerShell 执行 `wsl --install`。
+- **如果你用 macOS 或 Linux**：直接用本机终端即可，本身就是类 Unix 环境，无需额外配置。
+- **如果你要做 GPU 实训（比如 LoRA/QLoRA 微调、vLLM 部署）**：用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这些任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态支持最成熟、文档最全。
 
-### 4.2 SwiGLU FFN 的参数量
-
-SwiGLU 用三组权重矩阵替代了原来的两个：
-
-- $W$（门控路径，形状 $d \times d_{\text{ff}}$）
-- $V$（值路径，形状 $d \times d_{\text{ff}}$）
-- $W_{2}$（输出投影，形状 $d_{\text{ff}} \times d$）
-
-总参数量为：
+> **⚠️ 不推荐**：不要把 **"CentOS + VirtualBox 虚拟机"当作最佳方案**。CentOS 8 已于2021年12月31日停止维护，但 CentOS Stream
 
 ## 块 7
 
-## 四、SwiGLU 的维度设计：为什么是 \(\frac{8}{3} \cdot d\)？
+你已熟悉Tokenizer和BPE，现在要深入Transformer架构。在动手搭建模型前，先确保环境能顺畅安装PyTorch等依赖库。
 
-### 4.3 令参数量相等
+`pip`是Python的包管理工具，默认从官方PyPI服务器（`pypi.org`）下载库，这是最权威、最完整的源，应始终作为首选。
 
-SwiGLU 内部有三个权重矩阵，参数量比原始 FFN 更多。为了保持模型容量和计算量不变，我们令两者参数量相等：
+**什么时候才需要镜像源？** 仅当网络受限、访问官方源明显变慢或频繁超时时，才临时切换。镜像只是“网络不佳时的加速手段”，不是永久替代品。
 
-\[
-3d \cdot d_{\text{ff}} = 8d^{2}
-\]
+**推荐做法：临时指定镜像源**（只对单次安装生效，不改全局配置）：
 
-解这个方程，得到：
+```bash
+pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
 
-\[
-d_{\text{ff}} = \frac{8}{3}d \approx 2.67d
-\]
-
-这就是 \(\frac{8}{3} \cdot d\) 的由来。LLaMA 论文中采用 SwiGLU 激活函数，中间维度设为 \(\frac{2}{3} \cdot 4d\)，而非 PaLM 的 \(4d\)，用更小的维度换来了更强的表达能力。
-
-### 4.4 工业
+这样官方源仍是默认，网络恢复或镜像异常时无需清理配置。你的RTX 3060环境后续安装PyTorch时，若遇下载缓慢，即可用此方式临时加速。
 
 ## 块 8
 
-## 5.1 标准 SwiGLU FFN
+## 3.3 进阶：将镜像设为默认（仅在长期网络受限时）
 
-你已经知道 Transformer 里 FFN 的作用，现在看它在 LLaMA 中如何用 SwiGLU 实现。核心就一行公式：
+你已熟悉 Tokenizer 与 BPE 的底层逻辑，现在进入 Transformer 架构学习前，先把环境彻底备好。若你**长期处于网络受限环境**、几乎每次安装包都要用镜像，才建议把镜像写入配置作为默认源。配置后请牢记：**官方 PyPI 仍是最可靠来源**，网络恢复后建议改回或删除该配置。
 
-**`(SiLU(xW1) ⊗ (xW3)) W2`**
+**Windows 用户：**
 
-其中 ⊗ 表示逐元素相乘。拆开看三步：
+1. 按 `Win + R`，输入 `%APPDATA%`，回车，打开类似 `C:\Users\你的用户名\AppData\Roaming` 的文件夹。
+2. 在该文件夹下**新建一个名为 `pip` 的文件夹**。
+3. 在 `pip` 文件夹内**新建一个名为 `pip.ini` 的文本文件**。
+4. 用记事本打开，写入：
 
-1. **`xW1`**：把输入 `x` 线性变换到隐藏维度，作为“门控”信号。
-2. **`F.silu(...)`**：对门控信号应用 SiLU 激活（即 Swish），让负值不完全归零，保留一点信息。
-3. **`⊗ (xW3)`**：与另一路线性变换 `xW3` 逐元素相乘，实现“门控筛选”——只有门控放行的部分才保留。
-4. **`W2`**：最后线性变换回原维度 `dim`，完成 FFN 输出。
+```ini
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+```
 
-代码里三个线性层分工明确：
+**为什么这样写**：`index-url` 告诉 pip 默认从这个地址下载包。
 
-- `w1`：门控（gate），输出到 `hidden_dim`
-- `w3`：上投影（up），同样输出到 `hidden_dim`
-- `w2`：下
+> **⚠️ 关于 `trusted-host`**：网上很多教程会顺手加一行 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——`trusted-host` 会让 pip 跳过对该域名的 TLS 校验，等于放弃传输安全。清华、阿里等主流镜像都提供合法 HTTPS 证书，正常使用**无需** `trusted-host`。只有企业内网自建源、或确实遇到证书报错且已确认来源可信时，才临时加它。
+
+**macOS / Linux 用户：**
+
+1. 打开终端，执行：
+
+```bash
+mkdir -p ~/.config/pip
+```
+
+2. 创建配置文件：
+
+```bash
+nano ~/.config/pip/pip.conf
+```
+
+3. 写入同样的内容：
+
+```ini
+[global]
+index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+4. 按 `Ctrl + O` 保存，`Ctrl + X` 退出。
+
+配置完成后，可通过 `pip config list` 查看当前配置；若需改回官方
 
 ## 块 9
 
-**动手验证：SwiGLU 与 ReLU FFN 的参数量对比**
+### 4.1 方案一：VS Code（轻量、免费、推荐）
 
-你已经知道 Transformer 里 FFN 有两种常见设计，这里我们直接跑代码，亲眼看看它们的参数量差多少。
+**为什么选它**：你已熟悉Tokenizer和BPE，接下来要深入Transformer架构，写代码、调试模型是常态。VS Code启动快、插件丰富，免费且跨平台，后续写脚本、改配置都能复用，是性价比最高的起步工具。
 
-**代码逻辑拆解**（跟着敲一遍）：
+**安装步骤**：
+1. 访问 `https://code.visualstudio.com`，下载对应系统的安装包。
+2. 运行安装程序，一路“下一步”即可。
 
-1. 设置输入维度 `dim = 4096`（这是模型隐藏层大小）。
-2. 构建**原始 ReLU FFN**：先线性变换到 `4 * dim`（即 16384），过 ReLU，再线性变换回 `dim`。
-3. 构建 **SwiGLU FFN**：隐藏层维度设为 `11008`（这是 LLaMA-7B 实际用的值）。
-4. 分别统计两个网络的参数量（`p.numel()` 统计每个张量的元素个数，求和）。
-5. 打印结果和比值。
+**必装插件**：打开VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并安装：
+- **Python**（微软官方出品，提供语法高亮、调试、智能提示）
+- **Pylance**（Python语言服务器，让代码提示更智能）
 
-**运行后你会看到**：
+安装后，VS Code才能识别`.py`文件，提供代码补全、错误提示和一键运行功能——这对你后续调试Transformer代码至关重要。
 
-- ReLU FFN 参数量：`2 * 4096 * 16384
+**配置Python解释器**：
+1. 按`Ctrl + Shift + P`（Mac是`Cmd + Shift + P`）。
 
 ## 块 10
 
-好的，我们直接进入正题。既然你喜欢动手实践，而且目标是理解Transformer架构，那我们就用最直观的方式，把SwiGLU这个“黑盒”拆开，亲手算一遍。
+### 4.2 方案二：PyCharm Community（免费、轻量）
 
-你之前的知识缺口在Transformer架构，而SwiGLU正是Transformer中FFN层的关键激活函数。理解它的计算流程，能帮你更扎实地掌握整个架构的数据流动。
+**为什么选它**：PyCharm 是 JetBrains 出品的 Python 专用 IDE，社区版完全免费。它内置了代码分析、版本控制等功能，适合大型项目开发。需注意，社区版功能较专业版精简，数据库工具等高级功能仅专业版提供。
 
----
+**安装步骤**：
+1. 访问 https://www.jetbrains.com/pycharm/download/。
+2. 下载 **PyCharm Community Edition**（社区版，免费）。
+3. 运行安装程序，建议勾选：
+   - `Add "Open Folder as Project"`（右键菜单快速打开文件夹）
+   - `Add launchers to the PATH`（命令行可直接启动 PyCharm，该选项可能因版本而异）
 
-### 5.3 迷你手算实例：亲手验证 SwiGLU 计算流程
-
-理论看再多，不如动手算一次。我们用一个极小维度的例子，把SwiGLU的每一步都看清楚。别怕，这里只有简单的矩阵乘法和乘法。
-
-**我们的“实验”设定**：
-想象我们正在处理一个极其简单的数据点，它只有2个特征。
-- 输入向量 `x = [1.0, 2.0]` （这就是我们当前token的特征表示）
-- 为了演示，我们设定中间维度 `d_ff = 4`（实际模型中会大得多，这里只是为了方便手算）。
-
-SwiGLU需要三个权重矩阵，我们给它们赋予具体的数值：
-- 门控权重 `W`，形状是 (2, 4)：`[[0.5, 1.0, -0.5, 0.0], [1.5, -1.0, 0.5, 1.0]]`
-- 值权重 `V`，形状是 (2, 4)：`[[-0.5, 2.0, 1.0, -1.0], [0.5, -
+**首次启动配置**：
+1. 打开 PyCharm，选择 `New Project`。
+2. 在 `Location` 处选择项目存放路径（**路径中不要含中文**）。
+3. `Interpreter` 选择系统安装的 Python 3.10+
 
 ## 块 11
 
-## 5.3 迷你手算实例：验证 SwiGLU 计算流程
+### 5.1 为什么用 Conda
 
-你已理解 SwiGLU 的结构，现在通过一个极简例子，亲手走一遍计算，巩固“门控”直觉。
+你已经熟悉了 Tokenizer 和 BPE，下一步要深入 Transformer，这意味着你很快会接触 PyTorch、CUDA 这类复杂依赖。Conda 能做的，不只是为每个项目创建独立的 Python 空间，它还能直接管理 Python 解释器本身的版本——这正是深度学习环境最需要的。想象一下，不同项目可能需要不同版本的 Python 和 CUDA，Conda 让这一切互不干扰，所以它几乎是深度学习必备工具。
 
-**设定**：设输入维度 $d=2$，隐藏维度 $d_{\text{ff}}=4$（为手算方便，非 $\frac{8}{3}d$）。输入向量 $x=[1, 2]$。
+### 5.2 安装 Conda：Anaconda vs Miniconda
 
-**步骤 1：升维**  
-两个权重矩阵 $W_1, W_3$ 将 $x$ 从 2 维映射到 4 维。假设（仅演示）：
-- $W_1 x = [1, 0, -1, 2]$（主路径）
-- $W_3 x = [0.5, 1, -0.5, 1]$（门控路径）
+两个选择，核心区别在“体积”和“预装”：
 
-**步骤 2：门控激活**  
-对门控路径应用 SiLU（即 $\beta=1$ 的 Swish）：$\text
+| 选项 | 特点 | 推荐人群 |
+|------|------|----------|
+| **Anaconda** | 体积大（约 500MB+），预装 numpy、pandas、jupyter 等大量数据科学库 | 做数据分析、不想手动装包的用户 |
+| **Miniconda** | 体积小（约 50MB），只含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发的用户 |
+
+**推荐 Miniconda**。你的目标是 Transformer，环境越干净越好，需要什么装什么，避免预装库干扰。
+
+**安装步骤：**
+
+1. 访问 https://docs.conda.io/en/latest/miniconda.html。
+2. 下载对应系统安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）。
+3. 运行安装程序：
+   - **Windows**：一路下一步，**保持默认，不要勾选 "Add Miniconda3 to my PATH environment variable"**，以避免与已有 Python 环境冲突。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 使用 conda。
+   - **macOS/Linux**：运行 `.sh` 文件，按提示输入 `yes` 同意协议、选安装路径，最后一步选 `yes` 让安装器执行 **`conda init`**（完成 shell 初始化）。这样每次打开终端，conda 通过初始化脚本正确接管，而非硬加 PATH。
+
+4. **验证安装**：打开一个**新的**终端（Windows 用 **"
 
 ## 块 12
 
-## 一、为什么需要位置编码？
+### 5.3 创建你的第一个虚拟环境
 
-Transformer 的核心是 Self-Attention，而 Attention 的计算本质是**加权平均**：
+**为什么这样做**：你已熟悉 Tokenizer 和 BPE，下一步深入 Transformer 时，不同项目常需不同版本的 PyTorch 和 CUDA。现在学会创建环境，以后直接复用这套流程。
 
-$$\text{Attention}(Q,K,V) = \text{softmax}\left( \frac{QK^T}{\sqrt{d_k}} \right)V$$
+在终端中执行：
 
-关键问题：**不加入位置编码的 Self-Attention 对序列排列具有置换等变性**。如果你把序列中第 1 个 token 和第 10 个 token 交换位置，对应位置的输出也会随之交换，不是整个输出完全不变。这意味着模型无法感知"谁应该在哪个位置"这一顺序信息。
-
-因此，如果没有位置编码，以下两句话对模型来说，仅就 Attention 计算本身而言，无法区分它们的顺序差异：
-
-- "从 北京 到 上海 的 火车票"
-- "从 上海 到 北京 的 火车票"
-
-所以，必须引入某种机制让模型感知"谁在哪个位置"。
-
-### 1.1 绝对位置编码：原始 Transformer 的选择
-
-原始 Transformer 使用正弦/余弦函数生成位置编码，直接加到词嵌入上：
-
-$$\text{PE}_{(pos,2i)} = \sin\left( \frac{pos}{10000^{2i/d_{\text{model}}}} \right)$$
-
-**动手验证一下**（在已安装 `torch` 的 Python 环境中运行）：
-
-```python
-import torch
-import math
-
-def sinusoidal_pe(pos, d_model):
-    pe = torch.zeros(pos, d_model)
-    for p in range(pos):
-        for i in range(0, d_model, 2):
-            pe[p, i] = math.sin(p / 10000 ** (2 * i / d_model))
-            pe[p, i+1] = math.cos(p / 10000 ** (2 * i / d_model))
-    return pe
-
-# 生成 10 个位置、8 维的位置编码
-pe = sinusoidal_pe(10, 8)
-print(pe[0])  # 位置 0 的编码
-print(pe[5])  # 位置 5 的编码
+```bash
+# 创建一个名为 llm-learn 的环境，指定 Python 3.10
+conda create -n llm-learn python=3.10
 ```
 
-观察输出：每个位置都有**唯一**的编码向量，这就是"绝对位置"的含义——每个位置有自己固定的"身份证号"。
+**命令拆解**：
+- `conda create`：创建环境的命令
+- `-n llm-learn`：给环境起名叫 `llm-learn`（`n` 是 `name` 的缩写）
+- `python=3.10`：指定这个环境里安装 Python 3.10
 
-**关键理解**：这种编码方式是**加**到词嵌入上的（`x + PE`），而不是乘进去的。它给每个位置一个绝对标记，但模型
+执行后，
 
 ## 块 13
 
-绝对位置编码：一句话版本是——给每个词的位置打一个“固定标签”，公式里用正弦和余弦函数（sin/cos）算出来。它简单，但有两个坑：
+**5.4 激活与退出环境：为你的 Transformer 项目隔离“工作台”**
 
-1. **外推性差**：训练时只见过 512 长度的序列，推理时给 1024 就懵了。
-2. **不显式建模相对位置**：模型得自己猜“第 5 个词和第 8 个词距离 3”，而不是直接告诉它。
+你已熟悉 Tokenizer 与 BPE，接下来要深入 Transformer 架构。在动手写代码前，先确保所有依赖都装在一个“独立房间”里，避免污染系统环境。
 
-**为什么这是个问题？** 语言本质是相对位置——你关心“这个词离那个词多远”，而不是“这是第 500 个词”。理想情况是 Attention 的点积只依赖词本身和相对距离 m-n，与绝对位置无关
+**进入环境**（相当于打开这个房间的门）：
 
-## 块 14
-
-## 2.1 从 2D 情况开始理解
-
-想象词嵌入维度 $d=2$，Query 和 Key 都是二维向量。RoPE 的核心思想一句话：
-
-> **将词向量按其位置索引旋转，旋转角度与位置成正比。**
-
-具体操作：
-- 位置 $m$ 的 Query 向量 $q_m$ 逆时针旋转 $m\theta$ 角度
-- 位置 $n$ 的 Key 向量 $k_n$ 逆时针旋转 $n\theta$ 角度
-
-用复数表示（便于理解）：
-
-$$f_q(x_m, m) = (W_q x_m) \cdot e^{im\theta}$$
-
-$$f_k(x_n, n) = (W_k x_n) \cdot e^{
-
-## 块 15
-
-**动手验证：旋转后点积里只剩“距离”**
-
-我们直接看旋转后 Query 和 Key 的点积公式：
-
-$$\langle f_q(x_m,m), f_k(x_n,n) \rangle = \text{Re}\left[ (W_q x_m)(W_k x_n)^* \cdot e^{i(m - n)\theta} \right]$$
-
-**关键观察**：结果中只出现了 $m - n$（相对位置），而 $m$ 和 $n$ 单独消失了！
-
-**这意味着**：两个 token 相距 5 个位置，无论它们在序列的哪个绝对位置，它们的 Attention 权重模式是相同的。这正是“用绝对位置编码的方式实现相对位置编码”的精髓。
-
-**动手检查**：
-
-## 块 16
-
-### 旋转矩阵的显式形式
-
-前面我们用复数描述了旋转，现在把它变成代码里实际用的矩阵。对一个二维向量 $(x, y)$，旋转 $\theta$ 角度的变换是：
-
-$$R(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}$$
-
-**动手验证**：取向量 $X = \rho(\cos\phi, \sin\phi)$，乘上 $R(\theta)$ 后得到 $XR(\theta) = \rho(\cos(\phi + \theta), \sin(\phi + \theta))$。看，角度从 $\phi$ 变成了 $\phi + \theta$，这就是逆时针旋转。
-
-记住两个关键性质，后面推导全靠它们：
-1. **正交性**：$R(\theta)^T = R(-\theta)$，转置等于反向旋转。
-2. **可加性**：$R(\theta_1)R(\theta_2) = R(\theta_1 + \theta_2)$，连续旋转就是角度相加。
-
-**快速检查**：用 $R(30^\circ)$ 旋转向量 $(1, 0)$
-
-## 块 17
-
-### 频率参数：给每个维度定一个“转速”
-
-你已经知道RoPE的核心是“旋转”，但高维空间怎么转？答案是把大空间拆成许多个2D小平面，每个小平面独立旋转。这里的关键就是**频率参数**——它决定每个小平面的旋转速度。
-
-#### 频率公式
-
-对于第 $k$ 个子空间（$k = 0, 1, \ldots, d/2 - 1$），频率定义为：
-
-$$\theta_k = 10000^{-2k/d}$$
-
-位置 $m$ 的旋转角度就是：
-
-$$\text{angle}_{m,k} = m \cdot \theta_k$$
-
-**直观理解**：$k$ 越大，$\theta_k$ 越小，旋转越慢。这就像时钟——时针转得慢（对应大 $k$），秒针转得快（对应小 $k$）。这个设计与原始Transformer的正弦编码一致，保证不同维度的旋转速度呈指数级变化。
-
-#### 块对角旋转矩阵
-
-有了频率，高维旋转矩阵 $R_{\Theta,m}^d$ 就是**块对角矩阵**——每个2D小块负责一个子空间的旋转：
-
-$$R_{\Theta,m}^d = \begin{pmatrix} \cos(m\theta_0) & -\sin(m\theta_0
-
-## 块 18
-
-## 3.3 高效计算：避免完整矩阵乘法
-
-RoPE 的旋转矩阵是**块对角**的——只有相邻两维组成的小块参与旋转，其余位置都是零。这个稀疏结构意味着：**你根本不需要构造或乘一个大矩阵**，用逐元素操作就能完成同样的事。
-
-看一个具体例子。对向量 \(x = (x_1, x_2, x_3, x_4, \ldots, x_{d-1}, x_d)\)，RoPE 的计算拆成三步：
-
-1. **取余弦部分**：把 \(x\) 原样保留，逐元素乘以 \(\cos(m\theta_1), \cos(m\theta_1), \cos(m\theta_2), \cos(m\theta_2), \ldots\)——注意每个 \(\theta_i\) 对应的余弦值要**重复两次**，因为每个旋转块管两个维度。
-2.
-
-## 块 19
-
-### 4.1 长距离衰减：距离越远，关联越弱
-
-RoPE 通过设定旋转频率 $\theta_k = 10000^{-2k/d}$，实现了一个关键特性：**当两个 token 的相对距离 $|m - n|$ 增大时，它们内积的幅值会自然衰减**。这符合我们的直觉——距离越远的 token，语义关联应该越弱。RoPE 通过频率设计天然实现了这一点，无需额外约束。
-
-### 4.2 与线性 Attention 兼容
-
-标准 Attention 的复杂度是 $O(n^2)$，而线性 Attention 通过核技巧将其降至 $O(n)$。但大多数相对位置编码无法与线性 Attention 配合使用。RoPE 通过旋转注入位置信息，**保持了向量范数不变**，
-
-## 块 20
-
-## 5.1 极简版：理解核心逻辑
-
-你已经掌握注意力机制，现在看 RoPE 如何把“位置”注入 Transformer。核心思想：**用旋转角度编码位置**，而不是直接加位置向量。
-
-### 三步读懂代码
-
-**第一步：准备旋转角度**
-
-```python
-theta = 10000 ** (-torch.arange(0, head_dim, 2, device=device).float() / head_dim)
-pos = torch.arange(seq_len, device=device).unsqueeze(1)
-angles = pos * theta
+```bash
+conda activate llm-learn
 ```
 
-- `theta` 是频率参数，维度 `head_dim//2`，每个维度对应不同旋转速度
-- `pos` 是位置索引 `[0, 1, ..., seq_len-1]`
-- `angles` 是每个位置、每个维度的旋转角度
+激活后，命令行前会出现 `(llm-learn)` 标志。此后你执行的 `python` 和 `pip` 命令，都只作用于这个环境，不会影响系统或其他项目——这对后续调试 Transformer 模型至关重要。
 
-**第二步：拆分奇偶索引**
+**验证当前 Python 版本**：
 
-```python
-x1 = x[..., 0::2]  # 偶数索引
-x2 = x[..., 1::2]  # 奇数索引
+```bash
+python --version
 ```
 
-把 `head_dim` 分成两半，分别作为旋转的“横坐标”和“纵坐标”。
+应显示 `Python 3.10.x`。
 
-**第三步：应用 2D 旋转**
+**退出环境**（回到系统默认环境）：
 
-```python
-rotated_x1 = x1 * cos - x2 * sin
-rotated_x2 = x1 * sin + x2 * cos
+```bash
+conda deactivate
 ```
-
-这就是二维旋转公式：`(x1, x2)` 旋转 `angles` 角度后得到 `
-
-## 块 21
-
-**本块学习检查**：阅读下面的工业级 RoPE 实现，并对照注释，在代码旁标注出“缓存”和“广播”分别对应哪几行。
 
 ---
 
-### 5.2 工业级版：支持缓存与广播
+**本块学习检查**：执行 `conda activate llm-learn` 后，观察命令行提示符的变化；再
 
-实际 LLM 推理中，RoPE 的 cos/sin 值会被反复使用，因此需要缓存。以下是接近 `meta-llama/Llama-2-7b` 实现风格的版本：
+## 块 14
 
-```python
-import torch
-import torch.nn as nn
+## 6.1 VS Code 配置 Conda 环境
 
-class RotaryEmbedding(nn.Module):
-    """
-    工业级 RoPE 实现，支持缓存和广播
-    """
-    def __init__(self, dim, max_seq_len=2048, base=10000):
-        super().__init__()
-        self.dim = dim
-        self.max_seq_len = max_seq_len
-        self.base = base
-        
-        # 预计算频率参数 theta
-        inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
-        self.register_buffer("inv_freq", inv_freq)
-        
-        # 预计算并缓存 cos/sin
-        self._precompute_cache()
-    
-    def _precompute_cache(self):
-        # 位置索引
-        t = torch.arange(self.max_seq_len, device=self.inv_freq.device)
-        # 外积: [max_seq_len, dim//2]
-        freqs = torch.outer(t, self.inv_freq)
-        # 实际存储 cos 和 sin
-        self.register_buffer("cos_cached", torch.cos(freqs))
-        self.register_buffer("sin_cached", torch.sin(freqs))
-    
-    def forward(self, x, seq_len):
-        """
-        x: [batch, num_heads, seq_len, head_dim]
-        """
-        # 取前 seq_len 个缓存值
-        cos = self.cos_cached[:seq_len]  # [seq_len, dim//2]
-        sin = self.sin_cached[:seq_len]  # [seq_len, dim//2]
-        
-        # 调整维度以支持广播: [1, 1, seq_len, dim//2]
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
-        
-        # 拆分
-        x1 = x[..., 0::2]
-        x2 = x[..., 1::2]
-        
-        # 旋转
+既然你已熟悉 Tokenizer 和 BPE，接下来要深入 Transformer 架构，那代码环境必须指向 `llm-learn` 这个 conda 环境，否则你装的 PyTorch 等依赖会“找不到”。
 
-## 块 22
+**操作步骤**：
 
-## 5.3 在 Attention 中使用 RoPE
+1. 先激活环境：`conda activate llm-learn`
+2. 打开 VS Code，按 `Ctrl + Shift + P` 打开命令面板。
+3. 输入 `Python: Select Interpreter` 并回车。
+4. 在列表中选择带有 `conda` 字样的 Python 路径（形如 `Python 3.10.x ('llm-learn': conda)`）。
 
-你已经掌握了 RoPE 的基本原理，现在我们把旋转位置编码真正“装进”多头注意力里。下面这段代码就是完整的 `RoPEAttention` 模块，我们一步步拆开看。
+**为什么这样写**：VS Code 会自动识别 conda 环境。选中后，你在这个工作区写的所有代码都会使用 `llm-learn` 环境中的 Python 解释器和已安装的包——包括你后续要用的深度学习框架。
 
-### 整体结构
+## 6.2 PyCharm 配置 Conda 环境
 
-```python
-class RoPEAttention(nn.Module):
-    def __init__(self, dim, num_heads):
-        super().__init__()
-        self.num_heads = num_heads
-        self.head_dim = dim // num_heads
-        self.scale = self.head_dim ** -0.5
-        
-        self.q_proj = nn.Linear(dim, dim)
-        self.k_proj = nn.Linear(dim, dim)
-        self.v_proj = nn.Linear(dim, dim)
-        self.o_proj = nn.Linear(dim, dim)
-        
-        self.rope = RotaryEmbedding(self.head_dim, max_seq_len=2048)
-```
+如果你更习惯 PyCharm，流程同样直接：
 
-**关键点**：
-- `head_dim = dim // num_heads`：每个头的维度是总维度除以头数。
-- `scale = head_dim ** -0.5`：缩放因子，防止点积过大。
-- 四个线性层：Q/K/V 投影 + 输出投影。
-- `self.rope` 是之前实现的旋转编码器，注意它接收的是 `head_dim`。
+1. 打开 PyCharm，点击 `File` → `Settings`（Mac 上是 `PyCharm` → `Preferences`）。
+2. 左侧选择 `Project: 你的项目名` → `Python Interpreter`。
+3. 点击齿轮图标 → `Add...`。
+4. 左侧选择 `Conda Environment` → `
 
-### forward 流程
+## 块 15
 
-```python
-def forward(self, x):
-    batch, seq_len, dim = x.shape
-    
-    # 1. 投影到 Q/K/V
-    q = self.q_proj(x)  # [batch, seq_len, dim]
-    k = self.k_proj(x)
-    v = self.v_proj(x)
-    
-    # 2. 拆分为多头
-    q = q.view(batch, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-    k = k.view(batch, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-    v = v.view(batch, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-```
+### 在命令行验证
 
-**形状变化**：`[batch, seq_len, dim]` → `[batch, num_heads, seq_len, head_dim]`。`transpose(1, 2)` 把头的维度提到第 2 位，方便后续批量计算。
+你已经熟悉了Tokenizer和BPE，现在进入Transformer前，先确保环境就绪。这一步是基础，但很关键。
 
-### 应用 RoPE
+1. **激活环境**：输入 `conda activate llm-learn`，回车。
+2. **进入交互模式**：输入 `python`，回车。看到 `>>>` 提示符，说明Python已启动。
+3. **运行第一行代码**：在 `>>>` 后输入：
+   ```python
+   print("Hello, Python! 我的环境准备好了！")
+   ```
+   回车后，若正确打印出这句话，说明环境正常。
+4. **退出**：输入 `exit()` 回车。
 
-```python
-    # 3. 应用 RoPE 到 Q 和 K（V 不需要位置编码）
-    q = self.rope(q, seq_len)
-    k = self.rope(k, seq_len)
-```
+**本块学习检查**：在命令行完成上述步骤，确认输出与预期一致。若打印成功，
 
-**注意**：只有 Q 和 K 需要位置编码，V 不需要。因为位置信息是通过 Q 和 K 的点积注入的，V 只负责携带内容信息。
+## 块 16
 
-###
+**本块学习检查**：完成下方步骤后，在 PyCharm 的 Run 窗口看到输出结果，即代表你的开发工作台已成功跑通。
 
-## 块 23
+---
 
-## 5.3 在 Attention 中使用 RoPE：为什么只旋转 Q 和 K？
+### 7.3 在 PyCharm 中验证
 
-在动手写代码之前，先抓住一个关键点：**RoPE 只应用于 Query 和 Key，不应用于 Value**。
+你已经熟悉 Tokenizer 和 BPE 算法，现在要进入 Transformer 架构的学习。在动手理解模型代码之前，先确保你的“实验台”能正常运转——这一步验证的就是环境是否真正打通。
 
-为什么？因为 Attention 的权重是由 $QK^T$ 决定的——位置信息只需要影响“谁关注谁”的权重分配。Value 的角色是提供被提取的内容信息，它和位置无关。所以旋转 Q 和 K 就足够了，Value 保持原样。
+操作很简单，三步：
 
-## 5.4 验证：RoPE 的相对位置特性
+1. **新建项目**：打开 PyCharm，创建一个新项目（注意：项目路径不要包含中文或空格）。
+2. **创建文件**：在项目中新建一个 Python 文件，命名为 `hello.py`。
+3. **运行**：在 `hello.py` 的编辑区右键点击，选择 `Run 'hello'`。
 
-现在动手验证 RoPE 的核心性质：**相同相对距离的点积应当相同，与绝对位置无关**。
-
-把下面的代码复制到本地 Python 环境运行（纯 CPU 即可，内存 ≥ 4GB）：
-
-```python
-import torch
-
-def test_rope_relative_property():
-    """验证 RoPE 的相对位置特性"""
-    head_dim = 64
-    
-    # 构造两个相同的词向量，放在不同绝对位置
-    x = torch.randn(1, 1, 1, head_dim)  # [batch=1, heads=1, seq=1, dim]
-    
-    # 频率参数
-    theta = 1.0 / (10000 ** (torch.arange(0, head_dim, 2).float() / head_dim))
-    
-    def rotate_at_pos(vec, pos_idx):
-        angles = torch.tensor([[pos_idx]]) * theta  # [1, head_dim//2]
-        cos, sin = torch.cos(angles), torch.sin(angles)
-        x1, x2 = vec[..., 0::2], vec[..., 1::2]
-        r1 = x1 * cos - x2 * sin
-        r2 = x1 * sin + x2 * cos
-        return torch.cat([r1, r2], dim=-1)
-    
-    # 测试相对距离为 5 的两组绝对位置
-    r5 = rotate_at_pos(x, 5)
-    r10 = rotate_at_pos(x, 10)
-
-## 块 24
-
-## 5.5 长距离衰减可视化：用代码“看见”RoPE 的直觉
-
-你已经在 Transformer 架构中理解了注意力机制——现在我们要用动手的方式，验证 RoPE 的一个关键性质：**距离越远，关联越弱**。
-
-### 为什么值得动手跑一遍？
-
-RoPE 不像其他位置编码那样需要额外学习参数，它通过旋转向量的方式把位置信息“编”进去。而“长距离衰减”正是它的优雅之处：**不需要任何额外约束，内积幅值会随相对距离自然下降**。这与你对注意力机制的理解直接挂钩——远距离 token 的关联本来就该更弱。
-
-### 核心代码逐段拆解
-
-```python
-import torch
-
-head_dim = 64
-distances = [0, 1, 2, 4, 8, 16, 32, 64]
-
-theta = 1.0 / (10000 ** (torch.arange(0, head_dim, 2).float() / head_dim))
-```
-
-这行代码生成频率系数 `theta`。`head_dim=64` 时，`torch.arange(0, 64, 2)` 产生 32 个偶数索引，每个对应一个频率。分母中的 `10000` 是 RoPE 的基频参数，它决定了不同维度旋转的快慢。
-
-```python
-x = torch.ones(1, head_dim // 2)
-y = torch.ones(1, head_dim // 2)
-```
-
-这里把向量拆成两半（`head_dim // 2 = 32`），用两个全 1 向量表示一个单位向量。RoPE 的旋转操作是**成对**进行的——每两个维度构成一个旋转平面。
-
-```python
-for dist in distances:
-    angles_0 = torch.zeros(1, head_dim // 2)
-    angles_d = torch.tensor([[dist]]) * theta
-    cos_0 = torch.cos(angles_0
-
-## 块 25
-
-## 七、总结与后续学习路线
-
-恭喜你完成了 RoPE 的学习！针对你在 Transformer 架构上的学习目标，这里把核心要点串成一条清晰的链路，方便你快速内化。
-
-### 你已掌握的核心内容
-
-- **为什么需要位置编码**：Self-Attention 本身对序列顺序不敏感（排列等变性），必须显式注入位置信息，否则"我关注你"和"你关注我"的顺序就丢失了。
-- **RoPE 的核心思想**：通过旋转矩阵把位置信息编码进 Q/K 向量，实现"绝对旋转，相对感知"——每个 token 的位置是绝对编码的，但 Attention 计算时只依赖相对距离 $m-n$。
-- **数学推导主线**：2D 旋转 → 高维分块旋转 → 频率参数 $10000^{-2i/d}$ 设计 → 块对角矩阵的高效实现。频率参数与原始 Transformer 正弦编码一致，确保不同维度旋转速度呈指数级变化，覆盖多尺度位置信息。
-- **关键性质**：长距离衰减、与线性 Attention 兼容、外推性。注意：理论上 RoPE 支持任意长度（角度连续），但实际外推受训练长度分布限制，超长外推需配合 NTK-aware、YaRN 等改进技术。
-- **工业级实现**：缓存 cos/sin、广播机制、在 Multi-Head Attention 中的正确接入方式。
-
-### 常见疑问速查（帮你扫清盲区）
-
-| 疑问 | 一句话解答 |
-|------|-----------|
-| 为什么不加在 embedding 上？ | 加在 embedding 上退化为绝对编码，无法保证 $Q_m^T K_n$ 仅依赖 $m-n$ |
-| 为什么 V 不旋转？ | Attention 权重由 $QK^T$ 决定，位置信息只需影响"谁
+如果一切正常，PyCharm 下方的 **Run 窗口**会输出你写在文件里的内容（比如 `print("
 
 ## 测评题目
 
-### Q-KB08-ST0804-003
-FFN 在 Transformer 中主要负责？
+### Q-KB0200-001
+请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：
+```bash
+python --version
+```
 
-### Q-KB08-ST0804-002
-SwiGLU 是一种带门控机制的________函数变体。
+### Q-KB0200-004
+验证conda环境是否配置正确：
+```bash
+conda --version && conda info --envs
+```
 
-### Q-KB0805-002
-原始Transformer论文中，使用的是基于________和________函数的固定位置编码。
+### Q-KB0204-003
+请写代码：读取 `data.txt` 文件，捕获文件不存在的异常，若不存在则打印 "文件未找到"。
 
-### Q-KB0805-003
-以下哪种位置编码是**可学习**的（Learnable）？
+### Q-KB0202-006
+请写代码：给定嵌套字典 `data = {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}`，提取所有年龄大于26的用户姓名。
 
-### Q-KB08-ST0807-002
-推理时将模型切换到评估模式，应调用 `model.________()`。
+### Q-KB0205-004
+请写一个生成器函数 `fibonacci(n)`，生成前 `n` 个斐波那契数。
 
-### Q-KB0806-001
-在自回归生成过程中，KV Cache的主要作用是？
+### Q-KB0200-002
+执行以下命令进入Python交互环境，将输出粘贴作答：
+```bash
+python
+```
 
-### Q-KB0806-003
-以下哪种技术不是用于推理加速的？
+### Q-KB0204-001
+以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？
 
-### Q-KB08-ST0803-002
-RMSNorm 使用均方根统计进行归一化，通常不减去输入的________。
+### Q-KB0201-002
+Python中，`type(3.14)` 的返回结果是________；`type("3.14")` 的返回结果是________。

@@ -2,313 +2,1556 @@
 
 ## 块 1
 
-```markdown
-# KV Cache 机制
+**本块学习检查**  
+先动手验证前置基础：在终端里依次执行 `cd ~`（回到用户主目录）、`ls`（查看当前目录内容）、`mkdir test_dir`（新建文件夹）、`cp -r test_dir test_dir_backup`（复制文件夹）、`mv test_dir_backup test_dir_renamed`（重命名）。确认每条命令都能执行并理解其作用后，再继续往下读。
 
-## 一、为什么需要 KV Cache？
+---
 
-### 1.1 自回归生成的重复计算
+你已经有 PyTorch 和 Transformer 的基础，马上要碰 vLLM 部署。但 vLLM 跑在 Linux 上，所以先花点时间把环境弄明白。
 
-在大语言模型（LLM）的自回归生成过程中，每个新生成的token都依赖于之前所有已生成的token。假设已经生成了$t-1$个token，现在需要生成第$t$个token。如果不使用任何缓存机制，模型需要将完整的序列$[x_1, x_2, \ldots, x_{t-1}, x_t]$重新输入，计算每一层的Attention：
+**Linux 是什么？** 你平时用的 Windows 是操作系统，Linux 是另一种操作系统。全球绝大多数服务器——包括 AI 训练集群、云服务后台——跑的都是 Linux。你要部署 vLLM，最终目标就是在一台 Linux 机器上把模型跑起来。
 
-$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+**为什么必须装？** 你的 RTX 3090 要发挥全部性能做 Tensor Parallel 部署，主流推理框架（包括 vLLM）的官方支持环境就是 Linux。Windows 上也能折腾，但你会遇到大量“为什么这里不行”的坑，浪费宝贵时间。
 
-其中$Q, K, V$都是长度为$t$的序列。这意味着第$t$步的计算复杂度为$O(t^2)$（因为$QK^T$是$t \times t$的矩阵）。
+**装哪个版本？** 本教程用 **Ubuntu 24.04 LTS**（长期支持版），厂家持续提供多年安全更新，稳定且适合入门。如果你已有 Ubuntu 22.04，步骤基本一致，可继续用。
 
-随着序列长度$t$的增长，计算量呈平方级爆炸：
-
-| 已生成长度 | 当前步复杂度 | 累计复杂度 |
-|-----------|------------|-----------|
-| 1 | $O(1)$ | $O(1)$ |
-| 10 | $O(100)$ | $O(385)$ |
-| 100 | $O(10^4)$ | $O(3.3 \times 10^5)$ |
-| 1000 | $O(10^6
+**三条路选一条：**
+- **WSL2**：在 Windows 里直接开一个 Linux 子系统，最省事，适合先跑通流程。
+- **云服务器**：租一台带 GPU 的云主机（
 
 ## 块 2
 
-### 1.2 关键观察：历史 token 的 K 和 V 是不变的
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
-在 Decoder 的 Causal Self-Attention 中，由于**因果掩码**（causal mask）的存在，每个 token 只能看到它自己及之前的 token，看不到未来的 token。（权威①）
+你已有 PyTorch 和 Transformer 基础，目标是用 vLLM 部署模型。vLLM 需要 Linux 环境，所以先解决“在哪跑”的问题。你的机器是 RTX 3090 24GB，本地算力足够，重点是把环境搭对。
 
-这意味着：**已经生成的前 $t-1$ 个 token，它们的 Key 和 Value 向量不会受到后续生成的影响**。无论后面生成什么新 token，$k_1, k_2, \ldots, k_{t-1}$ 和 $v_1, v_2, \ldots, v_{t-1}$ 都保持不变。（①）
+三种方案速览：
 
-因此，我们可以将历史 token 的 K 和 V 缓存起来，避免重复计算。
-
-## 二、KV Cache 的核心原理
-
-（个性化提示：学习风格：hands-on）
+- **虚拟机**：在 Windows 里模拟一台完整电脑，隔离性好但吃内存（建议至少 4GB），配置低会卡。适合内存 ≥8GB 且想体验完整 Linux 的用户。
+- **WSL2**：Windows 自带的 Linux 子系统，像装 App 一样轻量、启动快，与 Windows
 
 ## 块 3
 
-### 2.1 KV 缓存机制
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-在 Transformer 模型中，KV 缓存用于优化注意力机制的计算效率。具体来说，KV 缓存存储的是**每一层 TransformerDecoder 中所有历史 token 的 Key 矩阵和 Value 矩阵**。通过缓存这些信息，模型可以避免重复计算，从而显著提升生成速度。
+先别急着装系统，记住：**三个方案（虚拟机、云服务器、WSL2）最终给你的开发体验完全一致**——你都会得到一台运行 Ubuntu 24.04 的“电脑”，并且能在这台电脑上写代码、跑命令。
 
-#### 为什么需要 KV 缓存？
-1. **不缓存 Query**：每个新 token 的 Query 是全新的，无法从缓存中直接获取，因此需要重新计算。
-2. **不缓存 Attention 输出**：Attention 输出
+具体来说，最终效果就三条：
+
+1. **有一台 Ubuntu 24.04 的“电脑”**（虚拟的或远程的）。
+2. **能操作它**：虚拟机/云服务器通过 SSH 从你的 Windows 连过去（相当于“远程桌面命令行版”）；WSL2
 
 ## 块 4
 
-### 2.3 为什么只缓存 K 和 V？
+**VirtualBox 是什么？** 它是一款开源虚拟机软件，能在你的 Windows 里造出一台“假电脑”，用来安装 Linux 系统。
 
-这是初学者最常见的困惑。让我们从 Attention 的计算逻辑来理解：
+**下载步骤：**
+1. 浏览器打开：`https://www.virtualbox.org/wiki/Downloads`
+2. 找到 **“VirtualBox 7.x.x platform packages”** 下的 **Windows hosts** 版本，点击下载。
+3. 双击安装包，一路点“下一步”，保持默认选项。
+4. 点“安装”，等进度条跑完，点“完成”。
 
-- **Query** $q_t$：代表"当前 token 在问什么"，每个新 token 的问题都不同，必须重新计算
-- **Key** $k_i$：代表"第 $i$ 个 token 回答什么主题"，一旦生成就不再改变
-- **Value** $v_i$：代表"第 $i$ 个 token 的实际内容"，一旦生成就不再改变
+**常见坑**：安装时若弹出“是否允许此应用更改你的设备”，点“是”；杀毒软件拦截就选“允许”或“信任”。
 
-Attention 的本质是"用当前的问题（Q）去匹配历史的主题（K），然后提取历史的内容（V）"。历史和主题不会变，所以 K 和 V 可以缓存；但每个新 token 的问题不同，所以 Q 必须重新计算。（①）
+---
 
-## 三、内存开销分析
-
-KV Cache 的引入以**空间换时间**。理解它的内存占用，是分析 LLM 推理显存瓶颈的基础。（①）
-
-（个性化提示：学习风格：hands-on）
+**本块学习检查**：完成本块后，用自己的话说明：下载 VirtualBox
 
 ## 块 5
 
-# KV缓存机制的内存开销分析
+**下载 Ubuntu 24.04 镜像（为 vLLM 部署铺路）**
 
-## 3.1 通用计算公式
+你的 RTX 3090 已就位，接下来要装一个能跑 GPU 驱动的 Linux 环境。这里下载的 `.iso` 文件就是虚拟机的“安装光盘”——VirtualBox 靠它来装系统。
 
-在标准多头注意力（MHA）中，KV缓存的内存占用可以通过以下公式计算：
+**操作步骤：**
+1. 浏览器打开：`https://releases.ubuntu.com/24.04/`
+2. 找到文件名类似 `ubuntu-24.04.x-desktop-amd64.iso` 的文件（`x` 是小版本号），点击下载。
+3. 文件约 5GB，下载耗时取决于网速，耐心等几分钟到十几分钟。
+4. 下载完成后**不要双击打开**，就留在下载文件夹里。
 
-$$\text{Memory}_{\text{per layer}} = \text{batch\_size} \times \text{seq\_len} \times \text{num\_key\_value\_heads} \times \text{head\_dim} \times 2 \times \text{bytes\_per\_elem}$$
-
-其中：
-- $\text{batch\_size}$ 表示一批样本的数量
-- $\text{seq\_len}$ 表示序列长度
-- $\text{num\_key\_value\_heads}$ 表
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 6
 
-### 3.2 实例：`meta-llama/Llama-2-7b`（标准多头注意力）
+### 在 VirtualBox 里创建虚拟机（①）
 
-以 `meta-llama/Llama-2-7b` 为例（标准多头注意力，`num_key_value_heads = num_heads = 32`，FP16，即 2 bytes/参数）：（①）
+你已有 PyTorch 和 Transformer 基础，目标是 vLLM 部署。本块是环境准备的关键一步——在虚拟机中装好 Ubuntu，后续才能安装驱动、CUDA 和 vLLM。你的 RTX 3090 有 24GB 显存，但虚拟机本身不直接使用 GPU，它只是给你一个干净的 Linux 环境来练习部署流程。
 
-- $L = 32$ 层
-- `num_key_value_heads = 32`，`head_dim = 128`，即 $d_{\text{model}} = 4096$
-- 每 token 每层 K+V：$32 \times 128 \times 2\ \text{bytes} \times 2 = 16\ \text{KB}$
-- 每 token 全部层：$32 \times 16\ \text{KB} = 512\ \text{KB}$
+**操作步骤：**
 
-当 `batch_size = 64`，`seq_len = 2048` 时：
+1. 打开 **Oracle VM VirtualBox**，点击 **新建**。
+2. 填写：名称 `Ubuntu-24.04`，文件夹选 **D 盘或 E 盘**（别放 C 盘），类型 `Linux`，版本 `Ubuntu (64-bit)`，下一步。
+3. 内存拖到 **4096 MB**（4GB），下一步。
+4. 选 **现在创建虚拟硬盘**，大小 **60 GB**，类型 **VDI**，存储选 **动态分配**，点完成。
+5. 选中虚拟机 → **设置** → **系统 → 处理器**：处理器数量 `1`，每个核心数 `2`（共 2 核）。
 
-$$\text{Memory} = 64 \times 2048 \times 512\ \text{KB} = 64\ \text{GB}$$
-
-而 `meta-llama/Llama-2-7b` 的模型参数本身仅占约 14 GB（FP16）。这意味着**KV Cache 的内存占用可以达到模型参数量的数倍**，是长上下文、大 batch 推理时的主要显存瓶颈。（①）
-
-> **直观理解**：在 NVIDIA A100 40GB 显卡上，如果 batch_size=1、seq_len=4096，KV Cache 约需 2 GB，这看起来不多；但当 batch_size=16、seq_len=8192 时，KV Cache 就需要约 64 GB，远超单卡容量。
-
-## 四、极简代码实现
-
-以下是一个接近 Hugging Face Transformers 风格的极简实现，支持 MHA、GQA 和 MQA，帮助你理解 KV Cache 在代码中如何工作。（①）
-
-（个性化提示：学习风格：hands-on）
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 7
 
-```markdown
-# KeyValue 缓存机制在标准多头注意力模型中的实现
+## 本块学习检查
 
-## 1. KeyValue 缓存机制的重要性
+完成本块后，用自己的话说明：安装 Ubuntu 系统与你的 vLLM 部署目标有什么关系？遇到无法解释的术语（如“虚拟盘”）时记录下来再提问。
 
-KeyValue 缓存机制在模型推理中扮演着关键角色，尤其是在多头注意力机制中。通过缓存历史输入的 K 和 V，可以显著提升模型的推理效率。以下是 KeyValue 缓存机制的核心实现步骤。
+---
 
-## 2. KeyValue 缓存机制的实现
+### 2.4 安装 Ubuntu 系统
 
-### 2.1 KeyValue 缓存的扩展
+你的 RTX 3090 要跑 vLLM，Linux 环境是前提。跟着做：
 
-在标准多头注意力模型中，KeyValue 缓存机制通过扩展 K 和 V 的维度，将有限的 KV 头扩展到与 Q 头数相同的数量。具体实现如下：
-
-```python
-def repeat_kv(hidden_states, n_rep):
-    """
-    将 K/V 从 [batch, num_kv_heads, seq_len, head_dim] 
-    重复扩展到 [batch, num_heads, seq_len, head_dim]，
-    用于 GQA/MQA 场景。
-    """
-    batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    if n_rep == 1:
-        return hidden_states
-    # 先扩展维度，再 reshape
-    hidden_states = hidden_states[:, :, None, :, :].expand(
-        batch, num_kv_heads, n_rep, slen, head_dim
-    )
-    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
-```
-
-### 2.2 多头注意力的计算
-
-通过扩展后的 K 和 V，多头注意力的计算过程如下：
-
-```python
-class DecoderLayerWithKVCache(nn.Module):
-    def __init__(self, d_model, n_heads, num_key_value_heads=None):
-        super().__init__()
-        self.n_heads = n_heads
-        self.num_key_value_heads = num_key_value_heads or n_heads
-        self.head_dim = d_model // n_heads
-        
-        # GQA/MQA 要求 n_heads 能被 num_key_value_heads 整除
-        assert n_heads % self.num_key_value_heads == 0, \
-            f"n_heads ({n_heads}) 必须能被 num_key_value_heads ({self.num_key_value_heads}) 整除"
-        self.n_rep = n_heads // self.num_key_value_heads
-        
-        self.Wq = nn.Linear(d_model, d_model)
-        # GQA/MQA 中 Wk/Wv 的输出维度按实际 KV 头数计算
-        kv_dim = self.num_key_value_heads * self.head_dim
-        self.Wk = nn.Linear(d_model, kv_dim)
-        self.Wv = nn.Linear(d_model, kv_dim)
-        self.Wo = nn.Linear(d_model, d_model)
-        
-    def forward(self, x, past_kv=None):
-        """
-        x: [batch_size, seq_len, d_model]
-        past_kv: tuple of (K, V), 每个 [batch_size, num_kv_heads, past_len, head_dim]
-        """
-        batch_size, seq_len, _ = x.shape
-        
-        # 计算当前输入的 Q, K, V
-        q = self.Wq(x)  # [batch, seq, d_model]
-        k = self.Wk(x)  # [batch, seq, kv_dim]
-        v = self.Wv(x)  # [batch, seq, kv_dim]
+1. 在 VirtualBox 窗口选中虚拟机，点 **“启动”**。
+2. 等几十秒出现安装界面，按顺序操作：
+   - 语言选 **“中文(简体)”** → 点“安装 Ubuntu”
+   - 键盘布局默认，点“继续”
+   - 更新和软件：选 **“正常安装”**，勾选“下载更新”和“安装第三方软件” → “继续”
+   - 安装类型：选 **“清除整个磁盘并安装 Ubuntu”** —— 这里清的是虚拟机里那块 60G 虚拟盘，不是你电脑的 C/D 盘 → “现在安装” → 弹窗点“继续”
+   - 时区：输入“Shanghai”或地图点中国 → “继续”
+   - 用户信息：填名字、计算机名、用户名、密码 →
 
 ## 块 8
 
-### 4.1 关键代码解读
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-1. **`repeat_kv` 函数**：GQA/MQA 的核心。将 K/V 从 `num_kv_heads` 通过维度扩展+reshape 重复到 `num_heads`，使 Q/K/V 头数对齐以计算 Attention。计算完成后，缓存中仍保存未扩展的 K/V，保持显存节省效果。
-2. **`past_kv` 参数**：接收上一层的 `(K, V)` 缓存，形状为 `[batch, num_kv_heads, past_len, head_dim]`。
-3. **`torch.cat` 拼接**：将历史 K/V 与当前新 token 的 K/V 沿序列长度维度拼接。
-4. **Causal Mask**：`q` 中第 `i` 个 token 只能看到 `k` 中前 `past_len + i + 1` 个位置。当 `past_len=0` 时退化为标准下三角 mask；当 `seq_len=1`（逐 token 解码）时，当前 token 可看到全部历史位置。
-5. **Prefill vs Decoding**：Prefill 阶段输入完整 prompt，Decoding 阶段每步只输入 1 个新 token。
+---
 
-## 五、工业级挑战：KV Cache 内存管理
+### 2.5 安装 SSH 远程连接工具
 
-KV Cache 虽然降低了计算复杂度，但引入了巨大的**内存管理挑战**。在生产环境中，这甚至比计算本身更棘手。（权威②）
+**为什么需要 SSH？** 你要在 RTX 3090 上跑 vLLM 部署，但 vLLM 的推理脚本通常跑在 Linux 环境里。装了 SSH 后，你可以在 Windows 终端里直接操控虚拟机里的 Ubuntu，不用来回切换窗口，后续敲 vLLM 部署命令会顺手很多。
 
-（个性化提示：学习风格：hands-on）
+**操作步骤：**
+
+1. 在 Ubuntu 桌面空白处点**鼠标右键** → 选**"在终端中打开"**。如果右键没有，按 `Ctrl + Alt + T` 也能打开终端。
+
+2. 依次输入以下命令（输完一行按回车）：
+
+```bash
+# 第1步：更新软件列表（类似"刷新应用商店货架"）
+sudo apt update
+
+# 第2步：安装 SSH 服务（让别的电脑能远程连过来）
+#     openssh-server 是 SSH 服务端
+#     net-tools 提供 ifconfig 命令，用来查看 IP 地址
+sudo apt install -y openssh-server net-tools
+
+# 第3步：设置 SSH 开机自动启动
+sudo systemctl enable ssh
+
+# 第4步：立刻启动 SSH 服务
+sudo systemctl start ssh
+```
+
+> **sudo 是什么？** `sudo` = "以管理员身份执行"。Linux 里普通用户不能随便装软件，加了 sudo 就相当于"给我最高权限"。输入 sudo 命令后会让你输密码，输的时候**屏幕不会有任何显示**（不会出现 `***`），这是正常的安全设计，盲打完按回车就行。
+
+3. 查看虚拟机的 IP 地址：
+
+```bash
+ifconfig
+```
+
+4. 输出内容很多，找到类似这一行：`inet 192.168.xxx.xxx`，那一串数字就是 IP 地址。**记下来！** 例如：`192.168.126.128`
+
+5. 验证 SSH 是否可用：回到 Windows，
 
 ## 块 9
 
-### 5.1 现有系统的内存浪费
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-传统推理系统（如 FasterTransformer）为每个请求**预分配一段连续的 GPU 内存**，大小为该请求的最大可能序列长度（如 2048 tokens）。（权威②）
+**安装增强功能（让虚拟机和 Windows 更好配合）**
 
-这导致三种内存浪费：
+这一步让你可以在 Windows 和虚拟机之间**直接复制粘贴文字和文件**，非常实用。
 
-| 浪费类型 | 原因 | 后果 |
-|---------|------|------|
-| **Reserved（预留）** | 为未来 token 预留的槽位，在请求结束前不能被其他请求使用 | 占用大量空闲内存 |
-| **Internal Fragmentation（内部碎片）** | 请求实际长度远小于最大长度，预分配的空间大部分未使用 | 内存利用率低 |
-| **External Fragmentation（外部碎片）** | 不同请求预分配大小不同，释放后留下不连续的小块 | 无法分配给新请求 |
+新版 VirtualBox 通常会自动安装增强功能。如果未能自动生效，可手动安装：
 
-根据 vLLM 论文（权威②）在 NVIDIA A10G GPU、OPT-13B 模型、ShareGPT 数据集上的测试，现有系统中**实际有效内存利用率低至 20.4% - 38.2%**，超过 60% 的 KV Cache 内存被浪费。（权威②）
+```bash
+# 安装 VirtualBox 增强工具包
+sudo apt install -y virtualbox-guest-utils virtualbox-guest-x11 virtualbox-guest-dkms
 
-（个性化提示：学习风格：hands-on）
+# 重启虚拟机
+sudo reboot
+```
+
+重启后，你就可以在 Windows 里 `Ctrl+C` 复制文字，到 Ubuntu 里 `Ctrl+V` 粘贴了！
+
+**方案一完成！** 你现在有了一台完整的 Ubuntu 虚拟机。
+
+> **实践提示**：完成重启后，立即测试一次从 Windows 复制命令到 Ubuntu 粘贴执行
 
 ## 块 10
 
-### 5.2 PagedAttention：类比操作系统的虚拟内存
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-vLLM 提出的 **PagedAttention** 核心思想是：**将 KV Cache 分成固定大小的块（block），非连续存储，类比 OS 的虚拟内存分页**。（权威②）
+你的 RTX 3090 要跑 vLLM，通常需要一个能执行 Shell 命令的 Linux 环境（或通过 WSL2 在 Windows 上模拟）。WSL2 就是最快路径，但前提是 Windows 的“虚拟化”功能已开启——它让 Windows 能“套娃”运行 Linux。
 
-核心设计：
+**操作验证**：
+1. 按 `Ctrl + Shift + Esc` 打开任务管理器。
+2. 点顶部“性能”标签页。
+3. 右下角找“虚拟化”，确认是“已启用”。
 
-1. **KV Block**：每个块包含固定数量 token 的 K 和 V（默认 16 个 token）
-2. **逻辑块 vs 物理块**：请求的 KV Cache 是逻辑上连续的块序列，但物理上可以映射到 GPU 上任意空闲的物理块
-3. **Block Table**：维护每个请求的逻辑块到物理块的映射表
-4. **按需分配**：新 token 生成时才分配新物理块，而不是一开始就预分配最大长度
-
-这带来了三个好处：（权威②）
-
-- **消除内部碎片**：只分配实际需要的块，最后一块可能有少量浪费（最多 15 个 token）
-- **消除外部碎片**：所有块大小相同，释放后可以被任意请求复用
-- **支持内存共享**：通过引用计数和 Copy-on-Write，实现并行采样、束搜索等场景下的 KV Cache 共享
-
-（个性化提示：学习风格：hands-on）
+- **已启用** → 直接进入下一步。
+- **已禁用** → 需进 BIOS 开启：
+  - 重启，开机时按 BIOS 进入键（不同品牌和型号可能
 
 ## 块 11
 
-### 5.3 Copy-on-Write 与内存共享
+**本块学习检查**：完成安装后，用自己的话说说WSL2和你的vLLM部署目标有什么关系；遇到不懂的术语（如“内核”）先记下，稍后提问。
 
-在并行采样（一个 prompt 生成多个候选答案）时，所有候选共享相同的 prompt 部分的 KV Cache。vLLM 通过以下机制实现：（权威②）
+你的RTX 3090是GPU，但vLLM部署需要Linux环境。WSL2就是Windows里跑的一个轻量Linux，几分钟装好，不用重装系统。
 
-1. Prompt 的 KV Block 被多个序列**共享**，引用计数 > 1
-2. 当某个序列需要写入新 token 到共享块时，触发 **Copy-on-Write**：复制该块到新物理块，再写入
-3. 原块的引用计数减 1
+**操作步骤**（跟着做，每步等提示）：
 
-在束搜索（Beam Search）中，不同 beam 候选可以共享大部分前缀。根据 vLLM 论文（权威②）在相同测试条件下的实验，这可以节省 **37.6% - 55.2%** 的内存。（权威②）
+1. 按`Win`键，输入`powershell`，右键“Windows PowerShell”选“以管理员身份运行”，弹窗点“是”。
+2. 在蓝色窗口里，**逐行**复制粘贴下面两条命令，每条回车，等显示“操作成功完成”：
 
-### 5.4 调度与抢占
+```bash
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
 
-当 GPU 内存不足时，vLLM 支持两种策略将部分请求的 KV Cache 移出 GPU：（权威②）
+3. **重启电脑**。
+4. 重启后，再以管理员身份打开PowerShell，输入：
 
-- **Swapping（交换）**：将 KV Block 复制到 CPU 内存，需要时再搬回
-- **Recomputation（重计算）**：直接丢弃 KV Cache，需要时重新计算（利用已生成的 token 作为新 prompt 快速重算）
+```bash
+wsl --set-default-version 2
+```
 
-## 六、其他优化方向
+5. 若提示更新内核，去`https://aka.ms/wsl2kernel`下载安装，装完重跑第4步。
 
-除了 PagedAttention，工业界还从多个角度优化 KV Cache：（①）
-
-（个性化提示：学习风格：hands-on）
+**验证**：
 
 ## 块 12
 
-### 6.1 Multi-Query Attention (MQA)
+## 3.3 安装 Ubuntu 24.04
 
-所有 Query 头**共享同一组 K 和 V**。KV Cache 大小降为原来的 $1/\text{num\_heads}$。PaLM 系列（《PaLM: Scaling Language Modeling with Pathways》）、`tiiuae/falcon-7b` 等模型采用，在特定条件下可提升推理速度，但可能带来轻微质量损失。（①）
+你的目标是跑 vLLM 部署，而 vLLM 在 Linux 环境下运行最省心。WSL2 就是 Windows 里直接开一个 Linux 子系统，不用装双系统，几分钟搞定。
 
-### 6.2 Grouped-Query Attention (GQA)
+**方法一（推荐，简单）**：
 
-将 Query 头分组，每组共享一个 K、V 头。这是 MQA 和标准多头注意力的折中。不同模型的 GQA 配置差异较大，需以具体模型的 `config.json` 为准：（①）
+1. 按 `Win` 键，输入 `Microsoft Store`，打开微软应用商店
+2. 搜索框输入 `Ubuntu 24.04`
+3. 找到 **"Ubuntu 24.04.x LTS"**（发布者是 Canonical Group Limited），点"安装"
+4. 下载大约 500MB，装完后点"打开"
 
-- `meta-llama/Llama-2-7b`：`num_heads=32`，`num_key_value_heads=32`（标准多头注意力，**非 GQA**）
-- `meta-llama/Llama-2-70b`：`num_heads=64`，`num_key_value_heads=8`（GQA，缓存大小降至 $1/8$）
-- `meta-llama/Llama-3-8B`：`num_heads=32`，`num_key_value_heads=8`（GQA，缓存大小降至 $1/4$）
+**方法二（命令行，更快）**：
 
-（个性化提示：学习风格：hands-on）
+```bash
+# 一条命令自动下载并安装 Ubuntu 24.04
+wsl --install -d Ubuntu-24.04
+```
+
+5. 首次启动会显示 "Installing, this may take a few minutes..."，等 2~5 分钟
+6. 安装完会提示设置用户名和密码：
+   - 输入用户名（全英文小写，如 `zhangsan`）→ 回车
+   - 输入密码
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 13
 
-```markdown
-# KV Cache 量化
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
-## 什么是 KV Cache 量化？
+在 Ubuntu 终端（绿色提示符窗口）逐行执行：
 
-在模型推理中，为了减少显存占用，我们可以通过 **量化** 技术对 KV Cache 进行优化。量化通过将高精度的权重和激活值转换为低精度表示（如 INT8、INT4 或 INT16），可以显著降低模型的显存占用。研究表明，在特定条件下，量化可以减少 50% 到 75% 的缓存占用，同时保持生成质量的可接受性（①）。
+```bash
+# 刷新软件包列表
+sudo apt update
 
-### 量化的作用
-- **减少显存占用**：通过降低数据精度，模型在推理过程中所需的运行时内存（RAM）大幅减少。
-- **提升运行效率**：低精度计算虽然不如浮点数计算精确，但在大多数应用场景下可以满足生成质量的要求（①）。
+# 升级所有已装软件（-y 自动确认）
+sudo apt upgrade -y
+```
 
-### 量化方法
-- **INT8 量化**：将 32 位浮点数转换为 8 位整数，占用更少的内存。
-- **INT4 量化**：进一步降低精度，占用更少的内存，但可能会影响
+> **WSL2 需要 SSH 吗？** 不需要。WSL2 与 Windows 紧密集成，直接用 VS Code 的 Remote-WSL 插件开发，无需像虚拟机那样额外配置 SSH。
+
+验证环境：
+
+```bash
+# 查看系统版本（应显示 Ubuntu 24.04.x）
+lsb_release -a
+
+# 查看当前用户名
+whoami
+```
+
+测试与 Windows 互通：
+
+```bash
+# 用 Windows 资源管理器打开当前 Linux 目录
+explorer.exe .
+```
+
+弹出资源管理器窗口即说明 WSL2 与 Windows 无缝衔接。**方案二完成！**
+
+---
+
+**练习**：执行上述命令，确认输出正常。若 `lsb_release -a` 显示版本非 24.04.x，记录输出并继续。
+
+## 块 14
+
+**本块学习检查**：完成购买云服务器后，请用自己的话说明：为什么这个步骤与“vLLM部署”目标相关？若遇到“地域”“镜像”等术语无法解释，记录下来再提问。
+
+---
+
+**4.1 购买服务器（①）——以阿里云为例**
+
+你的RTX 3090适合本地训练，但vLLM部署需要独立环境。云服务器可作远程测试平台，流程如下：
+
+1. 打开 https://www.aliyun.com/ ，用支付宝/淘宝账号注册登录。
+2. 顶部搜索“**轻量应用服务器**”进入产品页；学生先搜“**学生优惠**”完成认证，价格更低。
+3. 点“立即购买”，按需配置：
+
+## 块 15
+
+**为什么不能一直用 root？** root 是 Linux 的“超级管理员”，权限过高，误操作可能删掉系统文件。日常操作应使用普通账户。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+**操作步骤**（通过云厂商控制台的“远程连接”或VNC登录）：
+
+```bash
+# 创建新用户（yourname换成你想要的用户名，全英文小写）
+adduser yourname
+# 设置密码输入两次，其他信息直接回车跳过
+
+# 添加sudo权限（授予“管理员资格”）
+usermod -aG sudo yourname
+```
+
+**验证任务
+
+## 块 16
+
+**本块学习检查**：完成本块后，用自己的话说明SSH密钥登录与vLLM部署目标的关系；遇到无法解释的术语（如randomart image）时记录下来再提问。
+
+---
+
+**目标关联**：你要在RTX 3090上跑vLLM，通常需要远程连接云服务器。密码登录易被暴力破解，密钥登录是安全且高效的替代方案——一次配置，后续免密连接，为部署节省时间。
+
+**操作步骤**（Windows → 云服务器）：
+
+1. **生成密钥对**：`Win + R`输入`cmd`打开命令提示符，执行：
+   ```bash
+   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+   ```
+   - 提示`Enter file...`→ 直接回车（默认路径）
+   - 提示`Enter passphrase`→ 建议设置密码以保护私钥；若直接回车不设密码，私钥泄露时攻击者可直接登录，风险较高
+   - 再次提示`Enter same passphrase again`→ 重复输入同一密码
+   - 看到randomart image即生成成功
+
+2. **服务器端配置**：通过云厂商VNC/远程连接登录服务器（确认目标用户名，如`ubuntu`或`root`，确保该用户存在），执行：
+   ```bash
+   su - yourname
+   mkdir -p ~/.ssh
+   ch
+
+## 块 17
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+在阿里云轻量应用服务器控制台，点“防火墙”标签页，添加规则：端口22、协议TCP、来源填你本机公网IP（格式如`123.45.67.89/32`，浏览器搜“IP”可查）。IP不固定可暂填`0.0.0.0/0`（允许所有IP，安全性低）。安全提醒：勿长期用root+密码登录，务必用普通用户+SSH密钥。
+
+**操作验证**：添加规则后，在本地终端用`ssh`命令尝试
+
+## 块 18
+
+### 从 Windows 连接你的云服务器
+
+你的目标是跑 vLLM 部署，而 vLLM 需要 Linux 环境。现在你已经有了阿里云服务器，接下来就是从 Windows 连上去操作它。
+
+1. 在阿里云控制台找到 **公网 IP**（形如 `47.96.xxx.xxx`），复制。
+2. 按 `Win + R`，输入 `cmd`，打开命令提示符。
+3. 输入命令连接（`yourname` 换成你的用户名）：
+
+```bash
+ssh yourname@47.96.xxx.xxx
+```
+
+4. 首次连接提示 `Are you sure... (yes/no)?`，输入 `yes` 回车。
+5. 若密钥配置正确，直接登录
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 19
+
+你的目标是 vLLM 部署，而 SSH 免密登录是打通“本地写代码 → 远端 GPU 跑推理”这条链路的关键一步。RTX 3090 上跑 Tensor Parallel 时，你通常不会直接在服务器前操作，而是通过 VS Code 远程连过去。免密登录能让你每次连接、传文件时少输一次密码，把精力集中在模型配置上。
+
+**验证免密是否生效**：在 Windows PowerShell 或 Windows Terminal 中执行：
+
+```bash
+ssh 用户名@你的IP地址
+```
+
+如果直接进入系统、不提示输入密码，说明 4.3 节的密钥配置已生效，可以继续。
+
+**常见坑预警**：如果提示 `ssh-copy-id 不是内部或外部命令
+
+## 块 20
+
+## 5.2 WSL2：无需 SSH，直接集成
+
+你用的是 WSL2，那就不需要折腾 SSH 了。VS Code 通过 **Remote-WSL 插件**直接和 WSL2 通信，打开即用，体验更流畅。
+
+## 5.3 安装 VS Code 及远程开发插件
+
+**VS Code** 全称 Visual Studio Code，微软出的免费代码编辑器，轻量、插件多、跨平台，是目前最主流的编辑器之一。你后面写 vLLM 部署脚本、改推理配置，都会在它里面完成。
+
+### 第一步：安装 VS Code
+
+1. 浏览器打开：https://code.visualstudio.com/
+2. 点 **"Download for Windows"** 按钮
+3. 下载完成后双击安装包
+4. 安装过程：
+   - 同意协议 → 下一步
+   - 安装路径默认就行 → 下一步
+   - **重点！** 这页勾选以下选项：
+     - ☑ **"将 Code 添加到"PATH"中"**（重要！这样可以在命令行直接输入 `code` 打开 VS Code）
+     - ☑ **"将 Code 注册为受支持的编辑器"**
+     - ☑ **"添加到文件资源管理器上下文菜单"**
+   - 一路"下一步" → "安装" → 完成后勾上"启动 VS Code" → "完成"
+
+### 第二步：安装必备插件
+
+**插件（Extension）** 是 VS Code 的"外挂功能包"。VS Code 本身只是个编辑器壳子，装了插件才能高亮代码、自动补全、调试。
+
+1. 打开 VS Code
+2. 点左侧竖排图标栏里 **第五个图标**（四个小方块组成的正方形），或按 `Ctrl + Shift + X`
+3. 在扩展商店搜索框里依次搜索并安装：
+
+| 搜索关键词 | 插件全名 | 发布者
+
+## 块 21
+
+### 5.4 连接你的 Linux 环境
+
+你的目标是跑 vLLM 部署，而 vLLM 需要 Linux 环境。下面两步帮你把 VS Code 连到 Linux，之后就能在图形界面里写代码、跑命令了。
+
+**如果你用的虚拟机或云服务器（推荐，RTX 3090 直通）：**
+
+1. 打开 VS Code，看左下角，有个 **绿色小图标**（像 `><` 形状）。
+2. 点击它 → 顶部弹出菜单，选 **"Connect to Host…"**。
+3. 输入 `用户名@你的IP地址`（如 `zhangsan@192.168.126.128`）→ 回车。
+4. 如果弹出选平台，选 **"Linux"**。
+5. 如果之前配了密钥，直接连上；没配的话会提示输密码。
+6. 连上后左下角绿色图标会变成 `SSH: IP地址`，说明连接成功。
+7. 点左上角 **"File"** → **"Open Folder…"**，选择服务器上的目录（如 `/home/你的用户名`），点 OK。
+8. 现在你就可以像编辑本地文件一样编辑远程文件了。
+
+**如果你用的 WSL2：**
+
+1. 打开 VS Code，点击左下角绿色图标 → 选 **"Connect to WSL"**。
+2. 会自动连上你的 Ubuntu，左下角变成 `WSL: Ubuntu-24.04`。
+3. 点 "Open Folder"，选择 `/home/你的用户名`，开始编辑。
+
+> **WSL2 更方便的方法**：在 Ubuntu 终端里，`cd` 进入项目目录，输入 `code .`，VS Code 自动打开并连接 WSL。
+
+---
+
+### 六、熟悉终端使用：Linux 基本命令入门
+
+终端（Terminal）就是那个黑框框
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 22
+
+## 6.1 文件与目录操作：最基础也最常用
+
+在开始 vLLM 部署之前，你需要先能在 Linux 环境中“走动”——找到模型文件、创建配置目录、复制权重、查看日志。这一节就是干这个的。
+
+### 核心命令速览
+
+| 命令 | 作用 | 常用示例 |
+|---|---|---|
+| `ls` | 看当前目录里有什么 | `ls -l`（详细列表，部分系统配置了 `ll` 别名，但并非默认）、`ls -a`（含隐藏文件） |
+| `cd` | 切换目录 | `cd ..`（上级）、`cd ~`（主目录）、`cd /home/user/Documents`（指定路径） |
+| `pwd` | 显示当前绝对路径 | 直接输入 `pwd` 即可 |
+| `mkdir` | 创建目录 | `mkdir test`；多级目录用 `mkdir -p test/aaa/bbb` |
+| `touch` | 创建空文件 | `touch file1.txt file2.log`（可一次建多个） |
+| `cp` | 复制 | 文件：`cp file1.txt /目标路径`；目录必须加 `-r`：`cp -r test/ /目标路径` |
+| `mv` | 移动或重命名 | `mv file1.txt test/`（移动）；`mv file1.txt newfile.txt`（改名） |
+| `rm` | 删除（⚠️不可恢复） | `rm file1.txt`；强制递归删目录：`rm -rf test/`——**千万别对系统目录用** |
+| `cat` | 查看小文件内容 | `cat -n file1.txt`（带行号） |
+| `less` | 分页查看大文件 | `less app.log`；空格翻页、`q` 退出 |
+
+### 结合你的场景理解
+
+- **`ls -l`**：部署 vLLM 时，你要确认模型权重文件是否完整、权限是否正确，这个命令是第一步。
+- **`mkdir -p`**：创建多
+
+## 块 23
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+**6.2 权限管理：Linux 系统的安全核心**
+
+部署 vLLM 时，你要运行脚本、修改配置文件、管理模型权重，这些都绕不开权限。Linux 用「所有者、所属组、其他用户」三类身份控制访问，权限分「读（r=4）、写（w=2）、执行（x=1）」。
+
+**chmod：改权限**
+- 数字法（推荐）：`chmod 744 file1.txt` → 7=4+2+1 给所有者读+写+执行，4=4 给其他用户只读。
+- 符号法：`chmod g+w file1.txt` 给所属组加写权限；`chmod a+x test.sh` 给所有用户加执行权限（跑脚本常用）。
+
+**ch
+
+## 块 24
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+你的RTX 3090跑vLLM部署前，得先学会“看系统脸色”。这5个命令就是你的仪表盘：
+
+- **`uname -a`**：查看内核与架构，确认环境是x86_64（部署vLLM的常见前提）。
+- **`top`**：实时看CPU/内存占用。按`P`按CPU排序、`M`按内存排序，`q`退出。部署时若GPU吃满但CPU飙高，先看这里。
+- **`ps -ef | grep python`**：过滤python进程，确认vLLM服务是否在
+
+## 块 25
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+你的RTX 3090上跑vLLM，改配置文件是家常便饭。这里只记两个最实用的工具，够你快速上手。
+
+**1. vim——改文件的主力**
+
+- 打开文件：`vim 文件名`
+- 按 `i` 进入编辑模式（左下角出现`--INSERT--`），此时才能打字
+- 改完按 `Esc` 退出编辑，输入 `:wq` 回车保存退出
+- 改错了不想存：`Esc` → `:q!` → 回车
+
+## 块 26
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+**网络操作：基础网络查询**
+
+部署vLLM前，需确保服务器网络正常。本块掌握两个命令：
+
+- **`ping`**：测试网络连通性。语法：`ping [选项] 目标IP/域名`。示例：`ping www.baidu.com`，按`Ctrl+C`停止。若通，则网络可达。
+- **`ifconfig`**：查看网卡信息（IP、MAC地址）。直接输入`ifconfig`，输出中`inet`字段即IP地址。若提示找不到命令，执行`sudo apt install net-tools`安装
+
+## 块 27
+
+### 命令实战：为 vLLM 部署热身
+
+你已有 PyTorch 和 Transformer 基础，目标是用 vLLM 部署模型。下面两个场景直接对应你即将遇到的日常操作：**整理模型文件**和**排查进程资源**。
+
+#### 场景 1：创建并整理文件
+
+部署时你常需把模型权重、配置和代码分目录存放。试着手动操作：
+
+```bash
+# 1. 进入主目录
+cd ~
+
+# 2. 创建 work 及子文件夹（doc 放文档，code 放脚本）
+mkdir -p work/doc work/code
+
+# 3. 创建并写入文件
+echo "Linux命令学习笔记" > note.txt
+
+# 4. 移动文件
+mv note.txt work/doc/
+
+# 5. 查看结果
+ls work/doc/
+# 预期输出：note.txt
+```
+
+**要点**：`mkdir -p` 可一次创建多级目录；`mv` 既移动文件也可重命名。
+
+#### 场景 2：查询系统资源并结束进程
+
+训练或推理时，显
+
+## 块 28
+
+## 6.7 新手避坑指南
+
+你的目标是vLLM部署，终端操作是地基。以下五个坑，踩中任何一个都会浪费你宝贵的2.5小时：
+
+**1. 大小写敏感**：Linux命令严格区分大小写。`ls`正确，`LS`直接报错。敲命令时手指别懒，Shift键该按就按。
+
+**2. 路径写错**：切换目录或复制文件时，报错`No such file or directory`就是路径不对。先`ls`看看目标路径到底存不存在，再动手。
+
+**3. `rm -rf`是核弹**：这命令能瞬间删掉整个目录树，误删`/`（根目录）等于系统报废。执行前务必`ls`确认你指向的是对的文件/目录，别手滑。
+
+**4. 权限不足**：操作受保护的系统文件或他人文件时，报错`Permission denied`。在命令前加`sudo`获取临时管理员权限，会提示输入当前用户密码。
+
+**5. 命令记不住**：输入文件名/目录名
+
+## 块 29
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+你的RTX 3090要跑vLLM，第一步是确认Python环境。Ubuntu 24.04自带Python 3.12，先验证：
+
+```bash
+python3 --version   # 预期输出：Python 3.12.x
+pip3 --version
+```
+
+若`pip3`未找到，安装它：
+
+```bash
+sudo apt update
+sudo apt install -y python3-pip
+```
+
+**pip**是Python的包管理器，相当于“应用商店”，后续装PyTorch、Transformers都靠它。确认这两条命令能跑通，环境验证就
+
+## 块 30
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+你的RTX 3090已就绪，但后续用vLLM部署模型时，依赖管理和环境隔离是关键。Miniconda正是为此服务的轻量工具——它比系统Python更便于创建独立环境，避免不同项目间的包冲突。
+
+**操作步骤（跟着做）**：
+
+1. 下载安装脚本：
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+```
+若提示`wget未找到`，先执行`sudo apt install wget`。
+
+2. 运行安装：
+```bash
+bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+3. 安装交互中：按`Enter`读协议→输入`yes`同意→确认路径（默认回车）→提示更新shell profile时输入`yes`。
+
+4. 激活配置：
+```bash
+source ~/.bashrc
+```
+
+5. 验证：
+```bash
+conda --
+
+## 块 31
+
+## 7.3 运行你的第一个 Python 程序
+
+你的目标是用 RTX 3090 跑 vLLM 部署，而 vLLM 的推理脚本本质上是 Python 程序。所以，**在终端里成功运行一个 Python 文件**，就是你整个部署流程的“第一块地基”——这一步走通了，后面加载模型、启动服务才有意义。
+
+下面跟着做，全程在终端里完成：
+
+**第一步：创建文件**
+
+```bash
+# 回到主目录
+cd ~
+
+# 创建一个叫 hello.py 的文件，用 nano 编辑器打开
+nano hello.py
+```
+
+**第二步：输入代码**
+
+在 nano 里输入以下内容：
+
+```python
+print("Hello, Python on Ubuntu 24.04!")
+```
+
+**第三步：保存并退出**
+
+- 按 `Ctrl + O` 保存，然后按回车确认文件名
+- 按 `Ctrl + X` 退出 nano
+
+**第四步：运行程序**
+
+```bash
+python3 hello.py
+```
+
+如果屏幕输出了 `Hello, Python on Ubuntu 24.04!`，恭喜！你的 Linux 环境已经全部就绪，而且你已经成功使用了 `cd`、`nano`、`python3` 这三个终端命令——它们分别是**切换目录**、**编辑文件**、**执行 Python 脚本**的基础操作，后续你在 3090 上配置 vLLM 环境、编写推理脚本时，这三板斧会反复用到。
+
+---
+
+### 本块学习检查
+
+完成本块后，请用自己的话说明：**“运行第一个 Python 程序”这件事，和你最终用 vLLM 在 RTX 309
+
+## 块 32
+
+## 二、你在哪？pwd 与路径的概念
+
+### 2.1 pwd：打印当前工作目录
+
+`pwd` = **P**rint **W**orking **D**irectory，作用是告诉你"我现在在哪个文件夹里"。
+
+```bash
+pwd
+```
+
+示例输出：
+```bash
+/home/zhangsan
+```
+
+这表示你当前位于 `/home/zhangsan` 目录下。
+
+**为什么这对你的 vLLM 部署很重要？** 部署 vLLM 时，你需要加载模型权重、指定配置文件、管理日志输出——这些操作都依赖"你当前在哪个目录"这个前提。如果路径不对，`vLLM` 会报"文件找不到"的错误，而 `pwd` 就是帮你
+
+## 块 33
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+你在RTX 3090上部署vLLM时，模型文件、配置和日志都放在特定目录里。**pwd**让你知道“我在哪”，而**绝对路径**（从`/`开始，如`/home/zhangsan/Documents`）和**相对路径**（基于当前位置，如`./file.txt`、`../backup`）决定了你怎么“到达那里”。
+
+记住三个符号：
+- `./`：当前目录（可省略）
+- `../`：上一级目录
+- `~`：当前用户家目录（如`/home/zhangsan`）
+
+**举例**：你在`/home/zhangsan/Documents`下：
+- `
+
+## 块 34
+
+## 3.1 基础用法
+
+`ls` 是查看目录内容的命令，先掌握这四种组合：
+
+```bash
+ls          # 列出当前目录（不含隐藏文件）
+ls /path    # 列出指定路径
+ls -a       # 包含隐藏文件（以 . 开头）
+ls -l       # 详细列表：权限、所有者、大小、修改时间
+ls -ahl     # 组合：全部文件 + 详细 + 人类可读大小
+```
+
+**隐藏文件**：以 `.` 开头的文件默认隐藏，如 `.bashrc`、`.ssh`。后续配置 vLLM 环境变量时会频繁遇到，务必记住 `-a`。
+
+## 3.2 ls -l 输出解读
+
+```bash
+drwxr-xr-x 2 zhangsan zhangsan 4096 Aug  3 10:00 Documents
+-rw-r--r-- 1 zhangsan zhangsan  220 Aug  3 09:30 hello.py
+```
+
+**第一列首字符**表示类型：
+- `d`：文件夹
+- `-`：普通文件
+- `l`：软链接
+
+其余列依次为：权限、硬链接数、所有者、所属
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 35
+
+`ls` 的选项很多，但别慌，我们只挑对你部署 vLLM 真正有用的来练。
+
+**核心组合：`ls -lh`**
+这是最常用的。`-l` 显示详细列表，`-h` 把大小变成人类可读的 KB/MB/GB。注意：`-h` 必须搭配 `-l` 用，单独 `ls -h` 没效果。
+
+**排序与筛选：**
+- `ls -t`：按修改时间排，最新的在前。找刚下载的模型权重时很有用。
+- `ls -S`：按文件大小排，从大到小。快速定位最大的那几个 `.bin` 或 `.safetensors` 分片文件。
+
+## 块 36
+
+## 四、cd：切换目录（基础用法）
+
+你的目标是搞定 vLLM 部署，而部署模型时，你几乎每一步都要在命令行里**切换目录**——进入模型目录、进入配置文件所在位置、回到项目根目录。`cd` 就是你在文件系统里"移动"的工具。
+
+**核心命令速览：**
+
+```bash
+# 进入指定目录（绝对路径，从根目录 / 开始写）
+cd /home/zhangsan/Documents
+
+# 进入当前目录下的子文件夹（相对路径，./ 可省略）
+cd ./Downloads
+cd Downloads
+
+# 返回上一级目录
+cd ..
+
+# 返回上两级目录
+cd ../..
+
+# 回到家目录
+cd ~
+cd        # 直接 cd 不加参数也是回家目录
+
+# 返回刚才所在的目录（快速来回切换）
+cd -
+```
+
+**路径切换示例：**
+
+假设当前在 `/usr/local` 下，想切换到 `/home/zhangsan`：
+
+```bash
+# 方法1：绝对路径（去哪都管用）
+cd /home/zhangsan
+
+# 方法2：相对路径（先回根目录，再去 home）
+cd ../../home/zhangsan
+```
+
+> **建议**：新手优先使用绝对路径，不容易迷路；熟悉后多用相对路径，效率更高。
+
+---
+
+## 五、mkdir：创建目录
+
+`mkdir` = **M**a**k**e **Dir**ectory，用来创建文件夹。部署 vLLM 时，你需要用它来组织项目结构，比如创建存放模型权重、日志、配置文件的目录。
+
+```bash
+# 在当前目录下创建一个文件夹
+mkdir myproject
+
+# 在指定路径下创建文件夹
+mkdir /home/zhangsan/myproject
+
+# 递归创建多级目录（父目录不存在时自动创建）
+mkdir -p myproject/src/models
+
+# 一次性创建多个同级文件夹
+mkdir dir1 dir2 dir3
+
+# 使用花括号批量创建同级文件夹
+mkdir {dir1,dir2,dir3}
+
+# 批量创建 100 个文件夹（dir1 ~ dir100）
+mkdir dir{1..100}
+```
+
+> **注意**：`mkdir` 默认**不能**直接创建多级嵌套目录，必须加 `-p` 参数。这是新手最常踩的坑之一。
+
+---
+
+## 六、touch：创建空文件
+
+`touch` 原本用来"更新文件的时间戳"，但最常用的功能是**快速创建一个空文件**。比如你需要新建
+
+## 块 37
+
+### 7.1 复制文件（①+②）
+
+```bash
+# 复制文件到另一个文件夹（保留原文件名）
+cp hello.py ./backup/
+
+# 复制文件到另一个文件夹，并改名
+cp hello.py ./backup/hello_backup.py
+
+# 一次性复制多个文件到目标文件夹
+cp file1.txt file2.txt ./backup/
+
+# 复制时保持文件属性不变（如修改时间）
+cp -p hello.py ./backup/
+
+# 覆盖前进行提示（如果目标文件已存在）
+cp -i hello.py ./backup/
+```
+
+### 7.2 复制目录（①+②）
+
+复制文件夹时，**必须加 `-r` 参数**（recursive，递归），否则系统会拒绝。（①+②）
+
+```bash
+# 复制整个目录到另一个位置
+cp -r myproject ./backup/
+
+# 注意：
+# 如果 backup 文件夹不存在，会新建 backup 并把 myproject 的内容复制进去
+# 如果 backup 文件夹已存在，会新建 backup/myproject/，把整个文件夹复制进去
+```
+
+### 7.3 复制软链接（①）
+
+```bash
+# 拷贝软链接时保持链接属性（不加 -d 会复制源文件本身）
+cp -d link1 link2
+```
+
+---
+
+## 八、mv：移动
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 38
+
+## mv：移动与重命名（①）
+
+既然你要部署 vLLM，文件组织就是基本功。模型权重、配置文件、日志脚本，全靠 `mv` 来归位。
+
+**移动文件/文件夹（①）**
+
+```bash
+# 把文件移动到另一个文件夹
+mv hello.py ./backup/
+
+# 把文件夹移动到另一个位置
+mv myproject ./archive/
+
+# 用通配符批量移动（把所有 data_ 开头的文件移到 data 文件夹）
+mv data_* ./data/
+```
+
+**重命名（①）**
+
+```bash
+# 把 a.txt 改名为 b.txt（本质是同一目录下的移动）
+mv a.txt b.txt
+
+# 移动的同时改名
+mv hello.py ./backup/hello_v2.py
+```
+
+**安全选项（①）**
+
+```bash
+# 覆盖前询问（推荐日常使用）
+mv -i old.txt new.txt
+
+# 强制覆盖，不提示（慎用）
+mv -f old.txt new.txt
+```
+
+## rm：删除文件与目录（①）
+
+`rm` = **R**e**m**ove，删除文件或文件夹。**此命令不可逆，请谨慎使用！**（①）
+
+```bash
+# 删除单个文件
+rm hello.py
+
+# 删除多个文件
+rm file1.txt file2.txt
+
+# 删除文件名以 - 开头的文件（用 -- 告诉 rm 后面是文件名而非选项）
+rm -- -file.txt
+
+# 删除文件夹（必须加 -r，递归删除其中所有内容）
+rm -r myproject/
+
+# 只删除空文件夹
+rm -d empty_dir/
+
+# 强制删除，不提示确认
+rm -f hello.py
+
+# 强制递归删除文件夹及其中所有内容（⚠️ 极度危险，
+
+## 块 39
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+你在RTX 3090上做vLLM部署，项目结构是第一步。按下面步骤操作：
+
+```bash
+# 1. 回到家目录
+cd ~
+
+# 2. 创建项目根目录
+mkdir llm-learning
+
+# 3. 进入项目目录
+cd llm-learning
+
+# 4. 创建三个子目录
+mkdir data models scripts
+
+# 5. 创建空文件
+touch scripts/train.py
+
+# 6. 验证结构
+ls -R
+```
+
+预期输出：
+```bash
+llm-learning/
+├── data
+├── models
+
+## 块 40
+
+## 场景 2：复制与整理实验文件
+
+你正在为 vLLM 部署准备实验数据，先把 `~/Downloads/` 下的三个 CSV 文件整理到 `~/llm-learning/data/` 中。
+
+**操作步骤：**
+
+1. **确认源文件存在**：用 `ls ~/Downloads/*.csv` 查看下载目录下所有 CSV 文件。
+2. **复制文件**：`cp ~/Downloads/train.csv ~/Downloads/test.csv ~/Downloads/dev.csv ~/llm-learning/data/` — 将三个文件一次性复制到目标目录。
+3. **验证结果**：用 `ls ~/llm-learning/data/` 确认文件已就位。
+
+**本块学习检查**：完成
+
+## 块 41
+
+### 场景 3：清理临时文件（针对你的 vLLM 部署目标）
+
+在 `~/llm-learning/` 下误建了 `temp` 空文件夹和 `old.txt` 文件，现在要清理掉。这个场景对应你部署 vLLM 时的常见操作：**下载的临时权重、测试脚本、缓存文件，都需要用 `rm` 精准清理，避免误删模型文件**。
+
+```bash
+# 1. 先确认要删的内容（好习惯！）
+ls ~/llm-learning/temp ~/llm-learning/old.txt
+
+# 2. 删除文件
+rm ~/llm-learning/old.txt
+
+# 3. 删除空文件夹（rm -d 仅能删除空目录）
+rm -d ~/llm-learning/temp
+
+# 4. 验证
+ls ~/llm-learning/
+```
+
+---
+
+### 新手避坑指南（重点看 1、5、6）
+
+**1. 区分文件和文件夹**：`ls -l` 第一列是 `d` 表示文件夹，是 `-` 表示文件。对文件夹操作别忘了 `-r`（如 `cp -r`、`rm -r`）。**部署 vLLM 时，模型权重目录是文件夹，必须用 `-r` 才能整体复制或删除。**
+
+**2. 路径写错**：切换目录或复制文件时，路径写错会提示 "No such file or directory"，可先用 `pwd` 和 `ls` 确认当前位置和目录内容。
+
+**3. 路径中包含空格必须用引号包裹**：如果文件夹或文件名包含空格，命令行会把它当成多个参数。务必用双引号包裹：
+
+```bash
+# 错误：mkdir my folder 会创建两个文件夹 my 和 folder
+# 正确：
+mkdir "my folder"
+cd "my folder"
+touch "my file.txt"
+cp "my file.txt" ./backup/
+rm "my file.txt"
+```
+
+**4. 文件名以 `-` 开头时使用 `--`**：Linux 命令中 `-` 开头通常表示选项。如果文件名本身以 `-` 开头，命令会误把文件名当选项解析。用 `--` 告诉命令"后面都是文件名，不是选项"。**`--` 是通用约定，
+
+## 块 42
+
+**本块学习检查**：完成本块后，用自己的话说明环境变量与“vLLM部署”这个目标的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+## 一、环境变量是什么？
+
+环境变量是操作系统或程序运行时使用的**动态键值对**，用来传递配置信息。你可以把它理解为操作系统的“备忘录”——系统启动时加载，所有程序都能读到，并据此调整行为。
+
+**常见例子**：
+
+| 变量名 | 作用 |
+|---|---|
+| `PATH` | 告诉系统去哪找可执行程序（如输入`python3`，系统靠PATH找到它） |
+| `HOME` | 当前用户家目录路径 |
+| `USER` | 当前登录用户名 |
+| `SHELL` | 当前Shell路径（如`/bin/bash`） |
+| `LANG` | 系统语言和字符编码 |
+| `PWD` | 当前工作目录（随`cd`自动更新） |
+| `EDITOR` | 默认文本编辑器 |
+
+## 为什么需要环境变量？
+
+1. **控制程序行为**：如通过`JAVA_HOME`指定JDK路径，让依赖Java的程序知道去哪找。
+2. **简化配置**：避免每次运行都手动输入长路径。
+3. **跨进程通信**：子进程自动继承父进程的环境变量，实现配置无缝传递。
+
+## 二、分类：临时 vs 永久
+
+环境变量按生命周期分两类，理解这个区别是后续操作的基础。
+
+---
+
+**结合你的场景**：你正在学vLLM部署，RTX 3090 24
+
+## 块 43
+
+**临时变量：当前终端会话有效**
+
+临时变量只在当前终端或 SSH 会话中存活，关闭窗口或断开连接后自动消失，适合快速测试。
+
+```bash
+# 设置临时变量
+export MY_VAR="hello_linux"
+
+# 查看值
+echo $MY_VAR
+# 输出：hello_linux
+
+# 删除变量
+unset MY_VAR
+
+# 再查看
+echo $MY_VAR
+# 输出：（空）
+```
+
+**`export` 的作用**：不加 `export`，变量仅当前 Shell 可见，子进程（如你启动的程序）读不到；加了 `export`，子进程可继承。设置环境变量时通常都加 `export`。
+
+**本块学习检查**：完成
+
+## 块 44
+
+## 永久变量：写入配置文件，持久生效
+
+临时变量关掉终端就没了，要让它每次打开都在，就得写进**配置文件**。
+
+| 级别 | 配置文件 | 影响范围 | 是否需要 sudo |
+|---|---|---|---|
+| **用户级（推荐）** | `~/.bashrc` | 仅当前用户 | 否 |
+| **用户级** | `~/.bash_profile` 或 `~/.profile` | 仅当前用户（登录时生效） | 否 |
+| **系统级** | `/etc/profile` 等 | 所有用户 | 是 |
+
+**选哪个？** 日常开发优先用 `~/.bashrc`，只影响你自己，改错也不影响系统。系统级配置要 `sudo` 且影响所有人，日常不建议碰。
+
+结合你的 RTX
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 45
+
+你的目标是用 vLLM 在 RTX 3090 上做部署，而 vLLM 启动时经常要指定模型路径、缓存目录等环境变量。如果每次都在命令行里临时敲，既容易出错，又拖慢你调试并行策略的节奏。所以，咱们先把这些变量固化到 `~/.bashrc` 里，一劳永逸。
+
+`~/.bashrc` 是 Bash 的配置文件，**每次打开新的交互式终端时自动加载**。日常开发改环境变量，首选这里。
+
+**操作步骤**：
+
+```bash
+# 1. 用 nano 打开配置文件（上节课学过的命令）
+nano ~/.bashrc
+
+# 2. 滚动到文件末尾，添加一行：
+export MY_VAR="hello_permanent"
+
+# 3. 按 Ctrl + O 保存，Ctrl + X 退出
+
+# 4. 让修改立即生效（不重启终端）
+source ~/.bashrc
+
+# 5. 验证
+echo $MY_VAR
+# 输出：hello_permanent
+```
+
+> **`source` 是什么？** 相当于"重新执行一遍这个配置文件"，让刚才的修改在当前终端立刻生效，不用关掉重开。
+
+> **`~/.bashrc` 的加载限制**
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 46
+
+## 3.2 用户级配置：~/.bash_profile 或 ~/.profile（①）
+
+这两个文件在**登录 Shell** 时生效（如 SSH 远程登录、系统开机登录）。若两者同时存在，系统优先读取 `~/.bash_profile`。日常开发中 `~/.bashrc` 更常用（每开终端即加载），仅在需要“登录时才生效”的特殊场景才用这两个文件。
+
+## 四、环境变量的优先级（①）
+
+同一变量多处定义时，优先级从高到低：**临时变量**（当前终端 `export`）> **用户级配置**（`~/.bashrc` 等）> **系统级配置**（`/etc/profile` 等）。即临时设置覆盖配置文件设置。
+
+## 五、核心环境变量详解（①）
+
+结合你的 RTX 3090 与 vLLM 部署目标，理解优先级很关键：若你在 `~/.bashrc` 设好 PATH，又在终端临时 `export` 覆盖，当前终端以
+
+## 块 47
+
+## 5.1 PATH：命令的"搜索路径"
+
+PATH 是最重要的环境变量，没有之一。它定义了系统**查找可执行文件**的目录列表。对你做 vLLM 部署来说，理解 PATH 意味着你知道 `vllm` 命令、`python3` 命令到底从哪里被找到并执行——这直接关系到你能不能顺利启动推理服务。
+
+### 查看 PATH
+
+```bash
+echo $PATH
+```
+
+输出类似这样（多个路径用冒号 `:` 分隔）：
+
+```bash
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+
+当你在终端输入 `python3` 时，系统会**从左到右**依次在这些目录里找名为 `python3` 的可执行文件，找到了就执行，找不到就提示 `command not found`。
+
+### 查看命令具体位置
+
+```bash
+which python3
+# 输出：/usr/bin/python3
+
+which conda
+# 输出：/home/zhangsan/miniconda3/bin/conda
+```
+
+`which` 命令能告诉你某个命令到底是从 PATH 的哪个目录里找到的。部署 vLLM 时，如果你发现 `which vllm` 指向了意料之外的路径，就知道是 PATH 顺序在起作用。
+
+### 修改 PATH
+
+**追加路径**（添加到末尾，优先级较低）：
+
+```bash
+export PATH=$PATH:/new/path
+```
+
+**前置路径**（添加到开头，优先级更高，系统会先搜这里）：
+
+```bash
+export PATH=/new/path:$PATH
+```
+
+> **安全提示**：不要把 `.`（当前目录）加入 PATH。如果你在某个目录里下载了一个名为 `ls` 的恶意脚本，而当前目录又在 PATH 里，那么你执行 `ls` 时可能运行的是恶意脚本而非真正的系统命令。
+>
+> **避免重复添加**：
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 48
+
+**LD_LIBRARY_PATH：运行时动态库路径**
+
+你在部署 vLLM 时，CUDA 和 PyTorch 的 `.so` 文件常不在系统默认路径（`/usr/lib`、`/lib`）里。`LD_LIBRARY_PATH` 就是告诉系统**运行时**去哪里额外找这些动态库。
+
+**查看当前值**：
+```bash
+echo $LD_LIBRARY_PATH
+```
+
+**临时添加 CUDA 动态库路径**（当前终端生效）：
+```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
+```
+
+**典型场景**：你编译的程序依赖某个 `.so`，但它不在默认路径。把该目录加入 `LD_LIBRARY_PATH`，程序就能正常运行
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 49
+
+## 5.3 LIBRARY_PATH：编译时库文件路径
+
+`LIBRARY_PATH` 指定编译器（如 `gcc`）在**编译阶段**查找库文件的路径，影响静态库（`.a`）和动态库（`.so`）的链接。配置方式：
+
+```bash
+export LIBRARY_PATH=$LIBRARY_PATH:/path/to/your/libraries
+```
+
+**三者区别总结**：
+
+| 变量名 | 作用阶段 | 查找目标 | 典型用途 |
+|---|---|---|---|
+| `PATH` | 执行命令时 | 可执行文件 | 让命令在任何位置都能运行 |
+| `LD_LIBRARY_PATH` | 程序运行时 | 动态链接库（`.so`） | 运行依赖自定义动态库的程序 |
+| `LIBRARY_PATH` | 编译链接时 | 静态库/动态库 | 编译时链接第三方库 |
+
+> **对大模型开发者的建议**：PATH 和 LD_LIBRARY_PATH 是你后续最常打交道的两个变量。安装 Miniconda、CUDA、PyTorch 时，都需要正确配置它们。
+
+---
+
+## 六、实战：配置 CUDA 环境变量
+
+CUDA 是
+
+## 块 50
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+你的RTX 3090要跑vLLM，CUDA环境变量是前提——vLLM依赖PyTorch的CUDA支持。本块只做一件事：确认系统能否找到CUDA工具。
+
+**第一步：检查现状**
+
+```bash
+echo $PATH | grep cuda
+echo $LD_LIBRARY_PATH | grep cuda
+```
+
+有输出（如`/usr/local/cuda/bin`）→ 已配置，跳过下一步。无输出 → 继续。
+
+**第二步：写入配置**
+
+```bash
+nano ~/.bashrc
+```
+
+文件末尾追加：
+
+```bash
+# CUDA 环境变量配置
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+```
+
+> 注意：`/usr/local/cuda`是默认路径，装别处就替换成实际路径。
+
+**第三步：生效并验证**
+
+```bash
+source ~/.bashrc
+echo $PATH | grep cuda
+nvcc --version
+```
+
+`nvcc --version`能输出版本号
+
+## 块 51
+
+### 7.1 查看所有环境变量
+
+先快速摸清系统里有哪些环境变量，用 `printenv` 或 `env` 即可。两者输出类似，`env` 更详细些。这是排查问题的起点。
+
+### 7.2 查看特定变量
+
+想看某个变量（比如 `PATH`）的具体值，用 `echo $PATH` 或 `printenv PATH`。若想确认它是否被导出（export），用 `declare -p PATH` 查看定义细节。
+
+### 7.3 测试变量是否生效
+
+假设你在 `~/.bashrc` 里设置了 `export MY_VAR="hello"`，执行 `source ~/.bashrc` 让配置立即生效，然后 `echo $MY_VAR` 应输出 `hello`。这是验证配置是否被正确加载的常用方法。
+
+### 7.4 追踪变量来源
+
+如果
+
+## 块 52
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+### 8.1 变量未生效（①）
+
+**可能原因**：
+- 修改了配置文件但没有 `source` 或重启终端
+- 配置文件有语法错误（比如少写了 `export`）
+- 变量在其他地方被覆盖了
+- 所用终端或 IDE 没有加载 `~/.bashrc`（见 3.1 节说明）
+
+**排查步骤**：
+
+```bash
+# 1. 确认配置文件语法正确（将 PATH 替换为你的变量名）
+cat ~/.bashrc | grep 'PATH'
+
+# 2. 重新加载
+source ~/.bashrc
+
+# 3. 检查是否有重复定义
+grep "PATH=" ~/.bashrc
+```
+
+---
+
+**实践任务**（基于你的RTX 309
+
+## 块 53
+
+## 9.1 脚本中临时修改变量
+
+在部署 vLLM 时，你经常需要临时调整环境变量（比如控制日志级别或临时测试某个参数）。用 `export` 可以在脚本内设置变量：
+
+```bash
+#!/bin/bash
+export TEMP_VAR=123
+# 仅在脚本执行期间生效，脚本结束后变量消失
+```
+
+**关键点**：这个变量只在当前 Shell 会话中存活。脚本跑完，变量自动消失，不会污染你的终端环境——这对反复调试 vLLM 启动参数很实用。
+
+## 9.2 用 env 命令指定单次运行变量
+
+如果你只想让某个变量影响**一次**命令执行，用 `env` 更干净：
+
+```bash
+env MY_VAR=hello python3 my_script.py
+# MY_VAR 仅在这次 python3 运行时有效
+```
+
+**对比**：`export` 影响后续所有命令，`env` 只影响紧跟的那一条。在 RTX 3090 上调试 vLLM 时，比如临时指定 `CUDA_VISIBLE_DEVICES=0` 只跑一次推理测试，用 `env` 最合适。
+
+## 9.3 用 .env 文件分组管理变量
+
+vLLM 部署通常涉及多个变量（模型路径、端口、显存分配等）。把它们集中到一个 `.env` 文件：
+
+```bash
+# 创建 ~/.env 文件
+nano ~/.env
+```
+
+内容示例：
+
+```bash
+export PROJECT_HOME="$HOME/
+
+## 块 54
+
+**本块学习检查**  
+完成本块后，用自己的话说明：环境变量配置（如自定义变量和PATH）与你的vLLM部署目标有何关联？若遇到无法解释的术语（如`export`、`source`），记录下来再提问。
+
+---
+
+**场景 1：创建并验证自定义变量**  
+你正在为vLLM部署准备环境，先掌握变量配置的基础操作。以下命令在终端中依次执行：
+
+```bash
+# 1. 设置一个临时变量
+export MY_NAME="zhangsan"
+
+# 2. 验证
+echo $MY_NAME
+
+# 3. 写入 ~/.bashrc 使其永久生效
+echo 'export MY_NAME="zhangsan"' >> ~/.bashrc
+
+# 4. 重新加载并验证
+source ~/.bashrc
+echo $MY_NAME
+```
+
+**要点**：`export`定义变量，`echo $变量名`查看值；写入`~/.bashrc`后需`source`重载，确保新终端也生效。
+
+**场景 2：为自定义脚本目录配置 PATH**  
+假设你在`~/scripts`存放自写工具
+
+## 块 55
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+你的RTX 3090跑vLLM前，CUDA环境变量是必经之路。即使还没装CUDA，也能先练熟配置手法，等真机到位直接上手。
+
+**操作步骤**（在终端执行）：
+
+1. 打开配置文件：`nano ~/.bashrc`
+2. 在文件末尾追加两行（假设CUDA装在`/usr/local/cuda`）：
+   ```
+   export PATH=/usr/local/cuda/bin:$PATH
+   export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBR
+
+## 块 56
+
+## 系统级配置文件（①）——面向vLLM部署
+
+你已有PyTorch和Transformer基础，目标是用RTX 3090跑vLLM部署。系统级配置虽不常用，但公共服务器上部署服务时，所有用户共享环境，理解它能避免权限坑。
+
+### A.1 /etc/environment（①）
+
+**特点**：无需`export`，直接`KEY=value`；支持变量展开（如`$PATH`），但不支持命令替换和通配符。
+
+```bash
+sudo nano /etc/environment
+# 添加：
+JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+# 保存后需重启或重新登录生效
+```
+
+### A.2 /etc/profile（①）
+
+**特点**：全局Bash配置，需`export`。
+
+```bash
+sudo nano /etc/profile
+# 添加：
+export PATH=$PATH:/usr/local/custom/bin
+# source使当前会话生效，或重启
+source /etc/profile
+```
+
+**本块学习检查**：完成本块后，用自己的
+
+## 块 57
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+你在 RTX 3090 上跑 vLLM 部署时，终端用的 Shell 决定了环境变量（如 CUDA 路径）写进哪个文件。本块只讲一件事：**不同 Shell 的配置文件在哪**。
+
+- **Bash**（最常见）：日常终端改 `~/.bashrc`；SSH 登录改 `~/.bash_profile`。
+- **Zsh**：改 `~/.zshrc`，覆盖所有交互式会话。
+- **Fish**：改 `~/.config/fish/config.fish`，覆盖所有会话。
+
+**怎么确认自己的
+
+## 块 58
+
+## 附录 C：清理 PATH 中的重复项（④）
+
+多次修改 PATH 后，重复路径会累积，干扰命令解析。用下面这行命令去重：
+
+```bash
+export PATH=$(echo $PATH | awk -v RS=: '!a[$0]++' | paste -sd: -)
+```
+
+**拆解**：`echo $PATH` 输出当前 PATH，`awk` 按冒号分割并去重，`paste` 重新拼接成冒号分隔的路径串，最后 `export` 写回。执行后可用 `echo $PATH` 验证重复项已消失。
+
+> 注意：此命令只对当前 Shell 生效，如需永久生效，请将其加入 `~/.bashrc`。
+
+## 附录 D：按环境加载不同配置（④）
+
+在 `~/.bashrc` 中添加条件判断，让不同环境加载不同配置：
+
+```bash
+if [ "$ENVIRONMENT" = "production" ]; then
+    source ~/.env.prod
+else
+    source ~/.env.dev
+fi
+```
+
+这样，设置 `ENVIRONMENT=production` 时加载生产配置，否则加载开发配置。适合区分训练与推理环境。
+
+## 附录 E：脚本调试模式（④）
+
+排查脚本问题时，用详细模式运行，会打印每行执行前的变量值：
+
+```bash
+bash -x your_script.sh
+```
+
+或在当前 Shell 中临时开启追踪：
+
+```bash
+set -o xtrace
+source ~/.bashrc
+set +o xtrace
+```
+
+`set -o xtrace` 开启追踪，`set +o xtrace` 关闭。调试完务必关闭。
+
+---
+
+## 总结与后续路线
+
+你已掌握环境变量配置的核心技能：概念、临时/永久变量、`source`、PATH 相关操作、CUDA 配置流程、调试方法
 
 ## 测评题目
 
-### Q-KB0806-003
-以下哪种技术不是用于推理加速的？
+### Q-KB0100-003
+执行以下命令确认系统发行版信息：
+```bash
+cat /etc/os-release
+```
 
-### Q-KB0806-004
-FlashAttention 的核心思想是通过分块（Tiling）和重计算（Recomputation）来减少HBM（显存）的读写次数，从而加速并降低显存占用。（ ）
+### Q-KB0100-002
+执行以下命令验证当前用户和主机名：
+```bash
+whoami && hostname
+```
 
-### Q-KB0805-003
-以下哪种位置编码是**可学习**的（Learnable）？
+### Q-KB0101-008
+请写出一条命令，查找 `/var/log` 目录下所有大于100MB的文件，并按大小排序显示。
 
-### Q-KB0806-001
-在自回归生成过程中，KV Cache的主要作用是？
+### Q-KB0101-002
+命令 `ls -la` 中，`-l` 的作用是________，`-a` 的作用是________。
 
-### Q-KB0805-001
-为什么Transformer需要引入位置编码（Positional Encoding）？
+### Q-KB0102-003
+以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？
 
-### Q-KB08-ST0807-002
-推理时将模型切换到评估模式，应调用 `model.________()`。
+### Q-KB0102-001
+临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。
 
-### Q-KB0805-004
-RoPE（旋转位置编码）通过将Query和Key向量进行旋转操作，使得注意力分数仅依赖于Token之间的**相对距离**。（ ）
+### Q-KB0100-001
+请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：
+```bash
+uname -a
+```
 
-### Q-KB08-ST0807-003
-前向实验中 `input_ids` 通常表示？
+### Q-KB0103-005
+在conda环境中使用 `pip install` 安装的包，可以用 `conda list` 查看到吗？反过来呢？

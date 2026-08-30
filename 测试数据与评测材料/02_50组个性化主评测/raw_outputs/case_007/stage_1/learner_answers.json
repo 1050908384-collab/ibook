@@ -1,65 +1,65 @@
 [
   {
-    "question_id": "Q-KB0104-001",
+    "question_id": "Q-KB04-ST0400-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-001",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+    "correct_answer": "NVIDIA 驱动 ||| 显卡驱动",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0104-004",
-    "submitted_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
-    "is_correct": true,
-    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0103-002",
-    "submitted_answer": "`conda activate myenv`；`conda deactivate`",
-    "is_correct": true,
-    "correct_answer": "`conda activate myenv`；`conda deactivate`",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0102-002",
-    "submitted_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
-    "is_correct": true,
-    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0103-003",
-    "submitted_answer": "conda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml",
-    "is_correct": true,
-    "correct_answer": "conda create -n llm_train python=3.10 -y\nconda activate llm_train\npip install torch\npip list\nconda env export > environment.yml",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0101-006",
+    "question_id": "Q-KB0404-005",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "mkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la",
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0101-005",
+    "question_id": "Q-KB0406-003",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "mkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/",
+    "correct_answer": "```python\nloss.backward()\noptimizer.step()\n```",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0104-005",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits",
+    "question_id": "Q-KB0405-003",
+    "submitted_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-001",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0407-003",
+    "submitted_answer": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "is_correct": true,
+    "correct_answer": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-001",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

@@ -40,8 +40,6 @@ type GenState = {
   /** 当前文案（"正在生成阶段中..." / "正在生成学习包中..."） */
   message: string;
   errorMsg: string | null;
-  /** 进度条 0-100，细动画反馈 */
-  progress: number;
   review: ReviewProgress | null;
   events: GenerationEvent[];
 };
@@ -142,10 +140,9 @@ export function GenerationProgressProvider({ children }: { children: React.React
     stage: null,
     message: '',
     errorMsg: null,
-    progress: 0,
-  review: null,
-  events: [],
-});
+    review: null,
+    events: [],
+  });
 
   const close = useCallback(() => {
     setState((s) => {
@@ -161,7 +158,6 @@ export function GenerationProgressProvider({ children }: { children: React.React
       phase: 'error',
       errorMsg: message || '生成失败',
       message: message || '生成失败，请重试',
-      progress: s.progress,
     }));
   }, []);
 
@@ -178,7 +174,6 @@ export function GenerationProgressProvider({ children }: { children: React.React
       stage: normalizeStage(initialStage) || null,
       message: action === 'first' ? '正在规划学习阶段，请稍等…' : '正在生成下一阶段，请稍等…',
       errorMsg: null,
-      progress: 15,
       review: null,
       events: [],
     });
@@ -225,7 +220,6 @@ export function GenerationProgressProvider({ children }: { children: React.React
         phase: 'package',
         stage: stagePreview!,
         message: '正在生成学习包中，请稍等…',
-        progress: 52,
       }));
       if (onStageReady) await Promise.resolve(onStageReady(stagePreview!));
 
@@ -280,7 +274,6 @@ export function GenerationProgressProvider({ children }: { children: React.React
         ...s,
         phase: 'success',
         message: '生成完成，即将进入学习…',
-        progress: 100,
         stage: normalizeStage(stageResponse?.stage) || s.stage,
         review: startResponse?.review_summary
           ? { ...startResponse.review_summary, timeline: startResponse.review_timeline || [] }
@@ -306,7 +299,6 @@ export function GenerationProgressProvider({ children }: { children: React.React
         message: action === 'first'
           ? '生成学习阶段失败，请重试'
           : (s.phase === 'package' ? '学习包生成失败，请重试' : '阶段规划失败，请重试'),
-        progress: s.progress,
       }));
       if (onError) onError(caught);
     } finally {
@@ -458,18 +450,11 @@ function GenerationProgressModal({
           </section>
         )}
 
-        {/* ===== 状态文案 + 进度条 ===== */}
+        {/* ===== 当前状态文案 ===== */}
         <div className="gen-progress-status-row">
           <p className="gen-progress-message">
-            {state.phase === 'error' ? state.message : state.message}
+            {state.message}
           </p>
-          <span className="gen-progress-percent">{Math.min(100, Math.max(0, Math.round(state.progress)))}%</span>
-        </div>
-        <div className="gen-progress-bar" aria-hidden>
-          <div
-            className="gen-progress-bar-fill"
-            style={{ width: `${Math.min(100, Math.max(0, state.progress))}%` }}
-          />
         </div>
 
         {state.events.length > 0 && (

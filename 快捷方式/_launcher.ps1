@@ -43,6 +43,28 @@ Write-Host "  Frontend : http://localhost:$FrontendPort"
 if ($PythonExe) { Write-Host "  Python   : $PythonExe" } else { Write-Host "  Python   : [NOT FOUND]" -ForegroundColor Yellow }
 Write-Host ""
 
+
+# ---------- 依赖完整性自检（评委复现第一步） ----------
+$DepPyCheck = @('pydantic_settings', 'sqlalchemy', 'fastapi', 'chromadb')
+$MissingDeps = @()
+foreach ($mod in $DepPyCheck) {
+    $pyCode = "import sys`ntry:`n    import $mod`n    sys.stdout.write('OK')`nexcept Exception:`n    sys.stdout.write('MISSING')`n"
+    $out = (& $PythonExe -c $pyCode 2>$null | Out-String).Trim()
+    if ($out -ne 'OK') { $MissingDeps += $mod }
+}
+if ($MissingDeps.Count -gt 0) {
+    Write-Host ""
+    Write-Host "[DEP] 发现缺失依赖：$($MissingDeps -join ', ')，正在为当前 Python 自动安装 requirements.txt ..." -ForegroundColor Yellow
+    $ReqFile = Join-Path $ProjectDir "requirements.txt"
+    & $PythonExe -m pip install --disable-pip-version-check -r $ReqFile
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[DEP] pip install 返回非零码，请手动执行：& $PythonExe -m pip install -r `"$ReqFile`"" -ForegroundColor Red
+        Read-Host "按回车键继续（或 Ctrl+C 退出）" | Out-Null
+    } else {
+        Write-Host "[DEP] requirements.txt 安装完成" -ForegroundColor Green
+    }
+}
+Write-Host ""
 # ---------- Helpers ----------
 function Test-PortListening([int]$Port) {
     try {
@@ -130,6 +152,38 @@ if (-not (Test-Path $FrontendEnv)) {
         Copy-Item $envExample $FrontendEnv -Force
         Write-Host "  Created frontend\.env.local from .env.example" -ForegroundColor Green
     }
+}
+
+# ---------- 0.5) Always sync seed-derived data (fast, idempotent) ----------
+# 修改种子文件（knowledge_subtopics.json / knowledge_graph_relations.json）
+# 后，现有 sqlite 表和 graph pickle 会静默漂移。这两步脚本每次启动都
+# 跑一遍——INSERT ON CONFLICT DO UPDATE 安全幂等，只改种子派生数据，
+# 永不触碰 user_subtopic_status / sessions / attempts 等学习记录。总耗时 ~2s。
+if ($PythonExe) {
+    $SeedScriptsDir = Join-Path $ProjectDir "scripts"
+    $SeedBackendDir = Join-Path $ProjectDir "backend"
+    $seedSyncOk = $true
+    foreach ($seedScript in @(
+        @{name="insert_knowledge_data";           desc="Seeds -> sqlite tables (blocks/subtopics/questions/resources)"},
+        @{name="import_local_learning_materials"; desc="Local .md lessons -> knowledge_docs"},
+        @{name="build_knowledge_graph";          desc="Seeds -> graph pickle (nodes/edges/closure)"}
+    )) {
+        $seedPath = Join-Path $SeedScriptsDir "$($seedScript.name).py"
+        if (-not (Test-Path $seedPath)) { continue }
+        $seedOut = Join-Path $env:TEMP "aiat_seed_$($seedScript.name)_out.log"
+        $seedErr = Join-Path $env:TEMP "aiat_seed_$($seedScript.name)_err.log"
+        Push-Location $SeedBackendDir
+        try {
+            & $PythonExe $seedPath 1> $seedOut 2> $seedErr
+            $rc = $LASTEXITCODE
+        } finally { Pop-Location }
+        if ($rc -ne 0) {
+            Write-Host "  [WARN] $($seedScript.desc) failed (exit $rc) - continuing with existing data." -ForegroundColor Yellow
+            $seedSyncOk = $false
+        }
+    }
+    if ($seedSyncOk) { Write-Host "  Seed data synced (sqlite + graph)." -ForegroundColor DarkGreen }
+    Write-Host ""
 }
 
 # ---------- 1) Ollama (按需启用：只有当 DeepSeek 未配置或需要首次构建嵌入索引时才要求) ----------

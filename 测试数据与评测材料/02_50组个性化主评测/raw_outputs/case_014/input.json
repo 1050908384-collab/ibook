@@ -3,7 +3,7 @@
   "primary_category": "已掌握知识识别与跳过",
   "tags": "已掌握知识识别与跳过|DeepSpeed分布式训练|工程实操型|双卡RTX 4090 48GB",
   "background": "深度学习全栈，想学分布式训练",
-  "existing_skills": "KB-04|KB-08|KB-11|KB-13",
+  "existing_skills": "深度学习框架PyTorch基础、Transformer架构、HuggingFace生态工具链、PyTorch进阶训练技巧",
   "learning_goal": "DeepSpeed分布式训练",
   "daily_hours": "3.0",
   "learning_style": "工程实操型",
@@ -14,5 +14,5 @@
   "expected_strategy": "advance",
   "run_stage_2": "False",
   "answer_script_stage_1": "{\"answer_behavior\":\"high\",\"target_accuracy_range\":[0.8,1.0],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"advance\"}",
-  "user_input_text": "我的学习背景：深度学习全栈，想学分布式训练\n已掌握技能：KB-04|KB-08|KB-11|KB-13\n我的学习目标：DeepSpeed分布式训练\n我每天能学：3.0小时\n我喜欢怎么学：工程实操型\n我的硬件条件：双卡RTX 4090 48GB"
+  "user_input_text": "我的学习背景：深度学习全栈，想学分布式训练\n我已掌握的技能：深度学习框架PyTorch基础、Transformer架构、HuggingFace生态工具链、PyTorch进阶训练技巧\n我的学习目标：DeepSpeed分布式训练\n我每天能学：3.0小时\n我喜欢怎么学：工程实操型\n我的硬件条件：双卡RTX 4090 48GB"
 }

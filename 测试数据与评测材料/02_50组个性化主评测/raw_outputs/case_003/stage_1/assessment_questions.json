@@ -1,121 +1,80 @@
 [
   {
-    "question_id": "Q-KB11-ST1100-001",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-00",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "Hugging Face 数据集加载和处理常使用的库名称是________。",
-    "options": [],
-    "correct_answer": "datasets",
-    "hint": "datasets 提供 Dataset 与数据处理接口。",
-    "explanation": "datasets 提供 Dataset 与数据处理接口。"
-  },
-  {
-    "question_id": "Q-KB11-ST1100-003",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-00",
-    "difficulty": "中级",
-    "question_type": "single_choice",
-    "question_text": "以下哪个库最直接用于训练配置中的分布式加速？",
-    "options": [
-      {
-        "key": "A",
-        "text": "accelerate"
-      },
-      {
-        "key": "B",
-        "text": "flask"
-      },
-      {
-        "key": "C",
-        "text": "requests"
-      },
-      {
-        "key": "D",
-        "text": "sqlite3"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "accelerate 用于简化设备与分布式训练配置。",
-    "explanation": "accelerate 用于简化设备与分布式训练配置。"
-  },
-  {
-    "question_id": "Q-KB1101-001",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-01",
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
     "difficulty": "初级",
-    "question_type": "short_answer",
-    "question_text": "请写出使用 `AutoModelForCausalLM` 加载 `gpt2` 模型的代码。",
-    "options": [],
-    "correct_answer": "```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n```",
-    "hint": "```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n```",
-    "explanation": "```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n```"
-  },
-  {
-    "question_id": "Q-KB1101-004",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-01",
-    "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "`AutoModelForCausalLM` 和 `AutoModelForMaskedLM` 的区别是？",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
     "options": [
       {
         "key": "A",
-        "text": "前者用于自回归生成（如GPT），后者用于掩码语言模型（如BERT）"
+        "text": "torch.cuda.is_available()"
       },
       {
         "key": "B",
-        "text": "前者用于翻译，后者用于分类"
+        "text": "torch.manual_seed(0)"
       },
       {
         "key": "C",
-        "text": "两者完全相同"
+        "text": "torch.save()"
       },
       {
         "key": "D",
-        "text": "前者参数量更小"
+        "text": "torch.no_grad()"
       }
     ],
     "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "options": [],
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
+  },
+  {
+    "question_id": "Q-KB0404-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`DataLoader` 中，`batch_size=32` 表示________；`shuffle=True` 表示________。",
+    "options": [],
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
     "hint": null,
     "explanation": ""
   },
   {
-    "question_id": "Q-KB11-ST1102-001",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-02",
-    "difficulty": "中级",
-    "question_type": "fill_blank",
-    "question_text": "datasets 的 `map()` 常用于对数据集样本执行批量________。",
-    "options": [],
-    "correct_answer": "转换 ||| 处理 ||| 映射",
-    "hint": "map 会将给定函数应用到数据集样本。",
-    "explanation": "map 会将给定函数应用到数据集样本。"
-  },
-  {
-    "question_id": "Q-KB1103-004",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
-    "difficulty": "中级",
+    "question_id": "Q-KB0403-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "在 `SFTConfig` 中，`max_seq_length` 参数的作用是？",
+    "question_text": "以下哪个是PyTorch中定义**线性层**（全连接层）的类？",
     "options": [
       {
         "key": "A",
-        "text": "设置模型的最大层数"
+        "text": "`nn.Conv2d`"
       },
       {
         "key": "B",
-        "text": "设置训练时序列的最大长度，超过则截断"
+        "text": "`nn.Linear`"
       },
       {
         "key": "C",
-        "text": "设置学习率"
+        "text": "`nn.ReLU`"
       },
       {
         "key": "D",
-        "text": "设置LoRA的秩"
+        "text": "`nn.Softmax`"
       }
     ],
     "correct_answer": "B",
@@ -123,26 +82,67 @@
     "explanation": ""
   },
   {
-    "question_id": "Q-KB1101-003",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-01",
-    "difficulty": "中级",
+    "question_id": "Q-KB0406-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-06",
+    "difficulty": "高级",
     "question_type": "short_answer",
-    "question_text": "请写代码：使用 GPT-2 模型和分词器，对输入文本 `\"Hello, I am\"` 生成接下来的 20 个词（设置 `max_new_tokens=20`），并解码输出。",
+    "question_text": "请写一个完整的训练循环，包含：\n- 模型训练模式\n- 损失计算\n- 反向传播\n- 每100个batch打印一次损失",
     "options": [],
-    "correct_answer": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```",
-    "hint": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```",
-    "explanation": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```"
+    "correct_answer": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "hint": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "explanation": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---"
   },
   {
-    "question_id": "Q-KB1103-002",
-    "block_id": "KB-11",
-    "subtopic_id": "KBS-11-03",
-    "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "`SFTTrainer` 继承自 HuggingFace 的 `Trainer`，它额外支持直接传入________格式的原始数据集，并自动完成分词和格式化。",
+    "question_id": "Q-KB0404-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `DataLoader` 加载 `MyDataset`，批次大小为16，使用4个子进程，并在每个epoch开始时打乱数据。",
     "options": [],
-    "correct_answer": "对话（Messages / Chat）",
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "hint": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "explanation": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个简单的神经网络类 `SimpleNet`，包含：\n- 一个输入层到隐藏层的线性层（10 -> 20）\n- ReLU激活\n- 隐藏层到输出层的线性层（20 -> 1）",
+    "options": [],
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "hint": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "explanation": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```"
+  },
+  {
+    "question_id": "Q-KB0402-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-02",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "PyTorch中，用于**反向传播**计算梯度的方法是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`.backward()`"
+      },
+      {
+        "key": "B",
+        "text": "`.forward()`"
+      },
+      {
+        "key": "C",
+        "text": "`.grad()`"
+      },
+      {
+        "key": "D",
+        "text": "`.optimize()`"
+      }
+    ],
+    "correct_answer": "A",
     "hint": null,
     "explanation": ""
   }

@@ -23,8 +23,8 @@
 | 条件 | 策略标签 | decision | 说明 |
 |:---|:---|:---|:---|
 | accuracy ≥ 0.85 **且** coverage ≥ 0.90 **且** 所有gaps已掌握 | 结业（finish） | completed | 终止迭代，进入结业报告 |
-| accuracy ≥ 0.80（非全部已掌握） | 进阶（advance） | continue | 推送下一阶段内容 |
-| 0.60 ≤ accuracy < 0.80 | 巩固（reinforce） | repeat | 重新学习当前阶段，补充讲解 |
+| accuracy ≥ 0.70（非全部已掌握） | 进阶（advance） | continue | 推送下一阶段内容 |
+| 0.60 ≤ accuracy < 0.70 | 巩固（reinforce） | repeat | 重新学习当前阶段，补充讲解 |
 | accuracy < 0.60 | 降维（simplify） | repeat | 降低内容难度，简化概念 |
 | 降维连续2轮无效时触发 | 回溯（backtrack） | repeat | 回退到前置知识阶段重新学习 |
 
@@ -98,7 +98,7 @@ StageDecisionInput对象，包含：
 ```json
 {
   "next_strategy": "advance",
-  "reason": "BKT建议next_strategy='reinforce'（P_corrected=0.797∈[0.60,0.80)），但accuracy=0.85≥0.80匹配进阶策略，以策略表结果为准。未触发方向切换，未满足终止条件。",
+  "reason": "BKT建议next_strategy='reinforce'（P_corrected=0.697∈[0.60,0.70)），但accuracy=0.85≥0.70匹配进阶策略，以策略表结果为准。未触发方向切换，未满足终止条件。",
   "should_terminate": false,
   "decision": "continue"
 }
@@ -159,7 +159,7 @@ StageDecisionInput对象，包含：
 
 **处理过程**：
 1. 步骤1：接收BKT建议 `next_strategy="reinforce"`（来自user_model_update的P_corrected=0.797建议）；accuracy=0.85，coverage=0.5（0个已掌握/2个总gap）
-2. 步骤2：查策略表——accuracy≥0.85但coverage=0.5<0.90且非全部已掌握 → 不满足结业条件；accuracy≥0.80 → 匹配"进阶"策略。BKT建议为"reinforce"与策略表结果"advance"冲突，以策略表结果为准
+2. 步骤2：查策略表——accuracy≥0.85但coverage=0.5<0.90且非全部已掌握 → 不满足结业条件；accuracy≥0.70 → 匹配"进阶"策略。BKT建议为"reinforce"与策略表结果"advance"冲突，以策略表结果为准
 3. 步骤3：检查方向切换——iteration_history仅1轮，无降维历史，不触发回溯；检查终止条件——非全部已掌握，iteration_num=1<5，无停滞 → 不终止
 4. 步骤4：输出最终 next_strategy="advance"
 
@@ -167,7 +167,7 @@ StageDecisionInput对象，包含：
 ```json
 {
   "next_strategy": "advance",
-  "reason": "BKT建议next_strategy='reinforce'（P_corrected=0.797∈[0.60,0.80)），但accuracy=0.85≥0.80匹配进阶策略，以策略表结果为准。非全部已掌握（Transformer仍未开始），不满足结业条件。迭代历史仅1轮，未触发方向切换。iteration_num=1<5、无停滞，不满足终止条件。",
+  "reason": "BKT建议next_strategy='reinforce'（P_corrected=0.697∈[0.60,0.70)），但accuracy=0.85≥0.70匹配进阶策略，以策略表结果为准。非全部已掌握（Transformer仍未开始），不满足结业条件。迭代历史仅1轮，未触发方向切换。iteration_num=1<5、无停滞，不满足终止条件。",
   "should_terminate": false,
   "decision": "continue"
 }

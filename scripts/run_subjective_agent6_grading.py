@@ -6,6 +6,17 @@ Use --dry-run to inspect the exact workload.  A network call requires --execute.
 """
 from __future__ import annotations
 
+
+# ---------- 路径设置：python scripts\xxx.py 直接运行时能正确找到 backend / data ----------
+import sys as _sys_py
+from pathlib import Path as _Path_py
+_PROJ_ROOT_ = _Path_py(__file__).resolve().parent.parent
+if str(_PROJ_ROOT_) not in _sys_py.path:
+    _sys_py.path.insert(0, str(_PROJ_ROOT_))
+if str(_PROJ_ROOT_ / "backend") not in _sys_py.path:
+    _sys_py.path.insert(0, str(_PROJ_ROOT_ / "backend"))
+# -------------------------------------------------------------------------------------
+
 import argparse
 import hashlib
 import json

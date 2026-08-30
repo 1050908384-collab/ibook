@@ -1,38 +1,38 @@
 [
   {
-    "question_id": "Q-KB0406-001",
-    "submitted_answer": "B",
+    "question_id": "Q-KB0200-004",
+    "submitted_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "is_correct": true,
-    "correct_answer": "B",
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0406-003",
-    "submitted_answer": "```python\nloss.backward()\noptimizer.step()\n```",
-    "is_correct": true,
-    "correct_answer": "```python\nloss.backward()\noptimizer.step()\n```",
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "24.0",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0407-004",
-    "submitted_answer": "B",
+    "question_id": "Q-KB0204-004",
+    "submitted_answer": "C",
     "is_correct": true,
-    "correct_answer": "B",
+    "correct_answer": "C",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0407-001",
-    "submitted_answer": "B",
+    "question_id": "Q-KB0202-006",
+    "submitted_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
     "is_correct": true,
-    "correct_answer": "B",
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0401-001",
+    "question_id": "Q-KB0203-004",
     "submitted_answer": "A",
     "is_correct": true,
     "correct_answer": "A",
@@ -40,26 +40,26 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0402-003",
-    "submitted_answer": "`tensor(12.)`\n> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
+    "question_id": "Q-KB0205-007",
+    "submitted_answer": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```",
     "is_correct": true,
-    "correct_answer": "`tensor(12.)`\n> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
+    "correct_answer": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0401-003",
-    "submitted_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "question_id": "Q-KB0205-006",
+    "submitted_answer": "C",
     "is_correct": true,
-    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "correct_answer": "C",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0404-001",
-    "submitted_answer": "B",
+    "question_id": "Q-KB0205-005",
+    "submitted_answer": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
     "is_correct": true,
-    "correct_answer": "B",
+    "correct_answer": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

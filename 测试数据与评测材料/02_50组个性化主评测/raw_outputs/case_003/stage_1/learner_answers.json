@@ -1,14 +1,6 @@
 [
   {
-    "question_id": "Q-KB11-ST1100-001",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "datasets",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB11-ST1100-003",
+    "question_id": "Q-KB04-ST0400-003",
     "submitted_answer": "A",
     "is_correct": true,
     "correct_answer": "A",
@@ -16,50 +8,58 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1101-001",
-    "submitted_answer": "```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n```",
+    "question_id": "Q-KB04-ST0400-002",
+    "submitted_answer": "CUDA ||| GPU ||| 显卡",
     "is_correct": true,
-    "correct_answer": "```python\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\nmodel = AutoModelForCausalLM.from_pretrained(\"gpt2\")\n```",
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1101-004",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0404-002",
+    "submitted_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB11-ST1102-001",
-    "submitted_answer": "转换 ||| 处理 ||| 映射",
+    "question_id": "Q-KB0403-001",
+    "submitted_answer": "B",
     "is_correct": true,
-    "correct_answer": "转换 ||| 处理 ||| 映射",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB1103-004",
-    "submitted_answer": "A",
-    "is_correct": false,
     "correct_answer": "B",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1101-003",
-    "submitted_answer": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```",
+    "question_id": "Q-KB0406-005",
+    "submitted_answer": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
     "is_correct": true,
-    "correct_answer": "```python\ninputs = tokenizer(\"Hello, I am\", return_tensors=\"pt\")\noutputs = model.generate(**inputs, max_new_tokens=20)\ngenerated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)\nprint(generated_text)\n```",
+    "correct_answer": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB1103-002",
-    "submitted_answer": "对话（Messages / Chat）",
+    "question_id": "Q-KB0404-005",
+    "submitted_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
     "is_correct": true,
-    "correct_answer": "对话（Messages / Chat）",
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "submitted_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0402-001",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

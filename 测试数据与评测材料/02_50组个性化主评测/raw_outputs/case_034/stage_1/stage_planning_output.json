@@ -1,38 +1,38 @@
 {
-  "stage_id": "ef3f3377-5ca1-5e6a-a78f-5036292bdab6",
+  "stage_id": "99773a37-4e60-521f-bac6-e5865b567d3a",
   "stage_num": 1,
-  "block_id": "KB-08",
-  "block_name": "Transformer架构（Decoder-Only）",
+  "block_id": "KB-07",
+  "block_name": "子词切分与分词器（Tokenizer）",
   "block_ids": [
-    "KB-08"
+    "KB-07"
   ],
-  "subtopic_id": "KBS-08-07",
-  "subtopic_name": "前向传播实验（加载GPT-2验证理解）",
+  "subtopic_id": "KBS-07-00",
+  "subtopic_name": "（环境准备：在Python环境中安装transformers、tokenizers库）",
   "subtopic_ids": [
-    "KBS-08-07"
+    "KBS-07-00"
   ],
   "subtopic_names": [
-    "前向传播实验（加载GPT-2验证理解）"
+    "（环境准备：在Python环境中安装transformers、tokenizers库）"
   ],
   "estimated_hours": 0.5,
   "gap_skill": "Transformer",
   "prerequisites": [
-    "KBS-08-06"
+    "KBS-02-00"
   ],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习前向传播实验（加载GPT-2验证理解）",
-  "description": "围绕前向传播实验（加载GPT-2验证理解）完成一次可执行的阶段学习与练习。",
+  "title": "学习环境准备：在Python环境中安装transformers、...",
+  "description": "围绕环境准备：在Python环境中安装transformers、...完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解前向传播实验（加载GPT-2验证理解）的基本概念",
-    "掌握前向传播实验（加载GPT-2验证理解）的核心技术",
-    "能够独立完成前向传播实验（加载GPT-2验证理解）相关任务"
+    "理解环境准备：在Python环境中安装transformers、...的基本概念",
+    "掌握环境准备：在Python环境中安装transformers、...的核心技术",
+    "能够独立完成环境准备：在Python环境中安装transformers、...相关任务"
   ],
-  "difficulty": "高级",
+  "difficulty": "中级",
   "recommended_daily_hours": 0.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习前向传播实验（加载GPT-2验证理解）",
-  "hardware_notes": "",
-  "personalization_summary": "预计0.8小时完成 | 建议分2天学习 | 每天0.5小时 | 综合型学习风格"
+  "learning_style_notes": "理论型学习者：建议先理解环境准备：在Python环境中安装transformers、...的原理、设计思路与适用场景，再辅以少量代码示例验证关键写法。",
+  "hardware_notes": "当前设备为 无独立GPU：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合每天只有0.5小时，理论型，想理解Transformer学习者 | 预计1.5小时完成 | 建议分3天学习 | 每天0.5小时 | 综合型学习风格"
 }

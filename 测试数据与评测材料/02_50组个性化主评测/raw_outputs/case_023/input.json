@@ -3,7 +3,7 @@
   "primary_category": "LoRA/QLoRA实训适配",
   "tags": "LoRA/QLoRA实训适配|QLoRA微调|边学边做|RTX 3080 10GB",
   "background": "10GB卡，想用小模型做QLoRA",
-  "existing_skills": "KB-04|KB-08",
+  "existing_skills": "深度学习框架PyTorch基础、Transformer架构",
   "learning_goal": "QLoRA微调",
   "daily_hours": "2.0",
   "learning_style": "边学边做",
@@ -13,6 +13,6 @@
   "expected_difficulty": "中级",
   "expected_strategy": "reinforce",
   "run_stage_2": "False",
-  "answer_script_stage_1": "{\"answer_behavior\":\"medium\",\"target_accuracy_range\":[0.6,0.79],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"reinforce\"}",
-  "user_input_text": "我的学习背景：10GB卡，想用小模型做QLoRA\n已掌握技能：KB-04|KB-08\n我的学习目标：QLoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：边学边做\n我的硬件条件：RTX 3080 10GB"
+  "answer_script_stage_1": "{\"answer_behavior\": \"medium\", \"target_accuracy_range\": [0.6, 0.69], \"wrong_answer_strategy\": \"fixed_by_question_id\", \"expected_next_strategy\": \"reinforce\"}",
+  "user_input_text": "我的学习背景：10GB卡，想用小模型做QLoRA\n我已掌握的技能：深度学习框架PyTorch基础、Transformer架构\n我的学习目标：QLoRA微调\n我每天能学：2.0小时\n我喜欢怎么学：边学边做\n我的硬件条件：RTX 3080 10GB"
 }

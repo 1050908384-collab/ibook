@@ -1,37 +1,68 @@
 {
   "status": "planned",
-  "session_id": "e8fd66ac-16d6-423d-8e54-3c724186f6a1",
+  "session_id": "ef9b63ba-948d-40ff-bab6-100a5a523ac9",
   "next_stage": {
-    "stage_id": "empty-e8fd66ac-16d6-423d-8e54-3c724186f6a1-2",
+    "stage_id": "3a046b0f-9f9e-5fe1-9525-39803e4fc38b",
     "stage_num": 2,
-    "block_id": "KB-12",
-    "block_name": "LoRA",
-    "block_ids": [],
-    "subtopic_id": "",
-    "subtopic_name": "",
-    "subtopic_ids": [],
-    "subtopic_names": [],
-    "estimated_hours": 0.0,
+    "block_id": "KB-07",
+    "block_name": "子词切分与分词器（Tokenizer）",
+    "block_ids": [
+      "KB-07"
+    ],
+    "subtopic_id": "KBS-07-00",
+    "subtopic_name": "（环境准备：在Python环境中安装transformers、tokenizers库）",
+    "subtopic_ids": [
+      "KBS-07-00"
+    ],
+    "subtopic_names": [
+      "（环境准备：在Python环境中安装transformers、tokenizers库）"
+    ],
+    "estimated_hours": 0.5,
     "gap_skill": "LoRA",
-    "prerequisites": [],
+    "prerequisites": [
+      "KBS-02-00"
+    ],
     "status": "pending",
     "accuracy": null,
     "strategy_used": null,
-    "title": "已完成全部知识点",
-    "description": "当前 gap 下没有需要学习的知识点了",
-    "objectives": [],
-    "difficulty": "初级",
-    "recommended_daily_hours": 0.0,
-    "suggested_study_days": 0,
-    "learning_style_notes": null,
-    "hardware_notes": null,
-    "personalization_summary": null
+    "title": "学习环境准备：在Python环境中安装transformers、...",
+    "description": "围绕环境准备：在Python环境中安装transformers、...完成一次可执行的阶段学习与练习。",
+    "objectives": [
+      "理解环境准备：在Python环境中安装transformers、...的基本概念",
+      "掌握环境准备：在Python环境中安装transformers、...的核心技术",
+      "能够独立完成环境准备：在Python环境中安装transformers、...相关任务"
+    ],
+    "difficulty": "中级",
+    "recommended_daily_hours": 0.5,
+    "suggested_study_days": 1,
+    "learning_style_notes": "动手型学习者：建议先完成环境准备：在Python环境中安装transformers、...的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+    "hardware_notes": "当前设备为 RTX 4060 8GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+    "personalization_summary": "适合阶段1高正确率，验证是否进入后续知识点学习者 | 预计1.4小时完成 | 建议分1天学习 | 每天2.0小时 | 动手型学习风格"
   },
   "updated_profile": {
-    "session_id": "e8fd66ac-16d6-423d-8e54-3c724186f6a1",
+    "session_id": "ef9b63ba-948d-40ff-bab6-100a5a523ac9",
     "user_id": "local-user",
-    "grade": "",
-    "skill_tags": [],
+    "grade": "阶段1高正确率，验证是否进入后续知识点",
+    "skill_tags": [
+      "深度学习框架PyTorch基础",
+      "Transformer架构"
+    ],
+    "mastered_block_ids": [
+      "KB-04",
+      "KB-08"
+    ],
+    "expected_target_blocks": [],
+    "goal_scope": "focused",
+    "target_block_ids": [
+      "KB-12"
+    ],
+    "target_subtopic_ids": [
+      "KBS-12-03"
+    ],
+    "planned_block_order": [
+      "KB-12"
+    ],
+    "active_stage_block_id": "KB-07",
     "foundation_confirmed": false,
     "knowledge_gaps": [
       {
@@ -39,12 +70,16 @@
         "block_id": "KB-12",
         "block_name": "参数高效微调（LoRA与QLoRA）",
         "target_subtopic_ids": [
-          "KBS-12-01"
+          "KBS-12-01",
+          "KBS-12-02",
+          "KBS-12-03",
+          "KBS-12-04",
+          "KBS-12-05"
         ],
         "mapping_confidence": 1.0,
-        "level": "beginner",
-        "status": "学习中",
-        "progress": 0.857,
+        "level": "advanced",
+        "status": "未掌握",
+        "progress": 0.0,
         "prerequisites": [
           "HuggingFace生态工具链"
         ]
@@ -52,9 +87,9 @@
     ],
     "goal": "LoRA微调",
     "daily_hours": 2.0,
-    "learning_style": "hands-on",
+    "learning_style": "practice",
     "learning_rhythm": "fast",
-    "confidence_index": 0.725,
+    "confidence_index": 0.65,
     "confusion_markers": [],
     "confidence": 0.95,
     "version": 3

@@ -1,38 +1,38 @@
 {
-  "stage_id": "47832890-6bfe-5ae1-9c29-17d09b707f47",
+  "stage_id": "d8372918-49bb-568f-bead-4f63fcf1345f",
   "stage_num": 1,
-  "block_id": "KB-01",
-  "block_name": "Linux环境与命令行操作",
+  "block_id": "KB-04",
+  "block_name": "深度学习框架PyTorch基础",
   "block_ids": [
-    "KB-01"
+    "KB-04"
   ],
-  "subtopic_id": "KBS-01-04",
-  "subtopic_name": "nvidia-smi显存监控",
+  "subtopic_id": "KBS-04-00",
+  "subtopic_name": "（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）",
   "subtopic_ids": [
-    "KBS-01-04"
+    "KBS-04-00"
   ],
   "subtopic_names": [
-    "nvidia-smi显存监控"
+    "（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）"
   ],
   "estimated_hours": 0.5,
   "gap_skill": "LoRA",
   "prerequisites": [
-    "KBS-01-03"
+    "KBS-02-00"
   ],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习nvidia-smi显存监控",
-  "description": "围绕nvidia-smi显存监控完成一次可执行的阶段学习与练习。",
+  "title": "学习环境准备：根据CUDA版本安装PyTorch（如torch 2",
+  "description": "围绕环境准备：根据CUDA版本安装PyTorch（如torch 2完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解nvidia-smi显存监控的基本概念",
-    "掌握nvidia-smi显存监控的核心技术",
-    "能够独立完成nvidia-smi显存监控相关任务"
+    "理解环境准备：根据CUDA版本安装PyTorch（如torch 2的基本概念",
+    "掌握环境准备：根据CUDA版本安装PyTorch（如torch 2的核心技术",
+    "能够独立完成环境准备：根据CUDA版本安装PyTorch（如torch 2相关任务"
   ],
   "difficulty": "初级",
   "recommended_daily_hours": 0.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习nvidia-smi显存监控",
-  "hardware_notes": "",
-  "personalization_summary": "预计0.7小时完成 | 建议分1天学习 | 每天1.0小时 | 综合型学习风格"
+  "learning_style_notes": "理论型学习者：建议先理解环境准备：根据CUDA版本安装PyTorch（如torch 2的原理、设计思路与适用场景，再辅以少量代码示例验证关键写法。",
+  "hardware_notes": "当前设备为 RTX 3060 12GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合只会Python2和老式脚本，不熟悉现代Python生态学习者 | 预计2.2小时完成 | 建议分2天学习 | 每天1.0小时 | 综合型学习风格"
 }

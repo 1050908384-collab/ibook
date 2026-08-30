@@ -2,950 +2,420 @@
 
 ## 块 1
 
-## 环境变量配置：为LoRA微调铺路
+### 1.1 Python 解释器：程序的"翻译官"
 
-> 你正在准备LoRA微调，但发现前置知识——环境变量配置——还不牢靠。别急，这一节我们用最快的方式补上这块短板。你已经有 `cd`、`ls`、`mkdir`、`cp`、`mv` 和文件编辑的基础，本节约1小时，目标是理解环境变量原理，掌握临时与永久配置方法。
+你写下的 Python 代码是给人读的文字，而电脑只认 0 和 1。**Python 解释器**就是那个"翻译官"——它把你写的代码逐行翻译成电脑能执行的指令。没有它，你保存的 `.py` 文件只是一堆普通文本，电脑根本不知道你想让它做什么。
 
----
+**用你熟悉的 C++/Java 来类比**：就像编译器负责把 C++/Java 源码变成机器码一样，Python 解释器承担了类似职责。区别在于，Python 解释器是边翻译边执行（解释执行），不需要单独的编译步骤。你写好代码，直接交给解释器运行即可。
 
-### 一、环境变量是什么？
-
-环境变量是操作系统提供给进程的键值对，进程可以读取和修改，子进程会继承父进程的环境变量。把它想成操作系统的"备忘录"——系统启动时加载，程序据此调整行为。
-
-**常见例子**：
-
-| 变量名 | 作用 |
-|---|---|
-| `PATH` | 告诉系统去哪找可执行程序（你输入 `python3`，系统靠它找到位置） |
-| `HOME` | 当前用户家目录（如 `/home/zhangsan`） |
-| `USER` | 当前登录用户名 |
-| `SHELL` | 当前Shell路径（如 `/bin/bash`） |
-| `LANG` | 系统语言和字符编码 |
-| `PWD` | 当前工作目录，由 shell 维护，`cd` 命令会更新它 |
-| `EDITOR` | 默认文本编辑器（影响 `git commit` 等） |
-
-**为什么需要？** ①控制程序行为（如 `JAVA_HOME` 指定JDK路径）；②简化配置，免去每次输长路径；③子进程自动继承父
+**对你的 LoRA
 
 ## 块 2
 
-**临时变量：当前终端会话有效**
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-临时变量就像一次性的便利贴——只在当前终端窗口或 SSH 连接里有效。一旦关闭窗口或断开连接，它就消失了。适合快速测试，不用长期保存。
+---
 
-**动手试试（跟着敲一遍）：**
+你已熟悉C++/Java的工程化工具链，这里用类比快速对齐Python生态。
 
-```bash
-# 设置一个临时变量
-export MY_VAR="hello_linux"
+**IDE**：记事本也能写代码，但效率极低。IDE提供语法高亮、自动补全、运行调试，让你写代码像用Word写文档。推荐**VS Code**（轻量免费）或**PyCharm**（专业强大）——选一个装好即可，后续微调脚本都用它打开。
 
-# 查看它的值
-echo $MY_VAR
-# 输出：hello_linux
-
-# 删除这个变量
-unset MY_VAR
-
-# 再查看
-echo $MY_VAR
-# 输出：（空，因为已经删除了）
-```
-
-**关键点：`export` 的作用**
-
-不加 `export`，变量只对当前 Shell 有效，子进程（比如你启动的另一个
+**虚拟环境**：想象两个项目分别需要`numpy 1.0`和`numpy 2.0`，装进同一个Python会冲突。虚拟环境为每个项目建独立Python空间，互不影响。我们用**conda**管理，这是最主流方案。你之后做LoRA微调，会为它单独建一个
 
 ## 块 3
 
-**永久变量：写入配置文件，持久生效**
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-临时变量只在当前终端有效，关掉就没了。想让变量每次打开终端都在，就得写进**配置文件**——这相当于给系统一份“开机自动加载”的清单。
+作为资深C++/Java工程师，你熟悉环境变量和命令行，本块的关键就一个：**勾选“Add python.exe to PATH”**，否则后续所有命令都跑不起来。
 
-| 级别 | 配置文件 | 影响范围 | 是否需要 sudo |
-|---|---|---|---|
-| **用户级（推荐）** | `~/.bashrc` | 仅当前用户 | 否 |
-| **用户级** | `~/.bash_profile` 或 `~/.profile` | 仅当前用户（登录时生效） | 否 |
-| **系统级** | `/etc/profile` 等 | 所有用户 | 是 |
+**第一步：下载安装包**
 
-**选哪个？** 日常开发优先用 `~/.bashrc`（用户级）。它只影响你自己，改错了不会拖累系统
+1. 浏览器访问 https://www.python.org
+2. 顶部菜单 **Downloads**，网站自动推荐 Windows 版本（如 `Python 3.13.x`）。
+3. 下载 **Windows installer (64-bit)**。
+
+**第二步：运行安装程序（⚠️ 关键步骤）**
+
+双击 `.exe`，弹出安装界面后，**务必做两件事**：
+
+1. **勾选最下方的 "Add python.exe to PATH"**  
+   这会把 Python 加入系统环境变量。不勾选的话，命令行输入 `python` 会提示“不是内部或外部命令”，后续所有命令行操作都无法进行。
+
+2. 点击 **"Install Now"**（默认安装）即可。  
+   默认路径在 `C:\Users\你的用户名\AppData\Local\Programs\Python\Python3xx`，不含中文和特殊符号，避免后续路径报错。想改路径的话，确保路径中**没有中文或空格**。
+
+**第三步：验证安装**
+
+1. 按 `Win + R`，输入 `
 
 ## 块 4
 
-## 3.1 用户级配置：修改 `~/.bashrc`（推荐）
+### macOS 用户：安装 Python 3.10+
 
-你要做 LoRA 微调，后面跑训练脚本、设环境变量是家常便饭。这个配置方法就是给你打地基的——改一次，终身有效。
+作为资深 C++/Java 工程师，你熟悉环境配置的重要性。macOS 上有个关键点：**macOS 12.3 起不再预装 Python 2**，系统自带的 `python3` 可能是旧版本，仅供系统脚本使用。因此，**强烈建议自行安装最新版 Python**，避免依赖系统版本。
 
-**为什么推荐它？** `~/.bashrc` 是 Bash 的配置文件，**每次打开新终端自动加载**，日常开发最常用。
+**方法一：官方安装包（推荐）**
 
-**动手操作（跟着敲）：**
-
-```bash
-# 1. 用 nano 打开配置文件（上节课学过的命令）
-nano ~/.bashrc
-
-# 2. 滚动到文件末尾，添加一行：
-export MY_VAR="hello_permanent"
-
-# 3. 按 Ctrl + O 保存，Ctrl + X 退出
-
-# 4. 让修改立即生效（不重启终端）
-source ~/.bashrc
-
-# 5. 验证
-echo $MY_VAR
-# 输出：hello_permanent
-```
-
-**两个关键点：**
-
-- **`source` 是什么？** 相当于"重新执行一遍这个配置文件"，让刚才的修改在当前终端立刻生效，不用关掉重开。
-- **加载限制**：`~/.bashrc` 通常在打开新的**交互式终端**时加载，但并非所有 SSH 会话
-
-## 块 5
-
-## 3.2 用户级配置：~/.bash_profile 或 ~/.profile
-
-这两个文件在**登录 Shell** 时生效，典型场景是 SSH 远程登录或系统开机登录。注意：如果两个文件同时存在，系统**优先读取 `~/.bash_profile`**。
-
-日常开发中，`~/.bashrc` 更常用——因为每开一个终端它都会自动加载。只有当你明确需要“登录时才生效”的配置时，才考虑这两个文件。
-
-## 四、环境变量的优先级
-
-同一个变量在多处定义时，生效优先级从高到低：
-
-1. **临时变量**（当前终端里 `export` 的）
-2. **系统级配置**（`/etc/profile` 等）
-3. **用户级配置**（`~/.bashrc` 等）
-
-**核心规则：临时设置会覆盖配置文件。** 加载顺序上
-
-## 块 6
-
-### 5.1 PATH：命令的"搜索路径"
-
-`PATH` 是最重要的环境变量，没有之一。它定义了系统**查找可执行文件**的目录列表。
-
-#### 5.1.1 查看 PATH
-
-```bash
-echo $PATH
-```
-
-输出类似这样（多个路径用冒号 `:` 分隔）：
-
-```bash
-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-```
-
-当你在终端输入 `python3` 时，系统会**从左到右**依次在这些目录里找名为 `python3` 的可执行文件，找到了就执行，找不到就提示 `command not found`。
-
-#### 5.1.2 查看命令具体位置
-
-```bash
-which python3
-# 输出：/usr/bin/python3
-
-which conda
-# 输出：/home/zhangsan/miniconda3/bin/conda
-```
-
-`which` 命令能告诉你某个命令到底是从 PATH 的哪个目录里找到的。
-
-#### 5.1.3 修改 PATH
-
-**追加路径**（添加到末尾，优先级较低）：
-
-```bash
-export PATH=$PATH:/new/path
-```
-
-**前置路径**（添加到开头，优先级更高，系统会先搜这里）：
-
-```bash
-export PATH=/new/path:$PATH
-```
-
-> **安全提示**：不要把 `.`（当前目录）加入 PATH。如果你在某个目录里下载了一个名为 `ls` 的恶意脚本，而当前目录又在 PATH 里，那么你执行 `ls` 时可能运行的是恶意脚本而非真正的系统命令。
->
-> **避免重复添加**：多次 `source ~/.bashrc` 或在 `~/.bashrc` 中重复写入同一行，可能导致 PATH 里出现重复路径。建议定期检查 `~/.bashrc`，确保每条 PATH 修改只出现一次。
-
----
-
-**本块
-
-## 块 7
-
-## 5.2 LD_LIBRARY_PATH：运行时动态库路径
-
-这个变量解决的是“**程序跑起来时去哪找库**”的问题。你编译的程序依赖某个 `.so` 文件，但系统默认只在 `/usr/lib`、`/lib` 里找——如果库在其他目录，程序就会报错。`LD_LIBRARY_PATH` 就是告诉系统“额外去这些目录找”。
-
-**先看当前值：**
-```bash
-echo $LD_LIBRARY_PATH
-```
-
-**临时添加 CUDA 的库路径：**
-```bash
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
-```
-
-> 注意：`export` 只对当前终端
-
-## 块 8
-
-**LIBRARY_PATH：编译时告诉编译器去哪儿找库**
-
-你正在学 LoRA 微调，后面会用到 PyTorch、CUDA 这些库。当你在终端里敲命令编译或安装东西时，系统需要知道“库文件”放在哪儿。`LIBRARY_PATH` 就是干这个的——它告诉编译器（比如 `gcc`）在**编译阶段**去哪些路径找静态库（`.a`）和动态库（`.so`）。
-
-设置方法很简单，把库路径追加进去：
-
-```bash
-export LIBRARY_PATH=$LIBRARY_PATH:/path/to/your/libraries
-```
-
-**三个变量别搞混**，记住这张表就够了：
-
-| 变量名 | 作用阶段 | 查找目标 | 典型用途 |
-|---|---|---|---|
-| `PATH` | 执行命令时 | 可执行文件 | 让命令在任何位置都能运行 |
-| `LD_LIBRARY_PATH` | 程序运行时 | 动态链接库（`.so`） | 运行依赖自定义动态库的程序 |
-| `LIBRARY_PATH` | 编译链接时 | 静态库/动态库 | 编译时链接第三方库 |
-
-**给你的重点提示**：做 LoRA 微调时，
-
-## 块 9
-
-**本块学习检查**：运行 `echo $PATH | grep cuda`，若看到 `/usr/local/cuda/bin` 即已配置；否则继续。
-
-你的目标是 LoRA 微调，而 CUDA 环境变量是 PyTorch 调用 GPU 的前提。先快速确认系统是否已认识 CUDA：
-
-```bash
-echo $PATH | grep cuda
-echo $LD_LIBRARY_PATH | grep cuda
-```
-
-有输出（如 `/usr/local/cuda/bin`）→ 已配置，跳到下方验证。无输出 → 手动添加：
-
-```bash
-nano ~/.bashrc
-```
-
-在文件末尾追加两行（若 CUDA 非默认路径，替换 `/usr/local/cuda` 为实际路径）：
-
-```bash
-# CUDA 环境变量配置
-export PATH=/usr/local/cuda/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-```
-
-保存退出后，加载配置并验证：
-
-```bash
-source ~/.bashrc
-echo $PATH | grep cuda
-nvcc --version
-```
-
-`nvcc --version` 输出版本号即成功。这步通过后，后续 PyTorch 才能识别 GPU，LoRA 微调才有硬件基础。
-
-## 块 10
-
-**7.1 查看所有环境变量**
-
-先来快速浏览系统里有哪些环境变量。打开终端，输入：
-
-```bash
-printenv      # 简洁输出所有变量
-env           # 更详细的输出
-```
-
-两个命令效果类似，`env` 输出更详细。先跑一下，感受下变量列表的规模。
-
-**7.2 查看特定变量**
-
-列表太长，我们只关心某个变量，比如 `PATH`（命令查找路径）。三种方式：
-
-```bash
-echo $PATH
-printenv PATH
-declare -p PATH    # 显示定义细节（包括是否 export）
-```
-
-`echo $PATH` 最常用，`declare -p` 能告诉你这个变量是否被导出（export）到子进程。
-
-**7.3 测试变量是否生效**
-
-假设你在 `~/.bash
-
-## 块 11
-
-## 8.1 变量未生效？先别急，按这个顺序查
-
-你在配置环境变量后，发现新开的终端里变量还是没生效？这通常不是玄学，而是下面几个原因之一。既然你在为 LoRA 微调做准备，环境变量配不对，后面跑训练脚本时找不到 `CUDA_HOME` 或 `PYTHONPATH` 会非常头疼，所以这一步值得花两分钟排查干净。
-
-**常见原因就四类：**
-
-1. 改了 `~/.bashrc` 但没重新加载——配置文件只在终端启动时读取一次，改完必须手动刷新。
-2. 配置文件写错了——最常见的是漏写了 `export` 关键字，导致变量根本没被导出。
-3. 变量被后面某处覆盖了——比如你在 `~/.bashrc` 里设了 `PATH`，但 `~/.profile` 或某个脚本又把它重写了。
-4. 你用的终端或 IDE 压根没加载 `~/.bashrc`——比如某些图形界面终端默认只读 `~/.profile`。
-
-**动手排查（三步走）：**
-
-```bash
-#
-
-## 块 12
-
-## 9.1 脚本中临时修改变量（①）
-
-在 LoRA 微调项目中，你经常需要在不同脚本间切换环境变量。最直接的方式是在脚本内部临时设置：
-
-```bash
-#!/bin/bash
-export TEMP_VAR=123
-# 仅在脚本执行期间生效，脚本结束后变量消失
-```
-
-`export` 的作用是让变量在当前 Shell 及它启动的子进程中可见。脚本运行完，这个变量就自动消失，不会污染你的终端环境。
-
----
-
-## 9.2 使用 env 命令指定单次运行的变量（①）
-
-如果你只想让某个变量在**一次命令**中生效，不需要写脚本，用 `env` 更轻量：
-
-```bash
-env MY_VAR=hello python3 my_script.py
-# MY_VAR 仅在这次 python3 运行时有效
-```
-
-这对 LoRA 训练很有用——比如临时指定 `CUDA_VISIBLE_DEVICES=0` 或修改 batch size 相关的环境变量，跑完就恢复原状。
-
----
-
-## 9.3 使用 .env 文件分组管理变量（④）
-
-LoRA 项目通常涉及多个配置项（数据路径、模型名、输出目录等）。把它们集中到一个 `.env` 文件里，管理更清晰：
-
-```bash
-# 创建 ~/.env 文件
-nano ~/.env
-```
-
-内容示例：
-
-```bash
-export PROJECT_HOME="$HOME/llm-learning"
-export EDITOR="nano"
-export TZ="Asia
-
-## 块 13
-
-### 场景 1：创建并验证自定义变量
-
-既然你的目标是 LoRA 微调，配置环境变量是第一步——很多训练脚本依赖 `PATH` 和自定义变量来定位模型或数据。我们直接动手，快速过一遍。
-
-**第一步：设置临时变量**
-
-打开终端，输入：
-
-```bash
-export MY_NAME="zhangsan"
-```
-
-`export` 让这个变量对当前终端会话生效。注意：关掉终端就没了，这是“临时”的。
-
-**第二步：验证**
-
-```bash
-echo $MY_NAME
-```
-
-`$MY_NAME` 会取出变量的值，终端应输出 `zhangsan`。如果没输出，检查引号是否配对。
-
-**第三步：永久生效**
-
-临时变量重启就丢，所以写入配置文件：
-
-```bash
-echo 'export MY_NAME="zhangsan"' >> ~/.bashrc
-```
-
-`>>` 是追加，不会覆盖原有内容。`~/.bashrc` 是 Bash 启动时读取的配置。
-
-**第四步：重新加载并验证**
-
-```bash
-source ~/.bashrc
-echo $MY_NAME
-```
-
-`source` 让配置立即生效，不用重启终端。再次 `echo` 确认输出 `zhangsan`，说明永久配置成功。
-
----
-
-**本块学习检查**：关掉终端
-
-## 块 14
-
-**本块学习检查**：完成下面三步，确认你已掌握 CUDA 环境变量配置的流程。
-
-1. 打开终端，执行 `nano ~/.bashrc`，在文件末尾添加以下两行（假设 CUDA 装在 `/usr/local/cuda`）：
-   ```bash
-   export PATH=/usr/local/cuda/bin:$PATH
-   export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-   ```
-2. 保存退出后，运行 `source ~/.bashrc` 使配置生效。
-3. 执行 `echo $PATH | grep cuda`，如果输出中包含 `/usr/local/cuda/bin`，说明配置成功。
-
-**提示**：即使你还没装 CUDA，也可以先按此方法练习
-
-## 块 15
-
-## 系统级配置文件（①）——公共服务器环境配置速览
-
-你在做 LoRA 微调时，如果用的是自己的机器，通常不需要碰系统级配置。但如果你在实验室或公司的**公共服务器**上训练，这些文件就很重要——因为系统级配置会影响**所有用户**。
-
-### A.1 `/etc/environment`（①）
-
-**特点**：不需要 `export` 关键字，直接写 `KEY=value`。但只支持简单键值对，**不支持** Shell 脚本语法（比如 `$PATH` 引用）。
-
-```bash
-# 需要 sudo 权限
-sudo nano /etc/environment
-
-# 添加：
-JAVA_HOME=/usr/lib/jvm/java-11-openjdk
-
-# 保存后，需要重启系统或重新登录才能生效
-```
-
-### A.2 `/etc/profile`（②）
-
-**特点**：全局 Bash 配置，**需要** `export` 关键字。
-
-```bash
-sudo nano /etc/profile
-
-# 添加：
-export PATH=$PATH:/usr/local/custom/bin
-
-## 块 16
-
-**本块学习检查**：先运行 `echo $SHELL`，确认输出是 `/bin/bash` 还是其他路径，再对照下表找到你该改的配置文件。
-
-| Shell 类型 | 配置文件 | 作用范围 |
-|---|---|---|
-| **Bash** | `~/.bashrc` | 非登录 Shell（日常终端） |
-| **Bash** | `~/.bash_profile` | 登录 Shell（SSH 登录） |
-| **Zsh** | `~/.zshrc` | 交互式非登录 Shell |
-| **Zsh** | `~/.zprofile` | 登录 Shell |
-| **Fish** | `~/.config/fish/config.fish` | 所有会话 |
-
-**怎么用
-
-## 块 17
-
-## C. 清理 PATH 中的重复项（④）
-
-多次修改 PATH 后，里面可能堆积了不少重复路径。虽然不影响功能，但会让排查问题变得混乱。用下面这一行命令，就能一键去重：
-
-```bash
-export PATH=$(echo $PATH | awk -F: '!a[$0]++' | paste -sd: -)
-```
-
-**拆解一下它在做什么**：`echo $PATH` 把当前 PATH 内容输出，`awk` 按冒号分割并只保留第一次出现的路径，最后 `paste` 再把它们用冒号重新拼回去。该命令仅影响当前 shell 会话，不会改动配置文件；若需永久生效，需将命令写入 `~/.bashrc` 等配置文件。
-
-**动手试一下**：先运行 `echo $PATH` 看看原始内容，再执行上面的命令，然后再次 `echo $PATH` 对比——你会发现重复项消失了。
-
-## D. 根据环境加载不同配置（④）
-
-如果你在不同场景（比如开发、生产）需要不同的环境变量，可以在 `~/.bashrc` 里加一段判断逻辑：
-
-```bash
-if [ "$ENVIRONMENT" = "production" ]; then
-    source ~/.env.prod
-else
-    source ~/.env.dev
-fi
-```
-
-这样，当 `ENVIRONMENT` 变量值为 `production` 时加载生产配置，否则加载开发配置。**注意**：`ENVIRONMENT` 需要提前设置好，例如运行 `export ENVIRONMENT=production` 或将其写入配置文件，否则走 `else` 分支。
-
-## E. 脚本调试模式（④）
-
-调试脚本时，想看到每一行执行前的变量值，有两种方式：
-
-```bash
-# 方式一：运行脚本时加 -x 参数
-bash -x your_script.sh
-
-# 方式二：在当前 Shell 中临时开启追踪
-set -o xtrace
-source ~/.bashrc
-
-## 块 18
-
-## 2.1 安装 Miniconda（②）
-
-你的目标是 LoRA 微调，这意味着你很快要管理 PyTorch、Transformers 等一堆依赖。Conda 虚拟环境就是你的“项目隔离舱”——每个项目一个独立空间，版本冲突、环境搞坏都不怕。本教程推荐 **Miniconda**，只包含 conda + Python，体积约 100MB，按需安装，不浪费空间。
-
-> **对比一下**：Anaconda 预装 1500+ 数据科学包，体积约 3GB，适合本地个人电脑想开箱即用；Miniconda 更适合服务器和普通开发环境，也是本教程推荐的选择。
-
-**安装前你需要确认**：已完成前三节内容，掌握 Shell 命令和环境变量配置。如果对 `cd`、`export` 这些命令还不熟，先回去复习一下。
-
-**动手验证（约 5 分钟）**：
-1. 打开终端，输入 `python --version`，记下当前 Python 版本——这是你系统自带的“原始环境”。
-2. 根据参考文章②的指引，下载并安装 Miniconda。
-3. 安装完成后，重新打开终端，输入 `conda --version`，如果能看到版本号，说明安装成功。
-
-> **小提示**：安装过程中如果遇到“是否将 conda 加入 PATH”的询问，建议选择“是”，这样后续使用更方便。如果选“否”，之后每次使用 conda 都需要手动激活。
-
-**为什么这一步对你重要**：LoRA 微调通常需要特定版本的 Py
-
-## 块 19
-
-## 安装 Miniconda：为 LoRA 微调铺路
-
-你正在为 LoRA 微调做准备，而 Conda 是你管理 Python 环境和依赖的“工具箱”。这一步安装 Miniconda，就是把这个工具箱搬回家。别担心，跟着下面的步骤走，很快就能搞定。
-
-### 第一步：看看你的电脑是什么“架构”
-
-打开终端，输入：
-
-```bash
-uname -m
-```
-
-输出通常是 `x86_64`（大多数 Intel/AMD 电脑）或 `aarch64`（部分 ARM 架构设备）。记住这个结果，下一步要用。
-
-### 第二步：下载对应的安装脚本
-
-根据上一步的结果，运行下面的命令自动下载：
-
-```bash
-ARCH=$(uname -m)
-if [ "$ARCH" = "x86_64" ]; then
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-elif [ "$ARCH" = "aarch64" ]; then
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh
-else
-    echo "不支持的架构: $ARCH"
-    exit 1
-fi
-```
-
-如果官方源下载慢，把命令里的域名换成清华镜像即可：
-
-```bash
-wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-${ARCH}.sh
-```
-
-### 第三步：校验文件完整性（推荐）
-
-下载完先别急着装，花 10 秒确认文件没被篡改：
-
-```bash
-sha256sum Miniconda3-latest-Linux-${ARCH}.sh
-```
-
-把输出的哈希值和官方公布的值对比（查询地址：`https://docs.conda.io/en/latest/miniconda.html`）。一致就继续，不一致就重新下载。
-
-### 第四步：运行安装脚本
-
-```bash
-bash Miniconda3-latest-Linux-${ARCH}.sh
-```
-
-安装过程中会有几个交互提示，按下面操作：
-
-1. **阅读许可协议**：按 `Enter` 滚动，或按 `q` 跳到末尾
-2. **接受条款**：输入 `yes` 回车
-3. **选择安装路径**：直接回车使用默认路径（`~/miniconda3`）
-4. **初始化 Conda**：当询问 `Do you wish the installer to initialize Miniconda3?` 时，**务必输入 `yes`** —— 这会自动修改你的 `~/.bashrc` 文件，把 conda 加入 PATH
-
-### 第五步：让修改生效并验证
-
-```bash
-source ~/.bashrc
-conda --version
-```
-
-预期输出类似 `conda 25.x.x`。看到版本号，说明安装成功。
-
----
-
-**两个你可能关心的问题：**
-
-**为什么输入 yes 后还要 `source ~/.bashrc`？** 因为安装脚本在 `~/.bashrc` 末尾追加了一段初始化代码（你可以用
-
-## 块 20
-
-### 2.2 配置国内镜像源
-
-默认官方源在国外，下载包时可能很慢甚至超时。配置国内镜像源能显著提升速度，尤其适合你即将进行的 LoRA 微调——那需要安装大量依赖包。
-
-**操作步骤（跟着做一遍）：**
-
-1. **添加清华镜像源**（推荐）：
-```bash
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
-```
-
-2. **显示下载源地址**（方便排查问题）：
-```bash
-conda config --set show_channel_urls yes
-```
-
-3. **清理索引缓存**（使配置立即生效）：
-```bash
-conda clean -i
-```
-
-**两个关键提醒：**
-- 旧频道 `pkgs/free` 已被官方停止维护，**不要添加**。保留默认源 `defaults` 作为备用，国内源优先即可。
-- 镜像地址可能随时间失效。如果某天报错，去清华镜像站（https://mirrors.tuna.ts
-
-## 块 21
-
-### 环境管理核心命令：为 LoRA 微调铺路
-
-你正在为 LoRA 微调准备环境，下面这些命令就是你的“工具箱”。我们直接上手，边看边敲。
-
-#### 1. 查看环境：先看看你有哪些“房间”
-
-```bash
-conda env list
-```
-
-运行后，列表里带 `*` 号的就是你当前所在的环境。也可以用 `conda info --envs`，效果一样。
-
-#### 2. 创建环境：为 LoRA 项目建一个“独立房间”
-
-```bash
-# 基础创建：指定环境名和 Python 版本
-conda create -n lora_env python=3.10
-```
-
-建议环境名用 `lora_env`，Python 版本按需选。想一步到位，创建时直接装包：
-
-```bash
-conda create -n lora_env python=3.10 numpy pandas
-```
-
-另外两个实用技巧：
-- **克隆环境**：想备份当前环境，用 `conda create --name prod_env --clone dev_env`，把名字换成你的即可。
-- **指定路径创建**：不想放默认位置，用 `conda create --prefix ./custom_env python=3.10`，会在当前目录下建环境。
-
-#### 3. 激活与退出：进入和离开“房间”
-
-```bash
-# 激活环境
-conda activate lora_env
-
-# 退出当前环境（回到 base）
-conda deactivate
-```
-
-## 块 22
-
-### 2.4 包管理核心命令（①）
-
-安装包是LoRA微调准备工作的第一步。用 `conda install numpy` 装最新版，或 `conda install numpy=1.24.0` 指定版本。装 HuggingFace 的 transformers 时，推荐用 `conda install -c conda-forge transformers`，conda-forge 频道包更全。批量安装依赖用 `pip install -r requirements.txt`。
-
-查看环境用 `conda list` 看当前环境所有包，`conda list -n llm_env` 看指定环境。搜索可用版本用 `conda search pytorch`。
-
-更新单个包用 `conda update numpy`，卸载用 `conda remove numpy`。遇到诡异依赖问题，先 `conda remove numpy` 再 `conda install numpy=1.24.0` 重装。
-
-**新手避坑**：别用 `conda update --all`。它会一次性升级所有包，极易引发依赖版本漂移，破坏环境可复现性。只更新需要的单个包，或新建环境重装指定版本。
-
-**本块学习检查**：在终端依次执行 `conda list` 查看当前环境，再用 `conda search numpy` 确认你需要的版本存在，最后用
-
-## 块 23
-
-### 环境导出与复现：让队友一键复刻你的环境
-
-你正在准备LoRA微调，环境配置是团队协作的第一步。这一节教你如何把当前环境“打包”成文件，让别人（或未来的你）一键重建。
-
-**核心操作：**
-
-1. **导出环境配置**（推荐加 `--no-builds`，跨平台更兼容）：
-   ```bash
-   conda env export --no-builds > environment.yml
-   ```
-   这会生成一个 `environment.yml` 文件——它记录了环境名、Python版本和所有包及版本。把它放进Git仓库，队友就能一键重建一模一样的环境。
-
-2. **根据文件重建环境**：
-   ```bash
-   conda env create -f environment.yml
-
-## 块 24
-
-### 2.6 Conda 与 Pip 的协作（①）
-
-你的目标是 LoRA 微调，很可能需要安装特定版本的 PyTorch。Conda 仓库虽全，但有些细分版本只有 pip 有。记住原则：**优先 conda，找不到再用 pip**。
-
-```bash
-# 在 conda 环境中先安装 pip
-conda install pip
-
-# 然后用 pip 安装 conda 仓库没有的包
-pip install some-package-only-on-pypi
-```
-
-> **⚠️ 注意**：混用可能导致依赖解析混乱。如果出现问题，建议新建一个干净环境重新安装。
-
-**动手验证**：在你的 conda 环境中执行 `conda install pip`，然后 `pip --version` 确认 pip 可用。这为后续安装 PyTorch 做准备。
-
-### 2.7 常用维护命令（①+②）
-
-```bash
-# 查看 conda 系统信息
-conda info
-
-# 查看当前配置
-conda config --show
-
-# 清理所有缓存（释放磁盘空间）
-conda clean --all --yes
-
-# 设置频道优先级策略（strict 模式减少冲突）
-conda config --set channel_priority strict
-```
-
-**
-
-## 块 25
-
-**创建你的LoRA微调环境（动手版）**
-
-先确认Python版本，运行：
+1. 访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
+2. 双击运行，一路点击 "Continue" → "Install"。
+3. 打开终端，验证安装：
 
 ```bash
 python3 --version
+pip3 --version
 ```
 
-然后，在当前目录创建名为`myenv`的虚拟环境：
+**安装注意事项**：若系统提示“无法打开，因为来自身份不明的开发者”，请右键点击安装包选择“打开”，或前往“系统偏好设置-安全性与隐私”允许安装。
+
+**为什么用 `python3` 而不是 `python`**：现代 macOS 默认**不提供** `python` 命令（早期版本曾指向 Python 2，现已移除）。请始终用 `python3` / `pip3`，避免"命令不存在"或误用系统版本的坑。
+
+**方法二：Homebrew（适合已有 Homebrew 的开发者）**
+
+如果你已安装 Homebrew，终端执行：
 
 ```bash
-python3 -m venv myenv
+brew install python
 ```
 
-这会生成一个`myenv`文件夹，内含独立的Python解释器和pip——你的LoRA微调实验将在这里隔离进行，避免污染系统环境。
+安装
 
-**激活与退出**（Linux/macOS）：
+## 块 5
+
+作为资深工程师，你熟悉包管理，这里直接给你最精简的路径。
 
 ```bash
-source myenv/bin/activate
+sudo apt update && sudo apt install python3 python3-pip python3-venv -y
+python3 --version
 ```
 
-激活后，命令行提示符前会出现`(myenv)`，表示你已进入虚拟环境。用完记得退出：
+`-y` 跳过确认；`python3-venv` 是虚拟环境模块，为后续隔离微调依赖做准备，一次装齐。
 
-```bash
-deactivate
-```
+**本块学习检查**：用自己的话说明，安装 Python 环境与你 LoRA 微调目标的关系；遇到无法解释的术语（如 venv）记录下来再提问。
 
-**动手验证**：创建并激活环境后，运行`pip list`，观察
+## 块 6
 
-## 块 26
+## 2.4 操作系统与实训环境该怎么选
 
-### 3.3 包管理（④）
+你是资深 C++/Java 工程师，对命令行和系统环境不陌生，但 Python 生态的部署细节可能不熟。这里直接给你结论，按你的目标（LoRA 微调）来选环境。
 
-你的LoRA微调项目会用到很多Python库（比如transformers、torch）。用`pip`管理它们很简单：
+**日常写 Python、练命令行（Windows 用户）**：启用 **WSL2 + Ubuntu LTS**（如 Ubuntu 22.04/24.04 LTS）。它在 Windows 里提供接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致。安装只需管理员 PowerShell 执行 `wsl --install`。
 
-```bash
-# 安装包（默认最新版）
-pip install numpy
+**日常写 Python（macOS / Linux 用户）**：直接用本机终端，本身就是类 Unix 环境。
 
-# 安装指定版本（LoRA项目常需固定版本）
-pip install numpy==1.24.0
+**LoRA 微调等 GPU 实训**：用**装有 Ubuntu LTS 的 NVIDIA GPU 云服务器，或本地实体 Linux（Ubuntu LTS）机器**。这类任务依赖 NVIDIA 驱动、CUDA 与显卡直通，Ubuntu LTS 对深度学习生态支持最成熟。
 
-# 查看当前环境已装了什么
-pip list
+> **⚠️ 不推荐**：不要把 **"CentOS + VirtualBox 虚拟机"当最佳方案**。CentOS 8 已停止维护；VirtualBox 默认**无法直通 NVIDIA GPU**，跑不了真正的 GPU 训练，只适合纯 CPU 隔离小实验。
 
-# 升级某个包
-pip install --upgrade numpy
+**你的选择**：你有 RTX 4070 12GB，本地实体机装 Ubuntu LTS 即可直接跑 LoRA 实训；
 
-# 卸载某个包
-pip uninstall numpy
-```
+## 块 7
 
-**动手练**：先`pip install numpy`，再`pip list`确认它出现了。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
-### 3.4 依赖导出与复现（④）
+---
 
-做LoRA微调时，环境一致性很重要。把当前环境所有包导出到文件，换机器时一键恢复：
+你作为资深C++/Java工程师，对“依赖管理”和“网络源”的概念不会陌生。Python的`pip`类似Maven或NuGet，默认从官方PyPI（`pypi.org`）拉包——这是最权威、最完整的源，应始终作为首选默认。
 
-```bash
-# 导出所有依赖到 requirements.txt
-pip freeze > requirements.txt
+**什么时候才需要镜像源？** 仅当网络受限、官方源明显变慢或频繁超时。镜像只是“临时加速手段”，不是永久替换项。
 
-# 新环境里按文件安装
-pip install -r requirements.txt
-
-# 看看哪些包有新版可升
-pip list --outdated
-```
-
-**动手练**：
-
-## 块 27
-
-**临时使用（单次生效）**
-
-在终端里执行：
+**首选做法（推荐）**：只对某次安装临时指定镜像，不改全局配置：
 
 ```bash
 pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-`-i` 后面跟的是镜像地址，这次安装会从清华源下载，但只对当前命令生效。
+**为什么推荐**：不影响平时默认行为，官方源仍是默认；网络恢复或镜像
 
-**永久配置（推荐）**
+## 块 8
 
-先创建并编辑配置文件：
+### 3.3 进阶：将镜像设为默认（仅在长期网络受限时）
 
-```bash
-mkdir -p ~/.pip
-nano ~/.pip/pip.conf
-```
+你作为资深工程师，肯定理解“默认配置”的利弊。这一节只针对**长期网络受限**的场景——如果你只是偶尔下载慢，用 `-i` 参数临时指定镜像即可，别动全局配置。官方 PyPI 始终是最可靠来源，网络恢复后记得改回。
 
-在打开的 `pip.conf` 里写入：
+**Windows 配置步骤：**
+
+1. `Win + R` 输入 `%APPDATA%` 回车，打开 `C:\Users\你的用户名\AppData\Roaming` 目录。
+2. 新建文件夹 `pip`，在其中新建文本文件 `pip.ini`。
+3. 用记事本写入：
 
 ```ini
 [global]
 index-url = https://pypi.tuna.tsinghua.edu.cn/simple
-trusted-host = pypi.tuna.tsinghua.edu.cn
 ```
 
-保存退出后，以后所有 `pip install` 都会自动走清华镜像源。
+`index-url` 就是告诉 pip 默认从清华镜像下载包。
+
+> **⚠️ 别加 `trusted-host`**：网上教程常让你加一行 `trusted-host = ...`，但除非镜像 HTTPS 证书验证失败，否则**不要加**——它会跳过 TLS 校验，放弃传输安全。清华、阿里等主流镜像都有合法 HTTPS 证书，正常使用无需此项。只有企业内网自建源或确认来源可信时才临时加。
+
+**macOS / Linux 配置步骤：**
+
+```bash
+mkdir -p ~/.config/pip
+nano ~/.config/pip/pip.conf
+```
+
+写入同样的 `[global]` 配置，`Ctrl + O` 保存，`Ctrl + X` 退出。
+
+**验证配置：**
+
+```bash
+pip config list
+```
+
+看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'` 即成功。
+
+**改回官方源：** 删除 `pip.ini` / `pip.conf`，或执行 `pip config unset global.index-url`。
 
 ---
 
 **本块学习检查**
 
-在终端
+完成本块后，用自己的话说明：这个镜像默认配置与你当前“LoRA 微调”目标的关系是什么？你会在什么条件下启用它，什么条件下不用？遇到无法解释的术语（如 `index-url`、`trusted-host`）先记录下来，稍后提问。
 
-## 块 28
+## 块 9
 
-**本块学习检查**：执行下方全部命令，确认输出中能看到 `llm-dev` 环境及 `numpy`、`pandas` 包。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
 
 ---
 
-你的目标是 LoRA 微调，先从搭建专属环境开始。跟着做，边敲边看结果：
+## 4.1 方案一：VS Code（轻量、免费、推荐）
 
-1. **创建环境**：`conda create -n llm-dev python=3.10 -y`  
-   名字叫 `llm-dev`，Python 用 3.10，`-y` 表示自动确认。
+**为什么选它**：VS Code 是微软出品的免费编辑器，启动快、插件丰富。你作为资深C++/Java工程师，对IDE不陌生——VS Code 的定位类似轻量级工具，后续写Python脚本、调配置文件都用得上。
 
-2. **激活**：`conda activate llm-dev`  
-   进入该环境，后续命令都在里面执行。
+**安装步骤**（对你简化为三步）：
 
-3. **装基础包**：`conda install numpy pandas -y`  
-   先装数据处理常用的
+1. 访问 https://code.visualstudio.com，下载对应系统安装包。
+2. 运行安装程序，一路下一步。
+3. **必装插件**：点击左侧活动栏最下方的四个方块图标（扩展），搜索安装：
+   - **Python**（Microsoft官方，提供语法高亮、调试、智能提示）
+   - **Pylance**（Python语言服务器，让代码提示更智能）
 
-## 块 29
+> 安装Python插件
 
-**场景 2：用 pip + venv 创建轻量环境（面向 LoRA 微调准备）**
+## 块 10
 
-你的目标是 LoRA 微调，动手前先搭一个干净的环境，避免包冲突。跟着做：
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+PyCharm Community 是 JetBrains 出品的免费 Python 专用 IDE，内置代码分析、版本控制、数据库工具，适合大型项目。作为资深 C++/Java 工程师，你熟悉 IDE 的价值——它帮你管理项目结构、调试和运行代码，这正是后续做 LoRA 微调实验时需要的“工作台”。
+
+**安装要点**：
+1. 访问官网下载页，选 **Community Edition**（社区版，免费）。
+2. 安装时勾选 `Add "Open Folder as Project"`（右键快速打开项目）和 `Add to PATH`（命令行直接启动）。
+
+**首次启动**：
+1. 打开后选 `New Project`。
+2. `Location` 选项目路径（**路径中不要含中文**，避免编码问题）。
+3. `Interpreter` 选 `Previously configured interpreter`，指向系统已装的 Python 3.10+。
+
+**
+
+## 块 11
+
+### 5.1 为什么用 Conda
+
+你作为资深 C++/Java 工程师，对“依赖冲突”和“环境隔离”应该不陌生——就像 Maven 管理 Java 依赖、vcpkg 管理 C++ 库一样，Python 项目也需要一个“隔离舱”。虚拟环境就是为每个项目创建独立的 Python 空间，而 **Conda** 是目前最主流的虚拟环境管理工具。
+
+它的独特之处在于：**不仅能创建虚拟环境，还能管理不同版本的 Python 解释器本身**。这对你后续学习大模型微调至关重要——因为 PyTorch、CUDA 这些深度学习依赖极其复杂，版本错一个就可能跑不起来。Conda 能帮你把整套环境“锁”住，避免“在我机器上能跑”的尴尬。
+
+### 5.2 安装 Conda：Anaconda vs Miniconda
+
+两个选择，本质是“全家桶” vs “纯净版”：
+
+| 选项 | 特点 | 推荐人群 |
+|------|------|----------|
+| **Anaconda** | 体积大（约 500MB+），预装 numpy、pandas、jupyter 等 | 数据分析、不想手动装包 |
+| **Miniconda** | 体积小（约 50MB），只含 conda 和基础 Python，按需安装 | 项目开发、想要干净环境 |
+
+**推荐 Miniconda**——你习惯了精确控制依赖，Miniconda 的“按需安装”哲学更贴合你的习惯。后续做 LoRA 微调时，需要什么装什么，环境清爽不臃肿。
+
+**安装步骤（以 Miniconda 为例）：**
+
+1. 访问 https://docs.conda.io/en/latest/miniconda.html
+2. 下载对应系统安装包（Windows 选 `.exe`，macOS 选 `.pkg`/`.sh`，Linux 选 `.sh`）
+3. 运行安装程序：
+   - **Windows**：一路下一步，**保持默认，不要勾选 "Add Miniconda3 to my PATH environment variable"**（安装器标为“不推荐”）。直接塞进 PATH 容易和系统已有 Python 冲突，导致 `python`、`pip` 指向不明。日常改用开始菜单里的 **"Anaconda
+
+## 块 12
+
+作为资深C++/Java工程师，你熟悉依赖管理和环境隔离（如Maven、Gradle、CMake）。Conda的虚拟环境本质类似，只是服务于Python生态。
+
+直接执行：
 
 ```bash
-# 1. 建项目目录并进入
-mkdir -p ~/projects/test_project
-cd ~/projects/test_project
-
-# 2. 创建虚拟环境（名为 venv）
-python3 -m venv venv
-
-# 3. 激活环境（激活后命令提示符前会出现 (venv)）
-source venv/bin/activate
-
-# 4. 安装包（示例：requests）
-pip install requests
-
-# 5. 导出当前环境所有包到文件
-pip freeze > requirements
-
-## 块 30
-
-好的，让我们直接进入实战验证环节。既然你的目标是 LoRA 微调，那么一个干净、可复现的 Python 环境就是一切的基石。这个场景就是帮你确认这块基石是否稳固。
-
-**场景 3：验证 conda 对 ~/.bashrc 的修改**
-
-刚才我们安装了 Miniconda，现在来验证它是否成功“接管”了你的终端。这直接关系到你之后能不能顺利地在终端里敲出 `conda` 命令。
-
-打开你的终端，执行下面的命令，看看 `~/.bashrc` 文件最后 20 行的内容：
-
-```bash
-tail -n 20 ~/.bashrc
+conda create -n llm-learn python=3.10
 ```
 
-**你应该会看到类似这样的内容：**
+- `conda create`：创建环境
+- `-n llm-learn`：环境名（`n` = `name`）
+- `python=3.10`：指定Python版本
+
+终端会列出待装包并询问`Proceed ([y]/n)?`，输入`y`回车等待完成。
+
+**为什么现在做这个**：后续LoRA微调需要特定版本的PyTorch和CUDA，这个环境就是你的隔离工作台。RTX 4070需要CUDA 11.8或更高版本，具体版本需根据驱动和PyTorch版本选择。
+
+## 块 13
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+你作为资深C++/Java工程师，理解“环境隔离”应该很自然——就像不同项目用不同版本的JDK或Node。Conda环境就是Python的“独立房间”。
+
+**激活环境**（进入这个“独立房间”）：
 
 ```bash
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-...
-# <<< conda initialize <<<
+conda activate llm-learn
 ```
 
-这段代码就是关键。它正是你之前学过的“环境变量配置”的实际应用。`conda` 通过修改这个文件，添加了初始化代码块，该代码块在 shell 启动时配置 conda 命令的可用性。这样，系统才能在任何地方找到 `conda` 命令。
+激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。
 
-**动手验证一下：**
+**验证当前环境的 Python 版本**：
 
-现在，请执行 `source ~/.bashrc` 让配置立即生效，然后输入 `conda --version`。如果能看到版本号，说明 conda 已经成功安装并配置好了，你的虚拟环境管理之旅可以正式开始了。
+```bash
+python --version
+```
 
----
+应该显示 `Python 3.10.x`。
 
-**小贴士：遇到问题别慌**
+**退出环境**（回到系统默认环境）：
 
-如果在配置过程中遇到麻烦，可以参考这个快速排查表：
-
-| 症状 | 可能原因 | 解决方案 |
-|---|---|---|
-| `conda: command not found` | conda 未加入 PATH | 执行 `~/miniconda3/bin/conda init bash`，然后 `source ~/.bashrc` |
-| 环境激活失败 | Shell 未初始化 conda | 运行 `conda init bash` 并重启终端 |
-| 包安装缓慢或超时 | 未配置国内镜像源 | 配置清华镜像源 |
-| 依赖冲突 | 多个包版本要求矛盾 | 新建干净环境，逐步安装排查 |
-| pip 安装提示权限不足 | 在系统 Python 中安装 | 先激活虚拟环境，再用 pip 安装 |
-| 每次打开终端自动进 (base) | conda 默认设置 | `conda config --set auto_activate_base false` |
-| 环境名含中文或特殊字符 | conda 不支持 | 使用纯英文小写 + 下划线命名 |
+```bash
+conda deactivate
+```
 
 ---
 
-**总结与
+**查看所有已创建的环境**：
+
+```bash
+conda env list
+
+## 块 14
+
+## 6.1 VS Code 配置 Conda 环境
+
+1. 先激活环境：`conda activate llm-learn`
+2. 打开 VS Code，按 `Ctrl + Shift + P`。
+3. 输入 `Python: Select Interpreter`。
+4. 选择带有 `conda` 字样的 Python 路径（如 `Python 3.10.x ('llm-learn': conda)`）。
+
+**为什么这样写**：VS Code 支持自动识别 conda 环境，选择后，你在这个工作区写的代码就会使用 `llm-learn` 环境中的 Python 和已安装的包。
+
+> **工程师视角**：这和你为 C++ 项目切换工具链、为 Java 项目切换 JDK 版本是同一件事——确保编译器/解释器指向正确的依赖集合。选错环境，代码跑不起来时，第一反应就查这里。
+
+## 6.2 PyCharm 配置 Conda 环境
+
+1. 打开 PyCharm，点击 `File` → `Settings`（Mac 是 `PyCharm` → `Preferences`）。
+2. 左侧选择 `Project: 你的项目名` → `Python Interpreter`。
+3. 点击齿轮图标 → `Add...`。
+4. 左侧选择 `Conda Environment` → `Existing environment`。
+5. 在 `Interpreter` 路径中选择 conda 环境的 Python 可执行文件：
+   - Windows：`C:\Users\你的用户名\miniconda3\envs\llm-learn\python.exe`
+
+## 块 15
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+你已熟悉C++/Java的编译运行，Python的交互模式（`>>>`）相当于即时执行，无需编译。先激活环境：`conda activate llm-learn`，输入`python`进入交互模式，看到`>>>`后输入：
+
+```python
+print("Hello, Python! 我的环境准备好了！")
+```
+
+回车打印文字即环境可用，用`exit()`退出。
+
+VS Code验证：新建文件夹`my-first-project`并打开，新建`hello.py`，输入`print("Hello from VS Code!")`，点击右上角小三角或按`Ctrl+F5
+
+## 块 16
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+## 7.3 在 PyCharm 中验证
+
+你已熟悉 IDE 的工程结构，这里只提炼关键动作：
+
+1. 新建项目，创建 `hello.py`。
+2. 右键点击文件 → `Run 'hello'`。
+3. 下方 Run 窗口应输出结果。
+
+> 对资深工程师的提示：这等价于你在 Java/C++ 里的“编译运行”入口，只是 Python 无需显式编译，直接解释执行。
+
+---
+
+## 第八章：常见问题排查（重点看与你相关的）
+
+| 问题现象 | 可能原因 | 解决方案 |
+|----------|----------|----------|
+| 输入 `python` 提示"不是内部或外部命令" | 安装时未勾选 "Add to PATH" | 重新运行 Python 安装程序，选择 "Modify"，勾选 "Add Python to environment variables" |
+| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 按第三章临时加 `-i` 指定国内镜像（如清华源）；长期受限再考虑设为默认源 |
+| `conda` 命令找不到 | 未使用 Anaconda/Miniconda Prompt（Windows）/ 未执行 `conda init`（macOS/Linux） | Windows 用户使用开始菜单的 `Anaconda Prompt (Miniconda3)`；macOS/Linux 运行 `conda init` 后重开终端 |
+| VS Code 提示"未选择 Python 解释器" | 未配置解释器路径 | 按 `Ctrl + Shift + P` → `Python: Select Interpreter` 手动选择 |
+| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 使用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
+| pip 安装后，Python 里 `import` 报错 | pip 装到了错误的环境 | 激活目标 conda 环境后，使用 `python -m pip install 包名` 安装 |
+
+---
+
+## 本章小结
+
+完成本章后，你的电脑上应该具备以下内容：
+
+| 组件 | 状态 | 验证命令 |
+|------|----------|----------|
+| Python 3.10+ | ✅ 已安装 | `python --version
 
 ## 测评题目
 
-### Q-KB0102-002
-请写出将 `/usr/local/cuda/bin` 永久添加到 `PATH` 环境变量的完整步骤（以bash为例）。
-
-### Q-KB0102-003
-以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？
-
-### Q-KB0103-003
-请写出以下操作的完整命令序列：
-1. 创建名为 `llm_train` 的conda环境（Python 3.10）
-2. 激活该环境
-3. 用pip安装 `torch` 包
-4. 查看已安装包列表
-5. 导出环境配置到 `environment.yml`
-
-### Q-KB0103-005
-在conda环境中使用 `pip install` 安装的包，可以用 `conda list` 查看到吗？反过来呢？
-
-### Q-KB0103-001
-创建一个名为 `myenv`、Python版本为3.10的conda虚拟环境，正确命令是？
-
-### Q-KB0101-001
-以下哪个命令用于**切换当前工作目录**？
-
-### Q-KB0104-004
-`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。
-
-### Q-KB0100-003
-执行以下命令确认系统发行版信息：
+### Q-KB0200-001
+请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：
 ```bash
-cat /etc/os-release
+python --version
+```
+
+### Q-KB0200-003
+在Python交互环境中执行以下代码，验证pip是否可用：
+```python
+import pip
+print(pip.__version__)
+```
+
+### Q-KB0205-002
+生成器函数使用________关键字返回值（而非 `return`），调用生成器函数返回的是一个________对象。
+
+### Q-KB0201-004
+以下代码输出是？
+```python
+a = [1, 2, 3]
+b = a
+b.append(4)
+print(a)
+```
+
+### Q-KB0204-002
+使用 `with open("file.txt", "r") as f:` 的好处是________。
+
+### Q-KB0204-001
+以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？
+
+### Q-KB0202-005
+以下代码输出是？
+```python
+d = {}
+d.setdefault("key", []).append(1)
+d.setdefault("key", []).append(2)
+print(d)
+```
+
+### Q-KB0201-005
+以下代码输出什么？
+```python
+for i in range(5):
+    if i == 3:
+        continue
+    print(i, end=" ")
 ```

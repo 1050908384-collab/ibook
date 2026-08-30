@@ -1,40 +1,36 @@
 {
-  "stage_id": "351c44ef-4ee1-57ca-b11e-0df03bd3e033",
+  "stage_id": "2f86874a-37b6-5272-b693-32113c34b6fb",
   "stage_num": 1,
-  "block_id": "KB-08",
-  "block_name": "Transformer架构（Decoder-Only）",
+  "block_id": "KB-02",
+  "block_name": "Python编程基础",
   "block_ids": [
-    "KB-08"
+    "KB-02"
   ],
-  "subtopic_id": "KBS-08-04",
-  "subtopic_name": "前馈网络（FFN）与SwiGLU激活函数",
+  "subtopic_id": "KBS-02-00",
+  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
   "subtopic_ids": [
-    "KBS-08-04",
-    "KBS-08-05"
+    "KBS-02-00"
   ],
   "subtopic_names": [
-    "前馈网络（FFN）与SwiGLU激活函数",
-    "旋转位置编码（RoPE）"
+    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
   ],
-  "estimated_hours": 2.0,
+  "estimated_hours": 0.5,
   "gap_skill": "Transformer",
-  "prerequisites": [
-    "KBS-08-03"
-  ],
+  "prerequisites": [],
   "status": "pending",
   "accuracy": null,
   "strategy_used": null,
-  "title": "学习前馈网络（FFN）与SwiGLU激活函数",
-  "description": "围绕前馈网络（FFN）与SwiGLU激活函数完成一次可执行的阶段学习与练习。",
+  "title": "学习环境准备：安装Python 3.10+",
+  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
   "objectives": [
-    "理解前馈网络（FFN）与SwiGLU激活函数的基本概念",
-    "掌握前馈网络（FFN）与SwiGLU激活函数的核心技术",
-    "能够独立完成前馈网络（FFN）与SwiGLU激活函数相关任务"
+    "理解环境准备：安装Python 3.10+的基本概念",
+    "掌握环境准备：安装Python 3.10+的核心技术",
+    "能够独立完成环境准备：安装Python 3.10+相关任务"
   ],
-  "difficulty": "高级",
-  "recommended_daily_hours": 2.0,
+  "difficulty": "初级",
+  "recommended_daily_hours": 0.5,
   "suggested_study_days": 1,
-  "learning_style_notes": "混合型学习者：建议结合阅读、观看和实践多种方式学习前馈网络（FFN）与SwiGLU激活函数",
-  "hardware_notes": "",
-  "personalization_summary": "预计0.9小时完成 | 建议分1天学习 | 每天2.0小时 | 综合型学习风格"
+  "learning_style_notes": "理论型学习者：建议先理解环境准备：安装Python 3.10+的原理、设计思路与适用场景，再辅以少量代码示例验证关键写法。",
+  "hardware_notes": "当前设备为 RTX 3060 12GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合熟悉Tokenizer和BPE算法，想深入Transformer学习者 | 预计1.4小时完成 | 建议分1天学习 | 每天2.0小时 | 综合型学习风格"
 }

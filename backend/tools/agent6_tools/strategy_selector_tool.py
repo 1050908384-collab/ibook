@@ -25,7 +25,7 @@ if not logger.handlers:
 # 策略阈值常量（iteration_strategy.skill.md 规则1）
 # ------------------------------------------------------------------
 ACCURACY_FINISH = 0.85       # ≥0.85 且 coverage≥0.90 且全部已掌握 → 结业
-ACCURACY_ADVANCE = 0.70      # ≥0.70（正确率 70%）且非全部已掌握 → 进阶（用户要求通过阈值为 70%）
+ACCURACY_ADVANCE = 0.70      # ≥0.70（正确率 70%）且非全部已掌握 → 进阶
 ACCURACY_REINFORCE_LOW = 0.60  # 0.60 ≤ accuracy < 0.70 → 巩固
 # accuracy < 0.60 → 降维
 

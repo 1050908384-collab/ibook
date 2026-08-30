@@ -1,8 +1,29 @@
 {
-  "session_id": "51655649-e5fb-4c75-aba8-52be1c53bf98",
+  "session_id": "97ebdc0f-e367-471d-a820-dc845709d90d",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "A100服务器，想做高并发vLLM推理服务",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构",
+    "HuggingFace生态工具链"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08",
+    "KB-11"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-15"
+  ],
+  "target_subtopic_ids": [
+    "KBS-15-04"
+  ],
+  "planned_block_order": [
+    "KB-15"
+  ],
+  "active_stage_block_id": "KB-01",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -10,8 +31,11 @@
       "block_id": "KB-15",
       "block_name": "模型推理部署（vLLM）",
       "target_subtopic_ids": [
+        "KBS-15-00",
+        "KBS-15-01",
         "KBS-15-02",
-        "KBS-15-03"
+        "KBS-15-03",
+        "KBS-15-04"
       ],
       "mapping_confidence": 1.0,
       "level": "advanced",
@@ -22,9 +46,9 @@
   ],
   "goal": "vLLM部署",
   "daily_hours": 3.0,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.725,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

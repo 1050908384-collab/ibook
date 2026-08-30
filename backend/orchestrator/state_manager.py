@@ -27,11 +27,11 @@ class StateManager:
         state = self._get(session_id)
         return state.model_dump(mode="json") if state else None
 
-    def require_session(self, session_id: str) -> SessionData:
+    def require_session(self, session_id: str, *, allow_completed: bool = False) -> SessionData:
         state = self._get(session_id)
         if not state:
             raise ValueError(f"Session not found: {session_id}")
-        if state.status != "active":
+        if state.status != "active" and not (allow_completed and state.status == "completed"):
             raise ValueError(f"Session is not active: {session_id}")
         return state
 
@@ -71,8 +71,8 @@ class StateManager:
         state.practice_profile = practice_profile
         self._save(state)
 
-    def get_practice_profile(self, session_id: str) -> Dict[str, Any]:
-        state = self.require_session(session_id)
+    def get_practice_profile(self, session_id: str, *, allow_completed: bool = False) -> Dict[str, Any]:
+        state = self.require_session(session_id, allow_completed=allow_completed)
         user_profile = self.db_client.get_user_profile(
             self.db_client.get_session_user_id(session_id)
         ) or {}
@@ -331,8 +331,9 @@ class StateManager:
         tech_pass: bool = True,
         quality_pass: bool = True,
         stage_num: Optional[int] = None,
+        allow_completed: bool = False,
     ) -> None:
-        state = self.require_session(session_id)
+        state = self.require_session(session_id, allow_completed=allow_completed)
         target_stage_num = stage_num if stage_num is not None else state.current_stage
         record = {
             "stage": target_stage_num,
@@ -381,8 +382,15 @@ class StateManager:
         ]
         return sum(1 for answer in answers if answer["is_correct"]) / len(answers) if answers else 0.0
 
-    def add_interaction(self, session_id: str, interaction_type: str, data: Dict[str, Any]) -> None:
-        state = self.require_session(session_id)
+    def add_interaction(
+        self,
+        session_id: str,
+        interaction_type: str,
+        data: Dict[str, Any],
+        *,
+        allow_completed: bool = False,
+    ) -> None:
+        state = self.require_session(session_id, allow_completed=allow_completed)
         state.interactions.append({"type": interaction_type, "data": data})
         self._save(state)
 

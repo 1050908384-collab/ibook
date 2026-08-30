@@ -122,8 +122,8 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 | P_corrected 区间 | next_strategy | 含义 |
 |:---|:---|:---|
 | ≥ 0.85 | `"finish"` | 已基本掌握，建议结业 |
-| [0.80, 0.85) | `"advance"` | 掌握度较高，建议进阶 |
-| [0.60, 0.80) | `"reinforce"` | 部分掌握，建议巩固 |
+| [0.70, 0.85) | `"advance"` | 掌握度较高，建议进阶 |
+| [0.60, 0.70) | `"reinforce"` | 部分掌握，建议巩固 |
 | < 0.60 | `"simplify"` | 掌握度较低，建议降维 |
 
 **说明**：本规则基于BKT掌握度生成纯数据驱动的策略建议，不考虑迭代历史和方向切换条件。最终策略决策由 `iteration_strategy.skill.md` 负责，其会将此建议与迭代历史结合，判断是否需要方向切换（如连续降维无效时触发回溯）或强制结业。
@@ -367,7 +367,7 @@ confidence_index = accuracy × 0.6 + ((emotion_score + 1) / 2) × 0.4
 | 知识点在画像中不存在（question_records中的skill不在knowledge_gaps中） | 新增KnowledgeGap到knowledge_gaps列表，status初始为"未掌握"，progress=P_corrected |
 | P_BKT计算异常（如除零错误） | 跳过BKT计算，降级为accuracy直接映射（accuracy≥0.8→已掌握，<0.8→部分掌握），update_rationale标注"BKT计算异常，降级为accuracy直接映射" |
 | 画像数据缺失 | 使用UserProfile默认值（confidence_index=0.5，version=1），标注"数据不足" |
-| P_corrected处于阈值边界（如恰好0.60或0.80） | 按下限区间取值（0.60→reinforce，0.80→advance），next_strategy标注对应区间 |
+| P_corrected处于阈值边界（如恰好0.60或0.70） | 按下限区间取值（0.60→reinforce，0.70→advance），next_strategy标注对应区间 |
 | next_strategy建议为"finish"但knowledge_gaps中仍有"学习中"状态 | 降级为"advance"建议，update_rationale标注"存在未掌握知识点，建议进阶而非结业" |
 
 ## 6. 附录

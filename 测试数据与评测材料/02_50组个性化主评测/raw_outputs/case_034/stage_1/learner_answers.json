@@ -1,65 +1,65 @@
 [
   {
-    "question_id": "Q-KB08-ST0807-001",
-    "submitted_answer": "softmax",
-    "is_correct": true,
-    "correct_answer": "softmax",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB08-ST0807-003",
-    "submitted_answer": "A",
-    "is_correct": true,
-    "correct_answer": "A",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB08-ST0804-001",
+    "question_id": "Q-KB07-ST0700-001",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "独立 ||| 分别 ||| position-wise",
+    "correct_answer": "transformers",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB08-ST0807-002",
+    "question_id": "Q-KB07-ST0700-002",
+    "submitted_answer": "tokenizer ||| 分词器",
+    "is_correct": true,
+    "correct_answer": "tokenizer ||| 分词器",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0704-005",
+    "submitted_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-005",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "eval ||| eval()",
+    "correct_answer": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB08-ST0802-002",
-    "submitted_answer": "Decoder-Only ||| decoder only ||| 仅解码器",
+    "question_id": "Q-KB0701-003",
+    "submitted_answer": "正确",
     "is_correct": true,
-    "correct_answer": "Decoder-Only ||| decoder only ||| 仅解码器",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB08-ST0800-003",
-    "submitted_answer": "A",
-    "is_correct": true,
-    "correct_answer": "A",
-    "answer_behavior": "medium",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0801-004",
-    "submitted_answer": "错误",
-    "is_correct": false,
     "correct_answer": "正确",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB08-ST0800-001",
-    "submitted_answer": "检查点 ||| checkpoint ||| 模型仓库",
+    "question_id": "Q-KB0702-001",
+    "submitted_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
     "is_correct": true,
-    "correct_answer": "检查点 ||| checkpoint ||| 模型仓库",
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-004",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "D",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
     "answer_behavior": "medium",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

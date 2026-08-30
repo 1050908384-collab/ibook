@@ -1,6 +1,6 @@
 {
   "review_passed": true,
-  "iterations": 3,
+  "iterations": 4,
   "review_history": [
     {
       "iteration": 1,
@@ -9,104 +9,36 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "61382cdc50b7_r1",
-            "canonical_error_id": "61382cdc50b7",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
-            "content_version": 1,
-            "in_chunk_position": "lines:1-48"
-          },
-          {
-            "error_type": "factual_error",
+            "error_type": "license_missing",
             "severity": "minor",
-            "location": null,
-            "description": "环境变量是操作系统运行时使用的动态键值对，但并非所有程序都能读到所有环境变量，环境变量具有作用域和继承性，子进程继承父进程的环境变量，但并非所有程序都能读取所有环境变量。",
-            "evidence": "环境变量具有进程级作用域，子进程继承父进程的环境变量，但并非所有程序都能读取所有环境变量。",
-            "suggestion": "建议修改为：环境变量是操作系统提供给进程的键值对，进程可以读取和修改，子进程会继承父进程的环境变量。",
-            "error_id": "1859d25080c9_r1",
-            "canonical_error_id": "1859d25080c9",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
             "source_refs": [],
             "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
+              "required": false,
+              "action": "review_suggestion"
             },
             "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "factual_error",
+            "error_type": "vram_note_missing",
             "severity": "minor",
-            "location": null,
-            "description": "PWD 环境变量并非随 cd 自动更新，而是由 shell 维护的当前工作目录的变量，cd 命令会更新 shell 的 PWD 变量，但环境变量本身不会自动更新。",
-            "evidence": "PWD 是 shell 的内置变量，cd 命令会更新它，但环境变量本身不会自动更新。",
-            "suggestion": "建议修改为：PWD 是当前工作目录，由 shell 维护，cd 命令会更新它。",
-            "error_id": "dbc9ad9dc4be_r1",
-            "canonical_error_id": "dbc9ad9dc4be",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "fact_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块中关于环境变量优先级顺序的表述存在事实错误：将用户级配置（~/.bashrc等）的优先级置于系统级配置（/etc/profile等）之上，但实际加载顺序中系统级配置文件（如/etc/profile）先于用户级配置文件（如~/.bash_profile）执行，且后加载的变量会覆盖先加载的变量。因此系统级配置的优先级应高于用户级配置，而非相反。",
-            "evidence": "在Linux登录Shell中，环境变量加载顺序通常为：/etc/profile → ~/.bash_profile（或~/.profile）→ ~/.bashrc。后执行的配置文件中的export会覆盖先前的同名变量，因此系统级配置（/etc/profile）的优先级高于用户级配置（~/.bashrc等）。",
-            "suggestion": "将优先级顺序修正为：1. 临时变量（当前终端export）2. 系统级配置（/etc/profile等）3. 用户级配置（~/.bashrc等）。并补充说明加载顺序：/etc/profile先于用户级配置文件执行。",
-            "error_id": "81b8e6eb451a_r1",
-            "canonical_error_id": "81b8e6eb451a",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C005",
-            "content_chunk_id": "LOCAL-KBS-01-02-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在'后续装'处截断，句子不完整，可能遗漏了重要信息。",
-            "evidence": "原文末尾为'关掉终端就失效了。后续装'，明显未完成。",
-            "suggestion": "补全后续内容，确保句子完整。",
-            "error_id": "07de3b23e0ae_r1",
-            "canonical_error_id": "07de3b23e0ae",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -115,86 +47,20 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C007",
-            "content_chunk_id": "LOCAL-KBS-01-02-C007",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在7.3节中途截断，未完成'测试变量是否生效'的说明，缺少使配置生效的命令（如source ~/.bashrc）及验证步骤。",
-            "evidence": "原文7.3节仅给出假设场景，未提供任何命令或后续说明，内容不完整。",
-            "suggestion": "补充使配置生效的命令（如source ~/.bashrc）及验证方法（如echo $MY_VAR）。",
-            "error_id": "c7028e4c8c04_r1",
-            "canonical_error_id": "c7028e4c8c04",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C010",
-            "content_chunk_id": "LOCAL-KBS-01-02-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "排查步骤第三步的 grep 命令不完整，缺少搜索模式和目标文件，无法执行。",
-            "evidence": "原文中第三步为单独的 'grep'，没有指定要搜索的模式和文件，属于不完整命令。",
-            "suggestion": "补充完整的 grep 命令，例如：grep -n 'export YOUR_VAR' ~/.bashrc，以检查变量是否被重复定义或覆盖。",
-            "error_id": "cc6bb9c5ad57_r1",
-            "canonical_error_id": "cc6bb9c5ad57",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C011",
-            "content_chunk_id": "LOCAL-KBS-01-02-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "9.3节中加载.env文件的命令不完整，缺少`set +o allexport`，导致allexport选项在脚本执行后仍保持开启，可能影响后续环境变量导出行为。",
-            "evidence": "标准做法是在source后关闭allexport选项：`set -o allexport; source ~/.env; set +o allexport`。原文仅写了`set -o allexport`和`source ~/.env`，未包含关闭命令。",
-            "suggestion": "补充`set +o allexport`命令，确保allexport选项在加载.env文件后关闭。",
-            "error_id": "a663f2a4f743_r1",
-            "canonical_error_id": "a663f2a4f743",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C012",
-            "content_chunk_id": "LOCAL-KBS-01-02-C012",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
+            "error_type": "command_error",
             "severity": "critical",
             "location": null,
-            "description": "内容块标题为“系统级配置文件（①）”，但正文中同时出现了“/etc/environment”和“/etc/profile”两个文件，且均标记为“①”，导致编号重复，无法区分。",
-            "evidence": "原文中“### A.1 `/etc/environment`（①）”和“### A.2 `/etc/profile`（①）”均使用“①”标记，造成混淆。",
-            "suggestion": "请为每个文件分配唯一的编号，例如“①”和“②”，或使用其他区分方式。",
-            "error_id": "fc87b90f261d_r1",
-            "canonical_error_id": "fc87b90f261d",
+            "description": "验证安装的命令不完整，缺少参数，导致命令无效。",
+            "evidence": "原文中命令为 'python --'，缺少参数（如 --version），无法执行。",
+            "suggestion": "将命令改为 'python --version' 或 'python -V'。",
+            "error_id": "0531be6e795a_r1",
+            "canonical_error_id": "0531be6e795a",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -203,30 +69,8 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C015",
-            "content_chunk_id": "LOCAL-KBS-01-02-C015",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在“### A.2 `/etc/profile`（①）”部分只给出了代码示例的开头，没有完整的配置示例和说明，内容不完整。",
-            "evidence": "原文在“export PATH=$PATH:/usr/local/custom/bin”后直接结束，没有后续说明或示例。",
-            "suggestion": "请补充完整的配置示例和必要的解释说明。",
-            "error_id": "fef50c21b343_r1",
-            "canonical_error_id": "fef50c21b343",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C015",
-            "content_chunk_id": "LOCAL-KBS-01-02-C015",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -234,11 +78,11 @@
             "error_type": "factual_error",
             "severity": "minor",
             "location": null,
-            "description": "Zsh 配置文件说明不准确：~/.zshrc 并非用于所有交互式 Shell，而是仅用于 Zsh 的交互式非登录 Shell。登录 Shell 会读取 ~/.zprofile 或 ~/.zlogin。",
-            "evidence": "Zsh 官方文档：~/.zshrc 在交互式 shell 启动时读取，~/.zprofile 在登录 shell 启动时读取。",
-            "suggestion": "将 Zsh 行改为：~/.zshrc 用于交互式非登录 Shell；~/.zprofile 用于登录 Shell。",
-            "error_id": "fe38ef53bb91_r1",
-            "canonical_error_id": "fe38ef53bb91",
+            "description": "内容声称“现代 macOS（Catalina 10.15 起）已不再预装 Python 2”，但 macOS Catalina 10.15 仍预装 Python 2.7，直到 macOS 12.3 才移除 Python 2。",
+            "evidence": "Apple 官方文档及社区记录显示，macOS Catalina 10.15 仍包含 Python 2.7，macOS Monterey 12.3 起才不再预装 Python 2。",
+            "suggestion": "修改为“macOS 12.3 起不再预装 Python 2，系统自带的 python3 可能为旧版本，建议自行安装最新版 Python。”",
+            "error_id": "3e49f1e30d5c_r1",
+            "canonical_error_id": "3e49f1e30d5c",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -247,66 +91,86 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C016",
-            "content_chunk_id": "LOCAL-KBS-01-02-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "安装官方安装包后，未提示用户可能需要运行“sudo installer -pkg ... -target /”或处理“无法打开，因为来自身份不明的开发者”的 Gatekeeper 提示，可能导致安装失败。",
+            "evidence": "macOS 安装 .pkg 文件时，若未通过 App Store 或已签名开发者，可能触发 Gatekeeper 阻止，需在“系统偏好设置-安全性与隐私”中允许或使用右键打开。",
+            "suggestion": "补充安装注意事项：若提示“无法打开”，请右键点击安装包选择“打开”，或前往“系统偏好设置-安全性与隐私”允许安装。",
+            "error_id": "3ecd29a6d3c3_r1",
+            "canonical_error_id": "3ecd29a6d3c3",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "Homebrew 安装 Python 后，未提示用户可能需要将 Homebrew 的 Python 路径加入 PATH，或使用 brew link 确保 python3 指向新版本。",
+            "evidence": "Homebrew 安装的 Python 位于 /opt/homebrew/bin（Apple Silicon）或 /usr/local/bin（Intel），若 PATH 未包含该目录，终端可能仍使用系统旧版 python3。",
+            "suggestion": "补充说明：安装后运行 which python3 确认路径，若指向系统路径，可执行 export PATH=\"/opt/homebrew/bin:$PATH\" 或 brew link python。",
+            "error_id": "4bf377d625c3_r1",
+            "canonical_error_id": "4bf377d625c3",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "incomplete_content",
-            "severity": "minor",
+            "severity": "critical",
             "location": null,
-            "description": "内容块末尾的 '怎么用' 部分被截断，句子不完整，影响可读性和理解。",
-            "evidence": "原文以 '就改 ~' 结尾，缺少后续内容。",
-            "suggestion": "补全该句，例如：'就改 ~/.bashrc'。",
-            "error_id": "70e9f4e8877d_r1",
-            "canonical_error_id": "70e9f4e8877d",
+            "description": "内容块在'你的选择'部分末尾以'若'字截断，句子不完整，导致关键信息缺失，无法为读者提供完整的指导。",
+            "evidence": "原文结尾为'本地实体机装 Ubuntu LTS 即可直接跑 LoRA 实训；若'，句子未结束，缺少后续内容。",
+            "suggestion": "补全该句，例如'若需在 Windows 下使用，可启用 WSL2 或使用云服务器。'，确保内容完整。",
+            "error_id": "2fdd1affe6f5_r1",
+            "canonical_error_id": "2fdd1affe6f5",
             "source_refs": [],
             "change_request": {
-              "required": false,
-              "action": "review_suggestion"
+              "required": true,
+              "action": "rewrite_with_supported_source"
             },
             "must_fix": false,
-            "must_fix_reason": null,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C016",
-            "content_chunk_id": "LOCAL-KBS-01-02-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "69c86d5d32c3_r1",
-            "canonical_error_id": "69c86d5d32c3",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C017"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
-            "content_version": 1,
-            "in_chunk_position": "lines:520-567"
-          },
-          {
-            "error_type": "command_incorrect",
+            "error_type": "incomplete_content",
             "severity": "major",
             "location": null,
-            "description": "PATH去重命令中awk的RS=:设置不正确，导致命令无法正确按冒号分割PATH。",
-            "evidence": "awk -v RS=: 将记录分隔符设为冒号，但未设置FS，awk默认按空白分割字段，$0为整行，无法实现按冒号分割路径。正确应使用 -F: 或同时设置FS=:。",
-            "suggestion": "将命令改为：export PATH=$(echo $PATH | awk -F: '!a[$0]++' | paste -sd: -) 或使用 tr 和 sort -u 等更可靠的方法。",
-            "error_id": "8196a715b624_r1",
-            "canonical_error_id": "8196a715b624",
+            "description": "内容块在'配置Python解释'处截断，未完成安装步骤的说明，可能导致用户无法完成配置。",
+            "evidence": "原文以'**配置Python解释'结尾，缺少后续内容。",
+            "suggestion": "补充完整的Python解释器配置步骤，包括选择解释器、创建虚拟环境等。",
+            "error_id": "75a5d2112554_r1",
+            "canonical_error_id": "75a5d2112554",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -315,8 +179,30 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "major",
+            "location": null,
+            "description": "安装步骤中 macOS/Linux 的运行命令不完整，仅显示 '运行 .'，缺少完整的安装命令和后续步骤说明。",
+            "evidence": "原文中 'macOS/Linux：运行 .' 后无具体命令，导致用户无法完成安装。",
+            "suggestion": "补充完整的安装命令，例如：'bash Miniconda3-latest-Linux-x86_64.sh'，并说明安装后的初始化步骤。",
+            "error_id": "5ad40d87b819_r1",
+            "canonical_error_id": "5ad40d87b819",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -324,11 +210,11 @@
             "error_type": "factual_error",
             "severity": "minor",
             "location": null,
-            "description": "声称'整个操作只影响当前终端会话，不会改动配置文件'，但export命令在bash中会修改当前shell的环境变量，且如果该命令在.bashrc等配置文件中执行，会影响所有新shell。",
-            "evidence": "export命令用于设置环境变量，其作用域为当前shell及其子进程。若在配置文件中执行，则会影响所有新启动的shell。",
-            "suggestion": "明确说明该命令仅影响当前shell会话，若需永久生效需写入配置文件。",
-            "error_id": "478249a9dbb4_r1",
-            "canonical_error_id": "478249a9dbb4",
+            "description": "内容块末尾出现不完整且误导性的技术陈述：'RTX 4070对应的CUDA版本依赖，'，该句未完成，且暗示RTX 4070有单一对应的CUDA版本，实际上CUDA版本选择取决于驱动版本和PyTorch版本，并非由显卡型号唯一确定。",
+            "evidence": "原文：'RTX 4070对应的CUDA版本依赖，'，句子不完整，且与NVIDIA官方文档中CUDA版本兼容性取决于驱动版本的事实不符。",
+            "suggestion": "删除该不完整句子，或补充完整说明：'RTX 4070需要CUDA 11.8或更高版本，具体版本需根据驱动和PyTorch版本选择。'",
+            "error_id": "0763ef0f2a9d_r1",
+            "canonical_error_id": "0763ef0f2a9d",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -337,88 +223,18 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C012",
+            "content_chunk_id": "LOCAL-KBS-02-00-C012",
             "content_version": 1,
             "in_chunk_position": null
-          },
-          {
-            "error_type": "logic_error",
-            "severity": "minor",
-            "location": null,
-            "description": "D部分的环境判断逻辑中，若ENVIRONMENT变量未设置，则走else分支加载开发配置，但未说明ENVIRONMENT变量如何设置，可能导致用户困惑。",
-            "evidence": "原文提到'ENVIRONMENT需要提前设置好，否则走else分支'，但未说明如何设置，可能造成用户误解。",
-            "suggestion": "建议补充设置ENVIRONMENT变量的方法，例如 export ENVIRONMENT=production 或写入配置文件。",
-            "error_id": "ed451151d2ca_r1",
-            "canonical_error_id": "ed451151d2ca",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "description": "与来源块 LOCAL-KBS-01-03-C001 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C001，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②），lines=1-50",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "99023351d023_r1",
-            "canonical_error_id": "99023351d023",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_chunk_id": "LOCAL-KBS-01-03-C001",
-            "content_version": 1,
-            "in_chunk_position": "lines:1-50"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "description": "与来源块 LOCAL-KBS-01-03-C002 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-03-C002，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②） > 安装步骤（②），lines=51-109",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "da96ef471afa_r1",
-            "canonical_error_id": "da96ef471afa",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C002"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
-            "content_version": 1,
-            "in_chunk_position": "lines:51-109"
           },
           {
             "error_type": "missing_content",
             "severity": "critical",
             "location": null,
             "description": "待审核内容块为空，无法进行技术审核。",
-            "evidence": "content为空字符串",
-            "suggestion": "请提供待审核的内容块。",
+            "evidence": "content.strip() 为空",
+            "suggestion": "请提供待审核的技术内容。",
             "error_id": "f19a9073ba7a_r1",
             "canonical_error_id": "f19a9073ba7a",
             "source_refs": [],
@@ -429,108 +245,20 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C013",
+            "content_chunk_id": "LOCAL-KBS-02-00-C013",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "missing_source",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块末尾的镜像地址提示不完整，缺少具体的中科大镜像站地址或链接，且未提供来源引用。",
-            "evidence": "原文仅提及'去清华/中科大镜像站查最新'，未给出具体URL或来源标识。",
-            "suggestion": "补充中科大镜像站的具体地址（如https://mirrors.ustc.edu.cn/anaconda/）或提供来源引用。",
-            "error_id": "fca6c778d8bf_r1",
-            "canonical_error_id": "fca6c778d8bf",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C003",
-            "content_chunk_id": "LOCAL-KBS-01-03-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "command_error",
-            "severity": "major",
-            "location": null,
-            "description": "命令 `conda install --yes --file requirements.txt` 不正确：conda 的 --file 选项用于从环境文件（environment.yml）创建环境，而不是从 requirements.txt 安装包。requirements.txt 是 pip 的格式，应使用 `pip install -r requirements.txt`。",
-            "evidence": "conda 官方文档：`conda install --file` 用于从 environment.yml 文件安装，而 requirements.txt 是 pip 的依赖文件格式。",
-            "suggestion": "将命令改为 `pip install -r requirements.txt`，或使用 `conda env create -f environment.yml`（如果提供的是 conda 环境文件）。",
-            "error_id": "9020a15f984c_r1",
-            "canonical_error_id": "9020a15f984c",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C005",
-            "content_chunk_id": "LOCAL-KBS-01-03-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "command_error",
-            "severity": "major",
-            "location": null,
-            "description": "命令 `conda install --force-reinstall numpy=1.24.0` 不正确：conda 没有 `--force-reinstall` 选项，该选项是 pip 的。conda 中强制重装应使用 `conda install --force-reinstall` 或 `conda install --force`，但更推荐使用 `conda install --force-reinstall` 或先卸载再安装。",
-            "evidence": "conda 官方命令参考：`conda install` 支持 `--force-reinstall` 选项，但该选项在 conda 中确实存在，但通常用于 pip。实际上 conda 的 `--force-reinstall` 选项是存在的，但更常见的做法是 `conda install --force-reinstall`。",
-            "suggestion": "建议使用 `conda install --force-reinstall numpy=1.24.0` 或 `conda install --force numpy=1.24.0`，但更推荐先 `conda remove numpy` 再 `conda install numpy=1.24.0`。",
-            "error_id": "971936974de7_r1",
-            "canonical_error_id": "971936974de7",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C005",
-            "content_chunk_id": "LOCAL-KBS-01-03-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_command_termination",
-            "severity": "major",
-            "location": null,
-            "description": "代码块中 conda env create 命令缺少结尾的右引号，导致命令不完整，无法正确执行。",
-            "evidence": "原文代码块：conda env create -f environment.yml 缺少结尾的 ` 符号，命令未闭合。",
-            "suggestion": "补全命令：conda env create -f environment.yml",
-            "error_id": "364218d14c5f_r1",
-            "canonical_error_id": "364218d14c5f",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C006",
-            "content_chunk_id": "LOCAL-KBS-01-03-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_content",
+            "error_type": "incomplete_content",
             "severity": "critical",
             "location": null,
-            "description": "待审核内容块在'动手练'处被截断，内容不完整，无法进行完整审核。",
-            "evidence": "内容块以'运行`pip'结尾，明显不完整。",
-            "suggestion": "提供完整的内容块后再进行审核。",
-            "error_id": "dd60250c207a_r1",
-            "canonical_error_id": "dd60250c207a",
+            "description": "内容块在6.2节PyCharm配置步骤5的Windows路径示例处被截断，缺少后续步骤和完整内容。",
+            "evidence": "原文在'C:\\Users\\你的用户名\\miniconda3\\'处中断，未提供完整路径示例，且6.2节后续步骤缺失。",
+            "suggestion": "补全6.2节内容，包括完整的conda环境路径示例（如'C:\\Users\\你的用户名\\miniconda3\\envs\\llm-learn\\python.exe'）及后续步骤。",
+            "error_id": "2d030b1f40b7_r1",
+            "canonical_error_id": "2d030b1f40b7",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -539,20 +267,20 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C009",
-            "content_chunk_id": "LOCAL-KBS-01-03-C009",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "missing_requirements_file_extension",
+            "error_type": "incomplete_instruction",
             "severity": "minor",
             "location": null,
-            "description": "导出依赖命令 `pip freeze > requirements` 未指定文件扩展名，通常应为 `requirements.txt`。",
-            "evidence": "行业惯例与 pip 文档均使用 `requirements.txt` 作为依赖清单文件名。",
-            "suggestion": "将命令改为 `pip freeze > requirements.txt`。",
-            "error_id": "b0c5e9fcf4cd_r1",
-            "canonical_error_id": "b0c5e9fcf4cd",
+            "description": "内容块末尾的VS Code验证步骤被截断，缺少完整的操作指令（如运行代码的完整快捷键或后续步骤），可能导致学习者无法完成验证。",
+            "evidence": "原文结尾为'点击右上角小三角或按`Ctrl'，未提供完整的快捷键或后续说明。",
+            "suggestion": "补全VS Code运行代码的完整操作说明，例如'点击右上角小三角或按Ctrl+F5运行'。",
+            "error_id": "c43b077a68d5_r1",
+            "canonical_error_id": "c43b077a68d5",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -561,22 +289,22 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C012",
-            "content_chunk_id": "LOCAL-KBS-01-03-C012",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "description": "与来源块 LOCAL-KBS-01-03-C013 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C013，heading_path=conda / pip 虚拟环境管理 > 五、综合实战演练（①+②+④） > 场景 3：验证 conda 对 ~/.bashrc 的修改，lines=433-478",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "3157dc509652_r1",
-            "canonical_error_id": "3157dc509652",
+            "error_id": "5fb568443944_r1",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-03-C013"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -584,33 +312,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 1,
-            "in_chunk_position": "lines:433-478"
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称 conda 通过修改 ~/.bashrc 把 ~/miniconda3/bin 添加到 PATH，但 conda init 实际添加的是 conda 初始化代码块，该代码块在 shell 启动时动态设置 PATH，而非直接写入 PATH 行。",
-            "evidence": "conda init 生成的代码块包含 conda 的 shell 函数和路径设置逻辑，并非简单地将路径追加到 PATH 变量。",
-            "suggestion": "修改表述为：conda 通过修改 ~/.bashrc 添加初始化代码块，该代码块在 shell 启动时配置 conda 命令的可用性。",
-            "error_id": "56c0495ffe24_r1",
-            "canonical_error_id": "56c0495ffe24",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
-            "content_version": 1,
-            "in_chunk_position": null
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -621,104 +327,36 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "61382cdc50b7_r1",
-            "canonical_error_id": "61382cdc50b7",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
-            "content_version": 1,
-            "in_chunk_position": "lines:1-48"
-          },
-          {
-            "error_type": "factual_error",
+            "error_type": "license_missing",
             "severity": "minor",
-            "location": null,
-            "description": "环境变量是操作系统运行时使用的动态键值对，但并非所有程序都能读到所有环境变量，环境变量具有作用域和继承性，子进程继承父进程的环境变量，但并非所有程序都能读取所有环境变量。",
-            "evidence": "环境变量具有进程级作用域，子进程继承父进程的环境变量，但并非所有程序都能读取所有环境变量。",
-            "suggestion": "建议修改为：环境变量是操作系统提供给进程的键值对，进程可以读取和修改，子进程会继承父进程的环境变量。",
-            "error_id": "1859d25080c9_r1",
-            "canonical_error_id": "1859d25080c9",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
             "source_refs": [],
             "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
+              "required": false,
+              "action": "review_suggestion"
             },
             "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "factual_error",
+            "error_type": "vram_note_missing",
             "severity": "minor",
-            "location": null,
-            "description": "PWD 环境变量并非随 cd 自动更新，而是由 shell 维护的当前工作目录的变量，cd 命令会更新 shell 的 PWD 变量，但环境变量本身不会自动更新。",
-            "evidence": "PWD 是 shell 的内置变量，cd 命令会更新它，但环境变量本身不会自动更新。",
-            "suggestion": "建议修改为：PWD 是当前工作目录，由 shell 维护，cd 命令会更新它。",
-            "error_id": "dbc9ad9dc4be_r1",
-            "canonical_error_id": "dbc9ad9dc4be",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "fact_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块中关于环境变量优先级顺序的表述存在事实错误：将用户级配置（~/.bashrc等）的优先级置于系统级配置（/etc/profile等）之上，但实际加载顺序中系统级配置文件（如/etc/profile）先于用户级配置文件（如~/.bash_profile）执行，且后加载的变量会覆盖先加载的变量。因此系统级配置的优先级应高于用户级配置，而非相反。",
-            "evidence": "在Linux登录Shell中，环境变量加载顺序通常为：/etc/profile → ~/.bash_profile（或~/.profile）→ ~/.bashrc。后执行的配置文件中的export会覆盖先前的同名变量，因此系统级配置（/etc/profile）的优先级高于用户级配置（~/.bashrc等）。",
-            "suggestion": "将优先级顺序修正为：1. 临时变量（当前终端export）2. 系统级配置（/etc/profile等）3. 用户级配置（~/.bashrc等）。并补充说明加载顺序：/etc/profile先于用户级配置文件执行。",
-            "error_id": "81b8e6eb451a_r1",
-            "canonical_error_id": "81b8e6eb451a",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C005",
-            "content_chunk_id": "LOCAL-KBS-01-02-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在'后续装'处截断，句子不完整，可能遗漏了重要信息。",
-            "evidence": "原文末尾为'关掉终端就失效了。后续装'，明显未完成。",
-            "suggestion": "补全后续内容，确保句子完整。",
-            "error_id": "07de3b23e0ae_r1",
-            "canonical_error_id": "07de3b23e0ae",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -727,86 +365,20 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C007",
-            "content_chunk_id": "LOCAL-KBS-01-02-C007",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在7.3节中途截断，未完成'测试变量是否生效'的说明，缺少使配置生效的命令（如source ~/.bashrc）及验证步骤。",
-            "evidence": "原文7.3节仅给出假设场景，未提供任何命令或后续说明，内容不完整。",
-            "suggestion": "补充使配置生效的命令（如source ~/.bashrc）及验证方法（如echo $MY_VAR）。",
-            "error_id": "c7028e4c8c04_r1",
-            "canonical_error_id": "c7028e4c8c04",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C010",
-            "content_chunk_id": "LOCAL-KBS-01-02-C010",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "排查步骤第三步的 grep 命令不完整，缺少搜索模式和目标文件，无法执行。",
-            "evidence": "原文中第三步为单独的 'grep'，没有指定要搜索的模式和文件，属于不完整命令。",
-            "suggestion": "补充完整的 grep 命令，例如：grep -n 'export YOUR_VAR' ~/.bashrc，以检查变量是否被重复定义或覆盖。",
-            "error_id": "cc6bb9c5ad57_r1",
-            "canonical_error_id": "cc6bb9c5ad57",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C011",
-            "content_chunk_id": "LOCAL-KBS-01-02-C011",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_command",
-            "severity": "major",
-            "location": null,
-            "description": "9.3节中加载.env文件的命令不完整，缺少`set +o allexport`，导致allexport选项在脚本执行后仍保持开启，可能影响后续环境变量导出行为。",
-            "evidence": "标准做法是在source后关闭allexport选项：`set -o allexport; source ~/.env; set +o allexport`。原文仅写了`set -o allexport`和`source ~/.env`，未包含关闭命令。",
-            "suggestion": "补充`set +o allexport`命令，确保allexport选项在加载.env文件后关闭。",
-            "error_id": "a663f2a4f743_r1",
-            "canonical_error_id": "a663f2a4f743",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C012",
-            "content_chunk_id": "LOCAL-KBS-01-02-C012",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "factual_error",
+            "error_type": "command_error",
             "severity": "critical",
             "location": null,
-            "description": "内容块标题为“系统级配置文件（①）”，但正文中同时出现了“/etc/environment”和“/etc/profile”两个文件，且均标记为“①”，导致编号重复，无法区分。",
-            "evidence": "原文中“### A.1 `/etc/environment`（①）”和“### A.2 `/etc/profile`（①）”均使用“①”标记，造成混淆。",
-            "suggestion": "请为每个文件分配唯一的编号，例如“①”和“②”，或使用其他区分方式。",
-            "error_id": "fc87b90f261d_r1",
-            "canonical_error_id": "fc87b90f261d",
+            "description": "验证安装的命令不完整，缺少参数，导致命令无效。",
+            "evidence": "原文中命令为 'python --'，缺少参数（如 --version），无法执行。",
+            "suggestion": "将命令改为 'python --version' 或 'python -V'。",
+            "error_id": "0531be6e795a_r1",
+            "canonical_error_id": "0531be6e795a",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -815,30 +387,8 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C015",
-            "content_chunk_id": "LOCAL-KBS-01-02-C015",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "incomplete_content",
-            "severity": "major",
-            "location": null,
-            "description": "内容块在“### A.2 `/etc/profile`（①）”部分只给出了代码示例的开头，没有完整的配置示例和说明，内容不完整。",
-            "evidence": "原文在“export PATH=$PATH:/usr/local/custom/bin”后直接结束，没有后续说明或示例。",
-            "suggestion": "请补充完整的配置示例和必要的解释说明。",
-            "error_id": "fef50c21b343_r1",
-            "canonical_error_id": "fef50c21b343",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C015",
-            "content_chunk_id": "LOCAL-KBS-01-02-C015",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -846,11 +396,11 @@
             "error_type": "factual_error",
             "severity": "minor",
             "location": null,
-            "description": "Zsh 配置文件说明不准确：~/.zshrc 并非用于所有交互式 Shell，而是仅用于 Zsh 的交互式非登录 Shell。登录 Shell 会读取 ~/.zprofile 或 ~/.zlogin。",
-            "evidence": "Zsh 官方文档：~/.zshrc 在交互式 shell 启动时读取，~/.zprofile 在登录 shell 启动时读取。",
-            "suggestion": "将 Zsh 行改为：~/.zshrc 用于交互式非登录 Shell；~/.zprofile 用于登录 Shell。",
-            "error_id": "fe38ef53bb91_r1",
-            "canonical_error_id": "fe38ef53bb91",
+            "description": "内容声称“现代 macOS（Catalina 10.15 起）已不再预装 Python 2”，但 macOS Catalina 10.15 仍预装 Python 2.7，直到 macOS 12.3 才移除 Python 2。",
+            "evidence": "Apple 官方文档及社区记录显示，macOS Catalina 10.15 仍包含 Python 2.7，macOS Monterey 12.3 起才不再预装 Python 2。",
+            "suggestion": "修改为“macOS 12.3 起不再预装 Python 2，系统自带的 python3 可能为旧版本，建议自行安装最新版 Python。”",
+            "error_id": "3e49f1e30d5c_r1",
+            "canonical_error_id": "3e49f1e30d5c",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -859,66 +409,86 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C016",
-            "content_chunk_id": "LOCAL-KBS-01-02-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "安装官方安装包后，未提示用户可能需要运行“sudo installer -pkg ... -target /”或处理“无法打开，因为来自身份不明的开发者”的 Gatekeeper 提示，可能导致安装失败。",
+            "evidence": "macOS 安装 .pkg 文件时，若未通过 App Store 或已签名开发者，可能触发 Gatekeeper 阻止，需在“系统偏好设置-安全性与隐私”中允许或使用右键打开。",
+            "suggestion": "补充安装注意事项：若提示“无法打开”，请右键点击安装包选择“打开”，或前往“系统偏好设置-安全性与隐私”允许安装。",
+            "error_id": "3ecd29a6d3c3_r1",
+            "canonical_error_id": "3ecd29a6d3c3",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "minor",
+            "location": null,
+            "description": "Homebrew 安装 Python 后，未提示用户可能需要将 Homebrew 的 Python 路径加入 PATH，或使用 brew link 确保 python3 指向新版本。",
+            "evidence": "Homebrew 安装的 Python 位于 /opt/homebrew/bin（Apple Silicon）或 /usr/local/bin（Intel），若 PATH 未包含该目录，终端可能仍使用系统旧版 python3。",
+            "suggestion": "补充说明：安装后运行 which python3 确认路径，若指向系统路径，可执行 export PATH=\"/opt/homebrew/bin:$PATH\" 或 brew link python。",
+            "error_id": "4bf377d625c3_r1",
+            "canonical_error_id": "4bf377d625c3",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "incomplete_content",
-            "severity": "minor",
+            "severity": "critical",
             "location": null,
-            "description": "内容块末尾的 '怎么用' 部分被截断，句子不完整，影响可读性和理解。",
-            "evidence": "原文以 '就改 ~' 结尾，缺少后续内容。",
-            "suggestion": "补全该句，例如：'就改 ~/.bashrc'。",
-            "error_id": "70e9f4e8877d_r1",
-            "canonical_error_id": "70e9f4e8877d",
+            "description": "内容块在'你的选择'部分末尾以'若'字截断，句子不完整，导致关键信息缺失，无法为读者提供完整的指导。",
+            "evidence": "原文结尾为'本地实体机装 Ubuntu LTS 即可直接跑 LoRA 实训；若'，句子未结束，缺少后续内容。",
+            "suggestion": "补全该句，例如'若需在 Windows 下使用，可启用 WSL2 或使用云服务器。'，确保内容完整。",
+            "error_id": "2fdd1affe6f5_r1",
+            "canonical_error_id": "2fdd1affe6f5",
             "source_refs": [],
             "change_request": {
-              "required": false,
-              "action": "review_suggestion"
+              "required": true,
+              "action": "rewrite_with_supported_source"
             },
             "must_fix": false,
-            "must_fix_reason": null,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C016",
-            "content_chunk_id": "LOCAL-KBS-01-02-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "69c86d5d32c3_r1",
-            "canonical_error_id": "69c86d5d32c3",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C017"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
-            "content_version": 1,
-            "in_chunk_position": "lines:520-567"
-          },
-          {
-            "error_type": "command_incorrect",
+            "error_type": "incomplete_content",
             "severity": "major",
             "location": null,
-            "description": "PATH去重命令中awk的RS=:设置不正确，导致命令无法正确按冒号分割PATH。",
-            "evidence": "awk -v RS=: 将记录分隔符设为冒号，但未设置FS，awk默认按空白分割字段，$0为整行，无法实现按冒号分割路径。正确应使用 -F: 或同时设置FS=:。",
-            "suggestion": "将命令改为：export PATH=$(echo $PATH | awk -F: '!a[$0]++' | paste -sd: -) 或使用 tr 和 sort -u 等更可靠的方法。",
-            "error_id": "8196a715b624_r1",
-            "canonical_error_id": "8196a715b624",
+            "description": "内容块在'配置Python解释'处截断，未完成安装步骤的说明，可能导致用户无法完成配置。",
+            "evidence": "原文以'**配置Python解释'结尾，缺少后续内容。",
+            "suggestion": "补充完整的Python解释器配置步骤，包括选择解释器、创建虚拟环境等。",
+            "error_id": "75a5d2112554_r1",
+            "canonical_error_id": "75a5d2112554",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -927,8 +497,30 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "major",
+            "location": null,
+            "description": "安装步骤中 macOS/Linux 的运行命令不完整，仅显示 '运行 .'，缺少完整的安装命令和后续步骤说明。",
+            "evidence": "原文中 'macOS/Linux：运行 .' 后无具体命令，导致用户无法完成安装。",
+            "suggestion": "补充完整的安装命令，例如：'bash Miniconda3-latest-Linux-x86_64.sh'，并说明安装后的初始化步骤。",
+            "error_id": "5ad40d87b819_r1",
+            "canonical_error_id": "5ad40d87b819",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
             "content_version": 1,
             "in_chunk_position": null
           },
@@ -936,11 +528,11 @@
             "error_type": "factual_error",
             "severity": "minor",
             "location": null,
-            "description": "声称'整个操作只影响当前终端会话，不会改动配置文件'，但export命令在bash中会修改当前shell的环境变量，且如果该命令在.bashrc等配置文件中执行，会影响所有新shell。",
-            "evidence": "export命令用于设置环境变量，其作用域为当前shell及其子进程。若在配置文件中执行，则会影响所有新启动的shell。",
-            "suggestion": "明确说明该命令仅影响当前shell会话，若需永久生效需写入配置文件。",
-            "error_id": "478249a9dbb4_r1",
-            "canonical_error_id": "478249a9dbb4",
+            "description": "内容块末尾出现不完整且误导性的技术陈述：'RTX 4070对应的CUDA版本依赖，'，该句未完成，且暗示RTX 4070有单一对应的CUDA版本，实际上CUDA版本选择取决于驱动版本和PyTorch版本，并非由显卡型号唯一确定。",
+            "evidence": "原文：'RTX 4070对应的CUDA版本依赖，'，句子不完整，且与NVIDIA官方文档中CUDA版本兼容性取决于驱动版本的事实不符。",
+            "suggestion": "删除该不完整句子，或补充完整说明：'RTX 4070需要CUDA 11.8或更高版本，具体版本需根据驱动和PyTorch版本选择。'",
+            "error_id": "0763ef0f2a9d_r1",
+            "canonical_error_id": "0763ef0f2a9d",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -949,88 +541,18 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C012",
+            "content_chunk_id": "LOCAL-KBS-02-00-C012",
             "content_version": 1,
             "in_chunk_position": null
-          },
-          {
-            "error_type": "logic_error",
-            "severity": "minor",
-            "location": null,
-            "description": "D部分的环境判断逻辑中，若ENVIRONMENT变量未设置，则走else分支加载开发配置，但未说明ENVIRONMENT变量如何设置，可能导致用户困惑。",
-            "evidence": "原文提到'ENVIRONMENT需要提前设置好，否则走else分支'，但未说明如何设置，可能造成用户误解。",
-            "suggestion": "建议补充设置ENVIRONMENT变量的方法，例如 export ENVIRONMENT=production 或写入配置文件。",
-            "error_id": "ed451151d2ca_r1",
-            "canonical_error_id": "ed451151d2ca",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "description": "与来源块 LOCAL-KBS-01-03-C001 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C001，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②），lines=1-50",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "99023351d023_r1",
-            "canonical_error_id": "99023351d023",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_chunk_id": "LOCAL-KBS-01-03-C001",
-            "content_version": 1,
-            "in_chunk_position": "lines:1-50"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "description": "与来源块 LOCAL-KBS-01-03-C002 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-03-C002，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②） > 安装步骤（②），lines=51-109",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "da96ef471afa_r1",
-            "canonical_error_id": "da96ef471afa",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C002"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
-            "content_version": 1,
-            "in_chunk_position": "lines:51-109"
           },
           {
             "error_type": "missing_content",
             "severity": "critical",
             "location": null,
             "description": "待审核内容块为空，无法进行技术审核。",
-            "evidence": "content为空字符串",
-            "suggestion": "请提供待审核的内容块。",
+            "evidence": "content.strip() 为空",
+            "suggestion": "请提供待审核的技术内容。",
             "error_id": "f19a9073ba7a_r1",
             "canonical_error_id": "f19a9073ba7a",
             "source_refs": [],
@@ -1041,108 +563,20 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C013",
+            "content_chunk_id": "LOCAL-KBS-02-00-C013",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "missing_source",
-            "severity": "minor",
-            "location": null,
-            "description": "内容块末尾的镜像地址提示不完整，缺少具体的中科大镜像站地址或链接，且未提供来源引用。",
-            "evidence": "原文仅提及'去清华/中科大镜像站查最新'，未给出具体URL或来源标识。",
-            "suggestion": "补充中科大镜像站的具体地址（如https://mirrors.ustc.edu.cn/anaconda/）或提供来源引用。",
-            "error_id": "fca6c778d8bf_r1",
-            "canonical_error_id": "fca6c778d8bf",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C003",
-            "content_chunk_id": "LOCAL-KBS-01-03-C003",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "command_error",
-            "severity": "major",
-            "location": null,
-            "description": "命令 `conda install --yes --file requirements.txt` 不正确：conda 的 --file 选项用于从环境文件（environment.yml）创建环境，而不是从 requirements.txt 安装包。requirements.txt 是 pip 的格式，应使用 `pip install -r requirements.txt`。",
-            "evidence": "conda 官方文档：`conda install --file` 用于从 environment.yml 文件安装，而 requirements.txt 是 pip 的依赖文件格式。",
-            "suggestion": "将命令改为 `pip install -r requirements.txt`，或使用 `conda env create -f environment.yml`（如果提供的是 conda 环境文件）。",
-            "error_id": "9020a15f984c_r1",
-            "canonical_error_id": "9020a15f984c",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C005",
-            "content_chunk_id": "LOCAL-KBS-01-03-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "command_error",
-            "severity": "major",
-            "location": null,
-            "description": "命令 `conda install --force-reinstall numpy=1.24.0` 不正确：conda 没有 `--force-reinstall` 选项，该选项是 pip 的。conda 中强制重装应使用 `conda install --force-reinstall` 或 `conda install --force`，但更推荐使用 `conda install --force-reinstall` 或先卸载再安装。",
-            "evidence": "conda 官方命令参考：`conda install` 支持 `--force-reinstall` 选项，但该选项在 conda 中确实存在，但通常用于 pip。实际上 conda 的 `--force-reinstall` 选项是存在的，但更常见的做法是 `conda install --force-reinstall`。",
-            "suggestion": "建议使用 `conda install --force-reinstall numpy=1.24.0` 或 `conda install --force numpy=1.24.0`，但更推荐先 `conda remove numpy` 再 `conda install numpy=1.24.0`。",
-            "error_id": "971936974de7_r1",
-            "canonical_error_id": "971936974de7",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C005",
-            "content_chunk_id": "LOCAL-KBS-01-03-C005",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_command_termination",
-            "severity": "major",
-            "location": null,
-            "description": "代码块中 conda env create 命令缺少结尾的右引号，导致命令不完整，无法正确执行。",
-            "evidence": "原文代码块：conda env create -f environment.yml 缺少结尾的 ` 符号，命令未闭合。",
-            "suggestion": "补全命令：conda env create -f environment.yml",
-            "error_id": "364218d14c5f_r1",
-            "canonical_error_id": "364218d14c5f",
-            "source_refs": [],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C006",
-            "content_chunk_id": "LOCAL-KBS-01-03-C006",
-            "content_version": 1,
-            "in_chunk_position": null
-          },
-          {
-            "error_type": "missing_content",
+            "error_type": "incomplete_content",
             "severity": "critical",
             "location": null,
-            "description": "待审核内容块在'动手练'处被截断，内容不完整，无法进行完整审核。",
-            "evidence": "内容块以'运行`pip'结尾，明显不完整。",
-            "suggestion": "提供完整的内容块后再进行审核。",
-            "error_id": "dd60250c207a_r1",
-            "canonical_error_id": "dd60250c207a",
+            "description": "内容块在6.2节PyCharm配置步骤5的Windows路径示例处被截断，缺少后续步骤和完整内容。",
+            "evidence": "原文在'C:\\Users\\你的用户名\\miniconda3\\'处中断，未提供完整路径示例，且6.2节后续步骤缺失。",
+            "suggestion": "补全6.2节内容，包括完整的conda环境路径示例（如'C:\\Users\\你的用户名\\miniconda3\\envs\\llm-learn\\python.exe'）及后续步骤。",
+            "error_id": "2d030b1f40b7_r1",
+            "canonical_error_id": "2d030b1f40b7",
             "source_refs": [],
             "change_request": {
               "required": true,
@@ -1151,20 +585,20 @@
             "must_fix": false,
             "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C009",
-            "content_chunk_id": "LOCAL-KBS-01-03-C009",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
-            "error_type": "missing_requirements_file_extension",
+            "error_type": "incomplete_instruction",
             "severity": "minor",
             "location": null,
-            "description": "导出依赖命令 `pip freeze > requirements` 未指定文件扩展名，通常应为 `requirements.txt`。",
-            "evidence": "行业惯例与 pip 文档均使用 `requirements.txt` 作为依赖清单文件名。",
-            "suggestion": "将命令改为 `pip freeze > requirements.txt`。",
-            "error_id": "b0c5e9fcf4cd_r1",
-            "canonical_error_id": "b0c5e9fcf4cd",
+            "description": "内容块末尾的VS Code验证步骤被截断，缺少完整的操作指令（如运行代码的完整快捷键或后续步骤），可能导致学习者无法完成验证。",
+            "evidence": "原文结尾为'点击右上角小三角或按`Ctrl'，未提供完整的快捷键或后续说明。",
+            "suggestion": "补全VS Code运行代码的完整操作说明，例如'点击右上角小三角或按Ctrl+F5运行'。",
+            "error_id": "c43b077a68d5_r1",
+            "canonical_error_id": "c43b077a68d5",
             "source_refs": [],
             "change_request": {
               "required": false,
@@ -1173,22 +607,22 @@
             "must_fix": false,
             "must_fix_reason": null,
             "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C012",
-            "content_chunk_id": "LOCAL-KBS-01-03-C012",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
             "content_version": 1,
             "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "description": "与来源块 LOCAL-KBS-01-03-C013 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C013，heading_path=conda / pip 虚拟环境管理 > 五、综合实战演练（①+②+④） > 场景 3：验证 conda 对 ~/.bashrc 的修改，lines=433-478",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "3157dc509652_r1",
-            "canonical_error_id": "3157dc509652",
+            "error_id": "5fb568443944_r1",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-03-C013"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -1196,33 +630,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 1,
-            "in_chunk_position": "lines:433-478"
-          },
-          {
-            "error_type": "factual_error",
-            "severity": "minor",
-            "location": null,
-            "description": "内容声称 conda 通过修改 ~/.bashrc 把 ~/miniconda3/bin 添加到 PATH，但 conda init 实际添加的是 conda 初始化代码块，该代码块在 shell 启动时动态设置 PATH，而非直接写入 PATH 行。",
-            "evidence": "conda init 生成的代码块包含 conda 的 shell 函数和路径设置逻辑，并非简单地将路径追加到 PATH 变量。",
-            "suggestion": "修改表述为：conda 通过修改 ~/.bashrc 添加初始化代码块，该代码块在 shell 启动时配置 conda 命令的可用性。",
-            "error_id": "56c0495ffe24_r1",
-            "canonical_error_id": "56c0495ffe24",
-            "source_refs": [],
-            "change_request": {
-              "required": true,
-              "action": "rewrite_with_supported_source"
-            },
-            "must_fix": false,
-            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
-            "claim_id": null,
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
-            "content_version": 1,
-            "in_chunk_position": null
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -1238,40 +650,38 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "61382cdc50b7_r2",
-            "canonical_error_id": "61382cdc50b7",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C001"
-            ],
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
             "change_request": {
               "required": false,
               "action": "review_suggestion"
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:1-48"
+            "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "69c86d5d32c3_r2",
-            "canonical_error_id": "69c86d5d32c3",
+            "error_id": "5fb568443944_r2",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-02-C017"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -1279,83 +689,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 2,
-            "in_chunk_position": "lines:520-567"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "description": "与来源块 LOCAL-KBS-01-03-C001 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C001，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②），lines=1-50",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "99023351d023_r2",
-            "canonical_error_id": "99023351d023",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_chunk_id": "LOCAL-KBS-01-03-C001",
-            "content_version": 2,
-            "in_chunk_position": "lines:1-50"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "description": "与来源块 LOCAL-KBS-01-03-C002 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-03-C002，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②） > 安装步骤（②），lines=51-109",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "da96ef471afa_r2",
-            "canonical_error_id": "da96ef471afa",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C002"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
-            "content_version": 2,
-            "in_chunk_position": "lines:51-109"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "description": "与来源块 LOCAL-KBS-01-03-C013 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C013，heading_path=conda / pip 虚拟环境管理 > 五、综合实战演练（①+②+④） > 场景 3：验证 conda 对 ~/.bashrc 的修改，lines=433-478",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "3157dc509652_r2",
-            "canonical_error_id": "3157dc509652",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C013"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
-            "content_version": 2,
-            "in_chunk_position": "lines:433-478"
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -1366,40 +704,38 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "61382cdc50b7_r2",
-            "canonical_error_id": "61382cdc50b7",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C001"
-            ],
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
             "change_request": {
               "required": false,
               "action": "review_suggestion"
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
             "content_version": 2,
-            "in_chunk_position": "lines:1-48"
+            "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "69c86d5d32c3_r2",
-            "canonical_error_id": "69c86d5d32c3",
+            "error_id": "5fb568443944_r2",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-02-C017"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -1407,83 +743,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 2,
-            "in_chunk_position": "lines:520-567"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "description": "与来源块 LOCAL-KBS-01-03-C001 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C001，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②），lines=1-50",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "99023351d023_r2",
-            "canonical_error_id": "99023351d023",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_chunk_id": "LOCAL-KBS-01-03-C001",
-            "content_version": 2,
-            "in_chunk_position": "lines:1-50"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "description": "与来源块 LOCAL-KBS-01-03-C002 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-03-C002，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②） > 安装步骤（②），lines=51-109",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "da96ef471afa_r2",
-            "canonical_error_id": "da96ef471afa",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C002"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
-            "content_version": 2,
-            "in_chunk_position": "lines:51-109"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "description": "与来源块 LOCAL-KBS-01-03-C013 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C013，heading_path=conda / pip 虚拟环境管理 > 五、综合实战演练（①+②+④） > 场景 3：验证 conda 对 ~/.bashrc 的修改，lines=433-478",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "3157dc509652_r2",
-            "canonical_error_id": "3157dc509652",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C013"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
-            "content_version": 2,
-            "in_chunk_position": "lines:433-478"
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -1499,40 +763,60 @@
         "passed": false,
         "errors": [
           {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "61382cdc50b7_r3",
-            "canonical_error_id": "61382cdc50b7",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C001"
-            ],
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
             "change_request": {
               "required": false,
               "action": "review_suggestion"
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
             "content_version": 3,
-            "in_chunk_position": "lines:1-48"
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
+            "content_version": 3,
+            "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "69c86d5d32c3_r3",
-            "canonical_error_id": "69c86d5d32c3",
+            "error_id": "5fb568443944_r2",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-02-C017"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -1540,47 +824,75 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
-            "content_version": 3,
-            "in_chunk_position": "lines:520-567"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "description": "与来源块 LOCAL-KBS-01-03-C001 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C001，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②），lines=1-50",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "99023351d023_r2",
-            "canonical_error_id": "99023351d023",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_chunk_id": "LOCAL-KBS-01-03-C001",
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 2,
-            "in_chunk_position": "lines:1-50"
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C001",
+            "content_chunk_id": "LOCAL-KBS-02-00-C001",
+            "content_version": 3,
+            "in_chunk_position": null
           },
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "description": "与来源块 LOCAL-KBS-01-03-C002 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-03-C002，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②） > 安装步骤（②），lines=51-109",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "da96ef471afa_r3",
-            "canonical_error_id": "da96ef471afa",
+            "error_id": "5fb568443944_r2",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-03-C002"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -1588,23 +900,36 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
-            "content_version": 3,
-            "in_chunk_position": "lines:51-109"
-          },
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 4,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "description": "与来源块 LOCAL-KBS-01-03-C013 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C013，heading_path=conda / pip 虚拟环境管理 > 五、综合实战演练（①+②+④） > 场景 3：验证 conda 对 ~/.bashrc 的修改，lines=433-478",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "3157dc509652_r3",
-            "canonical_error_id": "3157dc509652",
+            "error_id": "5fb568443944_r2",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-03-C013"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -1612,11 +937,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
-            "content_version": 3,
-            "in_chunk_position": "lines:433-478"
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],
@@ -1629,14 +954,14 @@
           {
             "error_type": "review_needed",
             "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "description": "与来源块 LOCAL-KBS-01-02-C001 相似度 0.71 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.71，chunk=LOCAL-KBS-01-02-C001，heading_path=环境变量配置 > 一、环境变量是什么？（①） > 1.1 通俗理解（①），lines=1-48",
+            "location": "block:cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
             "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "61382cdc50b7_r3",
-            "canonical_error_id": "61382cdc50b7",
+            "error_id": "5fb568443944_r2",
+            "canonical_error_id": "5fb568443944",
             "source_refs": [
-              "src_LOCAL-KBS-01-02-C001"
+              "src_LOCAL-KBS-02-00-C016"
             ],
             "change_request": {
               "required": false,
@@ -1644,107 +969,11 @@
             },
             "must_fix": false,
             "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C001",
-            "content_chunk_id": "LOCAL-KBS-01-02-C001",
-            "content_version": 3,
-            "in_chunk_position": "lines:1-48"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "description": "与来源块 LOCAL-KBS-01-02-C017 相似度 0.78 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.78，chunk=LOCAL-KBS-01-02-C017，heading_path=环境变量配置 > 附录：进阶参考（选读） > C. 清理 PATH 中的重复项（④），lines=520-567",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "69c86d5d32c3_r3",
-            "canonical_error_id": "69c86d5d32c3",
-            "source_refs": [
-              "src_LOCAL-KBS-01-02-C017"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-02-C017",
-            "content_chunk_id": "LOCAL-KBS-01-02-C017",
-            "content_version": 3,
-            "in_chunk_position": "lines:520-567"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "description": "与来源块 LOCAL-KBS-01-03-C001 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C001，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②），lines=1-50",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "99023351d023_r2",
-            "canonical_error_id": "99023351d023",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C001"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C001",
-            "content_chunk_id": "LOCAL-KBS-01-03-C001",
+            "claim_id": "clm_cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_e435ca2c-475e-433d-855d-08b1d087ecef_e16fdf9a-f59a-5aa6-ad08-bcca6d30bca2_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
             "content_version": 2,
-            "in_chunk_position": "lines:1-50"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "description": "与来源块 LOCAL-KBS-01-03-C002 相似度 0.73 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.73，chunk=LOCAL-KBS-01-03-C002，heading_path=conda / pip 虚拟环境管理 > 二、方案一：Conda 环境管理（推荐）（①+②+③） > 2.1 安装 Miniconda（②） > 安装步骤（②），lines=51-109",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "da96ef471afa_r3",
-            "canonical_error_id": "da96ef471afa",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C002"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C002",
-            "content_chunk_id": "LOCAL-KBS-01-03-C002",
-            "content_version": 3,
-            "in_chunk_position": "lines:51-109"
-          },
-          {
-            "error_type": "review_needed",
-            "severity": "major",
-            "location": "block:cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "description": "与来源块 LOCAL-KBS-01-03-C013 相似度 0.74 处于存疑区间，需人工复核。",
-            "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-03-C013，heading_path=conda / pip 虚拟环境管理 > 五、综合实战演练（①+②+④） > 场景 3：验证 conda 对 ~/.bashrc 的修改，lines=433-478",
-            "suggestion": "补充来源块依据或人工复核后放行。",
-            "error_id": "3157dc509652_r3",
-            "canonical_error_id": "3157dc509652",
-            "source_refs": [
-              "src_LOCAL-KBS-01-03-C013"
-            ],
-            "change_request": {
-              "required": false,
-              "action": "review_suggestion"
-            },
-            "must_fix": false,
-            "must_fix_reason": null,
-            "claim_id": "clm_cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_block_id": "cb_705ba96b-2e39-434f-9531-7f9daff8fb03_cefc2979-6614-50ad-80a4-bd003a2cf518_LOCAL-KBS-01-03-C013",
-            "content_chunk_id": "LOCAL-KBS-01-03-C013",
-            "content_version": 3,
-            "in_chunk_position": "lines:433-478"
+            "in_chunk_position": "lines:421-460"
           }
         ],
         "personalization_errors": [],

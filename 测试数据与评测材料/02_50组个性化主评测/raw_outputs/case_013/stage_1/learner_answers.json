@@ -1,65 +1,65 @@
 [
   {
-    "question_id": "Q-KB04-ST0400-002",
-    "submitted_answer": "CUDA ||| GPU ||| 显卡",
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "24.0",
     "is_correct": true,
-    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "correct_answer": "24.0",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB04-ST0400-003",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0200-004",
+    "submitted_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0401-001",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0202-004",
+    "submitted_answer": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0401-003",
-    "submitted_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "question_id": "Q-KB0203-001",
+    "submitted_answer": "B",
     "is_correct": true,
-    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "correct_answer": "B",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0407-002",
+    "question_id": "Q-KB0203-003",
+    "submitted_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0200-002",
+    "submitted_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "is_correct": true,
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0200-001",
     "submitted_answer": "我不知道",
     "is_correct": false,
-    "correct_answer": "实例化；`load_state_dict()`",
+    "correct_answer": "Python 3.10.14",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0403-001",
-    "submitted_answer": "B",
+    "question_id": "Q-KB0205-002",
+    "submitted_answer": "`yield`；生成器（generator）",
     "is_correct": true,
-    "correct_answer": "B",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0405-003",
-    "submitted_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
-    "is_correct": true,
-    "correct_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0407-004",
-    "submitted_answer": "B",
-    "is_correct": true,
-    "correct_answer": "B",
+    "correct_answer": "`yield`；生成器（generator）",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

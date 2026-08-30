@@ -1,5 +1,17 @@
 from pydantic import AliasChoices, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# BaseSettings 在 pydantic v2 中从 pydantic-settings 拆出；兼容 v1/v2。
+# 若评委机没装 pydantic-settings（v2 附加包），回退到 pydantic v1 自带 BaseSettings。
+try:  # pydantic v2
+    from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore
+except Exception:  # pragma: no cover - pydantic v1 回退
+    from pydantic import BaseSettings  # type: ignore
+
+    class _Config:
+        env_file = ".env"
+        extra = "ignore"
+
+    SettingsConfigDict = lambda **kw: _Config  # type: ignore
 from pathlib import Path
 
 BACKEND_DIR = Path(__file__).parent
@@ -41,6 +53,10 @@ class Settings(BaseSettings):
     DEEPSEEK_TOP_P: float = 0.95
     DEEPSEEK_MAX_TOKENS: int = 8192
     DEEPSEEK_PROXY_URL: str = ""
+    # When no explicit proxy is configured, honor standard HTTPS_PROXY/
+    # HTTP_PROXY environment variables (useful on networks that block direct
+    # TCP 443). Set false to force direct connections.
+    DEEPSEEK_USE_SYSTEM_PROXY: bool = True
     DEEPSEEK_FALLBACK_IPS: str = ""
     # 云端推理偶发长时间排队或先输出 reasoning_content；答疑需要比默认 HTTP
     # 超时更长的读取窗口，并由客户端对可恢复错误做有限重试。

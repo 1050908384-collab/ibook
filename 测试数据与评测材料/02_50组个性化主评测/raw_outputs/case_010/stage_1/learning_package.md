@@ -2,1109 +2,1524 @@
 
 ## 块 1
 
-**本块学习检查**（先做这个，再继续）
+你已经有 PyTorch 训练经验，现在要学 vLLM 部署，但部署环境跑在 Linux 上。别急着敲命令，先搞清两件事，能帮你少走弯路。
 
-在动手安装前，先用 3 分钟快速回顾：用 `AutoTokenizer` 和 `from_pretrained()` 加载一个分词器，并解释这两行代码各自的作用。如果你能说清“加载分词器”和“加载模型”的区别，再进入下面的安装步骤。若卡壳，回到第七板块复习后再来。
+**1.1 什么是 Linux？我为什么要装它？**
 
----
+你平时用的 Windows 或 macOS 叫“操作系统”，Linux 是另一个操作系统。全世界绝大多数服务器（网站后台、云服务、AI 训练集群）跑的都是 Linux。你训练用的 PyTorch 模型，最终要部署到服务器上对外提供服务，那些服务器几乎都是 Linux。所以，学 vLLM 部署，绕不开 Linux。
 
-## 一、安装与验证 transformers
+本教程用的是 **Ubuntu 24.04 LTS**（长期支持版），厂家会持续提供多年安全更新，稳定且适合入门。如果你已安装 Ubuntu 22.04，后续步骤同样适用。
 
-### 1.1 快速安装
+**本块学习检查**
 
-如果你已完成第七板块的学习，`transformers` 库应该已经安装。如果尚未安装，在已有的 `pytorch` conda 环境中执行：
+先别急着装系统，用你已有的知识快速回顾一下，确认基础没丢：
 
-```bash
-conda activate pytorch
-pip install transformers
-```
+1. 打开终端（Windows 用 PowerShell 或 CMD，macOS 用 Terminal），依次执行以下命令，观察输出：
+   - `cd ~` （回到用户主目录）
+   - `ls` （列出当前目录下的文件）
+   - `mkdir test_dir` （创建名为 test_dir 的文件夹）
+   - `cp -r test_dir test_dir_backup` （复制该文件夹）
+   - `mv test_dir_backup test_dir_renamed` （重命名文件夹）
 
-> 若需要同时安装 PyTorch 后端依赖，可使用 `pip install 'transformers[torch]'`。
-
-**运行环境说明**：`transformers` 库本身体积通常在数 MB 至十余 MB 之间，安装过程需要联网。CPU 即可执行，内存建议 ≥ 4GB。
-
----
-
-**安装后验证**（不引入新事实，仅用原文信息）：在 Python 中执行 `import transformers` 并打印版本号。若成功，说明环境就绪
+2. 解释一下：`cd`、`ls`、`mkdir`、`cp`、`mv` 这五个命令分别做什么？如果 `cp` 不加 `-r` 参数复制文件夹，会报什么错
 
 ## 块 2
 
-### 1.2 验证安装
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-装好后，直接跑一段代码确认环境没问题。用 `pipeline` 是最快的验证方式，它会自动加载一个小型情感分析模型：
+你已有PyTorch基础和训练流程经验，目标是用vLLM做推理部署。动手前先选对环境，避免后面踩坑。
 
-```python
-from transformers import pipeline
-result = pipeline('sentiment-analysis')('we love you')
-print(result)
-```
+**三种方案速览**：
 
-预期会输出类似 `[{'label': 'POSITIVE', 'score': 0.99...}]` 的结果，具体数值取决于你安装的 transformers 和模型版本。看到这个输出，就说明库装好了、能联网拉模型、前向传播链路通了。
-
-**动手试一下**：把 `'we love you'` 换成 `'I hate this'`，观察输出标签和分数怎么变。这能帮你直观感受模型的行为。
-
-### 1.3 常见问题
-
-如果验证时报错，对照下表排查：
-
-| 症状 | 可能原因 | 解决方案 |
-|---|---|---|
-| `Failed building wheel for tokenizers` | 缺少 Rust 编译工具链 | 确保已安装 Rust 编译工具链（rustc/cargo），或使用预编译的 tokenizers 版本（如 `pip install tokenizers --no-binary :all:` 前先安装 Rust） |
-| `urllib3.exceptions.SSLError` | `urllib3` 版本或系统证书/代理问题 | 升级 urllib3 到最新版本（`pip install --upgrade urllib3`），或检查系统证书、代理设置 |
-| 无法连接 HuggingFace Hub | 网络限制 | 参考第四节"离线配置"或设置镜像源 |
-
----
-
-## 二、加载 GPT-2 模型
-
-GPT-2 是 OpenAI 的因果语言模型，有多个尺寸。本实验用最小的 `openai-community/gpt2`（124M 参数），CPU + 4GB 内存就能跑，适合快速上手
+- **虚拟机**：在你电脑里“模拟”出一台新电脑。最像真服务器、完全隔离，但占内存（建议至少4GB），配置低会卡。适合内存≥8GB的用户。
+- **WSL2**：Windows自带的“Linux子系统”，像装个App。轻量、启动快、和Windows无缝互通，仅限Win10/11。适合不想折腾的用户。
+- **云服务器**：
 
 ## 块 3
 
-### 2.1 使用 pipeline 快速体验
+**本块学习检查**：学完本块后，用自己的话说说“三个方案最终都要达到什么效果”与“vLLM部署”这个目标有什么关系？如果遇到解释不了的术语（比如SSH），先记下来再提问。
 
-你的目标是 vLLM 部署，但先别急着上重型工具——用 `pipeline` 跑通 GPT-2，能帮你快速验证 HuggingFace 生态的基本流程，这是后续理解 vLLM 推理入口的基石。
+---
 
-`pipeline` 是 transformers 提供的高级 API，核心价值在于**一行代码封装了加载、预处理、推理、后处理全流程**。对于你这种 hands-on 风格，直接看代码：
+你已掌握PyTorch训练，现在要转向推理部署。本块只讲一个核心结论：**无论选虚拟机、云服务器还是WSL2，最终你都会得到一台运行Ubuntu 24.04的“电脑”**，且开发体验一致。
 
-```python
-from transformers import pipeline
+具体效果有三点：
 
-# 创建文本生成 pipeline，device=-1 表示使用 CPU
-generator = pipeline("text-generation", model="openai-community/gpt2", device=-1)
-
-result = generator("Hello, I'm a language model", max_new_tokens=20)
-print(result)
-```
-
-**运行前须知**：
-- 首次运行会自动从 HuggingFace Hub 下载 GPT-2 模型文件（约 500MB，fp32 精度）
+1. **拥有一台Ubuntu 24.04环境**（虚拟或远程），这是运行vLLM的基础。
+2. **连接方式不同但体验一致**：虚拟机/云服务器通过SSH从Windows远程操作（相当于“远程桌面命令行版”）；W
 
 ## 块 4
 
-## 2.2 手动加载 Tokenizer 和 Model
+**VirtualBox 是什么？** 它是开源虚拟机软件，能在 Windows 里造出一台“假电脑”，用来安装其他操作系统。
 
-既然你的目标是 vLLM 部署，理解底层加载机制是必要的地基。这里我们不走 `pipeline` 捷径，而是用底层 API 手动加载，方便你后续观察模型内部细节。
+**下载步骤**：浏览器打开 `https://www.virtualbox.org/wiki/Downloads` → 找到 **"VirtualBox 7.x.x platform packages"** 下的 **Windows hosts** 版本，点击下载。
 
-**第一步：加载分词器和模型**
+**安装**：双击安装包 → 一路“下一步”保持默认 → 点“安装”等待进度条 → 点“完成”。
 
-```python
-from transformers import AutoTokenizer, GPT2LMHeadModel
+**坑预警**：弹“是否允许更改设备”选“是”；杀毒软件拦截就选“允许”。
 
-# 加载分词器
-tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
-
-# 加载模型
-model = GPT2LMHeadModel.from_pretrained("openai-community/gpt2")
-```
-
-**第二步：处理 pad_token 坑**
-
-GPT-2 默认没有 `pad_token`，不设置的话 batch 处理会报错。手动把它设为 `eos_token`：
-
-```python
-tokenizer.pad_token = tokenizer.eos_token
-```
-
-**第三步：打印配置，验证加载成功**
-
-```python
-print(f"词表大小: {model.config.vocab_size}")
-print(f"最大序列长度: {model.config.n_positions}")
-print(f"隐藏层维度: {model.config.n_embd}")
-print(f"层数: {model.config.n_layer}")
-print(f"注意力头数: {model.config.n_head}")
-```
-
-**这些参数意味着什么？** 它们对应 Transformer 架构的核心超参数：`n_embd` 是隐藏层维度，`n_layer` 是 Transformer Block 堆叠层数，`n_head` 是多头注意力头数。后续课程会逐一拆解这些组件的内部机制。
-
-**本块学习检查**：
+**本块学习检查**：用自己的话说说，下载 VirtualBox 这一步，和你最终用 vLLM 部署模型的目标有什么关联？遇到不懂的术语记下来再提问。
 
 ## 块 5
 
-## 3.1 完整前向传播流程——动手跑通 GPT-2
+**本块学习检查**  
+完成下载后，请用自己的话说明：这个镜像文件在“vLLM部署”目标中扮演什么角色？如果下载时误选了server版，后续安装会遇到什么麻烦？遇到不懂的术语（如“镜像”“desktop-amd64”）先记下来，稍后提问。
 
-你的目标是 vLLM 部署，但部署前必须亲手摸清模型推理时内部发生了什么。下面这段代码就是“解剖”GPT-2 的起点，跟着敲一遍，重点看输出形状。
+---
 
-```python
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+**下载 Ubuntu 24.04 镜像（.iso）**  
+镜像文件相当于“系统安装光盘的电子版”，VirtualBox 用它来装系统。
 
-# 加载模型和分词器（模型许可证：MIT License，商用无限制）
-tokenizer = AutoTokenizer.from_pretrained("gpt2")
-model = AutoModelForCausalLM.from_pretrained("gpt2")
-
-# 注意：GPT-2 模型 FP16 推理需要至少 4GB 显存
-# 准备输入
-text = "Hello, my dog is cute"
-inputs = tokenizer(text, return_tensors="pt")
-
-print(f"input_ids 形状: {inputs['input_ids'].shape}")
-```
-
-先看 `input_ids` 的形状——它告诉你模型把这句话切成了几个 token。记住这个数字，后面所有输出都和它挂钩。
-
-```python
-# 执行前向传播
-with torch.no_grad():
-    outputs = model(
-        **inputs,
-        output_hidden_states=True,   # 返回每层的隐藏状态
-        output_attentions=True       # 返回每层的注意力权重
-    )
-```
-
-`torch.no_grad()` 表示只推理、不计算梯度，部署时也是这个模式。两个 `output_*` 参数是观察内部的关键开关。
+1. 浏览器打开 `https://releases.ubuntu.com/24.04/`  
+2. 找文件名类似 `ubuntu-24.04.x-desktop-amd64.iso`（x 是小版本号），点击下载  
+3. 文件约 5GB，下载需几分钟
 
 ## 块 6
 
-## 3.2 观察下一词预测
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-GPT-2 的核心能力是预测下一个词。我们通过取模型输出中**最后一个位置**的 logits，就能看到它对下一个词的预测：
+---
 
-```python
-# 取最后一个位置的 logits，预测下一个词
-next_token_logits = outputs.logits[0, -1, :]
-next_token_id = torch.argmax(next_token_logits).item()
-next_token = tokenizer.decode(next_token_id)
+在 VirtualBox 里创建 Ubuntu 虚拟机，是为后续 vLLM 部署搭建 Linux 环境。你已熟悉 PyTorch 训练，本块聚焦“跑通环境”，操作如下：
 
-print(f"模型预测的下一个词: '{next_token}'")
-```
-
-`torch.argmax` 选出概率最高的 token ID，再用 `tokenizer.decode` 转回文本。这就是 GPT-2 生成文本的基本单元——每次只预测一个词，然后把预测结果拼回输入，继续预测下一个。
-
-## 3.3 观察因果注意力掩码
-
-GPT-2 是 **Decoder-Only** 模型，使用**因果（causal）注意力**——每个 token 只能看到自己和之前的 token，不能看到未来的 token。这是它与 BERT 等 Encoder 模型的关键区别。
-
-我们可以通过注意力权重矩阵来验证这一点：
-
-```python
-# 取第一层的注意力权重
-# 形状: [batch=1, n_head=12, seq_len, seq_len]
-attn = outputs.attentions[0]
-
-# 查看第一个注意力头的权重矩阵
-attn_matrix = attn[0, 0].numpy()
-
-# 打印上三角是否接近 0（因果掩码的效果）
-import numpy as np
-upper_triangular = np.triu(attn_matrix, k=1)
-print(f"上三角区域最大权重: {upper_triangular.max():.6f}")
-```
-
-**验证要点**：如果因果掩码实现正确，上三角区域（未来token对应的位置）的注意力权重应接近0。
+1. 打开 VirtualBox，点 **新建**。
+2. 名称填 `Ubuntu-24.04`，文件夹选 D 或 E 盘（避开 C 盘），类型 `Linux`，版本 `Ubuntu (64-bit)`，下一步。
+3. 内存拖到 **4096 MB**（4GB），下一步。
+4. 硬盘选 **现在创建虚拟硬盘**，大小 **60 GB**，类型 **VDI**，存储 **动态分配**，完成。
+5. 选中虚拟机 → **设置** → **系统
 
 ## 块 7
 
-**动手做：用 labels 算损失（GPT-2 训练视角）**
+**本块学习检查**：完成安装后，请用自己的话说说“在虚拟机里装 Ubuntu”和你最终要做的“vLLM 部署”有什么关系；遇到看不懂的安装选项先记下来，之后提问。
 
-既然你要部署 vLLM，理解“损失”怎么算，能帮你更清楚模型在训练和推理时的区别。这里我们只看一个关键点：**训练时，`labels` 就是 `input_ids` 本身**。
+---
 
-为什么？因为语言模型的任务是预测下一个词。你给它 `input_ids`，它内部会自动把标签**左移一位**：预测第 `i` 个位置的词时，目标其实是第 `i+1` 个词。这个偏移，`GPT2LMHeadModel` 已经帮你处理好了，**你不需要手动做任何偏移**。
+你已掌握 PyTorch 训练，现在要迈向推理部署。本块是环境地基——在 VirtualBox 里装好 Ubuntu，后续才能跑 vLLM。
 
-直接看代码，一行搞定：
+**操作步骤**（跟着点即可）：
 
-```python
-import torch
-
-with torch.no_grad():
-    outputs = model(**inputs, labels=inputs["input_ids"])
-
-print(f"Loss: {outputs.l
+1. 选中虚拟机，点 **“启动”**。
+2. 出现安装界面后：
+   - 语言选 **“中文(简体)”**，点“安装 Ubuntu”。
+   - 键盘布局默认，点“继续”。
+   - 选 **“正常安装”**，勾选“下载更新”和“安装第三方软件”，点“继续”。
+   - 安装类型选 **“清除整个磁盘并安装 Ubuntu”**——放心，这里只清虚拟机的 60G 虚拟盘，碰不到你的真实硬盘。点“现在安装” → “继续”。
+   - 时区输入“Shanghai”，点“继续”。
+   - 填用户名、密码，点“继续”。
+3. 自动安装约 10~20 分钟。
+4. 提示
 
 ## 块 8
 
-你的目标是快速上手 vLLM 部署，而 HuggingFace 模型缓存是绕不开的第一步。这里直接给你最实用的路径：
+## 2.5 安装 SSH 远程连接工具（①）
 
-**模型默认缓存位置**（下载后自动存放）：
-- Linux/macOS：`~/.cache/huggingface/hub`
-- Windows：`C:\Users\你的用户名\.cache\huggingface\hub`
+你已经跑通了 PyTorch 训练流程，接下来要部署 vLLM 做推理。部署时你大概率不会直接在虚拟机里敲命令——SSH 就是让你从 Windows 终端远程操控 Ubuntu 的通道，相当于给虚拟机开一个"远程命令行入口"。
 
-**为什么要改缓存目录？** 因为默认路径常在系统盘，空间有限，且重装系统会丢失。部署 vLLM 时模型动辄几个 GB，建议一开始就指到你的大容量磁盘。
+**操作步骤：**
 
-**修改方法**（二选一，推荐第一种）：
+1. 在 Ubuntu 桌面空白处点 **鼠标右键** → 选 **"在终端中打开"**（Open in Terminal）。如果右键没有，按 `Ctrl + Alt + T` 也能打开终端。
+
+2. 依次输入以下命令（输完一行按回车）：
+
 ```bash
-# 方法 1：设置 HF_HOME（推荐，统一管理所有 HF 相关
+# 第1步：更新软件列表（类似"刷新应用商店的货架"）
+sudo apt update
+
+# 第2步：安装 SSH 服务（让别的电脑能远程连过来）
+#     openssh-server 是 SSH 服务端
+#     net-tools 提供 ifconfig 命令，用来查看 IP 地址
+sudo apt install -y openssh-server net-tools
+
+# 第3步：设置 SSH 开机自动启动
+sudo systemctl enable ssh
+
+# 第4步：立刻启动 SSH 服务
+sudo systemctl start ssh
+```
+
+> **sudo 是什么？** `sudo` = "以管理员身份执行"。Linux 里普通用户不能随便装软件，加了 sudo 就相当于"给我最高权限"。输入 sudo 命令后会让你输密码，输的时候 **屏幕不会有任何显示**（不会出现 `***`），这是正常的安全设计，盲打完按回车就行。
+
+3. 查看虚拟机的 IP 地址：
+
+```bash
+ifconfig
+```
+
+4. 输出内容很多，找到类似 `inet 192.168.xxx.xxx` 的那一行，那一串数字就是 IP 地址。**记下来！** 例如：`192.168.126.128`
+
+5. 回到 Windows，按 `Win + R`，输入 `cmd` 回车，打开命令提示符。先确认你的 Ubuntu 用户名：在 Ubuntu 终端输入 `whoami`，显示的就是你的用户名。然后输入：
+
+```bash
+ssh 你的用户名@192.168.xxx.xxx
+```
+
+（把"你的用户名"替换成 `whoami` 查到的实际用户名）
+
+6. 输入 Ubuntu 里的密码并回车。看到 `Welcome to Ubuntu` 之类的欢迎信息，说明成功！
+
+> **常见坑预警**：
 
 ## 块 9
 
-## 4.2 离线运行：内网环境下的模型加载
+你已经掌握 PyTorch 训练，现在要迈向 vLLM 推理部署。本块解决的是“运行环境”问题：让 Ubuntu 虚拟机与 Windows 顺畅协作，避免后续部署时复制配置文件、模型路径等操作卡壳。
 
-你的目标是 vLLM 部署，但部署前的模型准备和验证往往发生在受限网络环境中。这里直接给你一套可操作的离线方案。
+**核心操作：手动安装增强功能**
 
-**第一步：设置离线环境变量**
-
-在防火墙或内网环境中，先执行以下命令，告诉 transformers 和 datasets 库“不要联网”：
+VirtualBox 默认不会自动安装增强功能，需手动操作。在 VirtualBox 菜单中点击“设备”->“安装增强功能”，然后在虚拟机内挂载光盘并运行：
 
 ```bash
-export TRANSFORMERS_OFFLINE=1
-export HF_DATASETS_OFFLINE=1
+sudo sh /media/cdrom/VBoxLinuxAdditions.run
+sudo reboot
 ```
 
-**第二步：从本地路径加载模型**
+若安装失败，可尝试 apt 安装（需确保 VirtualBox 版本与 guest 包匹配，并安装 `virtualbox-guest-dkms` 编译内核模块）：
 
-设置好环境变量后，直接指向本地缓存目录加载模型。建议使用 try-except 捕获加载过程中的异常（如文件缺失、网络误触等），便于快速定位问题：
-
-```python
-try:
-    tokenizer = AutoTokenizer.from_pretrained("/local/path/to/gpt2")
-    model = GPT2LMHeadModel.from_pretrained("/local/path/to/gpt2")
-except OSError as e:
-    print(f"模型加载失败，请检查本地路径及文件完整性: {e}")
-    raise
+```bash
+sudo apt install -y virtualbox-guest-utils virtualbox-guest-dkms
+sudo reboot
 ```
 
-**关键操作：预先下载模型**
-
-离线前，先在有网环境中用 `from_pretrained()` 下载模型，再用 `save_pretrained("./local/path")` 保存到指定目录。这样离线时就能直接加载本地文件。
-
-> **模型许可证说明**：本教程以 GPT-2 为例，其采用 MIT 许可证，可自由商用。若你后续替换为其他模型（如 Llama 系列），请务必确认对应许可证条款（例如 Llama 2 Community License 对商用月活超 7 亿用户有额外授权要求），并在部署前完成合规审查。
-
----
-
-## 常见问题速查
-
-| 症状 | 可能原因 | 解决方案 |
-|---|---|---|
-| `OSError: Can't load tokenizer` | 本地路径缺少必要的配置文件 | 确保本地目录包含完整的分词器文件 |
-| `RuntimeError: Expected all tensors on same device` | 模型和数据不在同一设备 | 确保 `model.to(device)` 和数据 `.to(device)` 一致 |
-| GPT-2 padding 报错 | 默认没有 `pad_token` | 手动设置 `tokenizer.pad_token = tokenizer.eos_token` |
-| 下载速度极慢 | 网络问题 | 使用 `HF_HOME` 指定缓存目录，或配置镜像源 |
-| 显存不足（OOM） | 加载了过大的模型 | 换用 `openai-community/gpt2`，或尝试启用 `load_in_8bit=True` |
-
----
-
-## 总结与下一步
-
-你现在应该掌握了：
-
-- ✅ transformers 库的安装验证方法
-- ✅ 使用 `pipeline` 和 `AutoModel` 两种方式加载 GPT-2
-- ✅
+重启后，验证安装：运行 `lsmod | grep v
 
 ## 块 10
 
-## 三、Encoder 的层次结构（①）：Multi-Head Self-Attention
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-### 3.1 核心思想：为什么需要“多头”？
+---
 
-上一节你观察 GPT-2 的因果掩码时，其实已经接触过 Self-Attention 的基本计算：每个 token 都会“关注”序列中的其他 token，并据此更新自己的表示。
+**3.1 确认虚拟化已开启**
 
-但**单个注意力头**有一个局限：它只能捕捉一种“关注模式”。比如，一个头可能特别关注相邻词，另一个头可能关注句法上的主语-谓语关系。如果只用单头，模型被迫在多种模式中“折中”，表达能力受限。
+虚拟化是CPU的一项功能，让你能在Windows里“套娃”运行另一个系统（比如WSL2）。大部分电脑默认开启，但联想、戴尔等部分品牌机可能关闭。
 
-**Multi-Head Self-Attention（多头自注意力）** 的解决办法很直接：**并行运行多个独立的注意力头**，每个头学习不同的关注模式，最后把结果拼接起来再做一次线性变换。
+**检查步骤**：
+1. 按 `Ctrl + Shift + Esc` 打开任务管理器
+2. 点顶部“性能”标签页
+3. 右下角找“虚拟化”，看是“已启用”还是“已禁用”
+4. “已启用”→ 直接进入下一步；“已禁用”→ 按下面操作开启
 
-### 3.2 数据流拆解（以 Encoder 层为例）
-
-假设输入序列有 $n$ 个 token，每个 token 的向量维度是 $d_{model}$。一个 Encoder 层内的 Multi-Head Self-Attention 按以下步骤流动：
-
-1. **线性投影**：对输入 $\mathbf{X}$（形状 $n \times d_{model}$），分别用三组可学习的权重矩阵 $W^Q, W^K, W^V$ 计算出 **Query、Key、Value** 矩阵。每组权重形状为 $d_{model} \times d_k$（其中 $d_k = d_{model} / h$，$h$ 是头数）。
-2. **拆分多头**：把 Q、K、V 沿特征维度切成 $h$ 份，每份维度 $d_k$。这样每个头独立处理一份子空间。
-3. **并行注意力**：对每个头 $i$，计算：
-   $$\text{Attention}(Q_i, K_i, V_i) = \text{softmax}\left(\frac{Q_i K_i^T}{\sqrt{d_k}}\right) V_i$$
-   注意：**Encoder 的 Self-Attention 没有掩码**，因为 Encoder 是双向的，每个 token 可以看到完整输入序列的所有 token。
-4. **拼接与输出投影**：把 $h$
+**开启方法（仅当禁用时）**：
+- 重启电脑，开机时狂按 `F2` 或 `Del`（联想
 
 ## 块 11
 
-## 3.1 Multi-Head Self-Attention：让每个词“看到”整个句子
+**本块学习检查**：完成安装后，用自己的话说明“WSL2”与你“用vLLM部署模型”这个目标的关系；遇到不懂的术语（如“内核”）先记下来，之后提问。
 
-在 Encoder 的每一层里，第一个子层就是 **Multi-Head Self-Attention**。它的核心任务是：**让输入序列中的每个位置，都能聚合整个序列的上下文信息**。
+你的目标是用vLLM做推理部署，而vLLM在Linux环境下运行最稳。WSL2就是让你在Windows里直接获得一个Linux环境，不用装双系统或虚拟机，几分钟搞定。
 
-### 三个关键点
+**操作步骤（跟着做即可）**
 
-**1. Q/K/V 都来自前一层**
+1. 按`Win`键，输入`powershell`，在搜索结果里**右键**“Windows PowerShell” → **“以管理员身份运行”**。
+2. 弹出“是否允许此应用更改你的设备” → 点“是”。
+3. 在蓝色窗口里，**逐行**输入以下命令（复制一行，右键粘贴，回车）：
 
-这里的 Q（Query）、K（Key）、V（Value）三个矩阵，**全部来自 Encoder 前一层的输出**。也就是说，每个位置既“提问”，也“被检索”，还“提供信息”——这就是“Self”（自注意力）的含义：序列自己和自己做注意力计算。
+```bash
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
 
-**2. 无因果 Mask（双向可见）**
+4. 两条命令都显示“操作成功完成”后，**重启电脑**。
+5. 重启后，再以管理员身份打开PowerShell，输入：
 
-Encoder 的 Self-Attention **没有因果 mask**。这意味着序列中所有位置互相可见：第 1 个词可以看到第 100 个词，第 100 个词也可以看到第 1 个词。这是 Encoder 与 Decoder 的关键区别之一（Decoder 的 Self-Attention 带因果 mask，只能看左侧）。
-
-> 补充：在批处理变长序列时，通常仍会有 padding mask 来处理长度不一致的问题，但这与“因果 mask”是两回事。
-
-**3. 作用：聚合全局上下文**
-
-通过 Self-Attention，每个位置的输出向量都“融合”了全序列的信息。比如在“苹果很好吃，我咬了一口”中，“苹果”这个词的表示会包含“咬”这个动作的信息——这就是上下文聚合。
-
-### 结合你的 vLLM 部署目标
-
-你学习 Transformer 是为了 vLLM 部署。这里有一个直接关联：**vLLM 的 PagedAttention 优化，本质上就是在高效管理 Self-Attention 计算中的 KV Cache**。理解“Q/K/V 都来自前一层”这个数据流，是理解 KV Cache 为什么存在、为什么需要被缓存的前提——因为 K 和 V 在生成时会被反复
+```bash
+wsl --set-default-version 2
 
 ## 块 12
 
-### 3.2 位置级前馈网络（FFN）
+**本块学习检查**：完成安装后，请用自己的话说明：为什么在 Windows 上装 Ubuntu 24.04 是通往 vLLM 部署的第一步？遇到无法解释的术语（如 WSL、LTS）时记录下来再提问。
 
-你的目标是部署 vLLM，所以这里直接看关键点：FFN 是每个位置独立做的两次线性变换，中间夹一个 ReLU 激活，公式为：
+---
 
-**FFN(x) = max(0, xW₁ + b₁)W₂ + b₂**
+**安装 Ubuntu 24.04（推荐方法一）**
 
-维度先放大再缩回（通常为 d_model→4×d_model→d_model）。放大到4倍是为了让模型有更多参数去捕捉特征，缩回是为了和残差连接对齐。
+1. 按 `Win` 键，输入 `Microsoft Store`，打开微软应用商店。
+2. 搜索框输入 `Ubuntu 24.04`。
+3. 找到 **"Ubuntu 24.04.x LTS"**（发布者：Canonical Group Limited），点"安装"。
+4. 下载约 500MB，装完后点"打开"。
 
-### 3.3 残差连接 + 层归一化
+**方法二（命令行）**：一条命令自动下载并安装：
 
-每个子层输出都做：**LayerNorm(x + Sublayer(x))**。残差让梯度能直接流过，归一化稳定训练。
+```bash
+wsl --install -d Ubuntu-24.04
+```
 
-**Encoder 完整数据流**：
-1. x₁ = Embedding + 位置编码
-2. x₂ = LayerNorm(x₁ + 多头注意力(x₁))
-3. x₃ = LayerNorm(x₂ + FFN(x₂))
-4
+5. 首次启动显示 "Installing, this may take a few minutes..."，等 2~5 分钟。
+6. 设置用户名和密码：
+   - 用户名全英文小写（如 `zhangsan`）→ 回车
+   - 输入密码 → 回车（**屏幕无显示是正常的！
 
 ## 块 13
 
-### 4.1 Masked Multi-Head Self-Attention
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-你的目标是 vLLM 部署，核心是搞懂 Decoder 如何“一步步”生成。这里的关键就是**因果掩码**。
+在 Ubuntu 终端（绿色提示符窗口）中，逐行执行以下命令：
 
-**Q/K/V 来源**：全部来自 Decoder 前一层的输出，和 Encoder 无关。
+```bash
+# 刷新软件包列表
+sudo apt update
 
-**Mask 作用**：**因果掩码**，防止当前位置看到“未来”的词。这保证了自回归——生成第 3 个词时，只能看第 1、2 个词。
+# 升级所有已安装软件（-y 自动确认）
+sudo apt upgrade -y
+```
 
-**Mask 机制**：计算 attention score 时，把未来位置的 score 设为 $-\infty$：
+> **WSL2 需要 SSH 吗？** 不需要。WSL2 与 Windows 紧密集成，直接通过 VS Code 的 Remote-WSL 插件开发即可，无需像虚拟机那样额外配置 SSH。
 
-$$\text{score}_{ij} = \begin{cases} \frac{q_i \cdot k_j}{\sqrt{d_k}} & \text{if } j \leq i \\ -\infty & \text{if } j > i \end{cases}$$
+验证系统正常：
 
-Softmax 后，$-\infty$ 处权重变为 0
+```bash
+# 查看系统版本，应显示 Ubuntu 24.04.x
+lsb_release -a
+
+# 查看当前用户名
+whoami
+```
+
+测试与 Windows 互通：
+
+```bash
+# 用 Windows 资源管理器打开当前 Linux 目录
+explorer.exe .
+```
+
+若弹出资源管理器窗口，说明 WSL2 与 Windows 已无缝衔接。
+
+**方案二完成！** 系统更新确保后续安装 vLLM 时依赖库版本兼容，这是部署推理环境的基础步骤。
 
 ## 块 14
 
-**4.2 Multi-Head Cross-Attention：让Decoder“看见”输入**
+**本块学习检查**：完成购买服务器后，请用自己的话说明：为什么选择“Ubuntu 24.04 LTS”系统镜像，以及当前2核2G套餐与你vLLM部署目标的关系。遇到“地域”“镜像”等术语不理解时，记录下来再提问。
 
-Cross-Attention是Encoder和Decoder之间的桥梁。它的核心是**Q来源**和**K/V来源**不同：
-
-- **Q**：来自Decoder的**前一层**输出。
-- **K和V**：来自**Encoder的输出**（记为$\mathbf{z}$）。
-
-**关键点1：无因果Mask**
-Cross-Attention**没有因果mask**，意味着Decoder可以同时看到完整的输入序列（批处理时通常仍有padding mask，用于忽略填充部分）。
-
-**关键点2：每层都连接**
-Encoder输出$\mathbf{z}$会被送到**每一层**Decoder的Cross-Attention（共6次），**不是**只送给第一层。
+**购买步骤（阿里云为例）**：
+1. 打开 https://www.aliyun.com/，用支付宝/淘宝账号注册登录。
+2. 顶部搜索“轻量应用服务器”进入页面；学生可先搜“学生优惠”认证享低价。
+3. 点“立即购买”，配置如下：
+   - **地域**：选离你最近的（如“华东1（杭州）”）。
+   - **镜像类型**：选“系统镜像
 
 ## 块 15
 
-## Decoder 的 Feed-Forward Network：让每个位置“独立思考”
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-你已经掌握了 Decoder 中的两种注意力机制——Masked Self-Attention 负责“看自己已经生成的词”，Cross-Attention 负责“看 Encoder 编码好的输入”。现在来到 Decoder 每一层的最后一步：**Feed-Forward Network（FFN）**。
+你已掌握PyTorch训练，但部署vLLM前，安全是第一步。云服务器默认用`root`（超级管理员）登录，权限过高，误操作可能删系统文件，日常应用普通账户。
 
-好消息是：**Decoder 的 FFN 与 Encoder 的 FFN 结构相同，但参数不共享**，不需要额外学习新概念。它的作用是对每个位置的信息做一次独立的非线性变换，让模型有更强的表达能力。
+通过控制台的“远程连接”或VNC（网页终端）登录后，执行：
 
-### 完整数据流中的位置
-
-把 FFN 放到 Decoder 的完整流程里看，它处于每层的最后一步（采用 Pre-LN 结构，每个子层后均有残差连接，实际实现中通常还包含 Dropout）：
-
-1. **y₁** = Embedding(输出) + 位置编码
-2. **y₂** = y₁ + Masked Self-Attention(LayerNorm(y₁), 带因果mask)
-3. **y₃** = y₂ + Cross-Attention(LayerNorm(y₂), K=z, V=z)  ← z 是 Encoder 输出
-4. **y₄** = y₃ + **FFN(LayerNorm(y₃))**  ← 就是这里
-
-以上步骤**重复 6 次**（即 Decoder 有 6 层），最后经过 Linear 层得到 logits，再经过 Softmax 得到概率分布。
-
-### 三种 Attention 的对比：核心区别只在 Q/K/V 来源
-
-三种 Attention 的公式完全一样：`Attention(Q, K, V) = softmax(QKᵀ/√d_k)V`。区别只在于**谁提供 Q、K、V**：
-
-| 类型 | 位置 | Q来源 | K来源 | V来源 | Mask | 作用 |
-|---|---|---|---|---|---|---|
-| Encoder Self-Attention | Encoder每层 | 前一子层输出 | 前一子层输出 | 前一子层输出 | 无因果mask | 编码输入序列上下文 |
-| Decoder Masked Self-Attention | Decoder每层 | 前一子层输出 | 前一子层输出 | 前一子层输出 | **因果mask** | 自回归生成，防止“看到未来” |
-| Decoder Cross-Attention | Decoder每层 | Decoder前一子层输出 | **Encoder输出** | **Encoder输出** |
+```bash
+adduser yourname   # 创建用户，yourname换为英文小写；设密码两次（至少8位，含大小写字母和数字），其余回车跳过
+usermod -aG sudo yourname   # 赋予sudo
 
 ## 块 16
 
-**动手看 Decoder 的 Feed-Forward Network**
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-你的目标是 vLLM 部署，核心是搞懂模型结构。这里我们用 T5-small 直接“解剖”它。
+你已经掌握PyTorch和训练流程，现在要迈向推理部署。云服务器是部署vLLM的常见载体，而SSH密钥登录是安全访问服务器的关键一步——它比密码更安全，能防止暴力破解，同时让你后续操作更顺畅。
 
-# 模型许可证：T5 采用 Apache 2.0 许可证，可商用。
+**操作步骤（Windows + 阿里云轻量服务器）**
 
-**运行这段代码，观察输出：**
-
-```python
-from transformers import T5ForConditionalGeneration, T5Tokenizer
-
-model = T5ForConditionalGeneration.from_pretrained("google-t5/t5-small")
-tokenizer = T5Tokenizer.from_pretrained("google-t5/t5-small")
-
-print(f"Encoder 层数: {model.config.num_layers}")
-print(f"Decoder 层数: {model.config.num_decoder_layers}")
-print(model)
-```
-
-# 注意：T5-small 模型 FP16 精度下约需 1GB 显存。
-
-**看什么：**
-
-1. 打印出的 `model` 结构里，找到 `decoder` 部分，展开 `block`。
-2. 每个 Decoder 层里，你会看到 `T5LayerFF` —— 这就是 **Feed-Forward Network（前馈网络）**。它位于自注意力之后，对每个位置的表示做独立变换。
-3.
+1. 打开命令提示符：按 `Win + R`，输入 `cmd`，回车。
+2. 生成密钥对（公钥+私钥）：
+   ```bash
+   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+   ```
+3. 提示保存路径时，直接按**回车**（用默认路径）。
+4. 提示设置passphrase时，直接按**回车**（不设密码短语）；再次确认也按**回车**。
+5. 看到randomart image（随机艺术图），说明密钥生成成功。
+6. 通过云厂商的VNC/远程连接登录服务器，执行：
+   ```bash
+   su - yourname
+   mkdir -p ~/.ssh
+   nano ~/.ssh/authorized_keys
+   ```
+7. 回到Windows
 
 ## 块 17
 
-## 6.1 观察 Encoder-Decoder 的前向传播
+你已掌握 PyTorch 训练，现在要迈向 vLLM 部署。部署前，云服务器必须只开放必要端口，这是安全底线。
 
-既然你的目标是 vLLM 部署，理解前向传播的形状变化是后续部署时排查问题的基本功。我们直接动手跑代码。
+**配置防火墙（安全第三步）**
 
-**操作步骤**：复制以下代码到你的 Python 环境（纯 CPU 即可，内存 ≥ 4GB），逐行运行并观察输出。
-
-```python
-import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-
-# 加载模型和分词器（以 T5-small 为例）
-# 注意：若替换为更大模型（如 Llama-2-7b），FP16 需至少 14GB 显存
-tokenizer = AutoTokenizer.from_pretrained('t5-small')
-model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')
-
-# 输入文本
-input_text = "translate English to German: The house is wonderful."
-inputs = tokenizer(input_text, return_tensors="pt")
-
-# 构造 Decoder 输入（翻译任务中，Decoder 的输入是目标语言的前缀）
-decoder_input_ids = tokenizer("Das Haus", return_tensors="pt").input_ids
-
-# 前向传播
-with torch.no_grad():
-    outputs = model(
-        input_ids=inputs["input_ids"],
-        attention_mask=inputs["attention_mask"],
-        decoder_input_ids=decoder_input_ids,
-        output_attentions=True,
-        output_hidden_states=True
-    )
-
-# 观察各输出形状
-print(f"Encoder 最后一层隐藏状态形状: {outputs.encoder_last_hidden_state.shape}")
-print(f"Decoder 最后一层隐藏状态形状: {outputs.decoder_hidden_states[-1].shape}")
-print(f"Cross-Attention 层数: {len(outputs.cross_attentions)}")
-print(f"每层 Cross-Attention 形状: {outputs.cross_attentions[0].shape}")
-```
-
-**关键观察**：`cross_attentions[0].shape` 的形状通常为 `[batch_size, num_heads, decoder_len, encoder_len]`，其中最后两个维度说明 Decoder 的每个位置都在关注 Encoder 的所有位置。这正是 Cross-Attention 的作用。注意，当 `output_attentions=True` 时，`cross_attentions` 可能为 `None`（取决于模型是否支持），建议运行前打印 `outputs` 的属性以确认。上述输出会随 transformers 版本和模型版本变化，实际以运行结果为准。
-
-**动手验证**：运行后，记录你得到的四个形状值。重点对比 `encoder_last_hidden_state` 和 `decoder_hidden_states[-1]` 的维度差异——前者只含输入序列长度，后者还包含 decoder 前缀长度。这个差异在 vLLM 部署时会影响 KV Cache 的分配策略。
-
----
-
-## 七、架构演化：为什么后续模型"拆分"了 Encoder-Decoder？
-
-理解了完整的 Encoder-Decoder 结构后，一个自然的问题是：为什么 GPT-2、Llama
+1. 登录云厂商的**轻量应用服务器控制台**。
+2. 点击**“防火墙”**标签页。
+3. 点击**“添加规则”**：
+   - **端口**：`22`（SSH登录用）
+   - **协议**：`TCP`
+   - **来源**：建议填你自己的公网IP（浏览器搜“IP”可查），格式如 `123.45.67.89/32`。若IP不固定，可暂填 `0.0.0.0/0`（允许
 
 ## 块 18
 
-**目标：vLLM部署，先搞懂为什么主流模型都是Decoder-only**
+**连接你的云服务器（Windows 端）**
 
-你学vLLM，核心是部署GPT这类生成模型。所以看架构演化，重点就是搞清楚：为什么后来大家都“砍掉”了Encoder，只留Decoder？
+既然你已掌握 PyTorch 训练，接下来要部署 vLLM，就需要一台能跑推理的远程机器。现在我们从 Windows 连上它。
 
-**7.1 Encoder-only：BERT（2018）**
+1. 在阿里云控制台找到**公网 IP**（形如 `47.96.xxx.xxx`），复制。
+2. 按 `Win + R`，输入 `cmd` 打开命令提示符。
+3. 输入命令连接（将 `yourname` 替换为云服务器实例的用户名，如 `root` 或创建实例时设置的用户名）：
 
-BERT只用Encoder，去掉Decoder。它靠**Masked Language Model（MLM）**训练——盖住词猜原词，所以能看**双向上下文**。适合**理解任务**（分类、问答、NER），但**不适合生成**。
+```bash
+ssh root@47.96.xxx.xxx
+```
 
-**7.2 Decoder-only：GPT（2018-2024）**
-
-GPT反过来，只用Decoder，去掉Encoder和Cross-Attention。训练方式是**Causal Language Model（Next Token Prediction）**，只能往前看。
-
-对你部署vLLM，它的优势很关键：
-
-- **架构更简单**，参数量全在Decoder，容易扩展到超
+4. 首次连接询问 `yes/no` 时，输入 `yes`
 
 ## 块 19
 
-## 7.3 Encoder-Decoder 仍有广泛应用（①）
+你的目标是用 vLLM 做推理部署，而远程开发环境是第一步。本节验证 SSH 免密登录是否生效，确保后续能顺畅操作服务器。
 
-你已经知道通用语言模型主流是 Decoder-only，但别急着把 Encoder-Decoder 扔进垃圾桶——在**特定任务**里它依然是主力，而且特定条件下效果可能更好。直接看例子：
+**操作验证**：在 Windows 命令提示符中执行：
 
-- **机器翻译**：`google-t5/t5-small`、`facebook/mbart-large-50`
-- **语音识别**：`openai/whisper-base`
-- **多模态**：`OFA`、`UniT`
+```bash
+ssh 用户名@你的IP地址
+```
 
-这些模型都是 Encoder-Decoder 架构。为什么？因为翻译、语音识别这类任务，**输入和输出是两种不同形态的东西**——Encoder 先把源语言"读懂"，Decoder 再逐词生成目标语言，分工清晰。
+若直接连上且不提示密码，则配置成功。若提示 `ssh-copy-id 不是内部或外部命令`，说明 Windows 版本较老，推荐安装 Git for Windows（https://git-scm.com/download/win），其自带 Git Bash 工具，内含 ssh-copy-id；或按 4.3 节手动复制密钥。
 
-> 后续"重点理解 Decoder-Only 架构"会讲：GPT 去掉 Encoder 后为什么还能工作？核心答案是——**把输入和输出拼接在一起**，用统一的 Causal Mask 处理。先记住这个结论，后面细拆。
-
-## 八、常见问题与解决（①）
-
-| 症状 | 可能原因 | 解决方案 |
-|---|---|---|
-| 混淆三种 Attention 的 Q/K/V 来源 | 没有系统对比 | 记住核心区别：Self-Attention 的 Q/K/V 同源，Cross-Attention 的 K/V 来自 Encoder |
-| 不理解为什么 Decoder 需要 Mask | 忽略了自回归性质 | 生成任务中，模型不能"偷看"未来的正确标签 |
-| 以为 Encoder 输出只送到 Decoder 第一层 | 对数据流理解不深入 | Encoder 输出送到**每一层** Decoder 的 Cross-Attention |
-| Cross-Attention 的 K 和 V 能否只用其一 | 对 Attention 机制理解不深入 | 在标准实现中缺一不可，但存在共享或简化的变体 |
-
-**动手验证**：拿 T5 跑一次前向传播，打印 `cross_attentions` 矩阵，观察 Decoder 生成不同 token 时分别关注了输入序列的哪些位置。这一步能帮你把"Cross-Attention 的 K/V 来自 Encoder"从文字变成直觉。
-
-## 九、总结与后续学习路线（①）
-
-到这里，你已经掌握了：
-
-- ✅ Encoder-Decoder 架构的本质：Encoder 双向编码，Decoder 单向自回归生成
-- ✅ Encoder 的层次结构：Self-Attention + FFN，残差连接 + LayerNorm
-- ✅ Decoder 的层次结构：Masked Self-Attention
+**本块学习检查**：完成本块后，用自己的话说明 SSH 免密登录与 vLL
 
 ## 块 20
 
-## 为什么 GPT / Llama / Qwen 可以去掉 Encoder？
+### WSL2 与 VS Code 远程开发：为 vLLM 部署铺路
 
-你已经在上一节掌握了完整的 Encoder-Decoder 结构，知道 Decoder 依赖 Masked Self-Attention 和 Cross-Attention。现在问题来了：**GPT、Llama、Qwen 这些大模型为什么只保留 Decoder？去掉 Encoder 后，模型还怎么“理解”输入？**
+你已经熟悉 PyTorch 训练流程，现在要进入推理部署阶段。本块解决的是“代码写在哪、怎么跑”的问题——通过 VS Code 远程连接 WSL2，让你在 Windows 图形界面里直接操作 Linux 环境，为后续安装 vLLM、跑推理脚本做好准备。
 
-### 核心答案：把输入和输出拼成同一个序列
+#### WSL2 的特别之处
 
-Decoder-Only 架构的关键在于**统一的因果语言建模目标**。它不区分“输入”和“输出”，而是把 prompt 和要生成的内容组织成**同一个 token 序列**。
+如果你用的是 WSL2，**不需要配置 SSH**。VS Code 通过 Remote-WSL 插件直接与 WSL2 通信，省去密钥、端口等配置，体验更流畅。这是 WSL2 方案相比虚拟机/云服务器的最大优势。
 
-在这个序列里：
+#### 第一步：安装 VS Code
 
-- **prompt 内部**：仍然遵守从左到右的因果可见性——每个 token 只能看到它前面的 token，这和 Encoder-Decoder 中 Decoder 的 Masked Self-Attention 规则一致。
-- **输出 token**：能访问它之前的**全部 prompt**。也就是说，模型生成下一个词时，已经“看”完了你给它的所有上下文。
+1. 浏览器打开 https://code.visualstudio.com/
+2. 点击 **"Download for Windows"** 按钮，下载后双击安装包
+3. 安装过程中，同意协议后一路“下一步”，但**注意这一步**——勾选以下选项：
+   - ☑ **"将 Code 添加到 PATH 中"**（重要！这样可在命令行直接输入 `code` 打开 VS Code）
+   - ☑ **"将 Code 注册为受支持的编辑器"**
+   - ☑ **"添加到文件资源管理器上下文菜单"**
+4. 完成后勾选“启动 VS Code”并点击“完成”
 
-所以，Encoder 的职责（编码输入）被“吸收”进了这个统一的序列里——prompt 本身就是序列的开头部分，Decoder 在自回归生成时天然就能访问到它。
+> 你的 RTX 4090 是 Windows 主机上的 GPU，WSL2 能直接调用它。这一步装好 VS Code，后面才能在图形界面里写代码、看输出。
 
-### 为什么这样设计？——为了扩展性
+#### 第二步：安装必备插件
 
-Decoder-Only 通过**统一目标和统一结构**获得了较好的**扩展性**。所有任务（对话、写作、代码生成）都变成“给定前面的 token，预测下一个 token”，这让模型可以在海量文本上规模化训练，架构简单、工程实现也更高效。
+插件是 VS Code 的“外挂功能包”——编辑器本身只是个壳子，装插件才能高亮代码、自动补全、调试。
 
-### 但 Encoder-Decoder 并没有被淘汰
+1. 打开 VS Code，点击左侧竖排图标栏**第五个图标**（四个小方块组成的正方形），或按 `Ctrl + Shift + X`
+2. 在扩展商店搜索框里，依次搜索并安装：
 
-注意：**不能仅根据输入输出是否为同一种模态来判断架构优劣**。Encoder-Decoder 在**翻译、摘要**等条件生成任务中仍有独特优势：
-
-- **独立编码输入**：Encoder 可以一次性双向编码整个输入，捕捉全局语义。
-- **计算复用**：输入只需编码一次，生成多个输出时不必重复处理。
-- **任务归纳偏置**：结构本身自带“输入-输出分离”的归纳偏置，更适合严格的条件生成。
-
-### 一句话总结
-
-架构选择取决于**训练目标、任务类型和工程约束**。Decoder-Only 靠“统一序列 + 因果可见性”去掉了 Encoder，换来扩展性；Encoder-Decoder 靠“独立编码”保住条件生成任务的效率。没有绝对优劣，只有适不适合。
-
----
-
-**本块学习检查**：请用一句话向自己解释——在 Decoder-Only 架构中，模型生成第一个输出 token 时，它能“看到”哪些内容？它和 Encoder-Decoder 中 Decoder 生成第一个 token 时的
+|
 
 ## 块 21
 
-### 1.2 统一框架：Causal Language Modeling（①）
+### 连接你的 Linux 环境（①）
 
-你的目标是部署 vLLM，而 vLLM 的核心推理对象正是 Decoder-Only 模型。理解这里的“统一框架”是后续配置 KV Cache、优化吞吐的基础。
+你已经掌握 PyTorch 训练，现在要迈向 vLLM 推理部署。部署的第一步，是让 VS Code 能操作你的 Linux 环境——无论是虚拟机、云服务器还是 WSL2，连接方式都很直接。
 
-**核心思想**：Decoder-Only 模型只做一件事——**因果语言建模（CLM）**，也叫“预测下一个 token”。给定前 $t$ 个 token，预测第 $t+1$ 个。数学上：
+**虚拟机或云服务器：**
+1. 打开 VS Code，看左下角的**绿色图标**（形如 `><`）。
+2. 点击它 → 顶部菜单选 **"Connect to Host…"（连接到主机）**。
+3. 输入 `用户名@IP地址`（如 `zhangsan@192.168.126.128`）→ 回车。
+4. 若提示选平台，选 **"Linux"**。
+5. 配过密钥就直接连上；没配则输密码。
+6. 连接成功后，左下角图标变为 `SSH: IP地址`。
+7. 点左上角 **"File"** → **"Open Folder…"**，选服务器上的目录（如 `/home/你的用户名`），点 OK。
+8. 现在就能像编辑本地文件一样编辑远程文件了。
 
-$$P(x_1, ..., x_n) = \prod_{t=1}^{n} P(x_t | x_1, ..., x_{t-1})$$
-
-**为什么这对 vLLM 部署是好事？** 看四个优势：
-
-| 优势 | 对你的意义 |
-|---|---|
-| **架构简化** | 没有 Encoder 和 Cross-Attention，部署时只需关注 Decoder 的权重，参数量更集中，模型加载和推理路径更短 |
-| **数据要求低** | 不需要成对的输入-输出数据，任何纯文本都能训练，这意味着你部署的模型（如 Qwen）可以处理任意文本续写任务 |
-| **统一接口** | 问答、摘要、代码等
+**WSL2：**
+1. 打开 VS Code，点左下角绿色图标 → 选 **"Connect to WSL"**。
+2. 自动连上 Ubuntu，左下角变为 `WSL: Ubuntu-24.04`。
+3. 点 "Open Folder"，选 `/home/你的用户名` 开始编辑。
+4. **更快捷**：在 Ubuntu 终端 `cd` 到项目目录，输入 `code .`，VS
 
 ## 块 22
 
-**GPT-1：Decoder-Only 的开山之作**
+### 6.1 文件与目录操作：最基础也最常用
 
-你的目标是 vLLM 部署，核心是让模型高效跑起来。理解 GPT-1 的架构取舍，能帮你搞懂为什么这类模型在部署时如此“吃香”。
+你已经有 PyTorch 和训练流程的基础，现在要进入 vLLM 推理部署。部署模型时，你需要下载权重、配置环境、启动服务，这些都离不开 Linux 文件操作。下面这些命令是核心，我们边学边练。
 
-2018 年的 GPT-1 没搞复杂模块，就做了三个关键决定：
+#### 核心命令速览
 
-1. **只留 Decoder**：砍掉 Encoder 和 Cross-Attention，结构更简洁。
-2. **训练目标**：直接预测下一个 Token（Next Token Prediction）。
-3. **两阶段**：先在海量无标注文本上预训练，再针对具体任务微调。
+| 命令 | 功能 | 常用示例 |
+|---|---|---|
+| `ls` | 列出目录内容 | `ls -l`（详细列表，含权限大小）；`ls -a`（显示隐藏文件） |
+| `cd` | 切换目录 | `cd ..`（上级）；`cd ~`（主目录）；`cd /path/to/dir` |
+| `pwd` | 显示当前绝对路径 | `pwd` |
+| `mkdir` | 创建目录 | `mkdir -p test/aaa/bbb`（递归创建多级） |
+| `touch` | 创建空文件 | `touch config.yaml` |
+| `cp` | 复制 | `cp -r model_dir/ /backup/`（目录需加 `-r`） |
+| `mv` | 移动/重命名 | `mv old_name new_name` |
+| `rm` | 删除（⚠️不可恢复） | `rm -rf test/`（强制递归删除，慎用） |
+| `cat` | 查看小文件 | `cat -n config.yaml`（带行号） |
+| `less` | 分页查看大文件 | `less app.log`（空格翻页，`q` 退出） |
 
-**动手验证**：部署时你只需加载一个 Decoder 模型，输入 prompt，模型自动续写——
+#### 与 vLLM 部署的关联
+
+- **`ls` / `cd`**：定位模型权重目录（如 `~/.cache/huggingface/`）和 vLLM 安装位置。
+- **`mkdir` / `mv`**：组织实验目录，比如 `mkdir -p experiments/run1`，或将下载的模型文件移动到指定路径。
+- **`cp` / `rm`**：备份重要配置（如 `cp config.yaml config.yaml.bak`），清理无用的大文件（用 `rm -rf` 前务必确认路径
 
 ## 块 23
 
-### GPT-2：规模即能力（①）
+## 权限管理：Linux 系统的安全核心
 
-2019年，GPT-2没改核心架构，只把**规模**推到新高度：1.5B参数，40GB训练数据。结果出现惊人现象——**zero-shot能力**：不微调参数，只靠设计不同的输入prompt，模型就能执行翻译、摘要、问答等任务。这说明Decoder-Only的"续写"能力本身就蕴含通用性。
+你已经熟悉 PyTorch 训练流程，现在要走向 vLLM 部署。部署时你会频繁操作模型文件、配置脚本和日志——**权限管理决定谁能读、写、执行这些文件**，是保障部署环境安全的基础。
 
-**对你部署vLLM的启示**：GPT-2证明，模型能力主要来自规模而非架构改动。你在用vLLM部署时，选模型大小直接影响显存和吞吐——规模越大，能力越强，但推理资源需求也越高。注意：部署开源模型需遵守其许可证，例如Llama 2 Community License（商用月活>7亿需Meta授权）。
+**核心概念**：Linux 中每个文件/目录都有三类权限归属：**所有者、所属组、其他用户**。权限分三种：**读（r=4）、写（w=2）、执行（x=1）**。数字是权限的简写，比如 7=4+2+1 表示读+写+执行全开。
 
-**动手验证**：用vLLM加载一个小型Decoder-Only模型（如GPT-2），输入一个翻译prompt（如"Translate to French: Hello"），观察不微调时模型能否直接输出
+**两个关键命令**：
+
+| 命令 | 功能 | 语法 | 实战示例 |
+|---|---|---|---|
+| `chmod` | 修改权限 | `chmod [权限值] 文件名` 或 `chmod [用户+/-权限] 文件名` | 数字法：`chmod 744 file1.txt`（所有者全权限，其他只读）；符号法：`chmod g+w file1.txt`（给所属组
 
 ## 块 24
 
-### 3.1 Llama 不是推翻，而是"做减法 + 做强化"
+你的目标是用 vLLM 部署模型，部署前必须能看清系统状态：显存够不够、CPU 是否跑满、进程是否异常。下面这些命令就是你的“仪表盘”，全部在终端执行。
 
-你已了解 GPT 的 Decoder-Only 路线，现在看 Llama 如何在此路线上优化——它没有推翻架构，而是对三个关键组件做了"做减法 + 做强化"：
+**1. 看内核与架构**  
+`uname -a` 一次输出内核版本、主机名、CPU 架构。确认是 x86_64 即可，这决定后续安装的 vLLM 轮子是否兼容。
 
-| 改进项 | 原始 Transformer | Llama 的做法 | 作用 |
-|---|---|---|---|
-| **归一化** | Post-LayerNorm（子层后归一化） | **Pre-RMSNorm**（子层输入前归一化） | 训练更稳定，简化计算，提升训练稳定性 |
-| **激活函数** | ReLU | **SwiGLU** | 表达能力更强，门控机制过滤信息 |
-| **位置编码** | 绝对正弦位置编码 | **RoPE（旋转位置编码
+**2. 实时监控资源（最常用）**  
+`top` 类似 Windows 任务管理器，实时刷新进程和 CPU/内存占用。  
+- 按 `P`：按 CPU 使用率排序，找出谁在吃算力。  
+- 按 `M`：按内存排序，排查显存溢出前的内存压力。  
+- 按 `q`：退出。
+
+**
 
 ## 块 25
 
-## Llama 三代演进：从“能训”到“好用”再到“全能”
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-你学 vLLM 部署，核心是理解模型架构如何影响推理。Llama 三代演进正好展示了 Decoder-Only 架构的实用化路径。
+**目标关联**：部署vLLM时，你常需快速修改配置文件（如模型路径、GPU参数）。本块的两个工具正是为此服务。
 
-**Llama1**：开源高性价比基础模型，上下文较短，以 base 模型为主。它的意义在于证明“公开数据也能训出强模型”——这为后续开源生态铺路。
+**核心操作（按需选用）**
 
-**Llama2**：定位更成熟的对话基座，支持 4K 上下文，Chat 对齐更成熟。关键变化是“开始强调实用性”——模型从实验室走向产品。
-
-**Llama3**：定位多语言、代码、工具综合能力平台，部分版本（如 Llama
+- **快速改文件 → `vim`**  
+  ① 打开：`vim 文件名`  
+  ② 编辑：按 `i` 进入插入模式（左下角出现 `--INSERT--`）  
+  ③ 保存退出：按 `Esc` → 输入 `:wq` → 回车  
+  ④ 不保存退出：按 `Esc
 
 ## 块 26
 
-**本块学习检查**：读完 Qwen3 架构亮点后，请用一句话回答：MoE 模型相比 Dense 模型，在“总参数量”和“每 token 实际计算量”上分别有什么特点？
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
----
+**网络连通性测试**：用 `ping` 检查目标是否可达。例如 `ping www.baidu.com`，按 `Ctrl+C` 停止。
 
-### 4.1 Qwen3 的架构亮点（②）
+**查看网卡信息**：用 `ifconfig` 查看 IP、MAC 等。若提示找不到命令，执行 `sudo apt install net-tools` 安装。
 
-Qwen3（阿里巴巴，2025）在 Decoder-Only 主线上做了三处关键创新，直接关系到你后续用 vLLM 部署时的显存规划和推理速度调优。
-
-**（1）Dense + MoE 双轨并存**
-
-- **Dense 模型**：每层 FFN 只有一套权重，每个 token 前向时全部参与计算（如 Qwen3-8B、14B、32B）。
-- **MoE 模型**：FFN 换成多个独立专家，门控网络每 token 只激活少数专家（如 Qwen3-30B-A3B：总参 30B，每 token 激活 3B；235B-A22B：总参 235B，每 token 激活 22B）。
-
-> **MoE 优势**：模型仓库能装下超大总参数量，但生成每个 token 的实际计算量只和激活的支路相当，兼顾容量与效率。部署时注意：**显存占用看总参，推理速度看激活参**。
-
-**（2）Thinking / Non-Thinking 统一**
-
-Qwen3 把“深度推理”和“快速响应”统一进**同一套权重**，通过 chat template 中的开关（如 `/think`、`/no_think`）控制。你还可以设置 **thinking budget**（思考预算），在效果与延时之间灵活平衡——部署时这是调节响应速度的实用旋钮。
-
-**（3）关键架构细节演进**
-
-| 项目 | Qwen1 | Qwen2 | Qwen3 |
-|---|---|---|---|
-| 注意力 | MHA 为主
+**与vLLM部署的关系**：部署vLLM后，需用 `ping` 验证客户端能访问服务器，用 `ifconfig` 确认服务器IP，以便配置连接地址。
 
 ## 块 27
 
-## 4.2 Qwen3 的分阶段预训练
+### 命令实战场景演练
 
-Qwen3 的预训练不是"一把梭"，而是分阶段推进，这个设计直接关系到你部署 vLLM 时看到的模型能力分布：
+你已经掌握 PyTorch 训练流程，现在要迈向 vLLM 部署。部署时你需要在 Linux 终端操作模型文件、监控 GPU 资源——下面两个场景正是为这个目标准备的。
 
-**第一阶段：广度优先**
-使用大规模高质量数据，在短序列上进行广谱学习，让模型吸收语言与世界知识。相当于先给模型"喂饱"常识底座。
+#### 场景 1：创建并整理文件
 
-**第二阶段：深度强化**
-使用高质量数据，在短序列上强化推理相关分布，让模型在逻辑任务上更"聪明"。
+部署 vLLM 前，通常要整理模型目录和日志文件。手动操作一遍：
 
-**第三阶段：长度扩展**
-使用适量数据，将序列长度拉长，目的是让优化目标直接覆盖万级 token 的因果依赖——这对你部署长上下文推理场景至关重要。
+```bash
+# 1. 进入主目录
+cd ~
 
-**核心思想：先广度、再深度、最后长度。**
+# 2. 创建 work 及子文件夹（doc 放文档，code 放脚本）
+mkdir -p work/doc work/code
 
-> 部署提示：三阶段顺序意味着模型在长序列上的表现是"后训练"出来的，vLLM 部署时若遇到长文本性能问题，优先检查推理阶段的上下文窗口配置，而非模型本身能力缺失。
+# 3. 创建并写入文件
+echo "Linux命令学习笔记" > note.txt
 
----
+# 4. 移动文件到 doc 文件夹
+mv note.txt work/doc/
 
-## 五、三条主线的架构对比总结
+# 5. 查看结果
+ls work/doc/
+# 预期输出：note.txt
+```
 
-| 维度 | GPT 系列 | Llama 系列 | Qwen 系列 |
-|---|---|---|---|
-| **核心路线** | Decoder-only + 规模化 | Decoder-only + 组件优化标准化 | Decoder-only + MoE + 多模态能力 |
-| **归一化** | LayerNorm → 后续改进 | **Pre-RMSNorm** | **Pre-RMSNorm** |
-| **位置编码** | 绝对位置编码 | **RoPE** | **RoPE** |
-| **激活函数** | GeLU / 其他 | **SwiGLU** | **SwiGLU** |
-| **注意力优化** | 标准 MHA | 后续引入 GQA | **全系 GQA + QK-Norm** |
-| **长上下文** | 逐步扩展 | 逐步扩展 | **分阶段预
+**要点**：`mkdir -p` 可一次创建多级目录；`>` 将内容写入文件；`mv` 移动文件。这套组合拳在整理模型权重、配置文件时很常用。
+
+#### 场景
 
 ## 块 28
 
-## 6.1 观察 GPT-2 的“原始”Decoder-Only 结构
+## 6.7 新手避坑指南
 
-既然你的目标是 vLLM 部署，先亲手“解剖”一个最经典的 Decoder-Only 模型，能帮你建立对后续部署对象的直观认知。GPT-2 就是最好的起点——它结构简单、资源占用低，非常适合快速上手。
+你已经有 PyTorch 和训练流程的基础，现在要转向 vLLM 部署，终端操作是绕不开的关卡。下面这五个坑，是新手最容易踩的，直接关系到你后续能否顺利跑起部署命令。
 
-**动手运行以下代码**（建议在 Jupyter 或脚本中逐行执行）：
+**1. 区分大小写**：Linux 命令严格区分大小写。`ls` 正确，`LS` 直接报错。部署时输入 vLLM 相关命令，大小写错了就白敲。
 
-```python
-from transformers import GPT2LMHeadModel
+**2. 路径问题**：切换目录、复制文件时，路径写错会提示 "No such file or directory"。先 `ls` 看看路径在不在，别凭记忆硬写。
 
-model = GPT2LMHeadModel.from_pretrained("openai-community/gpt2")
-config = model.config
+**3. rm 命令慎用**：`rm -rf` 是"删库跑路"级别的危险命令。删除前务必 `ls` 确认目录/文件正确，避免误删 `/`（根目录）。部署时清理旧模型文件尤其要小心。
 
-print(f"层数: {config.n_layer}")
-print(f"隐藏维度: {config.n_embd}")
-print(f"注意力头数: {config.n_head}")
-print(f"FFN 中间维: {config.n_inner or config.n_embd * 4}")
-print(f"位置编码: 绝对位置编码 (n_positions={config.n_positions})")
-print(f"激活函数: {config.activation_function}")
-```
-
-**预期输出**：
-
-```
-层数: 12
-隐藏维度: 768
-注意力头数: 12
-FFN 中间维: 3072
-位置编码: 绝对位置编码 (n_positions=1024)
-激活函数: gelu_new
-```
-
-**关键观察**：GPT-2 采用绝对位置编码、近似 GELU（gelu_new）激活函数。
-
-**部署说明**：GPT-2 采用 MIT 许可证，可自由商用。加载模型时 # 注意：GPT-2 显存需求较低，但部署更大模型
+**4. 权限不足**：操作系统文件或其他用户的文件时，会提示 "Permission denied"。在命令
 
 ## 块 29
 
-## 6.2 观察 Qwen2.5 的现代 Decoder-Only 结构
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
-既然你的目标是 vLLM 部署，理解模型配置是第一步——部署时你需要根据这些参数决定显存分配和推理优化策略。下面直接用代码观察一个真实模型。
+你的目标是 vLLM 部署，而 vLLM 依赖 Python 环境。本块先确认 Ubuntu 24.04 自带的 Python 3.12 可用，并确保 pip 就位——pip 是 Python 的“应用商店”，后续安装 PyTorch、Transformers 乃至 vLLM 都靠它。
 
-### 运行代码
+**操作步骤**：
 
-```python
-from transformers import AutoConfig
+1. 打开终端，检查 Python：
+   ```bash
+   python3 --version
+   ```
+   预期输出 `Python 3.12.x`。
 
-# 使用 Qwen2.5-0.5B（小模型，无需申请权限，适合教学观察）
-config = AutoConfig.from_pretrained("Qwen/Qwen2.5-0.5B")
-
-print(f"层数: {config.num_hidden_layers}")
-print(f"隐藏维度: {config.hidden_size}")
-print(f"Q 头数: {config.num_attention_heads}")
-print(f"KV 头数: {config.num_key_value_heads}")  # GQA 的关键标志
-print(f"FFN 中间维: {config.intermediate_size}")
-print(f"位置编码: RoPE (rope_theta={config.rope_theta})")
-print(f"归一化: RMSNorm (rms_norm_eps={config.rms_norm_eps})")
-print(f"QKV bias: {getattr(config, 'attention_bias', False)}")
-```
-
-**输出**（以实际配置为准）：
-
-```
-层数: 24
-隐藏维度: 896
-Q 头数: 14
-KV 头数: 2          ← GQA：14 个 Q 头共享 2 组 KV
-FFN 中间维: 4864
-位置编码: RoPE (rope_theta=1000000.0)  ← ABF：基频从 1e4 提升到 1e6
-归一化: RMSNorm (rms_norm_eps=1e-06)
-QKV bias: False     ← Attention 投影层不使用 bias
-```
-
-### 三个关键观察
-
-1. **GQA（分组查询注意力）**：`num_key_value_heads=2` 远小于 `num_attention_heads=14`，意味着 14 个 Q 头共享 2 组 KV
+2. 检查 pip：
+   ```bash
+   pip3 --version
 
 ## 块 30
 
-## 6.3 对比三种 Attention 的 KV Cache 体积
+**本块学习检查**：完成安装后，请用自己的话说明：Miniconda 与后续 vLLM 部署学习目标的关系是什么？如果遇到无法解释的术语（如“shell profile”），记录下来再提问。
 
-KV Cache 是推理时缓存历史 token 的 K/V 张量，避免重复计算。它的显存占用直接决定你能跑多长的序列、多大的 batch——这正是 vLLM 部署时最关心的资源瓶颈之一。
+你的目标是 vLLM 部署，后续会频繁用到 conda/pip 虚拟环境来隔离不同项目的依赖。虽然系统自带 Python 够用，但 Miniconda 能让环境管理更省心。这里先做最简安装：
 
-我们用下面的函数来算：
-
-```python
-import torch
-
-def kv_cache_size(batch, seq_len, num_layers, num_kv_heads, head_dim, dtype_bytes=2):
-    """计算 KV Cache 显存占用（字节）"""
-    # 每层有 K 和 V 两个张量
-    # 形状: [batch, num_kv_heads, seq_len, head_dim]
-    per_layer = 2 * batch * num_kv_heads * seq_len * head_dim * dtype_bytes
-    return num_layers * per_layer
+1. **下载脚本**（若提示 `wget` 未找到，先执行 `sudo apt install wget`）：
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ```
 
-公式拆解：每层需要存 K 和 V 两个张量（所以乘 2），每个张量形状是 `[batch, num_kv_heads, seq_len, head_dim]`，再乘上 `dtype_bytes`（默认 FP16，2 字节）。最后乘以层数。
+2. **运行安装**：
+```bash
+bash Miniconda3-latest-Linux-x86_64.sh
+```
 
-**动手跑一下**，对比三种情况：
+3. **按提示操作**：`Enter` 阅读协议 → `yes` 同意 → 默认路径直接回车 → 询问是否更新 shell profile 时输入 `yes`。
 
-```python
-# GPT-2（标准 MHA，num_kv_heads = num_attention_heads = 12）
-gpt2_kv = kv_cache_size(1, 2048, 12, 12, 64)
-print(f"GPT-2 KV Cache: {gpt2_kv / 1024 / 1024:.2f} MB")
-
-# Qwen2.5-0.5B（GQA，num_kv_heads = 2, head_dim = 128）
-qwen_kv = kv_cache_size(1, 2048, 24, 2, 128)
-print(f"Qwen2.5-0.5B KV Cache: {qwen_kv / 1024 / 1024:.2f} MB")
-
-# 对比：如果 Qwen 也用 MHA（假设 14 个 KV 头）
-qwen_mha_kv = kv_cache_size(1, 2048, 24, 14, 128)
-print(f"Qwen2.5-0.5B (假设 MHA) KV Cache:
+4. **生效配置**：关闭重开终端，或执行 `source ~/.bashrc`。
 
 ## 块 31
 
-你的目标是快速上手 vLLM 部署，而 KV Cache 体积直接决定显存占用和吞吐量。这里我们用 `transformers` 库实际对比 GPT-2 和 Qwen2.5 的配置，直观感受 GQA 带来的节省。
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
 
-**动手观察：**
+---
 
-```python
-from transformers import AutoConfig
+## 7.3 运行你的第一个 Python 程序
 
-for model_id in ["gpt2", "Qwen/Qwen2.5-0.5B"]:
-    config = AutoConfig.from_pretrained(model_id)
-    print(f"\n{model_id}:")
-    print(f"  num_attention_heads: {config.num_attention_heads}")
-    print(f"  num_key_value_heads: {getattr(config, 'num_key_value_heads', None)}")
+你的环境已经装好了，现在来验证它是否真的能用。这一步的核心是：**在终端里创建并运行一个 Python 文件**。这和你之后用 vLLM 部署模型时的操作路径完全一致——只不过那时你运行的是推理脚本，而不是打印一句话。
+
+### 操作步骤
+
+**1. 回到主目录并创建文件**
+
+```bash
+cd ~
+nano hello.py
 ```
 
-**关键对比：**
+- `cd ~`：回到你的用户主目录（相当于 Windows 的“我的文档”）。
+- `nano hello.py`：用 nano 编辑器打开（或创建）一个叫 `hello.py` 的文件。若系统提示 `nano` 未找到，可先运行 `sudo apt install nano` 安装，或改用 `vi hello.py`（vi 通常已预装）。
 
-- **GPT-2**：`num_key_value_heads` 不存在，默认等于 `num_attention_heads`（实际为 12），即每个注意力头都有独立的 K/V，KV Cache 体积 = 2 × 层数 × 12 × 序列长度 × 头维度。
-- **Qwen2.5**：`num_key_value_heads` 远小于 `num_attention_heads`（GQA），多个查询头共享一组 K/V。以 Qwen2.5-0.5B 为例，`num_attention_heads` 为 14，`num_key_value
+**2. 在 nano 里输入代码**
+
+```python
+print("Hello, Python on Ubuntu 24.04!")
+```
+
+**3. 保存并退出**
+
+- 按 `Ctrl + O` 保存，然后按回车确认文件名。
+- 按 `Ctrl + X` 退出 nano。
+
+**4. 运行程序**
+
+```bash
+python3 --version   # 先确认 Python 已安装且版本正确
+python3 hello.py
+```
+
+如果屏幕输出了 `Hello, Python on Ubuntu 24.04!`，说明你的 Linux 环境已就绪，而且你已经成功使用了 `cd`、`nano`、`python3` 三个终端命令。
+
+---
+
+### 为什么这对你很重要？
+
+你已经掌握 PyTorch 和训练流程，现在要学 vLLM 部署。vLLM 的启动方式本质上就是：
+
+```bash
+python3 你的推理脚本.py
+```
+
+所以这个“第一个程序”不是玩具——它验证的是**从“写代码”到“跑起来”的完整链路**。如果这一步通了，后续安装 vLLM、加载模型、启动推理服务，都是在这条链路上叠加更复杂的
 
 ## 块 32
 
-## 二、从 LayerNorm 到 RMSNorm
+## 2.1 pwd：打印当前工作目录
 
-### 2.1 LayerNorm 的原始设计
+在动手部署 vLLM 之前，先解决一个最基础的问题：**你现在在哪个目录？**
 
-在动手部署 vLLM 之前，你得先搞清楚模型内部的一个关键组件——LayerNorm。它是原始 Transformer 用来稳定深层网络训练的基石之一。
+`pwd` = **P**rint **W**orking **D**irectory，作用就是告诉你"我现在在哪个文件夹里"。
 
-**为什么需要它？**
-
-GPT-3 有 96 层，Llama、Qwen 也有几十层。网络一深，反向传播时梯度逐层相乘，数值容易失控（梯度消失/爆炸），而且深层网络比浅层更难训练。原始 Transformer 的解法是：**残差连接 + 层归一化**。
-
-**LayerNorm 在做什么？**
-
-简单说，它对每个样本的所有特征维度，算出一个均值 μ 和一个方差 σ²，然后做标准化，把数据拉回到一个稳定的分布上。公式如下：
-
-```
-LN(x_i) = γ · (x_i - μ) / √(σ² + ε) + β
+```bash
+pwd
 ```
 
-拆开看：
+示例输出：
 
-- **μ**：该样本所有特征维度的均值
-- **σ²**：该样本所有特征维度的方差
-- **ε**：一个极小的数，防止分母为 0
-- **γ 和 β**：可学习的缩放和偏移参数，让模型决定标准化后的数据“长什么样”
-
-**关键点**：LayerNorm 是对**每个样本自己**做归一化，不依赖 batch 里的其他样本。这一点和 BatchNorm 不同，也是它适合 Transformer 这类变长序列输入的原因。
-
-**原始 Transformer 怎么用？**
-
-每个子层（比如注意力层、前馈层）的输出，先和输入做残差相加，再做 LayerNorm：
-
-```
-LayerNorm(x + Sublayer(x))
+```bash
+/home/zhangsan
 ```
 
-这个结构叫 **Post-LN**——先加残差，再归一化。
+这表示你当前位于 `/home/zhangsan` 目录下。
 
-**但现代 LLM（比如 Llama）不这么干了**，它们改用：
+**为什么这对你很重要？** 你之后用 vLLM 加载模型时，需要指定模型路径、输出日志路径。如果连自己在哪个目录都不清楚，很容易出现"文件找不到"或"路径写错"的报错。所以，在操作文件之前，养成先敲 `pwd` 的习惯，能避免很多困惑。
 
-```
-x + Sublayer(RMSNorm(x))
-```
+结合你的 RTX 4090 环境，一个典型场景是：你下载好模型权重后，想确认它放在哪个目录下。先 `pwd` 确认当前位置，再用 `ls` 查看目录内容，就能清楚掌握文件布局。
 
-每个子层的输入先经过 RMSNorm，然后进入子层，子层输出与原始输入相加（残差连接）。这叫 **Pre-LN**。
-
-**为什么换？** 这正是下一节要拆解
+**本块学习检查**：完成本块后
 
 ## 块 33
 
-你的目标是快速上手 vLLM 部署，而 vLLM 底层大量使用了 RMSNorm。理解它从 LayerNorm 简化而来的动机，能帮你更清楚地看懂推理时的计算流程。
+**本块学习检查**：学完后，用自己的话说说“绝对路径”和“相对路径”的区别，并思考这跟你用 vLLM 加载模型权重文件时的路径设置有什么关系。遇到不懂的术语记下来再问。
 
-LayerNorm 的原始设计是：先算均值 μ 和方差 σ²，再用它们把数据标准化，最后用可学习的 γ（缩放）和 β（平移）做变换。公式如下：
+你在 `/home/zhangsan/Documents` 下，想找模型权重：
 
-$$\mu = \frac{1}{n}\sum_{i=1}^{n} x_i, \quad \sigma^2 = \frac{1}{n}\sum_{i=1}^{n}(x_i - \mu)^2$$
+- **绝对路径**：从根目录 `/` 写起，不依赖当前位置。例如 `cd /home/zhangsan`，任何位置都能用。
+- **相对路径**：相对于当前目录。`./` 表示当前目录（可省略），`../` 表示上一级，`~` 表示家目录（如 `/home/zhangsan`）。
 
-RMSNorm 论文提出了一个关键假设：LayerNorm 之所以有效，主要靠的是**重缩放不变性**，而不是**重中心化不变性**。换句话说，减去均值（re-centering）那一步对最终效果贡献不大。
-
-基于这个假设，RMSNorm 直接砍掉了均值计算和偏置 β，只保留 RMS 统计量：
-
-$$\text{RMS}(\mathbf{x}) = \sqrt{\frac{1}{n}\sum_{i=1}^{n} x_i^2}$$
-
-$$\text{RMSNorm}(x_i) = \frac{x_i}{\text{RMS}(\mathbf{x})} \cdot \gamma_i$$
-
-数值稳定形式
+实操：`cd ..` 回到上一级
 
 ## 块 34
 
-**为什么可以去掉均值和偏置？——从 vLLM 部署视角看**
+### 3.1 基础用法：用 `ls` 快速查看文件
 
-你要部署 vLLM，核心是让模型跑得快、省显存。RMSNorm 就是为此服务的。
+你在做 vLLM 部署时，经常需要确认模型文件、配置脚本是否就位。`ls` 就是干这个的。
 
-看 Pre-LN 结构：`x + Sublayer(Norm(x))`。Norm 先把输入均值归零，但 Attention 或 FFN 这些子层一过，线性变换加激活函数，输出均值早就不为零了。再和原始 x 相加，最终结果均值主要由 x 决定，**零均值根本保不住**。
+```bash
+# 列出当前目录下的文件/文件夹（不包括隐藏文件）
+ls
 
-所以两个结论：
+# 列出指定路径下的内容，比如你的模型目录
+ls /home/zhangsan
 
-1. **偏置 β 冗余**：它和后续线性层的 bias 功能重叠，纯属浪费参数。
-2. **去均值冗余**：残差连接注定破坏零均值，你费劲算均值、强行减掉，下一轮又被重置，白算。
+# 列出所有文件，包括隐藏文件（以 . 开头）
+ls -a
 
-RMSNorm 论文实验也证实
+# 详细列表：显示权限、所有者、大小、修改时间
+ls -l
+
+# 组合：详细列出所有文件，大小以人类可读格式显示（如 K、M）
+ls -ahl
+```
+
+> **注意隐藏文件**：Linux 中以 `.` 开头的文件默认隐藏，比如 `.bashrc`、`.ssh`。这些文件在配置环境变量时很关键，部署 vLLM 时你可能会遇到。
+
+### 3.2 读懂 `ls -l` 的输出
+
+执行 `ls -l` 后，输出
 
 ## 块 35
 
-## 2.4 计算效率对比：为什么 RMSNorm 更快？
+### 3.3 其他常用选项（①）
 
-假设隐藏维度为 $d$，归一化层对每个 token 的每个隐藏维度都要计算，频率极高。对比两者的操作步骤：
+`ls` 的选项可以组合使用，帮你快速定位模型文件或日志。常用组合如下：
 
-| 步骤 | LayerNorm | RMSNorm |
-|------|-----------|---------|
-| 求均值 / 平方 | $d$ 次加法算 $\mu$ | $d$ 次乘法算 $x_i^2$ |
-| 中心化 / 求和 | $d$ 次减法 $(x_i - \mu)$ | $d$ 次加法算 $\sum x_i^2$ |
-| 平方 / 开方 | $d$ 次乘法算方差 | 开方 + 除法 |
-| 归一
+- **`ls -lh`**：详细列表 + 人类可读大小（KB/MB/GB）。注意 `-h` 必须搭配 `-l` 才有效。
+- **`ls -t`**：按最后修改时间排序（最新在前），适合找最新 checkpoint。
+- **`ls -S`**：按文件大小排序（从大到小），适合找最大的权重文件。
+- **`ls -rt`**：逆转排序（时间最旧在前），适合清理旧日志。
+- **`ls -F`**：在文件夹后加 `/`，软
 
 ## 块 36
 
-## Post-Norm：原始 Transformer 的选择
+### 4.1 基础用法
 
-原始 Transformer 的每个子层（如自注意力或前馈网络）采用这样的结构：
+`cd` 是切换目录的命令。在 vLLM 部署时，你经常需要进入模型目录、日志目录或配置文件所在位置，掌握它能让你在命令行里行动自如。
 
-**Output = LayerNorm(x + Sublayer(x))**
+```bash
+# 进入指定目录（绝对路径，从根目录开始写）
+cd /home/zhangsan/Documents
 
-拆开看：输入 `x` 先进入子层计算，得到的结果与原始 `x` 相加（残差连接），最后再做 LayerNorm 归一化。也就是说，**残差分支在归一化之前**。
+# 进入当前目录下的子文件夹（相对路径，./ 可省略）
+cd ./Downloads
+cd Downloads
 
-这个设计的代价是：训练深层网络时稳定性较差，对学习率很敏感——学习率稍大就容易震荡甚至发散。但它的优势在于模型表达能力理论上更强。
+# 返回上一级目录
+cd ..
+
+# 返回上两级目录
+cd ../..
+
+# 回到家目录
+cd ~
+cd        # 直接 cd 不加参数也是回家目录
+
+# 返回刚才所在的目录（快速来回切换）
+cd -
+```
+
+### 4.2 路径切换示例
+
+假设当前在 `/usr/local` 下，想切换到 `/home/zhangsan`：
+
+```bash
+# 方法1：绝对路径（去哪都管用）
+cd /home/zhangsan
+
+# 方法2：相对路径（先回根目录，再去 home）
+cd ../../home/zhangsan
+```
+
+> **建议**：新手优先使用绝对路径，不容易迷路；熟悉后多用相对路径，效率更高。
 
 ---
 
-**给你的实操提示**：如果你在 vLLM 部署中遇到加载模型后推理结果不稳定、或微调时 loss 剧烈波动的情况，可以先检查模型用的是 Post-Norm 还是 Pre-Norm 架构——Post-Norm 模型对学习率和初始化更"挑剔"，这不是部署代码的问题，而是架构本身的特性。
+## 五、mkdir：创建目录
 
-# 模型许可证：Llama 2 Community License（商用
+`mkdir` = **M**a**k**e **Dir**ectory，用来创建文件夹。部署 vLLM 时，你通常需要新建项目目录来存放模型权重、推理脚本和日志。
+
+```bash
+# 在当前目录下创建一个文件夹
+mkdir myproject
+
+# 在指定路径下创建文件夹
+mkdir /home/zhangsan/myproject
+
+# 递归创建多级目录（父目录不存在时自动创建）
+mkdir -p myproject/src/models
+
+# 一次性创建多个同级文件夹
+mkdir dir1 dir2 dir3
+
+# 使用花括号批量创建同级文件夹
+mkdir {dir1,dir2,dir3}
+
+# 批量创建 100 个文件夹（dir1 ~ dir100）
+mkdir dir{1..100}
+```
+
+> **注意**：`mkdir` 默认**不能**直接创建多级嵌套目录，必须加 `-p` 参数。这是新手最常踩的坑之一。
+
+---
+
+## 六、touch：创建空文件
+
+`touch` 原本用来"更新文件的时间戳"，但最常用的功能是**快速创建一个空文件**。比如创建推理脚本的占位文件或空配置文件。
+
+```bash
+# 创建一个空文件
+touch hello.py
+
+# 一次性创建
 
 ## 块 37
 
-**本块学习检查**：读完下面内容后，请用一句话回答：残差连接为什么能缓解梯度消失？答案就在原文里，找出来即可。
+### 7.1 复制文件（①+②）
 
----
+```bash
+# 复制文件到另一个文件夹（保留原文件名）
+cp hello.py ./backup/
 
-### 4.1 梯度高速公路
+# 复制文件到另一个文件夹，并改名
+cp hello.py ./backup/hello_backup.py
 
-没有残差连接时，梯度要逐层反向传播。假设网络有100层，每层梯度只衰减到0.99，最终梯度只剩 $0.99^{100} \approx 0.366$——梯度几乎消失了。残差连接相当于给梯度修了一条“高速公路”，让它能直接抄近路回传，从而缓解梯度消失。
+# 一次性复制多个文件到目标文件夹
+cp file1.txt file2.txt ./backup/
 
-### 4.2 学习残差而非完整映射
+# 复制时保持文件属性不变（如修改时间）
+cp -p hello.py ./backup/
 
-传统网络要直接学映射 $F(x)$。残差网络只学残差 $H(x) = F(x) - x$。当变换接近恒等映射时，残差趋近于0，这比学一个任意复杂映射容易得多。
+# 覆盖前进行提示（如果目标文件已存在）
+cp -i hello.py ./backup/
+```
 
-### 4.3 残差连接与激活值控制
+### 7.2 复制目录（①+②）
 
-残差连接的核心作用就是改善信息和梯度传播。但要注意：未经缩放的残差不断相加，激活方差会随网络深度增长。现代模型通常用 **Pre-Norm/RMSNorm**、合理的权重初始化或残差缩放（如 GPT-3 的 $1/\sqrt{N}$ 缩放）来控制。
+复制文件夹时，**必须加 `-r` 参数**（recursive，递归），否则系统会拒绝。（①+②）
 
-### 4.4 标准 Decoder-Only 层的残
+```bash
+# 复制整个目录到另一个位置
+cp -r myproject ./backup/
+
+# 注意：
+# 如果 backup 文件夹不存在，会新建 backup，并将 myproject 的内容复制到其中（backup 成为 myproject 的副本）
+# 如果 backup 文件夹已存在，会新建 backup/myproject/，把整个文件夹复制进去
+```
+
+### 7.3 复制软链接（①）
+
+```bash
+# 拷贝软链接时，默认会解引用链接，复制链接指向的文件内容；加 -d 参数可保持链接
 
 ## 块 38
 
-**RMSNorm 性能优化：`torch.rsqrt`**
+## 8.1 移动文件/文件夹
 
-RMSNorm 的核心计算是除以 $\sqrt{\text{variance} + \epsilon}$。PyTorch 的 `torch.rsqrt` 直接算 $1/\sqrt{x}$，在 CUDA 上通常映射为 `rsqrt.rn.f32`（精确）或 `rsqrt.approx.f32`（近似，取决于实现和设置），但无论哪种，其性能通常优于先开方再除法。
+在部署 vLLM 时，你常需要把训练好的模型权重或推理脚本整理到固定目录。`mv` 就是干这个的。
 
-**对比两种写法**：
+```bash
+# 把文件移动到另一个文件夹
+mv hello.py ./backup/
 
-```python
-# ❌ 慢：先开方，再除法（两次高延迟操作）
-denominator = torch.sqrt(variance + eps)
-output = x / denominator
+# 把文件夹移动到另一个位置
+mv myproject ./archive/
 
-# ✅ 快：rsqrt + 乘法（一条专用指令 + 一次快速乘法）
-inv_rms = torch.rsqrt(variance + eps)
-output = x * inv_rms
+# 使用通配符移动多个文件（把所有以 data_ 开头的文件移到 data 文件夹）
+mv data_* ./data/
 ```
 
-**为什么对你重要**：vLLM 部署时，
+## 8.2 重命名
+
+```bash
+# 把 a.txt 重命名为 b.txt（本质是在同一目录下移动）
+mv a.txt b.txt
+
+# 移动的同时改名
+mv hello.py ./backup/hello_v2.py
+```
+
+## 8.3 安全选项
+
+```bash
+# 覆盖前询问（推荐日常使用）
+mv -i old.txt new.txt
+
+# 强制覆盖，不提示（慎用）
+mv -f old.txt new.txt
+```
+
+## 九、rm：删除文件与目录
+
+`rm` = **R**e**m**ove，用来删除文件或文件夹。**此命令不可逆，请谨慎使用！**
+
+```bash
+# 删除单个文件
+rm hello.py
+
+# 删除多个文件
+rm file1.txt file2.txt
+
+# 删除文件名以 - 开头的文件（必须用 -- 告诉 rm 后面是文件名而非选项）
+rm -- -file.txt
+
+# 删除文件夹（必须加 -r，递归删除其中的所有内容）
+rm -r myproject/
+
+# 只删除空文件夹
+rm -d empty_dir/
+
+# 强制删除，不提示确认
+rm -f hello.py
+
+# 强制递归删除文件夹及其中所有内容（⚠️ 极度危险，务必确认路径正确！）
+rm -rf myproject/
+```
+
+> **⚠️ 生命警告**：`
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 39
 
-**目标：vLLM部署**，你最终要把模型高效跑起来。混合精度是部署时的常态，而RMSNorm里的类型转换是保证数值稳定的关键一步。
+```bash
+# 1. 回到家目录
+cd ~
 
-> **模型许可证**：Llama 2 Community License（商用月活>7亿需Meta授权）。
+# 2. 创建项目根目录
+mkdir llm-learning
 
-## 为什么通常转FP32？
+# 3. 进入项目目录
+cd llm-learning
 
-大模型训练和推理常用BF16/FP16省显存，但RMSNorm的**统计量累加通常建议在FP32下进行**，原因有三：
+# 4. 创建三个子目录
+mkdir data models scripts
 
-1. **防溢出**：长序列（如32K）的平方和累加，BF16/FP16很容易超范围变成`Inf`
-2. **防精度丢失**：低精度下累加会“大数吃小数”，方差算不准
-3. **保rsqrt稳定**：FP32的倒数平方根精度更高，避免梯度异常
+# 5. 创建空文件
+touch scripts/train.py
 
-## 标准流程
-
-**输入(BF16) → 转FP32算统计量 → 归一化 → 转回BF16 → 乘γ**
-
-## 代码实现
-
-```python
-import torch
-import torch.nn as nn
-
-class RMSNorm(nn.Module):
-    def __init__(self, dim, eps=1e-6):
-        super().__init__()
-        self.eps = eps
-        self.weight = nn.Parameter(torch.ones(dim))
-
-    def forward(self, x):
-        input_dtype = x.dtype  # 记录原始精度
-        
-        x_fp32 = x.float()  # 【关键】提升到FP32
-        
-        variance = x_fp32.pow(2).mean(dim=-1, keepdim=True)
-        inv_rms = torch.rsqrt(variance + self.eps)
-        x_normed = x_fp32 * inv_rms
-        
-        x_normed = x_normed.to(input_dtype)  # 【关键】转回原始精度
-        return x_normed * self.weight.to(input_dtype)  # 【关键】权重同步转换
+# 6. 查看目录结构
+ls -R
 ```
 
 ## 块 40
 
-## 5.4 与 PyTorch 原生 LayerNorm 对比
+### 场景 2：复制与整理实验文件
 
-你的目标是 vLLM 部署，而 vLLM 在底层推理时对算子和参数的效率极其敏感。理解 RMSNorm 与 LayerNorm 的差异，能帮你判断部署时模型配置中的归一化层选择。
+假设你已下载 `train.csv`、`test.csv`、`dev.csv` 到 `~/Downloads/`，现在要把它们整理进 `~/llm-learning/data/`，为后续 vLLM 部署时的数据准备打好基础。
 
-直接看代码对比（`hidden_dim=512`）：
+**操作步骤**：
 
-```python
-import torch
-import torch.nn as nn
+1. **确认文件存在**：`ls ~/Downloads/*.csv`，查看三个文件是否都在。
+2. **复制文件**：`cp ~/Downloads/train.csv ~/Downloads/test.csv ~/Downloads/dev.csv ~/llm-learning/data/`，一次复制多个文件到目标目录。
+3. **验证结果**：`ls ~/llm-learning/data/`，确认文件已就位。
 
-hidden_dim = 512
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
-# 原生 LayerNorm（含均值、方差、gamma、beta）
-ln = nn.LayerNorm(hidden_dim, elementwise_affine=True)
+## 块 41
 
-# 自定义 RMSNorm（仅 RMS + gamma）
-rms_norm = RMSNorm(hidden_dim)
+## 场景 3：清理临时文件——为 vLLM 部署腾出干净环境
 
-# 模拟输入：[batch=2, seq_len=10, hidden_dim=512]
-x = torch.randn(2, 10, hidden_dim)
+在 `~/llm-learning/` 下，你误建了一个空文件夹 `temp` 和一个 `old.txt` 文件。删除它们：
 
-out_ln = ln(x)
-out_rms = rms_norm(x)
+```bash
+# 1. 先确认要删的内容（好习惯！）
+ls ~/llm-learning/temp ~/llm-learning/old.txt
 
-print(f"LayerNorm 输出形状: {out_ln.shape}")
-print(f"RMSNorm 输出形状:  {out_rms.shape}")
+# 2. 删除文件
+rm ~/llm-learning/old.txt
 
-# 观察 gamma 参数量差异
-print(f"LayerNorm 参数: {sum(p.numel() for p in ln.parameters())}")   # 1024 (gamma + beta)
-print(f"RMSNorm 参数:   {sum(p.numel() for p in rms_norm.parameters())}")  # 512 (仅 gamma)
+# 3. 删除空文件夹（先确认目录为空，若不确定可改用 rm -r）
+rm -d ~/llm-learning/temp
+
+# 4. 验证
+ls ~/llm-learning/
 ```
 
-**观察**：RMSNorm 比 LayerNorm 少了一半的可学习参数（去掉了 β）。在 vLLM 部署场景中，参数减少意味着权重文件更小，但显存和计算优势需结合具体实现（如融合算子）评估，不能仅凭参数量直接推断。此外，LayerNorm 的 beta 参数在 Pre-LN 残差结构中可能被残差连接抵消，但并非所有场景都冗余。
+> **部署视角**：清理临时文件是模型部署前的常规操作。训练时产生的临时权重、日志文件如果不及时清理，会占用磁盘空间，甚至干扰后续 vLLM 加载模型时的路径判断。
+> **模型许可证**：Llama 2 Community License（商用月活>7亿需Meta授权）。
+> **显存要求**：注意：Llama-2-7b FP16 需要至少14GB显存。
 
-## 常见问题与解决
+---
 
-| 问题 | 可能原因 | 解决方案 |
-|------|----------|----------|
-| "去掉均值后效果不会变差吗？" | 忽略了 Pre-LN + 残差的结构特性 | Pre-LN 中残差连接会重置均值，去均值在特定条件下可能是冗余计算；RMSNorm 原论文（Zhang & Sennrich, 2019）在多种任务上报告了与 LayerNorm 相近的效果，但具体差异取决于模型架构和任务类型，不能一概而论 |
-| "Post-LN 和 Pre-LN 怎么选？" | 混淆了架构演进时序 | 现代 LLM 训练通常优先选 Pre-LN，通常更稳定；Post-LN 是原始 Transformer 的选择 |
-| "代码里为什么要 `.float()`？" | 不理解混合精度训练原理 | 统计量累加在 FP32 下更安全，防止 BF16/FP16 溢出和"大数吃小数" |
-| "`rsqrt` 和 `1/sqrt` 有什么区别？" | 不了解硬件指令差异 | `rsqrt` 是单条硬件指令，延迟更低，且将除法转为乘法；但其精度可能略低于 `1/sqrt`，且并非所有硬件都支持该指令，需根据部署平台权衡 |
-| "训练深层模型 loss 为 NaN" | 梯度爆炸或统计量溢出 | 检查是否使用 Pre-LN + RMSNorm，确认 `eps` 设置合理，添加梯度裁剪 |
-| "RMSNorm 的
+## 新手避坑指南（部署场景特别提醒）
+
+**1. 区分文件和文件夹**：`ls -l` 第一列是 `d` 表示文件夹，是 `-` 表示文件。对文件夹操作别忘了 `-r`（如 `cp -r`、`rm -r`）。
+
+**2. 路径写错**：切换目录或复制文件时，路径写错会提示 "No such file or directory"，可先用 `pwd` 和 `ls` 确认当前位置和目录内容。
+
+**3. 路径中包含空格必须用引号包裹**：如果文件夹或文件名包含空格，命令行会把它当成多个参数。务必用双引号包裹：
+
+```bash
+# 错误：mkdir my folder 会创建两个文件夹 my 和 folder
+# 正确：
+mkdir "my folder"
+cd "my folder"
+touch "my file.txt"
+cp "my file.txt" ./backup/
+rm "my file.txt"
+```
+
+**4. 文件名以 `-` 开头时使用 `--`**：Linux 命令中 `-` 开头通常表示选项。如果文件名本身以 `-` 开头，命令会误把文件名当选项解析。用 `--` 告诉命令"后面都是文件名，不是选项"（GNU 版本支持
+
+## 块 42
+
+## 环境变量是什么？——从PyTorch训练到vLLM部署的“备忘录”
+
+你已经跑通了PyTorch训练流程，现在要进入推理部署阶段。在配置vLLM之前，先花10分钟搞懂环境变量——它是你部署时绕不开的基础。
+
+### 通俗理解
+
+环境变量是操作系统或应用程序运行时使用的**动态键值对**，用于传递配置信息。你可以把它理解为操作系统的“备忘录”——系统启动时加载这些备忘录，所有程序都能读到里面的内容，并据此调整自己的行为。
+
+**常见例子**：
+
+| 变量名 | 作用 |
+|---|---|
+| `PATH` | 告诉系统去哪里找可执行程序（你输入`python3`，系统靠PATH找到它） |
+| `HOME` | 当前用户的家目录路径 |
+| `USER` | 当前登录的用户名 |
+| `SHELL` | 当前使用的Shell程序路径 |
+| `LANG` | 系统语言和字符编码 |
+| `PWD` | 当前工作目录路径（随`cd`自动更新） |
+| `EDITOR` | 默认文本编辑器 |
+
+### 为什么需要环境变量？
+
+1. **控制程序行为**：比如通过`JAVA_HOME`指定JDK路径，让依赖Java的程序知道去哪找它。
+2. **简化配置**：避免每次运行程序都手动输入长长的路径。
+3. **跨进程通信**：子进程自动继承父进程的环境变量，实现配置无缝传递。
+
+### 分类：临时 vs 永久
+
+环境变量按生命周期分为两类：**临时**（仅当前会话有效）和**永久**（写入配置文件，每次登录自动加载）。理解这个区别是后续操作的基础——你配置CUDA或vLLM相关路径时，选错类型会导致重启后配置失效。
+
+---
+
+**本
+
+## 块 43
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+临时变量只在当前终端会话有效，关闭终端或退出SSH后即消失，适合快速测试。设置时用`export`，查看用`echo $VAR`，删除用`unset`。不加`export`时子进程读不到，加了才能继承。
+
+**动手验证**：在终端执行以下命令，观察输出变化：
+```bash
+export MY_VAR="hello_linux"
+echo $MY_VAR
+unset MY_VAR
+echo $MY_VAR
+```
+对比两次`echo`的结果，确认变量已删除。
+
+**与vLL
+
+## 块 44
+
+**永久环境变量：写入配置文件，持久生效**
+
+你已掌握PyTorch训练，现在转向vLLM部署。部署时，模型路径、API密钥等变量若每次重启终端都丢失，会非常低效。解决办法是写入配置文件，让变量永久生效。
+
+配置文件分三级：
+
+| 级别 | 配置文件 | 影响范围 | 是否需要 sudo |
+|---|---|---|---|
+| **用户级（推荐）** | `~/.bashrc` | 仅当前用户 | 否 |
+| **用户级** | `~/.bash_profile` 或 `~/.profile` | 仅当前用户（登录时生效） | 否 |
+| **系统级** | `/etc/environment`、`/etc/profile.d/` 等 | 所有用户 | 是 |
+
+**该选哪个？** 日常开发中，
+
+## 块 45
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+### 3.1 用户级配置：修改 ~/.bashrc（推荐）
+
+`~/.bashrc` 是 Bash Shell 的配置文件，**每次打开新的交互式终端时自动加载**。这是日常开发中最常用的配置位置。
+
+**操作步骤**：
+
+```bash
+# 1. 用 nano 打开配置文件
+nano ~/.bashrc
+
+# 2. 滚动到文件末尾，添加一行：
+export MY_VAR="hello_permanent"
+
+# 3. 按 Ctrl + O 保存，Ctrl + X 退出
+
+# 4. 让修改立即生效（不重启终端）
+source ~/.bashrc
+
+# 5. 验证
+echo $MY_VAR
+# 输出：hello_permanent
+```
+
+> **`source` 是什么？** 相当于"重新执行一遍这个配置文件"，让刚才的修改在当前终端立刻生效，不用关掉重开。
+
+> **`~/.bashrc` 的加载限制**：`~/.bashrc` 通常在打开新的**交互式终端**时加载，但并非所有 SSH 会话、IDE
+
+## 块 46
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+**3.2 用户级配置：~/.bash_profile 或 ~/.profile（①）**
+
+这两个文件在**登录 Shell** 时生效（如SSH远程登录、系统开机登录）。若两者同时存在，系统优先读取 `~/.bash_profile`。
+
+日常开发中 `~/.bashrc` 更常用，因为每开一个终端都会加载。只有需要"登录时才生效"的特殊场景，才考虑这两个文件。
+
+---
+
+**四、环境变量的优先级（①）**
+
+同一变量多处定义时，优先级从高到低：
+
+1. **临时变量**（当前终端里 `export` 的）
+2. **用户级配置**（`~/.bashrc` 等）
+3. **
+
+## 块 47
+
+### 5.1 PATH：命令的“搜索路径”
+
+你已经熟悉 PyTorch 训练流程，现在要迈向 vLLM 推理部署。部署时你会频繁用到 `python3`、`vllm` 等命令，而 `PATH` 正是系统找到这些命令的“地图”。它定义了系统**查找可执行文件**的目录列表，是环境变量中最关键的一个。
+
+#### 查看 PATH
+
+在终端输入以下命令，查看当前 PATH：
+
+```bash
+echo $PATH
+```
+
+输出类似（多个路径用冒号 `:` 分隔）：
+
+```bash
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+
+当你在终端输入 `python3` 时，系统会**从左到右**依次在这些目录中查找名为 `python3` 的可执行文件，找到即执行，找不到则提示 `command not found`。
+
+#### 查看命令具体位置
+
+想知道某条命令到底从哪个目录被找到，用 `which`：
+
+```bash
+which python3
+# 输出：/usr/bin/python3
+
+which conda
+# 输出：/home/zhangsan/miniconda3/bin/conda
+```
+
+#### 修改 PATH
+
+**追加路径**（添加到末尾，优先级较低）：
+
+```bash
+export PATH=$PATH:/new/path
+```
+
+**前置路径**（添加到开头，优先级更高，系统会先搜索这里）：
+
+```bash
+export PATH=/new/path:$PATH
+```
+
+> **安全提示**：不要把 `.`（当前目录）加入 PATH。若你在某目录下载了名为 `ls` 的恶意脚本，而当前目录又在 PATH 中，执行 `ls` 时可能运行恶意脚本而非系统命令。
+>
+> **避免重复添加**：多次 `source ~/.bashrc` 或重复写入同一行，会导致 PATH 出现重复路径。建议定期检查
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 48
+
+你已掌握PyTorch训练流程，现在进入vLLM部署阶段。部署时，程序运行需要找到CUDA等动态库（`.so`文件），`LD_LIBRARY_PATH`正是指定这些额外查找路径的环境变量。
+
+**核心操作**：
+
+```bash
+# 查看当前值
+echo $LD_LIBRARY_PATH
+
+# 临时添加CUDA动态库路径
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
+```
+
+**典型场景**：你编译的程序依赖某个`.so`，但它不在系统默认路径（`/usr/lib`、`/lib`）中。将该`.so`所在目录加入`LD_LIBRARY_PATH`，程序即可正常运行。
+
+**本块学习检查**：完成本块后
+
+## 块 49
+
+## 5.3 LIBRARY_PATH：编译时库文件路径（②）
+
+`LIBRARY_PATH` 告诉编译器（如 `gcc`）在**编译链接阶段**去哪里找库文件——包括静态库（`.a`）和动态库（`.so`）。它和运行时无关，只在“把代码变成可执行文件”这一步起作用。
+
+```bash
+export LIBRARY_PATH=$LIBRARY_PATH:/path/to/your/libraries
+```
+
+**三个变量，别搞混**：
+
+| 变量名 | 作用阶段 | 查找目标 | 典型用途 |
+|---|---|---|---|
+| `PATH` | 执行命令时 | 可执行文件 | 让命令在任何位置都能运行 |
+| `LD_LIBRARY_PATH` | 程序运行时 | 动态链接库（`.so`） | 运行依赖自定义动态库的程序 |
+| `LIBRARY_PATH` | 编译链接时 | 静态库/动态库 | 编译时链接第三方库 |
+
+> **对你的建议**：你之后部署 vLLM 时，`PATH` 和 `LD_LIBRARY_PATH` 是打交道最多的两个变量——装 Miniconda、CUDA、PyTorch 都要正确
+
+## 块 50
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+你的RTX 4090要跑vLLM，CUDA环境变量是前提。先检查是否已配置：
+
+```bash
+echo $PATH | grep cuda
+echo $LD_LIBRARY_PATH | grep cuda
+```
+
+有输出（如`/usr/local/cuda/bin`）说明已配置；没输出就继续。
+
+编辑`~/.bashrc`：
+
+```bash
+nano ~/.bashrc
+```
+
+文件末尾加两行：
+
+```bash
+# CUDA 环境变量配置
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+```
+
+> **注意**：`/usr/local/cuda`是默认路径，若CUDA装在其他位置，替换为实际路径。
+
+生效并验证：
+
+```bash
+source ~/.bashrc
+echo $PATH | grep cuda
+nvcc --version
+```
+
+`nvcc --version`能输出版本号即配置成功。
+
+## 块 51
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+---
+
+## 七、调试与验证：让环境变量“现形”
+
+配置完环境变量后，最怕的就是“配了但没生效”。下面这套命令帮你快速排查。
+
+### 7.1 查看所有环境变量
+```bash
+printenv      # 简洁输出所有变量
+env           # 更详细的输出
+```
+两者都能列出当前Shell的全部环境变量，`env`格式更完整。适合先扫一眼全局，确认你的变量是否在列。
+
+### 7.2 查看特定变量
+```bash
+echo $PATH
+printenv PATH
+declare -p PATH    # 显示定义细节（包括是否 export）
+```
+前两条直接看值，第三条能告诉你这个变量是否被导出（`export`
+
+## 块 52
+
+## 8.1 变量未生效（①）
+
+你在配置 vLLM 环境时，如果改了 `~/.bashrc` 却没生效，先别急着怀疑自己写错了。最常见的原因就四个：改完没 `source` 或重启终端；配置文件语法有误（比如漏了 `export`）；变量被其他位置覆盖；或者你用的终端/IDE 压根没加载 `~/.bashrc`。
+
+**排查三步走：**
+
+```bash
+# 1. 确认配置文件语法正确
+cat ~/.bashrc | grep "你的变量名"
+
+# 2. 重新加载
+source ~/.bashrc
+
+# 3. 检查是否有重复定义
+grep -n "PATH=" ~/.bashrc
+```
+
+第 3 步特别值得注意——如果你之前装过多个 Python 环境，很可能在别处又定义了一次 `PATH`，后加载的配置会覆盖前面的。
+
+## 8.2 路径冲突：多个目录有同名命令
+
+你装了系统 Python 和 Miniconda 的 Python，输入 `python` 到底执行哪个？这直接关系到 vLLM 推理时用的是哪个环境。
+
+**排查：**
+
+```bash
+which python     # 输出第一个匹配的路径
+type -a python   # 输出所有匹配路径（按 PATH 搜索
+
+## 块 53
+
+## 脚本中临时修改变量：为 vLLM 部署做准备
+
+你已经掌握 PyTorch 和训练流程，现在要转向推理部署。部署时经常需要临时调整环境变量（比如指定 GPU、设置模型路径），但又不希望永久改动系统配置。这一节教你三种“临时”玩法。
+
+### 方式一：脚本内临时变量
+
+```bash
+#!/bin/bash
+export TEMP_VAR=123
+# 仅在脚本执行期间生效，脚本结束后变量消失
+```
+
+**理解**：`export` 在脚本里设置变量，脚本跑完就失效。适合在部署脚本开头临时设置一些路径或参数。
+
+### 方式二：单次命令指定变量
+
+```bash
+env MY_VAR=hello python3 my_script.py
+# MY_VAR 仅在这次 python3 运行时有效
+```
+
+**理解**：`env` 命令把变量“附”在一条命令上，只影响这一次运行。比如部署时临时指定 `CUDA_VISIBLE_DEVICES=0` 再启动 vLLM，非常干净。
+
+### 方式三：.env 文件分组管理
+
+项目变量多了，用 `.env` 文件统一管理：
+
+```bash
+# 创建 ~/.env 文件
+nano ~/.env
+```
+
+内容示例：
+
+```bash
+export PROJECT_HOME="$HOME/llm-learning"
+export EDITOR="nano"
+export TZ="Asia/Shanghai"
+```
+
+加载方法：
+
+```bash
+set -o allexport
+source ~/.env
+set +o allexport
+```
+
+**理解**：`set -o allexport` 开启
+
+## 块 54
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+你已掌握PyTorch训练流程，现在转向推理部署。环境变量是部署时的“后台配置”，本块教你如何创建并验证自定义变量，这是为后续配置vLLM运行参数打基础。
+
+**场景1：创建并验证自定义变量**
+
+```bash
+# 1. 设置一个临时变量（仅当前终端有效）
+export MY_NAME="zhangsan"
+
+# 2. 验证
+echo $MY_NAME
+```
+
+临时变量在关闭终端后失效。若需永久生效，写入配置文件：
+
+```bash
+# 3. 写入 ~/.bashrc 使其永久生效
+echo 'export MY_NAME="zhangsan"' >> ~/.bashrc
+
+# 4. 重新加载并验证
+source ~/.bashrc
+echo $MY_NAME
+```
+
+**场景2：为自定义脚本目录配置PATH**
+
+假设你在 `~/scripts` 文件夹里放了自己写的工具脚本，希望在任何目录下直接运行：
+
+```bash
+# 1. 创建脚本目录
+mkdir -p ~/scripts
+
+# 2. 创建测试脚本并赋予执行权限
+echo '#!/bin/bash'
+
+## 块 55
+
+你的目标是用 vLLM 部署模型，而 CUDA 环境变量是 GPU 推理的“地基”。即使还没装 CUDA，也可以先练熟配置套路，这样部署时能少踩坑。
+
+**动手练习：模拟配置 CUDA 环境变量**
+
+1. 打开终端，编辑配置文件：
+   ```bash
+   nano ~/.bashrc
+   ```
+2. 在文件末尾添加以下两行（假设 CUDA 装在 `/usr/local/cuda`）：
+   ```bash
+   export PATH=/usr/local/cuda/bin:$PATH
+   export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+   ```
+3. 保存并让配置生效：
+   ```bash
+   source ~/.bashrc
+   ```
+4. 验证配置是否生效：
+   ```bash
+   echo $PATH |
+
+## 块 56
+
+## 系统级配置文件（①）
+
+系统级配置影响**所有用户**，修改需 `sudo` 权限。日常开发不建议用，但配置公共服务器时需了解。
+
+**A.1 /etc/environment**：不需 `export`，直接写 `KEY=value`，支持简单的变量展开（如 `$PATH`），但不支持命令替换或复杂的 Shell 语法。
+
+```bash
+sudo nano /etc/environment
+# 添加：JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+# 保存后重启系统或重新登录生效
+```
+
+**A.2 /etc/profile**：全局 Bash 配置，需 `export`。
+
+```bash
+sudo nano /etc/profile
+# 添加：export PATH=$PATH:/usr/local/custom/bin
+# source /etc/profile 使当前会话生效，或重启系统
+```
+
+**本块学习检查**：完成本块后，用自己的话说明系统级配置文件与 vLLM 部署的关系（如：部署时若需全局设置库路径或环境变量
+
+## 块 57
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+
+配置 vLLM 环境时，你可能在 Bash 或 Zsh 中操作。不同 Shell 的配置文件位置不同：
+
+| Shell 类型 | 配置文件 | 作用范围 |
+|---|---|---|
+| **Bash** | `~/.bashrc` | 非登录 Shell（日常终端） |
+| **Bash** | `~/.bash_profile` | 登录 Shell（SSH 登录） |
+| **Zsh** | `~/.zshrc` | 所有交互式 Shell |
+| **Zsh** | `~/.zprofile` |
+
+## 块 58
+
+## C. 清理 PATH 中的重复项（④）
+
+多次修改 PATH 后，可能会出现重复路径。这不会导致系统报错，但会让 `echo $PATH` 的输出变得冗长，也可能让 `which` 的结果产生歧义。可以用下面这条命令一键去重：
+
+```bash
+export PATH=$(echo $PATH | awk -v RS=: '!a[$0]++' | paste -sd: -)
+```
+
+这条命令的思路是：把 `PATH` 按冒号拆成一行一个路径，用 `awk` 去掉重复项，再用 `paste` 把结果重新拼回冒号分隔的格式。该命令会保留路径首次出现的顺序。你不需要记住细节，只需要知道：**当你的 PATH 看起来杂乱时，这条命令能帮你恢复整洁**。注意，如果 PATH 中包含换行符等特殊字符，此命令可能不适用。
+
+## D. 根据环境加载不同配置（④）
+
+如果你需要在开发环境和生产环境使用不同的环境变量，可以在 `~/.bashrc` 中添加条件判断。假设 `~/.env.prod` 和 `~/.env.dev` 文件中包含 `export` 语句（例如 `export API_KEY=xxx`），这样 `source` 后变量才能导出到环境中：
+
+```bash
+# 在 ~/.bashrc 中添加
+if [ "$ENVIRONMENT" = "production" ]; then
+    source ~/.env.prod
+else
+    source ~/.env.dev
+fi
+```
+
+这样，当你设置 `ENVIRONMENT=production` 时，`~/.bashrc` 会加载生产环境配置；否则加载开发环境配置。这个模式在部署场景中很实用——比如你在本地调试时用开发配置，在服务器上跑推理服务时用生产配置。
+
+## E. 脚本调试模式（④）
+
+当脚本运行结果不符合预期时，可以用调试模式查看执行过程：
+
+```bash
+# 以详细模式运行脚本，会打印每一行执行前的变量值
+bash -x
 
 ## 测评题目
 
-### Q-KB08-ST0800-001
-用 `AutoModel.from_pretrained()` 加载模型时，模型权重通常来自名称对应的预训练________。
+### Q-KB0100-003
+执行以下命令确认系统发行版信息：
+```bash
+cat /etc/os-release
+```
 
-### Q-KB08-ST0800-002
-不计算梯度地执行前向推理，常使用 PyTorch 的 `torch.________()` 上下文。
+### Q-KB0100-001
+请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：
+```bash
+uname -a
+```
 
-### Q-KB0801-003
-以下哪个模型是典型的 **Encoder-only** 架构？
+### Q-KB0101-008
+请写出一条命令，查找 `/var/log` 目录下所有大于100MB的文件，并按大小排序显示。
 
-### Q-KB0801-001
-Transformer模型中，用于处理机器翻译等序列到序列（Seq2Seq）任务的完整架构是？
+### Q-KB0101-001
+以下哪个命令用于**切换当前工作目录**？
 
-### Q-KB08-ST0802-001
-Decoder-Only 模型在生成第 t 个 token 时，只能关注当前位置及其________位置。
+### Q-KB0102-003
+以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？
 
-### Q-KB08-ST0802-003
-Decoder-Only 注意力掩码的核心作用是？
+### Q-KB0102-001
+临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。
 
-### Q-KB08-ST0803-003
-残差连接最直接的训练收益是？
+### Q-KB0104-004
+`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。
 
-### Q-KB08-ST0803-002
-RMSNorm 使用均方根统计进行归一化，通常不减去输入的________。
+### Q-KB0104-002
+`nvidia-smi` 输出中，`Memory-Usage: 2048MiB / 8192MiB` 表示什么？

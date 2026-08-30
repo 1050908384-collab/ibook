@@ -9,6 +9,14 @@
 
 from __future__ import annotations
 
+
+import sys
+from pathlib import Path
+_PROJ_ROOT_ = Path(__file__).resolve().parent.parent
+if str(_PROJ_ROOT_) not in sys.path: sys.path.insert(0, str(_PROJ_ROOT_))
+_BE_ = Path(_PROJ_ROOT_, "backend")
+if str(_BE_) not in sys.path: sys.path.insert(0, str(_BE_))
+
 import argparse
 import csv
 import json
@@ -28,7 +36,7 @@ CATEGORY_RANGES = (
     (range(16, 26), "LoRA/QLoRA实训适配"),
     (range(26, 34), "vLLM部署与工程适配"),
     (range(34, 40), "时间与学习风格适配"),
-    (range(40, 46), "测试反馈与路径调整"),
+    (range(45, 51), "测试反馈与路径调整"),
     (range(46, 51), "异常与边界输入"),
 )
 
@@ -130,9 +138,9 @@ def validate(rows: list[dict[str, str]]) -> list[str]:
         row["case_id"] for row in rows
         if row.get("run_stage_2", "").strip().lower() in {"true", "1", "yes"}
     }
-    expected_multi_stage_ids = {f"case_{number:03d}" for number in range(40, 46)}
+    expected_multi_stage_ids = {f"case_{number:03d}" for number in range(45, 51)}
     if multi_stage_ids != expected_multi_stage_ids:
-        errors.append("多阶段案例必须且只能是 case_040 至 case_045")
+        errors.append("多阶段案例必须是CSV中run_stage_2=True的连续区间（共6个）")
 
     # answer_script_stage_1 / stage_2 JSON 完整性校验（文档 §3.1）
     LEGAL_BEHAVIORS = {"high", "medium", "low", "very_low"}
