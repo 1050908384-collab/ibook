@@ -1,0 +1,672 @@
+﻿
+################################################################################
+#                                                                              #
+#                                项目数据库与题库状态检查报告                              #
+#                                                                              #
+################################################################################
+
+================================================================================
+  1. 数据库表结构检查
+================================================================================
+
+  数据库文件: d:\我的项目\揭榜挂帅\ai_agent-trainer\data\sqlite_data\project.db
+  表的总数: 34
+
+  所有表名列表:
+     1. assessment_answers                       - 记录数: 0
+     2. assessment_attempt_questions             - 记录数: 0
+     3. assessment_attempts                      - 记录数: 0
+     4. block_resources                          - 记录数: 16
+     5. knowledge_blocks                         - 记录数: 15
+     6. knowledge_chunks                         - 记录数: 982
+     7. knowledge_chunks_fts                     - 记录数: 982
+     8. knowledge_chunks_fts_config              - 记录数: 1
+     9. knowledge_chunks_fts_content             - 记录数: 982
+    10. knowledge_chunks_fts_data                - 记录数: 1368
+    11. knowledge_chunks_fts_docsize             - 记录数: 982
+    12. knowledge_chunks_fts_idx                 - 记录数: 3515
+    13. knowledge_docs                           - 记录数: 141
+    14. knowledge_subtopics                      - 记录数: 73
+    15. learner_profiles                         - 记录数: 1
+    16. learning_package_claims                  - 记录数: 32
+    17. learning_package_sources                 - 记录数: 34
+    18. learning_resources                       - 记录数: 80
+    19. review_debate_issues                     - 记录数: 23
+    20. review_debate_responses                  - 记录数: 75
+    21. review_debate_rounds                     - 记录数: 4
+    22. review_traces                            - 记录数: 2
+    23. schema_migrations                        - 记录数: 1
+    24. session_states                           - 记录数: 1
+    25. sessions                                 - 记录数: 1
+    26. stage_progress                           - 记录数: 1
+    27. subtopic_resources                       - 记录数: 73
+    28. subtopic_status                          - 记录数: 0
+    29. test_questions                           - 记录数: 323
+    30. user_answers                             - 记录数: 16
+    31. user_profiles                            - 记录数: 0
+    32. user_qa                                  - 记录数: 0
+    33. user_subtopic_status                     - 记录数: 73
+    34. verified_claims                          - 记录数: 15
+
+------------------------------------------------------------
+  重点表存在性检查
+------------------------------------------------------------
+      [OK] knowledge_blocks
+      [OK] knowledge_subtopics
+      [OK] knowledge_docs
+      [OK] knowledge_chunks
+      [OK] test_questions
+      [OK] user_profiles
+      [OK] stage_progress
+      [OK] user_qa
+      [OK] user_answers
+      [OK] sessions
+      [OK] session_states
+      [OK] subtopic_status
+      [OK] review_traces
+      [OK] learning_package_sources
+      [OK] learning_package_claims
+      [OK] review_debate_issues
+      [OK] review_debate_rounds
+      [OK] review_debate_responses
+
+  预期表数: 18
+  实际存在: 18
+  缺失表数: 0
+
+------------------------------------------------------------
+  重点表字段结构
+------------------------------------------------------------
+
+    表: knowledge_blocks
+    字段数: 8
+      - block_id                       VARCHAR(50)     [PK]
+      - block_name                     VARCHAR(100)    [NOT NULL]
+      - description                    TEXT           
+      - estimated_hours                FLOAT          
+      - difficulty                     VARCHAR(20)    
+      - prerequisites                  TEXT           
+      - corresponding_gaps             TEXT           
+      - created_at                     TIMESTAMP      
+
+    表: knowledge_subtopics
+    字段数: 9
+      - subtopic_id                    VARCHAR(50)     [PK]
+      - block_id                       VARCHAR(50)     [NOT NULL]
+      - subtopic_name                  VARCHAR(200)    [NOT NULL]
+      - estimated_hours                FLOAT          
+      - sequence_index                 INT             [NOT NULL]
+      - difficulty                     VARCHAR(20)    
+      - prerequisites                  TEXT           
+      - content_summary                TEXT           
+      - created_at                     TIMESTAMP      
+
+    表: knowledge_docs
+    字段数: 10
+      - doc_id                         VARCHAR(50)     [PK]
+      - block_id                       VARCHAR(50)     [NOT NULL]
+      - title                          VARCHAR(200)    [NOT NULL]
+      - content                        TEXT            [NOT NULL]
+      - doc_type                       VARCHAR(20)    
+      - source                         VARCHAR(200)   
+      - difficulty                     VARCHAR(20)    
+      - created_at                     TIMESTAMP      
+      - subtopic_id                    VARCHAR(50)    
+      - source_file_path               TEXT            [NOT NULL]
+
+    表: knowledge_chunks
+    字段数: 13
+      - chunk_id                       VARCHAR(50)     [PK]
+      - doc_id                         VARCHAR(50)     [NOT NULL]
+      - block_id                       VARCHAR(50)     [NOT NULL]
+      - chunk_index                    INT            
+      - content                        TEXT            [NOT NULL]
+      - chunk_type                     VARCHAR(20)    
+      - char_start                     INT            
+      - char_end                       INT            
+      - heading_path                   TEXT            [NOT NULL]
+      - heading_level                  INTEGER         [NOT NULL]
+      - source_line_start              INTEGER         [NOT NULL]
+      - source_line_end                INTEGER         [NOT NULL]
+      - chunk_strategy                 TEXT            [NOT NULL]
+
+    表: test_questions
+    字段数: 13
+      - question_id                    VARCHAR(50)     [PK]
+      - block_id                       VARCHAR(50)     [NOT NULL]
+      - subtopic_id                    VARCHAR(50)    
+      - difficulty                     VARCHAR(20)    
+      - question_type                  VARCHAR(50)    
+      - question_text                  TEXT            [NOT NULL]
+      - options                        TEXT           
+      - correct_answer                 TEXT            [NOT NULL]
+      - explanation                    TEXT           
+      - expected_output                TEXT           
+      - grading_mode                   VARCHAR(50)    
+      - source                         VARCHAR(200)   
+      - hint                           TEXT           
+
+    表: user_profiles
+    字段数: 18
+      - profile_id                     VARCHAR(50)     [PK]
+      - session_id                     VARCHAR(50)     [NOT NULL]
+      - version                        INT            
+      - skill_tags                     TEXT           
+      - knowledge_gaps                 TEXT           
+      - goal                           TEXT           
+      - daily_hours                    FLOAT          
+      - learning_style                 VARCHAR(20)    
+      - learning_rhythm                VARCHAR(20)    
+      - confidence_index               FLOAT          
+      - confusion_markers              TEXT           
+      - confidence                     FLOAT          
+      - created_at                     TIMESTAMP      
+      - user_id                        VARCHAR(50)    
+      - grade                          VARCHAR(50)    
+      - hardware                       VARCHAR(100)   
+      - profile_confidence             FLOAT          
+      - last_updated                   TIMESTAMP      
+
+    表: stage_progress
+    字段数: 12
+      - stage_id                       VARCHAR(50)     [PK]
+      - session_id                     VARCHAR(50)     [NOT NULL]
+      - stage_num                      INT             [NOT NULL]
+      - block_id                       VARCHAR(50)    
+      - block_name                     VARCHAR(100)   
+      - status                         VARCHAR(20)    
+      - accuracy                       FLOAT          
+      - strategy_used                  VARCHAR(20)    
+      - started_at                     TIMESTAMP      
+      - completed_at                   TIMESTAMP      
+      - subtopic_id                    VARCHAR(50)    
+      - estimated_hours                FLOAT          
+
+    表: user_qa
+    字段数: 8
+      - qa_id                          VARCHAR(50)     [PK]
+      - session_id                     VARCHAR(50)     [NOT NULL]
+      - stage                          INT             [NOT NULL]
+      - question                       TEXT            [NOT NULL]
+      - answer                         TEXT           
+      - tech_pass                      BOOLEAN        
+      - quality_pass                   BOOLEAN        
+      - created_at                     TIMESTAMP      
+
+    表: user_answers
+    字段数: 8
+      - answer_id                      VARCHAR(50)     [PK]
+      - session_id                     VARCHAR(50)     [NOT NULL]
+      - stage                          INT             [NOT NULL]
+      - question_id                    VARCHAR(50)     [NOT NULL]
+      - user_answer                    TEXT           
+      - is_correct                     BOOLEAN        
+      - time_spent                     INT            
+      - created_at                     TIMESTAMP      
+
+    表: sessions
+    字段数: 11
+      - session_id                     VARCHAR(50)     [PK]
+      - current_stage                  INT            
+      - status                         VARCHAR(20)    
+      - created_at                     TIMESTAMP      
+      - updated_at                     TIMESTAMP      
+      - user_id                        VARCHAR(50)    
+      - goal                           TEXT           
+      - target_knowledge_gaps          TEXT           
+      - target_total_hours             FLOAT          
+      - target_daily_hours             FLOAT          
+      - target_progress                FLOAT          
+
+    表: session_states
+    字段数: 3
+      - session_id                     VARCHAR(50)     [PK]
+      - state_json                     TEXT            [NOT NULL]
+      - updated_at                     TIMESTAMP      
+
+    表: subtopic_status
+    字段数: 10
+      - session_id                     VARCHAR(50)     [PK] [NOT NULL]
+      - subtopic_id                    VARCHAR(50)     [PK] [NOT NULL]
+      - block_id                       VARCHAR(50)     [NOT NULL]
+      - status                         INT             [NOT NULL]
+      - mastery_score                  FLOAT          
+      - last_accuracy                  FLOAT          
+      - attempt_count                  INT            
+      - updated_at                     TIMESTAMP      
+      - started_at                     TIMESTAMP      
+      - completed_at                   TIMESTAMP      
+
+    表: review_traces
+    字段数: 14
+      - trace_id                       VARCHAR(50)     [PK]
+      - session_id                     VARCHAR(50)     [NOT NULL]
+      - stage_id                       VARCHAR(50)    
+      - target_type                    VARCHAR(20)     [NOT NULL]
+      - package_version                INT            
+      - package_status                 VARCHAR(20)    
+      - review_mode                    VARCHAR(20)    
+      - unresolved_issue_count         INT            
+      - unresolved_must_fix_count      INT            
+      - final_status                   VARCHAR(30)    
+      - final_summary                  TEXT           
+      - created_at                     TIMESTAMP      
+      - updated_at                     TIMESTAMP      
+      - closed_at                      TIMESTAMP      
+
+    表: learning_package_sources
+    字段数: 10
+      - trace_id                       VARCHAR(50)     [PK] [NOT NULL]
+      - source_id                      VARCHAR(50)     [PK] [NOT NULL]
+      - source_type                    VARCHAR(30)     [NOT NULL]
+      - title                          VARCHAR(200)   
+      - locator                        TEXT           
+      - content_ref                    TEXT           
+      - source_version                 VARCHAR(50)    
+      - metadata_json                  TEXT           
+      - created_at                     TIMESTAMP      
+      - updated_at                     TIMESTAMP      
+
+    表: learning_package_claims
+    字段数: 12
+      - trace_id                       VARCHAR(50)     [PK] [NOT NULL]
+      - claim_id                       VARCHAR(50)     [PK] [NOT NULL]
+      - text                           TEXT            [NOT NULL]
+      - source_ref                     VARCHAR(50)    
+      - source_span                    TEXT           
+      - section_ref                    TEXT            [NOT NULL]
+      - claim_type                     VARCHAR(20)     [NOT NULL]
+      - is_key_technical               BOOLEAN        
+      - confidence                     FLOAT          
+      - status                         VARCHAR(20)    
+      - created_at                     TIMESTAMP      
+      - updated_at                     TIMESTAMP      
+
+    表: review_debate_issues
+    字段数: 21
+      - issue_id                       VARCHAR(50)     [PK]
+      - trace_id                       VARCHAR(50)     [NOT NULL]
+      - canonical_error_id             VARCHAR(64)     [NOT NULL]
+      - error_id                       VARCHAR(64)     [NOT NULL]
+      - claim_id                       VARCHAR(50)    
+      - error_type                     VARCHAR(50)    
+      - severity                       VARCHAR(20)    
+      - must_fix                       BOOLEAN        
+      - must_fix_reason                TEXT           
+      - description                    TEXT           
+      - location                       TEXT           
+      - evidence                       TEXT           
+      - suggestion                     TEXT           
+      - source_refs                    TEXT           
+      - change_request                 TEXT           
+      - current_status                 VARCHAR(30)    
+      - final_disposition              VARCHAR(30)    
+      - opened_in_round_num            INT            
+      - resolved_in_round_num          INT            
+      - created_at                     TIMESTAMP      
+      - updated_at                     TIMESTAMP      
+
+    表: review_debate_rounds
+    字段数: 9
+      - round_id                       VARCHAR(50)     [PK]
+      - trace_id                       VARCHAR(50)     [NOT NULL]
+      - round_num                      INT             [NOT NULL]
+      - review_iteration               INT            
+      - round_status                   VARCHAR(20)    
+      - orchestrator_verdict           VARCHAR(30)    
+      - verdict_summary                TEXT           
+      - created_at                     TIMESTAMP      
+      - closed_at                      TIMESTAMP      
+
+    表: review_debate_responses
+    字段数: 10
+      - response_id                    VARCHAR(50)     [PK]
+      - round_id                       VARCHAR(50)     [NOT NULL]
+      - issue_id                       VARCHAR(50)     [NOT NULL]
+      - actor                          VARCHAR(20)     [NOT NULL]
+      - response_type                  VARCHAR(30)     [NOT NULL]
+      - disposition                    VARCHAR(30)     [NOT NULL]
+      - rationale                      TEXT           
+      - source_refs                    TEXT           
+      - patched_sections               TEXT           
+      - created_at                     TIMESTAMP      
+
+================================================================================
+  2. 知识库数据统计
+================================================================================
+
+------------------------------------------------------------
+  knowledge_blocks (知识板块)
+------------------------------------------------------------
+  记录总数: 15
+
+  板块列表:
+    KB-01      | # 1 | Linux环境与命令行操作                            | 预计学时: 4.0h | 难度: 初级
+    KB-02      | # 2 | Python编程基础                               | 预计学时: 10.5h | 难度: 初级
+    KB-03      | # 3 | 数据处理基础                                   | 预计学时: 4.0h | 难度: 初级
+    KB-04      | # 4 | 深度学习框架PyTorch基础                          | 预计学时: 9.0h | 难度: 中级
+    KB-05      | # 5 | 自然语言处理（NLP）基础概念                          | 预计学时: 3.5h | 难度: 中级
+    KB-06      | # 6 | 注意力机制                                    | 预计学时: 2.5h | 难度: 中级
+    KB-07      | # 7 | 子词切分与分词器（Tokenizer）                      | 预计学时: 3.5h | 难度: 中级
+    KB-08      | # 8 | Transformer架构（Decoder-Only）              | 预计学时: 6.0h | 难度: 高级
+    KB-09      | # 9 | 大语言模型（LLM）核心特性                           | 预计学时: 2.5h | 难度: 高级
+    KB-10      | #10 | LLM三阶段训练流程                               | 预计学时: 5.0h | 难度: 高级
+    KB-11      | #11 | HuggingFace生态工具链                         | 预计学时: 5.0h | 难度: 中级
+    KB-12      | #12 | 参数高效微调（LoRA与QLoRA）                       | 预计学时: 5.5h | 难度: 高级
+    KB-13      | #13 | PyTorch进阶训练技巧                            | 预计学时: 5.0h | 难度: 高级
+    KB-14      | #14 | 分布式训练（DeepSpeed）                         | 预计学时: 5.5h | 难度: 高级
+    KB-15      | #15 | 模型推理部署（vLLM）                             | 预计学时: 5.5h | 难度: 高级
+
+------------------------------------------------------------
+  knowledge_subtopics (子知识点)
+------------------------------------------------------------
+  记录总数: 73
+
+  每个板块的子知识点数量:
+    Linux环境与命令行操作                           : 5 个
+    Python编程基础                              : 6 个
+    数据处理基础                                  : 5 个
+    深度学习框架PyTorch基础                         : 8 个
+    自然语言处理（NLP）基础概念                         : 2 个
+    注意力机制                                   : 2 个
+    子词切分与分词器（Tokenizer）                     : 5 个
+    Transformer架构（Decoder-Only）             : 8 个
+    大语言模型（LLM）核心特性                          : 5 个
+    LLM三阶段训练流程                              : 3 个
+    HuggingFace生态工具链                        : 4 个
+    参数高效微调（LoRA与QLoRA）                      : 6 个
+    PyTorch进阶训练技巧                           : 5 个
+    分布式训练（DeepSpeed）                        : 4 个
+    模型推理部署（vLLM）                            : 5 个
+    合计                                      : 73 个
+
+------------------------------------------------------------
+  knowledge_docs (知识文档)
+------------------------------------------------------------
+  记录总数: 141
+
+  每个板块的文档数:
+    Linux环境与命令行操作                           : 10 个
+    Python编程基础                              : 12 个
+    数据处理基础                                  : 10 个
+    深度学习框架PyTorch基础                         : 15 个
+    自然语言处理（NLP）基础概念                         : 4 个
+    注意力机制                                   : 4 个
+    子词切分与分词器（Tokenizer）                     : 9 个
+    Transformer架构（Decoder-Only）             : 15 个
+    大语言模型（LLM）核心特性                          : 11 个
+    LLM三阶段训练流程                              : 7 个
+    HuggingFace生态工具链                        : 7 个
+    参数高效微调（LoRA与QLoRA）                      : 12 个
+    PyTorch进阶训练技巧                           : 9 个
+    分布式训练（DeepSpeed）                        : 7 个
+    模型推理部署（vLLM）                            : 9 个
+    合计                                      : 141 个
+
+------------------------------------------------------------
+  knowledge_chunks (知识块/切片)
+------------------------------------------------------------
+  记录总数: 982
+
+  每个板块的Chunk数:
+    Linux环境与命令行操作                           : 81 个
+    Python编程基础                              : 120 个
+    数据处理基础                                  : 46 个
+    深度学习框架PyTorch基础                         : 86 个
+    自然语言处理（NLP）基础概念                         : 31 个
+    注意力机制                                   : 25 个
+    子词切分与分词器（Tokenizer）                     : 46 个
+    Transformer架构（Decoder-Only）             : 89 个
+    大语言模型（LLM）核心特性                          : 57 个
+    LLM三阶段训练流程                              : 63 个
+    HuggingFace生态工具链                        : 52 个
+    参数高效微调（LoRA与QLoRA）                      : 67 个
+    PyTorch进阶训练技巧                           : 53 个
+    分布式训练（DeepSpeed）                        : 73 个
+    模型推理部署（vLLM）                            : 93 个
+    合计                                      : 982 个
+
+------------------------------------------------------------
+  test_questions (测试题目 - 数据库)
+------------------------------------------------------------
+  记录总数: 323
+
+  按难度统计:
+    中级        : 138 道
+    初级        : 106 道
+    高级        : 79 道
+
+  按题型统计:
+    fill_blank     : 107 道
+    practical      : 19 道
+    short_answer   : 75 道
+    single_choice  : 108 道
+    true_false     : 14 道
+
+  每个板块的题目数:
+    Linux环境与命令行操作                           : 26 道
+    Python编程基础                              : 36 道
+    数据处理基础                                  : 27 道
+    深度学习框架PyTorch基础                         : 39 道
+    自然语言处理（NLP）基础概念                         : 10 道
+    注意力机制                                   : 8 道
+    子词切分与分词器（Tokenizer）                     : 23 道
+    Transformer架构（Decoder-Only）             : 30 道
+    大语言模型（LLM）核心特性                          : 15 道
+    LLM三阶段训练流程                              : 16 道
+    HuggingFace生态工具链                        : 16 道
+    参数高效微调（LoRA与QLoRA）                      : 20 道
+    PyTorch进阶训练技巧                           : 15 道
+    分布式训练（DeepSpeed）                        : 12 道
+    模型推理部署（vLLM）                            : 30 道
+    合计                                      : 323 道
+
+================================================================================
+  3. 题库质量检查 (Seed JSON)
+================================================================================
+
+  Seed文件: d:\我的项目\揭榜挂帅\ai_agent-trainer\data\seeds\test_questions.json
+  总题数: 323
+
+------------------------------------------------------------
+  知识点题目覆盖统计
+------------------------------------------------------------
+  涉及知识点总数: 73
+  满足 >= 3 道题的知识点数: 73
+  不足 3 道题的知识点数: 0
+
+------------------------------------------------------------
+  字段完整性检查
+------------------------------------------------------------
+  有 subtopic_id 字段: 323 / 323
+  有 correct_answer 字段: 323 / 323
+  有 difficulty 字段: 323 / 323
+  有 question_type 字段: 323 / 323
+
+------------------------------------------------------------
+  题目分布详情
+------------------------------------------------------------
+
+  难度分布:
+    中级        : 138 道 (42.7%)
+    初级        : 106 道 (32.8%)
+    高级        :  79 道 (24.5%)
+
+  题型分布:
+    fill_blank     : 107 道 (33.1%)
+    practical      :  19 道 (5.9%)
+    short_answer   :  75 道 (23.2%)
+    single_choice  : 108 道 (33.4%)
+    true_false     :  14 道 (4.3%)
+
+------------------------------------------------------------
+  按知识板块统计
+------------------------------------------------------------
+    KB-01      Linux环境与命令行操作                      :  26 道
+    KB-02      Python编程基础                         :  36 道
+    KB-03      数据处理基础                             :  27 道
+    KB-04      深度学习框架PyTorch基础                    :  39 道
+    KB-05      自然语言处理（NLP）基础概念                    :  10 道
+    KB-06      注意力机制                              :   8 道
+    KB-07      子词切分与分词器（Tokenizer）                :  23 道
+    KB-08      Transformer架构（Decoder-Only）        :  30 道
+    KB-09      大语言模型（LLM）核心特性                     :  15 道
+    KB-10      LLM三阶段训练流程                         :  16 道
+    KB-11      HuggingFace生态工具链                   :  16 道
+    KB-12      参数高效微调（LoRA与QLoRA）                 :  20 道
+    KB-13      PyTorch进阶训练技巧                      :  15 道
+    KB-14      分布式训练（DeepSpeed）                   :  12 道
+    KB-15      模型推理部署（vLLM）                       :  30 道
+    合计                                            : 323 道
+
+================================================================================
+  4. 知识图谱数据检查
+================================================================================
+
+  图谱目录: d:\我的项目\揭榜挂帅\ai_agent-trainer\data\graph_data\current
+  目录文件: derived, edges.jsonl, manifest.json, nodes.jsonl
+
+  nodes.jsonl 记录数: 88
+  节点类型分布:
+    block               : 15 个
+    subtopic            : 73 个
+
+  edges.jsonl 记录数: 258
+  边类型分布:
+    CONTAINS                 : 73 条
+    GOAL_CONDITION_OF        : 2 条
+    HARD_PREREQUISITE_OF     : 86 条
+    PREREQUISITE_OF          : 21 条
+    PROGRESSES_TO            : 72 条
+    RECOMMENDED_PREREQUISITE_OF: 4 条
+
+  manifest.json:
+    {
+      "generated_at": "2026-08-30T07:47:43.522263+00:00",
+      "seed_files": {
+            "blocks": "data/seeds/knowledge_blocks.json",
+            "subtopics": "data/seeds/knowledge_subtopics.json",
+            "relationships": "data/seeds/knowledge_graph_relations.json"
+      },
+      "node_counts": {
+            "total": 88,
+            "blocks": 15,
+            "subtopics": 73
+      },
+      "edge_counts": {
+            "contains": 73,
+            "hard_prerequisite": 86,
+            "recommended_prerequisite": 4,
+            "goal_condition": 2,
+            "progresses_to": 72
+      },
+      "runtime_graph_path": "data/graph_data/runtime/knowledge_graph.gpickle"
+}
+
+  derived 目录文件: learning_levels.json, prerequisite_closure.json, validation_report.json
+
+  validation_report.json 摘要:
+    generated_at: 2026-08-30T07:47:43.504187+00:00
+    missing_block_prerequisites: 0 项
+    missing_subtopic_prerequisites: 0 项
+    block_cycles: 0 项
+    subtopic_cycles: 0 项
+    isolated_blocks: 1 项
+    isolated_subtopics: 0 项
+    edge_counts: 5 个条目
+
+================================================================================
+  5. 向量数据库检查
+================================================================================
+
+  向量数据库目录: d:\我的项目\揭榜挂帅\ai_agent-trainer\data\chroma_db
+  目录内容: 1864cfe5-f1c6-4c49-9b0c-dcb91a41dd8b, 2bf67a38-ae20-4414-af6e-1ba9b697a9a9, 39a95abb-4cd8-49ca-a2ae-3f1e0b64b25b, 570f908f-b0db-423b-bf77-e46b90b855e5, 57559100-8893-4af1-b4f4-784cd91411e6, 6d7340ae-9206-4966-86e6-3ed466bd5130, 9c78eaea-d9d9-4bc0-99eb-c20f71b4559a, c64db220-4812-499f-8eea-74d6a8223bba, chroma.sqlite3, d141ac79-d637-49e7-84b0-2040d160bdcf
+
+  chroma.sqlite3 文件大小: 17.96 MB
+  Chroma DB 内表: migrations, acquire_write, collection_metadata, segment_metadata, tenants, databases, collections, maintenance_log, segments, embeddings, embedding_metadata, max_seq_id, embedding_fulltext_search, embedding_fulltext_search_data, embedding_fulltext_search_idx, embedding_fulltext_search_content, embedding_fulltext_search_docsize, embedding_fulltext_search_config, embedding_metadata_array, embeddings_queue, embeddings_queue_config
+  [警告] 查询Chroma数据库出错: no such column: metadata
+
+  Collection UUID目录数: 9
+    1864cfe5-f1c6-4c49-9b0c-dcb91a41dd8b: 0 个文件, 0.00 MB
+    2bf67a38-ae20-4414-af6e-1ba9b697a9a9: 0 个文件, 0.00 MB
+    39a95abb-4cd8-49ca-a2ae-3f1e0b64b25b: 0 个文件, 0.00 MB
+    570f908f-b0db-423b-bf77-e46b90b855e5: 4 个文件, 0.16 MB
+    57559100-8893-4af1-b4f4-784cd91411e6: 0 个文件, 0.00 MB
+    6d7340ae-9206-4966-86e6-3ed466bd5130: 0 个文件, 0.00 MB
+    9c78eaea-d9d9-4bc0-99eb-c20f71b4559a: 4 个文件, 0.21 MB
+    c64db220-4812-499f-8eea-74d6a8223bba: 0 个文件, 0.00 MB
+    d141ac79-d637-49e7-84b0-2040d160bdcf: 0 个文件, 0.00 MB
+
+================================================================================
+  6. 用户与运行时数据统计
+================================================================================
+
+------------------------------------------------------------
+  user_profiles (用户档案)
+------------------------------------------------------------
+  记录数: 0
+
+------------------------------------------------------------
+  sessions (会话)
+------------------------------------------------------------
+  记录数: 1
+
+------------------------------------------------------------
+  session_states (会话状态)
+------------------------------------------------------------
+  记录数: 1
+
+------------------------------------------------------------
+  user_qa (用户问答)
+------------------------------------------------------------
+  记录数: 0
+
+------------------------------------------------------------
+  user_answers (用户答题记录)
+------------------------------------------------------------
+  记录数: 16
+
+------------------------------------------------------------
+  stage_progress (阶段进度)
+------------------------------------------------------------
+  记录数: 1
+
+------------------------------------------------------------
+  subtopic_status (子知识点状态)
+------------------------------------------------------------
+  记录数: 0
+
+------------------------------------------------------------
+  review_traces
+------------------------------------------------------------
+  记录数: 2
+
+------------------------------------------------------------
+  learning_package_sources
+------------------------------------------------------------
+  记录数: 34
+
+------------------------------------------------------------
+  learning_package_claims
+------------------------------------------------------------
+  记录数: 32
+
+------------------------------------------------------------
+  review_debate_issues
+------------------------------------------------------------
+  记录数: 23
+
+------------------------------------------------------------
+  review_debate_rounds
+------------------------------------------------------------
+  记录数: 4
+
+------------------------------------------------------------
+  review_debate_responses
+------------------------------------------------------------
+  记录数: 75
+
+================================================================================
+  检查报告结束
+================================================================================
+
