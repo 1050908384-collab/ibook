@@ -121,7 +121,7 @@ async def run(checker: Checker) -> None:
     )
     # 落库 stage 以满足 review_traces.stage_id 外键（对齐生产 start_stage 前置条件）。
     harness.state_manager.update_stage("orch-block", stage)
-    profile = UserProfile(session_id="orch-block", goal="掌握LoRA微调", learning_style="示例驱动")
+    profile = UserProfile(session_id="orch-block", goal="掌握LoRA微调", learning_style="practice")
     practice = PracticeProfile(hardware="RTX 4090 24GB")
 
     print("\n[有块场景] Harness._review_learning_package_pipeline ...")
@@ -131,8 +131,13 @@ async def run(checker: Checker) -> None:
     checker.check(isinstance(package, LearningPackage), "返回 LearningPackage 实例")
     checker.check(bool(package.review_trace_id), "学习包带 review_trace_id", str(package.review_trace_id))
     checker.check(len(package.tutorial) > 0, "聚合 tutorial 非空", f"len={len(package.tutorial)}")
-    checker.check("LoRA 微调 > 原理" in package.tutorial and "QLoRA > 量化" in package.tutorial,
-                  "tutorial 含两个块的标题路径（按块聚合）")
+    # 新版 _aggregate_blocks 不再把完整 breadcrumb heading_path 拼成 ## 标题；
+    # 因此用"两个块在原文里的核心事实/关键句"是否都被保留在 tutorial 里来断言按块聚合成功。
+    lora_marker = "只训练低秩增量矩阵 A 和 B"
+    qlora_marker = "基座模型量化到 4-bit"
+    checker.check(lora_marker in package.tutorial and qlora_marker in package.tutorial,
+                  "tutorial 同时包含 LoRA/QLoRA 两块的核心技术表述（按块聚合）",
+                  f"found_lora={lora_marker in package.tutorial}, found_qlora={qlora_marker in package.tutorial}")
     checker.check(len(package.claims) == 2, "聚合 2 条 Claim（每块一条）", f"claims={len(package.claims)}")
     checker.check(len(package.content_blocks) == 2,
                   "学习包保留 2 个结构化个性化内容块", f"blocks={len(package.content_blocks)}")

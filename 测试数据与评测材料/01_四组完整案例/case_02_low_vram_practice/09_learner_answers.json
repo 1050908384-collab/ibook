@@ -8,58 +8,58 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0200-001",
-    "submitted_answer": "Python 3.10.14",
+    "question_id": "Q-KB0200-004",
+    "submitted_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "is_correct": true,
-    "correct_answer": "Python 3.10.14",
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0203-006",
-    "submitted_answer": "C",
+    "question_id": "Q-KB0202-006",
+    "submitted_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
     "is_correct": true,
-    "correct_answer": "C",
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0203-001",
-    "submitted_answer": "B",
+    "question_id": "Q-KB0201-002",
+    "submitted_answer": "`<class 'float'>`；`<class 'str'>`",
     "is_correct": true,
-    "correct_answer": "B",
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0205-004",
-    "submitted_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "question_id": "Q-KB0204-005",
+    "submitted_answer": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
     "is_correct": true,
-    "correct_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "correct_answer": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0204-002",
-    "submitted_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
+    "question_id": "Q-KB0204-003",
+    "submitted_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
     "is_correct": true,
-    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
+    "correct_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0201-006",
-    "submitted_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "question_id": "Q-KB0205-001",
+    "submitted_answer": "A",
     "is_correct": true,
-    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "correct_answer": "A",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0205-008",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "question_id": "Q-KB0203-004",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

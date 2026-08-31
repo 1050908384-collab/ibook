@@ -12,121 +12,121 @@
     "explanation": "```\n24.0\n```"
   },
   {
-    "question_id": "Q-KB0200-001",
+    "question_id": "Q-KB0200-004",
     "block_id": "KB-02",
     "subtopic_id": "KBS-02-00",
-    "difficulty": "初级",
-    "question_type": "practical",
-    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
-    "options": [],
-    "correct_answer": "Python 3.10.14",
-    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
-    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
-  },
-  {
-    "question_id": "Q-KB0203-006",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-03",
-    "difficulty": "高级",
-    "question_type": "single_choice",
-    "question_text": "关于Python的MRO（方法解析顺序），以下说法**错误**的是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "Python 3使用C3线性化算法"
-      },
-      {
-        "key": "B",
-        "text": "可以通过 `ClassName.__mro__` 查看"
-      },
-      {
-        "key": "C",
-        "text": "多继承时，父类的搜索顺序与继承列表中的顺序无关"
-      },
-      {
-        "key": "D",
-        "text": "`super()` 遵循MRO顺序调用"
-      }
-    ],
-    "correct_answer": "C",
-    "hint": "> MRO与继承列表中的顺序**有关**，先写的父类优先级更高。\n\n---",
-    "explanation": "> MRO与继承列表中的顺序**有关**，先写的父类优先级更高。\n\n---"
-  },
-  {
-    "question_id": "Q-KB0203-001",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-03",
-    "difficulty": "初级",
-    "question_type": "single_choice",
-    "question_text": "以下函数定义中，哪个参数是**默认参数**？\n```python\ndef greet(name, greeting=\"Hello\"):\n    return f\"{greeting}, {name}!\"\n```",
-    "options": [
-      {
-        "key": "A",
-        "text": "`name`"
-      },
-      {
-        "key": "B",
-        "text": "`greeting`"
-      },
-      {
-        "key": "C",
-        "text": "两者都是"
-      },
-      {
-        "key": "D",
-        "text": "两者都不是"
-      }
-    ],
-    "correct_answer": "B",
-    "hint": null,
-    "explanation": ""
-  },
-  {
-    "question_id": "Q-KB0205-004",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-05",
     "difficulty": "中级",
-    "question_type": "short_answer",
-    "question_text": "请写一个生成器函数 `fibonacci(n)`，生成前 `n` 个斐波那契数。",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
     "options": [],
-    "correct_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
-    "hint": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
-    "explanation": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```"
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
   },
   {
-    "question_id": "Q-KB0204-002",
+    "question_id": "Q-KB0202-006",
     "block_id": "KB-02",
-    "subtopic_id": "KBS-02-04",
-    "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "使用 `with open(\"file.txt\", \"r\") as f:` 的好处是________。",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：给定嵌套字典 `data = {\"users\": [{\"name\": \"Alice\", \"age\": 30}, {\"name\": \"Bob\", \"age\": 25}]}`，提取所有年龄大于26的用户姓名。",
     "options": [],
-    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
-    "hint": null,
-    "explanation": ""
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "hint": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "explanation": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---"
   },
   {
-    "question_id": "Q-KB0201-006",
+    "question_id": "Q-KB0201-002",
     "block_id": "KB-02",
     "subtopic_id": "KBS-02-01",
-    "difficulty": "高级",
-    "question_type": "short_answer",
-    "question_text": "以下代码输出什么？\n```python\nx = 10\ndef foo():\n    x = 20\n    def bar():\n        nonlocal x\n        x = 30\n    bar()\n    print(x)\nfoo()\nprint(x)\n```",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Python中，`type(3.14)` 的返回结果是________；`type(\"3.14\")` 的返回结果是________。",
     "options": [],
-    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
-    "hint": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
-    "explanation": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---"
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "hint": null,
+    "explanation": ""
   },
   {
-    "question_id": "Q-KB0205-008",
+    "question_id": "Q-KB0204-005",
     "block_id": "KB-02",
-    "subtopic_id": "KBS-02-05",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写一个自定义异常类 `ModelError`，继承自 `Exception`，并在模型加载失败时抛出该异常，附带错误信息。",
+    "options": [],
+    "correct_answer": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
+    "hint": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
+    "explanation": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0204-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
     "difficulty": "中级",
     "question_type": "short_answer",
-    "question_text": "写一个类 `Stack`（栈），实现 `push(item)`、`pop()`、`peek()`、`is_empty()` 方法。`pop()` 在栈空时抛出 `IndexError`。",
+    "question_text": "请写代码：读取 `data.txt` 文件，捕获文件不存在的异常，若不存在则打印 \"文件未找到\"。",
     "options": [],
-    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
-    "hint": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
-    "explanation": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```"
+    "correct_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "hint": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "explanation": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```"
+  },
+  {
+    "question_id": "Q-KB0205-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是装饰器的正确语法？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`@decorator` 放在函数定义上方"
+      },
+      {
+        "key": "B",
+        "text": "`decorator()` 放在函数体内"
+      },
+      {
+        "key": "C",
+        "text": "`import decorator`"
+      },
+      {
+        "key": "D",
+        "text": "`def decorator:` 放在调用处"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0203-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\nclass A:\n    def __init__(self):\n        self.x = 1\nclass B(A):\n    def __init__(self):\n        super().__init__()\n        self.y = 2\nb = B()\nprint(b.x, b.y)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`1 2`"
+      },
+      {
+        "key": "B",
+        "text": "`2 1`"
+      },
+      {
+        "key": "C",
+        "text": "报错"
+      },
+      {
+        "key": "D",
+        "text": "`None 2`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。",
+    "explanation": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。"
   }
 ]

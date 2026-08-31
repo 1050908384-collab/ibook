@@ -1,9 +1,15 @@
 {
-  "run_id": "batch_run_50cases_20260830_215204",
-  "note": "本文件为 50 组主评测（case_001~case_050）顺序执行后的聚合清单，取代早期单组临时 manifest（total_cases=1）。每个 case 单独的 run_manifest.json 仍保存在 case_id/run_manifest.json。",
+  "run_id": "batch_run_50cases_mixed_20260830_20260831",
+  "note": "50 组主评测（case_001~case_050）聚合清单。47 组执行于 2026-08-30 批次，case_016 / case_026 / case_046 三组因展示材料配套、后端链路修复后于 2026-08-31 复跑，其余 46 组保持 8/30 批次数据；run_stage_2 声明严格以 evaluation_cases.csv 为准。",
   "evaluation_schema_version": "2026-08-30-final",
   "code_commit": "204d0bb0f962",
   "knowledge_base_version": "b7688878fe33",
+  "rerun_case_ids_on_20260831": [
+    "case_016",
+    "case_026",
+    "case_046"
+  ],
+  "batch_mix_note": "47组 2026-08-30 主批次 + 3组 2026-08-31 后端修复后复跑（展示案例关联）",
   "model_config": {
     "LLM_PROVIDER": "deepseek",
     "LLM_FALLBACK_PROVIDER": "ollama",
@@ -11,7 +17,7 @@
     "OLLAMA_MODEL": "deepseek-r1:7b",
     "OLLAMA_FALLBACK_MODEL": null,
     "OLLAMA_BASE_URL": "http://localhost:11434",
-    "EXECUTION_MODE": "batch_sequential_50cases",
+    "EXECUTION_MODE": "hybrid",
     "BLOCK_PIPELINE_ENABLED": true,
     "MAX_REVIEW_ITERATIONS": 3,
     "DEEPSEEK_TIMEOUT_SECONDS": 180.0,
@@ -36,7 +42,7 @@
     "29c58faa5b38": 50
   },
   "run_started_at": "2026-08-30T07:21:26.447421+00:00",
-  "run_finished_at": "2026-08-30T13:02:28.470140+00:00",
+  "run_finished_at": "2026-08-31T02:53:54.358735+00:00",
   "total_cases": 50,
   "succeeded": 50,
   "failed": 0,
@@ -48,11 +54,12 @@
   },
   "run_stage_2_total_declared": 6,
   "run_stage_2_total_completed": 6,
-  "llm_call_count": 1655,
-  "llm_successful_calls": 1655,
+  "llm_call_count": 1868,
+  "llm_successful_calls": 1868,
   "llm_failed_calls": 0,
   "llm_fallback_count": 0,
   "llm_fallback_rate": 0.0,
+  "total_package_chars": 825943,
   "summaries": [
     {
       "case_id": "case_001",
@@ -68,7 +75,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 1.0,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_002",
@@ -86,7 +94,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_003",
@@ -105,7 +114,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 1.0,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_004",
@@ -123,7 +133,8 @@
       "stage_1_estimated_hours": 1.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_005",
@@ -139,7 +150,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_006",
@@ -155,7 +167,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_007",
@@ -173,7 +186,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_008",
@@ -189,7 +203,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_009",
@@ -208,7 +223,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 1.0,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_010",
@@ -227,7 +243,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_011",
@@ -246,7 +263,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_012",
@@ -264,7 +282,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_013",
@@ -283,7 +302,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_014",
@@ -304,7 +324,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 1.0,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_015",
@@ -323,7 +344,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_016",
@@ -332,7 +354,7 @@
       "stage_1_completed": true,
       "stage_2_completed": false,
       "run_stage_2_declared": false,
-      "llm_call_count": 1,
+      "llm_call_count": 64,
       "execution_path": "deepseek_only",
       "mastered_block_ids": [
         "KB-04",
@@ -340,9 +362,10 @@
       ],
       "stage_1_block": "KB-02",
       "stage_1_estimated_hours": 0.5,
-      "stage_1_accuracy": 0.875,
+      "stage_1_accuracy": 1.0,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/31 re-run (展示案例配套)"
     },
     {
       "case_id": "case_017",
@@ -361,7 +384,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_018",
@@ -381,7 +405,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_019",
@@ -400,7 +425,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_020",
@@ -420,7 +446,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_021",
@@ -439,7 +466,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_022",
@@ -459,7 +487,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_023",
@@ -478,7 +507,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_024",
@@ -498,7 +528,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_025",
@@ -517,7 +548,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_026",
@@ -526,7 +558,7 @@
       "stage_1_completed": true,
       "stage_2_completed": false,
       "run_stage_2_declared": false,
-      "llm_call_count": 3,
+      "llm_call_count": 49,
       "execution_path": "deepseek_only",
       "mastered_block_ids": [
         "KB-04",
@@ -534,11 +566,12 @@
         "KB-11",
         "KB-13"
       ],
-      "stage_1_block": "KB-02",
+      "stage_1_block": "KB-07",
       "stage_1_estimated_hours": 0.5,
-      "stage_1_accuracy": 0.625,
+      "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/31 re-run (展示案例配套)"
     },
     {
       "case_id": "case_027",
@@ -557,7 +590,8 @@
       "stage_1_estimated_hours": 1.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_028",
@@ -577,7 +611,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_029",
@@ -597,7 +632,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_030",
@@ -616,7 +652,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_031",
@@ -637,7 +674,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_032",
@@ -656,7 +694,8 @@
       "stage_1_estimated_hours": 1.5,
       "stage_1_accuracy": 0.5,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "simplify"
+      "stage_1_strategy": "simplify",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_033",
@@ -675,7 +714,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_034",
@@ -693,7 +733,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_035",
@@ -711,7 +752,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.5,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "simplify"
+      "stage_1_strategy": "simplify",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_036",
@@ -730,7 +772,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_037",
@@ -750,7 +793,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_038",
@@ -769,7 +813,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.5,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "simplify"
+      "stage_1_strategy": "simplify",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_039",
@@ -788,7 +833,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_040",
@@ -807,7 +853,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_041",
@@ -826,7 +873,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_042",
@@ -844,7 +892,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.375,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "simplify"
+      "stage_1_strategy": "simplify",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_043",
@@ -860,7 +909,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.25,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "simplify"
+      "stage_1_strategy": "simplify",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_044",
@@ -879,7 +929,8 @@
       "stage_1_estimated_hours": 2.5,
       "stage_1_accuracy": 1.0,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_045",
@@ -898,7 +949,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_046",
@@ -907,16 +959,17 @@
       "stage_1_completed": true,
       "stage_2_completed": true,
       "run_stage_2_declared": true,
-      "llm_call_count": 4,
+      "llm_call_count": 108,
       "execution_path": "deepseek_only",
       "mastered_block_ids": [
         "KB-02"
       ],
       "stage_1_block": "KB-04",
       "stage_1_estimated_hours": 0.5,
-      "stage_1_accuracy": 0.625,
+      "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/31 re-run (展示案例配套)"
     },
     {
       "case_id": "case_047",
@@ -935,7 +988,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.75,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_048",
@@ -954,7 +1008,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.875,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "advance"
+      "stage_1_strategy": "advance",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_049",
@@ -970,7 +1025,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.25,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "simplify"
+      "stage_1_strategy": "simplify",
+      "batch_note": "8/30 batch"
     },
     {
       "case_id": "case_050",
@@ -986,7 +1042,8 @@
       "stage_1_estimated_hours": 0.5,
       "stage_1_accuracy": 0.625,
       "stage_1_question_count": 8,
-      "stage_1_strategy": "reinforce"
+      "stage_1_strategy": "reinforce",
+      "batch_note": "8/30 batch"
     }
   ]
 }

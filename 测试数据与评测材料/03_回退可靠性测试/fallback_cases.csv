@@ -11,3 +11,4 @@ CONNECT_TIMEOUT-case_001,connect_timeout,连接超时,case_001,mock_transport_ti
 READ_TIMEOUT-case_001,read_timeout,读取超时,case_001,mock_transport_timeout,success,False,qwen2.5:7b,0,True,True,,2026-08-27T18:53:18.614319+00:00,2026-08-27T19:00:13.951744+00:00,True
 HTTP_500_SERVER-case_001,http_500_server,500 服务端错误,case_001,mock_transport,success,False,qwen2.5:7b,0,True,True,,2026-08-27T19:00:13.960820+00:00,2026-08-27T19:07:11.138017+00:00,True
 EMPTY_CONTENT_BODY-case_001,empty_content_body,空正文（仅推理内容）,case_001,mock_transport,success,False,qwen2.5:7b,0,True,True,,2026-08-27T19:07:11.166029+00:00,2026-08-27T19:13:58.076010+00:00,True
+CONNECT_TIMEOUT-case_044,connect_timeout,连接超时,case_044,mock_transport_timeout,success,False,qwen2.5:7b,0,True,True,,2026-08-31T02:55:07.287683+00:00,2026-08-31T03:33:11.054456+00:00,True

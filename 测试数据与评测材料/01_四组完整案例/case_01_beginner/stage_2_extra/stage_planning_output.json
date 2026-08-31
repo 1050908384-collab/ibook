@@ -1,21 +1,21 @@
 {
   "status": "planned",
-  "session_id": "3a0dc60d-89b8-4530-b83a-2fc45a40586a",
+  "session_id": "4fee58da-7752-468e-90f1-04c92a96f0a7",
   "next_stage": {
-    "stage_id": "ba6925c6-19ea-5860-bae8-dd6a60e69c4a",
-    "stage_num": 1,
-    "block_id": "KB-04",
-    "block_name": "深度学习框架PyTorch基础",
+    "stage_id": "dfe1d379-0cce-53d7-9878-2314f1bd8438",
+    "stage_num": 2,
+    "block_id": "KB-07",
+    "block_name": "子词切分与分词器（Tokenizer）",
     "block_ids": [
-      "KB-04"
+      "KB-07"
     ],
-    "subtopic_id": "KBS-04-00",
-    "subtopic_name": "（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）",
+    "subtopic_id": "KBS-07-00",
+    "subtopic_name": "（环境准备：在Python环境中安装transformers、tokenizers库）",
     "subtopic_ids": [
-      "KBS-04-00"
+      "KBS-07-00"
     ],
     "subtopic_names": [
-      "（环境准备：根据CUDA版本安装PyTorch（如torch 2.0+ with CUDA 11.8/12.1）"
+      "（环境准备：在Python环境中安装transformers、tokenizers库）"
     ],
     "estimated_hours": 0.5,
     "gap_skill": "LoRA",
@@ -25,22 +25,22 @@
     "status": "pending",
     "accuracy": null,
     "strategy_used": null,
-    "title": "学习环境准备：根据CUDA版本安装PyTorch（如torch 2",
-    "description": "围绕环境准备：根据CUDA版本安装PyTorch（如torch 2完成一次可执行的阶段学习与练习。",
+    "title": "学习环境准备：在Python环境中安装transformers、...",
+    "description": "围绕环境准备：在Python环境中安装transformers、...完成一次可执行的阶段学习与练习。",
     "objectives": [
-      "理解环境准备：根据CUDA版本安装PyTorch（如torch 2的基本概念",
-      "掌握环境准备：根据CUDA版本安装PyTorch（如torch 2的核心技术",
-      "能够独立完成环境准备：根据CUDA版本安装PyTorch（如torch 2相关任务"
+      "理解环境准备：在Python环境中安装transformers、...的基本概念",
+      "掌握环境准备：在Python环境中安装transformers、...的核心技术",
+      "能够独立完成环境准备：在Python环境中安装transformers、...相关任务"
     ],
     "difficulty": "初级",
     "recommended_daily_hours": 0.5,
     "suggested_study_days": 1,
-    "learning_style_notes": "理论型学习者：建议先理解环境准备：根据CUDA版本安装PyTorch（如torch 2的原理、设计思路与适用场景，再辅以少量代码示例验证关键写法。",
+    "learning_style_notes": "理论型学习者：建议先理解环境准备：在Python环境中安装transformers、...的原理、设计思路与适用场景，再辅以少量代码示例验证关键写法。",
     "hardware_notes": "当前设备为 RTX 3060 12GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
-    "personalization_summary": "适合用户写\"LoRa\"，可能指物联网LoRa而非低秩适配学习者 | 预计2.2小时完成 | 建议分2天学习 | 每天1.0小时 | 综合型学习风格"
+    "personalization_summary": "适合用户写\"LoRa\"，可能指物联网LoRa而非低秩适配学习者 | 预计2.2小时完成 | 建议分2天学习 | 每天1.0小时 | 理论型学习风格"
   },
   "updated_profile": {
-    "session_id": "3a0dc60d-89b8-4530-b83a-2fc45a40586a",
+    "session_id": "4fee58da-7752-468e-90f1-04c92a96f0a7",
     "user_id": "local-user",
     "grade": "用户写\"LoRa\"，可能指物联网LoRa而非低秩适配",
     "skill_tags": [
@@ -60,7 +60,7 @@
     "planned_block_order": [
       "KB-12"
     ],
-    "active_stage_block_id": "KB-04",
+    "active_stage_block_id": "KB-07",
     "foundation_confirmed": false,
     "knowledge_gaps": [
       {
@@ -84,12 +84,12 @@
     "daily_hours": 1.0,
     "learning_style": "theory",
     "learning_rhythm": "fast",
-    "confidence_index": 0.575,
+    "confidence_index": 0.725,
     "confusion_markers": [],
     "confidence": 0.95,
     "version": 3
   },
-  "planning_notes": "本阶段（1）正确率不足 70%，重试当前阶段",
+  "planning_notes": "本阶段（1）已达标，推进到下一阶段",
   "session_status": "active",
   "phase": "next_stage_ready",
   "available_actions": [

@@ -1,115 +1,186 @@
 [
   {
-    "question_id": "Q-KB0200-001",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-00",
-    "difficulty": "初级",
-    "question_type": "practical",
-    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
-    "options": [],
-    "correct_answer": "Python 3.10.14",
-    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
-    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
-  },
-  {
-    "question_id": "Q-KB0200-003",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-00",
-    "difficulty": "中级",
-    "question_type": "practical",
-    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
-    "options": [],
-    "correct_answer": "24.0",
-    "hint": "```\n24.0\n```",
-    "explanation": "```\n24.0\n```"
-  },
-  {
-    "question_id": "Q-KB0201-002",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-01",
-    "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "Python中，`type(3.14)` 的返回结果是________；`type(\"3.14\")` 的返回结果是________。",
-    "options": [],
-    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
-    "hint": null,
-    "explanation": ""
-  },
-  {
-    "question_id": "Q-KB0201-005",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-01",
-    "difficulty": "中级",
-    "question_type": "short_answer",
-    "question_text": "以下代码输出什么？\n```python\nfor i in range(5):\n    if i == 3:\n        continue\n    print(i, end=\" \")\n```",
-    "options": [],
-    "correct_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
-    "hint": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
-    "explanation": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。"
-  },
-  {
-    "question_id": "Q-KB0201-003",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-01",
+    "question_id": "Q-KB07-ST0700-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
     "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "以下代码的输出是？\n```python\nx = 10\ny = 3\nprint(x // y, x % y, x ** y)\n```",
+    "question_text": "安装 Hugging Face Transformers 的常用命令是？",
     "options": [
       {
         "key": "A",
-        "text": "`3.33 1 1000`"
+        "text": "pip install transformers"
       },
       {
         "key": "B",
-        "text": "`3 1 1000`"
+        "text": "pip install tokenizer-only"
       },
       {
         "key": "C",
-        "text": "`3 0 30`"
+        "text": "conda remove torch"
       },
       {
         "key": "D",
-        "text": "`3.33 0 1000`"
+        "text": "python uninstall model"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "pip install transformers 是标准安装方式。",
+    "explanation": "pip install transformers 是标准安装方式。"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Hugging Face 模型与分词器常用的 Python 库名称是________。",
+    "options": [],
+    "correct_answer": "transformers",
+    "hint": "transformers 提供模型、Tokenizer 与训练接口。",
+    "explanation": "transformers 提供模型、Tokenizer 与训练接口。"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "Byte Pair Encoding (BPE) 算法的核心思想是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "随机采样词元"
+      },
+      {
+        "key": "B",
+        "text": "从字符级别开始，迭代合并最频繁出现的相邻符号对"
+      },
+      {
+        "key": "C",
+        "text": "基于整个词进行编码"
+      },
+      {
+        "key": "D",
+        "text": "使用固定大小的词汇表"
       }
     ],
     "correct_answer": "B",
-    "hint": "> `//` 整除得3，`%` 取余得1，`**` 幂运算 10³=1000。",
-    "explanation": "> `//` 整除得3，`%` 取余得1，`**` 幂运算 10³=1000。"
+    "hint": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。",
+    "explanation": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。"
   },
   {
-    "question_id": "Q-KB0204-002",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-04",
+    "question_id": "Q-KB0703-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
     "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "使用 `with open(\"file.txt\", \"r\") as f:` 的好处是________。",
-    "options": [],
-    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
-    "hint": null,
-    "explanation": ""
+    "question_type": "single_choice",
+    "question_text": "当设置 `truncation=True` 时，如果输入序列长度超过模型的最大长度，分词器会如何处理？",
+    "options": [
+      {
+        "key": "A",
+        "text": "抛出错误"
+      },
+      {
+        "key": "B",
+        "text": "自动将序列填充到最大长度"
+      },
+      {
+        "key": "C",
+        "text": "从序列末尾截断超出部分"
+      },
+      {
+        "key": "D",
+        "text": "随机删除一些 token"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。",
+    "explanation": "> `truncation=True` 会启用截断功能，默认行为是截断序列的末尾部分，使其长度不超过模型能接受的最大长度。"
   },
   {
-    "question_id": "Q-KB0205-002",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-05",
-    "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "生成器函数使用________关键字返回值（而非 `return`），调用生成器函数返回的是一个________对象。",
-    "options": [],
-    "correct_answer": "`yield`；生成器（generator）",
-    "hint": null,
-    "explanation": ""
-  },
-  {
-    "question_id": "Q-KB0205-008",
-    "block_id": "KB-02",
-    "subtopic_id": "KBS-02-05",
+    "question_id": "Q-KB0703-004",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
     "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "`padding=True` 和 `padding='longest'` 的效果是完全一样的。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "hint": "> 在一个批次（batch）内进行分词时，`padding=True` 的默认行为就是将批次内所有序列填充到该批次中最长序列的长度，这与 `padding='longest'` 的效果相同。",
+    "explanation": "> 在一个批次（batch）内进行分词时，`padding=True` 的默认行为就是将批次内所有序列填充到该批次中最长序列的长度，这与 `padding='longest'` 的效果相同。"
+  },
+  {
+    "question_id": "Q-KB0703-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "对于一个最大序列长度为 512 的模型，执行 `tokenizer(text, max_length=100, padding='max_length', truncation=True)` 后，输出序列的长度是多少？",
+    "options": [
+      {
+        "key": "A",
+        "text": "原始文本长度"
+      },
+      {
+        "key": "B",
+        "text": "512"
+      },
+      {
+        "key": "C",
+        "text": "100"
+      },
+      {
+        "key": "D",
+        "text": "不确定"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> `max_length=100` 指定了目标长度。`padding='max_length'` 会将短于 100 的序列填充到 100，`truncation=True` 会将长于 100 的序列截断到 100。",
+    "explanation": "> `max_length=100` 指定了目标长度。`padding='max_length'` 会将短于 100 的序列填充到 100，`truncation=True` 会将长于 100 的序列截断到 100。"
+  },
+  {
+    "question_id": "Q-KB0701-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "WordPiece 算法与 BPE 的主要区别在于合并标准不同。WordPiece 选择合并哪一对符号？",
+    "options": [
+      {
+        "key": "A",
+        "text": "出现频率最高的一对"
+      },
+      {
+        "key": "B",
+        "text": "能够最大化训练数据似然概率的一对"
+      },
+      {
+        "key": "C",
+        "text": "长度最短的一对"
+      },
+      {
+        "key": "D",
+        "text": "随机选择一对"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> WordPiece 在每次合并时，会选择那个能使整个语料库的似然概率增加最多的符号对，而不是简单地看频率。",
+    "explanation": "> WordPiece 在每次合并时，会选择那个能使整个语料库的似然概率增加最多的符号对，而不是简单地看频率。"
+  },
+  {
+    "question_id": "Q-KB0702-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "初级",
     "question_type": "short_answer",
-    "question_text": "写一个类 `Stack`（栈），实现 `push(item)`、`pop()`、`peek()`、`is_empty()` 方法。`pop()` 在栈空时抛出 `IndexError`。",
+    "question_text": "使用已加载的 `tokenizer` 对象，对字符串 `\"Hello, world!\"` 进行分词，并打印出 token ID 列表。",
     "options": [],
-    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
-    "hint": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
-    "explanation": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```"
+    "correct_answer": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```",
+    "hint": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```",
+    "explanation": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```"
   }
 ]

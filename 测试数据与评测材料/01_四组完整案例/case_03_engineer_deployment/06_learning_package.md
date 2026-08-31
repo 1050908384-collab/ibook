@@ -2,445 +2,517 @@
 
 ## 块 1
 
-## 1.1 Python 解释器：程序的“翻译官”
+### 一、前置检查：确认 PyTorch 环境就绪
 
-你已经熟悉 PyTorch、Transformer 和 HuggingFace 工具链，但请先别跳过这一节——因为后面你要做的 LoRA 微调、权重合并和 vLLM 部署，每一步都依赖这个“翻译官”在后台工作。
+你已经掌握 Python 编程基础，并且在前面的板块中完成了 PyTorch 的安装配置。这里我们只做快速确认，不重复展开细节。
 
-**核心概念**：你写的 Python 代码是人类能读懂的文本，但你的 RTX 4090 只认 0 和 1。Python 解释器的作用，就是把你的代码翻译成 GPU 能执行的指令。没有它，你的 `.py` 文件只是一堆文本，vLLM 根本不会启动。
+**确认步骤：**
 
-**对你的意义**：当你运行 `python train_lora.py` 或 `python -m vllm.entrypoints.openai.api_server` 时，最先被调用的就是解释器。它负责把你的 Python 代码逐行翻译成底层指令，再交给 PyTorch/CUDA 栈去驱动你的 4090。解释器版本不对或环境混乱，你会在最不该出错的地方——环境启动阶段——卡住。
+1. 打开终端，激活你的 `pytorch` conda 环境：
+   ```bash
+   conda activate pytorch
+   ```
 
-**实践建议**：既然你偏好在实践中学习，请打开终端，运行 `python --version`，确认解释器可用。如果输出正常，说明你的“翻译官”已就位，可以继续搭建后续环境。
+2. 进入 Python 交互环境，确认 PyTorch 能正常导入且版本正确：
+   ```bash
+   python
+   ```
+   ```python
+   import torch
+   print(torch.__version__)
+   ```
+   你应该能看到 `2.5.1` 或类似版本号输出。
 
----
+3. 确认 CUDA 可用（如果你之前配置了 GPU 版本）：
+   ```python
+   print(torch.cuda.is_available())
+   ```
+   返回 `True` 说明 GPU 环境正常。
 
-**本块学习检查**：完成本块后，用自己的话说明“Python 解释器”与你当前 LoRA 微调 + vLLM 部署目标的关系
+**验证方式：** 如果上述命令都能正常执行且输出符合预期，说明 PyTorch 环境就绪。如果某一步报错，回到"环境准备：根据 CUDA 版本安装 PyTorch"章节排查。
 
-## 块 2
+**与学习目标的关系：**
 
-**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调+权重合并+vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+本节是环境准备的第一环。你的目标是完成 LoRA 微调 + 权重合并 + vLLM 部署，而 `transformers` 库正是加载预训练模型、执行 LoRA 微调的核心工具；`tokenizers` 负责将文本转换为模型可接受的输入格式。环境就绪是后续所有操作的前提。
 
----
-
-你的目标是跑通 LoRA 微调、权重合并和 vLLM 部署。在这条流水线上，你每天要面对大量 `.py` 脚本、配置文件、日志输出。记事本写代码效率极低，所以你需要一个 IDE——也就是你的“工作台”。
-
-**IDE 是什么**：它提供语法高亮、自动补全、运行调试等功能，让你写代码像用 Word 写文档一样舒服。推荐两款：
-- **VS Code**：轻量免费，适合快速改脚本、看日志。
-- **PyCharm**：专业
-
-## 块 3
-
-**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调+权重合并+vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
-
----
-
-你的目标是用 PyTorch 跑 LoRA 微调、合并权重，再用 vLLM 部署。这些操作全部依赖命令行（cmd 或终端）执行 `python` 和 `pip` 命令。本块就是确保你的 Windows 环境能正确响应这两个命令。
-
-**第一步：下载安装包**
-
-1. 浏览器访问 https://www.python.org
-2. 鼠标悬停顶部 **Downloads** 菜单，网站自动推荐 Windows 版本（如 `Python 3.13.x`）。
-3. 点击下载 **Windows installer (64-bit)**。
-
-**第二步：运行安装程序（⚠️ 关键步骤）**
-
-双击 `.exe` 文件，弹出安装界面后，**务必做两件事**：
-
-1. **勾选最下方的 "Add python.exe to PATH"**  
-   这个选项把 Python 加入系统"环境变量"。不勾选的话，命令行输入 `python` 会提示"不是内部或外部命令"，后续所有命令操作（包括安装 PyTorch、运行训练脚本）都无法进行。
-
-2. 点击 **"Install Now"**（默认安装）即可。  
-   默认路径在 `C:\Users\你的用户名\AppData\Local\Program
-
-## 块 4
-
-你的目标很明确：在 RTX 4090 上完成 LoRA 微调、权重合并和 vLLM 部署。在动手前，先把 Python 环境弄干净是第一步——macOS 上这一步尤其容易踩坑，因为系统自带的 Python 版本混乱。
-
-**macOS 的 Python 现状**：较老的 macOS 曾预装 Python 2.7，macOS 12.3 起不再预装 Python 2，但系统可能仍保留旧版 `python3` 供系统脚本使用。无论哪种情况，都**强烈建议自行安装最新版 Python**，避免直接依赖系统自带版本。
-
-**方法一：官方安装包（推荐新手）**
-
-1. 访问 https://www.python.org，下载 **macOS 64-bit universal2 installer**（`.pkg` 文件）。
-2. 双击运行，一路点击 "Continue" → "Install" 完成安装。
-3. 打开终端（Terminal），输入验证：
-
-```bash
-python3 --version
-pip3 --version
-```
-
-**为什么用 `python3` 而不是 `python`**：在现代 macOS 上，命令行默认**并不提供** `python` 命令（早期版本曾指向系统自带的 Python 2，现已移除），系统与官方安装包统一使用 `python3`。因此请始终用 `python3` / `pip3`，避免踩到"命令不存在"或误用
-
-**本块学习检查**：完成本块后，
-
-## 块 5
-
-**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调+权重合并+vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
-
-Ubuntu/Debian 通常自带 Python，但版本可能偏老。为后续跑 LoRA 微调和 vLLM 部署，先确保环境干净可用：
-
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv -y
-python3 --version
-```
-
-`-y` 自动确认安装；`python3-venv` 用于建虚拟环境，避免依赖冲突。验证版本号确认安装成功。
-
-## 块 6
-
-## 2.4 操作系统与实训环境该怎么选
-
-你已经熟悉 PyTorch 和 HuggingFace 生态，接下来要跑 LoRA 微调和 vLLM 部署，环境选择直接决定你能否顺利用上 RTX 4090 的 24GB 显存。这里按你的实际场景精简说明：
-
-**GPU 实训（你的主战场）**：直接选 **Ubuntu LTS**（如 22.04/24.04 LTS）的实体机或云服务器。你的 RTX 4090 需要 NVIDIA 驱动、CUDA 和显卡直通才能发挥算力，Ubuntu LTS 对深度学习生态支持最成熟、文档最全，这是你跑 LoRA 微调和 vLLM 部署的稳妥路线。
-
-**日常写 Python、练命令行（Windows 用户）**：启用 **WSL2 + Ubuntu LTS**。它在 Windows 里提供接近真实生产的 Linux 环境，命令、路径、包管理都和后续服务器一致，比 Windows 原生 CMD 更贴近实战。安装只需管理员 PowerShell 执行 `wsl --install`。
-
-**macOS / Linux 用户**：直接用本机终端即可，本身就是类 Unix 环境。
-
-> **⚠️ 不推荐**：别把 **CentOS + VirtualBox 虚拟机**当最佳方案。CentOS 8 已停止维护，建议使用 Ubuntu LTS 或 Rocky Linux 8
-
-## 块 7
-
-### 3.1 什么时候才需要镜像源
-
-`pip` 是 Python 的包管理工具，用来安装第三方库（比如 `numpy`）。默认它从官方 PyPI（`pypi.org`）下载——这是最权威、最完整的源，**应始终保留为默认**。
-
-只有当你网络受限、访问官方源明显变慢或经常超时，才临时切到国内镜像。**镜像只是“网络不好时的加速手段”，不是永久替换项**——官方源永远是首选。
-
-### 3.2 首选做法：临时指定镜像源（推荐）
-
-某次安装慢？最干净的办法是**只对这一次安装临时指定镜像**，不动全局配置：
-
-```bash
-pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-**为什么推荐**：不影响平时默认行为，官方 PyPI 仍是默认；网络恢复或镜像出问题时，无需清理配置。
-
----
-
-**本块
+**记录待提问术语：** 如果遇到无法解释的术语（如"分词"的具体含义），先记录下来，在后续学习中带着问题去理解。
 
 **本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
+**部署显存提示**：后续使用 vLLM 部署模型时，需注意模型加载的显存占用。例如，Llama-2-7b 以 FP16 精度加载至少需要 14GB 显存，请根据你的 GPU 配置提前规划。
+
+## 块 2
+
+### 1.1 确认 conda 环境和 PyTorch 版本
+
+先激活你的 conda 环境，再确认 PyTorch 是否就绪：
+
+```bash
+conda activate pytorch
+
+python -c "import torch; print('PyTorch:', torch.__version__)"
+# 预期输出类似如下，实际以版本为准：PyTorch: 2.5.x
+```
+
+执行完，终端里会打印出 `PyTorch:` 加版本号。看到类似 `2.5.x` 就说明环境没问题。
+
+**版本要求**：本课程在 Python 3.10 + PyTorch 2.5.1 环境下验证通过。不同版本的 transformers 对 Python 和 PyTorch 版本要求可能不同，建议以安装时的官方文档为准。以下是本课程验证过的依赖版本示例（`requirements.txt`）：
+
+```text
+torch==2.5.1
+transformers>=4.45.0
+tokenizers>=0.20.0
+```
+
+如果你按照前面板块完成了环境搭建，当前环境已满足上述要求。
+
+### 1.2 确认 pip 可用
+
+```bash
+pip --version
+# 预期输出类似如下，实际以版本为准：pip 24.x.x
+```
+
+执行完，终端会显示 pip 的版本号，确认能正常调用即可。
+
+
+**与学习目标的关系**：这一步是 LoRA 微调 + vLLM 部署的前置检查。你的目标是跑通 LoRA 微调并合并权重，再用 vLLM 部署——这些操作都依赖 transformers 和 PyTorch 正确安装。确认好环境，后面跑训练脚本时才不会卡在导入报错上。
+
+**记录任务**：如果执行时遇到任何不认识的报错或术语（比如 `ModuleNotFoundError`），先记下来，稍后一起提问。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 3
+
+# 画像专属 · （环境准备：在Python环境中安装transformers、tokenizers库） · 本块学习卡
+## 立即动手 · （环境准备：在Python环境中安装transformers、tokenizers库） 最简操作
+### 本节关键命令 · 你自己的运行记录（请先执行，再读正文）
+| 序号 | 命令（原文给出） | 你预期的输出（动手前猜测） | 实际终端输出（执行后粘贴） | 你当下是否看懂每个输出字段？ |
+|---|---|---|---|---|
+| 2 | *(下一段代码，读完后自行粘贴)* |  |  | 待填 |
+| 3 | *(后续命令)* |  |  | 待填 |
+
+
+> 🎯 **你的画像 = 动手型 learner**：本块**强制阅读顺序与节奏**（不要跳步）：
+> 1. 立即从上面表格第一条命令开始 → 粘贴终端 → 实际运行 → 把输出填回表格；
+> 2. 遇到下面的『报错排查列表段』时，先停下来，用你机器的输出逐条对；
+> 3. 概念说明段**只在你「动手卡住 / 看不懂输出字段」时再回溯阅读**；
+> 4. 全部命令执行完后，再回到文末『画像专属 · 本块学习检查』完成验证。
+
+> ⚙️ 实训条件：RTX 3060 12GB；本块所属知识板块：『子词切分与分词器（Tokenizer）』。
+
+
+## 二、安装 transformers 库（①）
+
+
+## 画像专属 · （环境准备：在Python环境中安装transformers、tokenizers库） 本块学习检查
+### 动手验证（全部在你本机上独立完成，不会写的地方再回正文找）
+1. **执行与输出核对**：本块原文中没有独立代码块，请按文中说明的步骤顺序实际执行，并记录每一步的输出结果。
+
+2. **异常观察**：若执行过程中出现非预期输出，请自行记录报错现象、复现步骤和已尝试的修复动作，再带着这些信息在答疑区向导师提问。
+
+3. **字段自查**：选你执行输出里出现的任意 3 个关键字段，回到本块正文中找到它们的解释，再用 1 句话写下你自己的理解。
+
+4. **流程与顺序自检**：如果本块涉及多条命令，说明你实际执行的顺序是否与文中描述一致？如果不一致，会导致什么后果？
+
+
+### 实训条件提示 · 你的设备
+已记录你的实训条件：RTX 3060 12GB。示例会按本地 NVIDIA GPU 可执行的参数和验证方式组织，并保留与本知识点直接相关的最小步骤。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 4
+
+### 2.1 标准安装（推荐）
+
+`transformers` 库直接用 pip 装就行。你已经有 PyTorch 环境了，所以只需一条命令：
+
+```bash
+pip install transformers
+```
+
+装完可以在 Python 里跑 `import transformers` 验证一下，不报错就说明装好了。
+
+> **本地运行配置要求**：这步要联网下载安装包（体积通常几百 MB），对电脑配置没要求，CPU 就能跑。网络慢的话用清华镜像加速：
+
+```bash
+pip install transformers -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+装完同样用 `import transformers` 确认。
+
+**与学习目标的关系**：这一步装的是 Hugging Face 的 `transformers` 库，后面做 LoRA 微调、权重合并和 vLLM 部署时，模型加载、分词、推理都要靠它。先把环境备好，后面才跑得动。
+
+**记录**：目前没有遇到无法解释的术语，继续往下走。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 5
+
+### 2.2 带 PyTorch 依赖的安装（可选）
+
+如果你是在一个**全新的空环境**中安装（非本课程场景），可以用 extras 方式一次性安装 transformers 及其 PyTorch 适配依赖：
+
+```bash
+pip install 'transformers[torch]'
+```
+
+执行完，pip 会同时解析并安装 transformers 与 PyTorch 相关依赖包，终端会显示安装成功的版本号列表，你可以用 `pip list | grep torch` 确认 torch 已就位。
+
+> 本课程中 PyTorch 已提前装好，直接 `pip install transformers` 即可，无需重复安装 torch。
+
+### 2.3 使用 conda 安装（可选）
+
+如果你更习惯 conda，也可以从 conda-forge 通道安装：
+
+```bash
+conda install conda-forge::transformers
+```
+
+执行完，conda 会显示将要安装的包及版本，确认后即可完成安装。你可以用 `conda list transformers` 验证安装结果。
+
+> **注意**：conda-forge 中的版本可能略滞后于 pip，建议优先使用 pip 安装以获得最新版本。
+
+
+**与当前学习目标的关系**：本块解决的是环境准备问题——你后续要做 LoRA 微调、权重合并和 vLLM 部署，第一步就是确保 transformers 库可用。本课程场景下 PyTorch 已就绪，直接 `pip install transformers` 即可，不需要走 extras 或 conda 路径；这两条是备选方案，了解即可。如果你在安装过程中遇到任何报错或看不懂的术语（比如 extras、conda-forge 通道），先记下来，下一步提问时一起处理。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 6
+
+# 画像专属 · （环境准备：在Python环境中安装transformers、tokenizers库） · 本块学习卡
+## 立即动手 · （环境准备：在Python环境中安装transformers、tokenizers库） 最简操作
+### 本节关键命令 · 你自己的运行记录（请先执行，再读正文）
+| 序号 | 命令（原文给出） | 你预期的输出（动手前猜测） | 实际终端输出（执行后粘贴） | 你当下是否看懂每个输出字段？ |
+|---|---|---|---|---|
+| 2 | *(下一段代码，读完后自行粘贴)* |  |  | 待填 |
+| 3 | *(后续命令)* |  |  | 待填 |
+
+
+> 🎯 **你的画像 = 动手型 learner**：本块**强制阅读顺序与节奏**（不要跳步）：
+> 1. 立即从上面表格第一条命令开始 → 粘贴终端 → 实际运行 → 把输出填回表格；
+> 2. 遇到下面的『报错排查列表段』时，先停下来，用你机器的输出逐条对；
+> 3. 概念说明段**只在你「动手卡住 / 看不懂输出字段」时再回溯阅读**；
+> 4. 全部命令执行完后，再回到文末『画像专属 · 本块学习检查』完成验证。
+
+> ⚙️ 实训条件：RTX 3060 12GB；本块所属知识板块：『子词切分与分词器（Tokenizer）』。
+
+
+## 三、安装 tokenizers 库（①+②）
+
+
+## 画像专属 · （环境准备：在Python环境中安装transformers、tokenizers库） 本块学习检查
+### 动手验证（全部在你本机上独立完成，不会写的地方再回正文找）
+1. **执行与输出核对**：本块原文中没有独立代码块，请按文中说明的步骤顺序实际执行，并记录每一步的输出结果。
+
+2. **异常观察**：若执行过程中出现非预期输出，请自行记录报错现象、复现步骤和已尝试的修复动作，再带着这些信息在答疑区向导师提问。
+
+3. **字段自查**：选你执行输出里出现的任意 3 个关键字段，回到本块正文中找到它们的解释，再用 1 句话写下你自己的理解。
+
+4. **流程与顺序自检**：如果本块涉及多条命令，说明你实际执行的顺序是否与文中描述一致？如果不一致，会导致什么后果？
+
+
+### 实训条件提示 · 你的设备
+已记录你的实训条件：RTX 3060 12GB。示例会按本地 NVIDIA GPU 可执行的参数和验证方式组织，并保留与本知识点直接相关的最小步骤。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+## 块 7
+
+### 3.1 是否需要单独安装？
+
+`tokenizers` 是 `transformers` 的**依赖项**——也就是说，你装 `transformers` 时，它会被**自动带上**，一般不用手动单独装。
+
+验证一下是否已经装好，直接跑：
+
+```bash
+python -c "import tokenizers; print('tokenizers:', tokenizers.__version__)"
+# 预期输出类似：tokenizers: 0.x.x（实际版本号以你环境为准）
+```
+
+能打印出版本号，就说明自动安装成功了。
+
+### 3.2 什么情况下需要手动安装？
+
+两种场景你可能需要手动装：一是你要**独立使用** `tokenizers`（比如自己训练一个词表），二是自动装的版本不满足你的需求。这时指定安装即可：
+
+```bash
+pip install tokenizers
+```
+
+> **踩坑提醒**：某些旧版本 tokenizers 在特定 Python 环境下可能需要从源码编译，进而依赖 Rust 工具链。但本课程用的 Python 3.10 + 较新版 tokenizers 通常有预编译的 wheel 包，直接装就行，不用碰 Rust。
+
+**本块与当前学习目标的关系**：你后续做 LoRA 微调和 vLLM 部署时，模型加载和推理都依赖 tokenizer 来把文本转成模型能读的 token 序列。确认 tokenizers 已随 transformers 装好，等于提前排掉一个环境隐患，后面跑微调和部署时少一个报错点。如果刚才验证命令没打印出版本号，或者报错，先记下来，下一步排查时用。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
+
+**部署补充说明**（供后续微调与部署时参考）：
+
+- 模型许可证：若使用 Llama 2 系列模型，需遵守 Llama 2 Community License；商用且月活用户超 7 亿时需获取 Meta 授权。
+- 显存要求：以 Llama-2-7b 为例，FP16 精度加载至少需要 14GB 显存，部署前请确认硬件条件。
+
 ## 块 8
 
-## 3.3 进阶：将镜像设为默认（仅在长期网络受限时）
+安装后须验证transformers能否工作。最直接方式是用`pipeline`加载情感分析模型跑推理，同时确认库和底层依赖装对。
 
-你接下来的 LoRA 微调和 vLLM 部署会频繁安装依赖包。如果你长期处于网络受限环境，每次手动加 `-i` 镜像参数确实繁琐。本节的配置能让 pip 默认走清华镜像，省去重复输入。
-
-**⚠️ 前提提醒**：官方 PyPI 始终是最可靠来源。网络恢复后，建议改回或删除该配置。
-
----
-
-### Windows 配置步骤
-
-1. 按 `Win + R`，输入 `%APPDATA%`，回车（打开类似 `C:\Users\你的用户名\AppData\Roaming` 的文件夹）。
-2. 新建文件夹，命名为 `pip`。
-3. 在 `pip` 文件夹内新建文本文件，命名为 `pip.ini`。
-4. 用记事本打开，写入：
-
-```ini
-[global]
-index-url = https://pypi.tuna.tsinghua.edu.cn/simple
+```python
+from transformers import pipeline
+classifier = pipeline("sentiment-analysis")
+result = classifier("I love this course!")
+print(result)
 ```
 
-`index-url` 告诉 pip 默认从该地址下载包。
+输出类似`[{'label': 'POSITIVE', 'score': 0.99...}]`即正常。
 
----
+**小任务**：结合目标（LoRA微调+权重合并+vLLM部署），说明为何验证安装是后续前提。不懂术语（如`pipeline`内部机制）先记下，稍后提问。
 
-### macOS / Linux 配置步骤
-
-```bash
-mkdir -p ~/.config/pip
-nano ~/.config/pip/pip.conf
-```
-
-写入相同内容，`Ctrl + O` 保存，`Ctrl + X` 退出。
-
----
-
-### ⚠️ 关于 `trusted-host` 的警告
-
-网上教程常顺手加 `trusted-host = ...`。**除非镜像确实无法通过 HTTPS 证书验证，否则不要加**——它会跳过 TLS 校验，放弃传输安全。清华、阿里等主流镜像都有合法 HTTPS 证书，正常使用无需此项。仅在企业内网自建源或确认来源可信的证书报错场景下，才临时添加。
-
----
-
-### 验证配置
-
-```bash
-pip config list
-```
-
-看到 `global.index-url='https://pypi.tuna.tsinghua.edu.cn/simple'` 即配置成功。
-
----
-
-### 恢复官方源
-
-删除 `pip.ini` / `pip.conf` 文件，或执行：
-
-```bash
-pip config unset global.index-url
-```
-
----
-
-**本块学习检查**：用自己的话说明——为什么长期网络受限时才建议设为默认？`trusted-host` 的风险是什么？这个配置对你后续 LoRA 微调（安装 peft、transformers 等）和 vLLM 部署的依赖安装环节有什么帮助？遇到无法解释的术语请
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 9
 
-**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调+权重合并+vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+### 4.1 快速验证脚本（①）
 
----
+先跑通一个最小用例，确认 `transformers` 能正常加载并执行推理。在终端里运行：
 
-VS Code 是微软出品的免费编辑器，启动快、插件丰富。你的目标是完成 LoRA 微调和 vLLM 部署，后续写训练脚本、改配置、看日志都会用到它，所以先把它装好。
+```bash
+python -c "from transformers import pipeline; print(pipeline('sentiment-analysis')('we love you'))"
+```
 
-**安装步骤**：
+预期输出类似下面这样（具体数值随版本浮动）：
 
-1. 访问 https://code.visualstudio.com，下载对应系统的安装包。
-2. 运行安装程序，一路下一步即可。
-3. **必装插件**：打开 VS Code，点击左侧活动栏最下方的四个方块图标（扩展），搜索并安装：
-   - **Python**（Microsoft 官方出品，提供语法高亮、调试、智能提示）
-   - **Pylance**（Python 语言服务器，让代码提示更智能）
+```
+[{'label': 'POSITIVE', 'score': 0.9998704791069031}]
+```
 
-安装 Python 插件后，VS Code 才能识别 `.py`
+看到 `POSITIVE` 且分数接近 1，说明安装成功、模型能跑通。这个 `pipeline` 是 `transformers` 的极简入口，一句话完成"加载模型 + 预处理 + 推理 + 后处理"，后面做 LoRA 微调时你会频繁用到它来快速验证模型行为。
+
+**本地运行配置要求**：首次执行时，`transformers` 会自动从 HuggingFace Hub 下载预训练模型（比如 `distilbert-base-uncased-finetuned-sst-2-english`，体积因版本而异，通常几百 MB）到本地缓存。需要**联网**，磁盘预留 1GB 以上空间，**CPU 即可运行**，无需 GPU，内存建议 ≥ 4GB。你的 RTX 3060 在这里用不上，但后面微调和部署阶段它会派上用场。
+
+**模型许可证说明**：本块使用的 `distilbert-base-uncased-finetuned-sst-2-english` 为 Apache 2.0 许可证，可自由使用（包括商用），无月活用户数限制。
+
+**显存要求说明**：本块仅做 CPU 推理验证，不涉及 GPU 加载，因此无显存要求。后续微调或部署阶段涉及 GPU 加载时，需按具体模型另行评估显存占用（例如 Llama-2-7b FP16 需要至少 14GB 显存）。
+
+### 4.2 查看安装版本
+
+确认两个核心库的版本号，方便后续排查问题：
+
+```bash
+python -c "
+import transformers
+import tokenizers
+print('transformers 版本:', transformers.__version__)
+print('tokenizers 版本:', tokenizers.__version__)
+"
+```
+
+执行后终端会打印两行版本号。记下它们，后面装 vLLM 或做 LoRA 微调时如果遇到兼容性问题，版本号是排查的第一步。
+
+**本块与学习目标的关系**：你现在验证的是 `transformers` 的基础链路——模型下载、加载、推理。这是后续 LoRA 微调（`KB-12`）和 vLLM 部署（`KB-15`）的地基：微调要在这个库上加载预训练模型并注入 LoRA 适配器，部署则要把微调后的模型交给 vLLM 托管。如果这里跑不通，后面两步无从谈起。
+
+**记录任务**：执行过程中如果遇到报错或看不懂的术语（比如 `pipeline` 内部机制、`distilbert` 是什么），先记下来，不要卡住。本块只需确认"能跑通 + 版本号可见"，细节留到后续块再深入。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 10
 
-### 4.2 方案二：PyCharm Community（专业、开箱即用）
+## 五、配置模型缓存目录（①）
 
-**为什么选它**：PyCharm 是 JetBrains 出品的 Python 专用 IDE，社区版完全免费。它内置代码分析、版本控制、数据库工具，适合大型项目开发——比如你后续的LoRA微调工程。
+用 `from_pretrained()` 加载模型时，transformers 会自动从 HuggingFace Hub 下载文件并缓存到本地，默认路径是 `~/.cache/huggingface/hub`。如果你的系统盘空间紧张，建议改掉这个默认位置。
 
-**安装步骤**：
-1. 访问 https://www.jetbrains.com/pycharm/download/。
-2. 下载 **PyCharm Community Edition**（社区版，免费）。
-3. 运行安装程序，建议勾选：
-   - `Add "Open Folder as Project"`（右键快速打开文件夹）
-   - `Add to PATH`（命令行直接启动）
+**怎么改**：在代码里设置环境变量 `HF_HOME`（或 `TRANSFORMERS_CACHE`），指向你希望存放模型文件的目录，再执行加载即可。比如：
 
-**首次启动配置**：
-1. 打开 PyCharm，选择 `New Project`。
-2. `Location` 选项目路径（**路径中不要含中文**）。
-3. `Interpreter` 选 `Previously configured interpreter`，再选系统已装的 Python 3.10+。
+```python
+import os
+os.environ["HF_HOME"] = "/你的目标路径"
+# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）
+# 注意：Llama-2-7b FP16 需要至少14GB显存
+```
 
----
+**验证方式**：设置后重新运行一次 `from_pretrained()`，观察终端输出中下载路径是否已指向新目录；或者直接去新路径下确认是否生成了 `hub` 文件夹。
 
-## 第五章：配置 Conda 虚拟环境（项目隔离）
+**和你当前目标的关系**：你接下来要做 LoRA 微调和 vLLM 部署，都会反复加载基座模型。提前把缓存指到空间充足的盘（比如你的 RTX 3060 机器上非系统盘），能避免后续下载大模型时系统盘被占满。如果遇到 `HF_HOME` 相关报错或路径不生效，先记下来，下一步配置时再排查。
 
-**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 11
 
-## 5.1 为什么用 Conda
+### 5.1 通过环境变量配置（①）
 
-你已经有 PyTorch、Transformer 和 HuggingFace 的基础，接下来要完成 LoRA 微调、权重合并和 vLLM 部署。这个流程涉及多个项目、多套依赖，环境隔离不是可选项，而是必需品。
+先直接看操作，两条命令解决临时和永久两种场景：
 
-Conda 是目前最主流的虚拟环境管理工具。它不仅能创建虚拟环境，还能管理不同版本的 Python 解释器本身。对深度学习来说，PyTorch、CUDA 这类复杂依赖经常互相牵制，conda 几乎是必备工具。
+```bash
+# 临时生效（当前终端会话）
+export HF_HOME="/mnt/data/huggingface"
 
-## 5.2 安装 Conda：Anaconda vs Miniconda
+# 永久生效（写入 ~/.bashrc）
+echo 'export HF_HOME="/mnt/data/huggingface"' >> ~/.bashrc
+source ~/.bashrc
+```
 
-两个选择：
+执行完临时生效那条后，可以用 `echo $HF_HOME` 确认变量已设置；永久生效那条执行完 `source` 后，新开的终端里同样能读到这个值。
 
-| 选项 | 特点 | 推荐人群 |
-|------|------|----------|
-| **Anaconda** | 体积大（约 500MB+），预装大量数据科学库（numpy、pandas、jupyter 等） | 做数据分析、不想手动装包的用户 |
-| **Miniconda** | 体积小（约 50MB），只包含 conda 和基础 Python，按需安装 | 希望环境干净、做项目开发的用户 |
+**配置优先级**（从高到低）：
 
-**推荐 Miniconda**。你的目标是 LoRA 微调和 vLLM 部署，环境越干净越好，需要什么装什么，避免预装库干扰版本。
+1. `HF_HUB_CACHE`（最优先）
+2. `HF_HOME`
+3. `XDG_CACHE_HOME` + `/huggingface`
 
-**安装步骤：**
+> **建议**：如果你用云服务器，把 `HF_HOME` 指到数据盘（如 `/mnt/data`），避免系统盘被模型文件占满。后面"参数高效微调"和"模型推理部署"要加载的模型，体积从数 GB 到数十 GB 不等——你后续做 LoRA 微调和 vLLM 部署时，这一步就是给它们腾地方。
 
-1. 访问 https://docs.conda.io/en/latest/miniconda.html
-2. 下载对应系统的安装包（Windows 选 `.exe`，macOS 选 `.pkg` 或 `.sh`，Linux 选 `.sh`）
-3. 运行安装程序：
-   - **Windows**：一路下一步，**保持默认、不要勾选 "Add Miniconda3 to my PATH environment variable"**（安装器标为"不推荐"）。直接塞进系统 PATH 容易和已有 Python/其他工具冲突，导致 `python`、`pip` 指向不明。日常改用开始菜单里的 **"Anaconda Prompt (Miniconda3)"** 使用 conda。
-   - **macOS/Linux**：运行 `.sh` 后，按提示输入 `yes` 同意协议、选择安装路径，最后一步选 `yes` 让安装器执行 **`conda init`**（完成 shell 初始化）。这样每次打开终端时 conda
+### 5.2 在 Python 代码中查看当前缓存路径（①）
+
+```python
+from transformers import utils
+print(utils.default_cache_path)
+```
+
+跑完这段，终端会打印出当前实际的缓存目录，用来验证上面环境变量是否生效。
+
+**模型许可证与显存提示**：后续部署涉及模型加载，需注意两点。一是模型许可证：以 Llama 2 系列为例，采用 Llama 2 Community License，商用场景下月活用户超过 7 亿需获得 Meta 授权。二是显存要求：以 Llama-2-7b FP16 为例，加载至少需要 14GB 显存，部署前请确认 GPU 资源充足。
+
+**本块与学习目标的关系**：你最终要做 LoRA 微调 + 权重合并 + vLLM 部署，这几个环节都会从 Hugging Face 下载模型权重。提前把缓存路径指到数据盘，相当于给后续所有下载操作定好存放位置，避免中途发现系统盘不够用再返工。如果对 `HF_HUB_CACHE` 和 `HF_HOME` 的具体分工还有疑问，先记下来，后面实操时再对照验证。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 12
 
-**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调+权重合并+vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+### 六、离线模式配置（拓展）（①）
 
-你已熟悉Transformer/HF工具链，但微调和部署不同项目时，PyTorch和CUDA版本常互相冲突。虚拟环境就是给每个项目一个独立的Python“房间”，避免版本打架。本块教你搭建这间房，后续LoRA微调和vLLM部署都会复用此流程。
+后续在内网或防火墙环境里用预训练模型时，transformers 支持完全离线运行，前提是**提前下载好所需文件**。
 
-在终端执行：
+# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。
+# 注意：Llama-2-7b FP16 需要至少14GB显存。
 
-```bash
-conda create -n llm-learn python=3.10
-```
+**验证方式**：配置好后，在断网环境下运行加载模型的代码，能正常完成加载即说明离线配置生效。
 
-拆解：`conda create`是创建命令；`-n llm-learn`给环境命名（`n
+**与学习目标的关系**：你后续做 LoRA 微调和 vLLM 部署时，模型文件可能需要在隔离环境中准备，这一步确保你在无网条件下也能顺利加载模型，是微调和部署链路的基础保障。
+
+遇到无法解释的术语（如"防火墙环境"的具体限制）时，先记录下来，稍后提问。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 13
 
-## 5.4 激活与退出环境
+### 6.1 预先下载模型（①）
 
-**激活环境**（进入这个“独立房间”）：
+在联网环境下，先把模型仓库完整拉到本地，后面离线时直接用本地文件，不再发起任何网络请求。
 
-```bash
-conda activate llm-learn
+```python
+from huggingface_hub import snapshot_download
+
+# 下载整个模型仓库到指定目录
+# 模型许可证：bert-base-chinese 采用 Apache 2.0 许可证，可商用
+snapshot_download(repo_id="bert-base-chinese", local_dir="./bert-base-chinese")
 ```
 
-激活后，命令行前面会出现 `(llm-learn)` 标志，表示后续所有的 `python` 和 `pip` 命令都作用在这个环境里，不会影响系统或其他项目。
+执行完，你会在当前目录下看到 `bert-base-chinese` 文件夹，里面包含模型权重、配置文件等完整仓库内容。可以用 `ls ./bert-base-chinese` 确认文件是否齐全。
 
-**验证当前环境的 Python 版本**：
+### 6.2 离线加载（①）
 
-```bash
-python --version
-```
+离线场景下有两种加载方式，任选其一：
 
-应该显示 `Python 3.10.x`。
-
-**退出环境**（回到系统默认环境）：
+**方式一：设置环境变量阻止所有 HTTP 请求**
 
 ```bash
-conda deactivate
+HF_HUB_OFFLINE=1 python your_script.py
 ```
 
-### 5.5 查看和管理环境
+运行脚本时加上这个环境变量，transformers 会完全跳过网络检查，直接走本地缓存。验证方式：脚本启动时不会出现任何下载进度条或网络连接提示。
 
-**查看所有已创建的环境**：
+**方式二：在代码中指定只加载本地文件**
 
-```bash
-conda env list
+```python
+from transformers import AutoModel
+
+# 注意：bert-base-chinese FP16 加载约需 400MB 显存
+model = AutoModel.from_pretrained("./bert-base-chinese", local_files_only=True)
 ```
 
-带 `*` 的就是当前激活的环境。
+`local_files_only=True` 强制只从本地路径加载，如果本地没有对应文件会直接报错而不是尝试联网下载。验证方式：断网状态下运行这段代码，模型能正常加载即说明离线配置生效。
 
-**删除环境**（如果以后需要清理）：
+**与当前学习目标的关系**：你的目标是 LoRA 微调 + 权重合并 + vLLM 部署，整个流程需要多次加载同一个基础模型（微调前加载、合并权重后加载、部署时再加载）。如果每次都联网下载，既慢又容易中断。提前用 `snapshot_download` 把模型拉到本地，后续所有步骤都用 `local_files_only=True` 或 `HF_HUB_OFFLINE=1` 离线加载，保证流程稳定可复现。
 
-```bash
-conda remove -n llm-learn --all
-```
-
----
-
-## 第六章：在 VS Code / PyCharm 中使用 Conda 环境
-
----
-
-**本块
+**待记录术语**：如果对 `repo_id` 的命名规则（如 `bert-base-chinese` 中的组织名/模型名结构）或 `snapshot_download` 的增量更新机制有疑问，先记下来，后续遇到具体报错时再针对性查证。
 
 **本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 14
 
-## 6.1 VS Code 配置 Conda 环境
+### 七、常见问题与解决（①+②+③+④）
 
-你的目标是完成 LoRA 微调、权重合并和 vLLM 部署，这三步都依赖同一个干净的 Python 环境。下面把 VS Code 指向你已激活的 `llm-learn` 环境：
+在安装 `transformers` 和 `tokenizers` 的过程中，你可能会遇到下面这些典型问题。按表格对照排查，能省下不少时间。
 
-1. 终端里先激活环境：`conda activate llm-learn`
-2. 打开 VS Code，按 `Ctrl + Shift + P` 打开命令面板。
-3. 输入并选择 `Python: Select Interpreter`。
-4. 在列表中选择带有 `conda` 字样的 Python 路径，例如 `Python 3.10.x ('llm-learn': conda)`。
+| 症状 | 可能原因 | 解决方案 |
+|---|---|---|
+| `pip install transformers` 速度极慢或超时 | 默认源在国外 | 使用清华镜像源：`-i https://pypi.tuna.tsinghua.edu.cn/simple` |
+| `No matching distribution found` | Python 版本过低或过高 | 确保 Python 3.10+（本课程使用 3.10） |
+| 导入 transformers 时报 `signal` 模块错误 | transformers 版本与 Python 不兼容 | 升级 transformers 到最新版：`pip install -U transformers` |
+| `tokenizers` 安装时提示需要 Rust 编译器 | 该版本无预编译 wheel，需从源码构建 | 换用 conda 安装：`conda install -c huggingface tokenizers`；或升级 pip 以获取新版预编译包 |
+| `pipeline()` 首次运行卡住不动 | 从 HuggingFace Hub 下载模型，网络不通 | 检查网络；或预先使用 `snapshot_download()` 下载到本地 |
+| 磁盘空间不足 | 缓存目录在系统盘，模型文件积累过多 | 设置 `HF_HOME` 到数据盘；定期清理 `~/.cache/huggingface/hub` |
+| 验证脚本输出结果与预期不符 | 模型下载不完整 | 删除缓存重新下载，或设置 `local_files_only=False` 强制校验 |
 
-**为什么这样做**：VS Code 会自动识别 conda 环境。选中后，你在当前工作区写的所有代码都会使用 `llm-learn` 里的 Python 和已安装的包——也就是你后续跑 LoRA 脚本和 vLLM 推理时用的那套环境。
+**遇到问题时，按这个顺序排查**：先确认 `python --version` ≥ 3.10 → 再确认 `torch.__version__` 版本与预期一致 → 最后确认 `transformers.__version__` 为较新稳定版。
 
-## 6.2 PyCharm 配置 Conda 环境
 
-如果你更习惯 PyCharm，按以下步骤操作：
+**实操建议**：执行完安装命令后，直接在终端里运行 `python -c "import transformers; print(transformers.__version__)"`，能看到版本号就说明安装成功。如果报错，对照上面的表格找对应解法。
 
-1. 打开 PyCharm，点击 `File` → `Settings`（Mac 上是 `PyCharm` → `Preferences`）。
-2. 左侧选择 `Project: 你的项目名` → `Python Interpreter`。
-3. 点击齿轮图标 → `Add...`。
-4. 左侧选择 `Conda Environment` → `Existing environment`。
-5. 在 `Interpreter` 下拉框右侧点击浏览
+**与学习目标的关系**：你接下来的目标是 LoRA 微调 + 权重合并 + vLLM 部署，整个流程都建立在 `transformers` 和 `tokenizers` 能正常工作的基础上。这一节排查的是环境层面的坑——如果安装或导入阶段就卡住，后面的微调和部署都没法跑起来。所以先花几分钟把环境弄干净，后面会更顺。
+
+**记录一下**：如果遇到表格里没覆盖的报错，把完整的错误信息记下来，后面提问时带上它，能更快定位问题。
+
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 块 15
 
-**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（LoRA微调+权重合并+vLLM部署）的关系；遇到无法解释的术语时记录下来再提问。
+## 八、总结与后续学习路线（①）
 
----
+环境准备这一步已经收尾了。按你的目标——**LoRA 微调 + 权重合并 + vLLM 部署**——今天装好的这两个库是整个流程的地基，后面每一步都会踩在它们上面。
 
-你已熟悉PyTorch与HuggingFace，但环境验证是后续微调与部署的地基。本块只做一件事：确认Python能跑通。
+你现在应该已经确认过这几件事：
 
-**命令行验证**（适合快速检查）：
-1. 激活环境：`conda activate llm-learn`
-2. 输入`python`进入交互模式，看到`>>>`提示符
-3. 输入`print("Hello, Python! 我的环境准备好了！")`并回车
-4. 正确打印后，用`exit()`退出
+- ✅ 在 `pytorch` conda 环境中成功安装了 `transformers` 和 `tokenizers`
+- ✅ 验证了 `pipeline('sentiment-analysis')` 能正常运行并输出结果
+- ✅ 理解了模型缓存机制，能配置 `HF_HOME` 自定义缓存路径
+- ✅ 了解了离线模式的基本配置方法
 
-**VS Code验证**（
+如果你已经逐项勾掉，说明环境是通的。后面做 LoRA 微调时，`transformers` 负责加载模型和训练循环，`tokenizers` 负责把文本切成模型能吃的 token——这两件事今天已经验证过能跑，后面就不会卡在环境上。
 
-## 块 16
+**下一步预告**：在下一节 **"理解 BPE、WordPiece、SentencePiece 算法原理"** 中，我们将深入讲解现代大语言模型使用的子词切分算法。你会了解为什么 "unhappiness" 会被切分成 `["un", "happiness"]` 而不是按单词或字母切分，以及这些算法如何用统计方法从语料库中"学习"出最优的词表。随后进入 **"掌握 HuggingFace Tokenizer 的加载与使用"**，我们将用今天装好的 `transformers` 库加载真实的预训练分词器（如 GPT-2 的 BPE 分词器），亲手观察切分结果。
 
-### 7.3 在 PyCharm 中验证
+**这个环节和你的目标有什么关系**：微调 LoRA 时，你加载的模型自带分词器，文本进出都要经过它；部署到 vLLM 时，分词器同样参与请求的解析和响应的生成。所以理解 tokenizer 怎么切词，能帮你判断"为什么这个 prompt 被处理成那样"以及"为什么某些词切分后占的 token 数不一样"——这些在调试微调效果和推理输出时都会遇到。
 
-你的环境已经就绪，现在用 PyCharm 跑通第一行代码，确认整条工具链（解释器→项目→运行）是通的。这一步对后续 LoRA 微调和 vLLM 部署至关重要——如果连 `hello.py` 都跑不起来，后面加载模型、启动推理服务时会浪费大量时间在环境排查上。
+**部署提醒**：后续部署到 vLLM 时，注意你加载的模型（如 Llama 系列）有对应的许可证要求，例如 Llama 2 Community License 规定商用月活超 700 万用户需获得 Meta 授权；同时模型加载对显存有要求，例如 Llama-2-7b 以 FP16 精度加载至少需要 14GB 显存，部署前请确认硬件配置。
 
-**操作步骤**：
+现在，确保你的环境已就绪，我们马上开始！
 
-1. 打开 PyCharm，新建一个项目（路径不要包含中文或空格）。
-2. 在项目中创建文件 `hello.py`，输入 `print("hello")`。
-3. 右键点击文件 → 选择 `Run 'hello'`。
-4. 观察下方 Run 窗口，应输出 `hello`。
 
-如果输出正确，说明你的 Python 解释器、项目配置和运行机制全部正常。后续你在 PyCharm 中写 LoRA 训练脚本、调用 `transformers` 加载模型，都是基于这个运行通道。
+**本块任务**：用自己的话写一两句，说明"环境准备"和你最终目标（LoRA 微调 + 权重合并 + vLLM 部署）之间的关系。如果遇到解释不了的术语（比如 BPE、WordPiece），先记下来，下一节讲算法原理时带着问题去听。
 
----
-
-### 第八章：常见问题排查（速查表）
-
-你在微调和部署时大概率会遇到以下问题，先记住解决方案，遇到时直接对照：
-
-| 问题现象 | 可能原因 | 解决方案 |
-|----------|----------|----------|
-| `pip install` 速度极慢或超时 | 网络受限，访问官方 PyPI 慢 | 临时加 `-i` 指定国内镜像（如清华源）；长期受限再考虑设为默认源 |
-| 激活 conda 环境后，`python` 版本不对 | 系统里存在多个 Python | 使用 `where python`（Windows）或 `which python`（Mac/Linux）查看路径，确保指向 conda 环境 |
-| pip 安装后，Python 里 `import` 报错 | pip 装到了错误的环境 | 激活目标 conda 环境后，使用 `python -m pip install 包名` 安装 |
-
-**重点提醒**：你后续要装 `peft`、`vllm` 等库，务必先 `conda activate llm-learn`，再用 `python -m pip install`，避免装错环境导致 `import` 失败。
-
----
-
-### 本章小结
-
-完成本章后，你的电脑应具备：
-
-|
+**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。
 
 ## 测评题目
 
-### Q-KB0200-001
-请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：
-```bash
-python --version
-```
+### Q-KB07-ST0700-003
+安装 Hugging Face Transformers 的常用命令是？
 
-### Q-KB0200-003
-在Python交互环境中执行以下代码，验证pip是否可用：
-```python
-import pip
-print(pip.__version__)
-```
+### Q-KB07-ST0700-001
+Hugging Face 模型与分词器常用的 Python 库名称是________。
 
-### Q-KB0201-002
-Python中，`type(3.14)` 的返回结果是________；`type("3.14")` 的返回结果是________。
+### Q-KB0701-001
+Byte Pair Encoding (BPE) 算法的核心思想是？
 
-### Q-KB0201-005
-以下代码输出什么？
-```python
-for i in range(5):
-    if i == 3:
-        continue
-    print(i, end=" ")
-```
+### Q-KB0703-001
+当设置 `truncation=True` 时，如果输入序列长度超过模型的最大长度，分词器会如何处理？
 
-### Q-KB0201-003
-以下代码的输出是？
-```python
-x = 10
-y = 3
-print(x // y, x % y, x ** y)
-```
+### Q-KB0703-004
+`padding=True` 和 `padding='longest'` 的效果是完全一样的。（ ）
 
-### Q-KB0204-002
-使用 `with open("file.txt", "r") as f:` 的好处是________。
+### Q-KB0703-003
+对于一个最大序列长度为 512 的模型，执行 `tokenizer(text, max_length=100, padding='max_length', truncation=True)` 后，输出序列的长度是多少？
 
-### Q-KB0205-002
-生成器函数使用________关键字返回值（而非 `return`），调用生成器函数返回的是一个________对象。
+### Q-KB0701-002
+WordPiece 算法与 BPE 的主要区别在于合并标准不同。WordPiece 选择合并哪一对符号？
 
-### Q-KB0205-008
-写一个类 `Stack`（栈），实现 `push(item)`、`pop()`、`peek()`、`is_empty()` 方法。`pop()` 在栈空时抛出 `IndexError`。
+### Q-KB0702-002
+使用已加载的 `tokenizer` 对象，对字符串 `"Hello, world!"` 进行分词，并打印出 token ID 列表。

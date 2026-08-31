@@ -1,135 +1,173 @@
 [
   {
-    "question_id": "Q-KB12-ST1203-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
+    "question_id": "Q-KB0100-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令验证当前用户和主机名：\n```bash\nwhoami && hostname\n```",
+    "options": [],
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "hint": "```\nyour_username\nDESKTOP-XXXX\n```",
+    "explanation": "```\nyour_username\nDESKTOP-XXXX\n```",
+    "expected_output": "```\nyour_username\nDESKTOP-XXXX\n```",
+    "grading_mode": "command_output_check",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0100-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "执行以下命令确认系统发行版信息：\n```bash\ncat /etc/os-release\n```",
+    "options": [],
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "hint": null,
+    "explanation": "",
+    "expected_output": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "grading_mode": "command_output_check",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0101-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请依次执行以下命令并描述每一步的结果：\n```bash\nmkdir -p /tmp/test_dir/sub_dir\ncd /tmp/test_dir\ntouch hello.txt\ncp hello.txt sub_dir/\nmv hello.txt renamed.txt\nls -R\n```",
+    "options": [],
+    "correct_answer": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "hint": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "explanation": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "expected_output": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "grading_mode": "command_output_check",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0101-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "若希望将 LoRA 注入注意力层的 query 与 value 投影，应配置什么？",
+    "question_text": "以下哪个命令用于**切换当前工作目录**？",
     "options": [
       {
         "key": "A",
-        "text": "target_modules 指向对应投影层名"
+        "text": "`ls`"
       },
       {
         "key": "B",
-        "text": "删除 tokenizer"
+        "text": "`cd`"
       },
       {
         "key": "C",
-        "text": "把 batch size 设为0"
+        "text": "`mkdir`"
       },
       {
         "key": "D",
-        "text": "关闭梯度计算"
+        "text": "`pwd`"
       }
     ],
-    "correct_answer": "A",
-    "hint": "target_modules 控制 LoRA 的注入位置。",
-    "explanation": "target_modules 控制 LoRA 的注入位置。"
+    "correct_answer": "B",
+    "hint": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+    "explanation": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
   },
   {
-    "question_id": "Q-KB1201-004",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
-    "difficulty": "中级",
-    "question_type": "true_false",
-    "question_text": "使用LoRA微调后的模型，可以将LoRA权重合并（Merge）回基座模型中，合并后推理不需要额外加载LoRA适配器。（ ）",
-    "options": [
-      "正确",
-      "错误"
-    ],
-    "correct_answer": "正确",
-    "hint": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。",
-    "explanation": "> 因为 LoRA 是线性加法操作 ($W' = W + BA$)，合并后模型结构与原基座模型完全一致，不会增加推理延迟。"
-  },
-  {
-    "question_id": "Q-KB12-ST1200-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 的 4-bit 量化常依赖的库是________。",
-    "options": [],
-    "correct_answer": "bitsandbytes",
-    "hint": "bitsandbytes 提供低比特量化与优化器支持。",
-    "explanation": "bitsandbytes 提供低比特量化与优化器支持。"
-  },
-  {
-    "question_id": "Q-KB12-ST1203-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-03",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
-    "options": [],
-    "correct_answer": "lora_dropout",
-    "hint": "该参数用于适配器分支的 dropout。",
-    "explanation": "该参数用于适配器分支的 dropout。"
-  },
-  {
-    "question_id": "Q-KB1201-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
+    "question_id": "Q-KB0102-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
     "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "QLoRA 相比 LoRA 的主要改进是引入了 **4-bit** 量化技术，进一步降低了微调时的________占用。",
+    "question_text": "临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。",
     "options": [],
-    "correct_answer": "显存（GPU Memory）",
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
     "hint": null,
-    "explanation": ""
+    "explanation": "",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
   },
   {
-    "question_id": "Q-KB12-ST1202-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
+    "question_id": "Q-KB0102-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "在其他条件相同时，增大 LoRA rank 最可能带来什么？",
+    "question_text": "以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？",
     "options": [
       {
         "key": "A",
-        "text": "可训练参数量增加"
+        "text": "`~/.bashrc`"
       },
       {
         "key": "B",
-        "text": "基座模型词表被删除"
+        "text": "`/etc/profile`"
       },
       {
         "key": "C",
-        "text": "不再需要训练数据"
+        "text": "`~/.bash_profile`"
       },
       {
         "key": "D",
-        "text": "模型自动变为量化模型"
+        "text": "`/etc/bash.bashrc`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。",
+    "explanation": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0104-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "`nvidia-smi` 输出中，`Memory-Usage: 2048MiB / 8192MiB` 表示什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPU总内存8GB，已使用2GB"
+      },
+      {
+        "key": "B",
+        "text": "CPU内存使用情况"
+      },
+      {
+        "key": "C",
+        "text": "磁盘空间"
+      },
+      {
+        "key": "D",
+        "text": "网络带宽"
       }
     ],
     "correct_answer": "A",
-    "hint": "更高 rank 意味着更大的低秩适配器。",
-    "explanation": "更高 rank 意味着更大的低秩适配器。"
+    "hint": null,
+    "explanation": "",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
   },
   {
-    "question_id": "Q-KB12-ST1202-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
+    "question_id": "Q-KB0103-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-03",
+    "difficulty": "初级",
     "question_type": "fill_blank",
-    "question_text": "LoRA 中 alpha 通常用于对低秩更新进行________。",
+    "question_text": "激活conda虚拟环境 `myenv` 的命令是________；退出当前虚拟环境的命令是________。",
     "options": [],
-    "correct_answer": "缩放 ||| scaling ||| 放缩",
-    "hint": "常见实现使用 alpha/r 缩放更新。",
-    "explanation": "常见实现使用 alpha/r 缩放更新。"
-  },
-  {
-    "question_id": "Q-KB12-ST1200-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "使用 Hugging Face PEFT 实现 LoRA 时，需要安装的库名称是________。",
-    "options": [],
-    "correct_answer": "peft",
-    "hint": "PEFT 提供 LoraConfig 等参数高效微调接口。",
-    "explanation": "PEFT 提供 LoraConfig 等参数高效微调接口。"
+    "correct_answer": "`conda activate myenv`；`conda deactivate`",
+    "hint": null,
+    "explanation": "",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
   }
 ]
