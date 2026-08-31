@@ -22,9 +22,21 @@ LEARNING_STYLES = (LEARNING_STYLE_THEORY, LEARNING_STYLE_PRACTICE, LEARNING_STYL
 LearningStyle = Literal["theory", "practice", "mixed"]
 
 # 自然语言关键词 → 枚举值。保持前后端一致：只识别三类风格。
+# 2026-08-30 新增兼容映射（Part A）：之前前端旧版本和旧版 _generate_summary 用的是
+#   visual / auditory / reading / kinesthetic 四分类，新的前端已经统一到
+#   theory / practice / mixed 三分类。为了兼容老的 profile 存档和中间
+#   DTO，需要把这些老别名映射到新三档。不要漏 —— 否则会出现 "learning_style =
+#   reading → 归一化默认 mixed → notes 正确显示综合型，但 style_map 里没
+#   reading → summary 误落回综合型" 的前后一致仍然对的假象 —— 实际上我们
+#   现在已经修了 summary，缺这些关键词会让理论型用户的 profile.learning_style
+#   被误判成 mixed。
 LEARNING_STYLE_KEYWORDS: dict[str, tuple[str, ...]] = {
-    LEARNING_STYLE_THEORY:   ("theory",   "理论", "原理", "概念", "推导"),
-    LEARNING_STYLE_PRACTICE: ("practice", "实操", "实践", "动手", "代码", "实验", "部署"),
+    LEARNING_STYLE_THEORY:   ("theory",   "理论", "原理", "概念", "推导",
+                              # 旧分类兼容 → 对应理论型：
+                              "reading", "阅读", "visual", "视觉", "auditory", "听觉"),
+    LEARNING_STYLE_PRACTICE: ("practice", "实操", "实践", "动手", "代码", "实验", "部署",
+                              # 旧分类兼容 → 对应实操型：
+                              "kinesthetic", "动觉", "体感"),
     LEARNING_STYLE_MIXED:    ("mixed",    "混合", "结合", "均衡"),
 }
 LEARNING_STYLE_DEFAULT: LearningStyle = LEARNING_STYLE_MIXED

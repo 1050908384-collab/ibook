@@ -1,0 +1,15 @@
+{
+  "answer_behavior": "",
+  "target_accuracy_range": [
+    0.6,
+    0.79
+  ],
+  "wrong_answer_strategy": "fixed_by_question_id",
+  "expected_next_strategy": "",
+  "actual_accuracy_from_learner": 0.75,
+  "actual_accuracy_from_decision": 0.6875,
+  "accuracy_within_range": true,
+  "actual_next_strategy": "reinforce",
+  "strategy_match": null,
+  "discrepancy_reason": "脚本未设置 expected_next_strategy"
+}

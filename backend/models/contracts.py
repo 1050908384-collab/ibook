@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -119,6 +119,9 @@ class ReviewInput(BaseModel):
     heading_path: Optional[str] = None
     source_line_start: Optional[int] = None
     source_line_end: Optional[int] = None
+    # === 整篇路径也携带结构化块产物，供 Agent4 教学层元数据核验（★ Agent4 PersonalizationCheckTool）===
+    # 旧会话 / 纯整篇流水线该字段为空 list，Agent4 需安全兜底。
+    content_blocks: List[Any] = Field(default_factory=list)
 
 
 class BlockRevisionInput(BaseModel):

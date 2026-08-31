@@ -502,9 +502,73 @@ class StateManager:
         state.target_total_hours = target.get("target_total_hours") or 0.0
         state.target_daily_hours = target.get("target_daily_hours") or state.target_daily_hours
         state.target_progress = target.get("target_progress") or 0.0
-        composed_profile = self.db_client.get_latest_profile(session_id)
-        if composed_profile:
-            state.profile = UserProfile.model_validate(composed_profile)
+        composed_profile = self.db_client.get_latest_profile(session_id) or {}
+        # ── Part F: profile 合并策略（修复重启后会话专属 learning_style 被
+        #    全局 learner_profiles 值偷偷覆盖的问题） ──────────────────────
+        # 情况 A：state.profile 非空（新会话已经把 profile 序列化进 session
+        #          JSON）→ 以 state.profile 中的会话专属字段为准，只从
+        #          composed_profile 补全稳定字段作为兜底。
+        # 情况 B：state.profile is None（旧会话 / 存量数据，之前 _save 会把
+        #          profile 强制置 null；或刚创建时 payload 为空）→ 完整使用
+        #          composed_profile 作为初始 UserProfile，保持向后兼容。
+        SESSION_EXCLUSIVE_FIELDS = (
+            "learning_style",
+            "learning_rhythm",
+            "confidence_index",
+            "confusion_markers",
+            "confidence",
+            "daily_hours",
+            "goal",
+            "mastered_block_ids",
+            "knowledge_gaps",
+            "profile_id",
+        )
+        if state.profile is None:
+            # 兼容存量 session：_save 之前会把 profile 强改为 null，所以只能
+            # 从 composed_profile 重建（learning_style 会用全局行的值，对
+            # 于 Part B 之前创建的会话可能存在"被后创建的目标覆盖"的情况，
+            # 但至少不会抛 ValueError 导致无法恢复）。
+            if composed_profile:
+                state.profile = UserProfile.model_validate(composed_profile)
+        elif composed_profile:
+            # 新会话：用 composed_profile（稳定字段来源 + 目标字段）作为
+            # 补充，但绝对不要覆盖 state.profile 中已经带值的"会话专属字段"
+            # （学习风格、节奏、已掌握等 — 这些是会话级声明，每个目标独立）
+            try:
+                merged = dict(state.profile.model_dump(mode="json"))
+            except Exception:
+                merged = {}
+            for key, val in composed_profile.items():
+                if not val and val != 0 and val is not False:
+                    # composed_profile 里的空值不参与补全
+                    continue
+                if key in SESSION_EXCLUSIVE_FIELDS:
+                    # 会话专属字段：只有 merged 里当前是空/默认值时才填
+                    current = merged.get(key)
+                    is_empty = (
+                        current is None
+                        or current == ""
+                        or (isinstance(current, list) and not current)
+                        or (isinstance(current, dict) and not current)
+                    )
+                    if key == "daily_hours" and isinstance(current, (int, float)) and current <= 0:
+                        is_empty = True
+                    if is_empty:
+                        merged[key] = val
+                else:
+                    # 稳定字段（grade / skill_tags / version / foundation_confirmed
+                    # / hardware 等）：直接用 composed_profile 的值补全 / 覆盖
+                    merged[key] = val
+            try:
+                state.profile = UserProfile.model_validate(merged)
+            except Exception as exc:
+                # Fallback 避免迁移失败导致会话不可读
+                import logging as _logging
+                _logging.getLogger(__name__).warning(
+                    f"[Part F profile merge failed for {session_id[:8]}..] "
+                    f"fallback to composed_profile only: {exc!r}"
+                )
+                state.profile = UserProfile.model_validate(composed_profile)
         user_profile = self.db_client.get_user_profile(state.user_id) or {}
         state.practice_profile = self._practice_profile_from_user(user_profile)
         if self._heal_active_retry_state(state):
@@ -554,11 +618,17 @@ class StateManager:
         state.updated_at = datetime.now(timezone.utc).isoformat()
         self._cache[state.session_id] = state
         payload = state.model_dump(mode="json")
-        # The combined profile is a compatibility DTO. Stable learner fields
-        # live in learner_profiles and must not be duplicated in session JSON.
-        payload["profile"] = None
-        # PracticeProfile is rebuilt from learner_profiles on restore. Keeping
-        # it out of session JSON avoids duplicating user hardware per target.
+        # ── Part F: 会话专属画像字段（learning_style / daily_hours /
+        #    learning_rhythm / confidence_index / confusion_markers / confidence）
+        #    已经不再保存到全局 learner_profiles 表中（见 Part B 对
+        #    sqlite_client.save_profile 的改造），所以必须保存在
+        #    session_states.state_json 里，否则重启后就全部丢失 → 回退
+        #    成 DEFAULT="mixed"，导致 start_stage 读到的 profile 完全相同。
+        #    → 所以：不再把 payload["profile"] 强制置空。
+        #    稳定字段（grade / skill_tags）虽然会和 learner_profiles 有少量
+        #    冗余存储，但 DB 空间成本可以忽略，正确性更重要。
+        # PracticeProfile 仍然是 execution-only DTO，每次启动都从
+        # learner_profiles 重新构造，避免状态分叉。
         payload.pop("practice_profile", None)
         self.db_client.save_session_state(state.session_id, payload)
 

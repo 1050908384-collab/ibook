@@ -301,7 +301,12 @@ def _generate_hardware_notes(hardware: str, skill_name: str) -> str:
 
 def _generate_summary(grade: str, daily_hours: float, learning_style: str,
                       estimated_hours: float, study_days: int) -> str:
-    """生成个性化摘要。"""
+    """生成个性化摘要。
+
+    重要：必须先通过 normalize_learning_style 归一化，再和 _generate_style_notes
+    使用**完全一致**的 {theory/practice/mixed} → 中文标签映射，避免出现
+    "learning_style_notes = 理论型，personalization_summary = 综合型"的字段不一致。
+    """
     parts = []
     if grade:
         parts.append(f"适合{grade}学习者")
@@ -309,8 +314,18 @@ def _generate_summary(grade: str, daily_hours: float, learning_style: str,
     parts.append(f"建议分{study_days}天学习")
     if daily_hours:
         parts.append(f"每天{daily_hours}小时")
-    style_label = {"practice": "动手型", "visual": "视觉型", "auditory": "听觉型", "reading": "阅读型",
-                   "kinesthetic": "动手型", "mixed": "综合型"}.get(learning_style, "综合型")
+    style: LearningStyle = normalize_learning_style(learning_style)
+    # 与 _generate_style_notes 对齐：键 = LEARNING_STYLES 枚举（theory / practice / mixed）
+    style_label_map: dict[LearningStyle, str] = {
+        LEARNING_STYLE_THEORY: "理论型",
+        LEARNING_STYLE_PRACTICE: "动手型",
+        LEARNING_STYLE_MIXED: "综合型",
+    }
+    assert set(style_label_map.keys()) == set(LEARNING_STYLES), (
+        f"_generate_summary style_label_map 键 {set(style_label_map.keys())} "
+        f"与 LEARNING_STYLES {set(LEARNING_STYLES)} 不一致"
+    )
+    style_label = style_label_map.get(style, "综合型")
     parts.append(f"{style_label}学习风格")
     return " | ".join(parts)
 

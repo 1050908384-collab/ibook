@@ -1,8 +1,25 @@
 {
-  "session_id": "30092352-6229-4963-a5ca-ae0b5755f6a0",
+  "session_id": "3a0dc60d-89b8-4530-b83a-2fc45a40586a",
   "user_id": "local-user",
-  "grade": "",
-  "skill_tags": [],
+  "grade": "用户写\"LoRa\"，可能指物联网LoRa而非低秩适配",
+  "skill_tags": [
+    "Python编程基础"
+  ],
+  "mastered_block_ids": [
+    "KB-02"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-04",
   "foundation_confirmed": false,
   "knowledge_gaps": [
     {
@@ -17,15 +34,16 @@
       "status": "未掌握",
       "progress": 0.0,
       "prerequisites": [
+        "深度学习框架PyTorch基础",
         "HuggingFace生态工具链"
       ]
     }
   ],
   "goal": "LoRA微调",
-  "daily_hours": 1.5,
-  "learning_style": "hands-on",
-  "learning_rhythm": "fast",
-  "confidence_index": 0.575,
+  "daily_hours": 1.0,
+  "learning_style": "theory",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
   "confusion_markers": [],
   "confidence": 0.95,
   "version": 1

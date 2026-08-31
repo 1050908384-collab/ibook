@@ -69,6 +69,28 @@ class Claim(BaseModel):
         return self
 
 
+class PersonalizationMeta(BaseModel):
+    """块级个性化可观测元数据（不影响 Agent4 审核门槛）。
+
+    当 LLM 路径不可用（fallback 到 deterministic）时，用户/调试者可以
+    立即通过该字段知晓：1) 块是走了 LLM 还是确定性路径；2) 若 LLM 失败
+    则具体原因是什么；3) 块最终采用的学习风格是哪一档。Agent4 在审核时
+    不会读取这些字段，因此完全不会放宽任何质量标准。
+    """
+    path: Literal["llm", "deterministic"] = "deterministic"
+    llm_fail_reason: Literal[
+        "",
+        "ok",
+        "timeout",
+        "client_error",
+        "empty_content",
+        "budget_exceeded",
+        "validity_failed",
+        "skip_no_source",
+    ] = ""
+    style_applied: str = "mixed"
+
+
 class ContentBlock(BaseModel):
     """块级个性化内容单元（对应一个原始 knowledge_chunk）。
 
@@ -82,7 +104,7 @@ class ContentBlock(BaseModel):
     subtopic_id: Optional[str] = None                       # 所属子知识点
     block_name: str
     block_index: int                                        # 块在阶段内的顺序（用于聚合拼装）
-    # 来源溯源（回指原始 knowledge_chunk；字段缺失即降级）
+    # 来源溯源（回指原始知识 chunk；字段缺失即降级）
     source_chunk_id: Optional[str] = None
     source_doc_id: Optional[str] = None
     heading_path: Optional[str] = None
@@ -100,6 +122,8 @@ class ContentBlock(BaseModel):
     teaching_tasks: List[dict] = Field(default_factory=list)
     claims: List[Claim] = Field(default_factory=list)
     sources: List[Source] = Field(default_factory=list)
+    # 可观测元数据：Part E 新增，仅用于调试/可视化，不进入 Agent4 审核计算
+    personalization_meta: PersonalizationMeta = Field(default_factory=PersonalizationMeta)
     version: int = 1
     revision_note: Optional[str] = None                     # 修改说明（modify_block 回传）
     status: Literal["draft", "reviewing", "revised", "approved", "needs_human_review"] = "draft"

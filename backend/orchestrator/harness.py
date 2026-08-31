@@ -296,21 +296,49 @@ class Harness:
         user_id = self.state_manager.db_client.get_session_user_id(session_id)
         reusable_profile = self.state_manager.db_client.get_user_profile(user_id)
         if reusable_profile:
-            # New goals only need target-specific input. Stable learner facts
-            # are reused from the single user-level profile.
+            # ================================================================
+            # 跨会话字段复用规则（重要：不要覆盖"会话专属画像字段"，否则同一个
+            # 用户创建第二个目标时，第二个目标的学习风格/节奏等专属字段会被
+            # 第一个目标保存在全局 learner_profiles 里的值偷走）。
+            #
+            # ✓ 保留复用（跨目标稳定）：grade / skill_tags
+            #   - grade: 用户年级，跨所有学习目标不变
+            #   - skill_tags: 已掌握技能标签，支撑 Agent1 已掌握板块跳过
+            #        （如第二个 LoRA 目标，用户输入不含"我会Python"，必须从这里继承）
+            #
+            # ✗ 不复用（会话专属）：learning_style / learning_rhythm /
+            #    confidence_index / confusion_markers
+            #   - 每个学习目标的声明节奏/风格独立，不能被历史目标覆盖
+            #
+            # △ 条件复用：daily_hours 仅当 Agent1 诊断无有效值时兜底复用
+            # △ confidence: 取 max（跨目标越高越保守 → 不影响低于阈值的分支）
+            # ================================================================
             diagnostic.profile.user_id = user_id
+            # STABLE - 跨目标稳定：年级、已掌握技能标签
             diagnostic.profile.grade = reusable_profile.get("grade", diagnostic.profile.grade)
             diagnostic.profile.skill_tags = reusable_profile.get("skill_tags", diagnostic.profile.skill_tags)
-            diagnostic.profile.learning_style = reusable_profile.get("learning_style", diagnostic.profile.learning_style)
-            diagnostic.profile.learning_rhythm = reusable_profile.get("learning_rhythm", diagnostic.profile.learning_rhythm)
-            diagnostic.profile.confidence_index = reusable_profile.get("confidence_index", diagnostic.profile.confidence_index)
-            diagnostic.profile.confusion_markers = reusable_profile.get("confusion_markers", diagnostic.profile.confusion_markers)
+            # SESSION-SPECIFIC - 会话专属：不再用 reusable 覆盖 Agent1 诊断结果
+            # diagnostic.profile.learning_style  ← 保留 Agent1 新诊断值
+            # diagnostic.profile.learning_rhythm ← 保留 Agent1 新诊断值
+            # diagnostic.profile.confidence_index ← 保留 Agent1 新诊断值
+            # diagnostic.profile.confusion_markers ← 保留 Agent1 新诊断值
+            # CONDITIONAL - 仅取置信度上界，不压低新目标置信度
             diagnostic.profile.confidence = max(
                 diagnostic.profile.confidence,
                 reusable_profile.get("confidence", 0.7),
             )
+            # FALLBACK ONLY - 每日可用小时仅当新目标完全无输入时兜底复用
             if diagnostic.profile.daily_hours <= 0:
                 diagnostic.profile.daily_hours = reusable_profile.get("default_daily_hours", 2.0)
+            # 记录复用日志（便于排错"已掌握/风格"来源）
+            self._log(
+                session_id,
+                "process_initial_input:reuse_stable_profile_fields",
+                f"reused: grade={diagnostic.profile.grade!r}, skill_tags_count="
+                f"{len(diagnostic.profile.skill_tags or [])}; session-specific NOT overwritten "
+                f"(learning_style={diagnostic.profile.learning_style!r}, "
+                f"daily_hours={diagnostic.profile.daily_hours!r})",
+            )
         else:
             diagnostic.profile.user_id = user_id
         # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
@@ -1173,6 +1201,9 @@ class Harness:
                 claims=[c.model_dump(mode="json") for c in current_package.claims],
                 recommended_videos=current_package.recommended_videos,
                 round_index=iteration,
+                # ★ Agent4 整篇路径也携带结构化块：用于 PersonalizationCheckTool 核验
+                # teaching_tasks / personalization_action / fact_source_chunk_ids 等教学层元数据
+                content_blocks=[b.model_dump(mode="json") for b in current_package.content_blocks],
             ))
 
             # 如果审核通过，直接结束
@@ -1363,12 +1394,86 @@ class Harness:
         all_sources: List[Any] = []
         all_claims: List[Any] = []
         seen_source_ids: set = set()
-        for blk in ordered:
+
+        import re as _re
+
+        def _clean_internal_hr(text: str) -> str:
+            """清理块内部的水平分隔线（防止 LLM 用 `---` 把内容切碎得太难看）。
+
+            规则：
+            - 单行全是 `---` / `***` / `___`（两侧空白）的行 → 删掉。
+            - 为了避免误删 Markdown Setext 风格二级标题（'## xxx' 下一行是 ---），
+              只有上一行不是形如 '# xxx' 纯标题行时才删。
+            - 连续空白行压缩成最多 2 行。
+            """
+            if not text:
+                return text
+            lines = text.splitlines()
+            result: list[str] = []
+            _HR_RE = _re.compile(r"^\s*([-*_])\s*(?:\1\s*){2,}$")
+            for i, ln in enumerate(lines):
+                stripped = ln.strip()
+                is_hr = bool(_HR_RE.match(stripped)) and stripped and stripped[0] in "-*_" and len(stripped) >= 3
+                if is_hr:
+                    # 若上一行不是 heading、也不是代码块起始/结束、也不是表格分隔，才当 hr 删除
+                    prev = result[-1].strip() if result else ""
+                    looks_like_setext_underline = (
+                        bool(prev)
+                        and not prev.lstrip().startswith("#")
+                        and "|" not in prev  # 不是表格行
+                        and not prev.startswith("```")  # 不是代码围栏
+                    )
+                    # 简单策略：Setext 风格在本项目几乎不用（通篇都是 ATX ##/###），所以
+                    # 一律删除；若上一行有内容则用空行过渡代替 hr。
+                    if looks_like_setext_underline and len(result) <= 2:
+                        result.append(ln)  # 极少数边界保留
+                    else:
+                        if result and result[-1].strip() != "":
+                            result.append("")
+                    continue
+                result.append(ln)
+            # 压缩连续空白行（>2 个空行 → 2 个）
+            out: list[str] = []
+            blank_count = 0
+            for ln in result:
+                if ln.strip() == "":
+                    blank_count += 1
+                    if blank_count <= 2:
+                        out.append(ln)
+                else:
+                    blank_count = 0
+                    out.append(ln)
+            return "\n".join(out)
+
+        for idx, blk in enumerate(ordered):
+            # 块间视觉分隔：非首块之前加分隔线（替代原来的3段式外壳，保留块边界感）
+            if idx > 0:
+                tutorial_parts.append("\n---\n")
             heading = blk.heading_path or blk.block_name or ""
-            if heading:
-                tutorial_parts.append(f"## {heading}")
-            if blk.personalized_content:
-                tutorial_parts.append(blk.personalized_content)
+            pc_raw = blk.personalized_content or ""
+            # 清理块内部过密的 ---，避免内容被切碎（排版红线的 Python 兜底）
+            pc = _clean_internal_hr(pc_raw)
+            # 同步写回 blk，保证 content_blocks.personalized_content 与 tutorial 一致
+            if pc != pc_raw and blk is not None:
+                try:
+                    blk.personalized_content = pc
+                except Exception:
+                    pass
+            # 仅当 personalized_content 内部没有任何二级/三级标题时，才兜底补一个 leaf 标题
+            # 避免"_aggregate_blocks 额外加标题 + personalized_content 内部已有标题"的堆叠重复
+            has_internal_heading = bool(pc) and any(
+                ln.lstrip().startswith(prefix)
+                for prefix in ("## ", "### ", "#### ")
+                for ln in pc.splitlines()
+            )
+            if heading and not has_internal_heading:
+                # 取 leaf heading（heading_path 最后一级），避免整条 breadcrumb 作为标题过长
+                leaf = heading
+                if ">" in heading:
+                    leaf = heading.split(">")[-1].strip()
+                tutorial_parts.append(f"## {leaf}")
+            if pc:
+                tutorial_parts.append(pc)
             for src in blk.sources or []:
                 if src.source_id not in seen_source_ids:
                     seen_source_ids.add(src.source_id)
@@ -2162,10 +2267,42 @@ class Harness:
         return synced_profile
 
     def _require_profile(self, session_id: str) -> dict:
+        """Return a valid profile dict for session_id.
+
+        Part F 兜底：即便 state.profile 因某种极端原因仍为 None（老会话、
+        或迁移脚本未覆盖的异常状态），也不能在 start_stage 中间抛
+        ValueError，而是自动从 SQLite 全局 user_profile + sessions 目标表
+        合成一份最小可用 profile，保证内容生成阶段至少能读取 learning_style
+        等字段而非全为默认值。
+        """
         profile = self.state_manager.get_profile(session_id)
-        if not profile:
-            raise ValueError("Session has no user profile")
-        return profile
+        if profile:
+            return profile
+        composed = self.state_manager.db_client.get_latest_profile(session_id) or {}
+        if composed:
+            return composed
+        user_id = self.state_manager.db_client.get_session_user_id(session_id)
+        user_up = self.state_manager.db_client.get_user_profile(user_id) or {}
+        from models.profile import UserProfile
+        target = self.state_manager.db_client.get_target_settings(session_id) or {}
+        fallback = UserProfile(
+            profile_id=f"fb_{session_id[:8]}",
+            user_id=user_id,
+            session_id=session_id,
+            goal=target.get("goal") or "",
+            daily_hours=target.get("target_daily_hours") or user_up.get("default_daily_hours") or 2.0,
+            grade=user_up.get("grade", ""),
+            skill_tags=user_up.get("skill_tags") or [],
+            learning_style=user_up.get("learning_style", "mixed"),
+            hardware=user_up.get("hardware", ""),
+        )
+        self._log(
+            session_id,
+            "_require_profile:fallback_synthesized",
+            f"state.profile was null, synthesized a fallback profile "
+            f"(learning_style={fallback.learning_style!r})",
+        )
+        return fallback.model_dump(mode="json")
 
     def _require_stage(self, session_id: str) -> dict:
         stage = self.state_manager.get_current_stage(session_id)

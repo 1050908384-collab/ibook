@@ -1,109 +1,80 @@
 [
   {
-    "question_id": "Q-KB0402-003",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-02",
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
     "difficulty": "中级",
-    "question_type": "short_answer",
-    "question_text": "以下代码输出什么？\n```python\nx = torch.tensor(2.0, requires_grad=True)\ny = x ** 2\nz = y * 3\nz.backward()\nprint(x.grad)\n```",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
     "options": [],
-    "correct_answer": "`tensor(12.)`\n> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
-    "hint": "> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
-    "explanation": "> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。"
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
   },
   {
-    "question_id": "Q-KB0402-001",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-02",
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
     "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
+  },
+  {
+    "question_id": "Q-KB0203-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "高级",
     "question_type": "single_choice",
-    "question_text": "PyTorch中，用于**反向传播**计算梯度的方法是？",
+    "question_text": "关于Python的MRO（方法解析顺序），以下说法**错误**的是？",
     "options": [
       {
         "key": "A",
-        "text": "`.backward()`"
+        "text": "Python 3使用C3线性化算法"
       },
       {
         "key": "B",
-        "text": "`.forward()`"
+        "text": "可以通过 `ClassName.__mro__` 查看"
       },
       {
         "key": "C",
-        "text": "`.grad()`"
+        "text": "多继承时，父类的搜索顺序与继承列表中的顺序无关"
       },
       {
         "key": "D",
-        "text": "`.optimize()`"
+        "text": "`super()` 遵循MRO顺序调用"
       }
     ],
-    "correct_answer": "A",
-    "hint": null,
-    "explanation": ""
+    "correct_answer": "C",
+    "hint": "> MRO与继承列表中的顺序**有关**，先写的父类优先级更高。\n\n---",
+    "explanation": "> MRO与继承列表中的顺序**有关**，先写的父类优先级更高。\n\n---"
   },
   {
-    "question_id": "Q-KB0403-002",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-03",
+    "question_id": "Q-KB0203-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
     "difficulty": "初级",
-    "question_type": "fill_blank",
-    "question_text": "`nn.Linear(in_features=10, out_features=5)` 表示输入维度为________，输出维度为________。",
-    "options": [],
-    "correct_answer": "10；5",
-    "hint": null,
-    "explanation": ""
-  },
-  {
-    "question_id": "Q-KB0402-004",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-02",
-    "difficulty": "中级",
     "question_type": "single_choice",
-    "question_text": "以下哪个操作会**断开**计算图，使后续操作不追踪梯度？",
+    "question_text": "以下函数定义中，哪个参数是**默认参数**？\n```python\ndef greet(name, greeting=\"Hello\"):\n    return f\"{greeting}, {name}!\"\n```",
     "options": [
       {
         "key": "A",
-        "text": "`x.detach()`"
+        "text": "`name`"
       },
       {
         "key": "B",
-        "text": "`x.data`"
+        "text": "`greeting`"
       },
       {
         "key": "C",
-        "text": "`x.clone()`"
+        "text": "两者都是"
       },
       {
         "key": "D",
-        "text": "A和B"
-      }
-    ],
-    "correct_answer": "D",
-    "hint": "> `detach()` 和 `.data` 都返回与原张量共享数据但不追踪梯度的新张量；`clone()` 会保留计算图。",
-    "explanation": "> `detach()` 和 `.data` 都返回与原张量共享数据但不追踪梯度的新张量；`clone()` 会保留计算图。"
-  },
-  {
-    "question_id": "Q-KB0405-001",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-05",
-    "difficulty": "初级",
-    "question_type": "single_choice",
-    "question_text": "以下哪个是**交叉熵损失**函数？",
-    "options": [
-      {
-        "key": "A",
-        "text": "`nn.MSELoss`"
-      },
-      {
-        "key": "B",
-        "text": "`nn.CrossEntropyLoss`"
-      },
-      {
-        "key": "C",
-        "text": "`nn.L1Loss`"
-      },
-      {
-        "key": "D",
-        "text": "`nn.BCELoss`"
+        "text": "两者都不是"
       }
     ],
     "correct_answer": "B",
@@ -111,56 +82,51 @@
     "explanation": ""
   },
   {
-    "question_id": "Q-KB0401-001",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-01",
-    "difficulty": "初级",
-    "question_type": "single_choice",
-    "question_text": "以下哪个命令可以创建一个全为0的3x3张量？",
-    "options": [
-      {
-        "key": "A",
-        "text": "`torch.zeros(3, 3)`"
-      },
-      {
-        "key": "B",
-        "text": "`torch.ones(3, 3)`"
-      },
-      {
-        "key": "C",
-        "text": "`torch.empty(3, 3)`"
-      },
-      {
-        "key": "D",
-        "text": "`torch.rand(3, 3)`"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。",
-    "explanation": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。"
-  },
-  {
-    "question_id": "Q-KB0401-003",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-01",
+    "question_id": "Q-KB0205-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
     "difficulty": "中级",
     "question_type": "short_answer",
-    "question_text": "请将以下两个张量按**列方向**（dim=1）拼接：\n```python\na = torch.tensor([[1, 2], [3, 4]])\nb = torch.tensor([[5], [6]])\n```",
+    "question_text": "请写一个生成器函数 `fibonacci(n)`，生成前 `n` 个斐波那契数。",
     "options": [],
-    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
-    "hint": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
-    "explanation": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```"
+    "correct_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "hint": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "explanation": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```"
   },
   {
-    "question_id": "Q-KB0407-005",
-    "block_id": "KB-04",
-    "subtopic_id": "KBS-04-07",
+    "question_id": "Q-KB0204-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "使用 `with open(\"file.txt\", \"r\") as f:` 的好处是________。",
+    "options": [],
+    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0201-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
     "difficulty": "高级",
     "question_type": "short_answer",
-    "question_text": "请写代码：从 `checkpoint.pth` 加载模型和优化器状态，并恢复训练。",
+    "question_text": "以下代码输出什么？\n```python\nx = 10\ndef foo():\n    x = 20\n    def bar():\n        nonlocal x\n        x = 30\n    bar()\n    print(x)\nfoo()\nprint(x)\n```",
     "options": [],
-    "correct_answer": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
-    "hint": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
-    "explanation": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---"
+    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "hint": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "explanation": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0205-008",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "写一个类 `Stack`（栈），实现 `push(item)`、`pop()`、`peek()`、`is_empty()` 方法。`pop()` 在栈空时抛出 `IndexError`。",
+    "options": [],
+    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "hint": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "explanation": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```"
   }
 ]

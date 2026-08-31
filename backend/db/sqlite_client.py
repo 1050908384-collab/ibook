@@ -2130,10 +2130,103 @@ class SQLiteClient:
             return result
 
     def save_profile(self, session_id: str, profile: dict) -> None:
-        """Split the compatibility profile DTO into user and target records."""
+        """Split the compatibility profile DTO into user and target records.
+
+        写入分两层（之前只有第一层，导致重启后端 state.profile 丢失 → 两目标
+        全部回落到全局 learner_profiles 的 learning_style → 生成完全相同）：
+
+          1) 跨目标稳定字段（grade/skill_tags/foundation_confirmed/硬件）→ 写
+             全局 user 级 learner_profiles 行（upsert_user_profile）。
+          2) 会话专属字段（learning_style / learning_rhythm /
+             confidence_index / confusion_markers / daily_hours / confidence /
+             goal / knowledge_gaps / grade / skill_tags / hardware）→ 写
+             user_profiles（session_id + version 主键）。**这是重启后端后仍
+             能恢复每会话 learning_style 的唯一真源**。
+        """
+        profile = profile or {}
+        # 只挑选跨目标稳定字段 → 全局 user 级 learner_profiles 行
+        stable_only: dict[str, Any] = {}
+        stable_keys = (
+            "grade",
+            "skill_tags",
+            "foundation_confirmed",
+            "hardware",
+            "device_type",
+            "gpu_model",
+            "vram_gb",
+            "gpu_architecture",
+            # default_daily_hours: 作为用户的通用默认每日时长（非会话强制），
+            # 仅当 profile 明确带此键且非空时才写。
+            "default_daily_hours",
+        )
+        for k in stable_keys:
+            if k in profile and profile[k] is not None:
+                stable_only[k] = profile[k]
         user_id = self.get_session_user_id(session_id)
-        self.upsert_user_profile(user_id, profile)
+        if stable_only:
+            self.upsert_user_profile(user_id, stable_only)
+
+        # ================================================================
+        # 会话专属字段 → user_profiles（session 级） INSERT(版本+1)
+        # 这才是 _require_profile.get_latest_profile 应该读的"真源"。
+        # ================================================================
+        try:
+            kg_val = profile.get("knowledge_gaps")
+            if isinstance(kg_val, (list, dict)):
+                kg_json = json.dumps(kg_val, ensure_ascii=False)
+            elif isinstance(kg_val, str) and kg_val.strip():
+                kg_json = kg_val
+            else:
+                kg_json = "[]"
+        except Exception:
+            kg_json = "[]"
+        try:
+            skill_val = profile.get("skill_tags") or []
+            skill_json = json.dumps(list(skill_val) if isinstance(skill_val, (list, tuple)) else [], ensure_ascii=False)
+        except Exception:
+            skill_json = "[]"
+        try:
+            confusion_val = profile.get("confusion_markers") or []
+            confusion_json = json.dumps(list(confusion_val) if isinstance(confusion_val, (list, tuple)) else [], ensure_ascii=False)
+        except Exception:
+            confusion_json = "[]"
         with self.Session() as session:
+            cur_version = session.execute(text("""
+                SELECT COALESCE(MAX(version), 0) AS v FROM user_profiles WHERE session_id = :sid
+            """), {"sid": session_id}).scalar() or 0
+            import uuid as _uuid
+            profile_id = str(profile.get("profile_id") or f"up_{session_id[:8]}_{cur_version + 1}_{_uuid.uuid4().hex[:6]}")
+            session.execute(text("""
+                INSERT INTO user_profiles (
+                    profile_id, session_id, version, skill_tags, knowledge_gaps, goal,
+                    daily_hours, learning_style, learning_rhythm, confidence_index,
+                    confusion_markers, confidence, user_id, grade, hardware,
+                    profile_confidence, last_updated, created_at
+                ) VALUES (
+                    :profile_id, :session_id, :version, :skill_tags, :knowledge_gaps, :goal,
+                    :daily_hours, :learning_style, :learning_rhythm, :confidence_index,
+                    :confusion_markers, :confidence, :user_id, :grade, :hardware,
+                    :profile_confidence, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
+            """), {
+                "profile_id": profile_id,
+                "session_id": session_id,
+                "version": int(cur_version) + 1,
+                "skill_tags": skill_json,
+                "knowledge_gaps": kg_json,
+                "goal": profile.get("goal", ""),
+                "daily_hours": float(profile.get("daily_hours", 2.0) or 2.0),
+                "learning_style": str(profile.get("learning_style", "mixed") or "mixed"),
+                "learning_rhythm": str(profile.get("learning_rhythm", "medium") or "medium"),
+                "confidence_index": float(profile.get("confidence_index", 0.5) or 0.5),
+                "confusion_markers": confusion_json,
+                "confidence": float(profile.get("confidence", 0.7) or 0.7),
+                "user_id": user_id,
+                "grade": profile.get("grade", "") or "",
+                "hardware": profile.get("hardware", "") or "",
+                "profile_confidence": float(profile.get("profile_confidence") or profile.get("confidence") or 0.7),
+            })
+            session.commit()
             session.execute(text("""
                 UPDATE sessions
                 SET goal = :goal,
@@ -2144,8 +2237,8 @@ class SQLiteClient:
             """), {
                 "session_id": session_id,
                 "goal": profile.get("goal", ""),
-                "knowledge_gaps": json.dumps(profile.get("knowledge_gaps", []), ensure_ascii=False),
-                "daily_hours": profile.get("daily_hours", 2.0),
+                "knowledge_gaps": kg_json,
+                "daily_hours": float(profile.get("daily_hours", 2.0) or 2.0),
             })
             session.commit()
         self.refresh_target_metrics(session_id)
@@ -2905,7 +2998,15 @@ class SQLiteClient:
     # ========================================================================
 
     def get_latest_profile(self, session_id: str) -> dict | None:
-        """Compose the legacy profile DTO from normalized user and target data."""
+        """Compose the legacy profile DTO from normalized user and target data.
+
+        会话专属字段（learning_style / learning_rhythm / confidence_index /
+        confusion_markers / confidence / daily_hours / grade / skill_tags）
+        优先查 user_profiles（session 级，session_id 主键 + version DESC），只有当
+        session 没有行时才兜底用全局 learner_profiles。避免同一 user_id 的
+        第二个学习目标被第一个目标的声明风格覆盖——这是之前"实操/理论两目标
+        生成完全一样"的 2 号根因。
+        """
         with self.Session() as session:
             row = session.execute(text("""
                 SELECT session_id, user_id, goal, target_knowledge_gaps,
@@ -2914,29 +3015,91 @@ class SQLiteClient:
             """), {"session_id": session_id}).mappings().first()
         if not row:
             return None
-        user_profile = self.get_user_profile(row["user_id"] or DEFAULT_USER_ID)
-        if not user_profile:
-            return None
+        user_id = row["user_id"] or DEFAULT_USER_ID
+        user_profile = self.get_user_profile(user_id) or {}
+
+        # ═══════════════════════════════════════════════════════════════════
+        # 会话专属字段：user_profiles(session 级) 优先，其次 fallback 到全局
+        # ═══════════════════════════════════════════════════════════════════
+        sp = self._get_latest_session_profile(session_id) or {}
+        session_learning_style   = sp.get("learning_style") or user_profile.get("learning_style", "mixed")
+        session_learning_rhythm  = sp.get("learning_rhythm") or user_profile.get("learning_rhythm", "medium")
+        session_confidence_idx   = sp.get("confidence_index", user_profile.get("confidence_index", 0.5))
+        session_confidence       = sp.get("confidence", user_profile.get("confidence", 0.7))
+        session_confusion        = (
+            json.loads(sp["confusion_markers"]) if isinstance(sp.get("confusion_markers"), str) else
+            (sp.get("confusion_markers") or user_profile.get("confusion_markers", []))
+        )
+        # grade/skill_tags 虽然逻辑上跨目标稳定，但 user_profiles 版本更高（用户刚
+        # 在前端 PATCH /profile 改了）→ 也以 session 级为准；缺了再 fallback 全局。
+        session_grade = sp.get("grade") or user_profile.get("grade", "")
+        try:
+            sp_skill = (
+                json.loads(sp["skill_tags"]) if isinstance(sp.get("skill_tags"), str) else
+                (sp.get("skill_tags") if isinstance(sp.get("skill_tags"), list) else None)
+            )
+        except Exception:
+            sp_skill = None
+        session_skill_tags = sp_skill or user_profile.get("skill_tags", [])
+        session_hardware = sp.get("hardware") or user_profile.get("hardware", "")
+        daily_hours = (
+            float(sp["daily_hours"]) if sp.get("daily_hours") not in (None, "") else
+            (row["target_daily_hours"] or user_profile.get("default_daily_hours", 2.0))
+        )
+        try:
+            kg_val = sp.get("knowledge_gaps")
+            if kg_val not in (None, ""):
+                gaps = json.loads(kg_val) if isinstance(kg_val, str) else kg_val
+            else:
+                gaps = json.loads(row["target_knowledge_gaps"] or "[]")
+        except Exception:
+            gaps = json.loads(row["target_knowledge_gaps"] or "[]")
+        goal = sp.get("goal") or row["goal"] or ""
         return {
             "profile_id": f"profile_{row['user_id']}",
             "session_id": session_id,
-            "user_id": row["user_id"] or DEFAULT_USER_ID,
-            "version": user_profile.get("version", 1),
-            "grade": user_profile.get("grade", ""),
-            "skill_tags": user_profile.get("skill_tags", []),
+            "user_id": user_id,
+            "version": max(int(user_profile.get("version", 1)), int(sp.get("version", 1))),
+            "grade": session_grade,
+            "skill_tags": list(session_skill_tags or []),
             "foundation_confirmed": bool(user_profile.get("foundation_confirmed", False)),
-            "knowledge_gaps": json.loads(row["target_knowledge_gaps"] or "[]"),
-            "goal": row["goal"] or "",
-            "daily_hours": row["target_daily_hours"] or user_profile.get("default_daily_hours", 2.0),
-            "learning_style": user_profile.get("learning_style", "mixed"),
-            "hardware": user_profile.get("hardware", ""),
-            "learning_rhythm": user_profile.get("learning_rhythm", "medium"),
-            "confidence_index": user_profile.get("confidence_index", 0.5),
-            "confusion_markers": user_profile.get("confusion_markers", []),
-            "confidence": user_profile.get("confidence", 0.7),
+            "knowledge_gaps": list(gaps or []),
+            "goal": goal,
+            "daily_hours": daily_hours,
+            "learning_style": session_learning_style,
+            "hardware": session_hardware,
+            "learning_rhythm": session_learning_rhythm,
+            "confidence_index": session_confidence_idx,
+            "confusion_markers": list(session_confusion or []),
+            "confidence": session_confidence,
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
         }
+
+    def _get_latest_session_profile(self, session_id: str) -> dict | None:
+        """读 user_profiles 表中某 session 的最新版本（会话级画像）。"""
+        with self.Session() as session:
+            row = session.execute(text("""
+                SELECT profile_id, session_id, version, skill_tags, knowledge_gaps, goal,
+                       daily_hours, learning_style, learning_rhythm, confidence_index,
+                       confusion_markers, confidence, user_id, grade, hardware,
+                       profile_confidence, last_updated, created_at
+                  FROM user_profiles
+                 WHERE session_id = :sid
+                 ORDER BY version DESC, created_at DESC
+                 LIMIT 1
+            """), {"sid": session_id}).mappings().first()
+        if not row:
+            return None
+        d = dict(row)
+        for list_col in ("skill_tags", "knowledge_gaps", "confusion_markers"):
+            raw = d.get(list_col)
+            if isinstance(raw, str):
+                try:
+                    d[list_col] = json.loads(raw)
+                except Exception:
+                    d[list_col] = []
+        return d
 
     def list_stage_progress(self, session_id: str) -> list[dict]:
         """读取会话所有阶段记录（供当前阶段摘要与阶段历史聚合）。"""

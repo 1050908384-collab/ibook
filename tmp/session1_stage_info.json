@@ -1,0 +1,38 @@
+{
+  "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+  "stage_num": 1,
+  "block_id": "KB-01",
+  "block_name": "Linux环境与命令行操作",
+  "block_ids": [
+    "KB-01"
+  ],
+  "subtopic_id": "KBS-01-04",
+  "subtopic_name": "nvidia-smi显存监控",
+  "subtopic_ids": [
+    "KBS-01-04"
+  ],
+  "subtopic_names": [
+    "nvidia-smi显存监控"
+  ],
+  "estimated_hours": 0.5,
+  "gap_skill": "Linux",
+  "prerequisites": [
+    "KBS-01-03"
+  ],
+  "status": "learning",
+  "accuracy": null,
+  "strategy_used": null,
+  "title": "学习nvidia-smi显存监控",
+  "description": "围绕nvidia-smi显存监控完成一次可执行的阶段学习与练习。",
+  "objectives": [
+    "理解nvidia-smi显存监控的基本概念",
+    "掌握nvidia-smi显存监控的核心技术",
+    "能够独立完成nvidia-smi显存监控相关任务"
+  ],
+  "difficulty": "初级",
+  "recommended_daily_hours": 0.5,
+  "suggested_study_days": 1,
+  "learning_style_notes": "动手型学习者：建议先完成nvidia-smi显存监控的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+  "hardware_notes": "",
+  "personalization_summary": "适合大一学习者 | 预计1.8小时完成 | 建议分1天学习 | 每天3.0小时 | 动手型学习风格"
+}

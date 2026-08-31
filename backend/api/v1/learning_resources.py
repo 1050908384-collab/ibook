@@ -249,11 +249,29 @@ def _nest_document_markdown(content: str) -> str:
 
 
 def backfill_stage_tutorial(package: dict[str, Any], stage: dict[str, Any]) -> dict[str, Any]:
-    """Replace legacy placeholder tutorials with imported full lessons."""
+    """Replace legacy placeholder tutorials with imported full lessons.
+
+    ⚠️ 仅对「旧会话」生效：
+      - tutorial 为空 / 占位符文本；
+      - 或 tutorial 是 source_material 的纯拼接（不含任何 subtopic 级 ## heading）。
+    新会话 Agent3/HybridContentAgent 流水线已经把个性化内容写进 tutorial + content_blocks，
+    这里绝对不能覆盖，否则 practice / theory 两版本的表达层差异化会被统一回
+    VectorSearchTool 知识库原文正文 → 两学习包一模一样。
+    """
     # 1. 确保 subtopic_ids/subtopic_names 被补全（旧会话兼容）
     stage = ensure_stage_subtopics(stage)
 
     tutorial = str(package.get("tutorial") or "")
+    # ═══════════════════════════════════════════════════════════════════════
+    # Guard 1：新会话流水线一旦写出了 content_blocks，tutorial 就是
+    #   "块标题 + content_blocks.personalized_content" 拼接或 Agent3.run
+    #   整篇 LLM 生成的结果，必然是个性化版本。如果此时仍强行 backfill，
+    #   会用知识库原文覆盖掉 practice / theory 的表达差异，对用户呈现
+    #   为"修改半天一模一样"的假失败。
+    # ═══════════════════════════════════════════════════════════════════════
+    blocks = package.get("content_blocks") or []
+    if isinstance(blocks, list) and blocks:
+        return package
     if tutorial.strip() and _MISSING_TUTORIAL_TEXT not in tutorial:
         # 额外检查：tutorial 是否包含至少一个 subtopic 对应的 ## heading。
         # 旧会话可能存储了 source_material（所有知识点内容的纯拼接，无 ## 分隔），
@@ -266,13 +284,46 @@ def backfill_stage_tutorial(package: dict[str, Any], stage: dict[str, Any]) -> d
                 clean_name = _TRAILING_SECTION_MARK.sub("", str(raw_name)).strip()
                 if clean_name.startswith("（") and clean_name.endswith("）"):
                     clean_name = clean_name[1:-1].strip()
-                if clean_name and re.search(
-                    r"^##\s+" + re.escape(clean_name) + r"\s*$",
+                if not clean_name:
+                    continue
+                # ═══════════════════════════════════════════════════════════════
+                # 放宽匹配：从『整行完全等于 clean_name』改为『## 行包含子串』。
+                # 之前严格正则 r"^##\s+{clean_name}\s*$" 会把 Agent3 写出的
+                # 带风格前缀 / 多级 heading_path 的标题（例如
+                #   ## 立即动手 · nvidia-smi 显存监控 > ... > 2.1 最简命令（①）
+                #   ## 概念与设计动机：nvidia-smi 显存监控 > ... > 2.1 最简命令（①）
+                # ）误判为"缺少 subtopic 级 ## heading"→ 触发 backfill 覆盖。
+                # 放宽后只要同一行、同一 ## 层级中出现子知识点名即可判定为已有
+                # 子标题；后面的完整路径 / 风格前缀并不破坏切片。
+                # ═══════════════════════════════════════════════════════════════
+                if re.search(
+                    r"^##\s+.*\b" + re.escape(clean_name) + r"\b.*$",
                     tutorial,
-                    re.MULTILINE,
+                    re.MULTILINE | re.IGNORECASE,
                 ):
                     has_subtopic_heading = True
                     break
+                # 次选：clean_name 中可能含有空格变体 / 中英文标点差异，
+                # 做一次"去掉所有空白和中英文符号后的包含匹配"。
+                import unicodedata as _uni
+                def _compact(text: str) -> str:
+                    chars: list[str] = []
+                    for ch in _uni.normalize("NFKC", text or ""):
+                        category = _uni.category(ch)
+                        if category.startswith("Z") or category.startswith("P"):
+                            continue
+                        chars.append(ch.lower())
+                    return "".join(chars)
+                compact = _compact(clean_name)
+                if compact:
+                    for line in tutorial.splitlines():
+                        if not line.lstrip().startswith("##"):
+                            continue
+                        if compact in _compact(line):
+                            has_subtopic_heading = True
+                            break
+                    if has_subtopic_heading:
+                        break
             if has_subtopic_heading:
                 return package
             # 没有 subtopic 级 ## heading → 继续走 backfill 重新生成
@@ -292,7 +343,7 @@ def backfill_stage_tutorial(package: dict[str, Any], stage: dict[str, Any]) -> d
     if not subtopic_ids and stage.get("subtopic_id"):
         subtopic_ids = [stage["subtopic_id"]]
     if not subtopic_names and stage.get("subtopic_name"):
-        subtopic_names = [stage["subtopic_name"]]
+        subtopic_names = [stage.get("subtopic_name")]
 
     # 不再生成 # 块标题（前端已有标题），直接按每个 subtopic 输出 ## 子标题 + 正文
     sections: list[str] = []

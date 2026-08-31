@@ -1,38 +1,30 @@
 [
   {
-    "question_id": "Q-KB0402-003",
-    "submitted_answer": "`tensor(12.)`\n> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "24.0",
     "is_correct": true,
-    "correct_answer": "`tensor(12.)`\n> 计算图：z = 3x²，dz/dx = 6x，x=2时梯度为12。",
+    "correct_answer": "24.0",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0402-001",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0200-001",
+    "submitted_answer": "Python 3.10.14",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "Python 3.10.14",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0403-002",
-    "submitted_answer": "我不知道",
-    "is_correct": false,
-    "correct_answer": "10；5",
+    "question_id": "Q-KB0203-006",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0402-004",
-    "submitted_answer": "A",
-    "is_correct": false,
-    "correct_answer": "D",
-    "answer_behavior": "high",
-    "wrong_answer_strategy": "fixed_by_question_id"
-  },
-  {
-    "question_id": "Q-KB0405-001",
+    "question_id": "Q-KB0203-001",
     "submitted_answer": "B",
     "is_correct": true,
     "correct_answer": "B",
@@ -40,26 +32,34 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0401-001",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0205-004",
+    "submitted_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0401-003",
-    "submitted_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "question_id": "Q-KB0204-002",
+    "submitted_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
     "is_correct": true,
-    "correct_answer": "```python\nresult = torch.cat((a, b), dim=1)\n# tensor([[1, 2, 5],\n#         [3, 4, 6]])\n```",
+    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0407-005",
-    "submitted_answer": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "question_id": "Q-KB0201-006",
+    "submitted_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
     "is_correct": true,
-    "correct_answer": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0205-008",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

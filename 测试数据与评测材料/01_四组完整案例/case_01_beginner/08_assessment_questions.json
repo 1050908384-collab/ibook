@@ -1,121 +1,68 @@
 [
   {
-    "question_id": "Q-KB12-ST1204-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "options": [],
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "分页优化器的主要目标是？",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
     "options": [
       {
         "key": "A",
-        "text": "缓解训练时显存峰值"
+        "text": "torch.cuda.is_available()"
       },
       {
         "key": "B",
-        "text": "增加词表"
+        "text": "torch.manual_seed(0)"
       },
       {
         "key": "C",
-        "text": "替代数据集"
+        "text": "torch.save()"
       },
       {
         "key": "D",
-        "text": "关闭反向传播"
+        "text": "torch.no_grad()"
       }
     ],
     "correct_answer": "A",
-    "hint": "分页策略可避免部分优化器状态引发的显存峰值。",
-    "explanation": "分页策略可避免部分优化器状态引发的显存峰值。"
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
   },
   {
-    "question_id": "Q-KB12-ST1200-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-00",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "使用 Hugging Face PEFT 实现 LoRA 时，需要安装的库名称是________。",
-    "options": [],
-    "correct_answer": "peft",
-    "hint": "PEFT 提供 LoraConfig 等参数高效微调接口。",
-    "explanation": "PEFT 提供 LoraConfig 等参数高效微调接口。"
-  },
-  {
-    "question_id": "Q-KB12-ST1202-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoRA 中 rank r 决定低秩更新矩阵的________。",
-    "options": [],
-    "correct_answer": "秩 ||| rank ||| 维度",
-    "hint": "r 越大，可训练适配器容量通常越大。",
-    "explanation": "r 越大，可训练适配器容量通常越大。"
-  },
-  {
-    "question_id": "Q-KB12-ST1202-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
-    "difficulty": "高级",
+    "question_id": "Q-KB0406-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-06",
+    "difficulty": "初级",
     "question_type": "single_choice",
-    "question_text": "在其他条件相同时，增大 LoRA rank 最可能带来什么？",
+    "question_text": "训练循环中，`optimizer.zero_grad()` 的作用是？",
     "options": [
       {
         "key": "A",
-        "text": "可训练参数量增加"
+        "text": "初始化模型参数"
       },
       {
         "key": "B",
-        "text": "基座模型词表被删除"
+        "text": "清空上一轮的梯度"
       },
       {
         "key": "C",
-        "text": "不再需要训练数据"
+        "text": "重置学习率"
       },
       {
         "key": "D",
-        "text": "模型自动变为量化模型"
-      }
-    ],
-    "correct_answer": "A",
-    "hint": "更高 rank 意味着更大的低秩适配器。",
-    "explanation": "更高 rank 意味着更大的低秩适配器。"
-  },
-  {
-    "question_id": "Q-KB12-ST1204-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
-    "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
-    "options": [],
-    "correct_answer": "显存 ||| 内存 ||| 存储",
-    "hint": "Double Quantization 降低量化状态的存储开销。",
-    "explanation": "Double Quantization 降低量化状态的存储开销。"
-  },
-  {
-    "question_id": "Q-KB1201-003",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-01",
-    "difficulty": "中级",
-    "question_type": "single_choice",
-    "question_text": "LoRA中，`r`（rank）参数的作用是？",
-    "options": [
-      {
-        "key": "A",
-        "text": "设置学习率"
-      },
-      {
-        "key": "B",
-        "text": "设置低秩矩阵的维度，`r` 越大可训练参数越多"
-      },
-      {
-        "key": "C",
-        "text": "设置Batch Size"
-      },
-      {
-        "key": "D",
-        "text": "设置最大序列长度"
+        "text": "清空损失值"
       }
     ],
     "correct_answer": "B",
@@ -123,27 +70,80 @@
     "explanation": ""
   },
   {
-    "question_id": "Q-KB12-ST1204-001",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-04",
+    "question_id": "Q-KB0406-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-06",
     "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "QLoRA 常用的 4-bit 数据类型名称是________。",
+    "question_type": "short_answer",
+    "question_text": "请写一个完整的训练循环，包含：\n- 模型训练模式\n- 损失计算\n- 反向传播\n- 每100个batch打印一次损失",
     "options": [],
-    "correct_answer": "NF4 ||| NormalFloat4",
-    "hint": "NF4 为正态分布权重设计的 4-bit 格式。",
-    "explanation": "NF4 为正态分布权重设计的 4-bit 格式。"
+    "correct_answer": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "hint": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "explanation": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---"
   },
   {
-    "question_id": "Q-KB12-ST1202-002",
-    "block_id": "KB-12",
-    "subtopic_id": "KBS-12-02",
+    "question_id": "Q-KB0404-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
     "difficulty": "高级",
-    "question_type": "fill_blank",
-    "question_text": "LoRA 中 alpha 通常用于对低秩更新进行________。",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `DataLoader` 加载 `MyDataset`，批次大小为16，使用4个子进程，并在每个epoch开始时打乱数据。",
     "options": [],
-    "correct_answer": "缩放 ||| scaling ||| 放缩",
-    "hint": "常见实现使用 alpha/r 缩放更新。",
-    "explanation": "常见实现使用 alpha/r 缩放更新。"
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "hint": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "explanation": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0404-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`DataLoader` 的 `num_workers` 参数作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "设置批次大小"
+      },
+      {
+        "key": "B",
+        "text": "设置使用的CPU进程数用于数据加载"
+      },
+      {
+        "key": "C",
+        "text": "设置GPU数量"
+      },
+      {
+        "key": "D",
+        "text": "设置学习率"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0407-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：从 `checkpoint.pth` 加载模型和优化器状态，并恢复训练。",
+    "options": [],
+    "correct_answer": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "hint": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---",
+    "explanation": "```python\ncheckpoint = torch.load('checkpoint.pth', map_location=device)\nmodel.load_state_dict(checkpoint['model_state_dict'])\noptimizer.load_state_dict(checkpoint['optimizer_state_dict'])\nstart_epoch = checkpoint['epoch'] + 1\nloss = checkpoint['loss']\n\nmodel.train()\nfor epoch in range(start_epoch, epochs):\n    # 继续训练\n    pass\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个简单的神经网络类 `SimpleNet`，包含：\n- 一个输入层到隐藏层的线性层（10 -> 20）\n- ReLU激活\n- 隐藏层到输出层的线性层（20 -> 1）",
+    "options": [],
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "hint": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "explanation": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```"
   }
 ]

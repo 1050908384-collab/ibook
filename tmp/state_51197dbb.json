@@ -1,0 +1,3234 @@
+{
+  "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+  "user_id": "anon-146f1210-d4ec-4dde-9f45-6727c4626808",
+  "title": null,
+  "goal": "掌握Linux",
+  "target_total_hours": 0.0,
+  "target_daily_hours": 3.0,
+  "target_progress": 0.0,
+  "current_stage": 1,
+  "status": "active",
+  "phase": "learning",
+  "profile": null,
+  "profile_confirmed": true,
+  "profile_modified": false,
+  "stage_info": {
+    "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+    "stage_num": 1,
+    "block_id": "KB-01",
+    "block_name": "Linux环境与命令行操作",
+    "block_ids": [
+      "KB-01"
+    ],
+    "subtopic_id": "KBS-01-04",
+    "subtopic_name": "nvidia-smi显存监控",
+    "subtopic_ids": [
+      "KBS-01-04"
+    ],
+    "subtopic_names": [
+      "nvidia-smi显存监控"
+    ],
+    "estimated_hours": 0.5,
+    "gap_skill": "Linux",
+    "prerequisites": [
+      "KBS-01-03"
+    ],
+    "status": "learning",
+    "accuracy": null,
+    "strategy_used": null,
+    "title": "学习nvidia-smi显存监控",
+    "description": "围绕nvidia-smi显存监控完成一次可执行的阶段学习与练习。",
+    "objectives": [
+      "理解nvidia-smi显存监控的基本概念",
+      "掌握nvidia-smi显存监控的核心技术",
+      "能够独立完成nvidia-smi显存监控相关任务"
+    ],
+    "difficulty": "初级",
+    "recommended_daily_hours": 0.5,
+    "suggested_study_days": 1,
+    "learning_style_notes": "动手型学习者：建议先完成nvidia-smi显存监控的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+    "hardware_notes": "",
+    "personalization_summary": "适合大一学习者 | 预计1.8小时完成 | 建议分1天学习 | 每天3.0小时 | 动手型学习风格"
+  },
+  "learning_package": {
+    "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+    "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+    "block_id": "KB-01",
+    "block_name": "Linux环境与命令行操作",
+    "tutorial": "# Linux环境与命令行操作\n\n## nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）\n\n## 2.1 最简命令：`nvidia-smi`\n\n在 Linux 终端里，输入下面这行命令，然后按回车：\n\n```bash\nnvidia-smi\n```\n\n就这么简单。执行后，屏幕上会输出一个表格，里面显示了当前 GPU 的状态信息。\n\n**这个表格里你能看到什么？**\n\n- **显存占用**：当前用了多少显存、还剩多少。这能帮你提前判断会不会遇到 OOM（显存溢出）。\n- **GPU 利用率**：GPU 是在认真干活，还是闲着没事干。\n- **温度与功耗**：防止硬件过热，也能看看能耗情况。\n- **进程绑定**：哪个程序（PID）占用了 GPU？占了多少显存？一目了然。\n\n**注意**：`nvidia-smi` 只有在安装了 NVIDIA GPU 驱动后才能使用。如果你的机器没有 NVIDIA 显卡（比如纯 CPU 环境），命令会提示找不到。不过别担心，CPU 推理和不带 GPU 的基础学习仍然可以进行。\n\n---\n\n**本块学习检查**\n\n完成本块后，请用自己的话说明：`nvidia-smi` 这个命令和你的学习\n\n## nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）\n\n## 2.1 最简命令：直接输入 `nvidia-smi`\n\n在Linux终端里，想看一眼GPU现在什么状态，最直接的办法就是敲一个命令：\n\n```bash\nnvidia-smi\n```\n\n敲完回车，屏幕上会弹出一张表格。别被它吓到，咱们只看几个关键位置就行。\n\n**第一行**告诉你驱动和CUDA的版本信息，比如 `Driver Version: 525.85.12` 和 `CUDA Version: 12.0`，现在知道有这回事就行。\n\n**表格中间**才是重点。拿你电脑（联想拯救者Y7000P）来说，GPU型号会显示在这里，比如示例里的 `Tesla V100-PCIE`。旁边那列 `Memory-Usage` 显示显存占用，格式是“已用 / 总量”，比如 `128MiB / 32510MiB`，意思是总共32GB显存，现在只用了128MB。\n\n**最右边**的 `GPU-Util` 是GPU利用率，0%表示闲着，100%表示满负荷。下面那行 `Pwr:Usage/Cap` 是当前功耗和最大功耗，比如 `24W / 250W`，功耗低通常说明没在干重活。\n\n**怎么用**：你先\n\n## nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）\n\n好的，我们先从 `nvidia-smi` 的输出里，找出对你最重要的两个数字。\n\n### 2.2 关键指标解读\n\n运行 `nvidia-smi` 后，你会看到一张表格。别被密密麻麻的数字吓到，我们只看最核心的几项：\n\n*   **顶部信息**：这里告诉你工具、驱动和 CUDA 的版本号，先不用管。\n*   **GPU 列表**：这是重点。你会看到你的显卡型号（比如 `Name` 字段），以及：\n    *   `Temp`：显卡温度，越高越危险。\n    *   `Memory-Usage`：**显存占用 / 总显存**。比如 `128MiB / 32510MiB`，表示用了 128MB，总共 32GB。\n    *   `GPU-Util`：**GPU 计算利用率**。0% 是空闲，90%+ 是满载。\n*   **进程区**：显示是哪个程序（`Process name`）占用了显存（`GPU Memory Usage`）。\n\n> **对你最重要的两个数字**：`Memory-Usage`（显存占用）和 `GPU-Util`（利用率）。训练时如果显存快满了，就要调小 batch size；如果利用率长期很低，说明数据加载太慢，GPU 在空等。\n\n### 本块学习检查\n\n完成本块后，请用自己的话说明：`nvidia-smi` 中的 `Memory-Usage` 和 `GPU-Util` 这两个指标，分别能帮你发现\n\n## nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（掌握Linux）的关系；遇到无法解释的术语时记录下来再提问。\n\n在Linux终端输入 `watch -n 1 nvidia-smi`，屏幕会全屏并每秒自动刷新显卡状态。`-n 1` 表示间隔1秒，改成 `-n 0.5` 则每0.5秒刷新，更实时。按 `Ctrl + C` 退出。注意：`watch` 仅Linux/macOS可用，Windows不支持。\n\n**练习**：在你的联想拯救者Y7000P上打开Linux终端，运行 `watch -n 1 nvidia-smi`，观察刷新效果后按 `Ctrl\n\n## nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）\n\n### 3.2 方案 B：nvitop（推荐，可视化体验最佳）\n\n`nvitop` 是 Python 写的 GPU 监控工具，界面像 `top`，有颜色、进度条和曲线，比 `nvidia-smi` 好看好用。\n\n**安装与运行**（用上节课的 `pip`）：\n```bash\npip install nvitop\nnvitop\n```\n\n**界面特点**：\n- 彩色高亮：显存占用高变红，空闲变绿\n- 进程列表：显示 CPU%、MEM%、运行时间\n- 历史曲线：右上角有利用率和显存趋势图\n- 按 `h` 看帮助，`q` 退出\n\n**建议**：训练模型\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n## nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n---\n\n### 3.3 方案 C：gpustat（轻量简洁）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节，用 `gpustat` 最合适。\n\n**安装与使用**（在终端输入）：\n\n```bash\npip install gpustat   # 安装\ngpustat               # 运行，显示一次\nwatch -n 1 gpustat    # 每秒刷新，实时监控\n```\n\n**输出示例**：\n\n```bash\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n每行代表一张卡，依次是：卡编号、型号、温度、利用率、已用/总显存。\n\n**三种方案对比**：\n\n|\n\n## nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）\n\n## 4.1 查看显存详情（①）\n\n你的拯救者Y7000P上跑深度学习时，最常遇到的就是显存不够。先学会快速查看显存使用情况：\n\n```bash\nnvidia-smi -q -d MEMORY\n```\n\n这条命令只显示显存相关信息，输出包括：**总显存、已用显存、空闲显存、显存类型**（比如GDDR6）。不用在满屏输出里找重点，一眼就能看清。\n\n## 4.2 精准查询特定字段（①+④）\n\n如果只想看某几个数据，用 `--query-gpu` 配合 `--format=csv`，输出成表格，方便阅读或写脚本处理：\n\n```bash\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n```\n\n输出示例：\n\n```\nname, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\nTesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用字段：\n\n| 字段名 | 说明 |\n|---|---|\n| `name` | GPU 型号 |\n| `temperature.gpu` | GPU 温度 |\n| `memory.used` | 已用显存 |\n| `memory.total` | 总显存 |\n| `utilization.gpu` | GPU 利用率 |\n| `power.draw` | 当前功耗 |\n| `power.limit` | 功耗上限 |\n| `pcie.link.gen.current` | 当前 PCIe 版本 |\n| `ecc.mode.current` | ECC 内存模式 |\n\n## 4.3 限制 GPU 功率（高级）（①）\n\n某些场景（如实验室限电、散热不足）下可以限制GPU最大功耗：\n\n```bash\n# 查看当前功率限制\nnvidia-smi -q -d POWER\n\n# 设置 GPU\n\n## nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）\n\n## 5.1 查看 GPU 进程（①+④）\n\n运行 `nvidia-smi` 后，屏幕底部的 **Processes** 区域会列出当前占用 GPU 的进程。这个区域长这样：\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A  N/A      12345    C   python3                         10240MiB |\n+-----------------------------------------------------------------------------+\n```\n\n表格里每一行代表一个进程，你需要重点看四个字段：\n\n- **PID**：进程的唯一编号。后面要释放显存时，杀进程就靠它。\n- **Type**：进程类型。`C` 表示计算进程（比如 PyTorch 训练），`G` 表示图形进程。\n- **Process name**：进程的名字，比如 `python3`。\n- **GPU Memory Usage**：这个进程占了多少显存，单位是 MiB。\n\n简单说：**先看 Type 确认是不是计算任务，再看 PID 记住编号，最后看显存占用判断谁吃得多。**\n\n---\n\n**本块学习检查**：完成本块后，\n\n## nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）\n\n### 5.2 杀死僵尸进程，释放显存\n\n训练脚本崩溃后，有时进程没退干净，还占着显存（俗称“僵尸进程”）。这时手动杀掉它：\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程立刻消失，未保存的数据会丢。优先用 `kill PID`，不行再用 `kill -9`。\n\n### 5.3 OOM 预防思路\n\nOOM（显存溢出）是大模型训练常见报错。用 `nvidia-smi` 提前防：\n\n1. **训练前**：看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n## nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）\n\n## 6.1 导出监控日志（①）\n\n你的联想拯救者Y7000P上如果有NVIDIA显卡，就可以把刚才看到的监控信息保存成文件，方便事后分析。\n\n**方法一：直接保存屏幕输出**\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 > gpu_log.txt\n```\n\n这条命令会一直运行，把每次采样的结果写入 `gpu_log.txt`。想停止就按 `Ctrl+C`。\n\n**方法二：导出 CSV 格式（更适合分析）**\n\n```bash\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 > gpu_log.csv\n```\n\nCSV 是表格格式，每列有明确的字段名（时间戳、显卡名、已用显存、总显存、GPU利用率），之后可以用 Excel 或 Python 打开做分析。\n\n> **小提示**：`-l 1` 表示每秒采样一次，`-l 5` 就是每5秒一次。采样越频繁，文件越大，但数据越细。\n\n## 6.2 后台持续监控（④）\n\n如果你要跑一个很久的训练任务，不想一直盯着终端，可以用后台模式：\n\n```bash\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 > ~/gpu_monitor.csv 2>&1 &\n```\n\n这条命令的意思是：把监控放到后台运行，即使你关掉终端，它也会继续记录。数据会写到 `~/gpu_monitor.csv`（即你的主目录下）。训练结束后，再来看这个文件，就能分析整个训练期间的显存波动和利用率变化。\n\n---\n\n## 常见问题排查（④）\n\n| 症状 | 可能原因 | 解决方案 |\n|---|---|---|\n| `nvidia-smi: command not found` | 未安装 NVIDIA 驱动 | 安装驱动，或确认机器是否有 NVIDIA 显卡 |\n| 显示 `No running processes found` | GPU 空闲，没有程序在跑 | 正常状态，开始训练后会显示进程 |\n| 显存占用高但 GPU-Util 为 0% | 可能是采样时机、同步等待、训练流程暂停，或 DataLoader 瓶颈 | 持续观察 `nvitop` 确认趋势；若在训练中持续为 0%，可检查数据加载瓶颈，但需先确认 GPU 是否实际在执行计算 |\n|",
+    "code_examples": [],
+    "questions": [
+      {
+        "question_id": "Q-KB0104-001",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "difficulty": "初级",
+        "question_type": "short_answer",
+        "question_text": "请在终端执行以下命令，验证NVIDIA驱动和GPU是否可用，将输出粘贴作答：\n```bash\nnvidia-smi\n```",
+        "options": [],
+        "correct_answer": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+        "hint": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+        "explanation": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+        "expected_output": null,
+        "grading_mode": "semantic_match",
+        "source": "测试题目.md"
+      },
+      {
+        "question_id": "Q-KB0104-004",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "difficulty": "中级",
+        "question_type": "fill_blank",
+        "question_text": "`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。",
+        "options": [],
+        "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+        "hint": null,
+        "explanation": "",
+        "expected_output": null,
+        "grading_mode": "semantic_match",
+        "source": "测试题目.md"
+      },
+      {
+        "question_id": "Q-KB0101-007",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-01",
+        "difficulty": "中级",
+        "question_type": "practical",
+        "question_text": "请写出一条管道命令，统计当前目录下 `.py` 文件的数量。",
+        "options": [],
+        "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+        "hint": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+        "explanation": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+        "expected_output": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+        "grading_mode": "command_output_check",
+        "source": "测试题目.md"
+      },
+      {
+        "question_id": "Q-KB0103-005",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-03",
+        "difficulty": "高级",
+        "question_type": "true_false",
+        "question_text": "在conda环境中使用 `pip install` 安装的包，可以用 `conda list` 查看到吗？反过来呢？",
+        "options": [
+          "正确",
+          "错误"
+        ],
+        "correct_answer": "错误",
+        "hint": "---",
+        "explanation": "---",
+        "expected_output": null,
+        "grading_mode": "exact_match",
+        "source": "测试题目.md"
+      },
+      {
+        "question_id": "Q-KB0102-004",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-02",
+        "difficulty": "高级",
+        "question_type": "true_false",
+        "question_text": "在 `~/.bashrc` 中写入 `export LD_LIBRARY_PATH=/usr/local/lib` 后，新开一个终端窗口，该变量是否自动生效？为什么？",
+        "options": [
+          "正确",
+          "错误"
+        ],
+        "correct_answer": "错误",
+        "hint": "---",
+        "explanation": "---",
+        "expected_output": null,
+        "grading_mode": "exact_match",
+        "source": "测试题目.md"
+      },
+      {
+        "question_id": "Q-KB0104-003",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "difficulty": "中级",
+        "question_type": "single_choice",
+        "question_text": "想要**每2秒自动刷新**GPU状态，应使用哪个命令？",
+        "options": [
+          {
+            "key": "A",
+            "text": "`nvidia-smi -l 2`"
+          },
+          {
+            "key": "B",
+            "text": "`nvidia-smi --refresh 2`"
+          },
+          {
+            "key": "C",
+            "text": "`watch -n 2 nvidia-smi`"
+          },
+          {
+            "key": "D",
+            "text": "A和C都可以"
+          }
+        ],
+        "correct_answer": "D",
+        "hint": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。",
+        "explanation": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。",
+        "expected_output": null,
+        "grading_mode": "exact_match",
+        "source": "测试题目.md"
+      },
+      {
+        "question_id": "Q-KB0101-001",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-01",
+        "difficulty": "初级",
+        "question_type": "single_choice",
+        "question_text": "以下哪个命令用于**切换当前工作目录**？",
+        "options": [
+          {
+            "key": "A",
+            "text": "`ls`"
+          },
+          {
+            "key": "B",
+            "text": "`cd`"
+          },
+          {
+            "key": "C",
+            "text": "`mkdir`"
+          },
+          {
+            "key": "D",
+            "text": "`pwd`"
+          }
+        ],
+        "correct_answer": "B",
+        "hint": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+        "explanation": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+        "expected_output": null,
+        "grading_mode": "exact_match",
+        "source": "测试题目.md"
+      },
+      {
+        "question_id": "Q-KB0100-001",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-00",
+        "difficulty": "初级",
+        "question_type": "practical",
+        "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
+        "options": [],
+        "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+        "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+        "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+        "expected_output": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+        "grading_mode": "command_output_check",
+        "source": "测试题目.md"
+      }
+    ],
+    "format": "markdown",
+    "version": 1,
+    "review_trace_id": "tr_ee9d3dc1b4f34fa7",
+    "sources": [
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C001",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C001",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C001",
+          "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+          "source_line_start": 1,
+          "source_line_end": 45
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C002",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C002",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C002",
+          "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+          "source_line_start": 47,
+          "source_line_end": 58
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C003",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C003",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C003",
+          "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）",
+          "source_line_start": 60,
+          "source_line_end": 84
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C004",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C004",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C004",
+          "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）",
+          "source_line_start": 85,
+          "source_line_end": 101
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C005",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C005",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C005",
+          "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）",
+          "source_line_start": 102,
+          "source_line_end": 121
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C006",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C006",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C006",
+          "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）",
+          "source_line_start": 122,
+          "source_line_end": 156
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C007",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C007",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C007",
+          "heading_path": "nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）",
+          "source_line_start": 157,
+          "source_line_end": 210
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C008",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C008",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C008",
+          "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）",
+          "source_line_start": 211,
+          "source_line_end": 230
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C009",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C009",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C009",
+          "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）",
+          "source_line_start": 231,
+          "source_line_end": 259
+        }
+      },
+      {
+        "source_id": "src_LOCAL-KBS-01-04-C010",
+        "source_type": "knowledge_doc",
+        "title": "nvidia-smi 显存监控",
+        "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+        "content_ref": "LOCAL-KBS-01-04-C010",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "doc_id": "LOCAL-KBS-01-04",
+          "source_chunk_id": "LOCAL-KBS-01-04-C010",
+          "heading_path": "nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）",
+          "source_line_start": 260,
+          "source_line_end": 305
+        }
+      },
+      {
+        "source_id": "src_video_RES-VID-009",
+        "source_type": "video",
+        "title": "nvidia-smi命令详解",
+        "locator": "learning_resources:RES-VID-009",
+        "content_ref": "https://www.bilibili.com/video/BV1jfGh67E7A",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": "KBS-01-04",
+          "review_status": "pending"
+        }
+      },
+      {
+        "source_id": "src_video_RES-VID-001",
+        "source_type": "video",
+        "title": "黑马程序员新版Linux零基础快速入门到精通，全涵盖linux系统知识、常用软件环境部署、Shell脚本、云平台实践、大数据集群项目实战等",
+        "locator": "learning_resources:RES-VID-001",
+        "content_ref": "https://www.bilibili.com/video/BV1n84y1i7td",
+        "source_version": null,
+        "metadata_json": {
+          "block_id": "KB-01",
+          "subtopic_id": null,
+          "review_status": "pending"
+        }
+      }
+    ],
+    "claims": [
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+        "text": "# nvidia-smi 显存监控\n\n① 底稿：《nvidia-smi 用法详解》  \n　　网址：https://blog.csdn.net/qq_36803941/article/details/142182349\n\n② 参考文章：《实时查看 GPU 显存占用、功耗、进程状态》  \n　　网址：https://blog.csdn.net/qq_36693723/article/details/142974892\n\n③ 参考文章：《【监控 GPU】监控 NVIDIA GPU 显卡占用状态的常用命令》  \n　　网址：https://blog.csdn.net/Ever_____/article/details/136973595\n\n④ 参考文章：《nvidia-smi 命令实战：如何像老司机一样监控 GPU 状态》  \n　　网址：https://blog.csdn.net/weixin_29305313/article/details/159296452\n\n> **适合人群**：已完成前三节，掌握 conda/pip 并能安装 Python 包的初学者。本节时长约 0.5 小时，目标是掌握",
+        "source_ref": "src_LOCAL-KBS-01-04-C001",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "revised",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C001"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+        "text": "```bash\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 525.85.12    Driver Version: 525.85.12    CUDA Version: 12.0  |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|                               |                      |               MIG M. |\n|==============",
+        "source_ref": "src_LOCAL-KBS-01-04-C002",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C002"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+        "text": "### 2.2 关键指标解读（①+④）\n\n| 区域 | 字段 | 含义 |\n|---|---|---|\n| **顶部信息** | `NVIDIA-SMI 525.85.12` | nvidia-smi 工具版本 |\n| | `Driver Version: 525.85.12` | NVIDIA 显卡驱动版本 |\n| | `CUDA Version: 12.0` | 当前驱动支持的最高 CUDA 版本 |\n| **GPU 列表** | `GPU 0` | GPU 编号（多卡时会有 0, 1, 2...）|\n| | `Name` | GPU 型号（如 Tesla V100、RTX 4090）|\n| | `Temp` | 温度（摄氏度）|\n| | `Pwr:Usage/Cap` | 当前功耗 / 最大功耗（如 24W / 250W）|\n| | `Memory-Usage` | **显存占用 / 总显存**（如 128MiB / 32510MiB）|\n| | `GPU-Util` | **GPU 计算利用率**（0% 表示空闲，90%+ 表示满载）|\n| **进程区** | `PID` | ",
+        "source_ref": "src_LOCAL-KBS-01-04-C003",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C003"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+        "text": "### 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）\n\nLinux 自带的 `watch` 命令可以周期性执行任意命令，配合 `nvidia-smi` 实现实时刷新：（②+③）\n\n```bash\n# 每 1 秒刷新一次\nwatch -n 1 nvidia-smi\n\n# 每 0.5 秒刷新一次（更实时）\nwatch -n 0.5 nvidia-smi\n```\n\n- 终端会全屏显示，每秒自动更新\n- 按 `Ctrl + C` 退出\n\n> **注意**：`watch` 命令在 Linux/macOS 下可用，Windows 命令提示符不支持。Windows 用户可用 `nvidia-smi -l 1` 代替（体验稍差，每次打印新表格）。（③）",
+        "source_ref": "src_LOCAL-KBS-01-04-C004",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C004"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+        "text": "### 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）\n\n`nvitop` 是一个基于 Python 的 GPU 实时监控工具，界面类似 `top`，有颜色区分、进度条、历史曲线，体验远胜原生 `nvidia-smi`。（②+③）\n\n```bash\n# 安装（上节课学过的 pip！）\npip install nvitop\n\n# 运行\nnvitop\n```\n\n界面特点：（②）\n- 彩色高亮：显存占用高时变红，空闲时变绿\n- 进程列表：显示每个进程的 CPU%、MEM%、运行时间\n- 历史曲线：右上角有 GPU 利用率和显存占用的趋势图\n- 按 `h` 查看帮助，`q` 退出\n\n> **强烈建议**：在服务器上训练模型时，开两个终端——一个跑训练脚本，一个跑 `nvitop`，实时监控。",
+        "source_ref": "src_LOCAL-KBS-01-04-C005",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C005"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+        "text": "### 3.3 方案 C：gpustat（轻量简洁）（②）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节：（②）\n\n```bash\n# 安装\npip install gpustat\n\n# 运行\ngpustat\n\n# 实时刷新\nwatch -n 1 gpustat\n```\n\n输出示例：（②）\n\n```bash\nc01n04  Wed Oct 16 10:55:19 2024  455.23.05\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n> **三种方案对比**：\n\n| 方案 | 安装成本 | 可视化 | 适用场景 |\n|---|---|---|---|\n| `watch -n 1 nvidia-smi` | 无需安装 | 一般 | 临时查看、无 pip 权限的服务器 |\n| `nvitop` | `pip install nvitop` | 优秀 | **日常主力推荐** |\n| `g",
+        "source_ref": "src_LOCAL-KBS-01-04-C006",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C006"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+        "text": "### 4.1 查看显存详情（①）\n\n```bash\n# 只查看显存相关信息\nnvidia-smi -q -d MEMORY\n```\n\n输出包括：总显存、已用显存、空闲显存、显存类型（GDDR6/GDDR6X/HBM2 等）。（①）\n\n### 4.2 精准查询特定字段（①+④）\n\n使用 `--query-gpu` 可以只提取你关心的字段，配合 `--format=csv` 输出为表格，方便脚本处理：（①+④）\n\n```bash\n# 查询 GPU 名称、温度、显存占用、利用率\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n\n# 输出示例：\n# name, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\n# Tesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用查询字段：（①+④）",
+        "source_ref": "src_LOCAL-KBS-01-04-C007",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C007"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+        "text": "### 5.1 查看 GPU 进程（①+④）\n\n`nvidia-smi` 默认输出底部的 **Processes** 区域会列出占用 GPU 的进程：（④）\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A",
+        "source_ref": "src_LOCAL-KBS-01-04-C008",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C008"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+        "text": "### 5.2 杀死僵尸进程，释放显存（①+④）\n\n训练脚本崩溃后，有时进程没有彻底退出，继续占用显存（俗称\"僵尸进程\"）。这时需要手动杀掉：（①+④）\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程会立刻消失，未保存的数据会丢失。优先用 `kill PID`，不行再用 `kill -9`。（④）\n\n### 5.3 OOM 预防思路（④）\n\nOOM（Out Of Memory，显存溢出）是大模型训练中最常见的报错之一。通过 `nvidia-smi` 可以提前发现风险：（④）\n\n1. **训练前**：`nvidia-smi` 查看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长趋势\n3. **OOM 后**：检查是否有僵尸进程占用显存，有则 `kil",
+        "source_ref": "src_LOCAL-KBS-01-04-C009",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "active",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C009"
+        }
+      },
+      {
+        "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+        "text": "### 6.1 导出监控日志（①）\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 -f gpu_log.txt\n\n# 或者用 query 模式导出 CSV（更适合分析）\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 -f gpu_log.csv\n```\n\n### 6.2 后台持续监控（④）\n\n```bash\n# 放到后台运行，即使关闭终端也继续记录\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 -f ~/gpu_monitor.csv > /dev/null 2>&1 &\n```\n\n> **用途**：长时间训练时，后台记录 GPU 状态，事后分析训练期间的显存波动和利用率曲线。（④）\n\n---\n\n## 七、常见问题排查（④）\n\n| 症状",
+        "source_ref": "src_LOCAL-KBS-01-04-C010",
+        "source_span": null,
+        "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+        "claim_type": "concept",
+        "is_key_technical": true,
+        "confidence": 0.8,
+        "status": "revised",
+        "metadata_json": {
+          "source_chunk_id": "LOCAL-KBS-01-04-C010"
+        }
+      }
+    ],
+    "recommended_videos": [
+      {
+        "resource_id": "RES-VID-009",
+        "title": "nvidia-smi命令详解",
+        "url": "https://www.bilibili.com/video/BV1jfGh67E7A",
+        "content_summary": "用于学习“nvidia-smi显存监控”的推荐视频；导入后需补充视频内容摘要或字幕。",
+        "review_status": "pending",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "role": "primary",
+        "sequence_index": 1,
+        "relevance_score": 1.0,
+        "mapping_status": "confirmed",
+        "scope": "subtopic"
+      },
+      {
+        "resource_id": "RES-VID-001",
+        "title": "黑马程序员新版Linux零基础快速入门到精通，全涵盖linux系统知识、常用软件环境部署、Shell脚本、云平台实践、大数据集群项目实战等",
+        "url": "https://www.bilibili.com/video/BV1n84y1i7td",
+        "content_summary": "用于学习“（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+        "review_status": "pending",
+        "block_id": "KB-01",
+        "subtopic_id": null,
+        "role": "supplementary",
+        "sequence_index": 99,
+        "relevance_score": 1.0,
+        "mapping_status": "confirmed",
+        "scope": "block"
+      }
+    ],
+    "content_blocks": [
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 0,
+        "source_chunk_id": "LOCAL-KBS-01-04-C001",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+        "heading_level": 3,
+        "source_line_start": 1,
+        "source_line_end": 45,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）；原文行号：1-45；来源块：LOCAL-KBS-01-04-C001",
+        "personalized_content": "## 2.1 最简命令：`nvidia-smi`\n\n在 Linux 终端里，输入下面这行命令，然后按回车：\n\n```bash\nnvidia-smi\n```\n\n就这么简单。执行后，屏幕上会输出一个表格，里面显示了当前 GPU 的状态信息。\n\n**这个表格里你能看到什么？**\n\n- **显存占用**：当前用了多少显存、还剩多少。这能帮你提前判断会不会遇到 OOM（显存溢出）。\n- **GPU 利用率**：GPU 是在认真干活，还是闲着没事干。\n- **温度与功耗**：防止硬件过热，也能看看能耗情况。\n- **进程绑定**：哪个程序（PID）占用了 GPU？占了多少显存？一目了然。\n\n**注意**：`nvidia-smi` 只有在安装了 NVIDIA GPU 驱动后才能使用。如果你的机器没有 NVIDIA 显卡（比如纯 CPU 环境），命令会提示找不到。不过别担心，CPU 推理和不带 GPU 的基础学习仍然可以进行。\n\n---\n\n**本块学习检查**\n\n完成本块后，请用自己的话说明：`nvidia-smi` 这个命令和你的学习",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C001"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C001"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+            "text": "# nvidia-smi 显存监控\n\n① 底稿：《nvidia-smi 用法详解》  \n　　网址：https://blog.csdn.net/qq_36803941/article/details/142182349\n\n② 参考文章：《实时查看 GPU 显存占用、功耗、进程状态》  \n　　网址：https://blog.csdn.net/qq_36693723/article/details/142974892\n\n③ 参考文章：《【监控 GPU】监控 NVIDIA GPU 显卡占用状态的常用命令》  \n　　网址：https://blog.csdn.net/Ever_____/article/details/136973595\n\n④ 参考文章：《nvidia-smi 命令实战：如何像老司机一样监控 GPU 状态》  \n　　网址：https://blog.csdn.net/weixin_29305313/article/details/159296452\n\n> **适合人群**：已完成前三节，掌握 conda/pip 并能安装 Python 包的初学者。本节时长约 0.5 小时，目标是掌握",
+            "source_ref": "src_LOCAL-KBS-01-04-C001",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "revised",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C001"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C001",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C001",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C001",
+              "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+              "source_line_start": 1,
+              "source_line_end": 45
+            }
+          }
+        ],
+        "version": 2,
+        "revision_note": "已按审核建议定点修订本块：补充来源块依据或人工复核后放行。",
+        "status": "revised"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 1,
+        "source_chunk_id": "LOCAL-KBS-01-04-C002",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+        "heading_level": 3,
+        "source_line_start": 47,
+        "source_line_end": 58,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）；原文行号：47-58；来源块：LOCAL-KBS-01-04-C002",
+        "personalized_content": "## 2.1 最简命令：直接输入 `nvidia-smi`\n\n在Linux终端里，想看一眼GPU现在什么状态，最直接的办法就是敲一个命令：\n\n```bash\nnvidia-smi\n```\n\n敲完回车，屏幕上会弹出一张表格。别被它吓到，咱们只看几个关键位置就行。\n\n**第一行**告诉你驱动和CUDA的版本信息，比如 `Driver Version: 525.85.12` 和 `CUDA Version: 12.0`，现在知道有这回事就行。\n\n**表格中间**才是重点。拿你电脑（联想拯救者Y7000P）来说，GPU型号会显示在这里，比如示例里的 `Tesla V100-PCIE`。旁边那列 `Memory-Usage` 显示显存占用，格式是“已用 / 总量”，比如 `128MiB / 32510MiB`，意思是总共32GB显存，现在只用了128MB。\n\n**最右边**的 `GPU-Util` 是GPU利用率，0%表示闲着，100%表示满负荷。下面那行 `Pwr:Usage/Cap` 是当前功耗和最大功耗，比如 `24W / 250W`，功耗低通常说明没在干重活。\n\n**怎么用**：你先",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C002"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C002"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+            "text": "```bash\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 525.85.12    Driver Version: 525.85.12    CUDA Version: 12.0  |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|                               |                      |               MIG M. |\n|==============",
+            "source_ref": "src_LOCAL-KBS-01-04-C002",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C002"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C002",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C002",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C002",
+              "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+              "source_line_start": 47,
+              "source_line_end": 58
+            }
+          }
+        ],
+        "version": 2,
+        "revision_note": "已按审核建议定点修订本块：补充完整的使用说明，例如'看看GPU利用率和显存占用是否上升，以确认程序正在使用GPU'。",
+        "status": "revised"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 2,
+        "source_chunk_id": "LOCAL-KBS-01-04-C003",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）",
+        "heading_level": 3,
+        "source_line_start": 60,
+        "source_line_end": 84,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）；原文行号：60-84；来源块：LOCAL-KBS-01-04-C003",
+        "personalized_content": "好的，我们先从 `nvidia-smi` 的输出里，找出对你最重要的两个数字。\n\n### 2.2 关键指标解读\n\n运行 `nvidia-smi` 后，你会看到一张表格。别被密密麻麻的数字吓到，我们只看最核心的几项：\n\n*   **顶部信息**：这里告诉你工具、驱动和 CUDA 的版本号，先不用管。\n*   **GPU 列表**：这是重点。你会看到你的显卡型号（比如 `Name` 字段），以及：\n    *   `Temp`：显卡温度，越高越危险。\n    *   `Memory-Usage`：**显存占用 / 总显存**。比如 `128MiB / 32510MiB`，表示用了 128MB，总共 32GB。\n    *   `GPU-Util`：**GPU 计算利用率**。0% 是空闲，90%+ 是满载。\n*   **进程区**：显示是哪个程序（`Process name`）占用了显存（`GPU Memory Usage`）。\n\n> **对你最重要的两个数字**：`Memory-Usage`（显存占用）和 `GPU-Util`（利用率）。训练时如果显存快满了，就要调小 batch size；如果利用率长期很低，说明数据加载太慢，GPU 在空等。\n\n### 本块学习检查\n\n完成本块后，请用自己的话说明：`nvidia-smi` 中的 `Memory-Usage` 和 `GPU-Util` 这两个指标，分别能帮你发现",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C003"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C003"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+            "text": "### 2.2 关键指标解读（①+④）\n\n| 区域 | 字段 | 含义 |\n|---|---|---|\n| **顶部信息** | `NVIDIA-SMI 525.85.12` | nvidia-smi 工具版本 |\n| | `Driver Version: 525.85.12` | NVIDIA 显卡驱动版本 |\n| | `CUDA Version: 12.0` | 当前驱动支持的最高 CUDA 版本 |\n| **GPU 列表** | `GPU 0` | GPU 编号（多卡时会有 0, 1, 2...）|\n| | `Name` | GPU 型号（如 Tesla V100、RTX 4090）|\n| | `Temp` | 温度（摄氏度）|\n| | `Pwr:Usage/Cap` | 当前功耗 / 最大功耗（如 24W / 250W）|\n| | `Memory-Usage` | **显存占用 / 总显存**（如 128MiB / 32510MiB）|\n| | `GPU-Util` | **GPU 计算利用率**（0% 表示空闲，90%+ 表示满载）|\n| **进程区** | `PID` | ",
+            "source_ref": "src_LOCAL-KBS-01-04-C003",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C003"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C003",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C003",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C003",
+              "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）",
+              "source_line_start": 60,
+              "source_line_end": 84
+            }
+          }
+        ],
+        "version": 1,
+        "revision_note": null,
+        "status": "draft"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 3,
+        "source_chunk_id": "LOCAL-KBS-01-04-C004",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）",
+        "heading_level": 3,
+        "source_line_start": 85,
+        "source_line_end": 101,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）；原文行号：85-101；来源块：LOCAL-KBS-01-04-C004",
+        "personalized_content": "**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（掌握Linux）的关系；遇到无法解释的术语时记录下来再提问。\n\n在Linux终端输入 `watch -n 1 nvidia-smi`，屏幕会全屏并每秒自动刷新显卡状态。`-n 1` 表示间隔1秒，改成 `-n 0.5` 则每0.5秒刷新，更实时。按 `Ctrl + C` 退出。注意：`watch` 仅Linux/macOS可用，Windows不支持。\n\n**练习**：在你的联想拯救者Y7000P上打开Linux终端，运行 `watch -n 1 nvidia-smi`，观察刷新效果后按 `Ctrl",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C004"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C004"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+            "text": "### 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）\n\nLinux 自带的 `watch` 命令可以周期性执行任意命令，配合 `nvidia-smi` 实现实时刷新：（②+③）\n\n```bash\n# 每 1 秒刷新一次\nwatch -n 1 nvidia-smi\n\n# 每 0.5 秒刷新一次（更实时）\nwatch -n 0.5 nvidia-smi\n```\n\n- 终端会全屏显示，每秒自动更新\n- 按 `Ctrl + C` 退出\n\n> **注意**：`watch` 命令在 Linux/macOS 下可用，Windows 命令提示符不支持。Windows 用户可用 `nvidia-smi -l 1` 代替（体验稍差，每次打印新表格）。（③）",
+            "source_ref": "src_LOCAL-KBS-01-04-C004",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C004"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C004",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C004",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C004",
+              "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）",
+              "source_line_start": 85,
+              "source_line_end": 101
+            }
+          }
+        ],
+        "version": 1,
+        "revision_note": null,
+        "status": "draft"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 4,
+        "source_chunk_id": "LOCAL-KBS-01-04-C005",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）",
+        "heading_level": 3,
+        "source_line_start": 102,
+        "source_line_end": 121,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）；原文行号：102-121；来源块：LOCAL-KBS-01-04-C005",
+        "personalized_content": "### 3.2 方案 B：nvitop（推荐，可视化体验最佳）\n\n`nvitop` 是 Python 写的 GPU 监控工具，界面像 `top`，有颜色、进度条和曲线，比 `nvidia-smi` 好看好用。\n\n**安装与运行**（用上节课的 `pip`）：\n```bash\npip install nvitop\nnvitop\n```\n\n**界面特点**：\n- 彩色高亮：显存占用高变红，空闲变绿\n- 进程列表：显示 CPU%、MEM%、运行时间\n- 历史曲线：右上角有利用率和显存趋势图\n- 按 `h` 看帮助，`q` 退出\n\n**建议**：训练模型\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C005"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C005"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+            "text": "### 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）\n\n`nvitop` 是一个基于 Python 的 GPU 实时监控工具，界面类似 `top`，有颜色区分、进度条、历史曲线，体验远胜原生 `nvidia-smi`。（②+③）\n\n```bash\n# 安装（上节课学过的 pip！）\npip install nvitop\n\n# 运行\nnvitop\n```\n\n界面特点：（②）\n- 彩色高亮：显存占用高时变红，空闲时变绿\n- 进程列表：显示每个进程的 CPU%、MEM%、运行时间\n- 历史曲线：右上角有 GPU 利用率和显存占用的趋势图\n- 按 `h` 查看帮助，`q` 退出\n\n> **强烈建议**：在服务器上训练模型时，开两个终端——一个跑训练脚本，一个跑 `nvitop`，实时监控。",
+            "source_ref": "src_LOCAL-KBS-01-04-C005",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C005"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C005",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C005",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C005",
+              "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）",
+              "source_line_start": 102,
+              "source_line_end": 121
+            }
+          }
+        ],
+        "version": 1,
+        "revision_note": null,
+        "status": "draft"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 5,
+        "source_chunk_id": "LOCAL-KBS-01-04-C006",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）",
+        "heading_level": 3,
+        "source_line_start": 122,
+        "source_line_end": 156,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）；原文行号：122-156；来源块：LOCAL-KBS-01-04-C006",
+        "personalized_content": "**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n---\n\n### 3.3 方案 C：gpustat（轻量简洁）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节，用 `gpustat` 最合适。\n\n**安装与使用**（在终端输入）：\n\n```bash\npip install gpustat   # 安装\ngpustat               # 运行，显示一次\nwatch -n 1 gpustat    # 每秒刷新，实时监控\n```\n\n**输出示例**：\n\n```bash\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n每行代表一张卡，依次是：卡编号、型号、温度、利用率、已用/总显存。\n\n**三种方案对比**：\n\n|",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C006"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C006"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+            "text": "### 3.3 方案 C：gpustat（轻量简洁）（②）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节：（②）\n\n```bash\n# 安装\npip install gpustat\n\n# 运行\ngpustat\n\n# 实时刷新\nwatch -n 1 gpustat\n```\n\n输出示例：（②）\n\n```bash\nc01n04  Wed Oct 16 10:55:19 2024  455.23.05\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n> **三种方案对比**：\n\n| 方案 | 安装成本 | 可视化 | 适用场景 |\n|---|---|---|---|\n| `watch -n 1 nvidia-smi` | 无需安装 | 一般 | 临时查看、无 pip 权限的服务器 |\n| `nvitop` | `pip install nvitop` | 优秀 | **日常主力推荐** |\n| `g",
+            "source_ref": "src_LOCAL-KBS-01-04-C006",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C006"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C006",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C006",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C006",
+              "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）",
+              "source_line_start": 122,
+              "source_line_end": 156
+            }
+          }
+        ],
+        "version": 1,
+        "revision_note": null,
+        "status": "draft"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 6,
+        "source_chunk_id": "LOCAL-KBS-01-04-C007",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）",
+        "heading_level": 3,
+        "source_line_start": 157,
+        "source_line_end": 210,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）；原文行号：157-210；来源块：LOCAL-KBS-01-04-C007",
+        "personalized_content": "## 4.1 查看显存详情（①）\n\n你的拯救者Y7000P上跑深度学习时，最常遇到的就是显存不够。先学会快速查看显存使用情况：\n\n```bash\nnvidia-smi -q -d MEMORY\n```\n\n这条命令只显示显存相关信息，输出包括：**总显存、已用显存、空闲显存、显存类型**（比如GDDR6）。不用在满屏输出里找重点，一眼就能看清。\n\n## 4.2 精准查询特定字段（①+④）\n\n如果只想看某几个数据，用 `--query-gpu` 配合 `--format=csv`，输出成表格，方便阅读或写脚本处理：\n\n```bash\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n```\n\n输出示例：\n\n```\nname, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\nTesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用字段：\n\n| 字段名 | 说明 |\n|---|---|\n| `name` | GPU 型号 |\n| `temperature.gpu` | GPU 温度 |\n| `memory.used` | 已用显存 |\n| `memory.total` | 总显存 |\n| `utilization.gpu` | GPU 利用率 |\n| `power.draw` | 当前功耗 |\n| `power.limit` | 功耗上限 |\n| `pcie.link.gen.current` | 当前 PCIe 版本 |\n| `ecc.mode.current` | ECC 内存模式 |\n\n## 4.3 限制 GPU 功率（高级）（①）\n\n某些场景（如实验室限电、散热不足）下可以限制GPU最大功耗：\n\n```bash\n# 查看当前功率限制\nnvidia-smi -q -d POWER\n\n# 设置 GPU",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C007"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C007"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+            "text": "### 4.1 查看显存详情（①）\n\n```bash\n# 只查看显存相关信息\nnvidia-smi -q -d MEMORY\n```\n\n输出包括：总显存、已用显存、空闲显存、显存类型（GDDR6/GDDR6X/HBM2 等）。（①）\n\n### 4.2 精准查询特定字段（①+④）\n\n使用 `--query-gpu` 可以只提取你关心的字段，配合 `--format=csv` 输出为表格，方便脚本处理：（①+④）\n\n```bash\n# 查询 GPU 名称、温度、显存占用、利用率\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n\n# 输出示例：\n# name, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\n# Tesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用查询字段：（①+④）",
+            "source_ref": "src_LOCAL-KBS-01-04-C007",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C007"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C007",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C007",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C007",
+              "heading_path": "nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）",
+              "source_line_start": 157,
+              "source_line_end": 210
+            }
+          }
+        ],
+        "version": 2,
+        "revision_note": "已按审核建议定点修订本块：补充完整的设置命令，例如：nvidia-smi -pl 200，并确保代码块正确闭合。",
+        "status": "revised"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 7,
+        "source_chunk_id": "LOCAL-KBS-01-04-C008",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）",
+        "heading_level": 3,
+        "source_line_start": 211,
+        "source_line_end": 230,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）；原文行号：211-230；来源块：LOCAL-KBS-01-04-C008",
+        "personalized_content": "## 5.1 查看 GPU 进程（①+④）\n\n运行 `nvidia-smi` 后，屏幕底部的 **Processes** 区域会列出当前占用 GPU 的进程。这个区域长这样：\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A  N/A      12345    C   python3                         10240MiB |\n+-----------------------------------------------------------------------------+\n```\n\n表格里每一行代表一个进程，你需要重点看四个字段：\n\n- **PID**：进程的唯一编号。后面要释放显存时，杀进程就靠它。\n- **Type**：进程类型。`C` 表示计算进程（比如 PyTorch 训练），`G` 表示图形进程。\n- **Process name**：进程的名字，比如 `python3`。\n- **GPU Memory Usage**：这个进程占了多少显存，单位是 MiB。\n\n简单说：**先看 Type 确认是不是计算任务，再看 PID 记住编号，最后看显存占用判断谁吃得多。**\n\n---\n\n**本块学习检查**：完成本块后，",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C008"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C008"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+            "text": "### 5.1 查看 GPU 进程（①+④）\n\n`nvidia-smi` 默认输出底部的 **Processes** 区域会列出占用 GPU 的进程：（④）\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A",
+            "source_ref": "src_LOCAL-KBS-01-04-C008",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C008"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C008",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C008",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C008",
+              "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）",
+              "source_line_start": 211,
+              "source_line_end": 230
+            }
+          }
+        ],
+        "version": 1,
+        "revision_note": null,
+        "status": "draft"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 8,
+        "source_chunk_id": "LOCAL-KBS-01-04-C009",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）",
+        "heading_level": 3,
+        "source_line_start": 231,
+        "source_line_end": 259,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）；原文行号：231-259；来源块：LOCAL-KBS-01-04-C009",
+        "personalized_content": "### 5.2 杀死僵尸进程，释放显存\n\n训练脚本崩溃后，有时进程没退干净，还占着显存（俗称“僵尸进程”）。这时手动杀掉它：\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程立刻消失，未保存的数据会丢。优先用 `kill PID`，不行再用 `kill -9`。\n\n### 5.3 OOM 预防思路\n\nOOM（显存溢出）是大模型训练常见报错。用 `nvidia-smi` 提前防：\n\n1. **训练前**：看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C009"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C009"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+            "text": "### 5.2 杀死僵尸进程，释放显存（①+④）\n\n训练脚本崩溃后，有时进程没有彻底退出，继续占用显存（俗称\"僵尸进程\"）。这时需要手动杀掉：（①+④）\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程会立刻消失，未保存的数据会丢失。优先用 `kill PID`，不行再用 `kill -9`。（④）\n\n### 5.3 OOM 预防思路（④）\n\nOOM（Out Of Memory，显存溢出）是大模型训练中最常见的报错之一。通过 `nvidia-smi` 可以提前发现风险：（④）\n\n1. **训练前**：`nvidia-smi` 查看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长趋势\n3. **OOM 后**：检查是否有僵尸进程占用显存，有则 `kil",
+            "source_ref": "src_LOCAL-KBS-01-04-C009",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C009"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C009",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C009",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C009",
+              "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）",
+              "source_line_start": 231,
+              "source_line_end": 259
+            }
+          }
+        ],
+        "version": 1,
+        "revision_note": null,
+        "status": "draft"
+      },
+      {
+        "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "subtopic_id": "KBS-01-04",
+        "block_name": "Linux环境与命令行操作",
+        "block_index": 9,
+        "source_chunk_id": "LOCAL-KBS-01-04-C010",
+        "source_doc_id": "LOCAL-KBS-01-04",
+        "heading_path": "nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）",
+        "heading_level": 3,
+        "source_line_start": 260,
+        "source_line_end": 305,
+        "source_note": "标题路径：nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）；原文行号：260-305；来源块：LOCAL-KBS-01-04-C010",
+        "personalized_content": "## 6.1 导出监控日志（①）\n\n你的联想拯救者Y7000P上如果有NVIDIA显卡，就可以把刚才看到的监控信息保存成文件，方便事后分析。\n\n**方法一：直接保存屏幕输出**\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 > gpu_log.txt\n```\n\n这条命令会一直运行，把每次采样的结果写入 `gpu_log.txt`。想停止就按 `Ctrl+C`。\n\n**方法二：导出 CSV 格式（更适合分析）**\n\n```bash\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 > gpu_log.csv\n```\n\nCSV 是表格格式，每列有明确的字段名（时间戳、显卡名、已用显存、总显存、GPU利用率），之后可以用 Excel 或 Python 打开做分析。\n\n> **小提示**：`-l 1` 表示每秒采样一次，`-l 5` 就是每5秒一次。采样越频繁，文件越大，但数据越细。\n\n## 6.2 后台持续监控（④）\n\n如果你要跑一个很久的训练任务，不想一直盯着终端，可以用后台模式：\n\n```bash\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 > ~/gpu_monitor.csv 2>&1 &\n```\n\n这条命令的意思是：把监控放到后台运行，即使你关掉终端，它也会继续记录。数据会写到 `~/gpu_monitor.csv`（即你的主目录下）。训练结束后，再来看这个文件，就能分析整个训练期间的显存波动和利用率变化。\n\n---\n\n## 常见问题排查（④）\n\n| 症状 | 可能原因 | 解决方案 |\n|---|---|---|\n| `nvidia-smi: command not found` | 未安装 NVIDIA 驱动 | 安装驱动，或确认机器是否有 NVIDIA 显卡 |\n| 显示 `No running processes found` | GPU 空闲，没有程序在跑 | 正常状态，开始训练后会显示进程 |\n| 显存占用高但 GPU-Util 为 0% | 可能是采样时机、同步等待、训练流程暂停，或 DataLoader 瓶颈 | 持续观察 `nvitop` 确认趋势；若在训练中持续为 0%，可检查数据加载瓶颈，但需先确认 GPU 是否实际在执行计算 |\n|",
+        "personalization_action": "explain_and_practice",
+        "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+        "evidence_refs": [],
+        "fact_source_chunk_ids": [
+          "LOCAL-KBS-01-04-C010"
+        ],
+        "teaching_tasks": [
+          {
+            "task_type": "apply",
+            "title": "Linux环境与命令行操作本块检查",
+            "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "source_chunk_id": "LOCAL-KBS-01-04-C010"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+            "text": "### 6.1 导出监控日志（①）\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 -f gpu_log.txt\n\n# 或者用 query 模式导出 CSV（更适合分析）\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 -f gpu_log.csv\n```\n\n### 6.2 后台持续监控（④）\n\n```bash\n# 放到后台运行，即使关闭终端也继续记录\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 -f ~/gpu_monitor.csv > /dev/null 2>&1 &\n```\n\n> **用途**：长时间训练时，后台记录 GPU 状态，事后分析训练期间的显存波动和利用率曲线。（④）\n\n---\n\n## 七、常见问题排查（④）\n\n| 症状",
+            "source_ref": "src_LOCAL-KBS-01-04-C010",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "revised",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C010"
+            }
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C010",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C010",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C010",
+              "heading_path": "nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）",
+              "source_line_start": 260,
+              "source_line_end": 305
+            }
+          }
+        ],
+        "version": 3,
+        "revision_note": "已按审核建议定点修订本块：补充来源块依据或人工复核后放行。",
+        "status": "revised"
+      }
+    ],
+    "learning_evidence_summary": {
+      "unstable_prerequisite_count": 0,
+      "weak_topic_count": 0,
+      "recent_question_count": 0
+    },
+    "preflight_review": null
+  },
+  "stage_snapshots": {
+    "d21f54e9-0256-5564-b6bd-d8830ff59196": {
+      "stage_info": {
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "stage_num": 1,
+        "block_id": "KB-01",
+        "block_name": "Linux环境与命令行操作",
+        "block_ids": [
+          "KB-01"
+        ],
+        "subtopic_id": "KBS-01-04",
+        "subtopic_name": "nvidia-smi显存监控",
+        "subtopic_ids": [
+          "KBS-01-04"
+        ],
+        "subtopic_names": [
+          "nvidia-smi显存监控"
+        ],
+        "estimated_hours": 0.5,
+        "gap_skill": "Linux",
+        "prerequisites": [
+          "KBS-01-03"
+        ],
+        "status": "learning",
+        "accuracy": null,
+        "strategy_used": null,
+        "title": "学习nvidia-smi显存监控",
+        "description": "围绕nvidia-smi显存监控完成一次可执行的阶段学习与练习。",
+        "objectives": [
+          "理解nvidia-smi显存监控的基本概念",
+          "掌握nvidia-smi显存监控的核心技术",
+          "能够独立完成nvidia-smi显存监控相关任务"
+        ],
+        "difficulty": "初级",
+        "recommended_daily_hours": 0.5,
+        "suggested_study_days": 1,
+        "learning_style_notes": "动手型学习者：建议先完成nvidia-smi显存监控的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+        "hardware_notes": "",
+        "personalization_summary": "适合大一学习者 | 预计1.8小时完成 | 建议分1天学习 | 每天3.0小时 | 动手型学习风格"
+      },
+      "learning_package": {
+        "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "block_id": "KB-01",
+        "block_name": "Linux环境与命令行操作",
+        "tutorial": "# Linux环境与命令行操作\n\n## nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）\n\n## 2.1 最简命令：`nvidia-smi`\n\n在 Linux 终端里，输入下面这行命令，然后按回车：\n\n```bash\nnvidia-smi\n```\n\n就这么简单。执行后，屏幕上会输出一个表格，里面显示了当前 GPU 的状态信息。\n\n**这个表格里你能看到什么？**\n\n- **显存占用**：当前用了多少显存、还剩多少。这能帮你提前判断会不会遇到 OOM（显存溢出）。\n- **GPU 利用率**：GPU 是在认真干活，还是闲着没事干。\n- **温度与功耗**：防止硬件过热，也能看看能耗情况。\n- **进程绑定**：哪个程序（PID）占用了 GPU？占了多少显存？一目了然。\n\n**注意**：`nvidia-smi` 只有在安装了 NVIDIA GPU 驱动后才能使用。如果你的机器没有 NVIDIA 显卡（比如纯 CPU 环境），命令会提示找不到。不过别担心，CPU 推理和不带 GPU 的基础学习仍然可以进行。\n\n---\n\n**本块学习检查**\n\n完成本块后，请用自己的话说明：`nvidia-smi` 这个命令和你的学习\n\n## nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）\n\n## 2.1 最简命令：直接输入 `nvidia-smi`\n\n在Linux终端里，想看一眼GPU现在什么状态，最直接的办法就是敲一个命令：\n\n```bash\nnvidia-smi\n```\n\n敲完回车，屏幕上会弹出一张表格。别被它吓到，咱们只看几个关键位置就行。\n\n**第一行**告诉你驱动和CUDA的版本信息，比如 `Driver Version: 525.85.12` 和 `CUDA Version: 12.0`，现在知道有这回事就行。\n\n**表格中间**才是重点。拿你电脑（联想拯救者Y7000P）来说，GPU型号会显示在这里，比如示例里的 `Tesla V100-PCIE`。旁边那列 `Memory-Usage` 显示显存占用，格式是“已用 / 总量”，比如 `128MiB / 32510MiB`，意思是总共32GB显存，现在只用了128MB。\n\n**最右边**的 `GPU-Util` 是GPU利用率，0%表示闲着，100%表示满负荷。下面那行 `Pwr:Usage/Cap` 是当前功耗和最大功耗，比如 `24W / 250W`，功耗低通常说明没在干重活。\n\n**怎么用**：你先\n\n## nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）\n\n好的，我们先从 `nvidia-smi` 的输出里，找出对你最重要的两个数字。\n\n### 2.2 关键指标解读\n\n运行 `nvidia-smi` 后，你会看到一张表格。别被密密麻麻的数字吓到，我们只看最核心的几项：\n\n*   **顶部信息**：这里告诉你工具、驱动和 CUDA 的版本号，先不用管。\n*   **GPU 列表**：这是重点。你会看到你的显卡型号（比如 `Name` 字段），以及：\n    *   `Temp`：显卡温度，越高越危险。\n    *   `Memory-Usage`：**显存占用 / 总显存**。比如 `128MiB / 32510MiB`，表示用了 128MB，总共 32GB。\n    *   `GPU-Util`：**GPU 计算利用率**。0% 是空闲，90%+ 是满载。\n*   **进程区**：显示是哪个程序（`Process name`）占用了显存（`GPU Memory Usage`）。\n\n> **对你最重要的两个数字**：`Memory-Usage`（显存占用）和 `GPU-Util`（利用率）。训练时如果显存快满了，就要调小 batch size；如果利用率长期很低，说明数据加载太慢，GPU 在空等。\n\n### 本块学习检查\n\n完成本块后，请用自己的话说明：`nvidia-smi` 中的 `Memory-Usage` 和 `GPU-Util` 这两个指标，分别能帮你发现\n\n## nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（掌握Linux）的关系；遇到无法解释的术语时记录下来再提问。\n\n在Linux终端输入 `watch -n 1 nvidia-smi`，屏幕会全屏并每秒自动刷新显卡状态。`-n 1` 表示间隔1秒，改成 `-n 0.5` 则每0.5秒刷新，更实时。按 `Ctrl + C` 退出。注意：`watch` 仅Linux/macOS可用，Windows不支持。\n\n**练习**：在你的联想拯救者Y7000P上打开Linux终端，运行 `watch -n 1 nvidia-smi`，观察刷新效果后按 `Ctrl\n\n## nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）\n\n### 3.2 方案 B：nvitop（推荐，可视化体验最佳）\n\n`nvitop` 是 Python 写的 GPU 监控工具，界面像 `top`，有颜色、进度条和曲线，比 `nvidia-smi` 好看好用。\n\n**安装与运行**（用上节课的 `pip`）：\n```bash\npip install nvitop\nnvitop\n```\n\n**界面特点**：\n- 彩色高亮：显存占用高变红，空闲变绿\n- 进程列表：显示 CPU%、MEM%、运行时间\n- 历史曲线：右上角有利用率和显存趋势图\n- 按 `h` 看帮助，`q` 退出\n\n**建议**：训练模型\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n## nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n---\n\n### 3.3 方案 C：gpustat（轻量简洁）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节，用 `gpustat` 最合适。\n\n**安装与使用**（在终端输入）：\n\n```bash\npip install gpustat   # 安装\ngpustat               # 运行，显示一次\nwatch -n 1 gpustat    # 每秒刷新，实时监控\n```\n\n**输出示例**：\n\n```bash\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n每行代表一张卡，依次是：卡编号、型号、温度、利用率、已用/总显存。\n\n**三种方案对比**：\n\n|\n\n## nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）\n\n## 4.1 查看显存详情（①）\n\n你的拯救者Y7000P上跑深度学习时，最常遇到的就是显存不够。先学会快速查看显存使用情况：\n\n```bash\nnvidia-smi -q -d MEMORY\n```\n\n这条命令只显示显存相关信息，输出包括：**总显存、已用显存、空闲显存、显存类型**（比如GDDR6）。不用在满屏输出里找重点，一眼就能看清。\n\n## 4.2 精准查询特定字段（①+④）\n\n如果只想看某几个数据，用 `--query-gpu` 配合 `--format=csv`，输出成表格，方便阅读或写脚本处理：\n\n```bash\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n```\n\n输出示例：\n\n```\nname, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\nTesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用字段：\n\n| 字段名 | 说明 |\n|---|---|\n| `name` | GPU 型号 |\n| `temperature.gpu` | GPU 温度 |\n| `memory.used` | 已用显存 |\n| `memory.total` | 总显存 |\n| `utilization.gpu` | GPU 利用率 |\n| `power.draw` | 当前功耗 |\n| `power.limit` | 功耗上限 |\n| `pcie.link.gen.current` | 当前 PCIe 版本 |\n| `ecc.mode.current` | ECC 内存模式 |\n\n## 4.3 限制 GPU 功率（高级）（①）\n\n某些场景（如实验室限电、散热不足）下可以限制GPU最大功耗：\n\n```bash\n# 查看当前功率限制\nnvidia-smi -q -d POWER\n\n# 设置 GPU\n\n## nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）\n\n## 5.1 查看 GPU 进程（①+④）\n\n运行 `nvidia-smi` 后，屏幕底部的 **Processes** 区域会列出当前占用 GPU 的进程。这个区域长这样：\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A  N/A      12345    C   python3                         10240MiB |\n+-----------------------------------------------------------------------------+\n```\n\n表格里每一行代表一个进程，你需要重点看四个字段：\n\n- **PID**：进程的唯一编号。后面要释放显存时，杀进程就靠它。\n- **Type**：进程类型。`C` 表示计算进程（比如 PyTorch 训练），`G` 表示图形进程。\n- **Process name**：进程的名字，比如 `python3`。\n- **GPU Memory Usage**：这个进程占了多少显存，单位是 MiB。\n\n简单说：**先看 Type 确认是不是计算任务，再看 PID 记住编号，最后看显存占用判断谁吃得多。**\n\n---\n\n**本块学习检查**：完成本块后，\n\n## nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）\n\n### 5.2 杀死僵尸进程，释放显存\n\n训练脚本崩溃后，有时进程没退干净，还占着显存（俗称“僵尸进程”）。这时手动杀掉它：\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程立刻消失，未保存的数据会丢。优先用 `kill PID`，不行再用 `kill -9`。\n\n### 5.3 OOM 预防思路\n\nOOM（显存溢出）是大模型训练常见报错。用 `nvidia-smi` 提前防：\n\n1. **训练前**：看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n## nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）\n\n## 6.1 导出监控日志（①）\n\n你的联想拯救者Y7000P上如果有NVIDIA显卡，就可以把刚才看到的监控信息保存成文件，方便事后分析。\n\n**方法一：直接保存屏幕输出**\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 > gpu_log.txt\n```\n\n这条命令会一直运行，把每次采样的结果写入 `gpu_log.txt`。想停止就按 `Ctrl+C`。\n\n**方法二：导出 CSV 格式（更适合分析）**\n\n```bash\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 > gpu_log.csv\n```\n\nCSV 是表格格式，每列有明确的字段名（时间戳、显卡名、已用显存、总显存、GPU利用率），之后可以用 Excel 或 Python 打开做分析。\n\n> **小提示**：`-l 1` 表示每秒采样一次，`-l 5` 就是每5秒一次。采样越频繁，文件越大，但数据越细。\n\n## 6.2 后台持续监控（④）\n\n如果你要跑一个很久的训练任务，不想一直盯着终端，可以用后台模式：\n\n```bash\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 > ~/gpu_monitor.csv 2>&1 &\n```\n\n这条命令的意思是：把监控放到后台运行，即使你关掉终端，它也会继续记录。数据会写到 `~/gpu_monitor.csv`（即你的主目录下）。训练结束后，再来看这个文件，就能分析整个训练期间的显存波动和利用率变化。\n\n---\n\n## 常见问题排查（④）\n\n| 症状 | 可能原因 | 解决方案 |\n|---|---|---|\n| `nvidia-smi: command not found` | 未安装 NVIDIA 驱动 | 安装驱动，或确认机器是否有 NVIDIA 显卡 |\n| 显示 `No running processes found` | GPU 空闲，没有程序在跑 | 正常状态，开始训练后会显示进程 |\n| 显存占用高但 GPU-Util 为 0% | 可能是采样时机、同步等待、训练流程暂停，或 DataLoader 瓶颈 | 持续观察 `nvitop` 确认趋势；若在训练中持续为 0%，可检查数据加载瓶颈，但需先确认 GPU 是否实际在执行计算 |\n|",
+        "code_examples": [],
+        "questions": [
+          {
+            "question_id": "Q-KB0104-001",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "difficulty": "初级",
+            "question_type": "short_answer",
+            "question_text": "请在终端执行以下命令，验证NVIDIA驱动和GPU是否可用，将输出粘贴作答：\n```bash\nnvidia-smi\n```",
+            "options": [],
+            "correct_answer": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+            "hint": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+            "explanation": "```\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |\n| 30%   45C    P8    20W / 200W |    512MiB /  8192MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+\n```\n> 若返回 `command not found` 或 `NVIDIA-SMI has failed`，说明驱动未正确安装。",
+            "expected_output": null,
+            "grading_mode": "semantic_match",
+            "source": "测试题目.md"
+          },
+          {
+            "question_id": "Q-KB0104-004",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "difficulty": "中级",
+            "question_type": "fill_blank",
+            "question_text": "`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。",
+            "options": [],
+            "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+            "hint": null,
+            "explanation": "",
+            "expected_output": null,
+            "grading_mode": "semantic_match",
+            "source": "测试题目.md"
+          },
+          {
+            "question_id": "Q-KB0101-007",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-01",
+            "difficulty": "中级",
+            "question_type": "practical",
+            "question_text": "请写出一条管道命令，统计当前目录下 `.py` 文件的数量。",
+            "options": [],
+            "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+            "hint": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+            "explanation": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+            "expected_output": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+            "grading_mode": "command_output_check",
+            "source": "测试题目.md"
+          },
+          {
+            "question_id": "Q-KB0103-005",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-03",
+            "difficulty": "高级",
+            "question_type": "true_false",
+            "question_text": "在conda环境中使用 `pip install` 安装的包，可以用 `conda list` 查看到吗？反过来呢？",
+            "options": [
+              "正确",
+              "错误"
+            ],
+            "correct_answer": "错误",
+            "hint": "---",
+            "explanation": "---",
+            "expected_output": null,
+            "grading_mode": "exact_match",
+            "source": "测试题目.md"
+          },
+          {
+            "question_id": "Q-KB0102-004",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-02",
+            "difficulty": "高级",
+            "question_type": "true_false",
+            "question_text": "在 `~/.bashrc` 中写入 `export LD_LIBRARY_PATH=/usr/local/lib` 后，新开一个终端窗口，该变量是否自动生效？为什么？",
+            "options": [
+              "正确",
+              "错误"
+            ],
+            "correct_answer": "错误",
+            "hint": "---",
+            "explanation": "---",
+            "expected_output": null,
+            "grading_mode": "exact_match",
+            "source": "测试题目.md"
+          },
+          {
+            "question_id": "Q-KB0104-003",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "difficulty": "中级",
+            "question_type": "single_choice",
+            "question_text": "想要**每2秒自动刷新**GPU状态，应使用哪个命令？",
+            "options": [
+              {
+                "key": "A",
+                "text": "`nvidia-smi -l 2`"
+              },
+              {
+                "key": "B",
+                "text": "`nvidia-smi --refresh 2`"
+              },
+              {
+                "key": "C",
+                "text": "`watch -n 2 nvidia-smi`"
+              },
+              {
+                "key": "D",
+                "text": "A和C都可以"
+              }
+            ],
+            "correct_answer": "D",
+            "hint": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。",
+            "explanation": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。",
+            "expected_output": null,
+            "grading_mode": "exact_match",
+            "source": "测试题目.md"
+          },
+          {
+            "question_id": "Q-KB0101-001",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-01",
+            "difficulty": "初级",
+            "question_type": "single_choice",
+            "question_text": "以下哪个命令用于**切换当前工作目录**？",
+            "options": [
+              {
+                "key": "A",
+                "text": "`ls`"
+              },
+              {
+                "key": "B",
+                "text": "`cd`"
+              },
+              {
+                "key": "C",
+                "text": "`mkdir`"
+              },
+              {
+                "key": "D",
+                "text": "`pwd`"
+              }
+            ],
+            "correct_answer": "B",
+            "hint": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+            "explanation": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+            "expected_output": null,
+            "grading_mode": "exact_match",
+            "source": "测试题目.md"
+          },
+          {
+            "question_id": "Q-KB0100-001",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-00",
+            "difficulty": "初级",
+            "question_type": "practical",
+            "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
+            "options": [],
+            "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+            "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+            "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+            "expected_output": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+            "grading_mode": "command_output_check",
+            "source": "测试题目.md"
+          }
+        ],
+        "format": "markdown",
+        "version": 1,
+        "review_trace_id": "tr_ee9d3dc1b4f34fa7",
+        "sources": [
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C001",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C001",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C001",
+              "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+              "source_line_start": 1,
+              "source_line_end": 45
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C002",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C002",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C002",
+              "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+              "source_line_start": 47,
+              "source_line_end": 58
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C003",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C003",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C003",
+              "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）",
+              "source_line_start": 60,
+              "source_line_end": 84
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C004",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C004",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C004",
+              "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）",
+              "source_line_start": 85,
+              "source_line_end": 101
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C005",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C005",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C005",
+              "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）",
+              "source_line_start": 102,
+              "source_line_end": 121
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C006",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C006",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C006",
+              "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）",
+              "source_line_start": 122,
+              "source_line_end": 156
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C007",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C007",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C007",
+              "heading_path": "nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）",
+              "source_line_start": 157,
+              "source_line_end": 210
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C008",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C008",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C008",
+              "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）",
+              "source_line_start": 211,
+              "source_line_end": 230
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C009",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C009",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C009",
+              "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）",
+              "source_line_start": 231,
+              "source_line_end": 259
+            }
+          },
+          {
+            "source_id": "src_LOCAL-KBS-01-04-C010",
+            "source_type": "knowledge_doc",
+            "title": "nvidia-smi 显存监控",
+            "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+            "content_ref": "LOCAL-KBS-01-04-C010",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "doc_id": "LOCAL-KBS-01-04",
+              "source_chunk_id": "LOCAL-KBS-01-04-C010",
+              "heading_path": "nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）",
+              "source_line_start": 260,
+              "source_line_end": 305
+            }
+          },
+          {
+            "source_id": "src_video_RES-VID-009",
+            "source_type": "video",
+            "title": "nvidia-smi命令详解",
+            "locator": "learning_resources:RES-VID-009",
+            "content_ref": "https://www.bilibili.com/video/BV1jfGh67E7A",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": "KBS-01-04",
+              "review_status": "pending"
+            }
+          },
+          {
+            "source_id": "src_video_RES-VID-001",
+            "source_type": "video",
+            "title": "黑马程序员新版Linux零基础快速入门到精通，全涵盖linux系统知识、常用软件环境部署、Shell脚本、云平台实践、大数据集群项目实战等",
+            "locator": "learning_resources:RES-VID-001",
+            "content_ref": "https://www.bilibili.com/video/BV1n84y1i7td",
+            "source_version": null,
+            "metadata_json": {
+              "block_id": "KB-01",
+              "subtopic_id": null,
+              "review_status": "pending"
+            }
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+            "text": "# nvidia-smi 显存监控\n\n① 底稿：《nvidia-smi 用法详解》  \n　　网址：https://blog.csdn.net/qq_36803941/article/details/142182349\n\n② 参考文章：《实时查看 GPU 显存占用、功耗、进程状态》  \n　　网址：https://blog.csdn.net/qq_36693723/article/details/142974892\n\n③ 参考文章：《【监控 GPU】监控 NVIDIA GPU 显卡占用状态的常用命令》  \n　　网址：https://blog.csdn.net/Ever_____/article/details/136973595\n\n④ 参考文章：《nvidia-smi 命令实战：如何像老司机一样监控 GPU 状态》  \n　　网址：https://blog.csdn.net/weixin_29305313/article/details/159296452\n\n> **适合人群**：已完成前三节，掌握 conda/pip 并能安装 Python 包的初学者。本节时长约 0.5 小时，目标是掌握",
+            "source_ref": "src_LOCAL-KBS-01-04-C001",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "revised",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C001"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+            "text": "```bash\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 525.85.12    Driver Version: 525.85.12    CUDA Version: 12.0  |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|                               |                      |               MIG M. |\n|==============",
+            "source_ref": "src_LOCAL-KBS-01-04-C002",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C002"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+            "text": "### 2.2 关键指标解读（①+④）\n\n| 区域 | 字段 | 含义 |\n|---|---|---|\n| **顶部信息** | `NVIDIA-SMI 525.85.12` | nvidia-smi 工具版本 |\n| | `Driver Version: 525.85.12` | NVIDIA 显卡驱动版本 |\n| | `CUDA Version: 12.0` | 当前驱动支持的最高 CUDA 版本 |\n| **GPU 列表** | `GPU 0` | GPU 编号（多卡时会有 0, 1, 2...）|\n| | `Name` | GPU 型号（如 Tesla V100、RTX 4090）|\n| | `Temp` | 温度（摄氏度）|\n| | `Pwr:Usage/Cap` | 当前功耗 / 最大功耗（如 24W / 250W）|\n| | `Memory-Usage` | **显存占用 / 总显存**（如 128MiB / 32510MiB）|\n| | `GPU-Util` | **GPU 计算利用率**（0% 表示空闲，90%+ 表示满载）|\n| **进程区** | `PID` | ",
+            "source_ref": "src_LOCAL-KBS-01-04-C003",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C003"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+            "text": "### 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）\n\nLinux 自带的 `watch` 命令可以周期性执行任意命令，配合 `nvidia-smi` 实现实时刷新：（②+③）\n\n```bash\n# 每 1 秒刷新一次\nwatch -n 1 nvidia-smi\n\n# 每 0.5 秒刷新一次（更实时）\nwatch -n 0.5 nvidia-smi\n```\n\n- 终端会全屏显示，每秒自动更新\n- 按 `Ctrl + C` 退出\n\n> **注意**：`watch` 命令在 Linux/macOS 下可用，Windows 命令提示符不支持。Windows 用户可用 `nvidia-smi -l 1` 代替（体验稍差，每次打印新表格）。（③）",
+            "source_ref": "src_LOCAL-KBS-01-04-C004",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C004"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+            "text": "### 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）\n\n`nvitop` 是一个基于 Python 的 GPU 实时监控工具，界面类似 `top`，有颜色区分、进度条、历史曲线，体验远胜原生 `nvidia-smi`。（②+③）\n\n```bash\n# 安装（上节课学过的 pip！）\npip install nvitop\n\n# 运行\nnvitop\n```\n\n界面特点：（②）\n- 彩色高亮：显存占用高时变红，空闲时变绿\n- 进程列表：显示每个进程的 CPU%、MEM%、运行时间\n- 历史曲线：右上角有 GPU 利用率和显存占用的趋势图\n- 按 `h` 查看帮助，`q` 退出\n\n> **强烈建议**：在服务器上训练模型时，开两个终端——一个跑训练脚本，一个跑 `nvitop`，实时监控。",
+            "source_ref": "src_LOCAL-KBS-01-04-C005",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C005"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+            "text": "### 3.3 方案 C：gpustat（轻量简洁）（②）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节：（②）\n\n```bash\n# 安装\npip install gpustat\n\n# 运行\ngpustat\n\n# 实时刷新\nwatch -n 1 gpustat\n```\n\n输出示例：（②）\n\n```bash\nc01n04  Wed Oct 16 10:55:19 2024  455.23.05\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n> **三种方案对比**：\n\n| 方案 | 安装成本 | 可视化 | 适用场景 |\n|---|---|---|---|\n| `watch -n 1 nvidia-smi` | 无需安装 | 一般 | 临时查看、无 pip 权限的服务器 |\n| `nvitop` | `pip install nvitop` | 优秀 | **日常主力推荐** |\n| `g",
+            "source_ref": "src_LOCAL-KBS-01-04-C006",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C006"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+            "text": "### 4.1 查看显存详情（①）\n\n```bash\n# 只查看显存相关信息\nnvidia-smi -q -d MEMORY\n```\n\n输出包括：总显存、已用显存、空闲显存、显存类型（GDDR6/GDDR6X/HBM2 等）。（①）\n\n### 4.2 精准查询特定字段（①+④）\n\n使用 `--query-gpu` 可以只提取你关心的字段，配合 `--format=csv` 输出为表格，方便脚本处理：（①+④）\n\n```bash\n# 查询 GPU 名称、温度、显存占用、利用率\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n\n# 输出示例：\n# name, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\n# Tesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用查询字段：（①+④）",
+            "source_ref": "src_LOCAL-KBS-01-04-C007",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C007"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+            "text": "### 5.1 查看 GPU 进程（①+④）\n\n`nvidia-smi` 默认输出底部的 **Processes** 区域会列出占用 GPU 的进程：（④）\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A",
+            "source_ref": "src_LOCAL-KBS-01-04-C008",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C008"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+            "text": "### 5.2 杀死僵尸进程，释放显存（①+④）\n\n训练脚本崩溃后，有时进程没有彻底退出，继续占用显存（俗称\"僵尸进程\"）。这时需要手动杀掉：（①+④）\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程会立刻消失，未保存的数据会丢失。优先用 `kill PID`，不行再用 `kill -9`。（④）\n\n### 5.3 OOM 预防思路（④）\n\nOOM（Out Of Memory，显存溢出）是大模型训练中最常见的报错之一。通过 `nvidia-smi` 可以提前发现风险：（④）\n\n1. **训练前**：`nvidia-smi` 查看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长趋势\n3. **OOM 后**：检查是否有僵尸进程占用显存，有则 `kil",
+            "source_ref": "src_LOCAL-KBS-01-04-C009",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "active",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C009"
+            }
+          },
+          {
+            "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+            "text": "### 6.1 导出监控日志（①）\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 -f gpu_log.txt\n\n# 或者用 query 模式导出 CSV（更适合分析）\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 -f gpu_log.csv\n```\n\n### 6.2 后台持续监控（④）\n\n```bash\n# 放到后台运行，即使关闭终端也继续记录\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 -f ~/gpu_monitor.csv > /dev/null 2>&1 &\n```\n\n> **用途**：长时间训练时，后台记录 GPU 状态，事后分析训练期间的显存波动和利用率曲线。（④）\n\n---\n\n## 七、常见问题排查（④）\n\n| 症状",
+            "source_ref": "src_LOCAL-KBS-01-04-C010",
+            "source_span": null,
+            "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+            "claim_type": "concept",
+            "is_key_technical": true,
+            "confidence": 0.8,
+            "status": "revised",
+            "metadata_json": {
+              "source_chunk_id": "LOCAL-KBS-01-04-C010"
+            }
+          }
+        ],
+        "recommended_videos": [
+          {
+            "resource_id": "RES-VID-009",
+            "title": "nvidia-smi命令详解",
+            "url": "https://www.bilibili.com/video/BV1jfGh67E7A",
+            "content_summary": "用于学习“nvidia-smi显存监控”的推荐视频；导入后需补充视频内容摘要或字幕。",
+            "review_status": "pending",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "role": "primary",
+            "sequence_index": 1,
+            "relevance_score": 1.0,
+            "mapping_status": "confirmed",
+            "scope": "subtopic"
+          },
+          {
+            "resource_id": "RES-VID-001",
+            "title": "黑马程序员新版Linux零基础快速入门到精通，全涵盖linux系统知识、常用软件环境部署、Shell脚本、云平台实践、大数据集群项目实战等",
+            "url": "https://www.bilibili.com/video/BV1n84y1i7td",
+            "content_summary": "用于学习“（环境准备：安装Linux系统（或WSL2/云服务器），熟悉终端使用，确保能执行Shell命令）”的推荐视频；导入后需补充视频内容摘要或字幕。",
+            "review_status": "pending",
+            "block_id": "KB-01",
+            "subtopic_id": null,
+            "role": "supplementary",
+            "sequence_index": 99,
+            "relevance_score": 1.0,
+            "mapping_status": "confirmed",
+            "scope": "block"
+          }
+        ],
+        "content_blocks": [
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 0,
+            "source_chunk_id": "LOCAL-KBS-01-04-C001",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+            "heading_level": 3,
+            "source_line_start": 1,
+            "source_line_end": 45,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）；原文行号：1-45；来源块：LOCAL-KBS-01-04-C001",
+            "personalized_content": "## 2.1 最简命令：`nvidia-smi`\n\n在 Linux 终端里，输入下面这行命令，然后按回车：\n\n```bash\nnvidia-smi\n```\n\n就这么简单。执行后，屏幕上会输出一个表格，里面显示了当前 GPU 的状态信息。\n\n**这个表格里你能看到什么？**\n\n- **显存占用**：当前用了多少显存、还剩多少。这能帮你提前判断会不会遇到 OOM（显存溢出）。\n- **GPU 利用率**：GPU 是在认真干活，还是闲着没事干。\n- **温度与功耗**：防止硬件过热，也能看看能耗情况。\n- **进程绑定**：哪个程序（PID）占用了 GPU？占了多少显存？一目了然。\n\n**注意**：`nvidia-smi` 只有在安装了 NVIDIA GPU 驱动后才能使用。如果你的机器没有 NVIDIA 显卡（比如纯 CPU 环境），命令会提示找不到。不过别担心，CPU 推理和不带 GPU 的基础学习仍然可以进行。\n\n---\n\n**本块学习检查**\n\n完成本块后，请用自己的话说明：`nvidia-smi` 这个命令和你的学习",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C001"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C001"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+                "text": "# nvidia-smi 显存监控\n\n① 底稿：《nvidia-smi 用法详解》  \n　　网址：https://blog.csdn.net/qq_36803941/article/details/142182349\n\n② 参考文章：《实时查看 GPU 显存占用、功耗、进程状态》  \n　　网址：https://blog.csdn.net/qq_36693723/article/details/142974892\n\n③ 参考文章：《【监控 GPU】监控 NVIDIA GPU 显卡占用状态的常用命令》  \n　　网址：https://blog.csdn.net/Ever_____/article/details/136973595\n\n④ 参考文章：《nvidia-smi 命令实战：如何像老司机一样监控 GPU 状态》  \n　　网址：https://blog.csdn.net/weixin_29305313/article/details/159296452\n\n> **适合人群**：已完成前三节，掌握 conda/pip 并能安装 Python 包的初学者。本节时长约 0.5 小时，目标是掌握",
+                "source_ref": "src_LOCAL-KBS-01-04-C001",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "revised",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C001"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C001",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C001",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C001",
+                  "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+                  "source_line_start": 1,
+                  "source_line_end": 45
+                }
+              }
+            ],
+            "version": 2,
+            "revision_note": "已按审核建议定点修订本块：补充来源块依据或人工复核后放行。",
+            "status": "revised"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 1,
+            "source_chunk_id": "LOCAL-KBS-01-04-C002",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+            "heading_level": 3,
+            "source_line_start": 47,
+            "source_line_end": 58,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）；原文行号：47-58；来源块：LOCAL-KBS-01-04-C002",
+            "personalized_content": "## 2.1 最简命令：直接输入 `nvidia-smi`\n\n在Linux终端里，想看一眼GPU现在什么状态，最直接的办法就是敲一个命令：\n\n```bash\nnvidia-smi\n```\n\n敲完回车，屏幕上会弹出一张表格。别被它吓到，咱们只看几个关键位置就行。\n\n**第一行**告诉你驱动和CUDA的版本信息，比如 `Driver Version: 525.85.12` 和 `CUDA Version: 12.0`，现在知道有这回事就行。\n\n**表格中间**才是重点。拿你电脑（联想拯救者Y7000P）来说，GPU型号会显示在这里，比如示例里的 `Tesla V100-PCIE`。旁边那列 `Memory-Usage` 显示显存占用，格式是“已用 / 总量”，比如 `128MiB / 32510MiB`，意思是总共32GB显存，现在只用了128MB。\n\n**最右边**的 `GPU-Util` 是GPU利用率，0%表示闲着，100%表示满负荷。下面那行 `Pwr:Usage/Cap` 是当前功耗和最大功耗，比如 `24W / 250W`，功耗低通常说明没在干重活。\n\n**怎么用**：你先",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C002"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C002"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+                "text": "```bash\n+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 525.85.12    Driver Version: 525.85.12    CUDA Version: 12.0  |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|                               |                      |               MIG M. |\n|==============",
+                "source_ref": "src_LOCAL-KBS-01-04-C002",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C002"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C002",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C002",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C002",
+                  "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①）",
+                  "source_line_start": 47,
+                  "source_line_end": 58
+                }
+              }
+            ],
+            "version": 2,
+            "revision_note": "已按审核建议定点修订本块：补充完整的使用说明，例如'看看GPU利用率和显存占用是否上升，以确认程序正在使用GPU'。",
+            "status": "revised"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 2,
+            "source_chunk_id": "LOCAL-KBS-01-04-C003",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）",
+            "heading_level": 3,
+            "source_line_start": 60,
+            "source_line_end": 84,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）；原文行号：60-84；来源块：LOCAL-KBS-01-04-C003",
+            "personalized_content": "好的，我们先从 `nvidia-smi` 的输出里，找出对你最重要的两个数字。\n\n### 2.2 关键指标解读\n\n运行 `nvidia-smi` 后，你会看到一张表格。别被密密麻麻的数字吓到，我们只看最核心的几项：\n\n*   **顶部信息**：这里告诉你工具、驱动和 CUDA 的版本号，先不用管。\n*   **GPU 列表**：这是重点。你会看到你的显卡型号（比如 `Name` 字段），以及：\n    *   `Temp`：显卡温度，越高越危险。\n    *   `Memory-Usage`：**显存占用 / 总显存**。比如 `128MiB / 32510MiB`，表示用了 128MB，总共 32GB。\n    *   `GPU-Util`：**GPU 计算利用率**。0% 是空闲，90%+ 是满载。\n*   **进程区**：显示是哪个程序（`Process name`）占用了显存（`GPU Memory Usage`）。\n\n> **对你最重要的两个数字**：`Memory-Usage`（显存占用）和 `GPU-Util`（利用率）。训练时如果显存快满了，就要调小 batch size；如果利用率长期很低，说明数据加载太慢，GPU 在空等。\n\n### 本块学习检查\n\n完成本块后，请用自己的话说明：`nvidia-smi` 中的 `Memory-Usage` 和 `GPU-Util` 这两个指标，分别能帮你发现",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C003"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C003"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+                "text": "### 2.2 关键指标解读（①+④）\n\n| 区域 | 字段 | 含义 |\n|---|---|---|\n| **顶部信息** | `NVIDIA-SMI 525.85.12` | nvidia-smi 工具版本 |\n| | `Driver Version: 525.85.12` | NVIDIA 显卡驱动版本 |\n| | `CUDA Version: 12.0` | 当前驱动支持的最高 CUDA 版本 |\n| **GPU 列表** | `GPU 0` | GPU 编号（多卡时会有 0, 1, 2...）|\n| | `Name` | GPU 型号（如 Tesla V100、RTX 4090）|\n| | `Temp` | 温度（摄氏度）|\n| | `Pwr:Usage/Cap` | 当前功耗 / 最大功耗（如 24W / 250W）|\n| | `Memory-Usage` | **显存占用 / 总显存**（如 128MiB / 32510MiB）|\n| | `GPU-Util` | **GPU 计算利用率**（0% 表示空闲，90%+ 表示满载）|\n| **进程区** | `PID` | ",
+                "source_ref": "src_LOCAL-KBS-01-04-C003",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C003",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C003"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C003",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C003",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C003",
+                  "heading_path": "nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.2 关键指标解读（①+④）",
+                  "source_line_start": 60,
+                  "source_line_end": 84
+                }
+              }
+            ],
+            "version": 1,
+            "revision_note": null,
+            "status": "draft"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 3,
+            "source_chunk_id": "LOCAL-KBS-01-04-C004",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）",
+            "heading_level": 3,
+            "source_line_start": 85,
+            "source_line_end": 101,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）；原文行号：85-101；来源块：LOCAL-KBS-01-04-C004",
+            "personalized_content": "**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标（掌握Linux）的关系；遇到无法解释的术语时记录下来再提问。\n\n在Linux终端输入 `watch -n 1 nvidia-smi`，屏幕会全屏并每秒自动刷新显卡状态。`-n 1` 表示间隔1秒，改成 `-n 0.5` 则每0.5秒刷新，更实时。按 `Ctrl + C` 退出。注意：`watch` 仅Linux/macOS可用，Windows不支持。\n\n**练习**：在你的联想拯救者Y7000P上打开Linux终端，运行 `watch -n 1 nvidia-smi`，观察刷新效果后按 `Ctrl",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C004"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C004"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+                "text": "### 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）\n\nLinux 自带的 `watch` 命令可以周期性执行任意命令，配合 `nvidia-smi` 实现实时刷新：（②+③）\n\n```bash\n# 每 1 秒刷新一次\nwatch -n 1 nvidia-smi\n\n# 每 0.5 秒刷新一次（更实时）\nwatch -n 0.5 nvidia-smi\n```\n\n- 终端会全屏显示，每秒自动更新\n- 按 `Ctrl + C` 退出\n\n> **注意**：`watch` 命令在 Linux/macOS 下可用，Windows 命令提示符不支持。Windows 用户可用 `nvidia-smi -l 1` 代替（体验稍差，每次打印新表格）。（③）",
+                "source_ref": "src_LOCAL-KBS-01-04-C004",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C004",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C004"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C004",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C004",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C004",
+                  "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.1 方案 A：watch + nvidia-smi（系统自带，无需安装）（①+②）",
+                  "source_line_start": 85,
+                  "source_line_end": 101
+                }
+              }
+            ],
+            "version": 1,
+            "revision_note": null,
+            "status": "draft"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 4,
+            "source_chunk_id": "LOCAL-KBS-01-04-C005",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）",
+            "heading_level": 3,
+            "source_line_start": 102,
+            "source_line_end": 121,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）；原文行号：102-121；来源块：LOCAL-KBS-01-04-C005",
+            "personalized_content": "### 3.2 方案 B：nvitop（推荐，可视化体验最佳）\n\n`nvitop` 是 Python 写的 GPU 监控工具，界面像 `top`，有颜色、进度条和曲线，比 `nvidia-smi` 好看好用。\n\n**安装与运行**（用上节课的 `pip`）：\n```bash\npip install nvitop\nnvitop\n```\n\n**界面特点**：\n- 彩色高亮：显存占用高变红，空闲变绿\n- 进程列表：显示 CPU%、MEM%、运行时间\n- 历史曲线：右上角有利用率和显存趋势图\n- 按 `h` 看帮助，`q` 退出\n\n**建议**：训练模型\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C005"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C005"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+                "text": "### 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）\n\n`nvitop` 是一个基于 Python 的 GPU 实时监控工具，界面类似 `top`，有颜色区分、进度条、历史曲线，体验远胜原生 `nvidia-smi`。（②+③）\n\n```bash\n# 安装（上节课学过的 pip！）\npip install nvitop\n\n# 运行\nnvitop\n```\n\n界面特点：（②）\n- 彩色高亮：显存占用高时变红，空闲时变绿\n- 进程列表：显示每个进程的 CPU%、MEM%、运行时间\n- 历史曲线：右上角有 GPU 利用率和显存占用的趋势图\n- 按 `h` 查看帮助，`q` 退出\n\n> **强烈建议**：在服务器上训练模型时，开两个终端——一个跑训练脚本，一个跑 `nvitop`，实时监控。",
+                "source_ref": "src_LOCAL-KBS-01-04-C005",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C005",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C005"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C005",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C005",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C005",
+                  "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.2 方案 B：nvitop（推荐，可视化体验最佳）（②+③）",
+                  "source_line_start": 102,
+                  "source_line_end": 121
+                }
+              }
+            ],
+            "version": 1,
+            "revision_note": null,
+            "status": "draft"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 5,
+            "source_chunk_id": "LOCAL-KBS-01-04-C006",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）",
+            "heading_level": 3,
+            "source_line_start": 122,
+            "source_line_end": 156,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）；原文行号：122-156；来源块：LOCAL-KBS-01-04-C006",
+            "personalized_content": "**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。\n\n---\n\n### 3.3 方案 C：gpustat（轻量简洁）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节，用 `gpustat` 最合适。\n\n**安装与使用**（在终端输入）：\n\n```bash\npip install gpustat   # 安装\ngpustat               # 运行，显示一次\nwatch -n 1 gpustat    # 每秒刷新，实时监控\n```\n\n**输出示例**：\n\n```bash\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n每行代表一张卡，依次是：卡编号、型号、温度、利用率、已用/总显存。\n\n**三种方案对比**：\n\n|",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C006"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C006"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+                "text": "### 3.3 方案 C：gpustat（轻量简洁）（②）\n\n如果你只需要快速看一眼所有卡的显存占用，不需要太多细节：（②）\n\n```bash\n# 安装\npip install gpustat\n\n# 运行\ngpustat\n\n# 实时刷新\nwatch -n 1 gpustat\n```\n\n输出示例：（②）\n\n```bash\nc01n04  Wed Oct 16 10:55:19 2024  455.23.05\n[0] Tesla V100-PCIE-32GB | 33°C,  0 % |  0 / 32510 MB |\n[1] Tesla V100-PCIE-32GB | 30°C,  0 % |  0 / 32510 MB |\n```\n\n> **三种方案对比**：\n\n| 方案 | 安装成本 | 可视化 | 适用场景 |\n|---|---|---|---|\n| `watch -n 1 nvidia-smi` | 无需安装 | 一般 | 临时查看、无 pip 权限的服务器 |\n| `nvitop` | `pip install nvitop` | 优秀 | **日常主力推荐** |\n| `g",
+                "source_ref": "src_LOCAL-KBS-01-04-C006",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C006",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C006"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C006",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C006",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C006",
+                  "heading_path": "nvidia-smi 显存监控 > 三、实时动态监控（①+②+③） > 3.3 方案 C：gpustat（轻量简洁）（②）",
+                  "source_line_start": 122,
+                  "source_line_end": 156
+                }
+              }
+            ],
+            "version": 1,
+            "revision_note": null,
+            "status": "draft"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 6,
+            "source_chunk_id": "LOCAL-KBS-01-04-C007",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）",
+            "heading_level": 3,
+            "source_line_start": 157,
+            "source_line_end": 210,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）；原文行号：157-210；来源块：LOCAL-KBS-01-04-C007",
+            "personalized_content": "## 4.1 查看显存详情（①）\n\n你的拯救者Y7000P上跑深度学习时，最常遇到的就是显存不够。先学会快速查看显存使用情况：\n\n```bash\nnvidia-smi -q -d MEMORY\n```\n\n这条命令只显示显存相关信息，输出包括：**总显存、已用显存、空闲显存、显存类型**（比如GDDR6）。不用在满屏输出里找重点，一眼就能看清。\n\n## 4.2 精准查询特定字段（①+④）\n\n如果只想看某几个数据，用 `--query-gpu` 配合 `--format=csv`，输出成表格，方便阅读或写脚本处理：\n\n```bash\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n```\n\n输出示例：\n\n```\nname, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\nTesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用字段：\n\n| 字段名 | 说明 |\n|---|---|\n| `name` | GPU 型号 |\n| `temperature.gpu` | GPU 温度 |\n| `memory.used` | 已用显存 |\n| `memory.total` | 总显存 |\n| `utilization.gpu` | GPU 利用率 |\n| `power.draw` | 当前功耗 |\n| `power.limit` | 功耗上限 |\n| `pcie.link.gen.current` | 当前 PCIe 版本 |\n| `ecc.mode.current` | ECC 内存模式 |\n\n## 4.3 限制 GPU 功率（高级）（①）\n\n某些场景（如实验室限电、散热不足）下可以限制GPU最大功耗：\n\n```bash\n# 查看当前功率限制\nnvidia-smi -q -d POWER\n\n# 设置 GPU",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C007"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C007"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+                "text": "### 4.1 查看显存详情（①）\n\n```bash\n# 只查看显存相关信息\nnvidia-smi -q -d MEMORY\n```\n\n输出包括：总显存、已用显存、空闲显存、显存类型（GDDR6/GDDR6X/HBM2 等）。（①）\n\n### 4.2 精准查询特定字段（①+④）\n\n使用 `--query-gpu` 可以只提取你关心的字段，配合 `--format=csv` 输出为表格，方便脚本处理：（①+④）\n\n```bash\n# 查询 GPU 名称、温度、显存占用、利用率\nnvidia-smi --query-gpu=name,temperature.gpu,memory.used,memory.total,utilization.gpu --format=csv\n\n# 输出示例：\n# name, temperature.gpu, memory.used [MiB], memory.total [MiB], utilization.gpu [%]\n# Tesla V100-PCIE-32GB, 33, 128 MiB, 32510 MiB, 0 %\n```\n\n常用查询字段：（①+④）",
+                "source_ref": "src_LOCAL-KBS-01-04-C007",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C007"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C007",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C007",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C007",
+                  "heading_path": "nvidia-smi 显存监控 > 四、进阶查询：精准获取信息（①+④） > 4.1 查看显存详情（①）",
+                  "source_line_start": 157,
+                  "source_line_end": 210
+                }
+              }
+            ],
+            "version": 2,
+            "revision_note": "已按审核建议定点修订本块：补充完整的设置命令，例如：nvidia-smi -pl 200，并确保代码块正确闭合。",
+            "status": "revised"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 7,
+            "source_chunk_id": "LOCAL-KBS-01-04-C008",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）",
+            "heading_level": 3,
+            "source_line_start": 211,
+            "source_line_end": 230,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）；原文行号：211-230；来源块：LOCAL-KBS-01-04-C008",
+            "personalized_content": "## 5.1 查看 GPU 进程（①+④）\n\n运行 `nvidia-smi` 后，屏幕底部的 **Processes** 区域会列出当前占用 GPU 的进程。这个区域长这样：\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A  N/A      12345    C   python3                         10240MiB |\n+-----------------------------------------------------------------------------+\n```\n\n表格里每一行代表一个进程，你需要重点看四个字段：\n\n- **PID**：进程的唯一编号。后面要释放显存时，杀进程就靠它。\n- **Type**：进程类型。`C` 表示计算进程（比如 PyTorch 训练），`G` 表示图形进程。\n- **Process name**：进程的名字，比如 `python3`。\n- **GPU Memory Usage**：这个进程占了多少显存，单位是 MiB。\n\n简单说：**先看 Type 确认是不是计算任务，再看 PID 记住编号，最后看显存占用判断谁吃得多。**\n\n---\n\n**本块学习检查**：完成本块后，",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C008"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C008"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+                "text": "### 5.1 查看 GPU 进程（①+④）\n\n`nvidia-smi` 默认输出底部的 **Processes** 区域会列出占用 GPU 的进程：（④）\n\n```bash\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A",
+                "source_ref": "src_LOCAL-KBS-01-04-C008",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C008",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C008"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C008",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C008",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C008",
+                  "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.1 查看 GPU 进程（①+④）",
+                  "source_line_start": 211,
+                  "source_line_end": 230
+                }
+              }
+            ],
+            "version": 1,
+            "revision_note": null,
+            "status": "draft"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 8,
+            "source_chunk_id": "LOCAL-KBS-01-04-C009",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）",
+            "heading_level": 3,
+            "source_line_start": 231,
+            "source_line_end": 259,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）；原文行号：231-259；来源块：LOCAL-KBS-01-04-C009",
+            "personalized_content": "### 5.2 杀死僵尸进程，释放显存\n\n训练脚本崩溃后，有时进程没退干净，还占着显存（俗称“僵尸进程”）。这时手动杀掉它：\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程立刻消失，未保存的数据会丢。优先用 `kill PID`，不行再用 `kill -9`。\n\n### 5.3 OOM 预防思路\n\nOOM（显存溢出）是大模型训练常见报错。用 `nvidia-smi` 提前防：\n\n1. **训练前**：看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长\n\n**本块学习检查**：完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C009"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C009"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+                "text": "### 5.2 杀死僵尸进程，释放显存（①+④）\n\n训练脚本崩溃后，有时进程没有彻底退出，继续占用显存（俗称\"僵尸进程\"）。这时需要手动杀掉：（①+④）\n\n```bash\n# 1. 先用 nvidia-smi 找到 PID（比如 12345）\nnvidia-smi\n\n# 2. 杀死进程\nkill 12345\n\n# 3. 如果进程顽固不死，强制终止\nkill -9 12345\n```\n\n> **安全提醒**：`kill -9` 是强制终止，进程会立刻消失，未保存的数据会丢失。优先用 `kill PID`，不行再用 `kill -9`。（④）\n\n### 5.3 OOM 预防思路（④）\n\nOOM（Out Of Memory，显存溢出）是大模型训练中最常见的报错之一。通过 `nvidia-smi` 可以提前发现风险：（④）\n\n1. **训练前**：`nvidia-smi` 查看空闲显存，估算 batch size\n2. **训练中**：用 `watch -n 1 nvidia-smi` 或 `nvitop` 观察显存增长趋势\n3. **OOM 后**：检查是否有僵尸进程占用显存，有则 `kil",
+                "source_ref": "src_LOCAL-KBS-01-04-C009",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C009",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "active",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C009"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C009",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C009",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C009",
+                  "heading_path": "nvidia-smi 显存监控 > 五、进程管理与显存释放（①+④） > 5.2 杀死僵尸进程，释放显存（①+④）",
+                  "source_line_start": 231,
+                  "source_line_end": 259
+                }
+              }
+            ],
+            "version": 1,
+            "revision_note": null,
+            "status": "draft"
+          },
+          {
+            "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+            "session_id": "51197dbb-1d3c-45f3-8b3e-769628af1ec8",
+            "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+            "block_id": "KB-01",
+            "subtopic_id": "KBS-01-04",
+            "block_name": "Linux环境与命令行操作",
+            "block_index": 9,
+            "source_chunk_id": "LOCAL-KBS-01-04-C010",
+            "source_doc_id": "LOCAL-KBS-01-04",
+            "heading_path": "nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）",
+            "heading_level": 3,
+            "source_line_start": 260,
+            "source_line_end": 305,
+            "source_note": "标题路径：nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）；原文行号：260-305；来源块：LOCAL-KBS-01-04-C010",
+            "personalized_content": "## 6.1 导出监控日志（①）\n\n你的联想拯救者Y7000P上如果有NVIDIA显卡，就可以把刚才看到的监控信息保存成文件，方便事后分析。\n\n**方法一：直接保存屏幕输出**\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 > gpu_log.txt\n```\n\n这条命令会一直运行，把每次采样的结果写入 `gpu_log.txt`。想停止就按 `Ctrl+C`。\n\n**方法二：导出 CSV 格式（更适合分析）**\n\n```bash\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 > gpu_log.csv\n```\n\nCSV 是表格格式，每列有明确的字段名（时间戳、显卡名、已用显存、总显存、GPU利用率），之后可以用 Excel 或 Python 打开做分析。\n\n> **小提示**：`-l 1` 表示每秒采样一次，`-l 5` 就是每5秒一次。采样越频繁，文件越大，但数据越细。\n\n## 6.2 后台持续监控（④）\n\n如果你要跑一个很久的训练任务，不想一直盯着终端，可以用后台模式：\n\n```bash\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 > ~/gpu_monitor.csv 2>&1 &\n```\n\n这条命令的意思是：把监控放到后台运行，即使你关掉终端，它也会继续记录。数据会写到 `~/gpu_monitor.csv`（即你的主目录下）。训练结束后，再来看这个文件，就能分析整个训练期间的显存波动和利用率变化。\n\n---\n\n## 常见问题排查（④）\n\n| 症状 | 可能原因 | 解决方案 |\n|---|---|---|\n| `nvidia-smi: command not found` | 未安装 NVIDIA 驱动 | 安装驱动，或确认机器是否有 NVIDIA 显卡 |\n| 显示 `No running processes found` | GPU 空闲，没有程序在跑 | 正常状态，开始训练后会显示进程 |\n| 显存占用高但 GPU-Util 为 0% | 可能是采样时机、同步等待、训练流程暂停，或 DataLoader 瓶颈 | 持续观察 `nvitop` 确认趋势；若在训练中持续为 0%，可检查数据加载瓶颈，但需先确认 GPU 是否实际在执行计算 |\n|",
+            "personalization_action": "explain_and_practice",
+            "personalization_reason": "学习目标：掌握Linux；学习方式：practice；实训条件：联想拯救者Y7000P",
+            "evidence_refs": [],
+            "fact_source_chunk_ids": [
+              "LOCAL-KBS-01-04-C010"
+            ],
+            "teaching_tasks": [
+              {
+                "task_type": "apply",
+                "title": "Linux环境与命令行操作本块检查",
+                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
+                "source_chunk_id": "LOCAL-KBS-01-04-C010"
+              }
+            ],
+            "claims": [
+              {
+                "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+                "text": "### 6.1 导出监控日志（①）\n\n```bash\n# 每 2 秒采样一次，输出到 gpu_log.txt，按 Ctrl+C 停止\nnvidia-smi -l 2 -f gpu_log.txt\n\n# 或者用 query 模式导出 CSV（更适合分析）\nnvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 -f gpu_log.csv\n```\n\n### 6.2 后台持续监控（④）\n\n```bash\n# 放到后台运行，即使关闭终端也继续记录\nnohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 -f ~/gpu_monitor.csv > /dev/null 2>&1 &\n```\n\n> **用途**：长时间训练时，后台记录 GPU 状态，事后分析训练期间的显存波动和利用率曲线。（④）\n\n---\n\n## 七、常见问题排查（④）\n\n| 症状",
+                "source_ref": "src_LOCAL-KBS-01-04-C010",
+                "source_span": null,
+                "section_ref": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+                "claim_type": "concept",
+                "is_key_technical": true,
+                "confidence": 0.8,
+                "status": "revised",
+                "metadata_json": {
+                  "source_chunk_id": "LOCAL-KBS-01-04-C010"
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source_id": "src_LOCAL-KBS-01-04-C010",
+                "source_type": "knowledge_doc",
+                "title": "nvidia-smi 显存监控",
+                "locator": "https://blog.csdn.net/qq_36803941/article/details/142182349",
+                "content_ref": "LOCAL-KBS-01-04-C010",
+                "source_version": null,
+                "metadata_json": {
+                  "block_id": "KB-01",
+                  "subtopic_id": "KBS-01-04",
+                  "doc_id": "LOCAL-KBS-01-04",
+                  "source_chunk_id": "LOCAL-KBS-01-04-C010",
+                  "heading_path": "nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①）",
+                  "source_line_start": 260,
+                  "source_line_end": 305
+                }
+              }
+            ],
+            "version": 3,
+            "revision_note": "已按审核建议定点修订本块：补充来源块依据或人工复核后放行。",
+            "status": "revised"
+          }
+        ],
+        "learning_evidence_summary": {
+          "unstable_prerequisite_count": 0,
+          "weak_topic_count": 0,
+          "recent_question_count": 0
+        },
+        "preflight_review": null
+      },
+      "qa_history": []
+    }
+  },
+  "next_stage": null,
+  "next_stage_planning_notes": null,
+  "qa_history": [],
+  "answer_records": [],
+  "interactions": [
+    {
+      "type": "initial_diagnostic",
+      "data": {
+        "user_input": "目标：掌握Linux；已掌握知识点：4个"
+      }
+    },
+    {
+      "type": "review_round",
+      "data": {
+        "target_type": "learning_package",
+        "iteration": 1,
+        "technical": {
+          "reviewer": "technical",
+          "passed": false,
+          "errors": [
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "description": "与来源块 LOCAL-KBS-01-04-C001 相似度 0.75 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-04-C001，heading_path=nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①），lines=1-45",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "335728f79463_r1",
+              "canonical_error_id": "335728f79463",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C001"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_chunk_id": "LOCAL-KBS-01-04-C001",
+              "content_version": 1,
+              "in_chunk_position": "lines:1-45"
+            },
+            {
+              "error_type": "incomplete_content",
+              "severity": "major",
+              "location": null,
+              "description": "内容块在'另开一个终端敲 nvidia-smi，看看'处截断，未完成'怎么用'部分的说明，导致教学不完整。",
+              "evidence": "原文以'看看'结尾，缺少后续内容，属于内容不完整。",
+              "suggestion": "补充完整的使用说明，例如'看看GPU利用率和显存占用是否上升，以确认程序正在使用GPU'。",
+              "error_id": "ebeae8278360_r1",
+              "canonical_error_id": "ebeae8278360",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+              "content_chunk_id": "LOCAL-KBS-01-04-C002",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "incomplete_command",
+              "severity": "major",
+              "location": null,
+              "description": "4.3节中设置GPU功率上限的命令不完整，缺少实际设置命令和参数，且代码块未闭合。",
+              "evidence": "原文中'# 设置 GPU 0 的功率上限为 200'后无具体命令，且代码块缺少结束标记。",
+              "suggestion": "补充完整的设置命令，例如：nvidia-smi -pl 200，并确保代码块正确闭合。",
+              "error_id": "35e2be717af0_r1",
+              "canonical_error_id": "35e2be717af0",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+              "content_chunk_id": "LOCAL-KBS-01-04-C007",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "description": "与来源块 LOCAL-KBS-01-04-C010 相似度 0.74 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-04-C010，heading_path=nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①），lines=260-305",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "f465061a114e_r1",
+              "canonical_error_id": "f465061a114e",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C010"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": "lines:260-305"
+            },
+            {
+              "error_type": "command_error",
+              "severity": "major",
+              "location": null,
+              "description": "nvidia-smi 命令中 -l 与 -f 参数组合错误：-f 指定输出文件后，-l 的持续采样输出不会写入该文件，导致日志文件为空或行为不符合预期。",
+              "evidence": "nvidia-smi 官方文档：-f 用于将查询结果输出到文件，-l 用于持续监控，两者同时使用时 -l 的循环输出不会写入 -f 指定的文件。",
+              "suggestion": "使用 nvidia-smi -l 2 > gpu_log.txt 重定向输出，或使用 --query-gpu 与 --format=csv 配合 -f 进行单次或循环采样。",
+              "error_id": "27ad7f93eb17_r1",
+              "canonical_error_id": "27ad7f93eb17",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "command_error",
+              "severity": "major",
+              "location": null,
+              "description": "CSV 导出命令中 -l 1 与 -f 组合同样存在参数冲突，且 -l 与 --query-gpu 同时使用可能导致输出格式异常。",
+              "evidence": "nvidia-smi 帮助信息：-l 与 --query-gpu 不能同时使用，-l 用于持续监控，--query-gpu 用于查询指定字段。",
+              "suggestion": "使用 nvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 > gpu_log.csv 重定向输出，或使用 -f 但去掉 -l。",
+              "error_id": "5e104f49daa0_r1",
+              "canonical_error_id": "5e104f49daa0",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "command_error",
+              "severity": "major",
+              "location": null,
+              "description": "后台监控命令中 nohup 与 -f 组合无效，-f 指定文件后输出不会写入该文件，导致监控数据丢失。",
+              "evidence": "nvidia-smi 文档：-f 用于输出到文件，但 -l 循环输出不写入 -f 文件，需使用重定向。",
+              "suggestion": "使用 nohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 > ~/gpu_monitor.csv 2>&1 &",
+              "error_id": "492140a5927f_r1",
+              "canonical_error_id": "492140a5927f",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "factual_error",
+              "severity": "minor",
+              "location": null,
+              "description": "常见问题排查表中'显存占用高但 GPU-Util 为 0%'的解决方案建议增加 DataLoader 的 num_workers，但未说明该建议仅适用于训练场景，且未提及可能的原因如 GPU 空闲或同步等待。",
+              "evidence": "GPU-Util 为 0% 可能由多种原因导致，包括采样时机、同步等待、训练流程暂停等，增加 num_workers 并非通用解决方案。",
+              "suggestion": "建议补充说明：若在训练中持续为 0%，可检查数据加载瓶颈，但需先确认 GPU 是否实际在执行计算。",
+              "error_id": "fbda3e1604a1_r1",
+              "canonical_error_id": "fbda3e1604a1",
+              "source_refs": [],
+              "change_request": {
+                "required": true,
+                "action": "rewrite_with_supported_source"
+              },
+              "must_fix": true,
+              "must_fix_reason": "error_type=factual_error 属于事实错误/来源缺失/代码不可执行/违反安全规范",
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            }
+          ],
+          "personalization_errors": [],
+          "review_details": null
+        },
+        "quality": {
+          "reviewer": "quality",
+          "passed": false,
+          "errors": [
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "description": "与来源块 LOCAL-KBS-01-04-C001 相似度 0.75 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-04-C001，heading_path=nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①），lines=1-45",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "335728f79463_r1",
+              "canonical_error_id": "335728f79463",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C001"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_chunk_id": "LOCAL-KBS-01-04-C001",
+              "content_version": 1,
+              "in_chunk_position": "lines:1-45"
+            },
+            {
+              "error_type": "incomplete_content",
+              "severity": "major",
+              "location": null,
+              "description": "内容块在'另开一个终端敲 nvidia-smi，看看'处截断，未完成'怎么用'部分的说明，导致教学不完整。",
+              "evidence": "原文以'看看'结尾，缺少后续内容，属于内容不完整。",
+              "suggestion": "补充完整的使用说明，例如'看看GPU利用率和显存占用是否上升，以确认程序正在使用GPU'。",
+              "error_id": "ebeae8278360_r1",
+              "canonical_error_id": "ebeae8278360",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C002",
+              "content_chunk_id": "LOCAL-KBS-01-04-C002",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "incomplete_command",
+              "severity": "major",
+              "location": null,
+              "description": "4.3节中设置GPU功率上限的命令不完整，缺少实际设置命令和参数，且代码块未闭合。",
+              "evidence": "原文中'# 设置 GPU 0 的功率上限为 200'后无具体命令，且代码块缺少结束标记。",
+              "suggestion": "补充完整的设置命令，例如：nvidia-smi -pl 200，并确保代码块正确闭合。",
+              "error_id": "35e2be717af0_r1",
+              "canonical_error_id": "35e2be717af0",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C007",
+              "content_chunk_id": "LOCAL-KBS-01-04-C007",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "description": "与来源块 LOCAL-KBS-01-04-C010 相似度 0.74 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-04-C010，heading_path=nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①），lines=260-305",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "f465061a114e_r1",
+              "canonical_error_id": "f465061a114e",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C010"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": "lines:260-305"
+            },
+            {
+              "error_type": "command_error",
+              "severity": "major",
+              "location": null,
+              "description": "nvidia-smi 命令中 -l 与 -f 参数组合错误：-f 指定输出文件后，-l 的持续采样输出不会写入该文件，导致日志文件为空或行为不符合预期。",
+              "evidence": "nvidia-smi 官方文档：-f 用于将查询结果输出到文件，-l 用于持续监控，两者同时使用时 -l 的循环输出不会写入 -f 指定的文件。",
+              "suggestion": "使用 nvidia-smi -l 2 > gpu_log.txt 重定向输出，或使用 --query-gpu 与 --format=csv 配合 -f 进行单次或循环采样。",
+              "error_id": "27ad7f93eb17_r1",
+              "canonical_error_id": "27ad7f93eb17",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "command_error",
+              "severity": "major",
+              "location": null,
+              "description": "CSV 导出命令中 -l 1 与 -f 组合同样存在参数冲突，且 -l 与 --query-gpu 同时使用可能导致输出格式异常。",
+              "evidence": "nvidia-smi 帮助信息：-l 与 --query-gpu 不能同时使用，-l 用于持续监控，--query-gpu 用于查询指定字段。",
+              "suggestion": "使用 nvidia-smi --query-gpu=timestamp,name,memory.used,memory.total,utilization.gpu --format=csv -l 1 > gpu_log.csv 重定向输出，或使用 -f 但去掉 -l。",
+              "error_id": "5e104f49daa0_r1",
+              "canonical_error_id": "5e104f49daa0",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "command_error",
+              "severity": "major",
+              "location": null,
+              "description": "后台监控命令中 nohup 与 -f 组合无效，-f 指定文件后输出不会写入该文件，导致监控数据丢失。",
+              "evidence": "nvidia-smi 文档：-f 用于输出到文件，但 -l 循环输出不写入 -f 文件，需使用重定向。",
+              "suggestion": "使用 nohup nvidia-smi --query-gpu=timestamp,memory.used,utilization.gpu --format=csv -l 5 > ~/gpu_monitor.csv 2>&1 &",
+              "error_id": "492140a5927f_r1",
+              "canonical_error_id": "492140a5927f",
+              "source_refs": [],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            },
+            {
+              "error_type": "factual_error",
+              "severity": "minor",
+              "location": null,
+              "description": "常见问题排查表中'显存占用高但 GPU-Util 为 0%'的解决方案建议增加 DataLoader 的 num_workers，但未说明该建议仅适用于训练场景，且未提及可能的原因如 GPU 空闲或同步等待。",
+              "evidence": "GPU-Util 为 0% 可能由多种原因导致，包括采样时机、同步等待、训练流程暂停等，增加 num_workers 并非通用解决方案。",
+              "suggestion": "建议补充说明：若在训练中持续为 0%，可检查数据加载瓶颈，但需先确认 GPU 是否实际在执行计算。",
+              "error_id": "fbda3e1604a1_r1",
+              "canonical_error_id": "fbda3e1604a1",
+              "source_refs": [],
+              "change_request": {
+                "required": true,
+                "action": "rewrite_with_supported_source"
+              },
+              "must_fix": true,
+              "must_fix_reason": "error_type=factual_error 属于事实错误/来源缺失/代码不可执行/违反安全规范",
+              "claim_id": null,
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 1,
+              "in_chunk_position": null
+            }
+          ],
+          "personalization_errors": [],
+          "review_details": null,
+          "scores": null
+        },
+        "passed": false
+      }
+    },
+    {
+      "type": "review_round",
+      "data": {
+        "target_type": "learning_package",
+        "iteration": 2,
+        "technical": {
+          "reviewer": "technical",
+          "passed": false,
+          "errors": [
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "description": "与来源块 LOCAL-KBS-01-04-C001 相似度 0.75 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-04-C001，heading_path=nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①），lines=1-45",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "335728f79463_r2",
+              "canonical_error_id": "335728f79463",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C001"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_chunk_id": "LOCAL-KBS-01-04-C001",
+              "content_version": 2,
+              "in_chunk_position": "lines:1-45"
+            },
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "description": "与来源块 LOCAL-KBS-01-04-C010 相似度 0.74 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-04-C010，heading_path=nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①），lines=260-305",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "f465061a114e_r2",
+              "canonical_error_id": "f465061a114e",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C010"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 2,
+              "in_chunk_position": "lines:260-305"
+            }
+          ],
+          "personalization_errors": [],
+          "review_details": null
+        },
+        "quality": {
+          "reviewer": "quality",
+          "passed": false,
+          "errors": [
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "description": "与来源块 LOCAL-KBS-01-04-C001 相似度 0.75 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-04-C001，heading_path=nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①），lines=1-45",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "335728f79463_r2",
+              "canonical_error_id": "335728f79463",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C001"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_chunk_id": "LOCAL-KBS-01-04-C001",
+              "content_version": 2,
+              "in_chunk_position": "lines:1-45"
+            },
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "description": "与来源块 LOCAL-KBS-01-04-C010 相似度 0.74 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-04-C010，heading_path=nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①），lines=260-305",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "f465061a114e_r2",
+              "canonical_error_id": "f465061a114e",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C010"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 2,
+              "in_chunk_position": "lines:260-305"
+            }
+          ],
+          "personalization_errors": [],
+          "review_details": null,
+          "scores": null
+        },
+        "passed": false
+      }
+    },
+    {
+      "type": "review_round",
+      "data": {
+        "target_type": "learning_package",
+        "iteration": 3,
+        "technical": {
+          "reviewer": "technical",
+          "passed": false,
+          "errors": [
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "description": "与来源块 LOCAL-KBS-01-04-C001 相似度 0.75 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-04-C001，heading_path=nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①），lines=1-45",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "335728f79463_r2",
+              "canonical_error_id": "335728f79463",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C001"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_chunk_id": "LOCAL-KBS-01-04-C001",
+              "content_version": 2,
+              "in_chunk_position": "lines:1-45"
+            },
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "description": "与来源块 LOCAL-KBS-01-04-C010 相似度 0.74 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-04-C010，heading_path=nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①），lines=260-305",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "f465061a114e_r3",
+              "canonical_error_id": "f465061a114e",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C010"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 3,
+              "in_chunk_position": "lines:260-305"
+            }
+          ],
+          "personalization_errors": [],
+          "review_details": null
+        },
+        "quality": {
+          "reviewer": "quality",
+          "passed": false,
+          "errors": [
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "description": "与来源块 LOCAL-KBS-01-04-C001 相似度 0.75 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.75，chunk=LOCAL-KBS-01-04-C001，heading_path=nvidia-smi 显存监控 > 二、基础用法：单次查看 GPU 状态（①+④） > 2.1 最简命令（①），lines=1-45",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "335728f79463_r2",
+              "canonical_error_id": "335728f79463",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C001"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C001",
+              "content_chunk_id": "LOCAL-KBS-01-04-C001",
+              "content_version": 2,
+              "in_chunk_position": "lines:1-45"
+            },
+            {
+              "error_type": "review_needed",
+              "severity": "major",
+              "location": "block:cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "description": "与来源块 LOCAL-KBS-01-04-C010 相似度 0.74 处于存疑区间，需人工复核。",
+              "evidence": "knowledge_verify_tool.similarity=0.74，chunk=LOCAL-KBS-01-04-C010，heading_path=nvidia-smi 显存监控 > 六、日志记录与自动化（①+④） > 6.1 导出监控日志（①），lines=260-305",
+              "suggestion": "补充来源块依据或人工复核后放行。",
+              "error_id": "f465061a114e_r3",
+              "canonical_error_id": "f465061a114e",
+              "source_refs": [
+                "src_LOCAL-KBS-01-04-C010"
+              ],
+              "change_request": {
+                "required": false,
+                "action": "review_suggestion"
+              },
+              "must_fix": false,
+              "must_fix_reason": null,
+              "claim_id": "clm_cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_block_id": "cb_51197dbb-1d3c-45f3-8b3e-769628af1ec8_d21f54e9-0256-5564-b6bd-d8830ff59196_LOCAL-KBS-01-04-C010",
+              "content_chunk_id": "LOCAL-KBS-01-04-C010",
+              "content_version": 3,
+              "in_chunk_position": "lines:260-305"
+            }
+          ],
+          "personalization_errors": [],
+          "review_details": null,
+          "scores": null
+        },
+        "passed": false
+      }
+    },
+    {
+      "type": "stage_review_completed",
+      "data": {
+        "stage_id": "d21f54e9-0256-5564-b6bd-d8830ff59196",
+        "passed": true,
+        "iterations": 3,
+        "review_trace_id": "tr_ee9d3dc1b4f34fa7",
+        "final_status": "needs_human_review",
+        "needs_human_review": true
+      }
+    }
+  ],
+  "available_actions": [
+    "ask_question",
+    "start_assessment"
+  ],
+  "created_at": "2026-08-30T15:30:16.879120+00:00",
+  "updated_at": "2026-08-30T15:30:42.516492+00:00"
+}
