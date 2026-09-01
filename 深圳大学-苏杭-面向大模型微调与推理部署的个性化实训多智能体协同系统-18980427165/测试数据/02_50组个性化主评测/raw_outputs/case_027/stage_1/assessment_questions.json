@@ -1,0 +1,115 @@
+[
+  {
+    "question_id": "Q-KB0100-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "执行以下命令检查系统架构和内核版本：\n```bash\narch && uname -r\n```",
+    "options": [],
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "hint": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---",
+    "explanation": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0100-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
+    "options": [],
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+    "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。"
+  },
+  {
+    "question_id": "Q-KB0101-007",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出一条管道命令，统计当前目录下 `.py` 文件的数量。",
+    "options": [],
+    "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "hint": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+    "explanation": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```"
+  },
+  {
+    "question_id": "Q-KB0101-008",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，查找 `/var/log` 目录下所有大于100MB的文件，并按大小排序显示。",
+    "options": [],
+    "correct_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "hint": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---",
+    "explanation": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0104-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。",
+    "options": [],
+    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0101-005",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，将 `/tmp/test_dir` 下所有 `.txt` 文件复制到 `/tmp/backup/` 目录中（如目录不存在则先创建）。",
+    "options": [],
+    "correct_answer": "mkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/",
+    "hint": "```bash\nmkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/\n```\n\n---",
+    "explanation": "```bash\nmkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0101-006",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请完成以下操作并截图/粘贴输出：\n1. 在 `/tmp` 下创建目录 `practice`\n2. 进入该目录，创建文件 `note.txt` 并写入 \"Hello Linux\"\n3. 查看文件内容\n4. 复制为 `note_backup.txt`\n5. 列出目录下所有文件",
+    "options": [],
+    "correct_answer": "mkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la",
+    "hint": "```bash\nmkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la\n```",
+    "explanation": "```bash\nmkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la\n```"
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`~/.bashrc`"
+      },
+      {
+        "key": "B",
+        "text": "`/etc/profile`"
+      },
+      {
+        "key": "C",
+        "text": "`~/.bash_profile`"
+      },
+      {
+        "key": "D",
+        "text": "`/etc/bash.bashrc`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。",
+    "explanation": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。"
+  }
+]

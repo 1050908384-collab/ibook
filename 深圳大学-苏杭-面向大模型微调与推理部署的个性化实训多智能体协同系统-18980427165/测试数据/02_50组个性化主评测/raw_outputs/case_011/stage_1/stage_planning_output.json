@@ -1,0 +1,36 @@
+{
+  "stage_id": "48471dc1-81b8-5918-a263-2c54314921d3",
+  "stage_num": 1,
+  "block_id": "KB-02",
+  "block_name": "Python编程基础",
+  "block_ids": [
+    "KB-02"
+  ],
+  "subtopic_id": "KBS-02-00",
+  "subtopic_name": "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）",
+  "subtopic_ids": [
+    "KBS-02-00"
+  ],
+  "subtopic_names": [
+    "（环境准备：安装Python 3.10+，配置conda虚拟环境，安装IDE如PyCharm或VS Code，配置pip国内镜像源加速下载）"
+  ],
+  "estimated_hours": 0.5,
+  "gap_skill": "LoRA",
+  "prerequisites": [],
+  "status": "pending",
+  "accuracy": null,
+  "strategy_used": null,
+  "title": "学习环境准备：安装Python 3.10+",
+  "description": "围绕环境准备：安装Python 3.10+完成一次可执行的阶段学习与练习。",
+  "objectives": [
+    "理解环境准备：安装Python 3.10+的基本概念",
+    "掌握环境准备：安装Python 3.10+的核心技术",
+    "能够独立完成环境准备：安装Python 3.10+相关任务"
+  ],
+  "difficulty": "初级",
+  "recommended_daily_hours": 0.5,
+  "suggested_study_days": 1,
+  "learning_style_notes": "动手型学习者：建议先完成环境准备：安装Python 3.10+的最小可运行操作，再记录命令、报错与解决过程，逐步扩展到完整流程。",
+  "hardware_notes": "当前设备为 RTX 4060 Ti 16GB：本阶段先完成环境与依赖检查；训练阶段再根据显存设置 batch size。",
+  "personalization_summary": "适合掌握NLP和注意力机制，想做LoRA微调学习者 | 预计1.8小时完成 | 建议分1天学习 | 每天2.0小时 | 动手型学习风格"
+}

@@ -47,7 +47,7 @@ scripts\clean_personal_data.py          Python 主脚本（带备份/统计/VACU
     - learner_profiles / sessions / user_qa / assessment_attempts /
       review_debate_* / user_subtopic_status 等个人表行数 = 0
     - knowledge_docs = 141、knowledge_subtopics = 73、
-      knowledge_chunks = 982、test_questions = 233 等公共表 = 不变
+      knowledge_chunks = 1539、test_questions = 323 等公共表 = 当前冻结版本口径
 
 步骤 5：打压缩包发给别人
   把整个 ai_agent-trainer 文件夹打包（.zip / .7z）。

@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB0100-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "执行以下命令确认系统发行版信息：\n```bash\ncat /etc/os-release\n```",
+    "options": [],
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0100-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
+    "options": [],
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+    "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。"
+  },
+  {
+    "question_id": "Q-KB0101-008",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，查找 `/var/log` 目录下所有大于100MB的文件，并按大小排序显示。",
+    "options": [],
+    "correct_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "hint": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---",
+    "explanation": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0101-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个命令用于**切换当前工作目录**？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`ls`"
+      },
+      {
+        "key": "B",
+        "text": "`cd`"
+      },
+      {
+        "key": "C",
+        "text": "`mkdir`"
+      },
+      {
+        "key": "D",
+        "text": "`pwd`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。",
+    "explanation": "> `cd`（change directory）用于切换目录；`pwd` 显示当前目录；`ls` 列出文件；`mkdir` 创建目录。"
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`~/.bashrc`"
+      },
+      {
+        "key": "B",
+        "text": "`/etc/profile`"
+      },
+      {
+        "key": "C",
+        "text": "`~/.bash_profile`"
+      },
+      {
+        "key": "D",
+        "text": "`/etc/bash.bashrc`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。",
+    "explanation": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。",
+    "options": [],
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0104-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "`nvidia-smi` 输出中 `GPU-Util` 为 0% 表示________；`Pwr:Usage/Cap` 为 `20W / 200W` 表示________。",
+    "options": [],
+    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0104-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "`nvidia-smi` 输出中，`Memory-Usage: 2048MiB / 8192MiB` 表示什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPU总内存8GB，已使用2GB"
+      },
+      {
+        "key": "B",
+        "text": "CPU内存使用情况"
+      },
+      {
+        "key": "C",
+        "text": "磁盘空间"
+      },
+      {
+        "key": "D",
+        "text": "网络带宽"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  }
+]

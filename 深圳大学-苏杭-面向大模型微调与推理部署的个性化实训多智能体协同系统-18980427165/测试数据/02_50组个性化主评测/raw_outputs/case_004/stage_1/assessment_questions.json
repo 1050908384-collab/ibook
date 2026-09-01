@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB0100-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令验证当前用户和主机名：\n```bash\nwhoami && hostname\n```",
+    "options": [],
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "hint": "```\nyour_username\nDESKTOP-XXXX\n```",
+    "explanation": "```\nyour_username\nDESKTOP-XXXX\n```"
+  },
+  {
+    "question_id": "Q-KB0100-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "执行以下命令检查系统架构和内核版本：\n```bash\narch && uname -r\n```",
+    "options": [],
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "hint": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---",
+    "explanation": "```\nx86_64\n5.15.167.4-microsoft-standard-WSL2\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0101-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请依次执行以下命令并描述每一步的结果：\n```bash\nmkdir -p /tmp/test_dir/sub_dir\ncd /tmp/test_dir\ntouch hello.txt\ncp hello.txt sub_dir/\nmv hello.txt renamed.txt\nls -R\n```",
+    "options": [],
+    "correct_answer": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "hint": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "explanation": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`"
+  },
+  {
+    "question_id": "Q-KB0101-008",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，查找 `/var/log` 目录下所有大于100MB的文件，并按大小排序显示。",
+    "options": [],
+    "correct_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "hint": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---",
+    "explanation": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0101-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`cp -r source_dir/ dest_dir/` 中 `-r` 参数的含义是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "只复制文件不复制目录"
+      },
+      {
+        "key": "B",
+        "text": "递归复制整个目录树"
+      },
+      {
+        "key": "C",
+        "text": "覆盖时不提示"
+      },
+      {
+        "key": "D",
+        "text": "保留文件属性"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `-r`（recursive）递归复制目录及其所有子目录和文件。",
+    "explanation": "> `-r`（recursive）递归复制目录及其所有子目录和文件。"
+  },
+  {
+    "question_id": "Q-KB0100-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "执行以下命令确认系统发行版信息：\n```bash\ncat /etc/os-release\n```",
+    "options": [],
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0104-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "想要**每2秒自动刷新**GPU状态，应使用哪个命令？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nvidia-smi -l 2`"
+      },
+      {
+        "key": "B",
+        "text": "`nvidia-smi --refresh 2`"
+      },
+      {
+        "key": "C",
+        "text": "`watch -n 2 nvidia-smi`"
+      },
+      {
+        "key": "D",
+        "text": "A和C都可以"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。",
+    "explanation": "> `nvidia-smi -l 2`（loop模式）和 `watch -n 2 nvidia-smi` 都可以实现每2秒刷新。"
+  },
+  {
+    "question_id": "Q-KB0104-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "`nvidia-smi` 输出中，`Memory-Usage: 2048MiB / 8192MiB` 表示什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPU总内存8GB，已使用2GB"
+      },
+      {
+        "key": "B",
+        "text": "CPU内存使用情况"
+      },
+      {
+        "key": "C",
+        "text": "磁盘空间"
+      },
+      {
+        "key": "D",
+        "text": "网络带宽"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  }
+]

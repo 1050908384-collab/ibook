@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "submitted_answer": "CUDA ||| GPU ||| 显卡",
+    "is_correct": true,
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0404-002",
+    "submitted_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "is_correct": true,
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-001",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0406-005",
+    "submitted_answer": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "is_correct": true,
+    "correct_answer": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0404-005",
+    "submitted_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "submitted_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0402-001",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

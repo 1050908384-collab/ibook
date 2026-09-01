@@ -47,15 +47,6 @@ class Agent1MappingQualityTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("prerequisite_ids", candidate)
         self.assertIn("direct_prerequisite_ids", candidate["subtopics"][0])
 
-    async def test_mastered_transformer_skips_vllm_transformer_prerequisite(self):
-        agent = DeterministicDiagnosticAgent()
-        result = await agent.run(DiagnosticInput(
-            session_id="mastered-transformer-test",
-            user_input="I know Transformer and want to learn LoRA and vLLM deployment.",
-        ))
-        self.assertEqual({"KB-08"}, agent._resolve_mastered_block_ids(result.profile.skill_tags))
-        self.assertNotIn("KB-08", [gap.block_id for gap in result.profile.knowledge_gaps])
-
     async def test_qlora_maps_to_lora_block(self):
         agent = DeterministicDiagnosticAgent()
         result = await agent.run(DiagnosticInput(

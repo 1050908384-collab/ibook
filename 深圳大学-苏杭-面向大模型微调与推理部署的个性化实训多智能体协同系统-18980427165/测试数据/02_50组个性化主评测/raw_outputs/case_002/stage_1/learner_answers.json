@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "submitted_answer": "CUDA ||| GPU ||| 显卡",
+    "is_correct": true,
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0405-005",
+    "submitted_answer": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
+    "is_correct": true,
+    "correct_answer": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-001",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`(2, 2)`；`torch.int64`（或 `torch.long`）",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0404-002",
+    "submitted_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "is_correct": true,
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

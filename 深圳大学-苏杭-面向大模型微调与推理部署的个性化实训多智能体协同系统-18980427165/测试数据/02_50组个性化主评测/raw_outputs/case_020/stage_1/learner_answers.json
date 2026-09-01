@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0200-004",
+    "submitted_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "is_correct": true,
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "24.0",
+    "is_correct": true,
+    "correct_answer": "24.0",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0203-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0202-002",
+    "submitted_answer": "`d[\"a\"]` 或 `d.get(\"a\")`；`d.get(\"c\", 0)`",
+    "is_correct": true,
+    "correct_answer": "`d[\"a\"]` 或 `d.get(\"a\")`；`d.get(\"c\", 0)`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0203-002",
+    "submitted_answer": "元组（tuple）；字典（dict）",
+    "is_correct": true,
+    "correct_answer": "元组（tuple）；字典（dict）",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0205-006",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0202-006",
+    "submitted_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "is_correct": true,
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-004",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "submitted_answer": "tokenizer ||| 分词器",
+    "is_correct": true,
+    "correct_answer": "tokenizer ||| 分词器",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0703-002",
+    "submitted_answer": "`max_length`",
+    "is_correct": true,
+    "correct_answer": "`max_length`",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0703-001",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0702-001",
+    "submitted_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-003",
+    "submitted_answer": "正确",
+    "is_correct": true,
+    "correct_answer": "正确",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0702-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

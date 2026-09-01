@@ -1,0 +1,869 @@
+{
+  "review_passed": true,
+  "iterations": 3,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "46b755ff37f8_r1",
+            "canonical_error_id": "46b755ff37f8",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "missing_installation_command",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'二、安装 PyTorch'部分仅给出'有 NVIDIA 显卡'分支的引导语，但未提供任何实际的安装命令，导致学习者无法完成安装。",
+            "evidence": "原文'根据你的硬件情况选择对应命令：- **有 NVIDIA 显卡**：在激活的虚拟环境中，执行与 `nvidia-smi` 显示的 CUDA 版本匹配的安装命令'，但后续没有给出具体命令或链接。",
+            "suggestion": "补充具体的 PyTorch 安装命令，例如 `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121`（根据实际 CUDA 版本调整），或提供官方安装命令生成链接。",
+            "error_id": "7c180880d636_r1",
+            "canonical_error_id": "7c180880d636",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "8a57748f455f_r1",
+            "canonical_error_id": "8a57748f455f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块在'情况一：有正常输出'中描述nvidia-smi输出时，称'右上角的 CUDA Version'，但nvidia-smi输出中CUDA Version通常显示在输出表格的右上角，此描述基本正确。但后续在'二、先搞清楚：显卡、驱动、CUDA、PyTorch 四者是什么关系？'中，依赖关系图将'CUDA Toolkit（nvcc --version，可选）'置于'PyTorch（内置 CUDA Runtime）'之前，并称'PyTorch 自带 CUDA Runtime，一般不需要单独装'，这与实际安装流程不符：PyTorch的CUDA版本必须与驱动支持的CUDA版本兼容，且通常需要安装CUDA Toolkit（至少包含nvcc）才能编译自定义CUDA扩展，但仅运行PyTorch确实不需要单独安装CUDA Toolkit。此表述可能误导用户，但未达到严重错误程度。",
+            "evidence": "nvidia-smi显示的CUDA Version是驱动支持的最高CUDA版本，PyTorch安装时需匹配该版本，但PyTorch自带CUDA runtime，无需单独安装CUDA Toolkit即可运行。",
+            "suggestion": "建议明确说明：运行PyTorch无需单独安装CUDA Toolkit，但若需编译自定义CUDA扩展，则需安装与PyTorch CUDA版本匹配的CUDA Toolkit。",
+            "error_id": "eb91cf6201bf_r1",
+            "canonical_error_id": "eb91cf6201bf",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "953837113143_r1",
+            "canonical_error_id": "953837113143",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“CUDA Version: 12.2 表示你的显卡驱动最高支持 CUDA 12.2”，但 nvidia-smi 显示的 CUDA Version 是驱动支持的 CUDA 运行时版本上限，并非“显卡驱动最高支持”的准确表述。实际上，该版本号表示当前驱动兼容的 CUDA 版本，但驱动可能支持更高版本的 CUDA 工具包，具体取决于驱动版本与 CUDA 的兼容性。",
+            "evidence": "NVIDIA 官方文档指出，nvidia-smi 输出的 CUDA Version 是驱动所支持的最高 CUDA 版本，但驱动可能向后兼容多个 CUDA 版本。例如，驱动 535.54.03 支持 CUDA 12.2，但可能也支持 CUDA 12.3 或更高版本（取决于驱动发布时的支持范围）。因此，将“CUDA Version”直接等同于“驱动最高支持”可能不准确。",
+            "suggestion": "建议修改为：“CUDA Version: 12.2 表示当前驱动兼容的 CUDA 版本，安装 PyTorch 时选择的 CUDA 版本应不高于此版本，以确保兼容性。”",
+            "error_id": "4226f8b7177e_r1",
+            "canonical_error_id": "4226f8b7177e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“你安装的 PyTorch 的 CUDA 版本不能超过 12.2。比如选 cu121（CUDA 11.8 或 12.1）都可以，但选 cu13x 就不行。” 但 PyTorch 的 CUDA 版本命名（如 cu121）与 CUDA 版本号（如 12.1）的对应关系不准确。cu121 对应 CUDA 12.1，而 cu118 对应 CUDA 11.8，但 cu121 并不包含 CUDA 11.8。此外，PyTorch 的 CUDA 版本选择应基于驱动支持的 CUDA 版本，但驱动可能支持更高版本的 CUDA 工具包，因此“不能超过 12.2”的表述过于绝对。",
+            "evidence": "PyTorch 官方安装指南中，cu121 表示 CUDA 12.1，cu118 表示 CUDA 11.8，两者是不同版本。驱动 535.54.03 支持 CUDA 12.2，但可能也支持 CUDA 12.3 或更高版本，因此安装 PyTorch 时选择 cu123 或 cu124 可能仍然兼容，但需确认驱动版本。",
+            "suggestion": "建议修改为：“你安装的 PyTorch 的 CUDA 版本应不高于驱动支持的 CUDA 版本，例如 cu121（CUDA 12.1）或 cu122（CUDA 12.2）均可，但需确认驱动兼容性。”",
+            "error_id": "97de1173903f_r1",
+            "canonical_error_id": "97de1173903f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块末尾出现不完整的句子'如果你习惯'，属于内容截断或未完成表述，影响技术文档的完整性和可读性。",
+            "evidence": "原文末尾为'**如果你习惯'，句子未结束，无后续内容。",
+            "suggestion": "补全该句或删除不完整的表述，确保内容完整。",
+            "error_id": "e291f24da55a_r1",
+            "canonical_error_id": "e291f24da55a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C004",
+            "content_chunk_id": "LOCAL-KBS-04-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7ae8ff3af18e_r1",
+            "canonical_error_id": "7ae8ff3af18e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:240-297"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "46b755ff37f8_r1",
+            "canonical_error_id": "46b755ff37f8",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 1,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "missing_installation_command",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'二、安装 PyTorch'部分仅给出'有 NVIDIA 显卡'分支的引导语，但未提供任何实际的安装命令，导致学习者无法完成安装。",
+            "evidence": "原文'根据你的硬件情况选择对应命令：- **有 NVIDIA 显卡**：在激活的虚拟环境中，执行与 `nvidia-smi` 显示的 CUDA 版本匹配的安装命令'，但后续没有给出具体命令或链接。",
+            "suggestion": "补充具体的 PyTorch 安装命令，例如 `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121`（根据实际 CUDA 版本调整），或提供官方安装命令生成链接。",
+            "error_id": "7c180880d636_r1",
+            "canonical_error_id": "7c180880d636",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "8a57748f455f_r1",
+            "canonical_error_id": "8a57748f455f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块在'情况一：有正常输出'中描述nvidia-smi输出时，称'右上角的 CUDA Version'，但nvidia-smi输出中CUDA Version通常显示在输出表格的右上角，此描述基本正确。但后续在'二、先搞清楚：显卡、驱动、CUDA、PyTorch 四者是什么关系？'中，依赖关系图将'CUDA Toolkit（nvcc --version，可选）'置于'PyTorch（内置 CUDA Runtime）'之前，并称'PyTorch 自带 CUDA Runtime，一般不需要单独装'，这与实际安装流程不符：PyTorch的CUDA版本必须与驱动支持的CUDA版本兼容，且通常需要安装CUDA Toolkit（至少包含nvcc）才能编译自定义CUDA扩展，但仅运行PyTorch确实不需要单独安装CUDA Toolkit。此表述可能误导用户，但未达到严重错误程度。",
+            "evidence": "nvidia-smi显示的CUDA Version是驱动支持的最高CUDA版本，PyTorch安装时需匹配该版本，但PyTorch自带CUDA runtime，无需单独安装CUDA Toolkit即可运行。",
+            "suggestion": "建议明确说明：运行PyTorch无需单独安装CUDA Toolkit，但若需编译自定义CUDA扩展，则需安装与PyTorch CUDA版本匹配的CUDA Toolkit。",
+            "error_id": "eb91cf6201bf_r1",
+            "canonical_error_id": "eb91cf6201bf",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "953837113143_r1",
+            "canonical_error_id": "953837113143",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“CUDA Version: 12.2 表示你的显卡驱动最高支持 CUDA 12.2”，但 nvidia-smi 显示的 CUDA Version 是驱动支持的 CUDA 运行时版本上限，并非“显卡驱动最高支持”的准确表述。实际上，该版本号表示当前驱动兼容的 CUDA 版本，但驱动可能支持更高版本的 CUDA 工具包，具体取决于驱动版本与 CUDA 的兼容性。",
+            "evidence": "NVIDIA 官方文档指出，nvidia-smi 输出的 CUDA Version 是驱动所支持的最高 CUDA 版本，但驱动可能向后兼容多个 CUDA 版本。例如，驱动 535.54.03 支持 CUDA 12.2，但可能也支持 CUDA 12.3 或更高版本（取决于驱动发布时的支持范围）。因此，将“CUDA Version”直接等同于“驱动最高支持”可能不准确。",
+            "suggestion": "建议修改为：“CUDA Version: 12.2 表示当前驱动兼容的 CUDA 版本，安装 PyTorch 时选择的 CUDA 版本应不高于此版本，以确保兼容性。”",
+            "error_id": "4226f8b7177e_r1",
+            "canonical_error_id": "4226f8b7177e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“你安装的 PyTorch 的 CUDA 版本不能超过 12.2。比如选 cu121（CUDA 11.8 或 12.1）都可以，但选 cu13x 就不行。” 但 PyTorch 的 CUDA 版本命名（如 cu121）与 CUDA 版本号（如 12.1）的对应关系不准确。cu121 对应 CUDA 12.1，而 cu118 对应 CUDA 11.8，但 cu121 并不包含 CUDA 11.8。此外，PyTorch 的 CUDA 版本选择应基于驱动支持的 CUDA 版本，但驱动可能支持更高版本的 CUDA 工具包，因此“不能超过 12.2”的表述过于绝对。",
+            "evidence": "PyTorch 官方安装指南中，cu121 表示 CUDA 12.1，cu118 表示 CUDA 11.8，两者是不同版本。驱动 535.54.03 支持 CUDA 12.2，但可能也支持 CUDA 12.3 或更高版本，因此安装 PyTorch 时选择 cu123 或 cu124 可能仍然兼容，但需确认驱动版本。",
+            "suggestion": "建议修改为：“你安装的 PyTorch 的 CUDA 版本应不高于驱动支持的 CUDA 版本，例如 cu121（CUDA 12.1）或 cu122（CUDA 12.2）均可，但需确认驱动兼容性。”",
+            "error_id": "97de1173903f_r1",
+            "canonical_error_id": "97de1173903f",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块末尾出现不完整的句子'如果你习惯'，属于内容截断或未完成表述，影响技术文档的完整性和可读性。",
+            "evidence": "原文末尾为'**如果你习惯'，句子未结束，无后续内容。",
+            "suggestion": "补全该句或删除不完整的表述，确保内容完整。",
+            "error_id": "e291f24da55a_r1",
+            "canonical_error_id": "e291f24da55a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C004",
+            "content_chunk_id": "LOCAL-KBS-04-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7ae8ff3af18e_r1",
+            "canonical_error_id": "7ae8ff3af18e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 1,
+            "in_chunk_position": "lines:240-297"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "46b755ff37f8_r2",
+            "canonical_error_id": "46b755ff37f8",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "8a57748f455f_r2",
+            "canonical_error_id": "8a57748f455f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "953837113143_r2",
+            "canonical_error_id": "953837113143",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 2,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7ae8ff3af18e_r2",
+            "canonical_error_id": "7ae8ff3af18e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "46b755ff37f8_r2",
+            "canonical_error_id": "46b755ff37f8",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 2,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "8a57748f455f_r2",
+            "canonical_error_id": "8a57748f455f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 2,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "953837113143_r2",
+            "canonical_error_id": "953837113143",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 2,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7ae8ff3af18e_r2",
+            "canonical_error_id": "7ae8ff3af18e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "46b755ff37f8_r3",
+            "canonical_error_id": "46b755ff37f8",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "8a57748f455f_r3",
+            "canonical_error_id": "8a57748f455f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 3,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "953837113143_r3",
+            "canonical_error_id": "953837113143",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 3,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7ae8ff3af18e_r2",
+            "canonical_error_id": "7ae8ff3af18e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "description": "与来源块 LOCAL-KBS-04-00-C001 相似度 0.79 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.79，chunk=LOCAL-KBS-04-00-C001，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.1 确认 conda 可用（conda/pip 虚拟环境管理 章节已学过），lines=1-28",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "46b755ff37f8_r3",
+            "canonical_error_id": "46b755ff37f8",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C001"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C001",
+            "content_chunk_id": "LOCAL-KBS-04-00-C001",
+            "content_version": 3,
+            "in_chunk_position": "lines:1-28"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "description": "与来源块 LOCAL-KBS-04-00-C002 相似度 0.76 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.76，chunk=LOCAL-KBS-04-00-C002，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=29-89",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "8a57748f455f_r3",
+            "canonical_error_id": "8a57748f455f",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C002"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C002",
+            "content_chunk_id": "LOCAL-KBS-04-00-C002",
+            "content_version": 3,
+            "in_chunk_position": "lines:29-89"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "description": "与来源块 LOCAL-KBS-04-00-C003 相似度 0.70 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.70，chunk=LOCAL-KBS-04-00-C003，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 一、前置检查：确认前面章节的配置（不重复教学） > 1.2 确认 nvidia-smi 有输出（nvidia-smi 显存监控 章节已学过），lines=91-127",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "953837113143_r3",
+            "canonical_error_id": "953837113143",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C003"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C003",
+            "content_chunk_id": "LOCAL-KBS-04-00-C003",
+            "content_version": 3,
+            "in_chunk_position": "lines:91-127"
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "description": "与来源块 LOCAL-KBS-04-00-C008 相似度 0.72 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.72，chunk=LOCAL-KBS-04-00-C008，heading_path=环境准备：根据 CUDA 版本安装 PyTorch > 六、验证安装（①+②+③） > 6.2 运行一个简单的张量运算（①），lines=240-297",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "7ae8ff3af18e_r2",
+            "canonical_error_id": "7ae8ff3af18e",
+            "source_refs": [
+              "src_LOCAL-KBS-04-00-C008"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_block_id": "cb_77708ad8-415c-41f6-ae99-1fad466f9d03_d3f7aeb9-dac7-5199-9182-0a8d6dbffd4a_LOCAL-KBS-04-00-C008",
+            "content_chunk_id": "LOCAL-KBS-04-00-C008",
+            "content_version": 2,
+            "in_chunk_position": "lines:240-297"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

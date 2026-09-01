@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码中，`finally` 块在什么情况下执行？\n```python\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print(\"除零错误\")\nfinally:\n    print(\"清理完成\")\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "仅在无异常时"
+      },
+      {
+        "key": "B",
+        "text": "仅在捕获异常后"
+      },
+      {
+        "key": "C",
+        "text": "无论是否有异常都执行"
+      },
+      {
+        "key": "D",
+        "text": "仅在未捕获异常时"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0202-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：给定嵌套字典 `data = {\"users\": [{\"name\": \"Alice\", \"age\": 30}, {\"name\": \"Bob\", \"age\": 25}]}`，提取所有年龄大于26的用户姓名。",
+    "options": [],
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "hint": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "explanation": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0203-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\nclass A:\n    def __init__(self):\n        self.x = 1\nclass B(A):\n    def __init__(self):\n        super().__init__()\n        self.y = 2\nb = B()\nprint(b.x, b.y)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`1 2`"
+      },
+      {
+        "key": "B",
+        "text": "`2 1`"
+      },
+      {
+        "key": "C",
+        "text": "报错"
+      },
+      {
+        "key": "D",
+        "text": "`None 2`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。",
+    "explanation": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。"
+  },
+  {
+    "question_id": "Q-KB0205-007",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "写一个函数 `count_words(text)`，接收一段英文字符串，返回一个字典，统计每个单词出现的次数（忽略大小写）。",
+    "options": [],
+    "correct_answer": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```",
+    "hint": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```",
+    "explanation": "```python\ndef count_words(text):\n    words = text.lower().split()\n    result = {}\n    for w in words:\n        result[w] = result.get(w, 0) + 1\n    return result\n```"
+  },
+  {
+    "question_id": "Q-KB0205-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "以下关于生成器的说法，**错误**的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "生成器是惰性求值的，节省内存"
+      },
+      {
+        "key": "B",
+        "text": "生成器可以用 `next()` 逐个获取值"
+      },
+      {
+        "key": "C",
+        "text": "生成器可以多次遍历（如 `for` 循环两遍）"
+      },
+      {
+        "key": "D",
+        "text": "生成器表达式 `(x**2 for x in range(10))` 返回生成器对象"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> 生成器只能遍历**一次**，遍历完毕后再次迭代不会产出任何值（StopIteration）。\n\n---",
+    "explanation": "> 生成器只能遍历**一次**，遍历完毕后再次迭代不会产出任何值（StopIteration）。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0205-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写一个**带参数的装饰器** `retry(times=3)`，使被装饰的函数在抛出异常时自动重试指定次数。",
+    "options": [],
+    "correct_answer": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "hint": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "explanation": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```"
+  }
+]

@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0100-004",
+    "submitted_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "is_correct": true,
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0100-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-007",
+    "submitted_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "is_correct": true,
+    "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-008",
+    "submitted_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "is_correct": true,
+    "correct_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0104-004",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "mkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-006",
+    "submitted_answer": "mkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la",
+    "is_correct": true,
+    "correct_answer": "mkdir -p /tmp/practice\ncd /tmp/practice\necho \"Hello Linux\" > note.txt\ncat note.txt\ncp note.txt note_backup.txt\nls -la",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

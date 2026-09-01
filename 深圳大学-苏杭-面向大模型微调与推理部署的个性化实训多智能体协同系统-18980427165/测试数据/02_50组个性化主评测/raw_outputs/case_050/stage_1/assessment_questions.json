@@ -1,0 +1,166 @@
+[
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0203-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下函数定义中，哪个参数是**默认参数**？\n```python\ndef greet(name, greeting=\"Hello\"):\n    return f\"{greeting}, {name}!\"\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`name`"
+      },
+      {
+        "key": "B",
+        "text": "`greeting`"
+      },
+      {
+        "key": "C",
+        "text": "两者都是"
+      },
+      {
+        "key": "D",
+        "text": "两者都不是"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0203-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\nclass A:\n    def __init__(self):\n        self.x = 1\nclass B(A):\n    def __init__(self):\n        super().__init__()\n        self.y = 2\nb = B()\nprint(b.x, b.y)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`1 2`"
+      },
+      {
+        "key": "B",
+        "text": "`2 1`"
+      },
+      {
+        "key": "C",
+        "text": "报错"
+      },
+      {
+        "key": "D",
+        "text": "`None 2`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。",
+    "explanation": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。"
+  },
+  {
+    "question_id": "Q-KB0202-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是Python中**不可变**的数据结构？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`list`"
+      },
+      {
+        "key": "B",
+        "text": "`dict`"
+      },
+      {
+        "key": "C",
+        "text": "`set`"
+      },
+      {
+        "key": "D",
+        "text": "`tuple`"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。",
+    "explanation": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。"
+  },
+  {
+    "question_id": "Q-KB0203-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个类 `Dog`，包含：\n- 类属性 `species = \"Canis familiaris\"`\n- 实例属性 `name` 和 `age`（通过 `__init__` 初始化）\n- 方法 `bark()` 返回 `\"{name} says: Woof!\"`",
+    "options": [],
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "hint": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "explanation": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```"
+  },
+  {
+    "question_id": "Q-KB0205-009",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "写一个装饰器 `timer`，测量并打印被装饰函数的执行时间（秒），同时不改变原函数的返回值。然后用它装饰一个计算前100万个数平方和的函数。",
+    "options": [],
+    "correct_answer": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---",
+    "hint": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---",
+    "explanation": "```python\nimport time\nimport functools\n\ndef timer(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} 执行耗时: {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef sum_squares(n):\n    return sum(x**2 for x in range(n))\n\nprint(sum_squares(1_000_000))\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0205-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "以下关于生成器的说法，**错误**的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "生成器是惰性求值的，节省内存"
+      },
+      {
+        "key": "B",
+        "text": "生成器可以用 `next()` 逐个获取值"
+      },
+      {
+        "key": "C",
+        "text": "生成器可以多次遍历（如 `for` 循环两遍）"
+      },
+      {
+        "key": "D",
+        "text": "生成器表达式 `(x**2 for x in range(10))` 返回生成器对象"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> 生成器只能遍历**一次**，遍历完毕后再次迭代不会产出任何值（StopIteration）。\n\n---",
+    "explanation": "> 生成器只能遍历**一次**，遍历完毕后再次迭代不会产出任何值（StopIteration）。\n\n---"
+  }
+]

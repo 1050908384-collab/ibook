@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0100-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0100-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-007",
+    "submitted_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "is_correct": true,
+    "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "submitted_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "is_correct": true,
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0103-004",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0104-004",
+    "submitted_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+    "is_correct": true,
+    "correct_answer": "GPU计算核心当前空闲（无计算任务在运行）；当前功耗20W，最大功耗上限200W。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

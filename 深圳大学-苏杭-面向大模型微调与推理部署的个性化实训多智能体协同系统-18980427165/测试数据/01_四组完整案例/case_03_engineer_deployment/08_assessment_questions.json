@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
+  },
+  {
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
+  },
+  {
+    "question_id": "Q-KB0201-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`[1, 2, 3]`"
+      },
+      {
+        "key": "B",
+        "text": "`[1, 2, 3, 4]`"
+      },
+      {
+        "key": "C",
+        "text": "`[4, 1, 2, 3]`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。",
+    "explanation": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。"
+  },
+  {
+    "question_id": "Q-KB0201-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nx = 10\ndef foo():\n    x = 20\n    def bar():\n        nonlocal x\n        x = 30\n    bar()\n    print(x)\nfoo()\nprint(x)\n```",
+    "options": [],
+    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "hint": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "explanation": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0202-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是Python中**不可变**的数据结构？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`list`"
+      },
+      {
+        "key": "B",
+        "text": "`dict`"
+      },
+      {
+        "key": "C",
+        "text": "`set`"
+      },
+      {
+        "key": "D",
+        "text": "`tuple`"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。",
+    "explanation": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。"
+  },
+  {
+    "question_id": "Q-KB0203-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\nclass A:\n    def __init__(self):\n        self.x = 1\nclass B(A):\n    def __init__(self):\n        super().__init__()\n        self.y = 2\nb = B()\nprint(b.x, b.y)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`1 2`"
+      },
+      {
+        "key": "B",
+        "text": "`2 1`"
+      },
+      {
+        "key": "C",
+        "text": "报错"
+      },
+      {
+        "key": "D",
+        "text": "`None 2`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。",
+    "explanation": "> `super().__init__()` 调用父类 `A` 的构造器，设置 `self.x = 1`；然后 `B` 设置 `self.y = 2`。"
+  },
+  {
+    "question_id": "Q-KB0203-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个类 `Dog`，包含：\n- 类属性 `species = \"Canis familiaris\"`\n- 实例属性 `name` 和 `age`（通过 `__init__` 初始化）\n- 方法 `bark()` 返回 `\"{name} says: Woof!\"`",
+    "options": [],
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "hint": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "explanation": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```"
+  }
+]

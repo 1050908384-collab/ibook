@@ -1,0 +1,132 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "安装 Hugging Face Transformers 的常用命令是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "pip install transformers"
+      },
+      {
+        "key": "B",
+        "text": "pip install tokenizer-only"
+      },
+      {
+        "key": "C",
+        "text": "conda remove torch"
+      },
+      {
+        "key": "D",
+        "text": "python uninstall model"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "pip install transformers 是标准安装方式。",
+    "explanation": "pip install transformers 是标准安装方式。"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
+    "options": [],
+    "correct_answer": "tokenizer ||| 分词器",
+    "hint": "Tokenizer 负责文本与 token 序列转换。",
+    "explanation": "Tokenizer 负责文本与 token 序列转换。"
+  },
+  {
+    "question_id": "Q-KB0702-005",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：加载 `gpt2` 分词器，并对文本 `\"Hello, world!\"` 进行分词，要求返回 PyTorch 张量，并打印出 `input_ids` 和 `attention_mask`。",
+    "options": [],
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0703-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`padding='max_length'` 参数会将所有序列填充或截断到由________参数指定的长度。",
+    "options": [],
+    "correct_answer": "`max_length`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0704-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-04",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "如何检查一个已加载的 `tokenizer` 是否内置了 `chat_template`？",
+    "options": [],
+    "correct_answer": "```python\nif tokenizer.chat_template is not None:\n    print(\"Tokenizer has a default chat template.\")\nelse:\n    print(\"No default chat template found.\")\n```",
+    "hint": "```python\nif tokenizer.chat_template is not None:\n    print(\"Tokenizer has a default chat template.\")\nelse:\n    print(\"No default chat template found.\")\n```",
+    "explanation": "```python\nif tokenizer.chat_template is not None:\n    print(\"Tokenizer has a default chat template.\")\nelse:\n    print(\"No default chat template found.\")\n```"
+  },
+  {
+    "question_id": "Q-KB0701-005",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请简述 BPE 算法在解码（Decoding）时可能遇到的一个主要问题，以及 SentencePiece 是如何解决这个问题的。",
+    "options": [],
+    "correct_answer": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---",
+    "hint": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---",
+    "explanation": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0704-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "使用 `tokenizer.apply_chat_template` 方法，将以下对话历史转换为模型输入文本，但不进行分词（即 `tokenize=False`）。\n```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n```",
+    "options": [],
+    "correct_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "hint": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "explanation": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```"
+  },
+  {
+    "question_id": "Q-KB0701-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "WordPiece 算法与 BPE 的主要区别在于合并标准不同。WordPiece 选择合并哪一对符号？",
+    "options": [
+      {
+        "key": "A",
+        "text": "出现频率最高的一对"
+      },
+      {
+        "key": "B",
+        "text": "能够最大化训练数据似然概率的一对"
+      },
+      {
+        "key": "C",
+        "text": "长度最短的一对"
+      },
+      {
+        "key": "D",
+        "text": "随机选择一对"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> WordPiece 在每次合并时，会选择那个能使整个语料库的似然概率增加最多的符号对，而不是简单地看频率。",
+    "explanation": "> WordPiece 在每次合并时，会选择那个能使整个语料库的似然概率增加最多的符号对，而不是简单地看频率。"
+  }
+]

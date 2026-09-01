@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "tokenizer ||| 分词器",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0702-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"gpt2\")\n# GPT-2 的 tokenizer 需要设置 padding_side，因为它没有默认的 pad_token\ntokenizer.pad_token = tokenizer.eos_token\n\ntext = \"Hello, world!\"\nencoding = tokenizer(text, return_tensors=\"pt\", padding=True)\n\nprint(\"Input IDs:\", encoding[\"input_ids\"])\nprint(\"Attention Mask:\", encoding[\"attention_mask\"])\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0703-002",
+    "submitted_answer": "`max_length`",
+    "is_correct": true,
+    "correct_answer": "`max_length`",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0704-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nif tokenizer.chat_template is not None:\n    print(\"Tokenizer has a default chat template.\")\nelse:\n    print(\"No default chat template found.\")\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-005",
+    "submitted_answer": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---",
+    "is_correct": true,
+    "correct_answer": "*   **BPE的问题：** BPE在编码时通常需要依赖空格来分隔单词。在解码时，需要额外的规则来判断何时应该在子词之间添加空格，这在处理不同语言或格式不规范的文本时容易出错。\n*   **SentencePiece的解决：** SentencePiece 将空格也作为一个特殊字符（通常表示为 `_`）来对待，并将其纳入词汇表。这样，模型在解码时可以直接输出空格字符，无需额外的后处理规则，实现了更干净、更通用的解码过程。\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0704-003",
+    "submitted_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-002",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

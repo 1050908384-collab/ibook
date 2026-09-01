@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "submitted_answer": "tokenizer ||| 分词器",
+    "is_correct": true,
+    "correct_answer": "tokenizer ||| 分词器",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-001",
+    "submitted_answer": "transformers",
+    "is_correct": true,
+    "correct_answer": "transformers",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0704-005",
+    "submitted_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-002",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0703-004",
+    "submitted_answer": "错误",
+    "is_correct": false,
+    "correct_answer": "正确",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-003",
+    "submitted_answer": "正确",
+    "is_correct": true,
+    "correct_answer": "正确",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0703-003",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "C",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0702-001",
+    "submitted_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

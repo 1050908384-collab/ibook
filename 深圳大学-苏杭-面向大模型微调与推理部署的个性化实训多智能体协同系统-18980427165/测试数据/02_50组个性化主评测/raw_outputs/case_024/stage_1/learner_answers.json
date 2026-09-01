@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0200-002",
+    "submitted_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "is_correct": true,
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "24.0",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0203-003",
+    "submitted_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0204-002",
+    "submitted_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
+    "is_correct": true,
+    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0204-001",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0203-005",
+    "submitted_answer": "`3`\n> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
+    "is_correct": true,
+    "correct_answer": "`3`\n> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

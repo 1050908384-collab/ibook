@@ -1,0 +1,132 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "options": [],
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
+  },
+  {
+    "question_id": "Q-KB0405-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：实现带梯度裁剪的训练步骤，使用 `AdamW`，学习率 `5e-5`，梯度裁剪阈值为1.0。",
+    "options": [],
+    "correct_answer": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
+    "hint": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---",
+    "explanation": "```python\noptimizer = optim.AdamW(model.parameters(), lr=5e-5)\ncriterion = nn.CrossEntropyLoss()\n\nfor batch in dataloader:\n    optimizer.zero_grad()\n    outputs = model(batch['input'])\n    loss = criterion(outputs, batch['target'])\n    loss.backward()\n\n    # 梯度裁剪\n    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n\n    optimizer.step()\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0401-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个命令可以创建一个全为0的3x3张量？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`torch.zeros(3, 3)`"
+      },
+      {
+        "key": "B",
+        "text": "`torch.ones(3, 3)`"
+      },
+      {
+        "key": "C",
+        "text": "`torch.empty(3, 3)`"
+      },
+      {
+        "key": "D",
+        "text": "`torch.rand(3, 3)`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。",
+    "explanation": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。"
+  },
+  {
+    "question_id": "Q-KB0401-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "张量 `x = torch.tensor([[1, 2], [3, 4]])`，其形状 `x.shape` 为________；数据类型 `x.dtype` 默认为________。",
+    "options": [],
+    "correct_answer": "`(2, 2)`；`torch.int64`（或 `torch.long`）",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0404-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`DataLoader` 中，`batch_size=32` 表示________；`shuffle=True` 表示________。",
+    "options": [],
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0401-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "给定张量 `x` 形状为 `(2, 3, 4)`，请写出将其转置为 `(4, 3, 2)` 的代码。",
+    "options": [],
+    "correct_answer": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "hint": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```",
+    "explanation": "```python\nx_permuted = x.permute(2, 1, 0)\n# 或\nx_transposed = x.transpose(0, 2).transpose(0, 1)  # 不推荐，permute更直观\n```"
+  },
+  {
+    "question_id": "Q-KB0403-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `nn.Sequential` 定义一个包含 `Linear(10, 5)`、`ReLU`、`Linear(5, 1)` 的网络。",
+    "options": [],
+    "correct_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "hint": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "explanation": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---"
+  }
+]

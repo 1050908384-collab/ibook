@@ -1,0 +1,118 @@
+[
+  {
+    "question_id": "Q-KB0100-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "执行以下命令确认系统发行版信息：\n```bash\ncat /etc/os-release\n```",
+    "options": [],
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0100-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
+    "options": [],
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+    "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。"
+  },
+  {
+    "question_id": "Q-KB0101-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "命令 `ls -la` 中，`-l` 的作用是________，`-a` 的作用是________。",
+    "options": [],
+    "correct_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0101-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请依次执行以下命令并描述每一步的结果：\n```bash\nmkdir -p /tmp/test_dir/sub_dir\ncd /tmp/test_dir\ntouch hello.txt\ncp hello.txt sub_dir/\nmv hello.txt renamed.txt\nls -R\n```",
+    "options": [],
+    "correct_answer": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "hint": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "explanation": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`"
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`~/.bashrc`"
+      },
+      {
+        "key": "B",
+        "text": "`/etc/profile`"
+      },
+      {
+        "key": "C",
+        "text": "`~/.bash_profile`"
+      },
+      {
+        "key": "D",
+        "text": "`/etc/bash.bashrc`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。",
+    "explanation": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。"
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出将 `/usr/local/cuda/bin` 永久添加到 `PATH` 环境变量的完整步骤（以bash为例）。",
+    "options": [],
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "hint": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```",
+    "explanation": "```bash\necho 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证\n```"
+  },
+  {
+    "question_id": "Q-KB0103-005",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-03",
+    "difficulty": "高级",
+    "question_type": "true_false",
+    "question_text": "在conda环境中使用 `pip install` 安装的包，可以用 `conda list` 查看到吗？反过来呢？",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "错误",
+    "hint": "---",
+    "explanation": "---"
+  },
+  {
+    "question_id": "Q-KB0101-005",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，将 `/tmp/test_dir` 下所有 `.txt` 文件复制到 `/tmp/backup/` 目录中（如目录不存在则先创建）。",
+    "options": [],
+    "correct_answer": "mkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/",
+    "hint": "```bash\nmkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/\n```\n\n---",
+    "explanation": "```bash\nmkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/\n```\n\n---"
+  }
+]

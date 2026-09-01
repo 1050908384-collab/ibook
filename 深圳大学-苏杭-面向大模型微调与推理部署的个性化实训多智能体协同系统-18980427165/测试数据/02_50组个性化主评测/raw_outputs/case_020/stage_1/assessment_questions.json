@@ -1,0 +1,132 @@
+[
+  {
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0203-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个类 `Dog`，包含：\n- 类属性 `species = \"Canis familiaris\"`\n- 实例属性 `name` 和 `age`（通过 `__init__` 初始化）\n- 方法 `bark()` 返回 `\"{name} says: Woof!\"`",
+    "options": [],
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "hint": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "explanation": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```"
+  },
+  {
+    "question_id": "Q-KB0202-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "字典 `d = {\"a\": 1, \"b\": 2}`，获取键 `\"a\"` 对应值的方法是________；安全获取不存在的键 `\"c\"`（返回默认值0）的方法是________。",
+    "options": [],
+    "correct_answer": "`d[\"a\"]` 或 `d.get(\"a\")`；`d.get(\"c\", 0)`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0203-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Python中，`*args` 接收的是________类型；`**kwargs` 接收的是________类型。",
+    "options": [],
+    "correct_answer": "元组（tuple）；字典（dict）",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0205-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "以下关于生成器的说法，**错误**的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "生成器是惰性求值的，节省内存"
+      },
+      {
+        "key": "B",
+        "text": "生成器可以用 `next()` 逐个获取值"
+      },
+      {
+        "key": "C",
+        "text": "生成器可以多次遍历（如 `for` 循环两遍）"
+      },
+      {
+        "key": "D",
+        "text": "生成器表达式 `(x**2 for x in range(10))` 返回生成器对象"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> 生成器只能遍历**一次**，遍历完毕后再次迭代不会产出任何值（StopIteration）。\n\n---",
+    "explanation": "> 生成器只能遍历**一次**，遍历完毕后再次迭代不会产出任何值（StopIteration）。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0202-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：给定嵌套字典 `data = {\"users\": [{\"name\": \"Alice\", \"age\": 30}, {\"name\": \"Bob\", \"age\": 25}]}`，提取所有年龄大于26的用户姓名。",
+    "options": [],
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "hint": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "explanation": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0201-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`[1, 2, 3]`"
+      },
+      {
+        "key": "B",
+        "text": "`[1, 2, 3, 4]`"
+      },
+      {
+        "key": "C",
+        "text": "`[4, 1, 2, 3]`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。",
+    "explanation": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。"
+  }
+]

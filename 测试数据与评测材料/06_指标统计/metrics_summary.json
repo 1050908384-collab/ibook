@@ -46,5 +46,11 @@
   "llm_failed_calls": 0,
   "llm_fallback_count": 1,
   "llm_fallback_rate": 0.02,
-  "llm_fallback_count_definition": "发生 mixed_fallback 的 case 数，而非单次 LLM 调用数"
+  "llm_fallback_count_definition": "发生 mixed_fallback 的 case 数，而非单次 LLM 调用数",
+  "11_策略选择准确率_真实规则口径": 0.9821,
+  "11_策略_真实一致数": 55,
+  "11_策略_总样本数": 56,
+  "11_策略_CSV预设一致数": 38,
+  "11_策略_CSV预设一致率": 0.6786,
+  "11_策略_判定口径说明": "真实规则口径=调用strategy_selector(input={accuracy,coverage,current_profile,iteration_history}) 得到的strategy_label与实际next_strategy语义一致的比例；CSV预设一致率仅作为场景吻合度参考。"
 }

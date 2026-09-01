@@ -1,6 +1,6 @@
 当前运行时 Agent 协作简述
 
-说明：本文件已按当前 Harness 运行链路更新。Agent2 保留为逻辑职责名称，但当前实际阶段规划调用由 学情诊断与阶段规划 Agent 的 generate_stage 承担；Agent5 的质量审核能力已合并到 专业知识与教学质量审核 Agent。
+说明：本文件按当前 Harness 运行链路描述四个正式运行时 Agent。阶段规划由学情诊断与阶段规划 Agent 的 generate_stage 承担，专业知识与教学质量审核 Agent 统一负责技术与教学质量审核。
 
 学情诊断与阶段规划 Agent：学情诊断与阶段选路
 - 输入：用户表单字段、用户原始描述、当前画像
@@ -9,8 +9,8 @@
 - 规则：不能自由创造 block_id；证据不足或属于目录外领域时返回低置信度，不硬选板块
 - 阶段：通过 generate_stage 根据 subtopic_status、板块级先修和子知识点直接先修选择当前/下一阶段
 
-Agent2：路径规划逻辑角色
-- 当前 Harness 不直接实例化 Agent2 文件
+学情诊断与阶段规划 Agent：画像诊断与阶段选路
+- 当前 Harness 直接实例化该 Agent
 - 运行时选路由 学情诊断与阶段规划 Agent.generate_stage 完成，仍遵循知识图谱、daily_hours 和 subtopic_status 约束
 
 个性化学习资源生成 Agent：内容生成与答疑
@@ -20,7 +20,7 @@ Agent2：路径规划逻辑角色
 专业知识与教学质量审核 Agent：统一技术与教学质量审核
 - 输入：个性化学习资源生成 Agent 的学习包或答案
 - 处理：技术准确性、幻觉、代码、行业规范、难度、认知负荷、风格和资源关联审核
-- 输出：审核结果与结构化 issue；原 Agent5 的质量审核能力已合并在此
+- 输出：审核结果与结构化 issue，同时完成技术与教学质量审核
 
 学情评估与动态决策 Agent：阶段决策与学习状态更新
 - 输入：正确率、qa_history、interactions、当前画像

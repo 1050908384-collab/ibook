@@ -1,0 +1,48 @@
+{
+  "run_id": "case_034-1788082923",
+  "case_id": "case_034",
+  "evaluation_schema_version": "2026-08-26-final",
+  "code_commit": "204d0bb0f962",
+  "knowledge_base_version": "b7688878fe33",
+  "prompt_version": "29c58faa5b38",
+  "skill_version": "29c58faa5b38",
+  "database_sha256": "c2c3e991a16f",
+  "hardware_info": {
+    "cpu_model": "AMD64 Family 25 Model 117 Stepping 2, AuthenticAMD",
+    "cpu_cores_physical": 8,
+    "cpu_cores_logical": 16,
+    "ram_total_gb": 31.31,
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+        "memory_total_gb": 6.0,
+        "driver_version": "unknown"
+      }
+    ]
+  },
+  "model_config": {
+    "LLM_PROVIDER": "deepseek",
+    "LLM_FALLBACK_PROVIDER": "ollama",
+    "DEEPSEEK_MODEL": "deepseek-v4-flash",
+    "OLLAMA_MODEL": "deepseek-r1:7b",
+    "OLLAMA_FALLBACK_MODEL": null,
+    "OLLAMA_BASE_URL": "http://localhost:11434",
+    "EXECUTION_MODE": "hybrid",
+    "BLOCK_PIPELINE_ENABLED": true,
+    "MAX_REVIEW_ITERATIONS": 3,
+    "DEEPSEEK_TIMEOUT_SECONDS": 180.0,
+    "DEEPSEEK_MAX_RETRIES": 2,
+    "has_deepseek_key": true,
+    "has_ollama_fallback_configured": true,
+    "embedding_model": "qwen3-embedding:0.6b",
+    "temperature": 0.7,
+    "top_p": 0.95,
+    "max_tokens": 8192
+  },
+  "run_started_at": "2026-08-30T09:42:04.136652+00:00",
+  "run_finished_at": "2026-08-30T09:42:26.463860+00:00",
+  "status": "completed",
+  "error": null,
+  "execution_path": "deepseek_only"
+}

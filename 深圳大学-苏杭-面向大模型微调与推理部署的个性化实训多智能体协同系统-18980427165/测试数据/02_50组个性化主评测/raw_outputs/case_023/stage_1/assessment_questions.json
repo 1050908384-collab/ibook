@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
+  },
+  {
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0202-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：给定嵌套字典 `data = {\"users\": [{\"name\": \"Alice\", \"age\": 30}, {\"name\": \"Bob\", \"age\": 25}]}`，提取所有年龄大于26的用户姓名。",
+    "options": [],
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "hint": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "explanation": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0205-008",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "写一个类 `Stack`（栈），实现 `push(item)`、`pop()`、`peek()`、`is_empty()` 方法。`pop()` 在栈空时抛出 `IndexError`。",
+    "options": [],
+    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "hint": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "explanation": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```"
+  },
+  {
+    "question_id": "Q-KB0202-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\nd = {}\nd.setdefault(\"key\", []).append(1)\nd.setdefault(\"key\", []).append(2)\nprint(d)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`{\"key\": [1]}`"
+      },
+      {
+        "key": "B",
+        "text": "`{\"key\": [1, 2]}`"
+      },
+      {
+        "key": "C",
+        "text": "`{\"key\": [2]}`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。",
+    "explanation": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。"
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码中，`finally` 块在什么情况下执行？\n```python\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print(\"除零错误\")\nfinally:\n    print(\"清理完成\")\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "仅在无异常时"
+      },
+      {
+        "key": "B",
+        "text": "仅在捕获异常后"
+      },
+      {
+        "key": "C",
+        "text": "无论是否有异常都执行"
+      },
+      {
+        "key": "D",
+        "text": "仅在未捕获异常时"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0204-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：读取 `data.txt` 文件，捕获文件不存在的异常，若不存在则打印 \"文件未找到\"。",
+    "options": [],
+    "correct_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "hint": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "explanation": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```"
+  },
+  {
+    "question_id": "Q-KB0204-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`\"w\"`"
+      },
+      {
+        "key": "B",
+        "text": "`\"r\"`"
+      },
+      {
+        "key": "C",
+        "text": "`\"a\"`"
+      },
+      {
+        "key": "D",
+        "text": "`\"x\"`"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  }
+]

@@ -1,0 +1,965 @@
+{
+  "review_passed": true,
+  "iterations": 3,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块标题为'1.2 代码编辑器（IDE）'，但正文中出现了'### 1.3 虚拟环境'的标题，且后续章节编号跳至'第二章：安装 Python'，与所属知识点路径'1.2 代码编辑器（IDE）'不符，存在章节编号混乱。",
+            "evidence": "内容块中同时出现'### 1.2 代码编辑器（IDE）'和'### 1.3 虚拟环境'，且'第二章：安装 Python'与当前章节'1.2'不连续。",
+            "suggestion": "统一章节编号，确保内容块内标题与所属知识点路径一致，避免编号跳跃。",
+            "error_id": "72d3dee3de7d_r1",
+            "canonical_error_id": "72d3dee3de7d",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在验证步骤的代码块中被截断，显示为 '如果显示 `Python 3'，缺少完整的版本号输出和后续的验证说明，导致内容不完整。",
+            "evidence": "原文结尾为 '如果显示 `Python 3'，未提供完整的版本号示例（如 Python 3.10.x）及后续步骤。",
+            "suggestion": "补全验证步骤，例如：如果显示 `Python 3.10.x`（或更高版本），则安装成功；否则检查 PATH 配置或重新安装。",
+            "error_id": "089a41eb6e29_r1",
+            "canonical_error_id": "089a41eb6e29",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'方法二：Homebrew（适合已有 Homebrew 的'处截断，未完成该方法的说明，且缺少后续验证步骤和本块学习检查的完整内容。",
+            "evidence": "原文以'方法二：Homebrew（适合已有 Homebrew 的'结尾，句子不完整，后续内容缺失。",
+            "suggestion": "补全方法二的完整步骤，包括安装命令、验证命令，并确保本块学习检查部分完整呈现。",
+            "error_id": "4f62a766c5d7_r1",
+            "canonical_error_id": "4f62a766c5d7",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_sentence",
+            "severity": "minor",
+            "location": null,
+            "description": "句子在'不需要你'处截断，内容不完整，影响理解。",
+            "evidence": "原文：'**为什么这样写**：`-y` 参数表示自动确认安装，不需要你'，句子未结束。",
+            "suggestion": "补全句子，例如：'不需要你手动确认每个安装步骤。'",
+            "error_id": "3bb15ac21d88_r1",
+            "canonical_error_id": "3bb15ac21d88",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护中，且 CentOS 7 已于 2024 年 6 月 30 日 EOL。该表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 官方 EOL 日期为 2021-12-31，CentOS Stream 8 支持至 2024-05-31，CentOS 7 支持至 2024-06-30。",
+            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 也于 2024 年停止维护，不建议新项目使用 CentOS 系列”。",
+            "error_id": "b380c763a0dd_r1",
+            "canonical_error_id": "b380c763a0dd",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称“VirtualBox 默认无法直通 NVIDIA GPU”，但 VirtualBox 从 6.1 版本开始支持 NVIDIA GPU 直通（通过 PCI passthrough），且需要特定硬件和配置。该表述过于绝对，可能不准确。",
+            "evidence": "VirtualBox 6.1 及更高版本支持 PCI passthrough，包括 NVIDIA GPU，但需要 Intel/AMD CPU 支持 VT-d/AMD-Vi，且仅限 Linux 主机。",
+            "suggestion": "建议改为“VirtualBox 对 NVIDIA GPU 直通支持有限，配置复杂且性能损失大，不建议用于 GPU 训练”。",
+            "error_id": "ed267b0c4e61_r1",
+            "canonical_error_id": "ed267b0c4e61",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "major",
+            "location": null,
+            "description": "配置 Python 解释器的步骤不完整，缺少选择解释器后的后续操作说明，导致用户无法完成配置。",
+            "evidence": "原文步骤2后内容截断，未说明如何选择解释器或验证配置成功。",
+            "suggestion": "补充完整步骤：选择解释器后，点击需要的解释器版本，并在 VS Code 底部状态栏确认已显示所选解释器。",
+            "error_id": "9d5d4456e826_r1",
+            "canonical_error_id": "9d5d4456e826",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在安装步骤的macOS/Linux部分被截断，缺少完整的安装指引和后续内容，导致信息不完整。",
+            "evidence": "原文在'最后一步选 `yes` 让'处中断，未提供完整的安装步骤说明。",
+            "suggestion": "补全macOS/Linux安装步骤的完整说明，并确保内容块完整。",
+            "error_id": "329e9e6c6c9c_r1",
+            "canonical_error_id": "329e9e6c6c9c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'为何与你相关'部分被截断，句子'后续微调不同模型时，PyTorch'不完整，导致技术陈述不完整，无法验证其正确性。",
+            "evidence": "原文末尾为'后续微调不同模型时，PyTorch'，明显截断，缺少后续内容。",
+            "suggestion": "补全该句，确保技术陈述完整。",
+            "error_id": "6b1c3a9c4fb7_r1",
+            "canonical_error_id": "6b1c3a9c4fb7",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C012",
+            "content_chunk_id": "LOCAL-KBS-02-00-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在VS Code操作步骤处被截断，未完成'点击右上角小三角或按Ctrl+F5'后的完整说明，缺少运行结果验证和退出步骤，导致内容不完整。",
+            "evidence": "原文结尾为'点击右上角小三角或按 `Ctrl + F5`，下方终端'，句子未结束，缺少后续内容。",
+            "suggestion": "补充完整操作步骤，例如：'点击右上角小三角或按 Ctrl+F5，下方终端会显示运行结果，正确打印即环境可用。'",
+            "error_id": "e867cf7503fa_r1",
+            "canonical_error_id": "e867cf7503fa",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d093216b45_r1",
+            "canonical_error_id": "a6d093216b45",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容为空",
+            "evidence": "content.strip() 为空",
+            "suggestion": "提供待审核内容",
+            "error_id": "c02e0c4bf666_r1",
+            "canonical_error_id": "c02e0c4bf666",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块标题为'1.2 代码编辑器（IDE）'，但正文中出现了'### 1.3 虚拟环境'的标题，且后续章节编号跳至'第二章：安装 Python'，与所属知识点路径'1.2 代码编辑器（IDE）'不符，存在章节编号混乱。",
+            "evidence": "内容块中同时出现'### 1.2 代码编辑器（IDE）'和'### 1.3 虚拟环境'，且'第二章：安装 Python'与当前章节'1.2'不连续。",
+            "suggestion": "统一章节编号，确保内容块内标题与所属知识点路径一致，避免编号跳跃。",
+            "error_id": "72d3dee3de7d_r1",
+            "canonical_error_id": "72d3dee3de7d",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在验证步骤的代码块中被截断，显示为 '如果显示 `Python 3'，缺少完整的版本号输出和后续的验证说明，导致内容不完整。",
+            "evidence": "原文结尾为 '如果显示 `Python 3'，未提供完整的版本号示例（如 Python 3.10.x）及后续步骤。",
+            "suggestion": "补全验证步骤，例如：如果显示 `Python 3.10.x`（或更高版本），则安装成功；否则检查 PATH 配置或重新安装。",
+            "error_id": "089a41eb6e29_r1",
+            "canonical_error_id": "089a41eb6e29",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'方法二：Homebrew（适合已有 Homebrew 的'处截断，未完成该方法的说明，且缺少后续验证步骤和本块学习检查的完整内容。",
+            "evidence": "原文以'方法二：Homebrew（适合已有 Homebrew 的'结尾，句子不完整，后续内容缺失。",
+            "suggestion": "补全方法二的完整步骤，包括安装命令、验证命令，并确保本块学习检查部分完整呈现。",
+            "error_id": "4f62a766c5d7_r1",
+            "canonical_error_id": "4f62a766c5d7",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C004",
+            "content_chunk_id": "LOCAL-KBS-02-00-C004",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_sentence",
+            "severity": "minor",
+            "location": null,
+            "description": "句子在'不需要你'处截断，内容不完整，影响理解。",
+            "evidence": "原文：'**为什么这样写**：`-y` 参数表示自动确认安装，不需要你'，句子未结束。",
+            "suggestion": "补全句子，例如：'不需要你手动确认每个安装步骤。'",
+            "error_id": "3bb15ac21d88_r1",
+            "canonical_error_id": "3bb15ac21d88",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C005",
+            "content_chunk_id": "LOCAL-KBS-02-00-C005",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日 EOL，而 CentOS Stream 8 仍在维护中，且 CentOS 7 已于 2024 年 6 月 30 日 EOL。该表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 官方 EOL 日期为 2021-12-31，CentOS Stream 8 支持至 2024-05-31，CentOS 7 支持至 2024-06-30。",
+            "suggestion": "建议改为“CentOS 8 已于 2021 年停止维护，CentOS 7 也于 2024 年停止维护，不建议新项目使用 CentOS 系列”。",
+            "error_id": "b380c763a0dd_r1",
+            "canonical_error_id": "b380c763a0dd",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称“VirtualBox 默认无法直通 NVIDIA GPU”，但 VirtualBox 从 6.1 版本开始支持 NVIDIA GPU 直通（通过 PCI passthrough），且需要特定硬件和配置。该表述过于绝对，可能不准确。",
+            "evidence": "VirtualBox 6.1 及更高版本支持 PCI passthrough，包括 NVIDIA GPU，但需要 Intel/AMD CPU 支持 VT-d/AMD-Vi，且仅限 Linux 主机。",
+            "suggestion": "建议改为“VirtualBox 对 NVIDIA GPU 直通支持有限，配置复杂且性能损失大，不建议用于 GPU 训练”。",
+            "error_id": "ed267b0c4e61_r1",
+            "canonical_error_id": "ed267b0c4e61",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_instruction",
+            "severity": "major",
+            "location": null,
+            "description": "配置 Python 解释器的步骤不完整，缺少选择解释器后的后续操作说明，导致用户无法完成配置。",
+            "evidence": "原文步骤2后内容截断，未说明如何选择解释器或验证配置成功。",
+            "suggestion": "补充完整步骤：选择解释器后，点击需要的解释器版本，并在 VS Code 底部状态栏确认已显示所选解释器。",
+            "error_id": "9d5d4456e826_r1",
+            "canonical_error_id": "9d5d4456e826",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C009",
+            "content_chunk_id": "LOCAL-KBS-02-00-C009",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在安装步骤的macOS/Linux部分被截断，缺少完整的安装指引和后续内容，导致信息不完整。",
+            "evidence": "原文在'最后一步选 `yes` 让'处中断，未提供完整的安装步骤说明。",
+            "suggestion": "补全macOS/Linux安装步骤的完整说明，并确保内容块完整。",
+            "error_id": "329e9e6c6c9c_r1",
+            "canonical_error_id": "329e9e6c6c9c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'为何与你相关'部分被截断，句子'后续微调不同模型时，PyTorch'不完整，导致技术陈述不完整，无法验证其正确性。",
+            "evidence": "原文末尾为'后续微调不同模型时，PyTorch'，明显截断，缺少后续内容。",
+            "suggestion": "补全该句，确保技术陈述完整。",
+            "error_id": "6b1c3a9c4fb7_r1",
+            "canonical_error_id": "6b1c3a9c4fb7",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C012",
+            "content_chunk_id": "LOCAL-KBS-02-00-C012",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在VS Code操作步骤处被截断，未完成'点击右上角小三角或按Ctrl+F5'后的完整说明，缺少运行结果验证和退出步骤，导致内容不完整。",
+            "evidence": "原文结尾为'点击右上角小三角或按 `Ctrl + F5`，下方终端'，句子未结束，缺少后续内容。",
+            "suggestion": "补充完整操作步骤，例如：'点击右上角小三角或按 Ctrl+F5，下方终端会显示运行结果，正确打印即环境可用。'",
+            "error_id": "e867cf7503fa_r1",
+            "canonical_error_id": "e867cf7503fa",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C015",
+            "content_chunk_id": "LOCAL-KBS-02-00-C015",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d093216b45_r1",
+            "canonical_error_id": "a6d093216b45",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "missing_content",
+            "severity": "critical",
+            "location": null,
+            "description": "待审核内容为空",
+            "evidence": "content.strip() 为空",
+            "suggestion": "提供待审核内容",
+            "error_id": "c02e0c4bf666_r1",
+            "canonical_error_id": "c02e0c4bf666",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d093216b45_r2",
+            "canonical_error_id": "a6d093216b45",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d093216b45_r2",
+            "canonical_error_id": "a6d093216b45",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d093216b45_r3",
+            "canonical_error_id": "a6d093216b45",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "a6d093216b45_r3",
+            "canonical_error_id": "a6d093216b45",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_7e5a6d82-ae6a-472c-bee3-4b0f0b190d9b_25ad24ba-cb1b-5ec6-94c2-44b9ae6d85d4_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

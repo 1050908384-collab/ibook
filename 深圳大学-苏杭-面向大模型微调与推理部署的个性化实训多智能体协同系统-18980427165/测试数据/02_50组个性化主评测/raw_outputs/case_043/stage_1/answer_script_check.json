@@ -1,0 +1,15 @@
+{
+  "answer_behavior": "very_low",
+  "target_accuracy_range": [
+    0.0,
+    0.39
+  ],
+  "wrong_answer_strategy": "fixed_by_question_id",
+  "expected_next_strategy": "simplify",
+  "actual_accuracy_from_learner": 0.25,
+  "actual_accuracy_from_decision": 0.25,
+  "accuracy_within_range": true,
+  "actual_next_strategy": "simplify",
+  "strategy_match": true,
+  "discrepancy_reason": ""
+}

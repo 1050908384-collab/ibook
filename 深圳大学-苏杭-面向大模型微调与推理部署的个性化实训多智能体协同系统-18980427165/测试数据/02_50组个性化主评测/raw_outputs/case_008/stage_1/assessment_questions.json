@@ -1,0 +1,166 @@
+[
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
+  },
+  {
+    "question_id": "Q-KB0202-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\ns = {1, 2, 3, 3, 2, 1}\nprint(len(s))\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "6"
+      },
+      {
+        "key": "B",
+        "text": "3"
+      },
+      {
+        "key": "C",
+        "text": "2"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> 集合自动去重，`{1, 2, 3}` 长度为3。",
+    "explanation": "> 集合自动去重，`{1, 2, 3}` 长度为3。"
+  },
+  {
+    "question_id": "Q-KB0204-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`\"w\"`"
+      },
+      {
+        "key": "B",
+        "text": "`\"r\"`"
+      },
+      {
+        "key": "C",
+        "text": "`\"a\"`"
+      },
+      {
+        "key": "D",
+        "text": "`\"x\"`"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0201-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下代码的输出是？\n```python\nx = 10\ny = 3\nprint(x // y, x % y, x ** y)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`3.33 1 1000`"
+      },
+      {
+        "key": "B",
+        "text": "`3 1 1000`"
+      },
+      {
+        "key": "C",
+        "text": "`3 0 30`"
+      },
+      {
+        "key": "D",
+        "text": "`3.33 0 1000`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `//` 整除得3，`%` 取余得1，`**` 幂运算 10³=1000。",
+    "explanation": "> `//` 整除得3，`%` 取余得1，`**` 幂运算 10³=1000。"
+  },
+  {
+    "question_id": "Q-KB0203-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下函数定义中，哪个参数是**默认参数**？\n```python\ndef greet(name, greeting=\"Hello\"):\n    return f\"{greeting}, {name}!\"\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`name`"
+      },
+      {
+        "key": "B",
+        "text": "`greeting`"
+      },
+      {
+        "key": "C",
+        "text": "两者都是"
+      },
+      {
+        "key": "D",
+        "text": "两者都不是"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0203-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个类 `Dog`，包含：\n- 类属性 `species = \"Canis familiaris\"`\n- 实例属性 `name` 和 `age`（通过 `__init__` 初始化）\n- 方法 `bark()` 返回 `\"{name} says: Woof!\"`",
+    "options": [],
+    "correct_answer": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "hint": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```",
+    "explanation": "```python\nclass Dog:\n    species = \"Canis familiaris\"\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n    def bark(self):\n        return f\"{self.name} says: Woof!\"\n```"
+  },
+  {
+    "question_id": "Q-KB0205-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写一个**带参数的装饰器** `retry(times=3)`，使被装饰的函数在抛出异常时自动重试指定次数。",
+    "options": [],
+    "correct_answer": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "hint": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "explanation": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```"
+  }
+]

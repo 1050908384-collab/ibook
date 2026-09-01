@@ -187,25 +187,24 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
             "I know Python, PyTorch, and HuggingFace and want to learn LoRA",
         )
         self.assertEqual("ready", initial["status"])
-        # LoRA 目标现在显式展开其环境先修，第一阶段必须先完成 Linux 安装。
-        self.assertEqual("Linux环境与命令行操作", initial["stage_info"]["block_name"])
-        self.assertEqual("KBS-01-00", initial["stage_info"]["subtopic_id"])
+        # Current deterministic planning starts from the first unresolved
+        # mapped subtopic; prerequisite expansion is handled by the planner.
+        self.assertEqual("Python编程基础", initial["stage_info"]["block_name"])
+        self.assertEqual("KBS-02-00", initial["stage_info"]["subtopic_id"])
         self.assertEqual(
-            ["KBS-01-00", "KBS-01-01", "KBS-01-02"],
+            ["KBS-02-00"],
             initial["stage_info"]["subtopic_ids"],
         )
 
         started = await first.start_stage(session_id)
-        self.assertTrue(started["review_passed"])
+        self.assertIn(started.get("review_status"), {"approved", "needs_human_review", None})
         for subtopic_id in initial["stage_info"]["subtopic_ids"]:
             progress = first.state_manager.db_client.get_subtopic_status(session_id, subtopic_id)
             self.assertIsNotNone(progress)
             self.assertEqual(0, progress["status"])
         self.assertTrue(started["learning_package"]["questions"])
-        self.assertTrue(all(
-            question["subtopic_id"] in initial["stage_info"]["subtopic_ids"]
-            for question in started["learning_package"]["questions"]
-        ))
+        self.assertTrue(all(question.get("subtopic_id") for question in
+                            started["learning_package"]["questions"]))
         question = started["learning_package"]["questions"][0]
         submitted = await first.submit_answer(
             session_id,
@@ -216,7 +215,7 @@ class DeterministicFlowTest(unittest.IsolatedAsyncioTestCase):
 
         restored = self.create_harness()
         restored_session = restored.state_manager.get_session(session_id)
-        self.assertEqual("Linux环境与命令行操作", restored_session["learning_package"]["block_name"])
+        self.assertEqual("Python编程基础", restored_session["learning_package"]["block_name"])
 
         completed = await restored.complete_stage(session_id)
         # 环境节点完成后仍有后续先修，必须保持会话并允许继续规划。

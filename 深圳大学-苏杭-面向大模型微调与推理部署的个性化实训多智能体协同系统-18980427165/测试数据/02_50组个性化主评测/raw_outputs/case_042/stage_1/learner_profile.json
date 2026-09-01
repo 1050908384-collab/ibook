@@ -1,0 +1,49 @@
+{
+  "session_id": "cfd7c971-7145-4a3d-85ee-bdfea5fa1834",
+  "user_id": "local-user",
+  "grade": "阶段1低分，验证是否降难度拆分内容",
+  "skill_tags": [
+    "深度学习框架PyTorch基础"
+  ],
+  "mastered_block_ids": [
+    "KB-04"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "beginner",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "LoRA微调",
+  "daily_hours": 1.5,
+  "learning_style": "mixed",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

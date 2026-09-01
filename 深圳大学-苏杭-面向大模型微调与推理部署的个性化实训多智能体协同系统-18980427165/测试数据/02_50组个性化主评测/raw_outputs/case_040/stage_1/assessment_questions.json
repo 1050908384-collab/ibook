@@ -1,0 +1,115 @@
+[
+  {
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0204-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写一个自定义异常类 `ModelError`，继承自 `Exception`，并在模型加载失败时抛出该异常，附带错误信息。",
+    "options": [],
+    "correct_answer": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
+    "hint": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
+    "explanation": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0201-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nx = 10\ndef foo():\n    x = 20\n    def bar():\n        nonlocal x\n        x = 30\n    bar()\n    print(x)\nfoo()\nprint(x)\n```",
+    "options": [],
+    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "hint": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "explanation": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---"
+  },
+  {
+    "question_id": "Q-KB0205-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写一个生成器函数 `fibonacci(n)`，生成前 `n` 个斐波那契数。",
+    "options": [],
+    "correct_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "hint": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "explanation": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```"
+  },
+  {
+    "question_id": "Q-KB0205-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写一个**带参数的装饰器** `retry(times=3)`，使被装饰的函数在抛出异常时自动重试指定次数。",
+    "options": [],
+    "correct_answer": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "hint": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```",
+    "explanation": "```python\nimport functools\n\ndef retry(times=3):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except Exception as e:\n                    print(f\"第{attempt+1}次失败: {e}\")\n            raise Exception(f\"重试{times}次后仍失败\")\n        return wrapper\n    return decorator\n\n@retry(times=3)\ndef unstable_api():\n    import random\n    if random.random() < 0.7:\n        raise ConnectionError(\"网络超时\")\n    return \"成功\"\n```"
+  },
+  {
+    "question_id": "Q-KB0205-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "生成器函数使用________关键字返回值（而非 `return`），调用生成器函数返回的是一个________对象。",
+    "options": [],
+    "correct_answer": "`yield`；生成器（generator）",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0204-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码中，`finally` 块在什么情况下执行？\n```python\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print(\"除零错误\")\nfinally:\n    print(\"清理完成\")\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "仅在无异常时"
+      },
+      {
+        "key": "B",
+        "text": "仅在捕获异常后"
+      },
+      {
+        "key": "C",
+        "text": "无论是否有异常都执行"
+      },
+      {
+        "key": "D",
+        "text": "仅在未捕获异常时"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  }
+]

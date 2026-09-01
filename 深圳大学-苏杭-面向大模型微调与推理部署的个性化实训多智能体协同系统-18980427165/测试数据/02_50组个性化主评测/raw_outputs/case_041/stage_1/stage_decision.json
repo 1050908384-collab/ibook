@@ -1,0 +1,73 @@
+{
+  "status": "continue",
+  "session_id": "03aa8c95-e880-47de-809b-14a2d69f6964",
+  "stage_id": "dc39c175-a02b-515f-ab12-62ee6abbcf0c",
+  "stage_num": 1,
+  "accuracy": 0.875,
+  "bypass_assessment": false,
+  "updated_profile": {
+    "session_id": "03aa8c95-e880-47de-809b-14a2d69f6964",
+    "user_id": "local-user",
+    "grade": "阶段1中等正确率，验证是否增加针对性练习",
+    "skill_tags": [
+      "深度学习框架PyTorch基础",
+      "Transformer架构"
+    ],
+    "mastered_block_ids": [
+      "KB-04",
+      "KB-08"
+    ],
+    "expected_target_blocks": [],
+    "goal_scope": "focused",
+    "target_block_ids": [
+      "KB-12"
+    ],
+    "target_subtopic_ids": [
+      "KBS-12-03"
+    ],
+    "planned_block_order": [
+      "KB-12"
+    ],
+    "active_stage_block_id": "KB-02",
+    "foundation_confirmed": false,
+    "knowledge_gaps": [
+      {
+        "skill": "LoRA",
+        "block_id": "KB-12",
+        "block_name": "参数高效微调（LoRA与QLoRA）",
+        "target_subtopic_ids": [
+          "KBS-12-01",
+          "KBS-12-02",
+          "KBS-12-03",
+          "KBS-12-04",
+          "KBS-12-05"
+        ],
+        "mapping_confidence": 1.0,
+        "level": "advanced",
+        "status": "未掌握",
+        "progress": 0.0,
+        "prerequisites": [
+          "HuggingFace生态工具链"
+        ]
+      }
+    ],
+    "goal": "LoRA微调",
+    "daily_hours": 2.0,
+    "learning_style": "practice",
+    "learning_rhythm": "fast",
+    "confidence_index": 0.725,
+    "confusion_markers": [],
+    "confidence": 0.95,
+    "version": 3
+  },
+  "stage_summary": "## 阶段结果\n\n### 📈 阶段闭环\n【Python编程基础】：检验 0 道题，覆盖 1 个知识点。\n\n### ✅ 测试结果解读\n正确率 88%，达标。错题通常集中在细节（边界条件/步骤顺序），而不是「完全不会」——这种题丢分最可惜，因为补起来最快。建议：每次做新内容前花 5 分钟，专门回看 2 个最近的细节类错题即可。\n\n### 📚 知识点掌握分布\n- ❌ 待加强（1项）：LoRA。这些必须先打通——带着欠账往后推进的代价，不是「后面补回来」，而是每一步都更吃力，最终花的总时间是现在补齐的 2-3 倍。\n\n### 🔍 盲区与风险提示\n本轮未暴露可定位的盲区。更合理的解释是：当前题量还不足以覆盖到边界条件与多步骤组合场景——这不等于「所有变式都已掌握」。验证方法：后面遇到变式题（尤其是多步骤组合题）时，如果第一次就能做对，盲区才算真的没有。\n\n### ⏱️ 学习节奏信号\n⚠️ 节奏预警：比预期快 0.1h。当前错误多属细节类失误，说明概念本身能理解，但输入信息的颗粒度不够。动作：放慢 10% 节奏、每学完一个小节停 30 秒用自己的话复述一次，正确率通常能再抬一截，而且后面不需要返工，整体更省时间。\n\n### 😊 情绪状态信号\n未检测到明显的情绪波动——这是一种比较稳的状态，说明内容难度和吸收节奏基本匹配。如果后面遇到卡点或感觉顺得不正常，随时反馈，我可以据此微调后面的讲解深度。\n\n### 🎯 下一步决策\n策略：【进阶】\n\n▸ **为什么**：这次 88% 正确率，且关键练习达标，具备带着现有能力处理更复杂场景的条件。\n\n▸ **接下来做什么**：接下来的重点：在【Python编程基础】之上，引入真实边界条件与多步骤组合场景——这一步是从「看懂」到「会用」的关键门槛。\n\n### 💡 收尾提示\n【Python编程基础】本轮学习完成。从正确率 88% 来看，阶段主体内容已经不陌生了——现在最重要的不是「赶紧推进」，而是把「偶尔对」变成「稳定对」。判断标尺：同类题连续做对 2 道变式，才算手感真的固定下来，不会冷掉。  \n遇到卡顿随时提问，我们按你真实的卡点节奏走，不急。\n",
+  "next_strategy": "advance",
+  "can_plan_next_stage": true,
+  "session_status": "active",
+  "all_mastered": false,
+  "final_report": null,
+  "phase": "stage_result",
+  "available_actions": [
+    "plan_next_stage"
+  ]
+}

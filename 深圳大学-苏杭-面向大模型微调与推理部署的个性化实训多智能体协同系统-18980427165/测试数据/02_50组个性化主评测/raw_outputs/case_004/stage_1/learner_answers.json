@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0100-002",
+    "submitted_answer": "your_username\nDESKTOP-XXXX",
+    "is_correct": true,
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0100-004",
+    "submitted_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "is_correct": true,
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-008",
+    "submitted_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "is_correct": true,
+    "correct_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-004",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0100-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0104-003",
+    "submitted_answer": "D",
+    "is_correct": true,
+    "correct_answer": "D",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0104-002",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

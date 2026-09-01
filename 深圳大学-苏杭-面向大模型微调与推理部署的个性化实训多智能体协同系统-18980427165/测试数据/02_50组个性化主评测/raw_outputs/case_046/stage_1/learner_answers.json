@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "submitted_answer": "CUDA ||| GPU ||| 显卡",
+    "is_correct": true,
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0405-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "Weight Decay（权重衰减）；L2正则化与自适应学习率的耦合问题。",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0402-004",
+    "submitted_answer": "D",
+    "is_correct": true,
+    "correct_answer": "D",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0405-003",
+    "submitted_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0407-002",
+    "submitted_answer": "实例化；`load_state_dict()`",
+    "is_correct": true,
+    "correct_answer": "实例化；`load_state_dict()`",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0407-003",
+    "submitted_answer": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "is_correct": true,
+    "correct_answer": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "submitted_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

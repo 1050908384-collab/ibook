@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-001",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "transformers",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0704-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0702-001",
+    "submitted_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "is_correct": true,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0702-002",
+    "submitted_answer": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```",
+    "is_correct": true,
+    "correct_answer": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "tokenizer ||| 分词器",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0704-005",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "submitted_answer": "tokenizer ||| 分词器",
+    "is_correct": true,
+    "correct_answer": "tokenizer ||| 分词器",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-001",
+    "submitted_answer": "transformers",
+    "is_correct": true,
+    "correct_answer": "transformers",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0702-004",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-003",
+    "submitted_answer": "正确",
+    "is_correct": true,
+    "correct_answer": "正确",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0703-001",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0703-002",
+    "submitted_answer": "`max_length`",
+    "is_correct": true,
+    "correct_answer": "`max_length`",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0701-004",
+    "submitted_answer": "D",
+    "is_correct": true,
+    "correct_answer": "D",
+    "answer_behavior": "medium",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

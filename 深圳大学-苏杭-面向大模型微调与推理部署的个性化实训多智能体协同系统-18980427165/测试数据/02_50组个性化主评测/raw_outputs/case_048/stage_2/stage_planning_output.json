@@ -1,0 +1,101 @@
+{
+  "status": "planned",
+  "session_id": "e9917602-7985-4d2e-9d6e-ef6f750ed065",
+  "next_stage": {
+    "stage_id": "156590b4-9de9-5e1e-829c-1e1fd7246183",
+    "stage_num": 2,
+    "block_id": "KB-11",
+    "block_name": "HuggingFace生态工具链",
+    "block_ids": [
+      "KB-11"
+    ],
+    "subtopic_id": "KBS-11-00",
+    "subtopic_name": "（环境准备：安装transformers、datasets、accelerate库，建议使用 huggingface_hub 配置缓存路径与Token）",
+    "subtopic_ids": [
+      "KBS-11-00",
+      "KBS-11-01"
+    ],
+    "subtopic_names": [
+      "（环境准备：安装transformers、datasets、accelerate库，建议使用 huggingface_hub 配置缓存路径与Token）",
+      "掌握transformers库的AutoModel/AutoTokenizer加载方式"
+    ],
+    "estimated_hours": 1.5,
+    "gap_skill": "LoRA",
+    "prerequisites": [
+      "KBS-07-00"
+    ],
+    "status": "pending",
+    "accuracy": null,
+    "strategy_used": null,
+    "title": "学习环境准备：安装transformers、datasets、a...",
+    "description": "围绕环境准备：安装transformers、datasets、a...完成一次可执行的阶段学习与练习。",
+    "objectives": [
+      "理解环境准备：安装transformers、datasets、a...的基本概念",
+      "掌握环境准备：安装transformers、datasets、a...的核心技术",
+      "能够独立完成环境准备：安装transformers、datasets、a...相关任务"
+    ],
+    "difficulty": "初级",
+    "recommended_daily_hours": 1.5,
+    "suggested_study_days": 1,
+    "learning_style_notes": "理论型学习者：建议先理解环境准备：安装transformers、datasets、a...的原理、设计思路与适用场景，再辅以少量代码示例验证关键写法。",
+    "hardware_notes": "",
+    "personalization_summary": "适合未提供任何硬件信息，无法判断可执行性学习者 | 预计2.2小时完成 | 建议分1天学习 | 每天1.5小时 | 综合型学习风格"
+  },
+  "updated_profile": {
+    "session_id": "e9917602-7985-4d2e-9d6e-ef6f750ed065",
+    "user_id": "local-user",
+    "grade": "未提供任何硬件信息，无法判断可执行性",
+    "skill_tags": [
+      "Python编程基础",
+      "深度学习框架PyTorch基础"
+    ],
+    "mastered_block_ids": [
+      "KB-02",
+      "KB-04"
+    ],
+    "expected_target_blocks": [],
+    "goal_scope": "focused",
+    "target_block_ids": [
+      "KB-12"
+    ],
+    "target_subtopic_ids": [
+      "KBS-12-03"
+    ],
+    "planned_block_order": [
+      "KB-12"
+    ],
+    "active_stage_block_id": "KB-11",
+    "foundation_confirmed": false,
+    "knowledge_gaps": [
+      {
+        "skill": "LoRA",
+        "block_id": "KB-12",
+        "block_name": "参数高效微调（LoRA与QLoRA）",
+        "target_subtopic_ids": [
+          "KBS-12-01"
+        ],
+        "mapping_confidence": 1.0,
+        "level": "beginner",
+        "status": "未掌握",
+        "progress": 0.0,
+        "prerequisites": [
+          "HuggingFace生态工具链"
+        ]
+      }
+    ],
+    "goal": "LoRA微调",
+    "daily_hours": 1.5,
+    "learning_style": "theory",
+    "learning_rhythm": "fast",
+    "confidence_index": 0.725,
+    "confusion_markers": [],
+    "confidence": 0.95,
+    "version": 3
+  },
+  "planning_notes": "本阶段（1）已达标，推进到下一阶段",
+  "session_status": "active",
+  "phase": "next_stage_ready",
+  "available_actions": [
+    "start_stage"
+  ]
+}

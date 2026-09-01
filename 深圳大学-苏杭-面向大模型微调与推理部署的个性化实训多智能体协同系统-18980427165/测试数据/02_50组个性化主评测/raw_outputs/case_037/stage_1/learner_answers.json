@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0100-001",
+    "submitted_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "is_correct": true,
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0100-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-004",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-007",
+    "submitted_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "is_correct": true,
+    "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "submitted_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "is_correct": true,
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-004",
+    "submitted_answer": "错误",
+    "is_correct": true,
+    "correct_answer": "错误",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-008",
+    "submitted_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "is_correct": true,
+    "correct_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

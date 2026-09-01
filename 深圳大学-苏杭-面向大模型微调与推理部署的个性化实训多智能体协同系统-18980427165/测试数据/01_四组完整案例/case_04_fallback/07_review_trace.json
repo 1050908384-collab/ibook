@@ -1,0 +1,204 @@
+{
+  "review_passed": true,
+  "iterations": 2,
+  "needs_human_review": false,
+  "evidence": {
+    "session_id": "b04bdc4c-0d99-4982-8a04-a55fd35964a1",
+    "user_input_hash": "我的学习背景：阶段1达掌握条件，验证是否跳过转下一目标\n已掌握技能：Transformer架构、HuggingFace生态工具链\n我的学习目标：LoRA微调+权",
+    "profile_confidence": 0.95,
+    "planned_block": "Linux环境与命令行操作",
+    "review_passed": true,
+    "iterations": 2,
+    "llm_call_count": 206,
+    "failed_calls": 0,
+    "llm_route_samples": [
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": ""
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": ""
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      },
+      {
+        "agent": "",
+        "task": "",
+        "request": "deepseek-v4-flash",
+        "actual": "qwen2.5:7b",
+        "success": true,
+        "fallback": true,
+        "err": "Error: DeepSeek API transport failure: Mocked connect timeout"
+      }
+    ],
+    "successful_models": [
+      "qwen2.5:7b"
+    ]
+  },
+  "fallback_route": [
+    "qwen2.5:7b"
+  ],
+  "fallback_triggered": true
+}

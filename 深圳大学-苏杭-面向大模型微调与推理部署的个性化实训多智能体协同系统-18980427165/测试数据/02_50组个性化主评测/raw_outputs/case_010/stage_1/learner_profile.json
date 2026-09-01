@@ -1,0 +1,56 @@
+{
+  "session_id": "cda12a9f-e929-4445-8a59-47570ec5c287",
+  "user_id": "local-user",
+  "grade": "掌握PyTorch和训练流程，想学推理部署",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "LLM三阶段训练流程"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-10"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-15"
+  ],
+  "target_subtopic_ids": [
+    "KBS-15-04"
+  ],
+  "planned_block_order": [
+    "KB-15"
+  ],
+  "active_stage_block_id": "KB-01",
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "vLLM",
+      "block_id": "KB-15",
+      "block_name": "模型推理部署（vLLM）",
+      "target_subtopic_ids": [
+        "KBS-15-00",
+        "KBS-15-01",
+        "KBS-15-02",
+        "KBS-15-03",
+        "KBS-15-04"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "advanced",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "Transformer架构（Decoder-Only）",
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "vLLM部署",
+  "daily_hours": 2.5,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

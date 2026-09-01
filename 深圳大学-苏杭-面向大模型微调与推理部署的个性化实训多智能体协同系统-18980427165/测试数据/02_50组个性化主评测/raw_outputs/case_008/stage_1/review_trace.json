@@ -1,0 +1,1009 @@
+{
+  "review_passed": true,
+  "iterations": 3,
+  "review_history": [
+    {
+      "iteration": 1,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“conda 是目前最主流的虚拟环境管理工具”，但 conda 并非唯一或绝对最主流，venv 和 virtualenv 在 Python 社区同样广泛使用，且 conda 是跨语言包管理器，并非专为 Python 虚拟环境设计。",
+            "evidence": "Python 官方文档推荐使用 venv 创建虚拟环境；conda 是 Anaconda 发行版自带的包和环境管理器，虽流行但并非绝对最主流。",
+            "suggestion": "建议改为“我们用 conda 管理，这是常用的虚拟环境管理工具之一”，或补充说明 venv 也是常见选择。",
+            "error_id": "005ebbedb07a_r1",
+            "canonical_error_id": "005ebbedb07a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'第三步：验证安装'的步骤2处被截断，未提供完整的验证命令和后续步骤，导致学习者无法完成安装验证。",
+            "evidence": "原文以'2.'结尾，缺少验证安装的具体命令（如python --version）和后续说明。",
+            "suggestion": "补充完整的验证命令，例如：输入 python --version 和 pip --version，确认输出显示Python版本号和pip版本号。",
+            "error_id": "a7f4574b151a_r1",
+            "canonical_error_id": "a7f4574b151a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日结束维护，而 CentOS 8 Stream 仍在维护中。该表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 于 2021 年 12 月 31 日 EOL，但 CentOS 8 Stream 仍在维护中。",
+            "suggestion": "建议改为“CentOS 8 已停止维护（CentOS 8 Stream 除外）”，或直接推荐使用 Ubuntu LTS。",
+            "error_id": "4711e883f0b5_r1",
+            "canonical_error_id": "4711e883f0b5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'官方 Py'处被截断，句子不完整，且缺少3.2节后续内容。",
+            "evidence": "原文末尾为'官方 Py'，明显截断，导致信息不完整。",
+            "suggestion": "补全被截断的内容，确保3.2节完整。",
+            "error_id": "008c2c7fe8b9_r1",
+            "canonical_error_id": "008c2c7fe8b9",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C007",
+            "content_chunk_id": "LOCAL-KBS-02-00-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'如果你想恢复'处截断，未提供恢复官方源的完整操作步骤，导致指令不完整。",
+            "evidence": "原文以'如果你想恢复'结尾，缺少后续步骤说明。",
+            "suggestion": "补充恢复官方源的完整操作步骤，例如：删除或注释pip.ini/pip.conf中的index-url配置，或使用`pip config unset global.index-url`命令。",
+            "error_id": "c5043fdd5d60_r1",
+            "canonical_error_id": "c5043fdd5d60",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C008",
+            "content_chunk_id": "LOCAL-KBS-02-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Anaconda 体积描述不准确：Anaconda 安装包实际约 500MB 至 1GB 以上，且安装后占用空间通常超过 3GB，原文称“约 500MB+”可能低估。",
+            "evidence": "Anaconda 官方文档及常见安装经验表明，Anaconda 安装包约 500MB-1GB，安装后占用空间约 3GB 以上。",
+            "suggestion": "建议修改为“体积大（安装包约 500MB-1GB，安装后占用数 GB）”，或直接引用官方最新数据。",
+            "error_id": "aa011b96df1e_r1",
+            "canonical_error_id": "aa011b96df1e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Miniconda 体积描述不准确：Miniconda 安装包约 50-100MB，安装后占用约 400MB，原文称“约 50MB”可能低估。",
+            "evidence": "Miniconda 官方文档及常见安装经验表明，Miniconda 安装包约 50-100MB，安装后占用约 400MB。",
+            "suggestion": "建议修改为“体积小（安装包约 50-100MB，安装后占用约 400MB）”。",
+            "error_id": "c877e1885b07_r1",
+            "canonical_error_id": "c877e1885b07",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "macOS 安装包描述不完整：macOS 的 Miniconda 安装包有 .pkg 和 .sh 两种，但 .pkg 安装器不会自动运行 conda init，需要手动初始化，原文未区分。",
+            "evidence": "Miniconda 官方安装文档：macOS .pkg 安装后需手动运行 conda init，.sh 安装时可选运行 conda init。",
+            "suggestion": "建议补充说明：macOS 使用 .pkg 安装后需手动运行 conda init，或推荐使用 .sh 安装。",
+            "error_id": "9439b6ebb693_r1",
+            "canonical_error_id": "9439b6ebb693",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Windows 安装说明不完整：Windows 安装器勾选“Add Miniconda3 to my PATH”并非绝对不推荐，官方文档建议不勾选以避免冲突，但若用户需要命令行直接使用 conda，也可勾选，原文表述过于绝对。",
+            "evidence": "Miniconda 官方安装文档：Windows 安装器默认不勾选“Add to PATH”，官方建议不勾选以避免与现有 Python 冲突，但用户可根据需要勾选。",
+            "suggestion": "建议修改为“通常不勾选‘Add Miniconda3 to my PATH’，以避免与系统已有 Python 冲突；若你熟悉 PATH 配置，也可勾选”。",
+            "error_id": "faf667e1d816_r1",
+            "canonical_error_id": "faf667e1d816",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在 macOS/Linux 的 Interpreter 路径处被截断，未提供完整的路径示例，导致内容不完整。",
+            "evidence": "原文在 'macOS/Linux：`' 处结束，缺少路径内容。",
+            "suggestion": "补全 macOS/Linux 的 Python 可执行文件路径示例，例如：`/Users/你的用户名/miniconda3/envs/llm-learn/bin/python`。",
+            "error_id": "64abf238f68c_r1",
+            "canonical_error_id": "64abf238f68c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "44083aac623b_r1",
+            "canonical_error_id": "44083aac623b",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'pip 国内镜像源'的验证命令为'pip config list'，但该命令仅显示当前配置，并不能验证镜像源是否生效或是否已配置。更准确的验证命令应为'pip config get global.index-url'或'pip config list'后检查index-url字段。",
+            "evidence": "pip config list 列出所有配置项，但用户需自行检查 index-url 是否指向镜像源；而 pip config get global.index-url 可直接返回当前 index-url 值，更直接验证镜像源配置。",
+            "suggestion": "将验证命令改为'pip config get global.index-url'，或保留'pip config list'并提示用户检查 index-url 字段。",
+            "error_id": "57df90d5520e_r1",
+            "canonical_error_id": "57df90d5520e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "本章小结表格中'Conda 虚拟环境 llm-learn'的验证命令为'conda env list'，但该命令仅列出所有环境，无法确认名为'llm-learn'的环境是否存在。更准确的验证命令应为'conda env list | grep llm-learn'或'conda activate llm-learn'。",
+            "evidence": "conda env list 列出所有环境，用户需自行查找'llm-learn'；而 grep 或 activate 可直接确认环境是否存在。",
+            "suggestion": "将验证命令改为'conda env list | grep llm-learn'，或提示用户检查输出中是否包含'llm-learn'。",
+            "error_id": "fa61ab947124_r1",
+            "canonical_error_id": "fa61ab947124",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容声称“conda 是目前最主流的虚拟环境管理工具”，但 conda 并非唯一或绝对最主流，venv 和 virtualenv 在 Python 社区同样广泛使用，且 conda 是跨语言包管理器，并非专为 Python 虚拟环境设计。",
+            "evidence": "Python 官方文档推荐使用 venv 创建虚拟环境；conda 是 Anaconda 发行版自带的包和环境管理器，虽流行但并非绝对最主流。",
+            "suggestion": "建议改为“我们用 conda 管理，这是常用的虚拟环境管理工具之一”，或补充说明 venv 也是常见选择。",
+            "error_id": "005ebbedb07a_r1",
+            "canonical_error_id": "005ebbedb07a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C002",
+            "content_chunk_id": "LOCAL-KBS-02-00-C002",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'第三步：验证安装'的步骤2处被截断，未提供完整的验证命令和后续步骤，导致学习者无法完成安装验证。",
+            "evidence": "原文以'2.'结尾，缺少验证安装的具体命令（如python --version）和后续说明。",
+            "suggestion": "补充完整的验证命令，例如：输入 python --version 和 pip --version，确认输出显示Python版本号和pip版本号。",
+            "error_id": "a7f4574b151a_r1",
+            "canonical_error_id": "a7f4574b151a",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C003",
+            "content_chunk_id": "LOCAL-KBS-02-00-C003",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "内容块声称“CentOS 8 已停止维护”，但 CentOS 8 于 2021 年 12 月 31 日结束维护，而 CentOS 8 Stream 仍在维护中。该表述不准确，可能误导用户。",
+            "evidence": "CentOS 8 于 2021 年 12 月 31 日 EOL，但 CentOS 8 Stream 仍在维护中。",
+            "suggestion": "建议改为“CentOS 8 已停止维护（CentOS 8 Stream 除外）”，或直接推荐使用 Ubuntu LTS。",
+            "error_id": "4711e883f0b5_r1",
+            "canonical_error_id": "4711e883f0b5",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C006",
+            "content_chunk_id": "LOCAL-KBS-02-00-C006",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "truncated_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在'官方 Py'处被截断，句子不完整，且缺少3.2节后续内容。",
+            "evidence": "原文末尾为'官方 Py'，明显截断，导致信息不完整。",
+            "suggestion": "补全被截断的内容，确保3.2节完整。",
+            "error_id": "008c2c7fe8b9_r1",
+            "canonical_error_id": "008c2c7fe8b9",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C007",
+            "content_chunk_id": "LOCAL-KBS-02-00-C007",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "major",
+            "location": null,
+            "description": "内容块在'如果你想恢复'处截断，未提供恢复官方源的完整操作步骤，导致指令不完整。",
+            "evidence": "原文以'如果你想恢复'结尾，缺少后续步骤说明。",
+            "suggestion": "补充恢复官方源的完整操作步骤，例如：删除或注释pip.ini/pip.conf中的index-url配置，或使用`pip config unset global.index-url`命令。",
+            "error_id": "c5043fdd5d60_r1",
+            "canonical_error_id": "c5043fdd5d60",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C008",
+            "content_chunk_id": "LOCAL-KBS-02-00-C008",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Anaconda 体积描述不准确：Anaconda 安装包实际约 500MB 至 1GB 以上，且安装后占用空间通常超过 3GB，原文称“约 500MB+”可能低估。",
+            "evidence": "Anaconda 官方文档及常见安装经验表明，Anaconda 安装包约 500MB-1GB，安装后占用空间约 3GB 以上。",
+            "suggestion": "建议修改为“体积大（安装包约 500MB-1GB，安装后占用数 GB）”，或直接引用官方最新数据。",
+            "error_id": "aa011b96df1e_r1",
+            "canonical_error_id": "aa011b96df1e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Miniconda 体积描述不准确：Miniconda 安装包约 50-100MB，安装后占用约 400MB，原文称“约 50MB”可能低估。",
+            "evidence": "Miniconda 官方文档及常见安装经验表明，Miniconda 安装包约 50-100MB，安装后占用约 400MB。",
+            "suggestion": "建议修改为“体积小（安装包约 50-100MB，安装后占用约 400MB）”。",
+            "error_id": "c877e1885b07_r1",
+            "canonical_error_id": "c877e1885b07",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "macOS 安装包描述不完整：macOS 的 Miniconda 安装包有 .pkg 和 .sh 两种，但 .pkg 安装器不会自动运行 conda init，需要手动初始化，原文未区分。",
+            "evidence": "Miniconda 官方安装文档：macOS .pkg 安装后需手动运行 conda init，.sh 安装时可选运行 conda init。",
+            "suggestion": "建议补充说明：macOS 使用 .pkg 安装后需手动运行 conda init，或推荐使用 .sh 安装。",
+            "error_id": "9439b6ebb693_r1",
+            "canonical_error_id": "9439b6ebb693",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "Windows 安装说明不完整：Windows 安装器勾选“Add Miniconda3 to my PATH”并非绝对不推荐，官方文档建议不勾选以避免冲突，但若用户需要命令行直接使用 conda，也可勾选，原文表述过于绝对。",
+            "evidence": "Miniconda 官方安装文档：Windows 安装器默认不勾选“Add to PATH”，官方建议不勾选以避免与现有 Python 冲突，但用户可根据需要勾选。",
+            "suggestion": "建议修改为“通常不勾选‘Add Miniconda3 to my PATH’，以避免与系统已有 Python 冲突；若你熟悉 PATH 配置，也可勾选”。",
+            "error_id": "faf667e1d816_r1",
+            "canonical_error_id": "faf667e1d816",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C011",
+            "content_chunk_id": "LOCAL-KBS-02-00-C011",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "critical",
+            "location": null,
+            "description": "内容块在 macOS/Linux 的 Interpreter 路径处被截断，未提供完整的路径示例，导致内容不完整。",
+            "evidence": "原文在 'macOS/Linux：`' 处结束，缺少路径内容。",
+            "suggestion": "补全 macOS/Linux 的 Python 可执行文件路径示例，例如：`/Users/你的用户名/miniconda3/envs/llm-learn/bin/python`。",
+            "error_id": "64abf238f68c_r1",
+            "canonical_error_id": "64abf238f68c",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C014",
+            "content_chunk_id": "LOCAL-KBS-02-00-C014",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r1",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r1",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "44083aac623b_r1",
+            "canonical_error_id": "44083aac623b",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": "lines:421-460"
+          },
+          {
+            "error_type": "factual_error",
+            "severity": "minor",
+            "location": null,
+            "description": "表格中'pip 国内镜像源'的验证命令为'pip config list'，但该命令仅显示当前配置，并不能验证镜像源是否生效或是否已配置。更准确的验证命令应为'pip config get global.index-url'或'pip config list'后检查index-url字段。",
+            "evidence": "pip config list 列出所有配置项，但用户需自行检查 index-url 是否指向镜像源；而 pip config get global.index-url 可直接返回当前 index-url 值，更直接验证镜像源配置。",
+            "suggestion": "将验证命令改为'pip config get global.index-url'，或保留'pip config list'并提示用户检查 index-url 字段。",
+            "error_id": "57df90d5520e_r1",
+            "canonical_error_id": "57df90d5520e",
+            "source_refs": [],
+            "change_request": {
+              "required": true,
+              "action": "rewrite_with_supported_source"
+            },
+            "must_fix": false,
+            "must_fix_reason": "专业知识与教学质量审核 Agent 复核降级，解除 must_fix",
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "incomplete_content",
+            "severity": "minor",
+            "location": null,
+            "description": "本章小结表格中'Conda 虚拟环境 llm-learn'的验证命令为'conda env list'，但该命令仅列出所有环境，无法确认名为'llm-learn'的环境是否存在。更准确的验证命令应为'conda env list | grep llm-learn'或'conda activate llm-learn'。",
+            "evidence": "conda env list 列出所有环境，用户需自行查找'llm-learn'；而 grep 或 activate 可直接确认环境是否存在。",
+            "suggestion": "将验证命令改为'conda env list | grep llm-learn'，或提示用户检查输出中是否包含'llm-learn'。",
+            "error_id": "fa61ab947124_r1",
+            "canonical_error_id": "fa61ab947124",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 1,
+            "in_chunk_position": null
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 2,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "44083aac623b_r2",
+            "canonical_error_id": "44083aac623b",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r2",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r2",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "44083aac623b_r2",
+            "canonical_error_id": "44083aac623b",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 2,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    },
+    {
+      "iteration": 3,
+      "technical": {
+        "reviewer": "technical",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "44083aac623b_r3",
+            "canonical_error_id": "44083aac623b",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null
+      },
+      "quality": {
+        "reviewer": "quality",
+        "passed": false,
+        "errors": [
+          {
+            "error_type": "license_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档引用模型但未标注许可证类型。",
+            "evidence": "industry_standards规则2.1：部署文档引用模型时必须标注许可证类型。",
+            "suggestion": "补充许可证说明，例如：# 模型许可证：Llama 2 Community License（商用月活>7亿需Meta授权）。",
+            "error_id": "99be9c84485b_r3",
+            "canonical_error_id": "99be9c84485b",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "vram_note_missing",
+            "severity": "minor",
+            "location": "部署说明",
+            "description": "部署文档涉及模型加载但未标注显存要求。",
+            "evidence": "industry_standards规则2.2：涉及 from_pretrained 必须含显存关键词（显存|VRAM|GPU内存|memory）。",
+            "suggestion": "补充注释，例如：# 注意：Llama-2-7b FP16 需要至少14GB显存。",
+            "error_id": "9bf4fdfad01a_r3",
+            "canonical_error_id": "9bf4fdfad01a",
+            "source_refs": [],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": null,
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": null
+          },
+          {
+            "error_type": "review_needed",
+            "severity": "major",
+            "location": "block:cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "description": "与来源块 LOCAL-KBS-02-00-C016 相似度 0.80 处于存疑区间，需人工复核。",
+            "evidence": "knowledge_verify_tool.similarity=0.80，chunk=LOCAL-KBS-02-00-C016，heading_path=环境准备：搭建你的 Python 开发工作台 > 第七章：验证——运行你的第一行代码 > 7.3 在 PyCharm 中验证，lines=421-460",
+            "suggestion": "补充来源块依据或人工复核后放行。",
+            "error_id": "44083aac623b_r3",
+            "canonical_error_id": "44083aac623b",
+            "source_refs": [
+              "src_LOCAL-KBS-02-00-C016"
+            ],
+            "change_request": {
+              "required": false,
+              "action": "review_suggestion"
+            },
+            "must_fix": false,
+            "must_fix_reason": null,
+            "claim_id": "clm_cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_block_id": "cb_36dc5b5f-6bbc-40b5-bc34-a56a7f40b2a2_72223378-76b8-5ec0-8d37-c838303625f3_LOCAL-KBS-02-00-C016",
+            "content_chunk_id": "LOCAL-KBS-02-00-C016",
+            "content_version": 3,
+            "in_chunk_position": "lines:421-460"
+          }
+        ],
+        "personalization_errors": [],
+        "review_details": null,
+        "scores": null
+      },
+      "passed": false
+    }
+  ],
+  "package_status": "provisional",
+  "needs_human_review": true,
+  "unresolved_issue_count": 0,
+  "unresolved_must_fix_count": 0
+}

@@ -1,0 +1,135 @@
+[
+  {
+    "question_id": "Q-KB0100-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在终端中执行以下命令，验证Linux/WSL是否安装成功，将完整输出粘贴作答：\n```bash\nuname -a\n```",
+    "options": [],
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "hint": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。",
+    "explanation": "```\nLinux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux\n```\n> 若返回 Windows 版本号或 `command not found`，说明未成功进入Linux环境。"
+  },
+  {
+    "question_id": "Q-KB0100-002",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令验证当前用户和主机名：\n```bash\nwhoami && hostname\n```",
+    "options": [],
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "hint": "```\nyour_username\nDESKTOP-XXXX\n```",
+    "explanation": "```\nyour_username\nDESKTOP-XXXX\n```"
+  },
+  {
+    "question_id": "Q-KB0101-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "`cp -r source_dir/ dest_dir/` 中 `-r` 参数的含义是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "只复制文件不复制目录"
+      },
+      {
+        "key": "B",
+        "text": "递归复制整个目录树"
+      },
+      {
+        "key": "C",
+        "text": "覆盖时不提示"
+      },
+      {
+        "key": "D",
+        "text": "保留文件属性"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `-r`（recursive）递归复制目录及其所有子目录和文件。",
+    "explanation": "> `-r`（recursive）递归复制目录及其所有子目录和文件。"
+  },
+  {
+    "question_id": "Q-KB0101-007",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "请写出一条管道命令，统计当前目录下 `.py` 文件的数量。",
+    "options": [],
+    "correct_answer": "ls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l",
+    "hint": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```",
+    "explanation": "```bash\nls *.py 2>/dev/null | wc -l\n# 或\nfind . -name \"*.py\" | wc -l\n```"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "临时设置环境变量 `MY_VAR=hello`，命令为________；若要使其在当前shell及子进程中生效，需使用________命令。",
+    "options": [],
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个文件是bash shell用户登录时**最先**读取的全局配置文件？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`~/.bashrc`"
+      },
+      {
+        "key": "B",
+        "text": "`/etc/profile`"
+      },
+      {
+        "key": "C",
+        "text": "`~/.bash_profile`"
+      },
+      {
+        "key": "D",
+        "text": "`/etc/bash.bashrc`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。",
+    "explanation": "> `/etc/profile` 是系统级全局配置，登录时最先执行；`~/.bash_profile` 是用户级登录配置；`~/.bashrc` 是非登录交互式shell读取的。"
+  },
+  {
+    "question_id": "Q-KB0102-004",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-02",
+    "difficulty": "高级",
+    "question_type": "true_false",
+    "question_text": "在 `~/.bashrc` 中写入 `export LD_LIBRARY_PATH=/usr/local/lib` 后，新开一个终端窗口，该变量是否自动生效？为什么？",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "错误",
+    "hint": "---",
+    "explanation": "---"
+  },
+  {
+    "question_id": "Q-KB0101-008",
+    "block_id": "KB-01",
+    "subtopic_id": "KBS-01-01",
+    "difficulty": "高级",
+    "question_type": "practical",
+    "question_text": "请写出一条命令，查找 `/var/log` 目录下所有大于100MB的文件，并按大小排序显示。",
+    "options": [],
+    "correct_answer": "find /var/log -type f -size +100M -exec ls -lhS {} +",
+    "hint": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---",
+    "explanation": "```bash\nfind /var/log -type f -size +100M -exec ls -lhS {} +\n```\n\n---"
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "case_id": "case_037",
+  "primary_category": "时间与学习风格适配",
+  "tags": "时间与学习风格适配|vLLM部署|工程实操和故障排查|RTX 4090 24GB",
+  "background": "每天3小时，工程实操型，想学vLLM部署",
+  "existing_skills": "深度学习框架PyTorch基础、Transformer架构、PyTorch进阶训练技巧",
+  "learning_goal": "vLLM部署",
+  "daily_hours": "3.0",
+  "learning_style": "工程实操和故障排查",
+  "hardware": "RTX 4090 24GB",
+  "expected_target_blocks": "KB-15",
+  "expected_first_stage": "KB-15",
+  "expected_difficulty": "高级",
+  "expected_strategy": "advance",
+  "run_stage_2": "False",
+  "answer_script_stage_1": "{\"answer_behavior\":\"high\",\"target_accuracy_range\":[0.8,1.0],\"wrong_answer_strategy\":\"fixed_by_question_id\",\"expected_next_strategy\":\"advance\"}",
+  "user_input_text": "我的学习背景：每天3小时，工程实操型，想学vLLM部署\n我已掌握的技能：深度学习框架PyTorch基础、Transformer架构、PyTorch进阶训练技巧\n我的学习目标：vLLM部署\n我每天能学：3.0小时\n我喜欢怎么学：工程实操和故障排查\n我的硬件条件：RTX 4090 24GB"
+}

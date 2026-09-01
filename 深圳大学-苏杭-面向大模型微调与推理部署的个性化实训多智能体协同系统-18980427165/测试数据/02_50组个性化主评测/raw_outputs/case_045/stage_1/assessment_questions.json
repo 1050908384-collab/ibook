@@ -1,0 +1,115 @@
+[
+  {
+    "question_id": "Q-KB0200-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "验证conda环境是否配置正确：\n```bash\nconda --version && conda info --envs\n```",
+    "options": [],
+    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "hint": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---",
+    "explanation": "```\nconda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0202-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请用**列表推导式**生成1到20中所有能被3整除的数的平方。",
+    "options": [],
+    "correct_answer": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
+    "hint": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```",
+    "explanation": "```python\nresult = [x**2 for x in range(1, 21) if x % 3 == 0]\n# [9, 36, 81, 144, 225, 324]\n```"
+  },
+  {
+    "question_id": "Q-KB0200-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "执行以下命令进入Python交互环境，将输出粘贴作答：\n```bash\npython\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>",
+    "hint": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。",
+    "explanation": "```\nPython 3.10.14 (tags/v3.10.14:..., ...) [MSC v.1941 64 bit (AMD64)] on win32\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>>\n```\n> 输入 `exit()` 退出。"
+  },
+  {
+    "question_id": "Q-KB0201-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`[1, 2, 3]`"
+      },
+      {
+        "key": "B",
+        "text": "`[1, 2, 3, 4]`"
+      },
+      {
+        "key": "C",
+        "text": "`[4, 1, 2, 3]`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。",
+    "explanation": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。"
+  },
+  {
+    "question_id": "Q-KB0203-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-03",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nclass Counter:\n    count = 0\n    def __init__(self):\n        Counter.count += 1\n    @classmethod\n    def get_count(cls):\n        return cls.count\n\na = Counter()\nb = Counter()\nc = Counter()\nprint(Counter.get_count())\n```",
+    "options": [],
+    "correct_answer": "`3`\n> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
+    "hint": "> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。",
+    "explanation": "> `count` 是类属性，每次实例化 `+1`，创建3个实例后为3。"
+  },
+  {
+    "question_id": "Q-KB0202-006",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：给定嵌套字典 `data = {\"users\": [{\"name\": \"Alice\", \"age\": 30}, {\"name\": \"Bob\", \"age\": 25}]}`，提取所有年龄大于26的用户姓名。",
+    "options": [],
+    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "hint": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "explanation": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0205-008",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "写一个类 `Stack`（栈），实现 `push(item)`、`pop()`、`peek()`、`is_empty()` 方法。`pop()` 在栈空时抛出 `IndexError`。",
+    "options": [],
+    "correct_answer": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "hint": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```",
+    "explanation": "```python\nclass Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError(\"pop from empty stack\")\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError(\"peek from empty stack\")\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n```"
+  }
+]

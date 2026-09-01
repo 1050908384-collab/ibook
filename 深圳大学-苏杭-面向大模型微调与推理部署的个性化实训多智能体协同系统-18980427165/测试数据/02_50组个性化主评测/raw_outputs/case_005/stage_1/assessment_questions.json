@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
+  },
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0205-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "生成器函数使用________关键字返回值（而非 `return`），调用生成器函数返回的是一个________对象。",
+    "options": [],
+    "correct_answer": "`yield`；生成器（generator）",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0201-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`[1, 2, 3]`"
+      },
+      {
+        "key": "B",
+        "text": "`[1, 2, 3, 4]`"
+      },
+      {
+        "key": "C",
+        "text": "`[4, 1, 2, 3]`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。",
+    "explanation": "> `b = a` 是引用赋值，`a` 和 `b` 指向同一个列表对象，修改 `b` 会影响 `a`。"
+  },
+  {
+    "question_id": "Q-KB0204-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "使用 `with open(\"file.txt\", \"r\") as f:` 的好处是________。",
+    "options": [],
+    "correct_answer": "自动管理文件资源，即使发生异常也会自动关闭文件（无需手动调用 `f.close()`）。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0204-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪种文件打开模式表示**追加写入**（不覆盖原内容）？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`\"w\"`"
+      },
+      {
+        "key": "B",
+        "text": "`\"r\"`"
+      },
+      {
+        "key": "C",
+        "text": "`\"a\"`"
+      },
+      {
+        "key": "D",
+        "text": "`\"x\"`"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0202-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\nd = {}\nd.setdefault(\"key\", []).append(1)\nd.setdefault(\"key\", []).append(2)\nprint(d)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`{\"key\": [1]}`"
+      },
+      {
+        "key": "B",
+        "text": "`{\"key\": [1, 2]}`"
+      },
+      {
+        "key": "C",
+        "text": "`{\"key\": [2]}`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。",
+    "explanation": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。"
+  },
+  {
+    "question_id": "Q-KB0201-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "以下代码输出什么？\n```python\nfor i in range(5):\n    if i == 3:\n        continue\n    print(i, end=\" \")\n```",
+    "options": [],
+    "correct_answer": "`0 1 2 4`\n> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "hint": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。",
+    "explanation": "> `continue` 跳过 `i==3` 的那次循环，不执行 `print`。"
+  }
+]

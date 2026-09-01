@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB0200-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "中级",
+    "question_type": "practical",
+    "question_text": "在Python交互环境中执行以下代码，验证pip是否可用：\n```python\nimport pip\nprint(pip.__version__)\n```",
+    "options": [],
+    "correct_answer": "24.0",
+    "hint": "```\n24.0\n```",
+    "explanation": "```\n24.0\n```"
+  },
+  {
+    "question_id": "Q-KB0200-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-00",
+    "difficulty": "初级",
+    "question_type": "practical",
+    "question_text": "请在CMD/终端中执行以下命令，验证Python是否安装成功，将完整输出粘贴作答：\n```bash\npython --version\n```",
+    "options": [],
+    "correct_answer": "Python 3.10.14",
+    "hint": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。",
+    "explanation": "```\nPython 3.10.14\n```\n> 若返回 `'python' 不是内部或外部命令`，说明未安装或未加入PATH。"
+  },
+  {
+    "question_id": "Q-KB0205-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是装饰器的正确语法？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`@decorator` 放在函数定义上方"
+      },
+      {
+        "key": "B",
+        "text": "`decorator()` 放在函数体内"
+      },
+      {
+        "key": "C",
+        "text": "`import decorator`"
+      },
+      {
+        "key": "D",
+        "text": "`def decorator:` 放在调用处"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0205-004",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写一个生成器函数 `fibonacci(n)`，生成前 `n` 个斐波那契数。",
+    "options": [],
+    "correct_answer": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "hint": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```",
+    "explanation": "```python\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(8)))\n# [0, 1, 1, 2, 3, 5, 8, 13]\n```"
+  },
+  {
+    "question_id": "Q-KB0202-001",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是Python中**不可变**的数据结构？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`list`"
+      },
+      {
+        "key": "B",
+        "text": "`dict`"
+      },
+      {
+        "key": "C",
+        "text": "`set`"
+      },
+      {
+        "key": "D",
+        "text": "`tuple`"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。",
+    "explanation": "> 元组（tuple）创建后不可修改；列表、字典、集合都是可变的。"
+  },
+  {
+    "question_id": "Q-KB0201-002",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Python中，`type(3.14)` 的返回结果是________；`type(\"3.14\")` 的返回结果是________。",
+    "options": [],
+    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0204-003",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：读取 `data.txt` 文件，捕获文件不存在的异常，若不存在则打印 \"文件未找到\"。",
+    "options": [],
+    "correct_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "hint": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "explanation": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```"
+  },
+  {
+    "question_id": "Q-KB0202-005",
+    "block_id": "KB-02",
+    "subtopic_id": "KBS-02-02",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "以下代码输出是？\n```python\nd = {}\nd.setdefault(\"key\", []).append(1)\nd.setdefault(\"key\", []).append(2)\nprint(d)\n```",
+    "options": [
+      {
+        "key": "A",
+        "text": "`{\"key\": [1]}`"
+      },
+      {
+        "key": "B",
+        "text": "`{\"key\": [1, 2]}`"
+      },
+      {
+        "key": "C",
+        "text": "`{\"key\": [2]}`"
+      },
+      {
+        "key": "D",
+        "text": "报错"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。",
+    "explanation": "> `setdefault` 在键已存在时返回已有值（不覆盖），所以两次 `append` 作用于同一个列表。"
+  }
+]

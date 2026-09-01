@@ -1,0 +1,132 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "options": [],
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
+  },
+  {
+    "question_id": "Q-KB0405-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`AdamW` 优化器中，`W` 代表________，它解决了Adam中________的问题。",
+    "options": [],
+    "correct_answer": "Weight Decay（权重衰减）；L2正则化与自适应学习率的耦合问题。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0402-004",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个操作会**断开**计算图，使后续操作不追踪梯度？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`x.detach()`"
+      },
+      {
+        "key": "B",
+        "text": "`x.data`"
+      },
+      {
+        "key": "C",
+        "text": "`x.clone()`"
+      },
+      {
+        "key": "D",
+        "text": "A和B"
+      }
+    ],
+    "correct_answer": "D",
+    "hint": "> `detach()` 和 `.data` 都返回与原张量共享数据但不追踪梯度的新张量；`clone()` 会保留计算图。",
+    "explanation": "> `detach()` 和 `.data` 都返回与原张量共享数据但不追踪梯度的新张量；`clone()` 会保留计算图。"
+  },
+  {
+    "question_id": "Q-KB0405-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：为模型 `model` 创建 `AdamW` 优化器，学习率 `1e-4`，权重衰减 `1e-2`。",
+    "options": [],
+    "correct_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "hint": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "explanation": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```"
+  },
+  {
+    "question_id": "Q-KB0407-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "加载模型参数时，需要先________模型结构，然后调用________方法加载参数字典。",
+    "options": [],
+    "correct_answer": "实例化；`load_state_dict()`",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0407-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：保存模型 `model` 的参数到 `checkpoint.pth`，并包含优化器状态和当前epoch。",
+    "options": [],
+    "correct_answer": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "hint": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "explanation": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个简单的神经网络类 `SimpleNet`，包含：\n- 一个输入层到隐藏层的线性层（10 -> 20）\n- ReLU激活\n- 隐藏层到输出层的线性层（20 -> 1）",
+    "options": [],
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "hint": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "explanation": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```"
+  }
+]

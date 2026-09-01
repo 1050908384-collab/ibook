@@ -206,7 +206,7 @@
 
 **POST** `/api/stage/plan-next`
 
-用户确认继续后调用。Orchestrator 基于 学情评估与动态决策 Agent 更新后的画像调用 学情诊断与阶段规划 Agent 的 `generate_stage`（逻辑 Agent2 的阶段规划职责），生成并保存 `next_stage`；不会立即覆盖当前阶段。
+用户确认继续后调用。Orchestrator 基于 学情评估与动态决策 Agent 更新后的画像调用学情诊断与阶段规划 Agent 的 `generate_stage`，生成并保存 `next_stage`；不会立即覆盖当前阶段。
 
 请求体：
 ```json

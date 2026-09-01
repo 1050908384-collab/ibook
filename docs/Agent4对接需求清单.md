@@ -3,7 +3,7 @@
 > 依据：`docs/个性化学习资源生成 专业知识与教学质量审核 Agent审核辩论协议.md`、`数据库框架.md` 第九节、`专业知识与教学质量审核 Agent任务说明.md`。
 > 前提：审核辩论过程由 Orchestrator 按 `trace_id` 写入 `project.db` 的 `review_traces`、`review_debate_rounds`、`review_debate_issues`、`review_debate_responses` 及来源/Claim 表；个性化学习资源生成 Agent 不负责直接写库。
 >
-> 学习包采用块级流水线：首轮审核完成后一次性交付完整问题列表；个性化学习资源生成 Agent 最多并发修改 2 个块，每块完成即交 专业知识与教学质量审核 Agent 复核；问题列表最多交付 3 次。
+> 学习包采用块级流水线：首轮审核完成后一次性交付完整问题列表；个性化学习资源生成 Agent 按当前模型配置并发修改，当前为云端 5、本地 3，每块完成即交专业知识与教学质量审核 Agent 复核；问题列表最多交付 3 次。
 >
 > **运行时执行体选型 = 方案 B（原地嫁接）**：Harness 实际调用的是 `deterministic.HybridTechnicalReviewAgent`，
 > 它含一步 **LLM 独立语义审核**（重算参数量、辨析 LoRA 机制、注入领域基线），这是抓“读起来通顺但机制/参数讲错”的核心手段。

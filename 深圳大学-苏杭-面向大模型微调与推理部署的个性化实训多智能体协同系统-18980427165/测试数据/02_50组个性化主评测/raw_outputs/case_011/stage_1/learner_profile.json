@@ -1,0 +1,52 @@
+{
+  "session_id": "fe6c6973-d7f3-4893-8431-596a3e0da2c8",
+  "user_id": "local-user",
+  "grade": "掌握NLP和注意力机制，想做LoRA微调",
+  "skill_tags": [
+    "自然语言处理",
+    "注意力机制"
+  ],
+  "mastered_block_ids": [
+    "KB-05",
+    "KB-06"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "beginner",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "深度学习框架PyTorch基础",
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

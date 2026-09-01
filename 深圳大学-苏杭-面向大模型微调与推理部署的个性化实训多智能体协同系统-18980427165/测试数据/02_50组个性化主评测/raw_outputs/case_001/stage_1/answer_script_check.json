@@ -1,0 +1,15 @@
+{
+  "answer_behavior": "medium",
+  "target_accuracy_range": [
+    0.6,
+    0.69
+  ],
+  "wrong_answer_strategy": "fixed_by_question_id",
+  "expected_next_strategy": "finish",
+  "actual_accuracy_from_learner": 1.0,
+  "actual_accuracy_from_decision": 1.0,
+  "accuracy_within_range": false,
+  "actual_next_strategy": "advance",
+  "strategy_match": false,
+  "discrepancy_reason": "脚本期望「finish」 vs 系统实际「advance」"
+}

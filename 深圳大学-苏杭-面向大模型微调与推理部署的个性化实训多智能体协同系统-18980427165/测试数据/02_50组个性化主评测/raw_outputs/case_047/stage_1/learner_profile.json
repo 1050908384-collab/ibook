@@ -1,0 +1,52 @@
+{
+  "session_id": "323af12e-d05d-4312-a98d-916f6c310850",
+  "user_id": "local-user",
+  "grade": "目标是LoRA，但用户深入追问RLHF实现细节（目录外）",
+  "skill_tags": [
+    "Transformer架构",
+    "LLM三阶段训练流程"
+  ],
+  "mastered_block_ids": [
+    "KB-08",
+    "KB-10"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-03"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "beginner",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "深度学习框架PyTorch基础",
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "LoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "theory",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

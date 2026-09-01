@@ -1,0 +1,138 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
+    "options": [],
+    "correct_answer": "tokenizer ||| 分词器",
+    "hint": "Tokenizer 负责文本与 token 序列转换。",
+    "explanation": "Tokenizer 负责文本与 token 序列转换。"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Hugging Face 模型与分词器常用的 Python 库名称是________。",
+    "options": [],
+    "correct_answer": "transformers",
+    "hint": "transformers 提供模型、Tokenizer 与训练接口。",
+    "explanation": "transformers 提供模型、Tokenizer 与训练接口。"
+  },
+  {
+    "question_id": "Q-KB0704-005",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：加载 `meta-llama/Llama-2-7b-chat-hf` 分词器，使用 `apply_chat_template` 生成一个包含系统提示（\"You are a helpful assistant.\"）、用户提问（\"What is AI?\"）的输入字符串，要求包含生成提示（generation prompt），且不进行分词。",
+    "options": [],
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0701-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "WordPiece 算法与 BPE 的主要区别在于合并标准不同。WordPiece 选择合并哪一对符号？",
+    "options": [
+      {
+        "key": "A",
+        "text": "出现频率最高的一对"
+      },
+      {
+        "key": "B",
+        "text": "能够最大化训练数据似然概率的一对"
+      },
+      {
+        "key": "C",
+        "text": "长度最短的一对"
+      },
+      {
+        "key": "D",
+        "text": "随机选择一对"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> WordPiece 在每次合并时，会选择那个能使整个语料库的似然概率增加最多的符号对，而不是简单地看频率。",
+    "explanation": "> WordPiece 在每次合并时，会选择那个能使整个语料库的似然概率增加最多的符号对，而不是简单地看频率。"
+  },
+  {
+    "question_id": "Q-KB0703-004",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "`padding=True` 和 `padding='longest'` 的效果是完全一样的。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "hint": "> 在一个批次（batch）内进行分词时，`padding=True` 的默认行为就是将批次内所有序列填充到该批次中最长序列的长度，这与 `padding='longest'` 的效果相同。",
+    "explanation": "> 在一个批次（batch）内进行分词时，`padding=True` 的默认行为就是将批次内所有序列填充到该批次中最长序列的长度，这与 `padding='longest'` 的效果相同。"
+  },
+  {
+    "question_id": "Q-KB0701-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "SentencePiece 模型将输入文本视为原始的字符串序列，无需预先进行空格分词，可以直接从原始句子中学习子词单元。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "hint": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。",
+    "explanation": "> SentencePiece 的主要特点之一就是它将输入句子视为一个完整的 Unicode 字符串序列，而不是预分词后的词序列，这使得它可以端到端地训练，尤其适合像中文、日文这样没有天然空格分隔的语言。"
+  },
+  {
+    "question_id": "Q-KB0703-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "对于一个最大序列长度为 512 的模型，执行 `tokenizer(text, max_length=100, padding='max_length', truncation=True)` 后，输出序列的长度是多少？",
+    "options": [
+      {
+        "key": "A",
+        "text": "原始文本长度"
+      },
+      {
+        "key": "B",
+        "text": "512"
+      },
+      {
+        "key": "C",
+        "text": "100"
+      },
+      {
+        "key": "D",
+        "text": "不确定"
+      }
+    ],
+    "correct_answer": "C",
+    "hint": "> `max_length=100` 指定了目标长度。`padding='max_length'` 会将短于 100 的序列填充到 100，`truncation=True` 会将长于 100 的序列截断到 100。",
+    "explanation": "> `max_length=100` 指定了目标长度。`padding='max_length'` 会将短于 100 的序列填充到 100，`truncation=True` 会将长于 100 的序列截断到 100。"
+  },
+  {
+    "question_id": "Q-KB0702-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "请写出使用 Hugging Face `transformers` 库加载名为 `bert-base-uncased` 的分词器的代码。",
+    "options": [],
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```"
+  }
+]

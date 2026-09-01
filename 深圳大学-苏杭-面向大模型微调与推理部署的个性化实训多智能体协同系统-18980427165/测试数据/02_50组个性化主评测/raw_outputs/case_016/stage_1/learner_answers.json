@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0200-003",
+    "submitted_answer": "24.0",
+    "is_correct": true,
+    "correct_answer": "24.0",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0200-001",
+    "submitted_answer": "Python 3.10.14",
+    "is_correct": true,
+    "correct_answer": "Python 3.10.14",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-006",
+    "submitted_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "is_correct": true,
+    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0203-006",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0202-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`d[\"a\"]` 或 `d.get(\"a\")`；`d.get(\"c\", 0)`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0202-005",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0204-001",
+    "submitted_answer": "C",
+    "is_correct": true,
+    "correct_answer": "C",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0201-003",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

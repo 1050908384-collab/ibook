@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "options": [],
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "hint": "该函数用于判断 CUDA 是否可用。",
+    "explanation": "该函数用于判断 CUDA 是否可用。"
+  },
+  {
+    "question_id": "Q-KB0404-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "`DataLoader` 中，`batch_size=32` 表示________；`shuffle=True` 表示________。",
+    "options": [],
+    "correct_answer": "每个批次包含32个样本；每个epoch开始时打乱数据顺序。",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0403-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是PyTorch中定义**线性层**（全连接层）的类？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nn.Conv2d`"
+      },
+      {
+        "key": "B",
+        "text": "`nn.Linear`"
+      },
+      {
+        "key": "C",
+        "text": "`nn.ReLU`"
+      },
+      {
+        "key": "D",
+        "text": "`nn.Softmax`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0406-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-06",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写一个完整的训练循环，包含：\n- 模型训练模式\n- 损失计算\n- 反向传播\n- 每100个batch打印一次损失",
+    "options": [],
+    "correct_answer": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "hint": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---",
+    "explanation": "```python\nmodel.train()\nfor epoch in range(epochs):\n    for i, batch in enumerate(dataloader):\n        optimizer.zero_grad()\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        loss.backward()\n        optimizer.step()\n\n        if (i + 1) % 100 == 0:\n            print(f\"Epoch {epoch+1}, Step {i+1}, Loss: {loss.item():.4f}\")\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0404-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `DataLoader` 加载 `MyDataset`，批次大小为16，使用4个子进程，并在每个epoch开始时打乱数据。",
+    "options": [],
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "hint": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "explanation": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0403-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请定义一个简单的神经网络类 `SimpleNet`，包含：\n- 一个输入层到隐藏层的线性层（10 -> 20）\n- ReLU激活\n- 隐藏层到输出层的线性层（20 -> 1）",
+    "options": [],
+    "correct_answer": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "hint": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```",
+    "explanation": "```python\nimport torch.nn as nn\n\nclass SimpleNet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 1)\n\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\n```"
+  },
+  {
+    "question_id": "Q-KB0402-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-02",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "PyTorch中，用于**反向传播**计算梯度的方法是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`.backward()`"
+      },
+      {
+        "key": "B",
+        "text": "`.forward()`"
+      },
+      {
+        "key": "C",
+        "text": "`.grad()`"
+      },
+      {
+        "key": "D",
+        "text": "`.optimize()`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": null,
+    "explanation": ""
+  }
+]

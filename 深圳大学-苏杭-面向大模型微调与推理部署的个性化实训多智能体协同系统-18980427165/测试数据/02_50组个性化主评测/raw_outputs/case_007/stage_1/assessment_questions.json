@@ -1,0 +1,149 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "该函数直接返回 CUDA 可用性。",
+    "explanation": "该函数直接返回 CUDA 可用性。"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "安装带 CUDA 支持的 PyTorch 时，应使 PyTorch 所支持的 CUDA 版本与本机________版本兼容。",
+    "options": [],
+    "correct_answer": "NVIDIA 驱动 ||| 显卡驱动",
+    "hint": "驱动需能支持所安装 PyTorch 对应的 CUDA 运行时。",
+    "explanation": "驱动需能支持所安装 PyTorch 对应的 CUDA 运行时。"
+  },
+  {
+    "question_id": "Q-KB0404-005",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：使用 `DataLoader` 加载 `MyDataset`，批次大小为16，使用4个子进程，并在每个epoch开始时打乱数据。",
+    "options": [],
+    "correct_answer": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "hint": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---",
+    "explanation": "```python\nfrom torch.utils.data import DataLoader\n\ndataset = MyDataset(data, labels)\ndataloader = DataLoader(\n    dataset,\n    batch_size=16,\n    shuffle=True,\n    num_workers=4\n)\n\nfor batch_data, batch_labels in dataloader:\n    # 训练逻辑\n    pass\n```\n\n---"
+  },
+  {
+    "question_id": "Q-KB0406-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-06",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请补全以下训练循环代码：\n```python\nmodel.train()\nfor epoch in range(epochs):\n    for batch in dataloader:\n        optimizer.zero_grad()\n        # 前向传播\n        outputs = model(batch['input'])\n        loss = criterion(outputs, batch['target'])\n        # 反向传播\n        ________\n        # 更新参数\n        ________\n```",
+    "options": [],
+    "correct_answer": "```python\nloss.backward()\noptimizer.step()\n```",
+    "hint": "```python\nloss.backward()\noptimizer.step()\n```",
+    "explanation": "```python\nloss.backward()\noptimizer.step()\n```"
+  },
+  {
+    "question_id": "Q-KB0405-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-05",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：为模型 `model` 创建 `AdamW` 优化器，学习率 `1e-4`，权重衰减 `1e-2`。",
+    "options": [],
+    "correct_answer": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "hint": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```",
+    "explanation": "```python\nimport torch.optim as optim\n\noptimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)\n```"
+  },
+  {
+    "question_id": "Q-KB0403-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-03",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个是PyTorch中定义**线性层**（全连接层）的类？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`nn.Conv2d`"
+      },
+      {
+        "key": "B",
+        "text": "`nn.Linear`"
+      },
+      {
+        "key": "C",
+        "text": "`nn.ReLU`"
+      },
+      {
+        "key": "D",
+        "text": "`nn.Softmax`"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": null,
+    "explanation": ""
+  },
+  {
+    "question_id": "Q-KB0407-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-07",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：保存模型 `model` 的参数到 `checkpoint.pth`，并包含优化器状态和当前epoch。",
+    "options": [],
+    "correct_answer": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "hint": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```",
+    "explanation": "```python\ntorch.save({\n    'epoch': epoch,\n    'model_state_dict': model.state_dict(),\n    'optimizer_state_dict': optimizer.state_dict(),\n    'loss': loss,\n}, 'checkpoint.pth')\n```"
+  },
+  {
+    "question_id": "Q-KB0401-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个命令可以创建一个全为0的3x3张量？",
+    "options": [
+      {
+        "key": "A",
+        "text": "`torch.zeros(3, 3)`"
+      },
+      {
+        "key": "B",
+        "text": "`torch.ones(3, 3)`"
+      },
+      {
+        "key": "C",
+        "text": "`torch.empty(3, 3)`"
+      },
+      {
+        "key": "D",
+        "text": "`torch.rand(3, 3)`"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。",
+    "explanation": "> `zeros` 创建全0张量；`ones` 创建全1；`empty` 创建未初始化（随机值）；`rand` 创建0-1均匀分布随机值。"
+  }
+]

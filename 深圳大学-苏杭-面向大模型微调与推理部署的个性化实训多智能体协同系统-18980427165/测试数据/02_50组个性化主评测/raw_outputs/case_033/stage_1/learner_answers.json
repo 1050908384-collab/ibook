@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0100-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`NAME=\"Ubuntu\"`（或其他发行版名称）、`VERSION_ID=\"22.04\"` 等字段。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0100-001",
+    "submitted_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "is_correct": true,
+    "correct_answer": "Linux DESKTOP-XXXX 5.15.167.4-microsoft-standard-WSL2 #1 SMP ... x86_64 x86_64 x86_64 GNU/Linux",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-002",
+    "submitted_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
+    "is_correct": true,
+    "correct_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "- 递归创建嵌套目录 `/tmp/test_dir/sub_dir`\n- 进入 `/tmp/test_dir`\n- 创建空文件 `hello.txt`\n- 将 `hello.txt` 复制到 `sub_dir/` 下\n- 将 `hello.txt` 重命名为 `renamed.txt`\n- `ls -R` 输出：当前目录有 `renamed.txt` 和 `sub_dir/`；`sub_dir/` 下有 `hello.txt`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-003",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "submitted_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "is_correct": true,
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0103-005",
+    "submitted_answer": "错误",
+    "is_correct": true,
+    "correct_answer": "错误",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-005",
+    "submitted_answer": "mkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/",
+    "is_correct": true,
+    "correct_answer": "mkdir -p /tmp/backup && cp /tmp/test_dir/*.txt /tmp/backup/",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

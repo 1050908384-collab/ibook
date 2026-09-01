@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB0100-002",
+    "submitted_answer": "your_username\nDESKTOP-XXXX",
+    "is_correct": true,
+    "correct_answer": "your_username\nDESKTOP-XXXX",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0100-004",
+    "submitted_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "is_correct": true,
+    "correct_answer": "x86_64\n5.15.167.4-microsoft-standard-WSL2",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-004",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-002",
+    "submitted_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
+    "is_correct": true,
+    "correct_answer": "`-l` 以长格式（详细信息：权限、所有者、大小、修改时间）列出文件；`-a` 显示所有文件（包括以 `.` 开头的隐藏文件）。",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-001",
+    "submitted_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "is_correct": true,
+    "correct_answer": "`MY_VAR=hello`；`export MY_VAR=hello`",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0102-002",
+    "submitted_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "is_correct": true,
+    "correct_answer": "echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc\nsource ~/.bashrc\necho $PATH  # 验证",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0101-001",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0104-002",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "high",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]

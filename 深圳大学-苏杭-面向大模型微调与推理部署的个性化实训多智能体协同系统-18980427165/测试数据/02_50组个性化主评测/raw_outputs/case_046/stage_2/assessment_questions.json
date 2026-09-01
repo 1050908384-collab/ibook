@@ -1,0 +1,156 @@
+[
+  {
+    "question_id": "Q-KB07-ST0700-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Hugging Face 模型与分词器常用的 Python 库名称是________。",
+    "options": [],
+    "correct_answer": "transformers",
+    "hint": "transformers 提供模型、Tokenizer 与训练接口。",
+    "explanation": "transformers 提供模型、Tokenizer 与训练接口。",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "安装 Hugging Face Transformers 的常用命令是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "pip install transformers"
+      },
+      {
+        "key": "B",
+        "text": "pip install tokenizer-only"
+      },
+      {
+        "key": "C",
+        "text": "conda remove torch"
+      },
+      {
+        "key": "D",
+        "text": "python uninstall model"
+      }
+    ],
+    "correct_answer": "A",
+    "hint": "pip install transformers 是标准安装方式。",
+    "explanation": "pip install transformers 是标准安装方式。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB0704-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-04",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "使用 `tokenizer.apply_chat_template` 方法，将以下对话历史转换为模型输入文本，但不进行分词（即 `tokenize=False`）。\n```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n```",
+    "options": [],
+    "correct_answer": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "hint": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "explanation": "```python\nmessages = [\n    {\"role\": \"user\", \"content\": \"你好！\"},\n    {\"role\": \"assistant\", \"content\": \"你好！有什么我可以帮你的吗？\"}\n]\n\n# tokenize=False 返回格式化后的字符串\nprompt_str = tokenizer.apply_chat_template(messages, tokenize=False)\nprint(prompt_str)\n```",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0701-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "Byte Pair Encoding (BPE) 算法的核心思想是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "随机采样词元"
+      },
+      {
+        "key": "B",
+        "text": "从字符级别开始，迭代合并最频繁出现的相邻符号对"
+      },
+      {
+        "key": "C",
+        "text": "基于整个词进行编码"
+      },
+      {
+        "key": "D",
+        "text": "使用固定大小的词汇表"
+      }
+    ],
+    "correct_answer": "B",
+    "hint": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。",
+    "explanation": "> BPE 是一种贪心算法，从字符级别开始，不断合并语料库中出现频率最高的相邻符号对，直到达到预设的词汇表大小。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0702-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "请写出使用 Hugging Face `transformers` 库加载名为 `bert-base-uncased` 的分词器的代码。",
+    "options": [],
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"bert-base-uncased\")\n```",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB0702-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-02",
+    "difficulty": "初级",
+    "question_type": "short_answer",
+    "question_text": "使用已加载的 `tokenizer` 对象，对字符串 `\"Hello, world!\"` 进行分词，并打印出 token ID 列表。",
+    "options": [],
+    "correct_answer": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```",
+    "hint": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```",
+    "explanation": "```python\ntext = \"Hello, world!\"\nencoding = tokenizer(text)\nprint(encoding[\"input_ids\"])\n# 输出示例: [101, 7592, 1010, 2088, 999, 102]\n```",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
+    "options": [],
+    "correct_answer": "tokenizer ||| 分词器",
+    "hint": "Tokenizer 负责文本与 token 序列转换。",
+    "explanation": "Tokenizer 负责文本与 token 序列转换。",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB0704-005",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-04",
+    "difficulty": "高级",
+    "question_type": "short_answer",
+    "question_text": "请写代码：加载 `meta-llama/Llama-2-7b-chat-hf` 分词器，使用 `apply_chat_template` 生成一个包含系统提示（\"You are a helpful assistant.\"）、用户提问（\"What is AI?\"）的输入字符串，要求包含生成提示（generation prompt），且不进行分词。",
+    "options": [],
+    "correct_answer": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "hint": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "explanation": "```python\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained(\"meta-llama/Llama-2-7b-chat-hf\")\n\nmessages = [\n    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n    {\"role\": \"user\", \"content\": \"What is AI?\"}\n]\n\nprompt = tokenizer.apply_chat_template(\n    messages,\n    tokenize=False,\n    add_generation_prompt=True\n)\nprint(prompt)\n```\n\n---",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "测试题目.md"
+  }
+]

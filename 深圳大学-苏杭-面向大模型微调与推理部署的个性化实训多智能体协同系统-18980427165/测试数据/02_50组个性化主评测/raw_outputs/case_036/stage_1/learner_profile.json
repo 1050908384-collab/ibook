@@ -1,0 +1,51 @@
+{
+  "session_id": "9652e303-aed4-44c7-b20b-6e181dcfb773",
+  "user_id": "local-user",
+  "grade": "每天2小时，边学边做，想学QLoRA",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "focused",
+  "target_block_ids": [
+    "KB-12"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-04"
+  ],
+  "planned_block_order": [
+    "KB-12"
+  ],
+  "active_stage_block_id": "KB-02",
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "QLoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "beginner",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "QLoRA微调",
+  "daily_hours": 2.0,
+  "learning_style": "mixed",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

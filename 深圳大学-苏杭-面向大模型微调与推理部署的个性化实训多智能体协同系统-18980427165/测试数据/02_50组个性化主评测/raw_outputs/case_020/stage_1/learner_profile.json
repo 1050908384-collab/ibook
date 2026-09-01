@@ -1,0 +1,78 @@
+{
+  "session_id": "17f6d270-4190-4fb9-bdf1-5085ca2f5b4f",
+  "user_id": "local-user",
+  "grade": "RTX 4090，想做LoRA微调并合并权重",
+  "skill_tags": [
+    "深度学习框架PyTorch基础",
+    "Transformer架构",
+    "PyTorch进阶训练技巧"
+  ],
+  "mastered_block_ids": [
+    "KB-04",
+    "KB-08",
+    "KB-13"
+  ],
+  "expected_target_blocks": [],
+  "goal_scope": "multi_block",
+  "target_block_ids": [
+    "KB-12",
+    "KB-15"
+  ],
+  "target_subtopic_ids": [
+    "KBS-12-05",
+    "KBS-15-03"
+  ],
+  "planned_block_order": [
+    "KB-12",
+    "KB-15"
+  ],
+  "active_stage_block_id": "KB-02",
+  "foundation_confirmed": false,
+  "knowledge_gaps": [
+    {
+      "skill": "LoRA",
+      "block_id": "KB-12",
+      "block_name": "参数高效微调（LoRA与QLoRA）",
+      "target_subtopic_ids": [
+        "KBS-12-01",
+        "KBS-12-02",
+        "KBS-12-03",
+        "KBS-12-04",
+        "KBS-12-05"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "advanced",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    },
+    {
+      "skill": "vLLM",
+      "block_id": "KB-15",
+      "block_name": "模型推理部署（vLLM）",
+      "target_subtopic_ids": [
+        "KBS-15-01",
+        "KBS-15-02",
+        "KBS-15-03",
+        "KBS-15-04"
+      ],
+      "mapping_confidence": 1.0,
+      "level": "advanced",
+      "status": "未掌握",
+      "progress": 0.0,
+      "prerequisites": [
+        "HuggingFace生态工具链"
+      ]
+    }
+  ],
+  "goal": "LoRA微调+权重合并+vLLM部署",
+  "daily_hours": 3.0,
+  "learning_style": "practice",
+  "learning_rhythm": "medium",
+  "confidence_index": 0.5,
+  "confusion_markers": [],
+  "confidence": 0.95,
+  "version": 1
+}

@@ -1,0 +1,20 @@
+{
+  "stage_progress": {
+    "stage_id": "237e9168-8089-5e0b-aad9-69059e4e4153",
+    "session_id": "b04bdc4c-0d99-4982-8a04-a55fd35964a1",
+    "stage_num": 1,
+    "block_id": "KB-01",
+    "block_name": "Linux环境与命令行操作",
+    "status": "learning",
+    "accuracy": null,
+    "strategy_used": null,
+    "started_at": null,
+    "completed_at": null,
+    "subtopic_id": "KBS-01-00",
+    "estimated_hours": 2.5
+  },
+  "accuracy": null,
+  "next_strategy": null,
+  "can_plan_next_stage": null,
+  "completed": false
+}

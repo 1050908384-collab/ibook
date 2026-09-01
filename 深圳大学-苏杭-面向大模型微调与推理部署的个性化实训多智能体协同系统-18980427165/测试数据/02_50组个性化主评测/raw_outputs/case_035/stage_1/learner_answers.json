@@ -1,0 +1,66 @@
+[
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "submitted_answer": "A",
+    "is_correct": true,
+    "correct_answer": "A",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "submitted_answer": "CUDA ||| GPU ||| 显卡",
+    "is_correct": true,
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0405-004",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-004",
+    "submitted_answer": "B",
+    "is_correct": true,
+    "correct_answer": "B",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-004",
+    "submitted_answer": "A",
+    "is_correct": false,
+    "correct_answer": "B",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0404-003",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "```python\nfrom torch.utils.data import Dataset\n\nclass MyDataset(Dataset):\n    def __init__(self, data, labels):\n        self.data = data\n        self.labels = labels\n\n    def __len__(self):\n        return len(self.data)\n\n    def __getitem__(self, idx):\n        return self.data[idx], self.labels[idx]\n```",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0403-005",
+    "submitted_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "is_correct": true,
+    "correct_answer": "```python\nmodel = nn.Sequential(\n    nn.Linear(10, 5),\n    nn.ReLU(),\n    nn.Linear(5, 1)\n)\n```\n\n---",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  },
+  {
+    "question_id": "Q-KB0401-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`(2, 2)`；`torch.int64`（或 `torch.long`）",
+    "answer_behavior": "low",
+    "wrong_answer_strategy": "fixed_by_question_id"
+  }
+]
