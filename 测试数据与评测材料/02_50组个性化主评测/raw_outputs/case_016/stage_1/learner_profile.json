@@ -1,9 +1,10 @@
 {
-  "session_id": "0d02a7ef-2ffc-4bfb-a20b-a9e343091c07",
+  "session_id": "76a161a1-6952-4289-a5f5-c81edc50b3de",
   "user_id": "local-user",
-  "grade": "用户写\"LoRa\"，可能指物联网LoRa而非低秩适配",
+  "grade": "熟悉Python/PyTorch/Transformer，想在8GB卡上做QLoRA微调",
   "skill_tags": [
-    "Python编程基础"
+    "深度学习框架PyTorch基础",
+    "Transformer架构"
   ],
   "mastered_block_ids": [
     "KB-04",
@@ -28,6 +29,7 @@
       "block_id": "KB-12",
       "block_name": "参数高效微调（LoRA与QLoRA）",
       "target_subtopic_ids": [
+        "KBS-12-00",
         "KBS-12-01",
         "KBS-12-02",
         "KBS-12-03",

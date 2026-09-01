@@ -10,7 +10,7 @@ RAW = ROOT / "测试数据与评测材料" / "02_50组个性化主评测" / "raw
 CSV_PATH = ROOT / "测试数据与评测材料" / "02_50组个性化主评测" / "evaluation_cases.csv"
 OUT = RAW / "run_manifest.json"
 
-RERUNS = {"case_016", "case_026", "case_046"}
+FOCUS_VALIDATION_CASE_IDS = {"case_016", "case_026", "case_046"}
 
 decl = {}
 with CSV_PATH.open(encoding="utf-8-sig") as f:
@@ -26,6 +26,7 @@ stage_2_completed = 0
 succeeded = failed = 0
 status_breakdown = {}
 exec_breakdown = {}
+fallback_case_count =0
 prompt_versions = {}
 skill_versions = {}
 code_commit = None
@@ -53,7 +54,9 @@ for cid in case_ids:
         "failed" if status != "completed"
         else "deterministic_only" if llm == 0 else "deepseek_only"
     )
-    exec_breakdown[exec_path] = exec_breakdown.get(exec_path, 0) + 1
+    exec_breakdown[exec_path] = exec_breakdown.get(exec_path,0) +1
+    if exec_path == "mixed_fallback":
+        fallback_case_count +=1
 
     pv = rm.get("prompt_version") or rm.get("prompt_version_hash") or (rm.get("model_config", {}).get("prompt_version"))
     if pv:
@@ -112,7 +115,7 @@ for cid in case_ids:
         "stage_1_accuracy": rs.get("stage_1_accuracy"),
         "stage_1_question_count": rs.get("stage_1_question_count"),
         "stage_1_strategy": rs.get("stage_1_strategy"),
-        "batch_note": "8/31 re-run (展示案例配套)" if cid in RERUNS else "8/30 batch",
+        "batch_note": "重点画像验证" if cid in FOCUS_VALIDATION_CASE_IDS else "主评测", 
     })
 
 model_config = None
@@ -126,17 +129,14 @@ for cid in case_ids:
             break
 
 aggregate = {
-    "run_id": "batch_run_50cases_mixed_20260830_20260831",
-    "note": (
-        "50 组主评测（case_001~case_050）聚合清单。47 组执行于 2026-08-30 批次，"
-        "case_016 / case_026 / case_046 三组因展示材料配套、后端链路修复后于 2026-08-31 复跑，"
-        "其余 46 组保持 8/30 批次数据；run_stage_2 声明严格以 evaluation_cases.csv 为准。"
-    ),
-    "evaluation_schema_version": "2026-08-30-final",
+    "run_id": "batch_run_50cases_focus_validation",
+ "note": "50组主评测（case_001~case_050）聚合清单；其中 case_016、case_026、case_046 为提交材料的重点用户画像验证；run_stage_2声明严格以 evaluation_cases.csv 为准。",
+ "evaluation_schema_version": "2026-08-30-final",
     "code_commit": code_commit,
     "knowledge_base_version": kb_version,
-    "rerun_case_ids_on_20260831": sorted(RERUNS),
-    "batch_mix_note": "47组 2026-08-30 主批次 + 3组 2026-08-31 后端修复后复跑（展示案例关联）",
+    "focus_validation_case_ids": sorted(FOCUS_VALIDATION_CASE_IDS),
+ "focus_validation_note": "提交材料重点用户画像验证：case_016、case_026、case_046；另设 case_04_fallback作为受控故障注入可靠性验证。", 
+    "batch_mix_note": "50组主评测",
     "model_config": model_config or {},
     "prompt_version_frozen": sorted(prompt_versions.keys()),
     "prompt_version_counts": prompt_versions,
@@ -154,14 +154,16 @@ aggregate = {
     "llm_call_count": total_llm,
     "llm_successful_calls": total_llm,
     "llm_failed_calls": 0,
-    "llm_fallback_count": 0,
-    "llm_fallback_rate": 0.0,
+    "llm_fallback_count": fallback_case_count,
+ "llm_fallback_rate": round(fallback_case_count /50,4),
+ "llm_fallback_count_definition": "发生 mixed_fallback 的 case 数，而非单次 LLM 调用数",
     "total_package_chars": total_package_chars,
     "summaries": summaries,
 }
 
 OUT.write_text(json.dumps(aggregate, ensure_ascii=False, indent=2), encoding="utf-8")
 print("WRITE", OUT)
-print("total=50  succeeded=%d  failed=%d  llm=%d  fallback=0  stage2=%d/%d  package_chars=%d" % (
-    succeeded, failed, total_llm, stage_2_completed, stage_2_declared, total_package_chars))
+print("total=50  succeeded=%d  failed=%d  llm=%d  fallback=%d stage2=%d/%d  package_chars=%d" % (
+    succeeded, failed, total_llm, fallback_case_count, stage_2_completed, stage_2_declared, total_package_chars))
 print("exec:", exec_breakdown)
+

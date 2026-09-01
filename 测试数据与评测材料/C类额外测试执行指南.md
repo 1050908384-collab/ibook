@@ -32,7 +32,7 @@ python scripts\extract_complete_cases.py
 |---|---|---|---|
 | 回退可靠性 12 条 | [run_fallback_tests.py](file:///d:/code/ai_agent-trainer/scripts/run_fallback_tests.py) | 受控故障注入（env patch + httpx MockTransport） | `03_回退可靠性测试/fallback_cases.csv`、`fallback_traces.jsonl` |
 | 消融 15×4=60 条 | [run_ablation_tests.py](file:///d:/code/ai_agent-trainer/scripts/run_ablation_tests.py) | Direct-LLM / RAG-only / No-Agent4 / Full-System 四种配置 | `04_多Agent消融测试/ablation_cases.csv` + `ablation_outputs/*.json` |
-| 完整案例抽取 A/B/C/D | [extract_complete_cases.py](file:///d:/code/ai_agent-trainer/scripts/extract_complete_cases.py) | 从主评测 raw_outputs 抽 + D 受控回退重跑 | `01_四组完整案例/case_01~case_04` |
+| 完整案例抽取 A/B/C/D | [extract_complete_cases.py](file:///d:/code/ai_agent-trainer/scripts/extract_complete_cases.py) | 从主评测 raw_outputs 抽取 + D受控故障注入 | `01_四组完整案例/case_01~case_04` |
 | 汇总指标 | [calculate_real_metrics.py](file:///d:/code/ai_agent-trainer/scripts/calculate_real_metrics.py) | 读取真实 raw_outputs 自动计算画像/覆盖/策略/谬误率 | `06_指标统计/` 5 个文件 |
 
 ---

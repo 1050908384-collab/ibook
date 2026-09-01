@@ -8,58 +8,58 @@
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0200-004",
-    "submitted_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "question_id": "Q-KB0200-001",
+    "submitted_answer": "Python 3.10.14",
     "is_correct": true,
-    "correct_answer": "conda 24.1.2\n# conda environments:\nbase                  *  /home/user/miniconda3\nllm_train                /home/user/miniconda3/envs/llm_train",
+    "correct_answer": "Python 3.10.14",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0202-006",
-    "submitted_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "question_id": "Q-KB0201-006",
+    "submitted_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
     "is_correct": true,
-    "correct_answer": "```python\nresult = [u[\"name\"] for u in data[\"users\"] if u[\"age\"] > 26]\n# [\"Alice\"]\n```\n\n---",
+    "correct_answer": "```\n30\n10\n```\n> `nonlocal x` 使 `bar` 中的 `x` 指向 `foo` 的局部变量 `x`，改为30。全局 `x` 不受影响仍为10。\n\n---",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0201-002",
-    "submitted_answer": "`<class 'float'>`；`<class 'str'>`",
+    "question_id": "Q-KB0203-006",
+    "submitted_answer": "C",
     "is_correct": true,
-    "correct_answer": "`<class 'float'>`；`<class 'str'>`",
+    "correct_answer": "C",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0204-005",
-    "submitted_answer": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
-    "is_correct": true,
-    "correct_answer": "```python\nclass ModelError(Exception):\n    def __init__(self, message):\n        super().__init__(message)\n        self.message = message\n\ndef load_model(path):\n    import os\n    if not os.path.exists(path):\n        raise ModelError(f\"模型文件不存在: {path}\")\n    # ... 加载逻辑\n\ntry:\n    load_model(\"nonexist.bin\")\nexcept ModelError as e:\n    print(f\"捕获错误: {e.message}\")\n```\n\n---",
+    "question_id": "Q-KB0202-002",
+    "submitted_answer": "我不知道",
+    "is_correct": false,
+    "correct_answer": "`d[\"a\"]` 或 `d.get(\"a\")`；`d.get(\"c\", 0)`",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0204-003",
-    "submitted_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "question_id": "Q-KB0202-005",
+    "submitted_answer": "B",
     "is_correct": true,
-    "correct_answer": "```python\ntry:\n    with open(\"data.txt\", \"r\") as f:\n        content = f.read()\nexcept FileNotFoundError:\n    print(\"文件未找到\")\n```",
+    "correct_answer": "B",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0205-001",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0204-001",
+    "submitted_answer": "C",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "C",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   },
   {
-    "question_id": "Q-KB0203-004",
-    "submitted_answer": "A",
+    "question_id": "Q-KB0201-003",
+    "submitted_answer": "B",
     "is_correct": true,
-    "correct_answer": "A",
+    "correct_answer": "B",
     "answer_behavior": "high",
     "wrong_answer_strategy": "fixed_by_question_id"
   }

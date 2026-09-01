@@ -343,15 +343,18 @@ class Harness:
             diagnostic.profile.user_id = user_id
         # 无论置信度是否达标，都保存 profile（草稿），允许用户通过 PATCH /profile 修改
         self.state_manager.update_profile(session_id, diagnostic.profile)
-        # PracticeProfile remains 个性化学习资源生成 Agent's execution DTO, while hardware has a
-        # single durable source in learner_profiles. Only first-time input may
-        # seed that source; later goals always reuse it.
-        if not reusable_profile:
-            inferred_practice_profile = PracticeProfile.from_user_input(user_input)
-            if inferred_practice_profile.hardware:
-                self.state_manager.db_client.upsert_user_profile(
-                    user_id, {"hardware": inferred_practice_profile.hardware}
-                )
+        inferred_practice_profile = PracticeProfile.from_user_input(user_input)
+        if inferred_practice_profile.hardware:
+         self.state_manager.db_client.upsert_user_profile(
+          user_id,
+          {
+          "hardware": inferred_practice_profile.hardware,
+          "device_type": inferred_practice_profile.device_type,
+          "gpu_model": inferred_practice_profile.gpu_model,
+          "vram_gb": inferred_practice_profile.vram_gb,
+          "gpu_architecture": inferred_practice_profile.gpu_architecture,
+          },
+          )
         self.state_manager.refresh_practice_profile(session_id)
         self.state_manager.add_interaction(session_id, "initial_diagnostic", {"user_input": user_input})
         if diagnostic.profile.confidence < settings.CONFIDENCE_THRESHOLD:

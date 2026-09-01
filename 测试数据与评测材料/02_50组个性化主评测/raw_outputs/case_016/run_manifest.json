@@ -1,12 +1,12 @@
 {
-  "run_id": "run_20260831_105150",
+  "run_id": "run_20260831_193605",
   "case_id": "case_016",
   "evaluation_schema_version": "2026-08-26-final",
-  "code_commit": "31c1038d3686",
+  "code_commit": "a1c48b5cfb39",
   "knowledge_base_version": "b7688878fe33",
   "prompt_version": "29c58faa5b38",
   "skill_version": "29c58faa5b38",
-  "database_sha256": "fdc3a61d5b6f",
+  "database_sha256": "93e6a3d47fb5",
   "hardware_info": {
     "cpu_model": "AMD64 Family 25 Model 117 Stepping 2, AuthenticAMD",
     "cpu_cores_physical": 8,
@@ -40,8 +40,8 @@
     "top_p": 0.95,
     "max_tokens": 8192
   },
-  "run_started_at": "2026-08-31T02:51:54.252763+00:00",
-  "run_finished_at": "2026-08-31T02:52:34.498749+00:00",
+  "run_started_at": "2026-08-31T11:36:09.617733+00:00",
+  "run_finished_at": "2026-08-31T11:37:06.072801+00:00",
   "status": "completed",
   "error": null,
   "execution_path": "deepseek_only"

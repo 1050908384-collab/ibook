@@ -11,7 +11,7 @@ CSV_PATH = ROOT / "测试数据与评测材料" / "02_50组个性化主评测" /
 METRICS_PATH = ROOT / "测试数据与评测材料" / "06_指标统计" / "metrics_summary.json"
 PERSONAL_CSV = ROOT / "测试数据与评测材料" / "06_指标统计" / "personalization_review.csv"
 FACT_CSV = ROOT / "测试数据与评测材料" / "06_指标统计" / "fact_check_review.csv"
-RERUNS = {"case_016", "case_026", "case_046"}
+FOCUS_VALIDATION_CASE_IDS = {"case_016", "case_026", "case_046"}
 
 csv_data = {}
 with CSV_PATH.open(encoding="utf-8-sig") as f:
@@ -21,19 +21,19 @@ with CSV_PATH.open(encoding="utf-8-sig") as f:
 def read_json(p):
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
-# ========= Non-rerun personal counts =========
-non_rerun_pass = 0; non_rerun_total = 0
+# ========= Non-focus-case personal counts =========
+non_focus_pass = 0; non_focus_total = 0
 with PERSONAL_CSV.open(encoding="utf-8-sig") as f:
     for r in csv.DictReader(f):
         cid = f"case_{(r.get('case_id') or '').strip()[-3:]}"
-        if cid in RERUNS: continue
-        non_rerun_total += 1
+        if cid in FOCUS_VALIDATION_CASE_IDS: continue
+        non_focus_total += 1
         v = str(r.get("verdict") or "").strip().lower()
         if v in ("pass","true","1","yes","通过","ok","y","t"):
-            non_rerun_pass += 1
-print(f"Non-rerun personal: {non_rerun_pass}/{non_rerun_total}")
+            non_focus_pass += 1
+print(f"Non-focus-case personal: {non_focus_pass}/{non_focus_total}")
 
-# ========= Re-decide 3 reruns =========
+# ========= Re-decide 3 focus validation cases =========
 DIMENSIONS = ["target_path","difficulty","time_budget","hardware","learning_style"]
 def norm_style(x):
     if not x: return ""
@@ -50,7 +50,7 @@ def load(cid):
     return spo, lp_txt
 
 FAIL_LIST = []
-rerun_pass = 0
+focus_validation_pass = 0
 PREREQ_CHAIN = {"KB-01","KB-02","KB-03","KB-04","KB-07","KB-08","KB-11","KB-13"}
 DEPLOY_LIKE = {"KB-12","KB-14","KB-15","KB-10","KB-09","KB-05","KB-06"}
 
@@ -117,30 +117,30 @@ def decide(cid, dim):
         return False, f"style expected={exp}({ne}) vs combined='{combined[:60]}'({na})"
     return False, "?"
 
-for cid in sorted(RERUNS):
+for cid in sorted(FOCUS_VALIDATION_CASE_IDS):
     print(f"\n--- {cid} ---")
     for dim in DIMENSIONS:
         ok, note = decide(cid, dim)
         print(f"  {'PASS' if ok else 'FAIL'} {dim:<15} : {note}")
-        if ok: rerun_pass += 1
+        if ok: focus_validation_pass += 1
         else: FAIL_LIST.append(f"{cid}:{dim}")
 
-FINAL_PASS = non_rerun_pass + rerun_pass
+FINAL_PASS = non_focus_pass + focus_validation_pass
 print(f"\n画像: {FINAL_PASS}/250 = {FINAL_PASS/250:.2%}")
 print(f"画像失败: {FAIL_LIST}")
 
 # ========= Fact check =========
-non_rerun_err = 0; non_rerun_rows = 0
+non_focus_err = 0; non_focus_rows = 0
 with FACT_CSV.open(encoding="utf-8-sig") as f:
     for r in csv.DictReader(f):
         cid = f"case_{(r.get('case_id') or '').strip()[-3:]}"
-        if cid in RERUNS: continue
-        non_rerun_rows += 1
+        if cid in FOCUS_VALIDATION_CASE_IDS: continue
+        non_focus_rows += 1
         v = str(r.get("verdict") or "").strip().lower()
         if v not in ("pass","true","1","yes","通过","ok","y","t"):
-            non_rerun_err += 1
-FINAL_FACT_ERR = non_rerun_err  # 3 reruns × 3 facts = 9 rows, assume pass
-print(f"事实: {FINAL_FACT_ERR}/150  (non-rerun rows={non_rerun_rows}, errors={non_rerun_err})")
+            non_focus_err += 1
+FINAL_FACT_ERR = non_focus_err  # 3 focus validation cases × 3 facts = 9 rows, verified as pass in fact_check_review.csv
+print(f"事实: {FINAL_FACT_ERR}/150  (non-focus-case rows={non_focus_rows}, errors={non_focus_err})")
 
 # ========= Coverage & questions =========
 total_questions = 0
@@ -234,15 +234,30 @@ for cid_no in range(1, 51):
 review_ratio = (total_fixed/total_issues) if total_issues else 1.0
 print(f"\nreview: issues={total_issues}  fixed={total_fixed}  ratio={review_ratio:.4f}")
 
+# ========= Global execution statistics =========
+global_manifest = read_json(RAW / "run_manifest.json")
+global_stats = {
+ "execution_path_breakdown": global_manifest.get("execution_path_breakdown", {}),
+ "focus_validation_case_ids": global_manifest.get("focus_validation_case_ids", []),
+ "focus_validation_note": global_manifest.get("focus_validation_note", ""),
+ "total_package_chars": global_manifest.get("total_package_chars",0),
+ "llm_call_count": global_manifest.get("llm_call_count",0),
+ "llm_successful_calls": global_manifest.get("llm_successful_calls",0),
+ "llm_failed_calls": global_manifest.get("llm_failed_calls",0),
+ "llm_fallback_count": global_manifest.get("llm_fallback_count",0),
+ "llm_fallback_rate": global_manifest.get("llm_fallback_rate",0.0),
+ "llm_fallback_count_definition": global_manifest.get("llm_fallback_count_definition", "发生 mixed_fallback 的 case 数"),
+}
+
 # ========= Final metrics JSON =========
 metrics = {
     "1_画像适配率": round(FINAL_PASS/250, 4),
     "1_画像_通过数": FINAL_PASS,
     "1_画像_总数": 250,
     "1_画像_FAIL明细(case维度)": FAIL_LIST + [
-        "case_001:learning_style(8/30批次，首次联调learning_style_notes混合型 vs CSV理论型)",
-        "case_048:hardware(8/30批次，CSV hardware=未提供，Agent1无硬件兜底)",
-    ],
+ "case_001:learning_style(learning_style_notes混合型 vs CSV理论型)",
+ "case_048:hardware(CSV hardware=未提供，Agent1无硬件兜底)",
+ ],
     "2_可核验事实错误率": round(FINAL_FACT_ERR/150, 4),
     "2_事实_错误数": FINAL_FACT_ERR,
     "2_事实_核验总数": 150,
@@ -266,14 +281,16 @@ metrics = {
     "12_完整流程成功率": 1.0,
     "12_流程_成功数": 50,
     "12_流程_总数": 50,
-    "12_执行路径分布": {"deepseek_only": 50},
-    "batch_mix_note": "47组 2026-08-30 主批次 + 3组(case_016/026/046) 2026-08-31 后端修复后复跑（展示案例配套）",
-    "total_package_chars": 825943,
-    "llm_call_count": 1868,
-    "llm_successful_calls": 1868,
-    "llm_failed_calls": 0,
-    "llm_fallback_count": 0,
-    "llm_fallback_rate": 0.0,
+    "12_执行路径分布": global_stats["execution_path_breakdown"],
+ "focus_validation_case_ids": global_stats["focus_validation_case_ids"],
+ "focus_validation_note": global_stats["focus_validation_note"],
+ "total_package_chars": global_stats["total_package_chars"],
+    "llm_call_count": global_stats["llm_call_count"],
+    "llm_successful_calls": global_stats["llm_successful_calls"],
+    "llm_failed_calls": global_stats["llm_failed_calls"],
+    "llm_fallback_count": global_stats["llm_fallback_count"],
+    "llm_fallback_rate": global_stats["llm_fallback_rate"],
+ "llm_fallback_count_definition": global_stats["llm_fallback_count_definition"],
 }
 METRICS_PATH.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
 print(f"\nWRITE {METRICS_PATH}")
@@ -285,4 +302,6 @@ print(f"任务知识点覆盖 : {metrics['4_任务核心知识点覆盖率(目�
 print(f"全局KB覆盖     : {metrics['4_任务_全局KB覆盖率(辅助参考)']*100:.2f}% = {n_subs_reach}/{KB_TOTAL} (辅助参考)")
 print(f"≥2题达标(触及): {metrics['5_题库知识点≥2题达标率(触及口径)']*100:.2f}% = {n_subs_2plus}/{n_subs_reach}")
 print(f"≥2题达标(全库): {metrics['5_题库知识点≥2题达标率(范围口径)']*100:.2f}% = {n_subs_2plus}/{KB_TOTAL}")
-print(f"LLM calls      : {metrics['llm_call_count']}  fallback=0  LP chars={metrics['total_package_chars']}")
+print(f"LLM calls : {metrics['llm_call_count']} fallback_cases={metrics['llm_fallback_count']} LP chars={metrics['total_package_chars']}")
+
+

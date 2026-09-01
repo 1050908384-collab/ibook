@@ -19,6 +19,7 @@ import asyncio
 import csv
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -53,7 +54,7 @@ def log(msg: str) -> None:
         f.write(line + "\n")
 
 
-def clean_personal_data() -> None:
+def clean_personal_data() -> bool:
     """调 clean_personal_data.py 清空运行时数据。"""
     cmd = [sys.executable, str(ROOT_DIR / "scripts" / "eval_utils" / "clean_personal_data.py")]
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", cwd=str(ROOT_DIR))

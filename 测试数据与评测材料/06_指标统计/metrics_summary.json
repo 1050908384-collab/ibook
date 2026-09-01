@@ -1,20 +1,18 @@
 {
-  "1_画像适配率": 0.98,
-  "1_画像_通过数": 245,
+  "1_画像适配率": 0.988,
+  "1_画像_通过数": 247,
   "1_画像_总数": 250,
   "1_画像_FAIL明细(case维度)": [
-    "case_016:hardware",
     "case_016:learning_style",
-    "case_026:hardware",
-    "case_001:learning_style(8/30批次，首次联调learning_style_notes混合型 vs CSV理论型)",
-    "case_048:hardware(8/30批次，CSV hardware=未提供，Agent1无硬件兜底)"
+    "case_001:learning_style(learning_style_notes混合型 vs CSV理论型)",
+    "case_048:hardware(CSV hardware=未提供，Agent1无硬件兜底)"
   ],
   "2_可核验事实错误率": 0.0,
   "2_事实_错误数": 0,
   "2_事实_核验总数": 150,
   "3_审核修复率": 1.0,
-  "3_审核_修复数": 3490,
-  "3_审核_总数": 3490,
+  "3_审核_修复数": 3518,
+  "3_审核_总数": 3518,
   "4_任务核心知识点覆盖率(目标口径)": 1.0,
   "4_任务_目标口径说明": "以50组 CSV expected_target_blocks（15块：['KB-01', 'KB-02', 'KB-03', 'KB-04', 'KB-05', 'KB-06', 'KB-07', 'KB-08', 'KB-09', 'KB-10', 'KB-11', 'KB-12', 'KB-13', 'KB-14', 'KB-15']）对应阶段规划中的子知识点（共6个）为分母；命中=在50组阶段规划subtopic_ids或实际抽题subtopic_ids中同时出现",
   "4_任务_目标口径命中知识点数": 6,
@@ -33,13 +31,20 @@
   "12_流程_成功数": 50,
   "12_流程_总数": 50,
   "12_执行路径分布": {
-    "deepseek_only": 50
+    "deepseek_only": 49,
+    "mixed_fallback": 1
   },
-  "batch_mix_note": "47组 2026-08-30 主批次 + 3组(case_016/026/046) 2026-08-31 后端修复后复跑（展示案例配套）",
-  "total_package_chars": 825943,
-  "llm_call_count": 1868,
-  "llm_successful_calls": 1868,
+  "focus_validation_case_ids": [
+    "case_016",
+    "case_026",
+    "case_046"
+  ],
+  "focus_validation_note": "提交材料重点用户画像验证：case_016、case_026、case_046；另设 case_04_fallback作为受控故障注入可靠性验证。",
+  "total_package_chars": 838319,
+  "llm_call_count": 1892,
+  "llm_successful_calls": 1892,
   "llm_failed_calls": 0,
-  "llm_fallback_count": 0,
-  "llm_fallback_rate": 0.0
+  "llm_fallback_count": 1,
+  "llm_fallback_rate": 0.02,
+  "llm_fallback_count_definition": "发生 mixed_fallback 的 case 数，而非单次 LLM 调用数"
 }
