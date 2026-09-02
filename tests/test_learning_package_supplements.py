@@ -13,6 +13,20 @@ from services.assessment_service import AssessmentService
 
 
 class _AssessmentDb:
+    def get_question(self, question_id):
+        return {
+            "question_id": question_id,
+            "block_id": "KB-01",
+            "subtopic_id": "topic-1",
+            "difficulty": "easy",
+            "question_type": "single_choice",
+            "question_text": "Question",
+            "options": ["A", "B"],
+            "correct_answer": "A",
+            "explanation": "Because",
+            "hint": None,
+        }
+
     def list_questions_for_stage(self, block_id, subtopic_ids, limit=2):
         return [{
             "question_id": "q-1",

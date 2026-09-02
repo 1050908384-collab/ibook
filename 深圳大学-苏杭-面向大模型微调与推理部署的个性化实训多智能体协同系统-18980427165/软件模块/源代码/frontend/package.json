@@ -1,0 +1,33 @@
+{
+  "name": "ai-agent-trainer-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test:agent-flow": "tsc --target ES2020 --module ES2020 --moduleResolution Node --outDir node_modules/.cache/agent-flow-tests src/utils/agentFlowState.ts src/utils/buildDiagnosticMessage.ts src/data/knowledgeGraph.ts src/utils/knowledgeNetworkLayout.ts src/utils/learningProjects.ts src/utils/stageResultActions.ts && node --test tests/*.test.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "chart.js": "^4.4.3",
+    "katex": "^0.18.4",
+    "lucide-react": "^0.424.0",
+    "react": "^18.3.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "react-router-dom": "^6.26.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.0",
+    "remark-math": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^6.0.0"
+  }
+}

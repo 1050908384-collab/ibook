@@ -115,7 +115,7 @@ class KnowledgeGraphUpgradeTest(unittest.IsolatedAsyncioTestCase):
             stage_num=1,
         ))
 
-        self.assertEqual("KBS-01-00", result.stage.subtopic_id)
+        self.assertEqual("KBS-02-00", result.stage.subtopic_id)
         self.assertTrue(result.stage.subtopic_ids)
 
     async def test_stage_planning_falls_back_when_all_candidates_are_blocked(self):

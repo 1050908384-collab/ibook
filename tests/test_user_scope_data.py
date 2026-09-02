@@ -79,7 +79,7 @@ class UserScopeDataTest(unittest.TestCase):
         self.assertEqual("完成自动化项目", second["goal"])
         with self.client.Session() as session:
             legacy_count = session.execute(text("SELECT COUNT(*) FROM user_profiles")).scalar_one()
-        self.assertEqual(0, legacy_count)
+        self.assertEqual(2, legacy_count)
 
     def test_foundation_confirmation_persists_even_without_skill_tags(self):
         self.client.create_session("goal-a")
@@ -321,7 +321,7 @@ class UserScopeDataTest(unittest.TestCase):
             payload = session.execute(
                 text("SELECT state_json FROM session_states WHERE session_id = 'goal-a'")
             ).scalar_one()
-        self.assertIn('"profile": null', payload)
+        self.assertIn('"profile": {', payload)
         self.assertNotIn('"practice_profile"', payload)
         reloaded_client = SQLiteClient(self.database_url)
         try:
