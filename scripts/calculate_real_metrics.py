@@ -19,25 +19,6 @@
 """
 from __future__ import annotations
 
-
-# ---------- 路径设置：python scripts\xxx.py 直接运行时能正确找到 backend / data ----------
-
-import sys
-from pathlib import Path
-_PROJ_ROOT_ = Path(__file__).resolve().parent.parent
-if str(_PROJ_ROOT_) not in sys.path: sys.path.insert(0, str(_PROJ_ROOT_))
-_BE_ = Path(_PROJ_ROOT_, "backend")
-if str(_BE_) not in sys.path: sys.path.insert(0, str(_BE_))
-
-import sys as _sys_py
-from pathlib import Path as _Path_py
-_PROJ_ROOT_ = _Path_py(__file__).resolve().parent.parent
-if str(_PROJ_ROOT_) not in _sys_py.path:
-    _sys_py.path.insert(0, str(_PROJ_ROOT_))
-if str(_PROJ_ROOT_ / "backend") not in _sys_py.path:
-    _sys_py.path.insert(0, str(_PROJ_ROOT_ / "backend"))
-# -------------------------------------------------------------------------------------
-
 import csv
 import json
 import sys
@@ -134,11 +115,17 @@ def is_review_completed(review_path: Path) -> Tuple[bool, int, int]:
 # 指标 1: 画像适配率（依赖人工复核表）
 # =====================================================================
 def calc_personalization_adaptation() -> Dict:
-    """画像适配率 = pass条件数 / 已复核条件数 × 100%。"""
+    """画像适配率 = 普通学习阶段的 pass 条件数 / 普通阶段已复核条件数。
+
+    ``not_applicable`` is reserved for terminal/empty stages.  Those rows
+    remain auditable in the review CSV but are intentionally excluded from
+    the normal learning-package adaptation denominator.
+    """
     rows = load_csv(PERSONALIZATION_REVIEW_PATH)
     filled = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() in ("pass", "fail", "error"))
     total = len(rows)
-    completed = filled == total and total > 0
+    excluded = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() == "not_applicable")
+    completed = filled > 0 and (filled + excluded == total)
     if not completed:
         return {
             "personalization_adaptation_rate": None,
@@ -147,6 +134,7 @@ def calc_personalization_adaptation() -> Dict:
             "review_completed": False,
             "review_filled": filled,
             "review_total": total,
+            "review_excluded": excluded,
         }
     pass_count = sum(1 for r in rows if (r.get("verdict") or "").strip().lower() == "pass")
     return {
@@ -154,6 +142,7 @@ def calc_personalization_adaptation() -> Dict:
         "personalization_pass_count": pass_count,
         "personalization_total": filled,
         "review_completed": True,
+        "review_excluded": excluded,
     }
 
 
