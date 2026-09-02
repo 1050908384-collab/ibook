@@ -41,7 +41,7 @@ project-root/
 │   ├── chroma_db/    # 学情诊断与阶段规划 Agent 知识语义索引
 │   ├── graph_data/   # 知识图谱结果层
 │   └── test_data/    # 测试样例数据
-├── scripts/          # 工具脚本
+├── scripts/          # 评测、数据构建、部署校验及开发辅助脚本（非单元测试目录）
 └── docs/             # 项目文档
 ```
 
@@ -321,6 +321,10 @@ python -m unittest discover -s tests -v
 ```
 
 当前核心模块测试共 141 个用例，覆盖多智能体调度、领域知识检索与生成、专业审核、数据库状态、题目评估、并发控制和模型回退；最近一次执行结果为 141 个测试全部通过。该测试结果属于软件模块级验证，50 组主评测则用于系统级个性化效果统计。
+
+### `scripts/` 与 `tests/` 的职责边界
+
+`tests/` 保存正式的 Python `unittest` 单元与集成回归用例；`scripts/` 保存可重复执行的系统评测、指标统计、数据库/知识库初始化、图谱构建、运行状态校验和开发辅助工具。正式评测主要使用 `run_real_evaluation.py`、`calculate_real_metrics.py` 及 `run_fallback_tests.py`；带有 `debug_`、`diagnose_`、`patch_` 或交互式 `test_` 名称的脚本属于开发辅助，不计入141个单元测试。历史 `run_ablation_tests.py` 不属于当前提交的正式实验结果。
 
 ## Agent架构
 

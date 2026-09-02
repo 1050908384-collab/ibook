@@ -1,0 +1,1774 @@
+[
+  {
+    "question_id": "Q-KB09-ST0901-001",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-01",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "大语言模型的上下文窗口（context window）主要限制的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "单次请求可处理的 token 总数"
+      },
+      {
+        "key": "B",
+        "text": "模型参数总量"
+      },
+      {
+        "key": "C",
+        "text": "GPU 核心数量"
+      },
+      {
+        "key": "D",
+        "text": "训练数据集大小"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "上下文窗口限制一次推理可输入和生成的 token 总量。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0902-001",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "In-Context Learning 指模型在不更新参数的情况下，通过提示词中的________学习任务模式。",
+    "options": null,
+    "correct_answer": "示例 ||| demonstrations ||| few-shot examples",
+    "explanation": "模型从上下文示例中推断任务，不进行参数训练。",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0903-001",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-03",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "指令微调的目标之一是使模型更稳定地遵循用户指令。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "explanation": "指令微调提升模型遵循任务指令和对话格式的能力。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0904-001",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "要求模型将复杂问题拆分为中间步骤再作答，最接近哪种提示方式？",
+    "options": [
+      {
+        "key": "A",
+        "text": "Chain-of-Thought"
+      },
+      {
+        "key": "B",
+        "text": "Tokenization"
+      },
+      {
+        "key": "C",
+        "text": "Quantization"
+      },
+      {
+        "key": "D",
+        "text": "Batching"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "Chain-of-Thought 通过中间推理步骤辅助复杂问题求解。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0905-001",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-05",
+    "difficulty": "初级",
+    "question_type": "true_false",
+    "question_text": "模型幻觉是指模型生成看似合理但不受事实或给定上下文支持的内容。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "explanation": "幻觉是大模型生成中常见的事实可靠性风险。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1301-001",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-01",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "梯度累积通过连续多个小 batch 的反向传播后再执行一次________，从而模拟更大的有效 batch size。",
+    "options": null,
+    "correct_answer": "optimizer.step() ||| optimizer step",
+    "explanation": "梯度累积期间累积梯度，达到设定步数后才更新参数。",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1302-001",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "PyTorch AMP 混合精度训练通常使用哪个组件自动选择合适精度？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.autocast"
+      },
+      {
+        "key": "B",
+        "text": "torch.compile"
+      },
+      {
+        "key": "C",
+        "text": "DataLoader"
+      },
+      {
+        "key": "D",
+        "text": "Tokenizer"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "autocast 在合适算子上自动使用低精度；训练通常还配合 GradScaler。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1303-001",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-03",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "梯度检查点通过少保存中间激活、反向传播时重新计算的方式节省显存。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "explanation": "代价是增加部分计算时间。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1304-001",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "学习率 warmup 的常见目的是什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "训练初期逐步提高学习率以稳定优化"
+      },
+      {
+        "key": "B",
+        "text": "永久固定学习率"
+      },
+      {
+        "key": "C",
+        "text": "减少训练数据量"
+      },
+      {
+        "key": "D",
+        "text": "替代反向传播"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "warmup 可缓解训练刚开始时更新过大的不稳定问题。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1401-001",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "DeepSpeed ZeRO-3 相比 ZeRO-1，额外分片了哪类状态？",
+    "options": [
+      {
+        "key": "A",
+        "text": "模型参数和梯度"
+      },
+      {
+        "key": "B",
+        "text": "训练数据文件"
+      },
+      {
+        "key": "C",
+        "text": "Tokenizer词表"
+      },
+      {
+        "key": "D",
+        "text": "随机种子"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "ZeRO-1分片优化器状态，ZeRO-2再分片梯度，ZeRO-3再分片参数。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1402-001",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-02",
+    "difficulty": "中级",
+    "question_type": "true_false",
+    "question_text": "数据并行通常让每张GPU保存完整模型副本，并处理不同的数据批次。（ ）",
+    "options": [
+      "正确",
+      "错误"
+    ],
+    "correct_answer": "正确",
+    "explanation": "各副本的梯度通过通信同步。",
+    "expected_output": null,
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1403-001",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-03",
+    "difficulty": "中级",
+    "question_type": "short_answer",
+    "question_text": "启动 DeepSpeed 训练时，配置文件通常通过哪个命令行参数传入？",
+    "options": null,
+    "correct_answer": "--deepspeed ds_config.json ||| --deepspeed=ds_config.json",
+    "explanation": "Trainer 等训练入口通常使用 --deepspeed 指定 DeepSpeed JSON 配置。",
+    "expected_output": null,
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-001",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "安装带 CUDA 支持的 PyTorch 时，应使 PyTorch 所支持的 CUDA 版本与本机________版本兼容。",
+    "correct_answer": "NVIDIA 驱动 ||| 显卡驱动",
+    "explanation": "驱动需能支持所安装 PyTorch 对应的 CUDA 运行时。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-002",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "在 Python 中可通过 `torch.cuda.is_available()` 检查 PyTorch 是否识别到________。",
+    "correct_answer": "CUDA ||| GPU ||| 显卡",
+    "explanation": "该函数用于判断 CUDA 是否可用。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB04-ST0400-003",
+    "block_id": "KB-04",
+    "subtopic_id": "KBS-04-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项最适合用于确认当前 PyTorch 安装包是否支持 CUDA？",
+    "options": [
+      {
+        "key": "A",
+        "text": "torch.cuda.is_available()"
+      },
+      {
+        "key": "B",
+        "text": "torch.manual_seed(0)"
+      },
+      {
+        "key": "C",
+        "text": "torch.save()"
+      },
+      {
+        "key": "D",
+        "text": "torch.no_grad()"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "该函数直接返回 CUDA 可用性。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB06-ST0602-001",
+    "block_id": "KB-06",
+    "subtopic_id": "KBS-06-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "缩放点积注意力中，缩放因子通常为键向量维度 d_k 的________。",
+    "correct_answer": "平方根 ||| sqrt(d_k) ||| 根号 d_k",
+    "explanation": "使用除以 sqrt(d_k) 防止点积过大。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB06-ST0602-002",
+    "block_id": "KB-06",
+    "subtopic_id": "KBS-06-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "Self-Attention 的输出是对 Value 向量按注意力权重进行________得到的。",
+    "correct_answer": "加权求和 ||| 加权和",
+    "explanation": "注意力权重由 Query 与 Key 的相关性计算。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB06-ST0602-003",
+    "block_id": "KB-06",
+    "subtopic_id": "KBS-06-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "Multi-Head Attention 的主要作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "在不同表示子空间并行关注关系"
+      },
+      {
+        "key": "B",
+        "text": "删除所有位置编码"
+      },
+      {
+        "key": "C",
+        "text": "只保留一个 Token"
+      },
+      {
+        "key": "D",
+        "text": "替代损失函数"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "多头可学习不同子空间中的关联。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-001",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Hugging Face 模型与分词器常用的 Python 库名称是________。",
+    "correct_answer": "transformers",
+    "explanation": "transformers 提供模型、Tokenizer 与训练接口。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-002",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "将文本转换为 token ID 序列的组件通常称为________。",
+    "correct_answer": "tokenizer ||| 分词器",
+    "explanation": "Tokenizer 负责文本与 token 序列转换。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB07-ST0700-003",
+    "block_id": "KB-07",
+    "subtopic_id": "KBS-07-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "安装 Hugging Face Transformers 的常用命令是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "pip install transformers"
+      },
+      {
+        "key": "B",
+        "text": "pip install tokenizer-only"
+      },
+      {
+        "key": "C",
+        "text": "conda remove torch"
+      },
+      {
+        "key": "D",
+        "text": "python uninstall model"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "pip install transformers 是标准安装方式。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "用 `AutoModel.from_pretrained()` 加载模型时，模型权重通常来自名称对应的预训练________。",
+    "correct_answer": "检查点 ||| checkpoint ||| 模型仓库",
+    "explanation": "from_pretrained 会下载或读取预训练检查点。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "不计算梯度地执行前向推理，常使用 PyTorch 的 `torch.________()` 上下文。",
+    "correct_answer": "no_grad ||| no_grad()",
+    "explanation": "no_grad 可减少推理阶段的显存开销。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0800-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-00",
+    "difficulty": "初级",
+    "question_type": "single_choice",
+    "question_text": "加载 GPT-2 等预训练模型进行前向实验，最直接的目的是什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "验证模型与输入张量可正常前向计算"
+      },
+      {
+        "key": "B",
+        "text": "立即完成微调"
+      },
+      {
+        "key": "C",
+        "text": "删除词表"
+      },
+      {
+        "key": "D",
+        "text": "关闭 CUDA 驱动"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "该实验用于验证加载和前向流程。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0802-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "Decoder-Only 模型在生成第 t 个 token 时，只能关注当前位置及其________位置。",
+    "correct_answer": "之前 ||| 前面 ||| 历史",
+    "explanation": "因果掩码禁止关注未来 token。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0802-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "GPT、Llama、Qwen 等自回归语言模型通常使用________架构。",
+    "correct_answer": "Decoder-Only ||| decoder only ||| 仅解码器",
+    "explanation": "这些模型按自回归方式预测下一个 token。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0802-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "Decoder-Only 注意力掩码的核心作用是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "阻止当前位置看到未来 token"
+      },
+      {
+        "key": "B",
+        "text": "让所有 token 相同"
+      },
+      {
+        "key": "C",
+        "text": "删除位置编码"
+      },
+      {
+        "key": "D",
+        "text": "取消残差连接"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "因果掩码保证自回归生成。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0803-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "残差连接通常将子层输入与子层输出进行________。",
+    "correct_answer": "相加 ||| 加法 ||| 相加融合",
+    "explanation": "残差连接有利于深层网络训练。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0803-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "RMSNorm 使用均方根统计进行归一化，通常不减去输入的________。",
+    "correct_answer": "均值 ||| 平均值",
+    "explanation": "RMSNorm 与 LayerNorm 的常见区别是不中心化。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0803-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "残差连接最直接的训练收益是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "改善深层网络的梯度传播"
+      },
+      {
+        "key": "B",
+        "text": "取消全部参数"
+      },
+      {
+        "key": "C",
+        "text": "使序列长度恒为1"
+      },
+      {
+        "key": "D",
+        "text": "不再需要优化器"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "残差路径帮助信息和梯度传播。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0804-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "Transformer 中的 FFN 通常对序列中的每个 token 位置________地应用同一组参数。",
+    "correct_answer": "独立 ||| 分别 ||| position-wise",
+    "explanation": "FFN 不直接混合不同位置的信息。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0804-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "SwiGLU 是一种带门控机制的________函数变体。",
+    "correct_answer": "激活 ||| activation",
+    "explanation": "SwiGLU 常用于现代 LLM 的前馈网络。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0804-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-04",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "FFN 在 Transformer 中主要负责？",
+    "options": [
+      {
+        "key": "A",
+        "text": "对每个 token 做非线性特征变换"
+      },
+      {
+        "key": "B",
+        "text": "计算因果掩码"
+      },
+      {
+        "key": "C",
+        "text": "加载训练数据"
+      },
+      {
+        "key": "D",
+        "text": "替代注意力层"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "FFN 提供逐位置的非线性变换能力。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-001",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-07",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "模型前向传播得到的 logits 通常在经过________后可转换为词表上的概率分布。",
+    "correct_answer": "softmax",
+    "explanation": "softmax 将 logits 归一化为概率。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-002",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-07",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "推理时将模型切换到评估模式，应调用 `model.________()`。",
+    "correct_answer": "eval ||| eval()",
+    "explanation": "eval 模式会调整 dropout 等层的行为。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB08-ST0807-003",
+    "block_id": "KB-08",
+    "subtopic_id": "KBS-08-07",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "前向实验中 `input_ids` 通常表示？",
+    "options": [
+      {
+        "key": "A",
+        "text": "Tokenizer 输出的 token 整数编号"
+      },
+      {
+        "key": "B",
+        "text": "模型损失值"
+      },
+      {
+        "key": "C",
+        "text": "GPU 温度"
+      },
+      {
+        "key": "D",
+        "text": "训练轮数"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "input_ids 是送入模型的离散 token ID。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB10-ST1001-001",
+    "block_id": "KB-10",
+    "subtopic_id": "KBS-10-01",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "自回归语言模型预训练的常见目标是预测序列中的下一个________。",
+    "correct_answer": "token ||| 词元",
+    "explanation": "Causal LM 通过 next-token prediction 训练。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB10-ST1001-002",
+    "block_id": "KB-10",
+    "subtopic_id": "KBS-10-01",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "预训练通常使用大规模________语料，以学习通用语言与知识模式。",
+    "correct_answer": "无标注 ||| 未标注 ||| 自监督",
+    "explanation": "预训练主要依赖自监督学习信号。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB10-ST1001-003",
+    "block_id": "KB-10",
+    "subtopic_id": "KBS-10-01",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "下列哪项属于预训练而非监督微调的典型特征？",
+    "options": [
+      {
+        "key": "A",
+        "text": "在海量通用语料上学习语言模式"
+      },
+      {
+        "key": "B",
+        "text": "只用几十个标注问答样本"
+      },
+      {
+        "key": "C",
+        "text": "只调整提示词"
+      },
+      {
+        "key": "D",
+        "text": "不更新任何参数"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "预训练以广泛语料学习通用能力。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB10-ST1003-001",
+    "block_id": "KB-10",
+    "subtopic_id": "KBS-10-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "RLHF 中先训练用于比较回答偏好的模型称为________模型。",
+    "correct_answer": "奖励 ||| reward model ||| RM",
+    "explanation": "奖励模型从人类偏好数据学习评分信号。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB10-ST1003-002",
+    "block_id": "KB-10",
+    "subtopic_id": "KBS-10-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "RLHF 的人类偏好数据常以两个回答之间的________形式收集。",
+    "correct_answer": "比较 ||| 排序 ||| 偏好比较",
+    "explanation": "标注者选择更偏好的回答以形成比较样本。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB10-ST1003-003",
+    "block_id": "KB-10",
+    "subtopic_id": "KBS-10-03",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "RLHF 的主要目标之一是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "使输出更符合人类偏好与指令"
+      },
+      {
+        "key": "B",
+        "text": "取消全部训练数据"
+      },
+      {
+        "key": "C",
+        "text": "只增加词表大小"
+      },
+      {
+        "key": "D",
+        "text": "关闭模型生成"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "RLHF 用人类偏好信号调整模型行为。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB11-ST1100-001",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-00",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "Hugging Face 数据集加载和处理常使用的库名称是________。",
+    "correct_answer": "datasets",
+    "explanation": "datasets 提供 Dataset 与数据处理接口。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB11-ST1100-002",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-00",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "使用私有 Hugging Face 仓库时，通常需要配置访问________。",
+    "correct_answer": "Token ||| token ||| 令牌",
+    "explanation": "访问受限模型或数据集需要认证 Token。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB11-ST1100-003",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-00",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "以下哪个库最直接用于训练配置中的分布式加速？",
+    "options": [
+      {
+        "key": "A",
+        "text": "accelerate"
+      },
+      {
+        "key": "B",
+        "text": "flask"
+      },
+      {
+        "key": "C",
+        "text": "requests"
+      },
+      {
+        "key": "D",
+        "text": "sqlite3"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "accelerate 用于简化设备与分布式训练配置。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB11-ST1102-001",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "datasets 的 `map()` 常用于对数据集样本执行批量________。",
+    "correct_answer": "转换 ||| 处理 ||| 映射",
+    "explanation": "map 会将给定函数应用到数据集样本。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB11-ST1102-002",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "datasets 的 `filter()` 会保留使筛选函数返回________的样本。",
+    "correct_answer": "True ||| 真",
+    "explanation": "filter 依据布尔结果保留样本。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB11-ST1102-003",
+    "block_id": "KB-11",
+    "subtopic_id": "KBS-11-02",
+    "difficulty": "中级",
+    "question_type": "single_choice",
+    "question_text": "为了在每个训练轮次打乱样本顺序，通常使用？",
+    "options": [
+      {
+        "key": "A",
+        "text": "dataset.shuffle(seed=...)"
+      },
+      {
+        "key": "B",
+        "text": "dataset.filter(...)"
+      },
+      {
+        "key": "C",
+        "text": "dataset.save_to_disk(...)"
+      },
+      {
+        "key": "D",
+        "text": "dataset.select_columns(...)"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "shuffle 会随机重排数据集。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "使用 Hugging Face PEFT 实现 LoRA 时，需要安装的库名称是________。",
+    "correct_answer": "peft",
+    "explanation": "PEFT 提供 LoraConfig 等参数高效微调接口。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "QLoRA 的 4-bit 量化常依赖的库是________。",
+    "correct_answer": "bitsandbytes",
+    "explanation": "bitsandbytes 提供低比特量化与优化器支持。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1200-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-00",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "QLoRA 对显存要求相对较低，主要因为它将基座模型以何种精度加载？",
+    "options": [
+      {
+        "key": "A",
+        "text": "4-bit 量化精度"
+      },
+      {
+        "key": "B",
+        "text": "64-bit 浮点精度"
+      },
+      {
+        "key": "C",
+        "text": "纯文本精度"
+      },
+      {
+        "key": "D",
+        "text": "不加载模型"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "QLoRA 以低比特量化加载冻结的基座模型。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1202-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-02",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "LoRA 中 rank r 决定低秩更新矩阵的________。",
+    "correct_answer": "秩 ||| rank ||| 维度",
+    "explanation": "r 越大，可训练适配器容量通常越大。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1202-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-02",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "LoRA 中 alpha 通常用于对低秩更新进行________。",
+    "correct_answer": "缩放 ||| scaling ||| 放缩",
+    "explanation": "常见实现使用 alpha/r 缩放更新。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1202-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-02",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "在其他条件相同时，增大 LoRA rank 最可能带来什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "可训练参数量增加"
+      },
+      {
+        "key": "B",
+        "text": "基座模型词表被删除"
+      },
+      {
+        "key": "C",
+        "text": "不再需要训练数据"
+      },
+      {
+        "key": "D",
+        "text": "模型自动变为量化模型"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "更高 rank 意味着更大的低秩适配器。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "LoraConfig 中用于指定注入 LoRA 层模块名列表的参数是________。",
+    "correct_answer": "target_modules",
+    "explanation": "target_modules 决定哪些线性层被适配。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "LoraConfig 中控制 LoRA 随机失活概率的参数是________。",
+    "correct_answer": "lora_dropout",
+    "explanation": "该参数用于适配器分支的 dropout。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1203-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-03",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "若希望将 LoRA 注入注意力层的 query 与 value 投影，应配置什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "target_modules 指向对应投影层名"
+      },
+      {
+        "key": "B",
+        "text": "删除 tokenizer"
+      },
+      {
+        "key": "C",
+        "text": "把 batch size 设为0"
+      },
+      {
+        "key": "D",
+        "text": "关闭梯度计算"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "target_modules 控制 LoRA 的注入位置。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1204-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-04",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "QLoRA 常用的 4-bit 数据类型名称是________。",
+    "correct_answer": "NF4 ||| NormalFloat4",
+    "explanation": "NF4 为正态分布权重设计的 4-bit 格式。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1204-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-04",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "双重量化指的是进一步量化量化常数，以继续节省________。",
+    "correct_answer": "显存 ||| 内存 ||| 存储",
+    "explanation": "Double Quantization 降低量化状态的存储开销。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1204-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-04",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "分页优化器的主要目标是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "缓解训练时显存峰值"
+      },
+      {
+        "key": "B",
+        "text": "增加词表"
+      },
+      {
+        "key": "C",
+        "text": "替代数据集"
+      },
+      {
+        "key": "D",
+        "text": "关闭反向传播"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "分页策略可避免部分优化器状态引发的显存峰值。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-001",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-05",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "PEFT 模型调用 `merge_and_unload()` 后，会将 LoRA 权重________到基座模型中。",
+    "correct_answer": "合并 ||| merge ||| 融合",
+    "explanation": "合并后可作为普通模型进行推理部署。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-002",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-05",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "使用 `save_pretrained()` 导出模型或适配器时，通常会保存权重和________文件。",
+    "correct_answer": "配置 ||| config ||| 配置文件",
+    "explanation": "配置文件用于后续正确加载模型。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB12-ST1205-003",
+    "block_id": "KB-12",
+    "subtopic_id": "KBS-12-05",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "合并 LoRA 权重后最直接的用途是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "以不依赖单独适配器的形式部署推理"
+      },
+      {
+        "key": "B",
+        "text": "删除全部模型参数"
+      },
+      {
+        "key": "C",
+        "text": "跳过保存模型"
+      },
+      {
+        "key": "D",
+        "text": "自动增加训练数据"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "合并可简化独立推理部署。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1300-001",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "PyTorch 自动混合精度训练通常结合 `autocast` 与________使用。",
+    "correct_answer": "GradScaler ||| grad scaler",
+    "explanation": "GradScaler 用于缓解低精度梯度下溢。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1300-002",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "AMP 的主要目标是在保持训练可用性的同时降低显存占用并提升________速度。",
+    "correct_answer": "训练 ||| 计算 ||| 训练计算",
+    "explanation": "低精度算子可减少计算与显存压力。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1300-003",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-00",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "使用 AMP 前首先应确认什么？",
+    "options": [
+      {
+        "key": "A",
+        "text": "当前 torch 与硬件支持相应混合精度"
+      },
+      {
+        "key": "B",
+        "text": "词表为空"
+      },
+      {
+        "key": "C",
+        "text": "禁用 GPU"
+      },
+      {
+        "key": "D",
+        "text": "删除优化器"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "AMP 依赖 PyTorch 与设备能力。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1400-001",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "DeepSpeed 训练配置通常保存为________格式文件。",
+    "correct_answer": "JSON ||| json",
+    "explanation": "ds_config.json 是常见配置文件。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1400-002",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "使用 DeepSpeed 命令行启动多卡训练时，可用 `--num_gpus` 指定________数量。",
+    "correct_answer": "GPU ||| 显卡",
+    "explanation": "该参数指定参与启动的 GPU 数。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1400-003",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-00",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "DeepSpeed 的 ds_config.json 主要用于？",
+    "options": [
+      {
+        "key": "A",
+        "text": "配置优化、并行与训练参数"
+      },
+      {
+        "key": "B",
+        "text": "保存原始训练语料"
+      },
+      {
+        "key": "C",
+        "text": "定义浏览器页面"
+      },
+      {
+        "key": "D",
+        "text": "替代模型权重"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "该配置描述 DeepSpeed 运行策略。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1500-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "部署 vLLM 前应确保 CUDA、PyTorch 与 vLLM 三者的________兼容。",
+    "correct_answer": "版本 ||| 版本号",
+    "explanation": "版本不兼容会导致安装或运行失败。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1500-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-00",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "vLLM 推理服务通常需要 NVIDIA GPU 及足够的________。",
+    "correct_answer": "显存 ||| GPU 显存",
+    "explanation": "模型权重与 KV Cache 都占用显存。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1500-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-00",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "安装 vLLM 前，最需要优先检查的是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "GPU、驱动、CUDA 与 PyTorch 兼容性"
+      },
+      {
+        "key": "B",
+        "text": "浏览器主题颜色"
+      },
+      {
+        "key": "C",
+        "text": "Excel 版本"
+      },
+      {
+        "key": "D",
+        "text": "是否删除 tokenizer"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "运行环境兼容性是部署前提。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1501-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-01",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "贪心搜索在每一步选择当前概率最高的下一个________。",
+    "correct_answer": "token ||| 词元",
+    "explanation": "贪心搜索不保留多个候选路径。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1501-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-01",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "束搜索会同时保留多个候选序列，保留数量由 beam________控制。",
+    "correct_answer": "width ||| size ||| 宽度",
+    "explanation": "beam width 决定保留的候选路径数。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1501-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-01",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "与贪心搜索相比，束搜索的典型代价是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "计算量和显存开销更高"
+      },
+      {
+        "key": "B",
+        "text": "无法生成文本"
+      },
+      {
+        "key": "C",
+        "text": "不需要模型"
+      },
+      {
+        "key": "D",
+        "text": "不能设置长度限制"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "多条候选路径需要更多计算和存储。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1502-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-02",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "Temperature 增大通常会使采样分布更________。",
+    "correct_answer": "平坦 ||| 随机 ||| 发散",
+    "explanation": "较高温度降低高概率 token 的相对优势。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1502-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-02",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "Top-k 采样每一步只在概率最高的 k 个候选________中采样。",
+    "correct_answer": "token ||| 词元",
+    "explanation": "Top-k 截断低概率候选。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1502-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-02",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "Top-p 采样保留的候选集合满足什么条件？",
+    "options": [
+      {
+        "key": "A",
+        "text": "累计概率达到阈值 p"
+      },
+      {
+        "key": "B",
+        "text": "候选数量恒为1"
+      },
+      {
+        "key": "C",
+        "text": "只保留最低概率 token"
+      },
+      {
+        "key": "D",
+        "text": "不依赖概率"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "Top-p 又称 nucleus sampling。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1503-001",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "vLLM 的 PagedAttention 用分页方式管理注意力计算所需的 KV________。",
+    "correct_answer": "Cache ||| cache ||| 缓存",
+    "explanation": "分页管理减少 KV Cache 碎片和浪费。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1503-002",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-03",
+    "difficulty": "高级",
+    "question_type": "fill_blank",
+    "question_text": "Continuous Batching 的核心是让不同请求在生成过程中________加入或离开批次。",
+    "correct_answer": "动态 ||| 连续 ||| 实时",
+    "explanation": "动态调度提高 GPU 利用率与吞吐。",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB15-ST1503-003",
+    "block_id": "KB-15",
+    "subtopic_id": "KBS-15-03",
+    "difficulty": "高级",
+    "question_type": "single_choice",
+    "question_text": "PagedAttention 的主要收益是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "更高效地管理 KV Cache 显存"
+      },
+      {
+        "key": "B",
+        "text": "取消所有注意力计算"
+      },
+      {
+        "key": "C",
+        "text": "让模型不需要权重"
+      },
+      {
+        "key": "D",
+        "text": "只支持单个请求"
+      }
+    ],
+    "correct_answer": "A",
+    "explanation": "它通过块化管理改善显存利用。",
+    "grading_mode": "exact_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0901-002",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "上下文窗口越大，单次请求可容纳的 token 总数通常越________。",
+    "correct_answer": "多 ||| 大",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0901-003",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-01",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "超过上下文窗口时，输入可能被________。",
+    "correct_answer": "截断 ||| 拒绝",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0902-002",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "In-Context Learning 中模型参数通常________更新。",
+    "correct_answer": "不 ||| 不会 ||| 无需",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0902-003",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-02",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "Few-shot 提示通过给出多个任务________引导模型。",
+    "correct_answer": "示例 ||| demonstrations",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0903-002",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "指令微调常使用指令与________成对的监督数据。",
+    "correct_answer": "回答 ||| 输出",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0903-003",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "SFT 是________微调的缩写。",
+    "correct_answer": "监督 ||| Supervised Fine-Tuning",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0904-002",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "要求 JSON 返回属于________输出约束。",
+    "correct_answer": "结构化 ||| JSON",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0904-003",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "复杂任务拆分为中间步骤的提示常称为________提示。",
+    "correct_answer": "思维链 ||| Chain-of-Thought ||| CoT",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0905-002",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-05",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "核验模型关键事实时应查阅________来源。",
+    "correct_answer": "权威 ||| 原始 ||| 可靠",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB09-ST0905-003",
+    "block_id": "KB-09",
+    "subtopic_id": "KBS-09-05",
+    "difficulty": "初级",
+    "question_type": "fill_blank",
+    "question_text": "让模型依据给定资料回答可降低________风险。",
+    "correct_answer": "幻觉 ||| 虚构",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1301-002",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-01",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "梯度累积可在小显存下模拟较大的有效________。",
+    "correct_answer": "batch ||| 批次 ||| batch size",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1301-003",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-01",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "梯度累积时参数更新频率会相对________。",
+    "correct_answer": "降低 ||| 减少",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1302-002",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "AMP 中用于处理梯度下溢的组件是________。",
+    "correct_answer": "GradScaler ||| grad scaler",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1302-003",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "autocast 会自动选择合适的计算________。",
+    "correct_answer": "精度 ||| 数据类型",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1303-002",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "梯度检查点以增加________换取显存节省。",
+    "correct_answer": "计算 ||| 重计算时间",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1303-003",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "梯度检查点少保存前向传播的中间________。",
+    "correct_answer": "激活 ||| activation",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1304-002",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "余弦退火按近似________曲线改变学习率。",
+    "correct_answer": "余弦 ||| cosine",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB13-ST1304-003",
+    "block_id": "KB-13",
+    "subtopic_id": "KBS-13-04",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "Warmup 通常发生在训练________。",
+    "correct_answer": "开始 ||| 初期",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1401-002",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-01",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "ZeRO-1 首先分片________状态。",
+    "correct_answer": "优化器 ||| optimizer",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1401-003",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-01",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "ZeRO-2 在 ZeRO-1 基础上还分片________。",
+    "correct_answer": "梯度 ||| gradients",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1402-002",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "数据并行中各 GPU 处理不同的数据________。",
+    "correct_answer": "批次 ||| batch",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1402-003",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-02",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "模型并行适用于单卡无法容纳完整________的情形。",
+    "correct_answer": "模型 ||| model",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1403-002",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "DeepSpeed 配置中设置 ZeRO 阶段的字段是________。",
+    "correct_answer": "zero_optimization",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  },
+  {
+    "question_id": "Q-KB14-ST1403-003",
+    "block_id": "KB-14",
+    "subtopic_id": "KBS-14-03",
+    "difficulty": "中级",
+    "question_type": "fill_blank",
+    "question_text": "启动 DeepSpeed 所用配置文件常命名为________。",
+    "correct_answer": "ds_config.json ||| ds config json",
+    "grading_mode": "semantic_match",
+    "source": "runtime_supplement"
+  }
+]
+

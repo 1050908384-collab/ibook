@@ -1,0 +1,682 @@
+[
+  {
+    "doc_id": "DOC-01-01",
+    "block_id": "KB-01",
+    "title": "常用Shell命令",
+    "content": "cd：切换目录\nls：列出文件\nmkdir：创建目录\ncp：复制文件\nmv：移动文件\nrm：删除文件\npwd：显示当前路径\ncat：查看文件内容\ngrep：搜索文本\nfind：查找文件",
+    "doc_type": "tutorial",
+    "source": "Linux官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-01-01"
+  },
+  {
+    "doc_id": "DOC-01-02",
+    "block_id": "KB-01",
+    "title": "环境变量配置",
+    "content": "export PATH=$PATH:/new/path\nexport PYTHONPATH=/path/to/modules\nsource ~/.bashrc 使配置生效\n查看环境变量：echo $PATH\nenv 查看所有环境变量",
+    "doc_type": "tutorial",
+    "source": "Linux官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-01-02"
+  },
+  {
+    "doc_id": "DOC-01-03",
+    "block_id": "KB-01",
+    "title": "conda虚拟环境管理",
+    "content": "conda create -n myenv python=3.10\nconda activate myenv\nconda deactivate\nconda env list\nconda install package_name\nconda remove package_name\npip install package_name -i https://pypi.tuna.tsinghua.edu.cn/simple",
+    "doc_type": "tutorial",
+    "source": "Anaconda官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-01-03"
+  },
+  {
+    "doc_id": "DOC-01-04",
+    "block_id": "KB-01",
+    "title": "nvidia-smi显存监控",
+    "content": "nvidia-smi 查看GPU状态\nwatch -n 1 nvidia-smi 实时监控\nnvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits\n显存单位换算：1GB = 1024MB",
+    "doc_type": "tutorial",
+    "source": "NVIDIA官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-01-04"
+  },
+  {
+    "doc_id": "DOC-01-05",
+    "block_id": "KB-01",
+    "title": "Linux终端实际操作与练习",
+    "content": "练习场景：\n1. 创建项目目录结构\n2. 编写并执行简单Shell脚本\n3. 使用管道和重定向\n4. 文件权限管理\n5. 进程管理与后台运行",
+    "doc_type": "tutorial",
+    "source": "实战练习",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-01-04"
+  },
+  {
+    "doc_id": "DOC-02-01",
+    "block_id": "KB-02",
+    "title": "Python基础语法",
+    "content": "变量声明：x = 10\n数据类型：int, float, str, bool\n条件判断：if/elif/else\n循环：for, while\n列表推导：[x for x in range(10)]\n格式化输出：f\"Hello {name}\"",
+    "doc_type": "tutorial",
+    "source": "Python官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-02-01"
+  },
+  {
+    "doc_id": "DOC-02-02",
+    "block_id": "KB-02",
+    "title": "Python数据结构",
+    "content": "列表：[1, 2, 3]，支持增删改查\n元组：(1, 2, 3)，不可变\n字典：{\"key\": \"value\"}\n集合：{1, 2, 3}，去重\n常用方法：append, extend, pop, get, keys, values",
+    "doc_type": "tutorial",
+    "source": "Python官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-02-02"
+  },
+  {
+    "doc_id": "DOC-02-03",
+    "block_id": "KB-02",
+    "title": "函数与面向对象",
+    "content": "def func(x): return x * 2\nclass MyClass:\n    def __init__(self, value):\n        self.value = value\n    def method(self):\n        return self.value\n继承：class Child(Parent): pass\n装饰器：@decorator",
+    "doc_type": "tutorial",
+    "source": "Python官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-02-03"
+  },
+  {
+    "doc_id": "DOC-02-04",
+    "block_id": "KB-02",
+    "title": "文件与异常处理",
+    "content": "with open('file.txt', 'r') as f:\n    content = f.read()\ntry:\n    result = 1 / 0\nexcept ZeroDivisionError as e:\n    print(f\"Error: {e}\")\nfinally:\n    print(\"Always executed\")",
+    "doc_type": "tutorial",
+    "source": "Python官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-02-04"
+  },
+  {
+    "doc_id": "DOC-02-05",
+    "block_id": "KB-02",
+    "title": "装饰器与生成器",
+    "content": "装饰器：\ndef timer(func):\n    def wrapper(*args, **kwargs):\n        start = time.time()\n        result = func(*args, **kwargs)\n        print(f\"Time: {time.time() - start}\")\n        return result\n    return wrapper\n生成器：\ndef fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b",
+    "doc_type": "tutorial",
+    "source": "Python官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-02-05"
+  },
+  {
+    "doc_id": "DOC-02-06",
+    "block_id": "KB-02",
+    "title": "Python综合练习与实战",
+    "content": "实战项目：\n1. 命令行待办事项管理器\n2. CSV数据统计分析工具\n3. 网页爬虫（requests+BeautifulSoup）\n4. 简单API服务（FastAPI）",
+    "doc_type": "tutorial",
+    "source": "实战练习",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-02-05"
+  },
+  {
+    "doc_id": "DOC-03-01",
+    "block_id": "KB-03",
+    "title": "Pandas数据清洗",
+    "content": "import pandas as pd\ndf = pd.read_csv('data.csv')\ndf.dropna() 删除缺失值\ndf.fillna(value) 填充缺失值\ndf.drop_duplicates() 去重\ndf.astype({'col': 'int'}) 类型转换\ndf.rename(columns={'old': 'new'}) 重命名列",
+    "doc_type": "code",
+    "source": "Pandas官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-03-01"
+  },
+  {
+    "doc_id": "DOC-03-02",
+    "block_id": "KB-03",
+    "title": "JSON/CSV读写",
+    "content": "import pandas as pd\nimport json\n# CSV\ndf = pd.read_csv('input.csv')\ndf.to_csv('output.csv', index=False)\n# JSON\nwith open('data.json', 'r') as f:\n    data = json.load(f)\nwith open('data.json', 'w') as f:\n    json.dump(data, f, ensure_ascii=False, indent=2)",
+    "doc_type": "code",
+    "source": "Python官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-03-02"
+  },
+  {
+    "doc_id": "DOC-03-03",
+    "block_id": "KB-03",
+    "title": "NumPy数组运算",
+    "content": "import numpy as np\narr = np.array([1, 2, 3])\narr2 = np.array([4, 5, 6])\n# 基本运算\nresult = arr + arr2\nresult = arr * arr2\n# 矩阵运算\nmatrix = np.random.rand(3, 4)\ntranspose = matrix.T\n# 统计\nmean = np.mean(arr)\nstd = np.std(arr)\nmax_val = np.max(arr)",
+    "doc_type": "code",
+    "source": "NumPy官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-03-03"
+  },
+  {
+    "doc_id": "DOC-03-04",
+    "block_id": "KB-03",
+    "title": "正则表达式",
+    "content": "import re\n# 匹配\npattern = r'\\d+'\ntext = 'Price: 123'\nmatch = re.search(pattern, text)\n# 替换\nresult = re.sub(r'\\s+', ' ', text)\n# 提取邮箱\nemails = re.findall(r'[\\w.-]+@[\\w.-]+', text)\n# 分组\npattern = r'(\\d+)-(\\d+)-(\\d+)'\nmatch = re.match(pattern, '2024-01-15')",
+    "doc_type": "code",
+    "source": "Python官方文档",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-03-04"
+  },
+  {
+    "doc_id": "DOC-03-05",
+    "block_id": "KB-03",
+    "title": "数据处理综合练习",
+    "content": "实战任务：\n1. 读取CSV数据并清洗\n2. 使用正则提取关键字段\n3. 使用NumPy进行统计分析\n4. 数据可视化（Matplotlib）",
+    "doc_type": "tutorial",
+    "source": "实战练习",
+    "difficulty": "初级",
+    "subtopic_id": "KBS-03-04"
+  },
+  {
+    "doc_id": "DOC-04-01",
+    "block_id": "KB-04",
+    "title": "张量操作",
+    "content": "import torch\na = torch.tensor([1, 2, 3])\nb = torch.randn(3, 4)\nc = torch.zeros(2, 3)\nd = torch.ones(4, 5)\nresult = a + b\nresult = torch.matmul(b, b.T)\nreshaped = b.view(4, 3)\nflattened = b.flatten()\nvalue = b[0, 1]",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-04-01"
+  },
+  {
+    "doc_id": "DOC-04-02",
+    "block_id": "KB-04",
+    "title": "自动求导机制",
+    "content": "import torch\nx = torch.tensor(2.0, requires_grad=True)\ny = x ** 2\ny.backward()\nprint(x.grad)  # 4.0\nw = torch.tensor(1.0, requires_grad=True)\nb = torch.tensor(2.0, requires_grad=True)\nx = torch.tensor(3.0)\ny = w * x + b\ny.backward()\nprint(w.grad)  # 3.0",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-04-02"
+  },
+  {
+    "doc_id": "DOC-04-03",
+    "block_id": "KB-04",
+    "title": "torch.nn模块",
+    "content": "import torch.nn as nn\nclass MyModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc1 = nn.Linear(10, 20)\n        self.relu = nn.ReLU()\n        self.fc2 = nn.Linear(20, 2)\n    def forward(self, x):\n        x = self.fc1(x)\n        x = self.relu(x)\n        x = self.fc2(x)\n        return x\nmodel = MyModel()",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-04-03"
+  },
+  {
+    "doc_id": "DOC-04-04",
+    "block_id": "KB-04",
+    "title": "Dataset与DataLoader",
+    "content": "from torch.utils.data import Dataset, DataLoader\nclass MyDataset(Dataset):\n    def __init__(self, data):\n        self.data = data\n    def __len__(self):\n        return len(self.data)\n    def __getitem__(self, idx):\n        return self.data[idx]\ndataset = MyDataset([1, 2, 3, 4, 5])\ndataloader = DataLoader(dataset, batch_size=2, shuffle=True)",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-04-04"
+  },
+  {
+    "doc_id": "DOC-04-05",
+    "block_id": "KB-04",
+    "title": "优化器与损失函数",
+    "content": "import torch.nn as nn\nimport torch.optim as optim\ncriterion = nn.CrossEntropyLoss()\ncriterion_mse = nn.MSELoss()\noptimizer = optim.Adam(model.parameters(), lr=1e-3)\noptimizer_adamw = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)\nscheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-04-05"
+  },
+  {
+    "doc_id": "DOC-04-06",
+    "block_id": "KB-04",
+    "title": "训练循环编写",
+    "content": "for epoch in range(100):\n    optimizer.zero_grad()\n    outputs = model(inputs)\n    loss = criterion(outputs, labels)\n    loss.backward()\n    optimizer.step()\n    if epoch % 10 == 0:\n        print(f\"Epoch {epoch}, Loss: {loss.item()}\")",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-04-06"
+  },
+  {
+    "doc_id": "DOC-04-07",
+    "block_id": "KB-04",
+    "title": "模型保存与加载",
+    "content": "torch.save(model.state_dict(), 'model.pth')\nmodel.load_state_dict(torch.load('model.pth'))\nmodel.eval()\ncheckpoint = {'epoch': epoch, 'model_state_dict': model.state_dict(), 'optimizer_state_dict': optimizer.state_dict(), 'loss': loss}\ntorch.save(checkpoint, 'checkpoint.pth')",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-04-07"
+  },
+  {
+    "doc_id": "DOC-05-01",
+    "block_id": "KB-05",
+    "title": "NLP基础任务",
+    "content": "分词：将文本切分为词语或子词\n词性标注：标注每个词的词性（名词、动词、形容词等）\n命名实体识别（NER）：识别文本中的实体（人名、地名、组织机构等）\n情感分析：判断文本的情感倾向（正面、负面、中性）\n文本分类：将文本分类到预定义类别",
+    "doc_type": "tutorial",
+    "source": "NLP教程",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-05-01"
+  },
+  {
+    "doc_id": "DOC-05-02",
+    "block_id": "KB-05",
+    "title": "文本数值化表示",
+    "content": "Bag-of-Words：统计词频，忽略顺序\nTF-IDF：词频-逆文档频率，衡量词的重要性\nWord2Vec：分布式表示，捕捉语义相似性\nGloVe：全局向量表示\nELMo：基于双向LSTM的上下文表示\nBERT：基于Transformer的上下文表示",
+    "doc_type": "tutorial",
+    "source": "NLP教程",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-05-02"
+  },
+  {
+    "doc_id": "DOC-06-01",
+    "block_id": "KB-06",
+    "title": "注意力机制核心概念",
+    "content": "Query（查询）：当前位置的表示\nKey（键）：所有位置的表示\nValue（值）：所有位置的表示\n注意力权重：softmax(Q·K^T / sqrt(d_k))\n加权求和：注意力权重 × Value\n核心公式：Attention(Q, K, V) = softmax(QK^T / sqrt(d_k))V",
+    "doc_type": "tutorial",
+    "source": "Attention Is All You Need",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-06-01"
+  },
+  {
+    "doc_id": "DOC-06-02",
+    "block_id": "KB-06",
+    "title": "Self-Attention与Multi-Head Attention",
+    "content": "Self-Attention：Q=K=V，同一序列内部的注意力\nMulti-Head Attention：将Q/K/V线性变换h次，并行计算h组注意力\nh组注意力结果拼接后再线性变换\n优点：捕捉不同子空间的关系\n公式：MultiHead(Q,K,V) = Concat(head_1,...,head_h)W^O\n其中head_i = Attention(QW_i^Q, KW_i^K, VW_i^V)",
+    "doc_type": "tutorial",
+    "source": "Attention Is All You Need",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-06-02"
+  },
+  {
+    "doc_id": "DOC-07-01",
+    "block_id": "KB-07",
+    "title": "子词切分算法",
+    "content": "BPE（Byte Pair Encoding）：从字符级别开始，迭代合并频率最高的字符对\nWordPiece：Google提出，用于BERT，基于概率选择合并\nSentencePiece：字节级别处理，支持多语言\nUnigram：基于语言模型概率的分词方法\n主要区别：覆盖范围、训练数据、语言支持",
+    "doc_type": "tutorial",
+    "source": "HuggingFace官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-07-01"
+  },
+  {
+    "doc_id": "DOC-07-02",
+    "block_id": "KB-07",
+    "title": "HuggingFace Tokenizer使用",
+    "content": "from transformers import AutoTokenizer\ntokenizer = AutoTokenizer.from_pretrained('bert-base-chinese')\ntext = '你好，世界！'\ntokens = tokenizer(text)\nencoded = tokenizer(text, padding=True, truncation=True, max_length=128, return_tensors='pt')\ndecoded = tokenizer.decode(encoded['input_ids'][0])",
+    "doc_type": "code",
+    "source": "Transformers官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-07-02"
+  },
+  {
+    "doc_id": "DOC-07-03",
+    "block_id": "KB-07",
+    "title": "Tokenizer关键参数",
+    "content": "padding：填充到指定长度\npadding_side：'left'或'right'\ntruncation：截断到max_length\nmax_length：最大长度\nreturn_tensors：返回张量类型（'pt'/'tf'/'np'）\nadd_special_tokens：是否添加特殊token\nreturn_attention_mask：是否返回attention_mask",
+    "doc_type": "tutorial",
+    "source": "Transformers官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-07-03"
+  },
+  {
+    "doc_id": "DOC-07-04",
+    "block_id": "KB-07",
+    "title": "ChatTemplate对话模板",
+    "content": "对话模板格式：\n<|system|>你是一个助手</|system|>\n<|user|>问题</|user|>\n<|assistant|>回答</|assistant|>\n使用tokenizer.apply_chat_template()\n支持不同模型的对话格式（Llama、Qwen、ChatGLM等）\n动态添加system prompt",
+    "doc_type": "tutorial",
+    "source": "HuggingFace官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-07-04"
+  },
+  {
+    "doc_id": "DOC-08-01",
+    "block_id": "KB-08",
+    "title": "Transformer Encoder-Decoder结构",
+    "content": "Encoder：多层堆叠，每层包含Multi-Head Attention和FFN\nDecoder：多层堆叠，每层包含Masked Multi-Head Attention、Encoder-Decoder Attention和FFN\n输入嵌入 + 位置编码\n输出：序列表示\n用于机器翻译等seq2seq任务",
+    "doc_type": "tutorial",
+    "source": "Attention Is All You Need",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-08-01"
+  },
+  {
+    "doc_id": "DOC-08-02",
+    "block_id": "KB-08",
+    "title": "Decoder-Only架构",
+    "content": "仅包含Decoder层\n每层：Masked Multi-Head Attention + FFN\n自回归生成：逐个token生成\n代表模型：GPT系列、Llama、Qwen、Mistral\n预训练目标：因果语言建模（CLM）",
+    "doc_type": "tutorial",
+    "source": "GPT论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-08-02"
+  },
+  {
+    "doc_id": "DOC-08-03",
+    "block_id": "KB-08",
+    "title": "RMSNorm与残差连接",
+    "content": "RMSNorm：均方根归一化\n公式：x_norm = x / sqrt(mean(x^2) + eps) * g\nLayerNorm vs RMSNorm：计算效率更高\n残差连接：x + f(x)\nPre-LN vs Post-LN：归一化位置",
+    "doc_type": "tutorial",
+    "source": "RMSNorm论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-08-03"
+  },
+  {
+    "doc_id": "DOC-08-04",
+    "block_id": "KB-08",
+    "title": "前馈网络与SwiGLU",
+    "content": "FFN：两层线性变换 + 激活函数\n传统：FFN(x) = max(0, xW1 + b1)W2 + b2\nSwiGLU：FFN(x) = Swish(xW1 + b1) * (xV1 + c1)\n优点：表达能力更强，训练更稳定\nGELU：平滑的ReLU变体",
+    "doc_type": "tutorial",
+    "source": "PaLM论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-08-04"
+  },
+  {
+    "doc_id": "DOC-08-05",
+    "block_id": "KB-08",
+    "title": "旋转位置编码（RoPE）",
+    "content": "RoPE：通过旋转矩阵注入位置信息\n公式：x_{i,2m} = cos(θ_m * pos) * x_i + sin(θ_m * pos) * x_{i,2m+1}\n优点：外推性好，长度扩展能力强\n适用模型：Llama、Qwen等",
+    "doc_type": "tutorial",
+    "source": "RoPE论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-08-05"
+  },
+  {
+    "doc_id": "DOC-08-06",
+    "block_id": "KB-08",
+    "title": "KV Cache机制",
+    "content": "KV Cache：缓存Key和Value，避免重复计算\n自回归生成时，仅计算新token的Q\n极大提升生成速度\n内存占用：O(seq_len * hidden_size)\n滑动窗口Attention：限制缓存长度",
+    "doc_type": "tutorial",
+    "source": "GPT论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-08-06"
+  },
+  {
+    "doc_id": "DOC-08-07",
+    "block_id": "KB-08",
+    "title": "Transformer前向传播实验",
+    "content": "from transformers import GPT2Model\nmodel = GPT2Model.from_pretrained('gpt2')\ninputs = tokenizer('Hello', return_tensors='pt')\noutputs = model(**inputs)\nlast_hidden_state = outputs.last_hidden_state\npast_key_values = outputs.past_key_values",
+    "doc_type": "code",
+    "source": "实战练习",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-08-07"
+  },
+  {
+    "doc_id": "DOC-09-01",
+    "block_id": "KB-09",
+    "title": "涌现能力",
+    "content": "涌现能力：模型规模达到一定阈值后突然出现的能力\n典型表现：\n- 算术推理\n- 多步推理\n- 代码生成\n- 翻译\n并非线性增长，而是阶梯式跃升\n关键因素：模型规模、训练数据、训练方法",
+    "doc_type": "tutorial",
+    "source": "LLM综述",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-09-01"
+  },
+  {
+    "doc_id": "DOC-09-02",
+    "block_id": "KB-09",
+    "title": "上下文学习",
+    "content": "In-Context Learning：在prompt中提供示例，模型模仿生成\n无需微调，仅通过示例指导\n示例格式：Q: xxx A: xxx\n影响因素：示例数量、示例质量、格式\n少样本学习（Few-shot）、单样本学习（One-shot）、零样本学习（Zero-shot）",
+    "doc_type": "tutorial",
+    "source": "ICL论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-09-02"
+  },
+  {
+    "doc_id": "DOC-09-03",
+    "block_id": "KB-09",
+    "title": "指令遵循",
+    "content": "Instruction Following：模型理解并执行自然语言指令\n指令微调：使用指令数据集进行SFT\n指令模板：\n- 角色扮演\n- 任务描述\n- 输出格式要求\n评估指标：指令遵循率、输出质量",
+    "doc_type": "tutorial",
+    "source": "FLAN论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-09-03"
+  },
+  {
+    "doc_id": "DOC-09-04",
+    "block_id": "KB-09",
+    "title": "逐步推理",
+    "content": "Step-by-Step Reasoning：模型逐步推导得出答案\nChain-of-Thought（CoT）：在prompt中添加思考过程\n示例：\nQ: 3+5*2=?\nA: 先算乘法5*2=10，再算加法3+10=13\n复杂推理任务必备技巧",
+    "doc_type": "tutorial",
+    "source": "CoT论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-09-04"
+  },
+  {
+    "doc_id": "DOC-09-05",
+    "block_id": "KB-09",
+    "title": "幻觉问题",
+    "content": "幻觉：模型生成看似合理但实际上不正确的内容\n原因：\n- 训练数据噪声\n- 生成过程的随机性\n- 缺乏事实核查机制\n缓解方法：\n- 检索增强生成（RAG）\n- 自一致性检查\n- 事实验证",
+    "doc_type": "tutorial",
+    "source": "LLM综述",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-09-05"
+  },
+  {
+    "doc_id": "DOC-09-06",
+    "block_id": "KB-09",
+    "title": "LLM核心特性综合案例",
+    "content": "综合案例分析：\n1. 使用ICL进行文本分类\n2. 使用CoT进行数学推理\n3. 使用RAG减少幻觉\n4. 指令微调提升遵循能力\n实战：设计一个多步骤推理任务",
+    "doc_type": "tutorial",
+    "source": "实战练习",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-09-05"
+  },
+  {
+    "doc_id": "DOC-10-01",
+    "block_id": "KB-10",
+    "title": "预训练流程",
+    "content": "预训练：在大规模文本数据上训练语言模型\n目标：预测下一个token（CLM）或掩码token（MLM）\n数据：万亿级token\n训练：多卡分布式训练\n输出：基础语言模型\n典型模型：GPT-3、Llama、Qwen",
+    "doc_type": "tutorial",
+    "source": "GPT论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-10-01"
+  },
+  {
+    "doc_id": "DOC-10-02",
+    "block_id": "KB-10",
+    "title": "有监督微调（SFT）",
+    "content": "SFT：使用高质量指令数据对预训练模型进行微调\n数据：人工标注的指令-响应对\n目标：让模型遵循指令\n训练：全参数微调或参数高效微调\n输出：指令遵循模型\n关键：数据质量 > 数据数量",
+    "doc_type": "tutorial",
+    "source": "SFT论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-10-02"
+  },
+  {
+    "doc_id": "DOC-10-03",
+    "block_id": "KB-10",
+    "title": "强化学习人类反馈（RLHF）",
+    "content": "RLHF：使用人类反馈优化模型行为\n三个阶段：\n1. 训练奖励模型（Reward Model）\n2. 使用PPO进行强化学习\n3. 学习过程中使用KL散度约束\n目标：最大化人类偏好\n输出：对齐人类价值观的模型",
+    "doc_type": "tutorial",
+    "source": "RLHF论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-10-03"
+  },
+  {
+    "doc_id": "DOC-10-04",
+    "block_id": "KB-10",
+    "title": "LLM三阶段串联理解",
+    "content": "串联流程：\n1. 预训练：学习通用语言知识\n2. SFT：学习指令遵循能力\n3. RLHF：对齐人类偏好\n每个阶段的目标和数据不同\n模型能力逐步提升\n实际应用：根据任务选择合适的阶段",
+    "doc_type": "tutorial",
+    "source": "LLM综述",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-10-03"
+  },
+  {
+    "doc_id": "DOC-11-01",
+    "block_id": "KB-11",
+    "title": "AutoModel与AutoTokenizer",
+    "content": "from transformers import AutoModel, AutoTokenizer\nmodel = AutoModel.from_pretrained('bert-base-chinese')\ntokenizer = AutoTokenizer.from_pretrained('bert-base-chinese')\nAuto系列自动识别模型架构\n支持多种模型格式：PyTorch、TensorFlow、JAX\n缓存机制：~/.cache/huggingface/hub",
+    "doc_type": "code",
+    "source": "Transformers官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-11-01"
+  },
+  {
+    "doc_id": "DOC-11-02",
+    "block_id": "KB-11",
+    "title": "datasets库数据处理",
+    "content": "from datasets import load_dataset\ndataset = load_dataset('glue', 'mrpc')\n# map：应用函数到每个样本\ndataset = dataset.map(lambda x: tokenizer(x['sentence1'], x['sentence2']))\n# filter：过滤样本\ndataset = dataset.filter(lambda x: len(x['input_ids']) < 512)\n# shuffle：打乱数据\ndataset = dataset.shuffle(seed=42)\n# split：划分训练/验证/测试集",
+    "doc_type": "code",
+    "source": "Datasets官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-11-02"
+  },
+  {
+    "doc_id": "DOC-11-03",
+    "block_id": "KB-11",
+    "title": "Trainer与TrainingArguments",
+    "content": "from transformers import Trainer, TrainingArguments\ntraining_args = TrainingArguments(\n    output_dir='./results',\n    per_device_train_batch_size=8,\n    num_train_epochs=3,\n    logging_dir='./logs',\n    learning_rate=2e-5,\n    weight_decay=0.01,\n    fp16=True\n)\ntrainer = Trainer(\n    model=model,\n    args=training_args,\n    train_dataset=train_dataset,\n    eval_dataset=eval_dataset\n)\ntrainer.train()",
+    "doc_type": "code",
+    "source": "Transformers官方文档",
+    "difficulty": "中级",
+    "subtopic_id": "KBS-11-03"
+  },
+  {
+    "doc_id": "DOC-12-01",
+    "block_id": "KB-12",
+    "title": "LoRA低秩分解原理",
+    "content": "LoRA：在原有权重矩阵上添加低秩矩阵\n公式：W = W_0 + BA\n其中B∈R^{d×r}, A∈R^{r×k}, r << min(d,k)\n训练时冻结W_0，仅训练B和A\n显著减少参数量和计算量\n适用于Transformer的Attention层",
+    "doc_type": "tutorial",
+    "source": "LoRA论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-12-01"
+  },
+  {
+    "doc_id": "DOC-12-02",
+    "block_id": "KB-12",
+    "title": "LoRA参数配置",
+    "content": "r：秩（通常8或16）\nlora_alpha：缩放因子（通常为r的2-4倍）\nlora_dropout：Dropout率（通常0.05）\ntarget_modules：目标模块（如q_proj、v_proj）\nbias：是否训练bias（通常none）\ntask_type：任务类型（CAUSAL_LM、SEQ_CLS等）",
+    "doc_type": "tutorial",
+    "source": "PEFT官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-12-02"
+  },
+  {
+    "doc_id": "DOC-12-03",
+    "block_id": "KB-12",
+    "title": "PEFT库LoraConfig",
+    "content": "from peft import LoraConfig, get_peft_model\nconfig = LoraConfig(\n    r=8,\n    lora_alpha=32,\n    target_modules=[\"q_proj\", \"v_proj\"],\n    lora_dropout=0.05,\n    bias=\"none\",\n    task_type=\"CAUSAL_LM\"\n)\nmodel = get_peft_model(model, config)\nmodel.print_trainable_parameters()",
+    "doc_type": "code",
+    "source": "PEFT官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-12-03"
+  },
+  {
+    "doc_id": "DOC-12-04",
+    "block_id": "KB-12",
+    "title": "QLoRA 4-bit量化",
+    "content": "from transformers import BitsAndBytesConfig\nbnb_config = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_use_double_quant=True,\n    bnb_4bit_quant_type=\"nf4\",\n    bnb_4bit_compute_dtype=torch.bfloat16\n)\nmodel = AutoModelForCausalLM.from_pretrained(\n    \"model_name\",\n    quantization_config=bnb_config,\n    device_map=\"auto\"\n)",
+    "doc_type": "code",
+    "source": "BitsAndBytes官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-12-04"
+  },
+  {
+    "doc_id": "DOC-12-05",
+    "block_id": "KB-12",
+    "title": "LoRA权重合并与导出",
+    "content": "from peft import PeftModel\nmodel = PeftModel.from_pretrained(base_model, peft_model_id)\nmodel = model.merge_and_unload()\nmodel.save_pretrained('merged_model')\ntokenizer.save_pretrained('merged_model')\n# 合并后可直接使用，无需PEFT库",
+    "doc_type": "code",
+    "source": "PEFT官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-12-05"
+  },
+  {
+    "doc_id": "DOC-12-06",
+    "block_id": "KB-12",
+    "title": "LoRA/QLoRA实战演练",
+    "content": "实战步骤：\n1. 加载预训练模型\n2. 配置LoRA/QLoRA\n3. 准备训练数据\n4. 使用Trainer训练\n5. 评估微调效果\n6. 合并并导出模型\n常见问题：显存不足、训练不稳定",
+    "doc_type": "tutorial",
+    "source": "实战练习",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-12-05"
+  },
+  {
+    "doc_id": "DOC-13-01",
+    "block_id": "KB-13",
+    "title": "梯度累积",
+    "content": "梯度累积：在多个batch上累积梯度再更新\n适用于显存不足的情况\n步骤：\n1. forward + backward（不优化）\n2. 重复N次\n3. optimizer.step()\n4. optimizer.zero_grad()\neffective_batch_size = batch_size * gradient_accumulation_steps",
+    "doc_type": "tutorial",
+    "source": "PyTorch官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-13-01"
+  },
+  {
+    "doc_id": "DOC-13-02",
+    "block_id": "KB-13",
+    "title": "混合精度训练（AMP）",
+    "content": "from torch.cuda.amp import autocast, GradScaler\nscaler = GradScaler()\nwith autocast():\n    outputs = model(inputs)\n    loss = criterion(outputs, labels)\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n优点：减少显存占用，提升训练速度",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-13-02"
+  },
+  {
+    "doc_id": "DOC-13-03",
+    "block_id": "KB-13",
+    "title": "梯度检查点",
+    "content": "from torch.utils.checkpoint import checkpoint\ndef forward_fn(x):\n    return model(x)\noutput = checkpoint(forward_fn, x)\n优点：显著减少显存占用\n缺点：增加计算量（需要重新计算部分前向传播）\n适用于模型参数量大、显存不足的情况",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-13-03"
+  },
+  {
+    "doc_id": "DOC-13-04",
+    "block_id": "KB-13",
+    "title": "学习率调度",
+    "content": "from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR\n# Warmup + Cosine Annealing\ndef warmup_lambda(epoch):\n    if epoch < warmup_epochs:\n        return epoch / warmup_epochs\n    return 0.5 * (1 + math.cos(math.pi * (epoch - warmup_epochs) / (epochs - warmup_epochs)))\nscheduler = LambdaLR(optimizer, lr_lambda=warmup_lambda)",
+    "doc_type": "code",
+    "source": "PyTorch官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-13-04"
+  },
+  {
+    "doc_id": "DOC-14-01",
+    "block_id": "KB-14",
+    "title": "DeepSpeed ZeRO优化策略",
+    "content": "ZeRO-1：优化器状态分片\nZeRO-2：优化器状态 + 梯度分片\nZeRO-3：优化器状态 + 梯度 + 参数分片\n配置示例（ds_config.json）：\n{\n    \"zero_optimization\": {\n        \"stage\": 2,\n        \"allgather_partitions\": true\n    }\n}",
+    "doc_type": "tutorial",
+    "source": "DeepSpeed官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-14-01"
+  },
+  {
+    "doc_id": "DOC-14-02",
+    "block_id": "KB-14",
+    "title": "数据并行与模型并行",
+    "content": "数据并行：不同GPU处理不同数据，参数同步\n模型并行：不同GPU处理模型的不同部分\n流水线并行：按层划分，流水线执行\n混合并行：结合多种并行策略\n适用场景：大模型训练",
+    "doc_type": "tutorial",
+    "source": "DeepSpeed官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-14-02"
+  },
+  {
+    "doc_id": "DOC-14-03",
+    "block_id": "KB-14",
+    "title": "DeepSpeed训练配置与启动",
+    "content": "# ds_config.json\n{\n    \"train_batch_size\": 64,\n    \"train_micro_batch_size_per_gpu\": 8,\n    \"optimizer\": {\"type\": \"Adam\", \"params\": {\"lr\": 1e-4}},\n    \"zero_optimization\": {\"stage\": 2}\n}\n# 启动命令\ndeepspeed --num_gpus=2 train.py --deepspeed ds_config.json",
+    "doc_type": "code",
+    "source": "DeepSpeed官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-14-03"
+  },
+  {
+    "doc_id": "DOC-15-01",
+    "block_id": "KB-15",
+    "title": "模型生成策略",
+    "content": "贪心搜索：每次选择概率最高的token\n束搜索（Beam Search）：维护多个候选序列\n采样搜索：基于概率分布随机采样\n对比：\n- 贪心：速度快，多样性差\n- 束搜索：质量高，计算量大\n- 采样：多样性好，可控性差",
+    "doc_type": "tutorial",
+    "source": "vLLM官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-15-01"
+  },
+  {
+    "doc_id": "DOC-15-02",
+    "block_id": "KB-15",
+    "title": "采样参数配置",
+    "content": "temperature：控制随机性（0=贪心，1=随机）\ntop_p（Nucleus Sampling）：从概率最高的前p个token中采样\ntop_k：从概率最高的前k个token中采样\ntypical_p：典型采样\n重复惩罚：避免重复生成\n长度惩罚：控制生成长度",
+    "doc_type": "tutorial",
+    "source": "vLLM官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-15-02"
+  },
+  {
+    "doc_id": "DOC-15-03",
+    "block_id": "KB-15",
+    "title": "PagedAttention与Continuous Batching",
+    "content": "PagedAttention：将KV Cache分页存储，提高显存利用率\nContinuous Batching：动态调度多个请求，提高GPU利用率\n关键优势：高吞吐量、低延迟\n适用场景：高并发推理服务",
+    "doc_type": "tutorial",
+    "source": "vLLM论文",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-15-03"
+  },
+  {
+    "doc_id": "DOC-15-04",
+    "block_id": "KB-15",
+    "title": "vLLM推理部署",
+    "content": "from vllm import LLM, SamplingParams\nllm = LLM(\n    model=\"model_name\",\n    gpu_memory_utilization=0.9,\n    tensor_parallel_size=1\n)\nsampling_params = SamplingParams(\n    temperature=0.7,\n    top_p=0.95,\n    max_tokens=512\n)\noutputs = llm.generate(prompts, sampling_params)",
+    "doc_type": "code",
+    "source": "vLLM官方文档",
+    "difficulty": "高级",
+    "subtopic_id": "KBS-15-04"
+  }
+]

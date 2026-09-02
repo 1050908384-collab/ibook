@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-09-02T07:12:40.776828+00:00",
+  "seed_files": {
+    "blocks": "data/seeds/knowledge_blocks.json",
+    "subtopics": "data/seeds/knowledge_subtopics.json",
+    "relationships": "data/seeds/knowledge_graph_relations.json"
+  },
+  "node_counts": {
+    "total": 88,
+    "blocks": 15,
+    "subtopics": 73
+  },
+  "edge_counts": {
+    "contains": 73,
+    "hard_prerequisite": 86,
+    "recommended_prerequisite": 4,
+    "goal_condition": 2,
+    "progresses_to": 72
+  },
+  "runtime_graph_path": "data/graph_data/runtime/knowledge_graph.gpickle"
+}

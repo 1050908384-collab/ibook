@@ -1,0 +1,518 @@
+{
+  "source": "data\\seeds\\source\\测试题目.md",
+  "parsed_questions": 253,
+  "mapped_source_questions": 218,
+  "supplemental_questions": 105,
+  "runtime_questions": 323,
+  "parsed_question_types": {
+    "fill_blank": 41,
+    "practical": 20,
+    "short_answer": 84,
+    "single_choice": 94,
+    "true_false": 14
+  },
+  "runtime_question_types": {
+    "fill_blank": 107,
+    "practical": 19,
+    "short_answer": 75,
+    "single_choice": 108,
+    "true_false": 14
+  },
+  "unmapped_questions": [
+    {
+      "topic": "13.1",
+      "question": "**题1 ⭐基础（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.1",
+      "question": "**题2 ⭐基础（填空）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.1",
+      "question": "**题3 ⭐⭐进阶（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.1",
+      "question": "**题4 ⭐⭐进阶（判断）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.1",
+      "question": "**题5 ⭐⭐⭐高级（简答）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.2",
+      "question": "**题1 ⭐基础（代码）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.2",
+      "question": "**题2 ⭐基础（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.2",
+      "question": "**题3 ⭐⭐进阶（代码）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.2",
+      "question": "**题4 ⭐⭐进阶（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.2",
+      "question": "**题5 ⭐⭐⭐高级（简答）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.3",
+      "question": "**题1 ⭐基础（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.3",
+      "question": "**题2 ⭐基础（填空）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.3",
+      "question": "**题3 ⭐⭐进阶（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.3",
+      "question": "**题4 ⭐⭐进阶（判断）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "13.3",
+      "question": "**题5 ⭐⭐⭐高级（实操）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.1",
+      "question": "**题1 ⭐基础（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.1",
+      "question": "**题2 ⭐基础（填空）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.1",
+      "question": "**题3 ⭐⭐进阶（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.1",
+      "question": "**题4 ⭐⭐进阶（判断）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.1",
+      "question": "**题5 ⭐⭐⭐高级（简答）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.2",
+      "question": "**题1 ⭐基础（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.2",
+      "question": "**题2 ⭐基础（填空）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.2",
+      "question": "**题3 ⭐⭐进阶（代码）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.2",
+      "question": "**题4 ⭐⭐进阶（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.2",
+      "question": "**题5 ⭐⭐⭐高级（代码）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.3",
+      "question": "**题1 ⭐基础（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.3",
+      "question": "**题2 ⭐基础（填空）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.3",
+      "question": "**题3 ⭐⭐进阶（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.3",
+      "question": "**题4 ⭐⭐进阶（代码）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "14.3",
+      "question": "**题5 ⭐⭐⭐高级（简答）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "15.1",
+      "question": "**题1 ⭐基础（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "15.1",
+      "question": "**题2 ⭐基础（填空）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "15.1",
+      "question": "**题3 ⭐⭐进阶（选择）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "15.1",
+      "question": "**题4 ⭐⭐进阶（判断）**",
+      "reason": "no_runtime_mapping"
+    },
+    {
+      "topic": "15.1",
+      "question": "**题5 ⭐⭐⭐高级（简答）**",
+      "reason": "no_runtime_mapping"
+    }
+  ],
+  "parse_skipped_questions": [
+    {
+      "topic": "1.2",
+      "question": "**题5 ⭐⭐进阶（判断）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "1.3",
+      "question": "**题1 ⭐基础（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.3",
+      "question": "**题3 进阶（选择）**（接上文）",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.3",
+      "question": "**题4 进阶（判断）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.3",
+      "question": "**题5 高级（简答）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.4",
+      "question": "**题1 基础（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.4",
+      "question": "**题2 基础（代码）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.4",
+      "question": "**题3 进阶（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.4",
+      "question": "**题4 进阶（代码）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "10.4",
+      "question": "**题5 高级（简答）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.1",
+      "question": "**题1 基础（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.1",
+      "question": "**题2 基础（填空）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.1",
+      "question": "**题3 进阶（判断）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.1",
+      "question": "**题4 进阶（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.1",
+      "question": "**题5 高级（简答）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.2",
+      "question": "**题1 基础（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.2",
+      "question": "**题2 基础（填空）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.2",
+      "question": "**题3 进阶（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.2",
+      "question": "**题4 进阶（代码）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.2",
+      "question": "**题5 高级（简答）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.3",
+      "question": "**题1 基础（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.3",
+      "question": "**题2 基础（填空）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.3",
+      "question": "**题3 进阶（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.3",
+      "question": "**题4 进阶（代码）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.3",
+      "question": "**题5 高级（代码）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.4",
+      "question": "**题1 基础（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.4",
+      "question": "**题2 基础（填空）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.4",
+      "question": "**题3 进阶（选择）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.4",
+      "question": "**题4 进阶（判断）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "11.4",
+      "question": "**题5 高级（简答）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.1",
+      "question": "**题1 基础（设计）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.1",
+      "question": "**题2 基础（流程）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.1",
+      "question": "**题3 进阶（实操）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.1",
+      "question": "**题4 进阶（判断）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.1",
+      "question": "**题5 高级（架构）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.2",
+      "question": "**题1 基础（数据）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.2",
+      "question": "**题2 基础（技术）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.2",
+      "question": "**题3 进阶（评估）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.2",
+      "question": "**题4 进阶（实操）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.2",
+      "question": "**题5 高级（部署）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.3",
+      "question": "**题1 基础（优化）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.3",
+      "question": "**题2 基础（监控）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.3",
+      "question": "**题3 进阶（优化）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.3",
+      "question": "**题4 进阶（监控）**",
+      "reason": "missing_answer_marker"
+    },
+    {
+      "topic": "12.3",
+      "question": "**题5 高级（架构）**",
+      "reason": "missing_answer_marker"
+    }
+  ],
+  "question_count_by_block": {
+    "KB-01": 26,
+    "KB-02": 36,
+    "KB-03": 27,
+    "KB-04": 39,
+    "KB-05": 10,
+    "KB-06": 8,
+    "KB-07": 23,
+    "KB-08": 30,
+    "KB-09": 15,
+    "KB-10": 16,
+    "KB-11": 16,
+    "KB-12": 20,
+    "KB-13": 15,
+    "KB-14": 12,
+    "KB-15": 30
+  },
+  "question_count_by_subtopic": {
+    "KBS-01-00": 4,
+    "KBS-01-01": 8,
+    "KBS-01-02": 4,
+    "KBS-01-03": 5,
+    "KBS-01-04": 5,
+    "KBS-02-00": 4,
+    "KBS-02-01": 6,
+    "KBS-02-02": 6,
+    "KBS-02-03": 6,
+    "KBS-02-04": 5,
+    "KBS-02-05": 9,
+    "KBS-03-00": 3,
+    "KBS-03-01": 5,
+    "KBS-03-02": 5,
+    "KBS-03-03": 5,
+    "KBS-03-04": 9,
+    "KBS-04-00": 3,
+    "KBS-04-01": 6,
+    "KBS-04-02": 5,
+    "KBS-04-03": 5,
+    "KBS-04-04": 5,
+    "KBS-04-05": 5,
+    "KBS-04-06": 5,
+    "KBS-04-07": 5,
+    "KBS-05-01": 5,
+    "KBS-05-02": 5,
+    "KBS-06-01": 5,
+    "KBS-06-02": 3,
+    "KBS-07-00": 3,
+    "KBS-07-01": 5,
+    "KBS-07-02": 5,
+    "KBS-07-03": 5,
+    "KBS-07-04": 5,
+    "KBS-08-00": 3,
+    "KBS-08-01": 5,
+    "KBS-08-02": 3,
+    "KBS-08-03": 3,
+    "KBS-08-04": 3,
+    "KBS-08-05": 5,
+    "KBS-08-06": 5,
+    "KBS-08-07": 3,
+    "KBS-09-01": 3,
+    "KBS-09-02": 3,
+    "KBS-09-03": 3,
+    "KBS-09-04": 3,
+    "KBS-09-05": 3,
+    "KBS-10-01": 3,
+    "KBS-10-02": 10,
+    "KBS-10-03": 3,
+    "KBS-11-00": 3,
+    "KBS-11-01": 5,
+    "KBS-11-02": 3,
+    "KBS-11-03": 5,
+    "KBS-12-00": 3,
+    "KBS-12-01": 5,
+    "KBS-12-02": 3,
+    "KBS-12-03": 3,
+    "KBS-12-04": 3,
+    "KBS-12-05": 3,
+    "KBS-13-00": 3,
+    "KBS-13-01": 3,
+    "KBS-13-02": 3,
+    "KBS-13-03": 3,
+    "KBS-13-04": 3,
+    "KBS-14-00": 3,
+    "KBS-14-01": 3,
+    "KBS-14-02": 3,
+    "KBS-14-03": 3,
+    "KBS-15-00": 3,
+    "KBS-15-01": 3,
+    "KBS-15-02": 3,
+    "KBS-15-03": 3,
+    "KBS-15-04": 18
+  },
+  "subtopics_without_questions": []
+}
