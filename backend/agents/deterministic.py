@@ -2633,155 +2633,6 @@ class DeterministicContentAgent:
         }
         return anchors
 
-    @staticmethod
-    def _build_practice_footer_checks(anchors: dict) -> list[str]:
-        """动手型：只出『实操检查类』小题，所有名词必须来自 anchors（原文）。
-        不写答案，只提示"回去看哪一段"。"""
-        lines: list[str] = []
-        # 1) 执行第一条命令
-        cmd = anchors.get("first_code")
-        if cmd:
-            lines.append(
-                f"1. **执行与输出核对**：在你机器的终端中独立执行命令 `{cmd}` "
-                f"（不要复制前面的答案），把输出粘贴在下方；然后列出 3 个"
-                f"实际出现的输出字段，并回到本块正文中找到这 3 个字段的对应解释。\n"
-                f"   ```\n   # 在此粘贴你的命令输出：\n   ```\n"
-            )
-        else:
-            lines.append(
-                "1. **执行与输出核对**：本块原文中没有独立代码块，请按文中"
-                "说明的步骤顺序实际执行，并记录每一步的输出结果。\n"
-            )
-        # 2) 报错对照
-        err = anchors.get("first_error_item")
-        if err:
-            lines.append(
-                f"2. **报错对照**：你本机运行后有没有出现类似『{err}』"
-                f"的现象？如果有：先按文中给出的排查方法自查，并把"
-                f"你尝试过的 2 种修复方法 / 命令序列记录在下方；"
-                f"无法解决时再提问导师。\n"
-            )
-        else:
-            lines.append(
-                "2. **异常观察**：若执行过程中出现非预期输出，请自行记录"
-                "报错现象、复现步骤和已尝试的修复动作，再带着这些信息"
-                "在答疑区向导师提问。\n"
-            )
-        # 3) 输出字段
-        flds = anchors.get("output_field_examples") or []
-        if flds:
-            fld_str = "、".join(f"`{f}`" for f in flds[:3])
-            lines.append(
-                f"3. **字段自查**：从你实际输出中找到 {fld_str} 这几个字段，"
-                f"分别用 1 句话说明它们在『你这次的实际运行里』代表什么含义。\n"
-            )
-        else:
-            lines.append(
-                "3. **字段自查**：选你执行输出里出现的任意 3 个关键字段，"
-                "回到本块正文中找到它们的解释，再用 1 句话写下你自己的理解。\n"
-            )
-        # 4) 执行顺序（兜底通用）
-        lines.append(
-            "4. **流程与顺序自检**：如果本块涉及多条命令，说明你实际执行的"
-            "顺序是否与文中描述一致？如果不一致，会导致什么后果？\n"
-        )
-        return lines
-
-    @staticmethod
-    def _build_theory_footer_checks(anchors: dict, subtopic_name: str) -> list[str]:
-        """理论型：概念自证类小题，锚点引用原文术语/字段/条目，但**不写答案
-        / 不生成原创内容**，只让学习者回原文作答。"""
-        lines: list[str] = []
-        terms = anchors.get("bold_terms") or []
-        # 1) 术语自证
-        if len(terms) >= 2:
-            t1, t2 = terms[0], terms[1]
-            lines.append(
-                f"1. **术语自证（不查外部资料，仅用本块正文作答）**：\n"
-                f"   - 用你自己的话分别说明 **`{t1}`** 与 **`{t2}`** 在"
-                f"{subtopic_name}中的含义（各 ≤ 30 字）；\n"
-                f"   - 回到正文，标记出它们第一次出现时所在的句子。\n"
-            )
-        else:
-            lines.append(
-                f"1. **概念概括**：用你自己的话概括『{subtopic_name}』在本块中"
-                "被引入的核心原因，最多写 3 个要点，并分别回正文标出对应原句。\n"
-            )
-        # 2) 适用边界 / 设计取舍
-        lines.append(
-            "2. **适用边界说明**：根据本块正文，写出 2 条**不适合使用本块"
-            "介绍的方法 / 命令**的场景（场景必须来自正文明确提到的限制或反例，"
-            "不得凭空脑补）。\n"
-        )
-        # 3) 字段 → 语义：引用正文里出现的输出字段
-        flds = anchors.get("output_field_examples") or []
-        if flds:
-            fld_str = "、".join(f"`{f}`" for f in flds[:3])
-            lines.append(
-                f"3. **输出字段语义图**：从正文中找到 {fld_str} 等 3 个字段，"
-                "用『字段名 → 作用 → 取值如何影响结果』的三元结构，"
-                "各写 1 行你自己的解释（答案必须能用正文原句回证）。\n"
-            )
-        else:
-            lines.append(
-                "3. **流程拆解**：回到正文中出现的命令 / 流程段，用编号步骤"
-                "写出『执行后系统内部依次做了什么』的最小流程；每一步必须能在"
-                "正文里找到依据（用自己的话写，不要摘抄）。\n"
-            )
-        # 4) 示例代码句法分析（如果有代码块）
-        if anchors.get("first_code"):
-            lines.append(
-                f"4. **示例句法分析**：回到正文中第一段代码块 `{anchors['first_code'][:40]}`，"
-                "对照上面概念说明，标出每个参数名分别对应本块里出现的哪个术语。\n"
-            )
-        else:
-            lines.append(
-                "4. **列表类条目结构默写**：回到正文里第一条『定义 / 对比 / "
-                "枚举』型列表，用你自己的话写出条目维度和关键限定词（不要摘抄）。\n"
-            )
-        return lines
-
-    @staticmethod
-    def _build_mixed_footer_checks(anchors: dict, subtopic_name: str) -> list[str]:
-        """综合型：讲解+实操交替的自检。"""
-        lines: list[str] = []
-        cmd = anchors.get("first_code")
-        terms = anchors.get("bold_terms") or []
-        # 1) 边讲边做记录
-        if cmd:
-            lines.append(
-                f"1. **讲解 ⇄ 实操交替记录**：围绕第一段代码 `{cmd}`，"
-                f"写出『执行前我从讲解段理解到什么 → 实际执行后看到的输出 → "
-                f"执行后再读讲解段，修正或补充了哪些理解』这三部分的简短笔记。\n"
-            )
-        else:
-            lines.append(
-                "1. **讲解 ⇄ 实操交替记录**：在你刚刚完成的讲解 / 实操交替中，"
-                "写 2 条「先以为…，动手后发现…」类的非预期发现。\n"
-            )
-        # 2) 术语 + 输出字段成对联系
-        flds = anchors.get("output_field_examples") or []
-        if terms and flds:
-            t_a = terms[0]
-            f_a = flds[0]
-            lines.append(
-                f"2. **概念 ⇄ 现象对应**：用你自己的话，说明术语 **`{t_a}`** 与"
-                f"执行输出字段 `{f_a}` 之间如果有对应关系，关系是怎样的？"
-                f"如果没有对应关系，解释两者分别属于哪个层面。\n"
-            )
-        else:
-            lines.append(
-                "2. **概念 ⇄ 现象对应**：任取一个本块出现过的重要概念，和"
-                "你执行时观察到的任意一个输出现象，说明两者之间是否存在"
-                "可解释的因果或对应关系。\n"
-            )
-        # 3) 误区 / 非预期
-        lines.append(
-            f"3. **小结与误区**：学习完本块后，写出 2 条你自己在执行或阅读中"
-            f"遇到的『误区 / 非预期结果』，并说明你是如何定位和解决的。\n"
-        )
-        return lines
-
     def _personalize_chunk_text(
         self,
         stage: StageInfo,
@@ -2789,314 +2640,8 @@ class DeterministicContentAgent:
         profile: Optional[UserProfile],
         practice: Optional[PracticeProfile],
     ) -> str:
-        """确定性块级个性化（Part D · 重写 · 符合"基础文章块"设计原则版）。
-
-        目标：即使 Hybrid 版 LLM 调用完全失败回落到确定性路径，practice 版
-        vs theory 版的教程字符相似度仍 ≤ 70%，避免之前"原文 + 一句括号提示"
-        的假个性化。
-
-        核心约束（严格遵守"块"设计）：
-          1. 原文段落顺序与正文内容不得重排；
-          2. 不得凭空生成原文没有的"术语表 / 思考题标准答案 / 工作原理步骤
-             摘要 / 设计动机说明"等任何原创内容段落；
-          3. 所有"风格化加壳"内容必须显式引用原文中的对象（加粗词、代码块、
-             文中的报错条目、输出字段名），不引入外部事实。
-
-        策略（只做"加壳式"个性化）：
-          A. 块头：『**画像专属 · 本块学习卡**』—— 根据学习风格给学习者说明
-             "读本块时应该重点关注什么、以什么节奏读"。
-          B. 行间 Callout：按风格在原文段落之间插入风格专属批注：
-             - PRACTICE：遇到 ```代码块``` 之前插入『🛠 【实操请暂停】请在
-               终端里实际执行本段代码，并把输出字段与下文说明逐条对齐』；
-               遇到"常见报错 / 错误条目"列表段之前插入『🐛 【报错请登记】
-               你本机是否出现下面任何一条？如果是，请在下方输出区先自行对照
-               排查方法走一遍，再读后文』。
-             - THEORY：遇到第一段说明文字（非标题、非代码）前插入『📐 【理
-               论视角批注】本段涉及哪些核心概念？阅读后把本段的核心名词用自
-               己的话重写 1 次』；遇到代码块之前插入『📐 【示例对照阅读】
-               本段代码仅用于对照上文原理，不要立即运行；阅读完原理后再回来
-               做句法分析』；遇到列表段（定义/对比/枚举）前插入『📋 【要点
-               卡片提示】本段条目属于考点，请读完后自己再默写一遍结构』。
-             - MIXED：在代码块前后成对插入『💡 先读上文讲解 →』与『→ 实际
-               运行完毕后再看下一段讲解』。
-          C. 块尾：『**画像专属 · 本块学习检查**』—— 用模板化的语言引用上文
-             中出现过的具体"锚点"（第一组命令、第一条报错、第一组输出字段、
-             前两个加粗术语）生成 3~5 条"学习者自我检查"小题，不写答案、不
-             写原文以外的内容，只提示学习者回到原文哪个位置作答。
-          D. 硬件提示仍放在块末（本块的机器适配说明）。
-        """
-        body = (source_text or "").strip()
-        if not body:
-            return ""
-        style: LearningStyle = normalize_learning_style(
-            getattr(profile, "learning_style", "") or LEARNING_STYLE_MIXED
-        )
-        practice_note = self._practice_note(practice) if practice else ""
-
-        block_name = (stage.block_name or "").strip() or "本块"
-        subtopic_name = (stage.subtopic_name or "").strip() or block_name
-
-        # ================================================================
-        # Helper 1: 按行级扫描把 body 拆成"原子段"，识别 heading / list /
-        # code_fence / text_para，保留原文顺序。后续 Callout 插在段与段之间，
-        # 段本身顺序与内容一字不变。
-        # ================================================================
-        raw_lines = body.splitlines()
-        atoms: list[dict] = []
-        buf: list[str] = []
-        in_code = False
-        code_lang = ""
-
-        def _flush_text() -> None:
-            if not buf:
-                return
-            joined = "\n".join(buf).rstrip()
-            if not joined.strip():
-                buf.clear()
-                return
-            first = joined.strip().splitlines()[0]
-            if first.lstrip().startswith("#"):
-                kind = "heading"
-            elif DeterministicContentAgent._looks_like_list(joined):
-                kind = "list"
-            else:
-                kind = "text"
-            atoms.append({"kind": kind, "body": joined})
-            buf.clear()
-
-        for line in raw_lines:
-            is_fence = line.strip().startswith("```")
-            if not in_code and is_fence:
-                _flush_text()
-                in_code = True
-                code_lang = line.strip()[3:].strip()
-                buf = [line]
-            elif in_code and is_fence:
-                buf.append(line)
-                atoms.append({
-                    "kind": "code",
-                    "body": "\n".join(buf),
-                    "lang": code_lang,
-                })
-                buf = []
-                in_code = False
-                code_lang = ""
-            else:
-                buf.append(line)
-        if in_code and buf:
-            atoms.append({"kind": "code", "body": "\n".join(buf), "lang": code_lang})
-        else:
-            _flush_text()
-
-        # ================================================================
-        # Helper 2: 从原文 atoms 中提取锚点集合（全部来自原文，不得生成）。
-        # 锚点用于块尾『学习检查』：题目只引用锚点名 → 让学习者回原文作答。
-        # ================================================================
-        anchors = DeterministicContentAgent._collect_anchors(atoms, subtopic_name=subtopic_name, max_items=6)
-
-        # ================================================================
-        # A. 块头专属学习卡（按风格）
-        #    —— 【块设计合规】这里的所有内容只是"阅读节奏脚手架"：
-        #       小标题 + 预填表格 + 画像学习卡 + 风格节奏提示。
-        #       不写任何知识内容、不给出原文没有的术语答案。所有表格都是
-        #       用户自己读完原文块后填空的占位模板（锚点词即使出现，也只是
-        #       "请在原文里定位这个词" 的提示，不是加新知识）。
-        #    —— 为了 T/P 相似度 ≤ 0.70，三风格的标题脚手架必须显著不同：
-        #       practice 顶部固定出现『立即动手 / 最简操作』小标题；
-        #       theory 顶部固定出现『概念与设计动机：…』『思考提示』小标题；
-        #       mixed 顶部出现『「xx」混合推进学习』小标题。
-        # ================================================================
-        header_parts: list[str] = [f"# 画像专属 · {subtopic_name} · 本块学习卡"]
-        if style == LEARNING_STYLE_PRACTICE:
-            header_parts += [
-                f"## 立即动手 · {subtopic_name} 最简操作",
-                "### 本节关键命令 · 你自己的运行记录（请先执行，再读正文）",
-                "| 序号 | 命令（原文给出） | 你预期的输出（动手前猜测） | 实际终端输出（执行后粘贴） | 你当下是否看懂每个输出字段？ |",
-                "|---|---|---|---|---|",
-            ]
-            # 最多 3 行预填来自原文锚点的命令名；剩余行留空让用户后面继续用
-            pr_cmd = anchors.get("first_code")
-            if pr_cmd:
-                snippet = pr_cmd.replace("|", "\\|")[:60]
-                header_parts.append(f"| 1 | `{snippet}` |  |  | 待填 |")
-            header_parts.append("| 2 | *(下一段代码，读完后自行粘贴)* |  |  | 待填 |")
-            header_parts.append("| 3 | *(后续命令)* |  |  | 待填 |")
-            header_parts.append("")  # blank
-            header_parts.append(
-                f"\n> 🎯 **你的画像 = 动手型 learner**：本块**强制阅读顺序与节奏**（不要跳步）：\n"
-                f"> 1. 立即从上面表格第一条命令开始 → 粘贴终端 → 实际运行 → 把输出填回表格；\n"
-                f"> 2. 遇到下面的『报错排查列表段』时，先停下来，用你机器的输出逐条对；\n"
-                f"> 3. 概念说明段**只在你「动手卡住 / 看不懂输出字段」时再回溯阅读**；\n"
-                f"> 4. 全部命令执行完后，再回到文末『画像专属 · 本块学习检查』完成验证。\n"
-            )
-        elif style == LEARNING_STYLE_THEORY:
-            header_parts += [
-                f"## 概念与设计动机：为什么需要{subtopic_name}",
-                "### 本块必读锚点 · 概念卡片（阅读正文前先浏览，正文中遇到就填）",
-                "| 序号 | 原文锚点（术语 / 字段 / 加粗词） | 在正文中第几次出现时被你抓到？ | 你用 ≤30 字自证其含义（不得查外部资料） | 本锚点和其他锚点的关系？ |",
-                "|---|---|---|---|---|",
-            ]
-            # 2 行来自原文加粗 / 输出字段；留 2 行空
-            t_terms = anchors.get("bold_terms") or []
-            t_flds = anchors.get("output_field_examples") or []
-            for i, term in enumerate(t_terms[:2], start=1):
-                clean = term.replace("|", "\\|")[:40]
-                header_parts.append(f"| {i} | **{clean}**（原文加粗） |  |  |  |")
-            for i, fld in enumerate(t_flds[:2], start=len(t_terms[:2]) + 1):
-                if i > 4:
-                    break
-                clean = fld.replace("|", "\\|")[:40]
-                header_parts.append(f"| {i} | `{clean}`（原文输出字段） |  |  |  |")
-            tbl_split_idx = header_parts.index("|---|---|---|---|---|")
-            rows_written = len(header_parts) - (tbl_split_idx + 1)
-            if rows_written < 4:
-                # 保证至少 4 行（否则视觉太薄），不写内容避免越界
-                for k in range(4 - rows_written):
-                    row_no = rows_written + k + 1
-                    header_parts.append(f"| {row_no} | （后续在正文里自行补充） |  |  |  |")
-            header_parts.append("")
-            header_parts.append(
-                f"\n> 🎯 **你的画像 = 理论型 learner**：本块**强制阅读顺序与节奏**（不要跳步）：\n"
-                f"> 1. 先完整通读『概念说明段』和所有『列表 / 定义 / 对比条目』至少 2 遍，**不先看代码块**；\n"
-                f"> 2. 列表条目部分标记为『要点卡片』，在上面的概念卡片里逐行填笔记；\n"
-                f"> 3. 代码块仅做『对照原理阅读 · 句法分析』，不必立即在你机器上运行；\n"
-                f"> 4. 全部通读完后，完成文末『画像专属 · 本块学习检查』和下面的『思考提示』。\n"
-            )
-            header_parts.append(
-                "### 思考提示（无需查资料，仅用本块正文作答；写不出来就回上文找原句）"
-                "\n> *说明：这里只列『思考题答题指引 + 引用原文锚点』，不给答案，答案由你读完正文后自己填写。*\n"
-                "1. **思考题 1 · 概念边界**：基于正文找出 2 条使用本知识点时的限制或前置条件（必须来自原文，不得脑补）。\n"
-                "2. **思考题 2 · 术语对照**：从上面「本块必读锚点」概念卡片中任选 2 个词，写出它们若被混淆会导致的后果（以原文中明确提到的差异为准）。\n"
-                "3. **思考题 3 · 流程/句法分析**：若本块有代码，回到代码块做句法分析；若无代码，则回到正文第一条列表条目做结构重写（不抄原句）。\n"
-            )
-        else:  # MIXED
-            header_parts += [
-                f"## 「{subtopic_name}」混合推进学习",
-                "### 讲解 ⇄ 实操交替节拍卡（左列填笔记、右列粘贴每一步的终端输出）",
-                "| 小节 | 读到讲解段时，你预判这一段要讲什么？ | 紧接着的代码段实际运行输出（立即粘贴） | 执行后再看下段讲解时修正了哪些理解？ |",
-                "|---|---|---|---|",
-            ]
-            # 空 3 行（用户边读边填）
-            for n in (1, 2, 3):
-                header_parts.append(f"| 第 {n} 对讲解/代码 |  |  |  |")
-            header_parts.append("")
-            header_parts.append(
-                f"\n> 🎯 **你的画像 = 综合型 learner**：本块**严格按「讲解 1 段 → 实操 1 段 → "
-                f"再讲解 1 段」交替节奏推进**。上面节拍卡每对完成后打勾，未写完不得直接翻下一代码块。\n"
-            )
-        header_parts.append(
-            f"> ⚙️ 实训条件：{(getattr(practice, 'hardware', '') if practice else '') or '通用环境'}；"
-            f"本块所属知识板块：『{block_name}』。\n"
-        )
-        header_parts.append("---\n")  # 分割线：以上是加壳、以下是原文主体
-
-        # ================================================================
-        # B. 行间 Callout：保留 atoms 顺序 + 原文 body 不改，只在段与段之间插入
-        # ================================================================
-        interleaved: list[str] = []
-        seen_first_text = False
-        seen_first_code = False
-        seen_first_error_list = False
-        seen_first_list = False
-        mixed_pair_state = 0  # 0=before讲解, 1=讲解已经插了提示，等待代码段前插提示，2=代码段后插后提示，循环
-        for idx, atom in enumerate(atoms):
-            kind = atom["kind"]
-            # 前 Callout
-            if style == LEARNING_STYLE_PRACTICE:
-                if kind == "code" and not seen_first_code:
-                    seen_first_code = True
-                    interleaved.append(
-                        "\n🛠 **【实操请暂停 · 第 1 段代码】** 请把下面这段代码"
-                        "原样粘贴到你自己的终端/编辑器中**实际运行一次**，把输出结果"
-                        "临时保存；执行完成后再读下文的输出字段说明；"
-                        "如果运行出现异常，先记录现象，再继续向后找到「报错排查段落」"
-                        "对照处理。\n"
-                    )
-                elif kind == "code":
-                    interleaved.append(
-                        "\n🛠 **【实操继续 · 下一段代码】** 本段命令请同样在你机器"
-                        "上执行一遍；每执行完一条就立即观察：输出字段和上文"
-                        "描述是否一致？\n"
-                    )
-                elif kind == "list" and DeterministicContentAgent._is_error_list(atom["body"]) and not seen_first_error_list:
-                    seen_first_error_list = True
-                    interleaved.append(
-                        "\n🐛 **【报错登记】** 你自己的机器运行第一段代码时，"
-                        "有没有出现下面列出的任何一条？如果有：先勾选，再按条目"
-                        "写的修复方法先自行排查一遍，确认无法解决时再追问导师。\n"
-                    )
-            elif style == LEARNING_STYLE_THEORY:
-                if kind == "text" and not seen_first_text:
-                    seen_first_text = True
-                    interleaved.append(
-                        "\n📐 **【理论视角批注 · 第一段概念说明】** 本段落涉及"
-                        "哪些核心概念？读完之后把本段 2~3 个关键词用自己的话重写"
-                        "一遍（写在自己草稿里即可），然后再继续。\n"
-                    )
-                elif kind == "code" and not seen_first_code:
-                    seen_first_code = True
-                    interleaved.append(
-                        "\n📐 **【示例对照阅读】** 下面这段代码/命令块用于**对照"
-                        "上文原理阅读**，**不必立即在你机器上运行**。关注点："
-                        "每一行对应上文原理的哪一个阶段？参数名和上文提到的"
-                        "术语有什么对应关系？\n"
-                    )
-                elif kind == "list" and not seen_first_list:
-                    seen_first_list = True
-                    interleaved.append(
-                        "\n📋 **【要点卡片提示】** 下面是本块的定义 / 对比 / "
-                        "枚举类条目（高频考点）。读完后，请把条目结构用你自己"
-                        "的方式再默写一遍（条目数、维度、关键限定词）。\n"
-                    )
-            else:  # MIXED
-                if kind == "text" and mixed_pair_state == 0:
-                    interleaved.append("\n💡 **【先读讲解 →】**\n")
-                    mixed_pair_state = 1
-                elif kind == "code" and mixed_pair_state in {1, 0}:
-                    interleaved.append(
-                        "\n🛠 **【→ 实际运行下面示例 →】** 请实际执行下面代码段后再继续。\n"
-                    )
-                    mixed_pair_state = 2
-                elif kind == "text" and mixed_pair_state == 2:
-                    interleaved.append("\n💡 **【执行完毕再看下一段讲解 →】**\n")
-                    mixed_pair_state = 1
-            interleaved.append(atom["body"])
-
-        # ================================================================
-        # C. 块尾画像专属学习检查（只引用原文锚点，不写答案、不引入外部事实）
-        # ================================================================
-        footer: list[str] = ["\n---\n", f"## 画像专属 · {subtopic_name} 本块学习检查"]
-        if style == LEARNING_STYLE_PRACTICE:
-            footer.append("### 动手验证（全部在你本机上独立完成，不会写的地方再回正文找）")
-            footer.extend(DeterministicContentAgent._build_practice_footer_checks(anchors))
-        elif style == LEARNING_STYLE_THEORY:
-            footer.append("### 概念自证 · 思考题作答（答案必须能用正文原句回证）")
-            footer.extend(DeterministicContentAgent._build_theory_footer_checks(anchors, subtopic_name))
-        else:  # MIXED
-            footer.append("### 边学边做 · 本块小结")
-            footer.extend(DeterministicContentAgent._build_mixed_footer_checks(anchors, subtopic_name))
-        # D. 硬件提示（如果有）
-        if practice_note:
-            footer.append("\n### 实训条件提示 · 你的设备")
-            footer.append(str(practice_note).strip())
-
-        # ================================================================
-        # 最终拼接（保留原文 order 一字不动；预算放大为 × 4，header+callout+
-        # footer 比原文长，之前 ×3.5 会把尾部检查项截掉，导致相似度虚高）。
-        # ================================================================
-        result = "\n\n".join([
-            "\n".join(header_parts).strip(),
-            "\n\n".join(interleaved),
-            "\n".join(footer).strip(),
-        ]).strip()
-        budget = int(max(1800, self._effective_length(body) * 4.0))
-        if len(result) > budget:
-            result = result[:budget].rstrip() + (
-                "\n\n……（剩余风格加壳内容受确定性个性化字符预算限制，已截断；"
-                "若需要完整展开请使用 LLM 改写模式。）"
-            )
-        return result
-
+        """Return source text unchanged when LLM personalization is unavailable."""
+        return (source_text or "").strip()
     @staticmethod
     def _build_teaching_layer(
         stage: StageInfo,
@@ -3125,30 +2670,17 @@ class DeterministicContentAgent:
             action = "remediate"
             evidence_refs = [f"prerequisite:{item.get('subtopic_id', '')}" for item in unstable]
             names = "、".join(str(item.get("subtopic_name") or "前置知识") for item in unstable[:3])
-            task = {
-                "task_type": "preflight_review",
-                "title": "开始前快速回顾",
-                "markdown": f"先用一个最小示例回顾 {names}；确认能解释关键写法后再继续本块。",
-                "source_chunk_id": "",
-            }
             reason_parts = [f"前置知识需要补救：{names}"]
         else:
             action = "explain_and_practice" if (is_practice or is_mixed) else "explain"
             if weak_topics:
                 evidence_refs = [f"low_accuracy:stage_{item.get('stage_num', '')}" for item in weak_topics]
             reason_parts = [f"学习目标：{goal}", f"学习方式：{learning_style}"]
-            task = {
-                "task_type": "apply" if (is_practice or is_mixed) else "reflection",
-                "title": f"{stage.block_name}本块检查",
-                "markdown": "完成本块后，用自己的话说明本块内容与当前学习目标的关系；遇到无法解释的术语时记录下来再提问。",
-                "source_chunk_id": "",
-            }
         if hardware:
             reason_parts.append(f"实训条件：{hardware}")
         if weak_topics:
             reason_parts.append("历史阶段存在低正确率，需要通过本块检查巩固")
-        tasks = [task] if action in {"remediate", "explain_and_practice"} else []
-        return action, "；".join(reason_parts), tasks, evidence_refs
+        return action, "；".join(reason_parts), [], evidence_refs
 
     async def generate_block(
         self,
@@ -3193,13 +2725,6 @@ class DeterministicContentAgent:
             llm_fail_reason=("skip_no_source" if not (source_text or "").strip() else ""),
             style_applied=str(getattr(_style_for_meta, "value", _style_for_meta)),
         )
-        for task in teaching_tasks:
-            task["source_chunk_id"] = chunk_id
-        if teaching_tasks:
-            personalized = "\n\n".join([
-                personalized,
-                f"**本块学习检查**：{teaching_tasks[0]['markdown']}",
-            ]).strip()
         source_note = self._chunk_source_note(source_chunk, title)
 
         # 来源：回指原始块，专业知识与教学质量审核 Agent 据 content_ref/metadata 的 source_chunk_id 回查核验
@@ -3563,7 +3088,6 @@ class HybridContentAgent(DeterministicContentAgent):
         learning_profile = profile.model_dump(mode="json") if profile is not None else {}
         practice_profile = practice.model_dump(mode="json") if practice is not None else {}
         heading_path = source_chunk.get("heading_path") or block.block_name
-        teaching_task = (block.teaching_tasks or [{}])[0]
         # ── 块级表达层差异化（仅改表达方式，不引入任何强制三段式外壳）─────────
         # 用户明确：不需要分三部分（头卡/主体/检查），只要每一块内容里按学习风格
         # 做个性化改写即可。所以这里的规则必须和 HybridContentAgent.run 里的
@@ -3612,19 +3136,19 @@ class HybridContentAgent(DeterministicContentAgent):
         )
         if _style == LEARNING_STYLE_PRACTICE:
             style_rule = """【风格规则 · learning_style = practice（实操型）】
-1. 原文里出现"命令 / 代码 / 操作步骤 / 配置"——一律保留、排版成代码块 / 编号步骤，并在紧接着的下文补 1 句该操作的"验证方式"（例如："执行完，你能在终端里看到 X 字段 / 可以用 xxx 再确认一下"），验证表述完全基于原文，不要杜撰命令。
+1. 原文里出现"命令 / 代码 / 操作步骤 / 配置"——一律保留、排版成代码块 / 编号步骤，并用原文已有说明解释其用途；不得额外添加验证任务或命令。
 2. 原文里出现大段纯理论概念（> 3 段解释、没有命令/步骤）——压缩成 1-2 句的"概念摘要 + 我什么时候需要它"，不要大段堆定义。
 3. 遇到术语：用「术语名 = 一句话解释 + 我怎么用」的口吻，避免纯定义。
 """
         elif _style == LEARNING_STYLE_THEORY:
             style_rule = """【风格规则 · learning_style = theory（理论型）】
-1. 原文里出现"命令 / 代码"——保留 1 份必要命令，但正文重点补：它的**设计动机**（为什么存在？解决什么问题？和历史方案比 trade-off 是什么？）、核心概念 / 数据结构 / 流程关系，不要只堆命令。
-2. 每个主要知识点结束时，**追加 1-2 条思考题**（答案必须能用原文原句回证，例如"为什么 xxx 比 yyy 更适合场景 S？"、"xxx 的 3 个核心要素？"），不要写"请你自己查资料"这类开放式题。
-3. 原文存在相近概念 / 命令对时，追加一句**概念对比**（例如：A vs B：触发时机不同 / 返回值粒度不同）。
+保留原文中的概念说明、条件和步骤关系；对原文已经解释的术语可以换成更清晰的表述。
+命令或代码仅保留原文已有的必要示例，不额外增加思考题、概念对比、设计动机或取舍分析。
 """
         else:
             style_rule = """【风格规则 · learning_style = mixed（混合型）】
-同时兼顾实操和理论：重要命令给出代码块 + 1 句解释；重要概念补 1 句设计动机；适度插入 1 条思考题。
+同时兼顾原文已有的实操步骤和概念说明：重要命令或代码保留并配合原文已有的解释；
+不额外插入思考题、任务卡或反思题。
 """
 
         import json as _json
@@ -3636,11 +3160,6 @@ class HybridContentAgent(DeterministicContentAgent):
             evidence_json = _json.dumps(block.evidence_refs, ensure_ascii=False) if block.evidence_refs else "[]"
         except Exception:
             evidence_json = "[]"
-        teaching_md = ""
-        try:
-            teaching_md = str((teaching_task or {}).get("markdown", "") or "")
-        except Exception:
-            teaching_md = ""
         _budget = int(self._effective_length(source_text) * 4.0)
 
         _prompt_skeleton = """请对以下原始学习资料「块」生成个性化教学正文，使其贴合学习者画像与实训条件。
@@ -3677,7 +3196,6 @@ class HybridContentAgent(DeterministicContentAgent):
 1. 直接输出 Markdown 文本，不要加"以下是生成结果"等套话，不要用 ```markdown 代码块包裹。
 2. 有效字符数不超过 [[BUDGET]]（= 原文长度 4 倍）。
 3. 严格遵守上面的红线与风格规则；同时兼顾已掌握/年级/硬件三条画像提示。
-4. 本块还有额外教学动作：[[TEACHING_TASK_MD]]（如果有内容，将任务要求自然融入正文，不要硬插外壳）。
 [[CONTENT_SKILL_CONTEXT_APPEND]]
 """
 
@@ -3695,10 +3213,6 @@ class HybridContentAgent(DeterministicContentAgent):
             .replace("[[STYLE_RULE]]", style_rule)
             .replace("[[SOURCE_TEXT]]", source_text)
             .replace("[[BUDGET]]", str(_budget))
-            .replace(
-                "[[TEACHING_TASK_MD]]",
-                teaching_md if teaching_task and teaching_task.get("markdown") else "（本块无额外教学任务）"
-            )
             .replace(
                 "[[CONTENT_SKILL_CONTEXT_APPEND]]",
                 ("\n\n内容生成补充规范（沿用项目既有 skill 上下文）：\n" + str(self.content_skill_context or ""))
@@ -3746,12 +3260,6 @@ class HybridContentAgent(DeterministicContentAgent):
                 rewritten = ""
         if self._is_valid_response(rewritten) and self._fits_budget(rewritten, budget):
             block.personalized_content = rewritten.strip()
-            if block.personalization_action in {"explain_and_practice", "remediate"} and "本块学习检查" not in block.personalized_content:
-                task_markdown = teaching_task.get("markdown", "")
-                if task_markdown:
-                    candidate = f"{block.personalized_content}\n\n**本块学习检查**：{task_markdown}"
-                    if self._fits_budget(candidate, budget):
-                        block.personalized_content = candidate
             # Part E: LLM 改写成功（Agent4 仍会按原门槛严格审核，此处仅记录路径）
             block.personalization_meta.path = "llm"
             block.personalization_meta.llm_fail_reason = "ok"
@@ -4808,48 +4316,9 @@ def parse_json_object(response: str) -> dict | None:
 #  纯规则实现，0 LLM / 0 额外积分。
 # ================================================================
 
-# Personalization 合法"加壳段"标题关键词。
-# 【设计原则】只收录"100% 不可能出现在原文骨架、只能是 Agent3 新加壳"的标记，
-# 避免把原文里的"报错与排查 / 动手验证 / 概念与设计动机"等正常骨架误判为壳段——
-# 那样会错误地把原文骨架段从 P_skeleton 里剔除，导致覆盖率虚警。
-_PERSONALIZATION_WRAPPER_HEADINGS = (
-    # 1) 画像专属 · xxx 卡 / 学习检查（Agent3 头/尾壳段的固定汉字前缀，原文不可能出现）
-    "画像专属",
-    # 2) 学习计划表独特关键词（原文骨架里不会出现"预期的输出/你当下是否看懂"这种教学表格列名）
-    "本节关键命令",
-    "你预期的输出",
-    "是否看懂每个输出字段",
-    "你的画像",
-    # 3) 尾学习检查 4 道题的独特"中文标签"（Agent3 模板写死，原文骨架不会出现）
-    "执行与输出核对",
-    "报错对照",
-    "字段自查",
-    "流程与顺序自检",
-    "术语自证",
-    "概念概括",
-    "适用边界说明",
-    "输出字段语义图",
-    "示例句法分析",
-    "列表类条目结构默写",
-    "讲解 ⇄ 实操交替记录",
-    "概念 ⇄ 现象对应",
-    "学习节奏提示",
-    # 4) Callout 提示句独特前缀（原文正文里不会以这些动词指令作为 section 标题）
-    "实操请暂停",
-    "报错请登记",
-    "理论视角批注",
-    "示例对照阅读",
-    "要点卡片提示",
-    "先读上文讲解",
-    "实际运行完毕后再看下一段讲解",
-    # 5) 混合推进的独特标题（"xx 混合推进学习"——原文不会出现）
-    "混合推进学习",
-)
-
-# emoji 级 callout 前缀仍然用 _is_personalization_wrapper_atom 里行首 emoji 判断即可，
-# 不用放到上面 HEADING 词表里。
-
-
+# Agent 3 no longer emits wrapper sections. Agent 4 therefore treats every
+# learner-facing section as source content during paragraph-order verification.
+_PERSONALIZATION_WRAPPER_HEADINGS: tuple[str, ...] = ()
 def _atomize_text_static(text: str) -> list[dict]:
     """Deterministic Markdown body → 语义原子段列表。
 

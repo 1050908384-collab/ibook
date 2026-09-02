@@ -202,7 +202,6 @@ class PersonalizationCheckTool:
         action = str(block.get("personalization_action") or "").strip()
         reason = str(block.get("personalization_reason") or "").strip()
         source_ids = [item for item in block.get("fact_source_chunk_ids", []) if item]
-        tasks = [item for item in block.get("teaching_tasks", []) if isinstance(item, dict)]
         evidence_refs = [item for item in block.get("evidence_refs", []) if item]
         style = str(profile.get("learning_style") or "").lower()
 
@@ -248,23 +247,6 @@ class PersonalizationCheckTool:
                 "description": "前置补救内容未绑定学习证据。",
                 "suggestion": "在 evidence_refs 中记录对应的前置知识点或低分阶段。",
             })
-        if action == "remediate" and not tasks:
-            issues.append({
-                "error_type": "remediation_task_missing",
-                "severity": "major",
-                "location": "教学任务",
-                "description": "前置补救内容缺少可完成的快速检查。",
-                "suggestion": "提供 5-15 分钟内可完成的最小回顾或验证任务。",
-            })
-        if any(marker in style for marker in _PRACTICE_MARKERS) and not tasks:
-            issues.append({
-                "error_type": "practice_task_missing",
-                "severity": "major",
-                "location": "教学任务",
-                "description": "实操型学习者的内容块缺少学习检查或验证任务。",
-                "suggestion": "补充不引入新技术事实的操作验证、观察记录或自我检查任务。",
-            })
-
         # ★★2 规则①：grade 术语密度匹配。
         # 场景：大一版写出了研究生版的术语密度 → 打回降难度。
         # 触发：profile.grade 能匹配目标档 + 块正文足够长（≥ 400 字）

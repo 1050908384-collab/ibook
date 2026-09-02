@@ -58,7 +58,7 @@ if ($MissingDeps.Count -gt 0) {
     $ReqFile = Join-Path $ProjectDir "requirements.txt"
     & $PythonExe -m pip install --disable-pip-version-check -r $ReqFile
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "[DEP] pip install 返回非零码，请手动执行：& $PythonExe -m pip install -r `"$ReqFile`"" -ForegroundColor Red
+        Write-Host ("[DEP] pip install 返回非零码，请手动执行: & ""{0}"" -m pip install -r ""{1}""" -f $PythonExe, $ReqFile) -ForegroundColor Red
         Read-Host "按回车键继续（或 Ctrl+C 退出）" | Out-Null
     } else {
         Write-Host "[DEP] requirements.txt 安装完成" -ForegroundColor Green
@@ -89,14 +89,29 @@ function Wait-Http200([string]$Url, [int]$TimeoutSeconds, [string]$Name) {
 }
 function Start-CmdWindow([string]$Title, [string]$WorkingDir, [string]$CommandLine) {
     # Assemble one cmd.exe command that cmd.exe's /k will run exactly as-is:
+    #   0) propagate any env vars the launcher injected (HTTPS_PROXY / DEEPSEEK_* / HTTP_PROXY)
+    #      so backend/frontend cmd windows inherit them too; otherwise the user's
+    #      Windows system proxy bridge goes only to the launcher PowerShell process.
     #   1) set title (visible in taskbar and window frame)
     #   2) cd to working dir
     #   3) run the user-provided command line (preserves ampersands/quotes in it)
-    $inner = "title $Title & cd /d `"$WorkingDir`" & $CommandLine"
-    # cmd.exe rule: if the first and last char of the argument after /C or /K is ",
-    # cmd strips them and parses what's inside. We want our $inner parsed literally.
-    $arg = 'cmd /c "' + $inner + '"'
-    Start-Process -FilePath "cmd.exe" -ArgumentList ("/k",$inner) -WorkingDirectory $WorkingDir -WindowStyle Normal
+    $parts = New-Object System.Collections.Generic.List[string]
+    foreach ($k in @("HTTPS_PROXY","HTTP_PROXY","DEEPSEEK_API_KEY","DEEPSEEK_API_BASE","DEEPSEEK_MODEL","LLM_PROVIDER","LLM_FALLBACK_PROVIDER","OLLAMA_BASE_URL","OLLAMA_MODEL","DATABASE_URL","OLLAMA_MODELS")) {
+        $v = [Environment]::GetEnvironmentVariable($k)
+        if (-not [string]::IsNullOrWhiteSpace($v)) {
+            $escaped = $v.Replace('%', '^%')
+            $parts.Add(('set "{0}={1}"' -f $k, $escaped))
+        }
+    }
+    $titlePart = 'title ' + $Title
+    $cdPart = 'cd /d "' + $WorkingDir + '"'
+    $parts.Add($titlePart) | Out-Null
+    $parts.Add($cdPart) | Out-Null
+    $parts.Add($CommandLine) | Out-Null
+    # Use a single-character separator (' & ') so PowerShell never treats the
+    # ampersand as a PS operator on PS 5.1 (Chinese GBK codepage-safe).
+    $inner = $parts -join ' & '
+    Start-Process -FilePath "cmd.exe" -ArgumentList @("/k", $inner) -WorkingDirectory $WorkingDir -WindowStyle Normal
 }
 function Stop-ProjectFrontendProcesses([string]$FrontendPath) {
     # npm ci removes node_modules before reinstalling.  A stale Vite process
@@ -137,6 +152,8 @@ function Stop-ProjectBackendProcesses([string]$BackendPath) {
 $DbPath       = Join-Path $ProjectDir "data\sqlite_data\project.db"
 $BackendEnv   = Join-Path $ProjectDir "backend\.env"
 $FrontendEnv  = Join-Path $ProjectDir "frontend\.env.local"
+$RootEnv      = Join-Path $ProjectDir ".env"
+$RootEnvExample = Join-Path $ProjectDir ".env.example"
 
 # Auto-copy .env files if missing (git clone won't have them)
 if (-not (Test-Path $BackendEnv)) {
@@ -152,6 +169,79 @@ if (-not (Test-Path $FrontendEnv)) {
         Copy-Item $envExample $FrontendEnv -Force
         Write-Host "  Created frontend\.env.local from .env.example" -ForegroundColor Green
     }
+}
+# 保证项目根目录也有 .env.example（主配置模板，便于独立脚本/工具从项目根加载）
+if (-not (Test-Path $RootEnvExample)) {
+    $backendEnvExample = Join-Path $ProjectDir "backend\.env.example"
+    if (Test-Path $backendEnvExample) {
+        Copy-Item $backendEnvExample $RootEnvExample -Force
+        Write-Host "  Created 根目录 .env.example（拷贝自 backend/.env.example）" -ForegroundColor Green
+    }
+}
+# LLM Provider 验证前必须把 backend/.env 同步到项目根目录/.env
+# 独立工具会从项目根目录读取 env；保持两边一致避免配置漂移
+if (Test-Path $BackendEnv) {
+    try {
+        Copy-Item $BackendEnv $RootEnv -Force
+        Write-Host "  已同步 backend/.env -> 项目根目录/.env（LLM 配置一致性）" -ForegroundColor DarkGreen
+    } catch {
+        Write-Host "  [WARN] 同步 backend/.env -> 根目录失败: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+
+# ---------- 0.25) Windows 系统代理 → HTTPS_PROXY / HTTP_PROXY 进程环境变量自动注入 ----------
+# 用户常见场景：在 Clash / v2rayN 里开启了「系统代理」开关（即写进了 Windows 注册表
+# HKCU\...\Internet Settings 的 ProxyEnable/ProxyServer），但没把 HTTPS_PROXY 显式导出为
+# 进程环境变量。而 httpx 的 trust_env=True 只会读取环境变量，不会读 Windows 注册表。
+# 结果：backend/.env 里 DEEPSEEK_USE_SYSTEM_PROXY=true 仍然直连 443，ConnectTimeout。
+# 这里**仅在启动脚本层**做桥接：把注册表的 ProxyServer 解析成协议前缀正确的 HTTP(S)_PROXY，
+# 注入到当前 PowerShell 进程的 env 变量 → 后续启动的 Python backend 子进程自动继承。
+# 完全不改任何业务代码，进程退出后无副作用，用户手动设置的 env 变量优先不覆盖。
+if (
+    [string]::IsNullOrWhiteSpace($env:HTTPS_PROXY) -and
+    [string]::IsNullOrWhiteSpace($env:HTTP_PROXY)
+) {
+    try {
+        $ieKey = Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -ErrorAction SilentlyContinue
+        if ($ieKey -and [int]$ieKey.ProxyEnable -eq 1 -and -not [string]::IsNullOrWhiteSpace($ieKey.ProxyServer)) {
+            $proxyStr = "$($ieKey.ProxyServer)".Trim()
+            $https = ""
+            $http  = ""
+            # ProxyServer 有两种格式：
+            #   A) "127.0.0.1:7890"                       单一端口，所有协议共用
+            #   B) "http=127.0.0.1:7890;https=127.0.0.1:7890;ftp=127.0.0.1:7890"   按协议拆分
+            if ($proxyStr -match '=') {
+                # 格式 B
+                foreach ($seg in $proxyStr -split ';') {
+                    if ($seg -match '^\s*https?\s*=\s*(.+?)\s*$') {
+                        $hostPort = $Matches[1].Trim()
+                        if (-not $hostPort.StartsWith("http")) { $hostPort = "http://" + $hostPort }
+                        if ($seg -match '^\s*https\s*=') { $https = $hostPort } else { $http = $hostPort }
+                    }
+                }
+                # 如果某协议缺失，用另一边兜底；所有都缺失则退回默认格式
+                if ([string]::IsNullOrWhiteSpace($https) -and -not [string]::IsNullOrWhiteSpace($http))  { $https = $http }
+                if ([string]::IsNullOrWhiteSpace($http)  -and -not [string]::IsNullOrWhiteSpace($https)) { $http  = $https }
+            } else {
+                # 格式 A: 单一 host:port → 所有协议共用
+                if (-not $proxyStr.StartsWith("http")) { $proxyStr = "http://" + $proxyStr }
+                $https = $proxyStr
+                $http  = $proxyStr
+            }
+            if (-not [string]::IsNullOrWhiteSpace($https)) {
+                $env:HTTPS_PROXY = $https
+                $env:HTTP_PROXY  = $http
+                Write-Host "  Windows 系统代理已桥接 → HTTPS_PROXY=$https" -ForegroundColor DarkGreen
+                if (-not [string]::IsNullOrWhiteSpace($http) -and $http -ne $https) {
+                    Write-Host "                                   HTTP_PROXY =$http" -ForegroundColor DarkGreen
+                }
+            }
+        }
+    } catch {
+        Write-Host "  [WARN] 读取 Windows 系统代理失败: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  进程已存在 HTTPS_PROXY / HTTP_PROXY → 保留用户设置（不覆盖）。" -ForegroundColor DarkGray
 }
 
 # ---------- 0.5) Always sync seed-derived data (fast, idempotent) ----------
@@ -174,11 +264,22 @@ if ($PythonExe) {
         $seedErr = Join-Path $env:TEMP "aiat_seed_$($seedScript.name)_err.log"
         Push-Location $SeedBackendDir
         try {
-            & $PythonExe $seedPath 1> $seedOut 2> $seedErr
-            $rc = $LASTEXITCODE
+            # Use Start-Process so a Python traceback on stderr is captured as
+            # a normal non-zero exit code instead of terminating this launcher
+            # under $ErrorActionPreference = Stop.
+            $seedProc = Start-Process -FilePath $PythonExe -ArgumentList @($seedPath) `
+                -WorkingDirectory $SeedBackendDir -RedirectStandardOutput $seedOut `
+                -RedirectStandardError $seedErr -Wait -PassThru -WindowStyle Hidden `
+                -UseNewEnvironment:$false
+            $rc = $seedProc.ExitCode
         } finally { Pop-Location }
         if ($rc -ne 0) {
             Write-Host "  [WARN] $($seedScript.desc) failed (exit $rc) - continuing with existing data." -ForegroundColor Yellow
+            if (Test-Path $seedErr) {
+                Get-Content $seedErr | Select-Object -Last 12 | ForEach-Object {
+                    Write-Host "        $_" -ForegroundColor DarkYellow
+                }
+            }
             $seedSyncOk = $false
         }
     }
@@ -192,9 +293,15 @@ $RequireOllama = $false
 $DeepSeekConfigured = $false
 $DbExists = Test-Path $DbPath
 if (Test-Path $BackendEnv) {
-    $dsKey   = ""
-    $dsProv  = ""
-    $dsFb    = ""
+    # Start with inherited environment variables so a deployment can keep
+    # secrets outside backend/.env. Values in backend/.env override them when
+    # explicitly non-empty.
+    $dsKey   = [Environment]::GetEnvironmentVariable("DEEPSEEK_API_KEY")
+    $dsProv  = [Environment]::GetEnvironmentVariable("LLM_PROVIDER")
+    $dsFb    = [Environment]::GetEnvironmentVariable("LLM_FALLBACK_PROVIDER")
+    if ($null -eq $dsKey)  { $dsKey = "" }
+    if ($null -eq $dsProv) { $dsProv = "" }
+    if ($null -eq $dsFb)   { $dsFb = "" }
     foreach ($line in Get-Content $BackendEnv) {
         $t = $line.Trim()
         if ($t.Length -eq 0 -or $t.StartsWith("#")) { continue }
@@ -203,9 +310,9 @@ if (Test-Path $BackendEnv) {
         $k = $t.Substring(0,$eq).Trim()
         $v = $t.Substring($eq+1).Trim().Trim('"').Trim("'")
         if ($k -ieq "APP_PORT")            { [int]$BackendPort = $v }   # 也在这里刷新端口号（env 刚复制完的情况下）
-        if ($k -ieq "DEEPSEEK_API_KEY")      { $dsKey  = $v }
-        if ($k -ieq "LLM_PROVIDER")          { $dsProv = $v }
-        if ($k -ieq "LLM_FALLBACK_PROVIDER") { $dsFb   = $v }
+        if ($k -ieq "DEEPSEEK_API_KEY" -and -not [string]::IsNullOrWhiteSpace($v)) { $dsKey  = $v }
+        if ($k -ieq "LLM_PROVIDER" -and -not [string]::IsNullOrWhiteSpace($v)) { $dsProv = $v }
+        if ($k -ieq "LLM_FALLBACK_PROVIDER" -and -not [string]::IsNullOrWhiteSpace($v)) { $dsFb = $v }
     }
     # 判定 DeepSeek 是否真正配置完成（LLM_PROVIDER=deepseek 且 key 非占位符/非空）
     $placeholderPattern = '^(your-|your_|sk-your|xxx|xxxx|placeholder)'
@@ -215,7 +322,8 @@ if (Test-Path $BackendEnv) {
     $fallbackNeedsOllama = ($dsFb -ieq "ollama")
     $DeepSeekConfigured = $providerOk -and $keyOk
     if ($DeepSeekConfigured) {
-        Write-Host "  DeepSeek 云端模型已检测到配置（LLM_PROVIDER=$dsProv）。" -ForegroundColor DarkGreen
+        $keySource = if ((Get-Content $BackendEnv) -match '^\s*DEEPSEEK_API_KEY\s*=\s*\S+') { "backend/.env" } else { "环境变量" }
+        Write-Host "  DeepSeek 云端模型已检测到配置（LLM_PROVIDER=$dsProv，Key来源：$keySource）。" -ForegroundColor DarkGreen
     } else {
         Write-Host "  DeepSeek 云端模型未正确配置：将依赖本地 Ollama。" -ForegroundColor Yellow
         $RequireOllama = $true
@@ -295,12 +403,13 @@ if (-not (Test-Path $DbPath)) {
     # Step 0: pip install (skip if already installed)
     Write-Host "  [0/6] Checking Python dependencies..." -ForegroundColor Cyan
     $pipCheck = Start-Process -FilePath $PythonExe -ArgumentList "-c", "import fastapi, uvicorn, pydantic, chromadb, fastembed" `
-        -Wait -PassThru -NoNewWindow -RedirectStandardOutput "$env:TEMP\aiat_pipcheck.log" -RedirectStandardError "$env:TEMP\aiat_pipcheck_err.log"
+        -Wait -PassThru -NoNewWindow -UseNewEnvironment:$false `
+        -RedirectStandardOutput "$env:TEMP\aiat_pipcheck.log" -RedirectStandardError "$env:TEMP\aiat_pipcheck_err.log"
     if ($pipCheck.ExitCode -ne 0) {
         Write-Host "  Installing Python dependencies (pip install)..." -ForegroundColor Yellow
         Write-Host "  (This may take 2-5 minutes on first run)" -ForegroundColor DarkGray
         $pipProc = Start-Process -FilePath $PythonExe -ArgumentList "-m", "pip", "install", "-r", "`"$ProjectDir\requirements.txt`"" `
-            -WorkingDirectory $ProjectDir -Wait -PassThru -NoNewWindow
+            -WorkingDirectory $ProjectDir -Wait -PassThru -NoNewWindow -UseNewEnvironment:$false
         if ($pipProc.ExitCode -ne 0) {
             Write-Host "[ERROR] pip install failed (exit $($pipProc.ExitCode))." -ForegroundColor Red
             Write-Host "        Try: pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple" -ForegroundColor Yellow
@@ -359,7 +468,7 @@ if (-not (Test-Path $DbPath)) {
         $outLog = Join-Path $env:TEMP "aiat_$($script.name)_out.log"
         $errLog = Join-Path $env:TEMP "aiat_$($script.name)_err.log"
         $proc = Start-Process -FilePath $PythonExe -ArgumentList $scriptPath `
-            -WorkingDirectory $BackendDir -Wait -PassThru -NoNewWindow `
+            -WorkingDirectory $BackendDir -Wait -PassThru -NoNewWindow -UseNewEnvironment:$false `
             -RedirectStandardOutput $outLog -RedirectStandardError $errLog
 
         if ($proc.ExitCode -ne 0) {

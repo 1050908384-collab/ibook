@@ -197,7 +197,7 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
         block_name="参数高效微调（LoRA与QLoRA）", gap_skill="LoRA",
         subtopic_id="KBS-12-01",
     )
-    profile = UserProfile(session_id=session_id, goal="掌握LoRA微调", learning_style="示例驱动")
+    profile = UserProfile(session_id=session_id, goal="掌握LoRA微调", learning_style="theory")
     practice = PracticeProfile(hardware="RTX 4090 24GB")
 
     # ------------------------------------------------------------------
@@ -263,10 +263,10 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
         str((b0.claims[0].metadata_json or {}) if b0.claims else {}),
     )
     checker.check(
-        b0.personalization_action == "explain_and_practice"
+        b0.personalization_action == "explain"
         and b0.fact_source_chunk_ids == ["CHK-LORA-0"]
-        and bool(b0.teaching_tasks),
-        "块携带结构化教学层元数据（动作、事实来源、学习任务）",
+        and not b0.teaching_tasks,
+        "块携带结构化教学层元数据（动作、事实来源）且不附加学习任务",
         str({"action": b0.personalization_action, "tasks": len(b0.teaching_tasks)}),
     )
 
@@ -320,7 +320,7 @@ async def run(args: argparse.Namespace, checker: Checker) -> None:
         issue.error_type for issue in incomplete_result.personalization_errors
     }
     checker.check(
-        {"personalization_action_missing", "personalization_reason_missing", "teaching_source_missing", "practice_task_missing"}.issubset(personalization_types),
+        {"personalization_action_missing", "personalization_reason_missing", "teaching_source_missing"}.issubset(personalization_types),
         "个性化检查工具识别缺失的教学层元数据",
         str(sorted(personalization_types)),
     )

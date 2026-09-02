@@ -175,12 +175,10 @@ _MUST_FIX_ERROR_TYPE_KEYWORDS = (
     "syntaxerror", "runtimeerror", "code_error", "不可执行", "无法运行", "无法复现",
     # 违反安全 / 规范
     "security", "compliance", "violation", "安全", "规范", "违反", "deploy",
-    # ★ Agent4 教学层元数据硬性缺失（PersonalizationCheckTool → rule_errors 通道）
-    # 实操缺动手任务、个性化 action/reason/source 声明缺失、补救缺证据/任务
-    # 全部都是"块外壳未按协议构建"，属于阻断发布的形式红线，必须修复。
+    # Agent4 个性化元数据硬性缺失（PersonalizationCheckTool → rule_errors 通道）。
+    # 仅校验 action/reason/source/evidence 等可追溯信息，不要求学习包附加任务。
     "personalization_action_missing", "personalization_reason_missing",
     "teaching_source_missing", "remediation_evidence_missing",
-    "remediation_task_missing", "practice_task_missing",
     # ★ Agent4 grade/skill_tags 形式红线（★★ 新规则）
     "grade_terminology_density_mismatch", "skill_tags_mastered_intro_filler",
     # ★ Agent4 块设计红线（★★ _verify_paragraph_order）：段落顺序被改动
