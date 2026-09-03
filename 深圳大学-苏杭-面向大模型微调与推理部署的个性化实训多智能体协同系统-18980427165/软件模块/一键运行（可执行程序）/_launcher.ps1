@@ -8,7 +8,7 @@ Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "  AI Agent Trainer - Launcher (PowerShell)"  -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 
-# The launcher is in "一键运行"; the runnable source project is its sibling "源代码".
+# Resolve project root (one level up from the folder holding this .ps1)
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectDir = (Resolve-Path (Join-Path $ScriptDir "..\源代码")).Path
 Write-Host "  Project  : $ProjectDir"
@@ -42,7 +42,6 @@ Write-Host "  Backend  : http://localhost:$BackendPort"
 Write-Host "  Frontend : http://localhost:$FrontendPort"
 if ($PythonExe) { Write-Host "  Python   : $PythonExe" } else { Write-Host "  Python   : [NOT FOUND]" -ForegroundColor Yellow }
 Write-Host ""
-
 
 # ---------- 依赖完整性自检（评委复现第一步） ----------
 $DepPyCheck = @('pydantic_settings', 'sqlalchemy', 'fastapi', 'chromadb')
@@ -152,7 +151,6 @@ function Stop-ProjectBackendProcesses([string]$BackendPath) {
 $DbPath       = Join-Path $ProjectDir "data\sqlite_data\project.db"
 $BackendEnv   = Join-Path $ProjectDir "backend\.env"
 $FrontendEnv  = Join-Path $ProjectDir "frontend\.env.local"
-$RootEnvExample = Join-Path $ProjectDir ".env.example"
 
 # Auto-copy .env files if missing (git clone won't have them)
 if (-not (Test-Path $BackendEnv)) {
@@ -169,14 +167,7 @@ if (-not (Test-Path $FrontendEnv)) {
         Write-Host "  Created frontend\.env.local from .env.example" -ForegroundColor Green
     }
 }
-# 保证项目根目录也有 .env.example（主配置模板，便于独立脚本/工具从项目根加载）
-if (-not (Test-Path $RootEnvExample)) {
-    $backendEnvExample = Join-Path $ProjectDir "backend\.env.example"
-    if (Test-Path $backendEnvExample) {
-        Copy-Item $backendEnvExample $RootEnvExample -Force
-        Write-Host "  Created 根目录 .env.example（拷贝自 backend/.env.example）" -ForegroundColor Green
-    }
-}
+
 # ---------- 0.25) Windows 系统代理 → HTTPS_PROXY / HTTP_PROXY 进程环境变量自动注入 ----------
 # 用户常见场景：在 Clash / v2rayN 里开启了「系统代理」开关（即写进了 Windows 注册表
 # HKCU\...\Internet Settings 的 ProxyEnable/ProxyServer），但没把 HTTPS_PROXY 显式导出为
@@ -255,7 +246,6 @@ if ($PythonExe) {
             # Use Start-Process so a Python traceback on stderr is captured as
             # a normal non-zero exit code instead of terminating this launcher
             # under $ErrorActionPreference = Stop.
-            # Use @(array) ArgumentList to safely handle paths with spaces/Chinese chars.
             $seedProc = Start-Process -FilePath $PythonExe -ArgumentList @($seedPath) `
                 -WorkingDirectory $SeedBackendDir -RedirectStandardOutput $seedOut `
                 -RedirectStandardError $seedErr -Wait -PassThru -WindowStyle Hidden `

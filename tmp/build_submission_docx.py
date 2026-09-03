@@ -198,6 +198,13 @@ def setup_styles(doc):
         style.paragraph_format.first_line_indent = Cm(0)
         style.paragraph_format.line_spacing = 1.5
         style.paragraph_format.space_after = Pt(3)
+    for name in ("Hyperlink", "FollowedHyperlink"):
+        try:
+            style = doc.styles[name]
+            style.font.color.rgb = BLACK
+            style.font.underline = False
+        except KeyError:
+            pass
 
     for name in ("List Bullet", "List Number"):
         style = doc.styles[name]
@@ -280,18 +287,22 @@ def add_toc_field(p):
     begin.set(qn("w:fldCharType"), "begin")
     instr = OxmlElement("w:instrText")
     instr.set(qn("xml:space"), "preserve")
-    instr.text = ' TOC \\o "1-2" \\z \\u '
+    instr.text = ' TOC \\o "1-2" \\h \\z \\u '
     separate = OxmlElement("w:fldChar")
     separate.set(qn("w:fldCharType"), "separate")
     placeholder = OxmlElement("w:t")
-    placeholder.text = ""
+    placeholder.text = "目录将在 Word 打开时自动更新"
     end = OxmlElement("w:fldChar")
     end.set(qn("w:fldCharType"), "end")
-    p._p.append(begin)
-    p._p.append(instr)
-    p._p.append(separate)
-    p._p.append(placeholder)
-    p._p.append(end)
+    run = p.add_run()
+    run._r.append(begin)
+    run = p.add_run()
+    run._r.append(instr)
+    run = p.add_run()
+    run._r.append(separate)
+    run._r.append(placeholder)
+    run = p.add_run()
+    run._r.append(end)
 
 
 def add_toc(doc):
@@ -301,22 +312,10 @@ def add_toc(doc):
     p.paragraph_format.first_line_indent = Cm(0)
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     add_inline(p, "目录", 20, bold=True, east_asia=FONT_HEADING)
-    # Static TOC avoids fragile field repair prompts across different Word builds.
-    for number in range(1, 10):
-        match = list(MATERIALS.glob(f"{number:02d}_*.md"))
-        if not match:
-            continue
-        for line in extract_body(match[0]).splitlines():
-            heading = re.match(r"^(#{2,3})\s+(.*)$", line)
-            if not heading:
-                continue
-            depth = len(heading.group(1))
-            p = doc.add_paragraph()
-            p.paragraph_format.first_line_indent = Cm(0)
-            p.paragraph_format.left_indent = Cm(0 if depth == 2 else 0.74)
-            p.paragraph_format.space_after = Pt(3)
-            p.paragraph_format.line_spacing = 1.25
-            add_inline(p, clean_text(heading.group(2)), 12 if depth == 2 else 11, bold=(depth == 2))
+    p = doc.add_paragraph()
+    p.paragraph_format.first_line_indent = Cm(0)
+    p.paragraph_format.line_spacing = 1.5
+    add_toc_field(p)
     doc.add_page_break()
 
 
@@ -329,9 +328,6 @@ def extract_body(path):
 def clean_text(text):
     text = text.replace("—", "-")
     text = text.replace("“", "\"").replace("”", "\"")
-    # This is a competition proposal, not a paper. Keep references at the end
-    # without scattering bracketed citation tokens through the body.
-    text = re.sub(r"\[(?:\d{1,2})(?:\s*[,;、]\s*\d{1,2})*\]", "", text)
     return text.strip()
 
 
@@ -522,8 +518,10 @@ def add_references(doc):
         return
     add_heading(doc, 1, "参考文献")
     for line in lines[start + 1 :]:
+        if line.strip() == "## 结语":
+            break
         text = line.strip()
-        if not text or text.startswith("#"):
+        if not text or text.startswith("#") or text == "---":
             continue
         text = re.sub(r"^[-*+]\s+", "", text)
         p = doc.add_paragraph()
