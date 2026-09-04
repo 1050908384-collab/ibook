@@ -64,9 +64,27 @@ try:
         r.raise_for_status()
         models = [m["name"] for m in r.json().get("models", [])]
         print(f"  ✅ 本地 Ollama 模型列表: {models}")
-        want = {"deepseek-r1:7b", "deepseek-r1:8b", "qwen2.5:7b", "qwen2.5:14b"}
-        if not (set(models) & want):
-            print(f"  ⚠️   建议至少拉取 deepseek-r1:7b:  ollama pull deepseek-r1:7b")
+        # 文本模型优先级：1) qwen2.5:7b（首选/中文质量优） -> 2) deepseek-r1:7b（次选/推理强）
+        # 其余：qwen2.5:14b / deepseek-r1:8b 为可选大规格增强（评审设备若具备 16GB+ 显存可考虑）
+        primary_text   = "qwen2.5:7b"
+        secondary_text = "deepseek-r1:7b"
+        optional_text  = {"qwen2.5:14b", "deepseek-r1:8b"}
+        want = {primary_text, secondary_text} | optional_text
+        present = set(models) & want
+        missing_critical = [m for m in (primary_text, secondary_text) if m not in set(models)]
+        if not present:
+            print(f"  ⚠️   未检测到任何推荐模型。请先拉取首选模型：")
+            print(f"       ollama pull {primary_text}    # 首选（中文生成质量稳定，推荐先拉取）")
+            print(f"       ollama pull {secondary_text}    # 次选（推理更强，作为首选异常时的回退）")
+        else:
+            if primary_text in set(models):
+                print(f"  ✅ 首选文本模型 {primary_text} 已安装")
+            else:
+                print(f"  ⚠️   首选文本模型 {primary_text} 缺失，建议安装：ollama pull {primary_text}")
+            if secondary_text in set(models):
+                print(f"  ✅ 次选文本模型 {secondary_text} 已安装")
+            else:
+                print(f"  -   次选文本模型 {secondary_text} 缺失（可选回退增强）：ollama pull {secondary_text}")
 except Exception as e:
     print(f"  ❌ 无法获取 Ollama 模型列表: {e}")
     sys.exit(1)

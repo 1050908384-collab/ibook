@@ -167,7 +167,7 @@ FAULT_CONFIGS: Dict[str, Dict[str, Any]] = {
             "LLM_PROVIDER": "ollama",
             "LLM_FALLBACK_PROVIDER": "ollama",
             "OLLAMA_MODEL": "nonexistent-model:999b",
-            "OLLAMA_FALLBACK_MODELS": "qwen2.5:7b",
+            "OLLAMA_FALLBACK_MODELS": "qwen2.5:7b,deepseek-r1:7b",
             "DEEPSEEK_API_KEY": "",
         },
         "expect_fallback_to_ollama": True,

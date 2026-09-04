@@ -26,7 +26,18 @@ class Settings(BaseSettings):
     APP_PORT: int = 8500
     # Comma-separated browser origins.  Keep this configurable for LAN and
     # production deployments instead of relying on a wildcard with cookies.
-    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5174,http://localhost:5173,http://127.0.0.1:5174"
+
+    # ---- LLM provider runtime override (written by launcher on startup) ----
+    # "一键启动" 检测到 DeepSeek API Key 未正确配置（占位符 / 空值）时，会
+    # 把此变量设为 "ollama" 并传入后端进程。此时 LLMClient 会**完全跳过云端**，
+    # 一次都不尝试连接 DeepSeek，直接使用本地 Ollama。
+    # 可用值：
+    #   - ""       (默认/空)：尊重 LLM_PROVIDER + LLM_FALLBACK_PROVIDER 原有配置
+    #   - "ollama"：强制所有调用走本地 Ollama（云跳过）
+    #   - "deepseek"：强制走云端（调试用，不推荐）
+    LLM_PROVIDER_OVERRIDE: str = ""
+
 
     # Accept the historic misspelled names so existing local .env files keep
     # working, while new deployments use the documented OLLAMA_* names.
@@ -35,12 +46,15 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("OLLAMA_BASE_URL", "OLLMA_BASE_URL"),
     )
     OLLAMA_MODEL: str = Field(
-        default="deepseek-r1:7b",
+        default="qwen2.5:7b",
         validation_alias=AliasChoices("OLLAMA_MODEL", "OLLMA_MODEL"),
     )
-    # Ordered local generation fallbacks. An empty value keeps the historic
-    # single-model behavior through OLLAMA_MODEL.
-    OLLAMA_FALLBACK_MODELS: str = ""
+    # Ordered local generation fallbacks (comma-separated list, e.g.
+    # "qwen2.5:7b,deepseek-r1:7b").  An empty value keeps the historic
+    # single-model behavior through OLLAMA_MODEL.  In ordered fallback the
+    # first entry SHOULD equal OLLAMA_MODEL so the two sources stay
+    # consistent when a downstream consumer checks either.
+    OLLAMA_FALLBACK_MODELS: str = "qwen2.5:7b,deepseek-r1:7b"
     # Chroma 向量库使用的 Ollama embedding 模型（中文语义检索）
     EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"
 

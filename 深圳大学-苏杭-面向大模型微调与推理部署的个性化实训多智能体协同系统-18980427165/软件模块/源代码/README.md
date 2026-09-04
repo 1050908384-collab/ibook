@@ -37,12 +37,18 @@ npm ci
 cd ..
 ```
 
-复制 `backend/.env.example` 为 `backend/.env`，再按《部署说明.md》配置模型和数据库路径。准备本地模型时，可使用 Ollama：
+复制 `backend/.env.example` 为 `backend/.env`，再按《部署说明.md》配置模型和数据库路径。准备本地模型时，使用 Ollama（按顺序执行）：
 
 ```bash
+# 1. 首选文本模型（千问 2.5 7B：中文生成质量稳定，作为本地推理首选项）
+ollama pull qwen2.5:7b
+# 2. 次选文本模型（深度求索推理 7B：逻辑/推理更强，首选异常时自动回退）
 ollama pull deepseek-r1:7b
+# 3. 中文语义嵌入模型（必装：用于知识库问答的向量索引构建）
 ollama pull qwen3-embedding:0.6b
 ```
+
+> 提示：完成后可用 `ollama list` 核对，应当至少能看到 `qwen2.5:7b` 和 `qwen3-embedding:0.6b` 两个条目。
 
 启动后端：
 

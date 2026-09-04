@@ -88,14 +88,15 @@ function Wait-Http200([string]$Url, [int]$TimeoutSeconds, [string]$Name) {
 }
 function Start-CmdWindow([string]$Title, [string]$WorkingDir, [string]$CommandLine) {
     # Assemble one cmd.exe command that cmd.exe's /k will run exactly as-is:
-    #   0) propagate any env vars the launcher injected (HTTPS_PROXY / DEEPSEEK_* / HTTP_PROXY)
-    #      so backend/frontend cmd windows inherit them too; otherwise the user's
-    #      Windows system proxy bridge goes only to the launcher PowerShell process.
+    #   0) propagate any env vars the launcher injected (HTTPS_PROXY / DEEPSEEK_* / HTTP_PROXY
+    #      / LLM_PROVIDER_OVERRIDE) so backend/frontend cmd windows inherit them too;
+    #      otherwise the user's Windows system proxy bridge / forced-local mode goes
+    #      only to the launcher PowerShell process.
     #   1) set title (visible in taskbar and window frame)
     #   2) cd to working dir
     #   3) run the user-provided command line (preserves ampersands/quotes in it)
     $parts = New-Object System.Collections.Generic.List[string]
-    foreach ($k in @("HTTPS_PROXY","HTTP_PROXY","DEEPSEEK_API_KEY","DEEPSEEK_API_BASE","DEEPSEEK_MODEL","LLM_PROVIDER","LLM_FALLBACK_PROVIDER","OLLAMA_BASE_URL","OLLAMA_MODEL","DATABASE_URL","OLLAMA_MODELS")) {
+    foreach ($k in @("HTTPS_PROXY","HTTP_PROXY","DEEPSEEK_API_KEY","DEEPSEEK_API_BASE","DEEPSEEK_MODEL","LLM_PROVIDER","LLM_FALLBACK_PROVIDER","LLM_PROVIDER_OVERRIDE","OLLAMA_BASE_URL","OLLAMA_MODEL","OLLAMA_FALLBACK_MODELS","DATABASE_URL","OLLAMA_MODELS")) {
         $v = [Environment]::GetEnvironmentVariable($k)
         if (-not [string]::IsNullOrWhiteSpace($v)) {
             $escaped = $v.Replace('%', '^%')
@@ -305,6 +306,12 @@ if (Test-Path $BackendEnv) {
         Write-Host "  DeepSeek 云端模型已检测到配置（LLM_PROVIDER=$dsProv，Key来源：$keySource）。" -ForegroundColor DarkGreen
     } else {
         Write-Host "  DeepSeek 云端模型未正确配置：将依赖本地 Ollama。" -ForegroundColor Yellow
+        # ★ 关键：将「永久跳过云端」注入到后端进程环境。
+        # 这样 LLMClient 在整个进程生命周期内，一次都不会尝试连接 DeepSeek，
+        # 直接按配置顺序 qwen2.5:7b → deepseek-r1:7b 使用本地 Ollama。
+        $env:LLM_PROVIDER_OVERRIDE = "ollama"
+        [Environment]::SetEnvironmentVariable("LLM_PROVIDER_OVERRIDE", "ollama", "Process")
+        Write-Host "  已强制启用 LLM_PROVIDER_OVERRIDE=ollama：后端将跳过所有云端尝试。" -ForegroundColor Yellow
         $RequireOllama = $true
     }
     if ($fallbackNeedsOllama) {

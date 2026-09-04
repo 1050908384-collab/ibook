@@ -89,8 +89,35 @@ class _DeepSeekSyncNetworkBackend(httpcore.NetworkBackend):
 
 
 class LLMClient:
+    """Hybrid LLM entrypoint: cloud-first (DeepSeek / OpenAI-compatible) with a
+    local Ollama ordered fallback.
+
+    Cloud-skipping behaviour:
+      * When ``LLM_PROVIDER_OVERRIDE`` is set to ``"ollama"`` (typically written
+        by the launcher script after detecting that DeepSeek credentials are
+        placeholders or missing), this client **never** attempts a cloud call
+        and routes every request straight to the local Ollama ordered list.
+        This is a *persistent, once-for-all* decision for the process lifetime.
+      * When credentials are missing / still templated placeholders, this client
+        skips cloud for the remainder of this process run (credentials cannot
+        heal themselves at runtime without a backend restart).
+      * When a cloud call fails due to HTTP/network/empty-body issues, the
+        client falls back locally once, but does **not** remember the failure
+        as a permanent "cloud is down" state.  Subsequent calls still try cloud
+        first — transient network flaps / momentary 408/5xx should not prevent
+        a working key from being used the next time.
+    """
+
     def __init__(self):
-        self.cloud_provider = settings.LLM_PROVIDER.lower().strip()
+        # 1) Apply launcher-side provider override BEFORE any provider selection.
+        override = (settings.model_dump().get("LLM_PROVIDER_OVERRIDE") or getattr(settings, "LLM_PROVIDER_OVERRIDE", "")).lower().strip()
+        self._provider_override: Optional[str] = override or None
+
+        base_provider = settings.LLM_PROVIDER.lower().strip()
+        # If override forces a specific provider for the entire backend run,
+        # use it as cloud_provider.  "" means "use LLM_PROVIDER as usual".
+        effective_cloud_provider = self._provider_override or base_provider
+        self.cloud_provider = effective_cloud_provider
         self._uses_openai_compatible_cloud = self.cloud_provider in {
             "openai", "openai_compatible", "custom_openai_compatible",
         }
@@ -122,6 +149,29 @@ class LLMClient:
         self.last_provider: Optional[str] = None
         self.last_model: Optional[str] = None
         self.last_fallback_reason: Optional[str] = None
+
+        # ================= Cloud-skipping caches (process-lifetime) ==============
+        # Latch 1 – FORCE-LOCAL set by launcher override.  If True, not a single
+        #           cloud call is attempted for the entire lifetime of this process.
+        self._cloud_force_local: bool = (self._provider_override == "ollama")
+        # Latch 2 – credentials missing.  Evaluated lazily once and cached so we
+        #           don't scan the key + placeholder tokens on every call.
+        #           Note: credentials never "self-heal" at runtime — you must
+        #           restart the backend after editing .env, so caching is safe.
+        self._cloud_credentials_checked: bool = False
+        self._cloud_credentials_ok: bool = False
+        # NOTE: We intentionally do NOT keep a "runtime cloud failure latch".
+        #       HTTP/408/5xx/network flaps must not cause a good key to be
+        #       locked out for the entire process run.  Per-call fallback plus
+        #       the harness concurrency shrink via _notify_fallback is enough.
+
+        if self._cloud_force_local:
+            logger.info(
+                "LLM_PROVIDER_OVERRIDE=ollama is active: this backend will route "
+                "ALL LLM calls directly to local Ollama and never attempt a "
+                "cloud DeepSeek connection for this process lifetime."
+            )
+
         # Optional orchestration hook. It is intentionally process-local and
         # is used to adapt concurrency after a runtime cloud failure.
         self._fallback_listener: Optional[Callable[[str], None]] = None
@@ -211,6 +261,9 @@ class LLMClient:
         }
 
     def _has_deepseek_credentials(self) -> bool:
+        """Cached credential check.  Runs once per process lifetime."""
+        if self._cloud_credentials_checked:
+            return self._cloud_credentials_ok
         # 兼容多个常见占位符写法，避免未替换的模板 key 被当作真实凭证发请求
         placeholder_tokens = {
             "",
@@ -225,13 +278,48 @@ class LLMClient:
             "xxxx",
         }
         normalized = (self.deepseek_api_key or "").strip().strip('"').strip("'").lower()
-        return (
+        result = (
             self.cloud_provider in {"deepseek", "openai", "openai_compatible", "custom_openai_compatible"}
             and bool(self.deepseek_api_key)
             and normalized not in placeholder_tokens
             and not normalized.startswith("your-")
             and not normalized.startswith("your_")
         )
+        self._cloud_credentials_checked = True
+        self._cloud_credentials_ok = result
+        if not result:
+            logger.info(
+                "Cloud credentials missing/placeholder — skipping cloud for "
+                "the rest of this process run (cached until restart)."
+            )
+        return result
+
+    def _should_skip_cloud(self) -> tuple[bool, Optional[str]]:
+        """Central check — only two latches (both deterministic, runtime-safe):
+
+        - ``LLM_PROVIDER_OVERRIDE=ollama`` from the launcher (config is known to
+          be missing / not replaced at launch time).
+        - credentials check found placeholders / empty (credentials don't heal
+          mid-process, so once bad, always bad).
+
+        Returns (skip, reason_or_None).  Importantly, this intentionally does
+        **not** latch on transient HTTP/network failures — those must only
+        trigger a one-shot local fallback for the current call.
+        """
+        if self._cloud_force_local:
+            return True, "force_local_via_LLM_PROVIDER_OVERRIDE"
+        # Force a credential refresh on the first call; it caches itself.
+        if self._cloud_credentials_checked and not self._cloud_credentials_ok:
+            return True, "deepseek_credentials_missing (cached)"
+        return False, None
+
+    # (Historical helper retained for grep-ability – not used anymore, because
+    #  we never permanently disable cloud on a single runtime failure.  The
+    #  equivalent helper is just the per-call fallback + _notify_fallback.)
+    def _mark_runtime_fallback(self, reason: str) -> None:
+        """Single-shot fallback: log, shrink concurrency via listener, done."""
+        logger.info("Cloud call fell back to local Ollama: %s", reason)
+        self._notify_fallback(reason)
 
     def _can_fallback_to_ollama(self) -> bool:
         return settings.LLM_FALLBACK_PROVIDER.lower() == "ollama"
@@ -372,6 +460,22 @@ class LLMClient:
         self.last_provider = None
         self.last_model = None
         self.last_fallback_reason = None
+
+        # ------------------------------------------------------------------
+        # Latch-based cloud skipping.  Two deterministic latches are checked:
+        #   1) launcher forced LLM_PROVIDER_OVERRIDE=ollama → never try cloud
+        #   2) credentials known missing/placeholder (cached once)
+        # HTTP/network failures never flip a permanent latch: subsequent calls
+        # always retry cloud first, then fall back locally if unreachable.
+        # ------------------------------------------------------------------
+        skip, reason = self._should_skip_cloud()
+        if skip:
+            if self._can_fallback_to_ollama():
+                self.last_fallback_reason = reason
+                return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
+            # Local fallback also disabled: surface a clear error.
+            return f"Error: Cloud provider skipped ({reason}) and Ollama fallback is not enabled."
+
         if not self._has_deepseek_credentials():
             if self._can_fallback_to_ollama():
                 self.last_fallback_reason = "deepseek_credentials_missing"
@@ -395,6 +499,9 @@ class LLMClient:
         response = await self._complete_deepseek(payload)
         if response.startswith("Error:") and self._can_fallback_to_ollama():
             self.last_fallback_reason = response
+            # One-shot fallback for this call only.  We do NOT permanently lock
+            # out cloud here, because a 408/5xx/network flap this time might
+            # resolve on the next call when the key itself is valid.
             self._notify_fallback(response)
             logger.info("Falling back to local Ollama after DeepSeek failure: %s", response)
             return await self._complete_with_ollama(prompt, system_prompt, max_tokens, temperature, json_mode)
@@ -467,6 +574,14 @@ class LLMClient:
         self.last_provider = None
         self.last_model = None
         self.last_fallback_reason = None
+        # ---- Latch-based cloud skipping (mirrors `complete`) ----
+        skip, reason = self._should_skip_cloud()
+        if skip:
+            if self._can_fallback_to_ollama():
+                self.last_fallback_reason = reason
+                return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
+            return f"Error: Cloud provider skipped ({reason}) and Ollama fallback is not enabled."
+
         if not self._has_deepseek_credentials():
             if self._can_fallback_to_ollama():
                 self.last_fallback_reason = "deepseek_credentials_missing"
@@ -481,6 +596,9 @@ class LLMClient:
         response = await self._complete_deepseek(payload)
         if response.startswith("Error:") and self._can_fallback_to_ollama():
             self.last_fallback_reason = response
+            # One-shot fallback (same rationale as complete) – transient failures
+            # must not permanently lock out a working key for the remaining run.
+            self._notify_fallback(response)
             logger.info("Falling back to local Ollama after DeepSeek chat failure: %s", response)
             return await self._complete_with_ollama_messages(messages, max_tokens, temperature)
         return response
@@ -496,13 +614,25 @@ class LLMClient:
         """Synchronous cloud-then-local completion for tools that cannot await.
 
         Mirrors :meth:`complete`: prefers cloud DeepSeek, and on failure falls
-        back to the local Ollama model (deepseek-r1:7b by default) when
-        ``LLM_FALLBACK_PROVIDER=ollama``. Returns the answer text, or
-        ``"Error: ..."`` when no provider yields a usable answer.
+        back to the local Ollama model (qwen2.5:7b by default with deepseek-r1:7b
+        as the ordered backup) when ``LLM_FALLBACK_PROVIDER=ollama``.  Runtime
+        failures trigger a *single-shot* local fallback — we intentionally do
+        NOT remember the failure as permanent, because transient network /
+        408/5xx issues must not kill a correctly configured cloud key for the
+        remainder of the backend process.
         """
         self.last_done_reason = None
         self.last_provider = None
         self.last_fallback_reason = None
+
+        # ---- Latch-based cloud skipping (same as async paths) ----
+        skip, reason = self._should_skip_cloud()
+        if skip:
+            if self._can_fallback_to_ollama():
+                self.last_fallback_reason = reason
+                return self._complete_with_ollama_sync(messages, max_tokens, temperature, json_mode)
+            return f"Error: Cloud provider skipped ({reason}) and Ollama fallback is not enabled."
+
         if not self._has_deepseek_credentials():
             if self._can_fallback_to_ollama():
                 self.last_fallback_reason = "deepseek_credentials_missing"
@@ -518,6 +648,7 @@ class LLMClient:
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
+        cloud_failed_reason: Optional[str] = None
         try:
             with self._build_sync_deepseek_client() as client:
                 resp = client.post(
@@ -541,25 +672,30 @@ class LLMClient:
                 "DeepSeek sync returned empty content (finish_reason=%s)",
                 choice.get("finish_reason"),
             )
+            cloud_failed_reason = "Error: DeepSeek returned empty content"
         except httpx.HTTPStatusError as error:
             status_code = error.response.status_code
             logger.warning("DeepSeek sync HTTP failure: status=%d", status_code)
             formatted_error = self._format_deepseek_status_error(error)
             if not self._can_fallback_to_ollama():
                 return formatted_error
-            self.last_fallback_reason = formatted_error
+            cloud_failed_reason = formatted_error
         except (httpx.RequestError, ValueError, KeyError, TypeError) as error:
             logger.warning("DeepSeek sync failure: %s", error)
             formatted_error = f"Error: DeepSeek sync failure: {error}"
             if not self._can_fallback_to_ollama():
                 return formatted_error
-            self.last_fallback_reason = formatted_error
+            cloud_failed_reason = formatted_error
 
         # Cloud failed (HTTP error, transport error, or empty content) and the
-        # local fallback is enabled: switch to the local deepseek-r1:7b model.
+        # local fallback is enabled: do a single-shot local fallback.
+        # Intentionally no permanent latch — the next call still tries cloud.
         if self._can_fallback_to_ollama():
-            if self.last_fallback_reason is None:
-                self.last_fallback_reason = "deepseek_empty_response"
+            self.last_fallback_reason = cloud_failed_reason or "deepseek_empty_response"
+            if cloud_failed_reason:
+                # Notify harness once so it can shrink concurrency, but keep
+                # cloud reachable for the next attempt.
+                self._notify_fallback(cloud_failed_reason)
             logger.info("Falling back to local Ollama after DeepSeek sync failure: %s", self.last_fallback_reason)
             return self._complete_with_ollama_sync(messages, max_tokens, temperature, json_mode)
         return "Error: DeepSeek sync returned no usable answer"
